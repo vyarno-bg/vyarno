@@ -41,7 +41,6 @@ import {
   mortgagePanel,
   verifyUrl,
   fastestRisingDivision,
-  shareSentence,
   taxWedgePanel,
   payslipPanel,
   scheduledMaxInsurable,
@@ -932,56 +931,6 @@ test("fastestRisingDivision does not mutate the caller's array", () => {
     cats.map((c) => c.annual_rate_pct),
     before
   );
-});
-
-// ---------------------------------------------------------------------------
-// Share — docs/principles.md P2
-// ---------------------------------------------------------------------------
-
-const fmt1 = (n) => n.toFixed(1);
-
-test("shareSentence carries NO euro figure — the pair would invert to the salary", () => {
-  // `extraPerMonth = salary × π/(100+π)`. Publishing "my inflation is 5.4%,
-  // that's €48/month" reveals the salary to the decimal, to everyone who reads
-  // the message. This is a privacy boundary, not a style rule.
-  for (const lang of ["bg", "en"]) {
-    for (const anchor of ["y1", 2020, 2024]) {
-      const s = shareSentence({ lang, piPct: 5.4, officialPct: 5.36, anchor, fmt: fmt1 });
-      assert.ok(!/€/.test(s), `€ leaked into the share text: ${s}`);
-      assert.ok(!/\bEUR\b/i.test(s), `EUR leaked into the share text: ${s}`);
-      assert.ok(!/\bевро\b/i.test(s), `евро leaked into the share text: ${s}`);
-      assert.ok(!/\bлв\.?/i.test(s), `лв leaked into the share text: ${s}`);
-    }
-  }
-});
-
-test("shareSentence carries nothing else personal either", () => {
-  // Rent, savings, the mortgage amount, m² and the basket shape are all
-  // out of scope for a shared link (docs/principles.md P1/P2).
-  const s = shareSentence({ lang: "bg", piPct: 5.4, officialPct: 5.36, anchor: "y1", fmt: fmt1 });
-  const numbers = s.match(/\d[\d.,]*/g) ?? [];
-  assert.deepEqual(
-    numbers.filter((n) => !["5.4", "5.36", "30"].includes(n)),
-    [],
-    `unexpected number in the share text: ${s}`
-  );
-});
-
-test("shareSentence says both numbers, in the reader's language, and names the site", () => {
-  const bg = shareSentence({ lang: "bg", piPct: 5.4, officialPct: 5.4, anchor: "y1", fmt: fmt1 });
-  assert.ok(bg.includes("5.4") && bg.includes("vyarno.bg"));
-  assert.ok(/[а-я]/i.test(bg), "the BG sentence must be in Bulgarian");
-  const en = shareSentence({ lang: "en", piPct: 5.4, officialPct: 5.4, anchor: "y1", fmt: fmt1 });
-  assert.ok(!/[а-я]/i.test(en), "the EN sentence must not be in Bulgarian");
-  // A year anchor names the year it measures from, so the number has a window.
-  const since = shareSentence({
-    lang: "en",
-    piPct: 41.8,
-    officialPct: 41.6,
-    anchor: 2020,
-    fmt: fmt1,
-  });
-  assert.ok(since.includes("2020"), since);
 });
 
 // ---------------------------------------------------------------------------

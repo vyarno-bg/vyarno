@@ -84,5 +84,5 @@
     estatCatUrl={calc.estatCatUrl}
   />
 
-  <ShareCard piPct={calc.pi} officialPct={calc.off} anchor={calc.anchor} />
+  <ShareCard />
 </div>

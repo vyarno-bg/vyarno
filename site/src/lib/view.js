@@ -779,32 +779,3 @@ export function rankedSplit(ranked, limit = RANK_ROWS_SHOWN) {
 // ---------------------------------------------------------------------------
 // SHARE — see docs/principles.md P2
 // ---------------------------------------------------------------------------
-
-/**
- * The one sentence the share button puts on the clipboard.
- *
- * **It carries percentages and never a € amount, and that is a privacy
- * boundary, not a style choice.** `extraPerMonth = salary × π/(100+π)` inverts
- * exactly: publishing "my inflation is 5.4%, that's €48/month" reveals the
- * salary to the decimal. Any € figure added to this string leaks the user's
- * pay to everyone who reads the message (docs/principles.md P2).
- *
- * Nothing else personal is in scope either — no rent, no savings, no basket
- * shape, no mortgage amount.
- *
- * @param {{lang:string, piPct:number, officialPct:number, anchor:'y1'|number, fmt:(n:number)=>string}} args
- * @returns {string}
- */
-export function shareSentence({ lang, piPct, officialPct, anchor, fmt }) {
-  const bg = lang === "bg";
-  const pi = fmt(piPct);
-  const off = fmt(officialPct);
-  if (anchor === "y1") {
-    return bg
-      ? `Моята лична инфлация е ${pi}% - официалната е ${off}%. Сметни своята за 30 секунди, без регистрация: vyarno.bg`
-      : `My personal inflation is ${pi}% - the official figure is ${off}%. Work out yours in 30 seconds, no sign-up: vyarno.bg`;
-  }
-  return bg
-    ? `Моята кошница е с ${pi}% по-скъпа от ${anchor}. А твоята заплата вдигна ли се с толкова? Провери: vyarno.bg`
-    : `My basket costs ${pi}% more than in ${anchor}. Has your pay risen that much? Check: vyarno.bg`;
-}

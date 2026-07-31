@@ -142,7 +142,7 @@ explanation for a number that turned out wrong, and this project ships figures
 people make decisions about.
 
 **Run the checks yourself, and never report a count you did not produce.**
-`make check` prints what it ran. A PR body claiming 287 pytest and 317
+`make check` prints what it ran. A PR body claiming 287 pytest and 314
 node:test when the suites were never started is the one failure that costs a
 reviewer their ability to trust anything else in the description.
 

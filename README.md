@@ -175,7 +175,7 @@ What is verified, and by what:
 | Suite | Runs | What it protects |
 |---|---|---|
 | `pytest` in `pipeline/` | 287 tests, offline | Connectors, transforms, the six validation gates, the published payloads |
-| `node:test` in `site/` | 317 tests | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
+| `node:test` in `site/` | 314 tests | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
 | `node:test` + Playwright | 15 tests | The built page, loaded in a real browser — the only suite that runs the app |
 
 `make check` runs all of it in CI's order. The counts above are stated, not
