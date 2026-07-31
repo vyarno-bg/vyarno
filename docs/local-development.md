@@ -101,10 +101,12 @@ npm run dev                      # http://localhost:5173, hot reload
 
 Two differences, both mechanical. A virtualenv puts its executables in
 `Scripts\` rather than `bin/`, and `python3` is a Microsoft Store stub that
-opens the Store instead of running anything — the interpreter is `python`. The
-Makefile knows both and switches on `OS`, so `make setup` and `make check` work
-under Git Bash, MSYS2 and WSL. GNU Make is not part of a Windows install, so
-without one of those, run the commands themselves. In PowerShell:
+opens the Store instead of running anything — the interpreter is `python`. GNU
+Make is not part of a Windows install either. Under Git Bash, MSYS2 or WSL every
+target works unchanged; run it from cmd.exe or PowerShell and the Makefile stops
+with a message pointing here, because Make hands its recipes to cmd there and
+cmd cannot run a command written with forward slashes. Without one of those
+shells, run the commands themselves. In PowerShell:
 
 ```powershell
 cd pipeline

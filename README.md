@@ -46,8 +46,8 @@ cd ../site && npm install && npm run dev      # http://localhost:5173
 
 On Windows the venv puts its executables in `Scripts\` and the interpreter is
 `python`, not `python3`: `python -m venv .venv` then
-`.\.venv\Scripts\Activate.ps1`, and the rest is identical. Linux, macOS and
-Windows are all covered by CI —
+`.\.venv\Scripts\Activate.ps1`, and the rest is identical. CI covers Linux and
+Windows —
 [`docs/local-development.md`](./docs/local-development.md) §"On Windows" has the
 full block and the six things that make it work.
 
