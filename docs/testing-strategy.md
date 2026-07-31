@@ -41,23 +41,27 @@ to do to count is §"The standard a test has to meet".
 
 ## The suites
 
-| Suite | Runner | Tests | What it holds |
-|---|---|---|---|
-| `pipeline/tests/test_*.py` | pytest | 275 | Connectors, transforms, publish gates, the models, the CLI |
-| `pipeline/tests/test_published_contracts.py` | pytest | 14 | The JSON committed under `data/published/`, re-checked offline |
-| `site/scripts/verify_mirror_math.mjs` · `verify_net_salary.mjs` | `node:test` | 92 | Every formula, against worked examples |
-| `site/scripts/verify_view.mjs` | `node:test` | 74 | Every derived value — which number feeds which formula |
-| `site/scripts/verify_copy.mjs` | `node:test` | 30 | Copy invariants, against the imported `COPY` object |
-| `site/scripts/verify_data_contracts.mjs` | `node:test` | 22 | `data.js` fallback chains and the shipped payloads |
-| `site/scripts/verify_legal.mjs` | `node:test` | 26 | The legal documents, the ЗЕТ чл. 4 identity, the licence claim, upstream attribution |
-| `site/scripts/verify_wiring.mjs` | `node:test` | 21 | Template wiring — which value the markup passes to which function |
-| `site/scripts/verify_static_assets.mjs` | `node:test` | 15 | `robots.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
-| `site/scripts/verify_render.mjs` | `node:test` + Playwright | 14 | The built page, in a browser |
-| `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | 34 | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
-| `site/scripts/verify_no_changelog_comments.mjs` | `node:test` | 2 | That no comment in `site/` or `pipeline/` describes an earlier version of the code |
+| Suite | Runner | What it holds |
+|---|---|---|
+| `pipeline/tests/test_*.py` | pytest | Connectors, transforms, publish gates, the models, the CLI |
+| `pipeline/tests/test_published_contracts.py` | pytest | The JSON committed under `data/published/`, re-checked offline |
+| `site/scripts/verify_mirror_math.mjs` · `verify_net_salary.mjs` | `node:test` | Every formula, against worked examples |
+| `site/scripts/verify_view.mjs` | `node:test` | Every derived value — which number feeds which formula |
+| `site/scripts/verify_copy.mjs` | `node:test` | Copy invariants, against the imported `COPY` object |
+| `site/scripts/verify_data_contracts.mjs` | `node:test` | `data.js` fallback chains and the shipped payloads |
+| `site/scripts/verify_legal.mjs` | `node:test` | The legal documents, the ЗЕТ чл. 4 identity, the licence claim, upstream attribution |
+| `site/scripts/verify_wiring.mjs` | `node:test` | Template wiring — which value the markup passes to which function |
+| `site/scripts/verify_static_assets.mjs` | `node:test` | `robots.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
+| `site/scripts/verify_render.mjs` | `node:test` + Playwright | The built page, in a browser |
+| `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
+| `site/scripts/verify_no_changelog_comments.mjs` | `node:test` | That no comment in `site/` or `pipeline/` describes an earlier version of the code |
 
-**288 pytest, 315 node:test, 15 render.** `make check` runs all of it in CI's
-order.
+`make check` runs all of it in CI's order. **The three totals live in
+[`AGENTS.md`](../AGENTS.md) §Commands and nowhere else.** A per-file count in
+this table is a number that goes stale the next time somebody adds a test to
+that file, and twelve of them go stale twelve different ways — read the totals
+from the run you just did instead. A count that moved without you moving it is
+still a finding.
 
 **The odd one out is the last row**, and it is worth saying why a prose rule is
 enforced by a test at all. `docs/writing-style.md` has said "never write a

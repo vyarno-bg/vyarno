@@ -9,7 +9,7 @@ the boundaries that apply everywhere; this file is the Python side.
 ```sh
 make setup                                  # from the repo root, once
 source .venv/bin/activate                   # ruff and pytest live here, not on PATH
-pytest -q                                   # 288 tests, offline, ~15 s
+pytest -q                                   # the offline suite, ~15 s
 pytest -m live -q -rs                       # the upstream probes, and why any skipped
 ruff check .. && ruff format --check ..     # ruff owns Python layout everywhere
 ```

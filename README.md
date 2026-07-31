@@ -39,7 +39,7 @@ git clone https://github.com/vyarno-bg/vyarno.git && cd vyarno
 
 cd pipeline && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e . --no-deps
-pytest -q                                     # 288 tests, offline
+pytest -q                                     # the offline suite
 
 cd ../site && npm install && npm run dev      # http://localhost:5173
 ```
@@ -181,8 +181,8 @@ What is verified, and by what:
 
 | Suite | Runs | What it protects |
 |---|---|---|
-| `pytest` in `pipeline/` | 288 tests, offline | Connectors, transforms, the six validation gates, the published payloads |
-| `node:test` in `site/` | 315 tests | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
+| `pytest` in `pipeline/` | offline | Connectors, transforms, the six validation gates, the published payloads |
+| `node:test` in `site/` | no browser | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
 | `node:test` + Playwright | 15 tests | The built page, loaded in a real browser — the only suite that runs the app |
 
 `make check` runs all of it in CI's order. The counts above are stated, not
