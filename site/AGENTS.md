@@ -10,7 +10,7 @@ everywhere; this file is the front-end side.
 npm install                                  # once after cloning
 npm run dev                                  # :5173, hot reload
 npm run verify:math                          # node:test, no browser
-npm run build && npm run test:render         # 15 tests, the built page in a browser
+npm run build && npm run test:render         # 16 tests, the built page in a browser
 npm run lint && npm run check                # eslint + prettier, then svelte-check
 node scripts/find-chromium.mjs               # which browser test:render will use
 ```
