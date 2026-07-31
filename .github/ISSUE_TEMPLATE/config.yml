@@ -1,7 +1,1 @@
 blank_issues_enabled: false
-contact_links:
-  - name: Report a security issue
-    url: mailto:security@vyarno.bg
-    about: |
-      Security issues must be reported privately by email, not as a public
-      issue. See SECURITY.md.

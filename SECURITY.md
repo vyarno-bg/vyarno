@@ -8,8 +8,8 @@ back-patched.
 
 | Branch  | Supported          |
 | ------- | ------------------ |
-| `main`  | :white_check_mark: |
-| older   | :x:                |
+| `main`  | yes                |
+| older   | no                 |
 
 ## Reporting a vulnerability
 
@@ -17,7 +17,7 @@ Please report security issues **privately** — **do not file a public GitHub
 issue** for a vulnerability. The maintainers want time to ship a fix before the
 detail becomes public.
 
-Email: **security@vyarno.bg**
+Email: **contact@vyarno.bg**
 
 A good report includes:
 

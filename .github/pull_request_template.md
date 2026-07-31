@@ -1,24 +1,14 @@
-<!-- One test for this PR: would a reviewer learn something from this
-     template that the diff does not already tell them? If not, cut it.
-     Fill the placeholders; the body fills the template and stops. -->
-
 ## What is being changed
 
-<!-- One or two sentences. Cite `docs/principles.md` P-numbered rules if the
-     change crosses one, or `docs/math.md` if a formula moved. -->
+Cite `docs/principles.md` P-numbers if the change crosses a principle, or `docs/math.md` if a formula moved.
 
 ## Why
 
-<!-- The constraint the code has to keep doing. Not the diff, not
-     "previously X, now Y" — the failure this change rules out, and what
-     you rejected before writing it. -->
+The constraint the code has to keep doing. State what you rejected before writing it, and what breaks if this is reverted.
 
 ## Verification
 
-<!-- Every box below is required. A count that moved without a change is a
-     finding, not noise. See AGENTS.md §Commands. -->
-
-- [ ] `make check` with `VYARNO_CHROMIUM` set — all green
-- [ ] target slice of the suite **N/M** green; pre-existing failures (if any) **K** listed separately
-- [ ] `git diff` reviewed against the constraint above
-- [ ] new user-facing copy in **both** languages, in the same commit
+- [ ] `make check` with `VYARNO_CHROMIUM` set, all green
+- [ ] target slice N/M green; pre-existing failures (if any) listed separately
+- [ ] new user-facing copy in both languages in the same commit
+- [ ] numbers cited in the body are the ones I observed, not the ones I expected

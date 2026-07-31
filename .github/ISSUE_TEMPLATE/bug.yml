@@ -2,13 +2,6 @@ name: Bug report
 description: Something on vyarno.bg reads, computes, or renders incorrectly.
 labels: ["type: bug"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for the report. Please fill the template — a report without a
-        way to reproduce it is hard to act on, and we may close it as
-        `needs-repro` if we cannot reach it.
-
   - type: input
     id: url
     attributes:

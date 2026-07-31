@@ -2,15 +2,6 @@ name: Feature request
 description: A change that would make vyarno.bg more useful, *and* is not on the closed list in docs/principles.md.
 labels: ["type: enhancement"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Before you file a feature request, please skim
-        [`docs/principles.md`](../blob/main/docs/principles.md). Several
-        plausible features are already ruled out there with their reasons,
-        and the reason is never effort — reading the list saves both of us a
-        round-trip.
-
   - type: textarea
     id: problem
     attributes:
