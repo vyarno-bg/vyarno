@@ -32,10 +32,10 @@ from vyarno_pipeline.validate import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
-IW_V2 = json.loads((FIXTURES / "eurostat_hicp_iw_bg.json").read_text())
-INW_V1 = json.loads((FIXTURES / "eurostat_hicp_inw_v1_bg.json").read_text())
-RCH = json.loads((FIXTURES / "eurostat_hicp_rch_bg.json").read_text())
-I15 = json.loads((FIXTURES / "eurostat_hicp_i15_bg.json").read_text())
+IW_V2 = json.loads((FIXTURES / "eurostat_hicp_iw_bg.json").read_text(encoding="utf-8"))
+INW_V1 = json.loads((FIXTURES / "eurostat_hicp_inw_v1_bg.json").read_text(encoding="utf-8"))
+RCH = json.loads((FIXTURES / "eurostat_hicp_rch_bg.json").read_text(encoding="utf-8"))
+I15 = json.loads((FIXTURES / "eurostat_hicp_i15_bg.json").read_text(encoding="utf-8"))
 
 DIVISIONS_V2 = [f"CP{n:02d}" for n in range(1, 14)]
 

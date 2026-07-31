@@ -28,7 +28,7 @@ INW_V1_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/dat
 
 
 def _fixture(name: str) -> dict:
-    return json.loads((FIXTURES / name).read_text())
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
 @pytest.fixture
@@ -91,7 +91,7 @@ def test_refresh_hicp_publishes_thirteen_divisions_with_their_groups(tmp_path: P
     result = _run(tmp_path, "--skip-link-check")
 
     assert result.exit_code == 0, f"CLI failed:\n{result.output}"
-    payload = json.loads((tmp_path / "hicp_categories.json").read_text())
+    payload = json.loads((tmp_path / "hicp_categories.json").read_text(encoding="utf-8"))
     codes = [c["cp_code"] for c in payload["categories"]]
     assert codes == [f"CP{n:02d}" for n in range(1, 14)]
     assert sum(len(c["groups"]) for c in payload["categories"]) >= 40
@@ -113,7 +113,7 @@ def test_published_cp12_is_insurance_and_cp13_exists(tmp_path: Path, cubes):
     assert _run(tmp_path, "--skip-link-check").exit_code == 0
     cats = {
         c["cp_code"]: c
-        for c in json.loads((tmp_path / "hicp_categories.json").read_text())["categories"]
+        for c in json.loads((tmp_path / "hicp_categories.json").read_text(encoding="utf-8"))["categories"]
     }
 
     cp12 = cats["CP12"]
@@ -135,7 +135,7 @@ def test_published_envelope_names_both_ver2_datasets(tmp_path: Path, cubes):
     _mock(cubes)
 
     assert _run(tmp_path, "--skip-link-check").exit_code == 0
-    payload = json.loads((tmp_path / "hicp_categories.json").read_text())
+    payload = json.loads((tmp_path / "hicp_categories.json").read_text(encoding="utf-8"))
 
     c = payload["classification"]
     assert c["version"] == "ECOICOP ver.2"
@@ -158,7 +158,7 @@ def test_refresh_hicp_publishes_the_headline_from_cp00_at_its_own_month(tmp_path
     _mock(cubes)
 
     assert _run(tmp_path, "--skip-link-check").exit_code == 0
-    headline = json.loads((tmp_path / "hicp_headline.json").read_text())
+    headline = json.loads((tmp_path / "hicp_headline.json").read_text(encoding="utf-8"))
     assert headline["headline_rate_pct"] == pytest.approx(5.2)
     assert headline["ref_period"] == "2026-06"
 
@@ -166,7 +166,7 @@ def test_refresh_hicp_publishes_the_headline_from_cp00_at_its_own_month(tmp_path
     # one month: were these to disagree, the site's data panel would date two
     # payloads from a single refresh differently and one would be wrong. Asserted
     # here because it is the wiring into both writers that can drift.
-    categories = json.loads((tmp_path / "hicp_categories.json").read_text())
+    categories = json.loads((tmp_path / "hicp_categories.json").read_text(encoding="utf-8"))
     assert categories["ref_period"] == headline["ref_period"]
     assert {c["ref_period"] for c in categories["categories"]} == {headline["ref_period"]}
 
