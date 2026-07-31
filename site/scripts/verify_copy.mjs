@@ -191,6 +191,21 @@ test("the unplaced-money copy describes and never advises", () => {
   }
 });
 
+test("the unplaced-money copy never mentions housing by name", () => {
+  // The leftover is `leftover / spendable`, and `spendable` is take-home minus
+  // committed housing. The home checkbox is optional — a reader who never
+  // ticked it sees «след жилището» / «after housing» and reads it as a lie.
+  // The wording must hold in both states, so neither language may name
+  // housing here. A test is cheaper than re-deriving the rule from the code
+  // every time the copy is touched.
+  for (const key of ["leftLead", "leftOver"]) {
+    const entry = COPY[key];
+    assert.ok(entry, `COPY.${key} is gone — the unplaced-money row lost a line`);
+    assert.ok(!/\bжилищ\w*/i.test(entry.bg), `COPY.${key}.bg mentions housing: ${entry.bg}`);
+    assert.ok(!/\bhous(e|ing)\b/i.test(entry.en), `COPY.${key}.en mentions housing: ${entry.en}`);
+  }
+});
+
 test("the euro tally states what was entered, it does not ask for more", () => {
   // In € mode the tally is a statement of what the reader placed against what
   // they have. An earlier wording read as an instruction to fill the basket,
