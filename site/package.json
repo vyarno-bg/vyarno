@@ -19,7 +19,8 @@
     "lint:fix": "eslint . --fix && prettier --write .",
     "check": "svelte-check --tsconfig ./jsconfig.json",
     "verify:math": "node --test scripts/verify_format.mjs scripts/verify_net_salary.mjs scripts/verify_mirror_math.mjs scripts/verify_view.mjs scripts/verify_stores.mjs scripts/verify_contrast.mjs scripts/verify_data_contracts.mjs scripts/verify_legal.mjs scripts/verify_static_assets.mjs scripts/verify_support.mjs scripts/verify_copy.mjs scripts/verify_template_safety.mjs scripts/verify_wiring.mjs scripts/verify_no_changelog_comments.mjs",
-    "test:render": "node --test scripts/verify_render.mjs"
+    "test:render": "node --test scripts/verify_render.mjs",
+    "check:all": "node scripts/check-all.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

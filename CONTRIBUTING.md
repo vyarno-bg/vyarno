@@ -44,9 +44,10 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-On Windows: `python -m venv .venv` and `.\.venv\Scripts\Activate.ps1`, and use
-Git Bash or WSL if you want `make`. Everything else is the same, and CI runs the
-whole thing on `windows-latest` so it stays that way —
+On Windows: `python -m venv .venv` and `.\.venv\Scripts\Activate.ps1`, and
+`cd site && npm run check:all` where this page says `make check` — same
+sequence, no `make` needed. CI runs the whole thing on `windows-latest` so it
+stays that way —
 [`docs/local-development.md`](./docs/local-development.md) §"On Windows".
 
 Before opening a pull request, run what CI runs:
@@ -78,8 +79,8 @@ reformat around them or disable a rule without saying why in the same commit.
 
 `npm run test:render` needs a Chromium. `make check` finds one for you —
 Playwright's own, a system install, or whatever `VYARNO_CHROMIUM` names — and
-fails if there is none, because run bare that suite skips and exits 0, and 14
-skipped looks exactly like 14 passed. Where nothing resolves,
+fails if there is none, because run bare that suite skips and exits 0, and 15
+skipped looks exactly like 15 passed. Where nothing resolves,
 `cd site && npx playwright install chromium`. It is the only suite that runs
 the app, so it is the one worth having.
 
@@ -147,8 +148,8 @@ explanation for a number that turned out wrong, and this project ships figures
 people make decisions about.
 
 **Run the checks yourself, and never report a count you did not produce.**
-`make check` prints what it ran. A PR body claiming 287 pytest and 314
-node:test when the suites were never started is the one failure that costs a
+`make check` prints what it ran, and so does `npm run check:all`. A PR body
+quoting counts from a run that never happened is the one failure that costs a
 reviewer their ability to trust anything else in the description.
 
 **Say so in the pull request** when an agent wrote a substantial part — one

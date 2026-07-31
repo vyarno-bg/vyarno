@@ -8,6 +8,10 @@ make check      # everything CI runs, in CI's order
 make help       # the rest of the targets
 ```
 
+No `make` on the machine — Windows, most often? `cd site && npm run check:all`
+is the same run. `make check` executes that script rather than a second copy of
+the command list, so the two cannot disagree.
+
 `make check` is a convenience over the sections below, not a second source of
 truth: every target is the command CI runs, in CI's order. If the two ever
 disagree, CI is right. The rest of this page is what those targets do and how
@@ -126,24 +130,21 @@ system` is PowerShell's execution policy rather than a broken venv. Either
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use
 `.\.venv\Scripts\activate.bat` from `cmd.exe`, which the policy does not cover.
 
-`make check`, by hand, from the repository root with the venv active:
+`make check` without make — the same sequence, one command, from `site\`:
 
 ```powershell
-ruff check .
-ruff format --check .
-cd pipeline ; pytest -q
-cd ..\site
-npm run lint
-npm run check
-npm run verify:math
-npm run build:release
-npm run test:render              # 15 — see below
+npm run check:all
 ```
 
-Read the last number. With no browser that suite skips and still exits 0, so
-`npx playwright install chromium` in `site\` is what turns a green 0 into a
-green 15. `node scripts/find-chromium.mjs` will also take a Chrome or an Edge
-already installed under `%ProgramFiles%` or `%LOCALAPPDATA%`.
+`site/scripts/check-all.mjs` is what that runs, and `make check` runs the same
+file rather than a second copy of the list. It resolves the venv's executables
+per platform, stops at the first failure and names the command that failed, and
+takes a single stage — `npm run check:all lint` — when you want one part of it.
+
+Read the render count at the end. With no browser that suite skips and still
+exits 0, so `npx playwright install chromium` in `site\` is what turns a green
+0 into a green 15. `node scripts/find-chromium.mjs` will also take a Chrome or
+an Edge already installed under `%ProgramFiles%` or `%LOCALAPPDATA%`.
 
 Six things in the repository make that block work, and each is load-bearing
 rather than tidy:
