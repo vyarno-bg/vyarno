@@ -49,7 +49,7 @@ On Windows the venv puts its executables in `Scripts\` and the interpreter is
 `.\.venv\Scripts\Activate.ps1`, and the rest is identical. Linux, macOS and
 Windows are all covered by CI —
 [`docs/local-development.md`](./docs/local-development.md) §"On Windows" has the
-full block and the four things that make it work.
+full block and the six things that make it work.
 
 The site reads the JSONs already committed under `data/published/`, so it runs
 without ever touching an upstream API. To run everything CI runs — both suites,

@@ -143,7 +143,7 @@ Read the last number. With no browser that suite skips and still exits 0, so
 green 15. `node scripts/find-chromium.mjs` will also take a Chrome or an Edge
 already installed under `%ProgramFiles%` or `%LOCALAPPDATA%`.
 
-Four things in the repository make that block work, and each is load-bearing
+Six things in the repository make that block work, and each is load-bearing
 rather than tidy:
 
 - **`.gitattributes` checks every text file out as LF.** Git for Windows
@@ -161,14 +161,28 @@ rather than tidy:
 - **`build:release` goes through `scripts/release-build.mjs`.** Setting an
   environment variable by prefixing the command is POSIX shell syntax; cmd.exe
   reads it as the name of a program.
-- **`publish.write_payload` passes `newline="\n"`.** Text mode translates to
-  `os.linesep`, so a refresh run from Windows would write all eight payloads
-  CRLF — invisible in the diff, because `.gitattributes` normalises them back,
-  and visible to everything that reads the working tree before git does.
+- **`check-identity.mjs` and `verify_support.mjs` wrap their dynamic imports in
+  `pathToFileURL`.** `await import()` takes a URL. A POSIX absolute path happens
+  to be one the loader accepts; `C:\…` is not, and it raises
+  `ERR_UNSUPPORTED_ESM_URL_SCHEME` — so the release guard and the donation guard
+  both refuse to start rather than reporting anything.
+- **`strip-sourcemaps.mjs` collapses `path.sep`, not `"/"`.** `relative()`
+  returns native separators, so a POSIX-only replacement leaves a backslash in
+  the destination and `rename` looks for a directory nobody created.
+- **Every file read and write states its encoding, and the writes state their
+  newline.** Text mode follows the locale — cp1252 or cp1251 on a Windows box,
+  which turns the UTF-8 Eurostat cubes into a `UnicodeDecodeError` on read and
+  the Cyrillic labels into mojibake on write — and it translates `"\n"` to
+  `os.linesep`, so `publish.write_payload` without `newline="\n"` rewrites all
+  eight payloads CRLF. That last one hides: `.gitattributes` normalises them
+  back on commit, so the repository stays clean while the working tree does
+  not, and what reads the working tree before git does — `copy-data.mjs`
+  filling `dist/`, any byte comparison against the previous publish — sees a
+  difference the diff never shows.
 
 The `windows` job in CI runs that block on every push. It is there because all
-four of those are the kind of thing that only breaks on a platform nobody
-tests, and a Linux-only CI cannot contradict a Linux-only assumption.
+six of those are the kind of thing that only breaks on a platform nobody tests,
+and a Linux-only CI cannot contradict a Linux-only assumption.
 
 One thing it does not pin: the interpreter. CI runs 3.11 and `pyproject.toml`
 asks for 3.11 or newer, so a local 3.13 or 3.14 is fine and is not what CI

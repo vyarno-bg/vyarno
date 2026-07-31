@@ -50,7 +50,7 @@ cd ../site && npm install && npm run dev      # http://localhost:5173
 `.\.venv\Scripts\Activate.ps1` — останалото е същото. CI покрива и трите
 операционни системи;
 [`docs/local-development.md`](./docs/local-development.md) §„On Windows“ дава
-пълния списък команди и четирите неща, на които стъпва.
+пълния списък команди и шестте неща, на които стъпва.
 
 Сайтът чете JSON файловете, които вече са в `data/published/`, така че работи,
 без изобщо да вика външно API. За да пуснеш всичко, което пуска и CI — двата
