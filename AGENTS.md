@@ -41,7 +41,7 @@ with no browser, and it is the only suite that runs the app — a template error
 that renders the page blank is invisible to every other test in the repository,
 so a green run without it proves less than it looks.
 
-Expected: **287 pytest, 314 node:test, 15 render.** A count that moved without
+Expected: **287 pytest, 315 node:test, 15 render.** A count that moved without
 you moving it is a finding, not noise. `make help` lists the rest;
 `docs/local-development.md` is the long form.
 
