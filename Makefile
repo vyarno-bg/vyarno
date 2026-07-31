@@ -70,7 +70,7 @@ PYTEST := pipeline/.venv/bin/pytest
 RUFF := pipeline/.venv/bin/ruff
 
 .DEFAULT_GOAL := help
-.PHONY: help setup lock check lint test build browser render coverage clean
+.PHONY: help setup lock check fmt lint test build browser render coverage clean
 
 help: ## Show this list
 	@echo "Вярно — make targets:"
@@ -94,6 +94,14 @@ setup: ## Create the Python venv and install both toolchains
 $(PYTEST):
 	@echo "pipeline/.venv is missing — run 'make setup' first." >&2
 	@exit 1
+
+fmt: $(PYTEST) ## Apply what `lint` only checks — ruff format, prettier, eslint --fix
+	@# `lint` reports and never rewrites, because CI has to report rather than
+	@# rewrite. That leaves a contributor reading a ruff diff to work out what
+	@# to type. This is what to type. It is not part of `check` — a target that
+	@# edits the tree has no business inside the one that verifies it.
+	$(RUFF) format .
+	cd site && npm run lint:fix
 
 lint: $(PYTEST) ## Ruff, ESLint, Prettier, svelte-check
 	$(RUFF) check .

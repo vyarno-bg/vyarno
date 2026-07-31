@@ -131,13 +131,13 @@ system` is PowerShell's execution policy rather than a broken venv. Either
 ```powershell
 ruff check .
 ruff format --check .
-cd pipeline ; pytest -q          # 288
+cd pipeline ; pytest -q
 cd ..\site
 npm run lint
 npm run check
-npm run verify:math              # 315
+npm run verify:math
 npm run build:release
-npm run test:render              # 15
+npm run test:render              # 15 — see below
 ```
 
 Read the last number. With no browser that suite skips and still exits 0, so

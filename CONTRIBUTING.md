@@ -215,9 +215,9 @@ repository already knows.
 author field records who answers for the code; the line in the PR body records
 how it was produced. A reviewer needs both, and they are not the same question.
 
-If you sign off (`git commit -s`, see below), the `Signed-off-by` line has to
-name the same person as the author — it is a statement about the right to
-submit, and it is worth nothing made in somebody else's name.
+If you sign off (`git commit -s`, see below), the `Signed-off-by` line names
+the same person as the author — it is a statement about the right to submit,
+and it is worth nothing made in somebody else's name.
 
 ## Where the project's conventions live
 
@@ -262,21 +262,24 @@ By contributing you agree that your contribution is licensed under Apache-2.0,
 the same licence as the project (see Apache-2.0 §5). There is no separate CLA
 and no copyright assignment — you keep your copyright.
 
-**Sign your commits off.** Add a `Signed-off-by` line, which `git commit -s`
-writes for you:
+**A sign-off is welcome and no pull request waits for one.** `git commit -s`
+adds a line saying you wrote the contribution or otherwise have the right to
+submit it under Apache-2.0:
 
 ```
 Signed-off-by: Your Name <you@example.com>
 ```
 
 That is the [Developer Certificate of Origin](https://developercertificate.org/)
-1.1, and signing off is a statement that you wrote the contribution or
-otherwise have the right to submit it under Apache-2.0. It is not a CLA: it
-asks for no rights beyond the licence you already grant, it takes one flag, and
-it can be read by anyone from the git log.
+1.1. It asks for no rights beyond the licence §5 already grants, it costs one
+flag, and it can be read by anyone from the git log — which is why it is worth
+having: `NOTICE` asks forks not to use the project's name, and a request like
+that is easier to make from a repository that can say where each line of its
+own code came from.
 
-Why ask at all, when §5 licenses contributions in by default: `NOTICE` asks
-forks not to use the project's name, and a request like that is only worth
-making if the project can say where each line of its own code came from. A DCO
-is the cheapest record of that, and it is much easier to ask for from the
-beginning than to reconstruct later.
+It is a request rather than a gate, and the distinction is the point. Nothing
+in CI checks for the trailer, so a rule that only a reviewer can enforce is a
+rule that turns a contribution into a round trip over a missing line — for a
+record that §5 already makes legally unnecessary. Add it if it costs you
+nothing. If a change arrives without it, that is not something anyone here will
+send it back over.
