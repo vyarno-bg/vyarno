@@ -37,13 +37,17 @@
  * invent a registration number to make this pass — a placeholder ЕИК on a
  * live site is a false registration number, not a missing detail.
  */
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = resolve(__dirname, "../src");
 const LEGAL = resolve(SRC, "lib/legal.js");
 
+// `await import()` takes a URL, not a path. On POSIX `resolve()` returns a
+// path the loader happens to accept; on Windows it is `C:\…` and the loader
+// rejects it with `ERR_UNSUPPORTED_ESM_URL_SCHEME`. `pathToFileURL` is the
+// documented way to bridge the two.
 const {
   DOCS,
   IDENTITY,
@@ -52,9 +56,11 @@ const {
   copyStrings,
   identityRows,
   unpublishedIdentityFields,
-} = await import(LEGAL);
-const { COPY, HOME } = await import(resolve(SRC, "lib/content.js"));
-const { SUPPORT_COPY, SUPPORT_PLATFORMS } = await import(resolve(SRC, "lib/support.js"));
+} = await import(pathToFileURL(LEGAL).href);
+const { COPY, HOME } = await import(pathToFileURL(resolve(SRC, "lib/content.js")).href);
+const { SUPPORT_COPY, SUPPORT_PLATFORMS } = await import(
+  pathToFileURL(resolve(SRC, "lib/support.js")).href
+);
 
 const isRelease = process.env.VYARNO_RELEASE === "1";
 const problems = [];
