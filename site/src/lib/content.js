@@ -103,6 +103,12 @@ export const COPY = {
 
   // Inputs card
   yourNumbers: { bg: "Твоите числа", en: "Your numbers" },
+  // The second inputs card's heading. Net pay sits in a card of its own above
+  // it (PayField), so this one needs a name that says what is left rather than
+  // repeating «Твоите числа» — two identical headings in one column read as a
+  // rendering fault. It also sets the expectation the card is built on: none of
+  // it has to be filled in for the page to answer.
+  restOfNumbers: { bg: "Ако искаш - още за теб", en: "If you like - more about you" },
   netPay: { bg: "Нетна заплата", en: "Net pay" },
   // Single hint covers both single-earner and household use. The math is
   // the same either way — what changes is only the comparator on the
@@ -390,6 +396,12 @@ export const COPY = {
     bg: "останалите {n} групи заедно · {pp} пункта",
     en: "the other {n} groups together · {pp} points",
   },
+  // The control that unfolds the rest of the table where it was capped for
+  // width. It names the full count rather than saying «повече», so the reader
+  // knows the size of what they are opening before they open it — thirteen
+  // rows is a different decision from three.
+  rankShowAll: { bg: "покажи всички {n} групи", en: "show all {n} groups" },
+  rankShowFewer: { bg: "покажи по-малко", en: "show fewer" },
   rankNoSalary: {
     bg: "въведи заплата горе, за да видиш и в евро",
     en: "enter your pay above to see this in euros too",

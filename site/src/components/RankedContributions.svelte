@@ -29,6 +29,34 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  /**
+   * How many rows to draw, and why it is not one number.
+   *
+   * Eight rows is around 1,000px, which on a 390px phone is a screen and a
+   * half of table between the reader's headline figure and «в джоба» — the row
+   * that answers whether their raise beat their prices, and the question the
+   * page is named for. Five rows carry 3.9 of the default basket's 5.4 points
+   * and cut that by a third; the rest stay one tap away.
+   *
+   * The cap is safe to move at all only because `rankedSplit` folds whatever
+   * is not drawn into a remainder that keeps Σshown + restPp === π at ANY
+   * limit. Capping a list that the lead sentence promises adds up, without
+   * rendering the tail, is the defect that test exists to catch.
+   *
+   * Measured from the list's own width rather than a `matchMedia` on 820px,
+   * which would put a second copy of the layout breakpoint in a file that
+   * cannot see the first. What decides whether eight rows are readable is the
+   * width this list actually got, and that is the thing being measured. Before
+   * the first measurement `listW` is 0 and the desktop cap applies — erring
+   * towards showing more, never towards a silent truncation.
+   */
+  const ROWS_NARROW = 5;
+  let listW = $state(0);
+  let expanded = $state(false);
+  const limit = $derived(
+    expanded ? ranked.length : listW > 0 && listW < 480 ? ROWS_NARROW : undefined
+  );
 </script>
 
 <!-- WHAT'S PUSHING YOUR NUMBER UP
@@ -45,9 +73,9 @@
        remainder has to be on screen. `view.js#rankedSplit` owns that
        arithmetic (Σshown + restPp === π, asserted in
        verify_view.mjs); the template only draws it. -->
-  {@const { shown, restN, restPp } = rankedSplit(ranked)}
+  {@const { shown, restN, restPp } = rankedSplit(ranked, limit)}
   {@const span = Math.max(...ranked.map((r) => Math.abs(r.contributionPp)), 0.1)}
-  <div class="rank">
+  <div class="rank" bind:clientWidth={listW}>
     <div class="bars-cap mono">
       <span class="l-bg">{COPY.rankHead.bg}</span>
       <span class="l-en">{COPY.rankHead.en}</span>
@@ -139,6 +167,21 @@
         >
       </div>
     {/if}
+    <!-- Rendered only where rows are actually folded, so a full list on a wide
+         screen carries no control that would do nothing. It is a link rather
+         than a button to look at, for the same reason the footer's donate ask
+         is: this is a way to read more of a table, not the thing to do next. -->
+    {#if restN > 0 || expanded}
+      <button type="button" class="rank-more" onclick={() => (expanded = !expanded)}>
+        {#if expanded}
+          <span class="l-bg">{COPY.rankShowFewer.bg}</span>
+          <span class="l-en">{COPY.rankShowFewer.en}</span>
+        {:else}
+          <span class="l-bg">{t(COPY.rankShowAll, "bg", { n: ranked.length })}</span>
+          <span class="l-en">{t(COPY.rankShowAll, "en", { n: ranked.length })}</span>
+        {/if}
+      </button>
+    {/if}
     {#if salary <= 0}
       <p class="leg">
         <span class="l-bg">{COPY.rankNoSalary.bg}</span>
@@ -209,5 +252,22 @@
     margin-top: 8px;
     padding-top: 6px;
     border-top: 1px dashed var(--line);
+  }
+  .rank-more {
+    display: inline;
+    margin-top: 8px;
+    padding: 0;
+    font-family: var(--sans);
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--real-ink);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--real);
+    cursor: pointer;
+  }
+  .rank-more:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
   }
 </style>

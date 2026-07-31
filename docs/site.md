@@ -611,7 +611,7 @@ handler, which is to say a silent one.
 
 ### The components
 
-`InputsCard` (with `BasketEditor` and `PayslipTable` under it) and
+`PayField`, `InputsCard` (with `BasketEditor` under it) and
 `ResultsCard`. `ResultsCard` is a running order rather than a template: one
 component per receipt row — `ResultsSummary`, `PocketRow`, `PercentileRow`,
 `TaxWedgeRow`, `RentRow`, `HomeRow`, `LeftoverRow`, `SavingsRow` — so which
@@ -655,6 +655,72 @@ lines stack **inside** that one `.ss`: three sibling `.ss` blocks meant three
 rules and three paddings, which is what made the median-pay card twice the
 height of its neighbours.
 
+### Three cards, and the order a phone reads them in
+
+The grid holds `PayField`, `InputsCard` and `ResultsCard`, and the DOM order in
+`App.svelte` is the **phone's** order: ask, answer, refine.
+
+That is what the split is for. Below the breakpoint the results card is placed
+ahead of the inputs — the payoff should not sit under thirteen basket sliders —
+and with net pay inside the inputs card that put the one field every figure on
+the page is priced off **2,969px down a 6,670px page**, five screens past the
+figures computed from it. A reader who wanted to answer the page's one question
+had to scroll past every answer to find where to put it. Lifting that single
+field into its own card puts it 449px in, above the fold on a 664px phone, with
+the top of the results card visible under it.
+
+Three things hold the arrangement up, each of which was a defect first:
+
+- **Every rule names its card** — `.m-pay` / `.m-inputs` / `.m-results`, never
+  `:first-child` or `:nth-child(2)`. A positional selector keeps matching after
+  a card is inserted and silently means a different one, which would have moved
+  the field rhythm and the results card's flex column onto whichever card
+  happened to be first. Naming them is what makes the DOM order free to serve
+  the reader instead of the stylesheet.
+- **The left column is a real element** (`.m-col`), not two grid rows. Two rows
+  with the results card spanning both looks equivalent and is not: the spanning
+  card is the tallest thing in the grid, so it sizes the rows, and
+  `align-items: start` then parks each input card at the top of a row far
+  taller than it — a 28px hole opens between two cards drawn to look like one.
+  Below the breakpoint `.m-col` becomes `display: contents`, so its children
+  become grid items and `order` can put the results between them. One DOM
+  order, both layouts, and no second copy of the pay field to keep in step.
+- **The seam is closed on a wide screen.** `.m-pay` drops its bottom border and
+  its lower radius so the two read as one card with a rule between its
+  sections. Without it, a split made for the phone's sake would be a visible
+  change to a desktop layout that had nothing wrong with it.
+
+**The breakpoint is 820px, not 880.** An iPad in portrait is 820 CSS px and was
+taking the phone stack, which put its salary field 2,465px down a screen with
+room for both columns side by side. Two columns hold their shape to about
+800px; below that the basket sliders and their labels start colliding.
+`a_portrait_tablet_gets_two_columns_not_the_phone_stack` checks both sides of
+the boundary, and `a_phone_is_asked_before_it_is_told` asserts the ordering
+rather than any pixel figure — the numbers above move with every copy edit, the
+sequence must not.
+
+### The ranked table folds where the column is narrow
+
+Eight rows is around 1,000px, and on a phone that is a screen and a half of
+table between the headline figure and «в джоба» — the row that answers whether
+the reader's raise beat their prices, which is the question the site is named
+for. A narrow list draws five, which carry 3.9 of the default basket's 5.4
+points, and `покажи всички 13 групи` unfolds the rest.
+
+Two properties make the cap safe, and neither is optional:
+
+- `view.js#rankedSplit` folds whatever is not drawn into a remainder, so
+  Σshown + restPp === π **at any limit**. The cap changes a number in a call,
+  not the arithmetic. Capping a list that `rankLead` promises adds up, without
+  rendering the tail, is the defect `verify_view.mjs` exists to catch.
+- The limit comes from the list's **own measured width**
+  (`bind:clientWidth`), not from a `matchMedia` on 820px. A second copy of the
+  layout breakpoint in a file that cannot see the first is a drift waiting to
+  happen, and what actually decides whether eight rows are readable is the
+  width this list got — which is also why a 7fr column on a 834px tablet folds
+  too. Before the first measurement the width is 0 and the desktop cap applies,
+  erring towards showing more.
+
 ### The card says whose salary it is computing with
 
 The €900 default is a worked example — a page whose figures are all em dashes
@@ -682,10 +748,17 @@ sentence together, because a bare «пред 34%» over a prompt asking for a sa
 the claim with its caveat removed. It is the treatment `PocketRow` already gives
 an empty raise.
 
-The four render tests that hold this are
+`PayField` applies the same rule to the payslip and the Sofia comparator: the
+gross, the deductions and «твоята нетна заплата е 39% под средната» are facts
+about whoever earns the placeholder until the reader replaces it. Withholding
+them also keeps the first paint short enough that the headline figure stays on
+the first screen of a phone with the pay field above it.
+
+The render tests that hold all of this are
 `an_untouched_salary_is_named_where_its_figures_are…`,
 `the_route_from_the_headline_to_the_salary_field_lands_on_it`,
-`the_ladder_row_ranks_nobody_who_has_not_typed_a_salary` and
+`the_ladder_row_ranks_nobody_who_has_not_typed_a_salary`,
+`the_placeholders_payslip_and_comparator_wait_for_a_salary` and
 `every_verify_link_is_drawn_the_same_in_both_cards`.
 
 ### The pocket row says which state it is in

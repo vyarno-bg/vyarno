@@ -494,11 +494,28 @@ test("the ranked column draws the remainder its sentence promises", () => {
   // exactly right. The arithmetic lives in `view.js#rankedSplit`
   // (verify_view.mjs asserts Σshown + rest === π); this asserts the template
   // actually draws the remainder it is handed.
-  assert.ok(
-    LIVE.includes("rankedSplit(ranked)"),
+  // Two halves, because the row cap is no longer one number. A narrow column
+  // draws five rows and a wide one eight, so the call carries a limit — which
+  // `rankedSplit` has always taken and `verify_view.mjs` already exercises at
+  // 3 and at 8. What must not change is WHERE the slicing happens, so the
+  // check is now the property the exact-string match stood in for: the split
+  // goes through view.js, and the template does none of its own. That is
+  // strictly more than the old assertion caught — a template that called
+  // `rankedSplit(ranked)` and then sliced the result again passed it.
+  assert.match(
+    LIVE,
+    /rankedSplit\(ranked(,\s*[A-Za-z_$][\w$]*)?\)/,
     "the ranked list no longer goes through view.js#rankedSplit — the slicing " +
       "arithmetic has moved back into the template, where nothing can test that " +
       "the column still sums to π"
+  );
+  const slicing = [...LIVE.matchAll(/\b(ranked|shown|rows)\s*\.\s*slice\(/g)].map((m) => m[0]);
+  assert.deepEqual(
+    slicing,
+    [],
+    "the template slices the ranked rows itself: " +
+      `${slicing.join(", ")}. Whatever is cut has to be folded into the remainder ` +
+      "by rankedSplit, or the column stops summing to the number rankLead promises"
   );
   assert.ok(
     LIVE.includes("COPY.rankRest"),
