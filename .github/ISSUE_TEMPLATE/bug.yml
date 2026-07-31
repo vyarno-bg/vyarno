@@ -1,0 +1,61 @@
+name: Bug report
+description: Something on vyarno.bg reads, computes, or renders incorrectly.
+labels: ["type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please fill the template — a report without a
+        way to reproduce it is hard to act on, and we may close it as
+        `needs-repro` if we cannot reach it.
+
+  - type: input
+    id: url
+    attributes:
+      label: URL where the bug is visible
+      placeholder: https://vyarno.bg/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: What you saw
+      placeholder: |
+        The headline inflation rate on the home page reads 7.2% for 2026-Q2,
+        but the HICP headline series you link to says 7.4% for the same
+        reference period.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the calculator
+        2. Enter gross salary 2000
+        3. Select "Sofia"
+        4. Observe the headline figure
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Firefox 130 on macOS 14
+  - type: dropdown
+    id: lang
+    attributes:
+      label: UI language
+      options:
+        - Bulgarian (bg)
+        - English (en)
