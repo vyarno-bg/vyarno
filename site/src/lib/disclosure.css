@@ -17,6 +17,10 @@
   border-radius: 6px;
   background: var(--paper-2);
   margin-top: 14px;
+  /* Constrain the disclosure to its grid cell. Without this, a nested `.fx`
+     with unbreakable math tokens (`<code>`, `<sub>`, `<sup>`) can force the
+     box wider than the page and cause horizontal scroll on mobile. */
+  overflow-x: auto;
 }
 .how summary {
   cursor: pointer;
@@ -68,6 +72,15 @@
   font-size: var(--fs-small);
   color: var(--muted);
   line-height: 1.6;
+}
+/* Break unbreakable math tokens (`<code>1 − (1 + m)−n</code>` and similar)
+   inside the nested `.fx` disclosure so they do not force the outer `.how`
+   wider than the viewport on mobile. `overflow-wrap: anywhere` (not
+   `word-break: break-all`) keeps word-boundary breaks as the first choice —
+   a long identifier like `prc_hicp_minr` is broken only when nothing else
+   fits, and a short token like `P = L` still wraps at the space. */
+.how .fx code {
+  overflow-wrap: anywhere;
 }
 .how .frm {
   font-size: var(--fs-small);

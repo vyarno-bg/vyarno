@@ -580,6 +580,60 @@ test(
   }
 );
 
+test("the explainer causes no horizontal overflow on a 360px viewport", { skip }, async () => {
+  // The explainer (`ExplainerBand.svelte`) opens a disclosure containing a nested
+  // `.fx` block with unbreakable math tokens (`<code>`, `<sub>`, `<sup>`). Without
+  // `overflow-x: auto` on `.how` and `overflow-wrap: anywhere` on `.how .fx code`,
+  // these tokens force the box wider than the page and the page scrolls
+  // horizontally on a phone viewport.
+  //
+  // Two things must hold: the page has no horizontal overflow when the explainer
+  // is open, and the explainer's right edge stays within the viewport.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+
+    // Open the explainer (the outer `.how` disclosure at the foot of the page).
+    const explainer = page.locator(".explain-band > .wrap > details.how");
+    assert.ok(
+      await explainer.count(),
+      "the explainer (details.how in .explain-band) is missing from the page"
+    );
+    await explainer.locator("summary").first().click();
+    await page.waitForTimeout(200);
+
+    // Open the nested math block inside it.
+    const mathBlock = explainer.locator("details.fx");
+    if (await mathBlock.count()) {
+      await mathBlock.locator("summary").first().click();
+      await page.waitForTimeout(200);
+    }
+
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    assert.ok(
+      scrollWidth <= clientWidth,
+      `the page is ${scrollWidth}px wide with a ${clientWidth}px viewport ` +
+        "— the explainer caused horizontal overflow"
+    );
+
+    const explainerRight = await page.evaluate(() => {
+      const el = document.querySelector(".explain-band details.how");
+      if (!el) return null;
+      return el.getBoundingClientRect().right;
+    });
+    assert.ok(
+      explainerRight !== null,
+      "the explainer (details.how in .explain-band) has no bounding rect — it is missing or invisible"
+    );
+    assert.ok(
+      explainerRight <= 360,
+      `the explainer's right edge is ${explainerRight}px, past the 360px viewport`
+    );
+
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test.after(async () => {
   await browser?.close();
   site?.server.close();
