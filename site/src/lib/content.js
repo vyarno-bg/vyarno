@@ -669,14 +669,6 @@ export const COPY = {
     en: "The maths runs at full precision. Only what we display is rounded - percentages to one decimal, euro amounts to whole euros. That is why the figures on screen can add up a cent apart.",
   },
 
-  // Share
-  share: { bg: "Сподели своето число", en: "Share your number" },
-  shareCopied: { bg: "Копирано ✓", en: "Copied ✓" },
-  shareFine: {
-    bg: "споделя само крайния процент - никога заплатата ти",
-    en: "shares only the final percentage - never your salary",
-  },
-
   // Footer
   // The source list is UPSTREAM ATTRIBUTION, not boilerplate, and it is
   // load-bearing twice over: it is a condition of several upstream licences

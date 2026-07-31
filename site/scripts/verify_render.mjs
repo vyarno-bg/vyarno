@@ -141,7 +141,6 @@ test("the calculator renders with no console errors", { skip }, async () => {
       ["results card", ".r-big"],
       ["result rows", ".r-row"],
       ["method drawer", "details.how"],
-      ["share button", ".sharebtn"],
       ["national strip", ".strip .stat"],
       ["explainer band", ".explain-band"],
       ["footer", "footer"],

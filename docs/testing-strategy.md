@@ -56,7 +56,7 @@ to do to count is §"The standard a test has to meet".
 | `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | 34 | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
 | `site/scripts/verify_no_changelog_comments.mjs` | `node:test` | 2 | That no comment in `site/` or `pipeline/` describes an earlier version of the code |
 
-**287 pytest, 317 node:test, 15 render.** `make check` runs all of it in CI's
+**287 pytest, 314 node:test, 15 render.** `make check` runs all of it in CI's
 order.
 
 **The odd one out is the last row**, and it is worth saying why a prose rule is

@@ -40,7 +40,7 @@ Filler is the problem.
 
 - **Name the failure.** "The `data` job listed the eight payload stems inline,
   so it went stale silently" beats "improves maintainability".
-- **State what you ran, with counts.** "317 node:test, the production build,
+- **State what you ran, with counts.** "314 node:test, the production build,
   and the 15 render tests against real Chromium."
 - **Say what you rejected.** "pip-compile, not uv: Dependabot's pip ecosystem
   does not support uv, which was the entire point."
