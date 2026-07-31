@@ -313,8 +313,8 @@ export const COPY = {
   // sentence is.
   leftK: { bg: "Неразпределени", en: "Not placed" },
   leftLead: {
-    bg: "<b>€{m}</b> на месец остават извън кошницата ти - <b>{p}%</b> от парите след жилището. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
-    en: "<b>€{m}</b> a month stays outside your basket - <b>{p}%</b> of what's left after housing. You don't have to place all of it: your number is worked out on what you actually spend.",
+    bg: "<b>€{m}</b> на месец остават извън кошницата ти - <b>{p}%</b> от парите, които ти остават. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
+    en: "<b>€{m}</b> a month stays outside your basket - <b>{p}%</b> of what's left of your take-home. You don't have to place all of it: your number is worked out on what you actually spend.",
   },
   leftYear: {
     bg: "Ако това се повтаря всеки месец, за година са <b>€{y}</b>.",
@@ -329,8 +329,8 @@ export const COPY = {
     en: "assumption: prices move over the next year as they did over the last. This is arithmetic, not a forecast - Eurostat does not publish one.",
   },
   leftOver: {
-    bg: "Разпределил си <b>€{m}</b> повече от това, което ти остава след жилището. Числото ти е сметнато точно върху въведеното - провери дали някъде не си сложил повече, отколкото даваш.",
-    en: "You've placed <b>€{m}</b> more than you have left after housing. Your number is worked out on exactly what you entered - worth checking whether one of the rows is bigger than what you really pay.",
+    bg: "Разпределил си <b>€{m}</b> повече от парите, които ти остават. Числото ти е сметнато точно върху въведеното - провери дали някъде не си сложил повече, отколкото даваш.",
+    en: "You've placed <b>€{m}</b> more than you have left. Your number is worked out on exactly what you entered - worth checking whether one of the rows is bigger than what you really pay.",
   },
 
   // Drill-down into ECOICOP groups
