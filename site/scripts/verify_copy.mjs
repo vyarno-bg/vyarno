@@ -147,11 +147,21 @@ test("every placeholder in a COPY string is substituted somewhere", () => {
       // `{{name}}` for the `.replace()` chains.
       for (const [, name] of (value[lang] ?? "").matchAll(/\{\{?([a-zA-Z_]\w*)\}\}?/g)) {
         // Either `t(COPY.key, lang, { name: … })` or a `.replace("{name}", …)`
-        // chain hanging off the key.
-        const substituted = new RegExp(
-          `COPY\\.${key}\\b.{0,400}?(\\b${name}\\s*:|replace\\( ?["']\\{{1,2}${name}\\})`
+        // chain hanging off the key. Dynamic access counts too: `COPY[key]`
+        // where the key appears as a string literal nearby — LeftoverRow does
+        // this for the housing variants, ResultsSummary for preset labels.
+        // The first branch is the simpler direct form: anywhere in the source,
+        // either `name:` in an object literal or a `replace("{name}", …)`.
+        const directForm = new RegExp(`(\\b${name}\\s*:|replace\\( ?["']\\{{1,2}${name}\\})`);
+        // The second branch is the dynamic form: near `COPY.key` or
+        // `COPY["key"]`, a `name:` appears within 400 chars. 400 chars is
+        // enough for a single Svelte template; longer than that and the
+        // substitution would have moved out of the render call.
+        const dynamicForm = new RegExp(
+          `(COPY\\.${key}\\b|COPY\\[\\s*["']${key}["']\\s*\\]).{0,400}?\\b${name}\\s*:`,
+          "s"
         );
-        if (!substituted.test(sources)) {
+        if (!directForm.test(sources) && !dynamicForm.test(sources)) {
           offenders.push(`COPY.${key}.${lang} → {${name}}`);
         }
       }
@@ -177,7 +187,15 @@ test("the unplaced-money copy describes and never advises", () => {
     /\byou could invest\b/i,
     /\bconsider (saving|investing)\b/i,
   ];
-  for (const key of ["leftK", "leftLead", "leftYear", "leftOver", "leftCash"]) {
+  for (const key of [
+    "leftK",
+    "leftLeadNoHousing",
+    "leftLeadWithHousing",
+    "leftYear",
+    "leftOverNoHousing",
+    "leftOverWithHousing",
+    "leftCash",
+  ]) {
     const entry = COPY[key];
     assert.ok(entry, `COPY.${key} is gone — the unplaced-money row lost a line`);
     for (const lang of ["bg", "en"]) {
@@ -191,19 +209,85 @@ test("the unplaced-money copy describes and never advises", () => {
   }
 });
 
-test("the unplaced-money copy never mentions housing by name", () => {
-  // The leftover is `leftover / spendable`, and `spendable` is take-home minus
-  // committed housing. The home checkbox is optional — a reader who never
-  // ticked it sees «след жилището» / «after housing» and reads it as a lie.
-  // The wording must hold in both states, so neither language may name
-  // housing here. A test is cheaper than re-deriving the rule from the code
-  // every time the copy is touched.
-  for (const key of ["leftLead", "leftOver"]) {
+test("the no-housing unplaced-money copy never mentions housing by name", () => {
+  // The leftover is `leftover / spendable`, and `spendable` is take-home
+  // minus committed housing. A reader who never opted into housing sees
+  // these two sentences — the «after housing» phrasing read as a lie to
+  // them, so neither language may name housing here. The *WithHousing
+  // variants render when `housingCost > 0` and are allowed (required, in
+  // fact) to mention housing — that is the whole point of the split.
+  // The Cyrillic regex uses an explicit non-letter lookbehind because
+  // JavaScript's `\b` is ASCII-only — `\bжилищ` doesn't fire against
+  // « за жилище».
+  const cyrHousing = /(?<![а-яё])жилищ[а-яё]*/i;
+  for (const key of ["leftLeadNoHousing", "leftOverNoHousing"]) {
     const entry = COPY[key];
     assert.ok(entry, `COPY.${key} is gone — the unplaced-money row lost a line`);
-    assert.ok(!/\bжилищ\w*/i.test(entry.bg), `COPY.${key}.bg mentions housing: ${entry.bg}`);
+    assert.ok(!cyrHousing.test(entry.bg), `COPY.${key}.bg mentions housing: ${entry.bg}`);
     assert.ok(!/\bhous(e|ing)\b/i.test(entry.en), `COPY.${key}.en mentions housing: ${entry.en}`);
   }
+});
+
+test("the with-housing unplaced-money copy names the housing amount", () => {
+  // The split exists so that, when `housingCost > 0`, the denominator is
+  // spelled out instead of hidden. The two *WithHousing variants must use
+  // the `{h}` placeholder that LeftoverRow fills with `calc.housingCost`,
+  // and they must mention housing in both languages — the no-housing rule
+  // above is silent about them on purpose.
+  const cyrHousing = /(?<![а-яё])жилищ[а-яё]*/i;
+  for (const key of ["leftLeadWithHousing", "leftOverWithHousing"]) {
+    const entry = COPY[key];
+    assert.ok(entry, `COPY.${key} is gone — the unplaced-money row lost a line`);
+    assert.ok(
+      entry.bg.includes("{h}") && entry.en.includes("{h}"),
+      `COPY.${key} lost its {h} placeholder — LeftoverRow fills it with the housing amount`
+    );
+    assert.ok(
+      cyrHousing.test(entry.bg),
+      `COPY.${key}.bg must name housing when housing is in the base: ${entry.bg}`
+    );
+    assert.ok(
+      /\bhous(e|ing)\b/i.test(entry.en),
+      `COPY.${key}.en must name housing when housing is in the base: ${entry.en}`
+    );
+  }
+});
+
+test("LeftoverRow picks the housing variant by `calc.housingCost`", () => {
+  // The component is the only place that decides which copy renders, and a
+  // reader who has typed a mortgage or rent (housingCost > 0) must NOT see
+  // the no-housing variant — that is the bug this whole branch exists to
+  // prevent. The template-safety scanner accepts the ternary form
+  // (`cond ? COPY.a : COPY.b`) but rejects dynamic-key access
+  // (`COPY[cond ? "a" : "b"]`); the test pins every `{@html}` substitution
+  // call individually so a single regression on either BG or EN trips it.
+  // It reads the component file directly — searching SOURCES would match
+  // this test's own regex string and pass trivially.
+  const componentSrc = readFileSync(join(SRC, "components", "LeftoverRow.svelte"), "utf8");
+  // Each `{@html t(...)}` invocation in the component that touches a
+  // housing-variant key must use the ternary form. Four such lines exist
+  // today: BG lead, EN lead, BG over, EN over.
+  const lines = componentSrc
+    .split("\n")
+    .filter(
+      (line) => line.includes("{@html") && (line.includes("leftLead") || line.includes("leftOver"))
+    );
+  assert.equal(
+    lines.length,
+    4,
+    `LeftoverRow must have exactly 4 {@html} substitution lines for the housing variants, found ${lines.length}`
+  );
+  for (const line of lines) {
+    assert.match(
+      line,
+      /\?\s*COPY\.(leftLeadWithHousing|leftOverWithHousing)\s*:\s*COPY\.(leftLeadNoHousing|leftOverNoHousing)/,
+      `LeftoverRow housing-variant line must use the template-safety-approved ternary form, not \`COPY[key]\`: ${line.trim()}`
+    );
+  }
+  assert.ok(
+    /housingCost\s*>\s*0/.test(componentSrc),
+    "LeftoverRow does not gate the variant on calc.housingCost > 0"
+  );
 });
 
 test("the euro tally states what was entered, it does not ask for more", () => {

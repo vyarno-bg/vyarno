@@ -312,9 +312,20 @@ export const COPY = {
   // form is a comparison plus a number, which is what `leftCash`'s second
   // sentence is.
   leftK: { bg: "Неразпределени", en: "Not placed" },
-  leftLead: {
+  // The LeftoverRow picks one of two variants of the lead sentence depending
+  // on whether housing is in the base: when `housingCost > 0`, the
+  // denominator (`spendable`) is take-home minus what the reader said goes
+  // to housing, and naming the amount makes the math legible. When it's
+  // zero, "what's left of your take-home" is the honest description — the
+  // older "after housing" phrasing read as a lie to anyone who never
+  // entered any housing (verify_copy pins both rules).
+  leftLeadNoHousing: {
     bg: "<b>€{m}</b> на месец остават извън кошницата ти - <b>{p}%</b> от парите, които ти остават. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
     en: "<b>€{m}</b> a month stays outside your basket - <b>{p}%</b> of what's left of your take-home. You don't have to place all of it: your number is worked out on what you actually spend.",
+  },
+  leftLeadWithHousing: {
+    bg: "<b>€{m}</b> на месец остават извън кошницата ти - <b>{p}%</b> от парите, които ти остават след <b>€{h}</b> за жилище. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
+    en: "<b>€{m}</b> a month stays outside your basket - <b>{p}%</b> of what's left of your take-home after the <b>€{h}</b> you said goes to housing. You don't have to place all of it: your number is worked out on what you actually spend.",
   },
   leftYear: {
     bg: "Ако това се повтаря всеки месец, за година са <b>€{y}</b>.",
@@ -328,9 +339,16 @@ export const COPY = {
     bg: "допускане: цените се движат следващата година както през последната. Това е сметка, не прогноза - Евростат не прогнозира.",
     en: "assumption: prices move over the next year as they did over the last. This is arithmetic, not a forecast - Eurostat does not publish one.",
   },
-  leftOver: {
+  // Same two-variant pattern as `leftLead*`: the over-budget branch fires
+  // regardless of whether the home block is on, and the wording must hold in
+  // both cases.
+  leftOverNoHousing: {
     bg: "Разпределил си <b>€{m}</b> повече от парите, които ти остават. Числото ти е сметнато точно върху въведеното - провери дали някъде не си сложил повече, отколкото даваш.",
     en: "You've placed <b>€{m}</b> more than you have left. Your number is worked out on exactly what you entered - worth checking whether one of the rows is bigger than what you really pay.",
+  },
+  leftOverWithHousing: {
+    bg: "Разпределил си <b>€{m}</b> повече от парите, които ти остават след <b>€{h}</b> за жилище. Числото ти е сметнато точно върху въведеното - провери дали някъде не си сложил повече, отколкото даваш.",
+    en: "You've placed <b>€{m}</b> more than you have left after the <b>€{h}</b> you said goes to housing. Your number is worked out on exactly what you entered - worth checking whether one of the rows is bigger than what you really pay.",
   },
 
   // Drill-down into ECOICOP groups
