@@ -1,0 +1,139 @@
+Вярно (vyarno.bg)
+Copyright 2026 The Вярно Authors
+
+This product includes software developed for the Вярно project
+(https://vyarno.bg).
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+
+--------------------------------------------------------------------------
+WHAT THE APACHE LICENCE COVERS
+--------------------------------------------------------------------------
+
+The project's own work, which is everything in this repository except the
+figures described in the next section:
+
+  - the data pipeline in `pipeline/` — its connectors, transforms,
+    validation gates, the classification-agreement and chain-reconciliation
+    checks, the dated payroll-law table and the dated lending-limit table;
+  - the web application in `site/` — its source, layout, styling and its
+    user-facing copy in both languages;
+  - the documentation in `docs/` and the repository's other written
+    material, including the methodology and the post-mortems;
+  - the schemas, field names and envelope structure of the files in
+    `data/published/`, as distinct from the figures they carry.
+
+All of it is free to use, modify and redistribute, commercially or not,
+under the terms of the Apache Licence, Version 2.0.
+
+
+--------------------------------------------------------------------------
+WHAT IT DOES NOT COVER: THE FIGURES IN `data/published/`
+--------------------------------------------------------------------------
+
+The numbers inside `data/published/` are not ours, and we cannot license
+them to you. They are statistics and published prices produced by Eurostat,
+the European Central Bank, the Bulgarian National Bank (БНБ), the Bulgarian
+National Statistical Institute (НСИ) and имот.bg, which this project
+retrieves and republishes with attribution.
+
+We never held the right to license those figures out, and the Apache
+Licence in `LICENSE` does not purport to grant you any right in them. They
+remain subject to each publisher's own terms, and each publisher's terms —
+not ours — govern what you may do with them.
+
+**Every published payload carries a `source_url` naming its origin.** That
+field exists for exactly this reason: to identify who a figure belongs to,
+and whom to ask.
+
+Our own contribution to those files — the schema, the field names, the
+envelope, the provenance blocks, the chosen aggregations and the labelling
+— is covered by the Apache Licence like the rest of the code.
+
+The publishers' terms differ from one another, and at least one of them
+restricts the redistribution of derived and composite works. Before you
+reuse a figure, identify its publisher from the `source_url` it carries and
+read that publisher's own terms. What each publisher permits — quoted
+verbatim, in the original language, and dated — is recorded in
+`docs/data-sources.md` and `docs/legal.md`.
+
+This is not a formality. If you fork this repository and redistribute
+`data/published/`, the upstream terms travel with the figures and become
+your responsibility, not ours.
+
+
+--------------------------------------------------------------------------
+TRADEMARKS
+--------------------------------------------------------------------------
+
+Nothing is registered. There is no trade mark for "Вярно" or "Vyarno" at
+the Патентно ведомство, at EUIPO or anywhere else, and this notice does not
+claim one. What follows is a request backed by the one thing the licence
+does give us — Section 6 of the Apache Licence grants no trademark rights,
+so the licence you receive over the code carries no permission to use the
+project's name.
+
+You may freely say that your work is based on, forked from or derived from
+Вярно — that is accurate description, and it is welcome. Please do not name
+your fork "Вярно" or "Vyarno", use the wordmark as your own, or present
+your deployment in a way that suggests it is the official vyarno.bg or is
+endorsed by this project. Rename the fork and the licence gives you
+everything else.
+
+This paragraph used to assert that these were "marks of the copyright
+holder". That overstated it in two directions and it is corrected rather
+than softened: nothing is filed, and «вярно» is an ordinary Bulgarian
+adjective meaning "true" used as the name of a service whose whole claim is
+accuracy, which is the definition of a descriptive sign. Whether that is
+registrable at all is a real question, not a formality. `docs/legal.md`
+carries the reasoning.
+
+
+--------------------------------------------------------------------------
+THIRD-PARTY COMPONENTS
+--------------------------------------------------------------------------
+
+Two font families are vendored into this repository — they are the only
+third-party files here that are not fetched from a registry — and each
+ships the SIL Open Font Licence 1.1 text alongside it, which is what
+condition 2 of that licence requires. Naming a licence is not including it.
+
+  - IBM Plex Sans and IBM Plex Mono (`site/public/fonts/ibm-plex/`)
+    Copyright IBM Corp. — SIL Open Font Licence 1.1
+    Licence: `site/public/fonts/ibm-plex/OFL.txt`
+    Upstream: https://github.com/IBM/plex
+
+    IBM's own Cyrillic split builds, unmodified — verified byte-identical to
+    the files published in `@ibm/plex-sans@1.1.0` and `@ibm/plex-mono@1.0.0`.
+
+  - Source Serif 4 (`site/public/fonts/source-serif/`)
+    Copyright 2014-2023 Adobe — SIL Open Font Licence 1.1
+    Licence: `site/public/fonts/source-serif/OFL.md`
+    Upstream: https://github.com/adobe-fonts/source-serif
+
+    Adobe's own WOFF2 release, unmodified.
+
+Both families carry a Reserved Font Name — «Plex» and «Source» — and OFL 1.1
+condition 3 forbids a MODIFIED Version from using one. Nothing here is
+modified, so the names stand. **Do not re-subset these files.** SIL's OFL FAQ
+2.6 counts subsetting a webfont as modification, so a pass through pyftsubset
+would save a couple of kilobytes and turn every `font-family` line in
+`tokens.css` into a breach. If a smaller file is ever needed, change to a
+family with no Reserved Font Name.
+
+Runtime and build dependencies are declared in `pipeline/pyproject.toml`
+and `site/package.json`. All are OSI-licensed and installable from public
+registries.
+
+
+--------------------------------------------------------------------------
+NO WARRANTY, AND NOT ADVICE
+--------------------------------------------------------------------------
+
+The software is provided "AS IS", without warranty of any kind, as set out
+in Section 7 of the Apache Licence.
+
+Вярно describes published statistics. It does not give financial,
+investment, tax, legal or credit advice, and no figure it produces is a
+recommendation.

@@ -1,0 +1,23 @@
+# Funding for Вярно (vyarno.bg).
+#
+# Вярно is a public good: every feature is free to everyone, there is no
+# paid version and nothing is held back. Donations cover the domain and the
+# server. They buy no feature, no priority and no influence over any figure
+# the site publishes.
+#
+# KEEP THIS FILE IN STEP WITH `site/src/lib/support.js`. That module is what
+# the site itself renders, and it carries a `live` flag per platform so a
+# donate link never points at an account that does not exist yet.
+# `site/scripts/verify_support.mjs` fails the build if the two disagree.
+#
+# Every line below is commented out because no account is open yet. Opening
+# one is three steps, in this order:
+#   1. open the account on the platform;
+#   2. uncomment the line here;
+#   3. flip `live: true` for that platform in `site/src/lib/support.js`.
+# Doing 2 without 3 (or the reverse) is what the verify script catches.
+
+# github: [vyarno-bg]
+# open_collective: vyarno
+# liberapay: vyarno
+# ko_fi: vyarno

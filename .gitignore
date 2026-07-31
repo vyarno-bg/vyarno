@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Node / Svelte
+node_modules/
+.svelte-kit/
+.vite/
+.parcel-cache/
+
+# Production source maps, held out of the deploy artefact by
+# site/scripts/strip-sourcemaps.mjs. They contain our full front-end source
+# (`sourcesContent` for every module) and must never be committed or served
+# — see docs/site.md §"Source maps stay out of the deploy artefact". They are
+# regenerated on every build; upload them to an error reporting service if we
+# ever want readable production stack traces.
+site/.sourcemaps/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / local config
+.env
+.env.local
+.env.*.local
+
+# Pipeline runtime
+pipeline/.cache/
+pipeline/.tmp/
+.lockenv/

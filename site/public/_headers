@@ -1,0 +1,123 @@
+# HTTP response headers — the single declaration of the site's security and
+# cache policy.
+#
+# Format: the Cloudflare Pages / Netlify `_headers` syntax. Vite copies
+# `public/` verbatim into `dist/`, so this ships with the bundle.
+#
+# **This file is the deployment contract, whoever serves the site.** A host that
+# reads `_headers` natively applies it as written. A host that does not — nginx,
+# Caddy, an S3-and-CDN pair — needs the same policy expressed in its own syntax,
+# and this file is what that translation is made from and checked against.
+#
+# It is the source of truth either way, because `verify_static_assets.mjs` pins
+# every directive below exactly: a widened CSP is a red test rather than a
+# silent deploy. What the build cannot see is a server whose config has drifted
+# from this file — that one is caught by requesting a page from the live origin
+# and reading the headers back, which is a deploy-time check, not a build-time
+# one.
+#
+# `public/` is copied verbatim into the bundle, so this file rides along inside
+# every release. A server that does not read it should decline to serve it.
+
+/*
+  # --- Content Security Policy -------------------------------------------
+  # The app is a static bundle that fetches only its own JSON. Nothing here
+  # is aspirational: every directive below is what the app already does, so a
+  # third-party script, pixel or font added later FAILS rather than shipping
+  # quietly. That is the point: the published privacy notice says there is no
+  # third-party script, and this is what makes that checkable rather than
+  # merely intended. Relaxing a directive is allowed — docs/principles.md — but only
+  # in the same release as the notice sentence it would falsify, never before.
+  #
+  #   script-src 'self'          — the Vite bundle, nothing else. No 'unsafe-inline'.
+  #   style-src  … 'unsafe-inline' — required: Svelte writes `style="..."`
+  #                                 attributes throughout the template (bar
+  #                                 widths, marker positions, verdict colours).
+  #                                 Inline style ATTRIBUTES are blocked without
+  #                                 it. This is the one relaxation, and it does
+  #                                 not admit script.
+  #   img-src 'self' data:       — the favicon, the OG image, inline SVG.
+  #   connect-src 'self'         — /data/published/*.json and nothing else. The
+  #                                 browser never calls Eurostat, the ECB, BNB,
+  #                                 NSI or imot.bg; the pipeline does, at build
+  #                                 time (docs/principles.md §"Identity").
+  #   frame-ancestors 'none'     — the main app is not embeddable. If an
+  #                                 embeddable surface is ever added, it gets
+  #                                 its OWN block with `frame-ancestors *` and
+  #                                 this one stays restrictive. Do not loosen it
+  #                                 here to make an embed work.
+  #   form-action 'none'         — there is no form and no endpoint to post to.
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
+  # Belt and braces for frame-ancestors on older browsers.
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  # No camera, mic, geolocation, payment or interest-cohort access is used or
+  # wanted. A privacy-first product should not merely decline to use them.
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()
+
+# --- Caching ---------------------------------------------------------------
+# Two different lifetimes, and getting them the wrong way round is the classic
+# static-site bug: immutable data or a cached index.html both ship stale
+# numbers to a user who thinks they refreshed.
+
+# Hashed bundle assets: the filename changes when the content does.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts: self-hosted and content-stable.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The published data. NOT immutable — this is the whole product, and a refresh
+# has to reach people the same day it lands. Short cache, revalidate always;
+# `data.js` also fetches with `cache: "no-cache"` from its side.
+#
+# `X-Robots-Tag` is belt and braces on top of robots.txt's `Disallow`: a
+# Disallow stops a crawler fetching the file, but a URL linked from elsewhere
+# can still be indexed from the link alone. The header removes it from an index
+# outright. It is not access control and does not pretend to be — the files are
+# public by construction and the terms of use are what govern reuse.
+/data/published/*
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Robots-Tag: noindex
+
+# What is live, as a fact a machine can check: the commit that was built, when,
+# and the oldest data as_of. One HTTPS request answers "did the deploy take?"
+# without shell access to whatever is serving this.
+# NEVER cached: a stale answer here would report the previous deploy as current,
+# which is the one thing this file exists to rule out.
+/version.json
+  Cache-Control: no-store
+  X-Robots-Tag: noindex
+
+# The entry points must never be cached hard, or a user keeps loading a bundle
+# that points at assets which no longer exist.
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/legal/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/legal/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/404.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# robots.txt, the sitemap and security.txt: cached for an hour, so a change to
+# any of them takes effect the same day rather than at a crawler's leisure.
+# security.txt in particular has a hard expiry (RFC 9116) and renewing it must
+# not be defeated by a month-long cache.
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+
+/.well-known/security.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8

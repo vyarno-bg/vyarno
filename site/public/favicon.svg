@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" width="22" height="22">
+  <!-- Вярно.bg — the wordmark mark: a short bar, a tall bar, a dashed
+       baseline between them — "then" against "now". Same geometry as the
+       in-app SVG in App.svelte's header and as the mark on og-image.png, so
+       the tab icon, the page and the share card all agree.
+
+       Text-free by design: the mark says what the product does, not what it
+       is called, so a brand change leaves the artwork alone. Colours are the
+       light-theme --muted / --real tokens. -->
+  <rect width="22" height="22" rx="3" fill="#ECEEE8"/>
+  <rect x="3" y="7" width="4" height="12" rx="1" fill="#899085"/>
+  <rect x="15" y="3" width="4" height="16" rx="1" fill="#1C6B54"/>
+  <path d="M7 19 H15" stroke="#1C6B54" stroke-width="1.4" stroke-dasharray="2 2" fill="none"/>
+</svg>

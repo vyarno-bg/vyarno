@@ -1,0 +1,8 @@
+# Local build artefacts. Repo .gitignore already covers node_modules/
+# and dist/; this file only adds vite/.svelte output from inside site/.
+node_modules/
+dist/
+.vite/
+.svelte-kit/
+*.log
+.DS_Store

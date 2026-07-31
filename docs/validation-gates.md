@@ -1,0 +1,294 @@
+# Validation gates
+
+Six gates block the HICP publish, plus five on the mortgage panel. They run in
+order, short-circuit on the first failure, and never pass silently. On any
+failure the CLI exits **before** publish, so the on-disk JSON never represents a
+failed run.
+
+| # | Gate | Catches |
+|---|---|---|
+| 1 | Classification agreement | The weights cube and the rates cube meaning different things by the same code |
+| 2 | Chain reconciliation | Weights, rates and index not describing the same basket |
+| 3 | Basket sum | A gross arithmetic or scale failure |
+| 4 | Group consistency | A division's sub-groups not adding up to it |
+| 5 | Coverage | A missing year, at either level |
+| 6 | Link status | A published verify link that does not resolve to real data |
+
+## Gate 1 — classification agreement
+
+`validate.py::validate_classification_agreement` (+ `validate_meta_labels_cover`)
+
+For every code about to be published:
+
+1. Both cubes use the **same COICOP dimension**. ECOICOP ver.1 cubes are keyed
+   by `coicop`, ver.2 by `coicop18`; two dimension names mean two
+   classifications, and no per-code comparison below is meaningful.
+2. Both cubes **cover the same codes**.
+3. Both cubes give each code the **same English label**. Cosmetic differences
+   (case, `&` vs `and`, punctuation) are folded; a different bucket is not.
+
+Plus: every published code has a friendly BG/EN name in `COICOP_META`. A code
+Eurostat publishes for BG that we have no name for **fails the publish** rather
+than being dropped, because a silently dropped division is invisible.
+
+**When it trips:** Eurostat ships a new classification version and one cube
+moves before the other; a connector is retargeted at a dataset on a different
+version; a division is split, merged or renamed upstream.
+
+**What to do:** read the message — it names the code and quotes both labels.
+Find the matching cube for the other series by enumerating the dissemination
+catalogue, never by guessing a dataset name. **Never** "fix" this by relabelling
+a category or dropping a code.
+
+## Gate 2 — chain reconciliation
+
+`validate.py::validate_chain_reconciliation`
+
+The published divisions must reproduce Eurostat's own all-items index movement
+through HICP's aggregation identity —
+
+```
+I_total(m) / I_total(Dec, y−1)  ==  Σ_i w_i(y) · I_i(m) / I_i(Dec, y−1)
+```
+
+— to within **±0.02 pp**. It also fails if the weights vintage is not the year
+of the rate month, or if the division weights do not sum to 100.
+
+HICP is annually chain-linked, so this is an identity rather than an
+approximation: measured on live BG data for every month of 2021-01 → 2026-06
+(66 months), the largest deviation is 0.0091 pp, and 14 of the 66 exceed
+0.005 pp. That precision — roughly half the tolerance at the worst month — is
+what makes it a real test of whether weights, rates and index describe the same
+basket. The figure is a measurement of live upstream data, so re-run it rather
+than trusting this sentence.
+
+**When it trips:** the weights and rates are on different classification
+versions; the weights are a stale vintage (a real annual window — Eurostat
+publishes new item weights around late February, so a January refresh has rates
+a year ahead of weights); a division was dropped or double-counted; the time
+anchor drifted.
+
+**What to do:** the message prints both sides and the gap. Check the
+classification, then the weights vintage, then the December link month. **The
+fix is never to widen 0.02 pp.**
+
+## Gate 3 — basket sum
+
+`validate.py::validate_reconciliation`
+
+`Σ (weight_pct × annual_rate_pct) / 100` must land within **±0.5 pp** of
+`headline_rate_pct`.
+
+The band is loose because Σ(w·r) is not an identity — a 12-month window
+straddles December's chain link, so on correct BG data it sits 0.156 pp from the
+headline. The precise check is gate 2; this one is a band a real error cannot
+slip through. See [`math.md`](./math.md) §"Two reconciliations".
+
+**What to do when it trips:** something is badly wrong — a weight vector off by
+an order of magnitude, a rate cube from the wrong country, a headline from a
+different month. Gate 2 will usually have fired first.
+
+## Gate 4 — group consistency
+
+`validate.py::validate_group_consistency`
+
+Every division has groups; every group names its parent correctly and has a
+child code; and each division's groups sum to the division's own weight within
+**±0.02 pp** (Eurostat publishes per-thousand weights to two decimals).
+
+This matters because the SPA's detailed mode lets the user re-split a division
+across its groups. If the groups did not add up to their parent, drilling into a
+division would silently change how big that division is in the user's basket.
+
+**When it trips:** Eurostat adds, removes or reweights a group; the
+group-discovery filter drops something it should not.
+
+## Gate 5 — coverage
+
+`validate.py::validate_coverage`
+
+For every division **and every group**, `index_by_year` must contain a value for
+every year from `since_year` (default 2020) through the most recent completed
+year — `as_of.year - 1`, matching the partial-year exclusion in the transform.
+
+The site's anchor selector lets users pick any year in that range at both levels
+of detail; a missing year renders nothing rather than an error.
+
+**When it trips:** Eurostat publishes a partial series; `since_year` is earlier
+than the available data; a new code's first observation lands mid-year.
+
+**What to do:** the message names the code and the missing years. If upstream
+published partially, wait — do not widen the gate.
+
+## Gate 6 — link status
+
+`validate.py::validate_link_status`
+
+Every URL below must return HTTP 200 **and** carry a real Eurostat ND-cube
+rather than an error payload:
+
+- both extracts for each of the 13 divisions (`api_url`, the RCH_A rate, and
+  `api_url_index`, the I15 monthly index), and
+- both extracts for one sampled group per division.
+
+52 calls. Which URLs are covered is load-bearing: the SPA's "↗" resolves to
+`api_url_index` whenever the anchor is a year, and every group row carries its
+own pair, so a gate checking division rates alone would not be gating
+provenance. Sampling one group per division is a deliberate cost trade — group
+URLs are built by the same two functions as the divisions', so a shape change
+breaks them together.
+
+Eurostat returns **200 OK with an error JSON payload** on rate-limit and invalid
+params, so `cli.py#_is_real_estat_cube` requires `dimension` **and** `value`
+**and** a non-empty value map. A 200 with `value: {}` is a failure, not a pass.
+
+**`--skip-link-check` is for a sandbox with no outbound HTTP, never a production
+refresh.** It is the only gate that catches a dead link in the published JSON,
+and that link is what the reader clicks to verify a number.
+
+**What to do when it trips:** open the failing URL. If Eurostat is
+rate-limiting, wait and re-run. If the URL shape changed, fix `api_url` in
+`transform.py`.
+
+## Mortgage gates (`--source mortgage`)
+
+All five are hard-required; none degrades. The arm writes a complete
+`mortgage.json` or exits non-zero having written nothing.
+
+| Gate | What it catches | Exit |
+|---|---|---|
+| **Response identity** (`ecb.py`) | The ЕЦБ returning a series other than the one requested, or more than one series — a filter that stopped applying | 2 |
+| **Header discovery** (`bnb.py`) | The БНБ workbook's merged headers moving, so the housing/EUR/total column is no longer where we read it | 2 |
+| **Plausibility bounds** [0.25%, 12%] | Reading the wrong cell entirely — calibrated to reject the 14.83% consumer-credit column in the same workbook while admitting the 2008-era outstanding peak | 3 |
+| **APRC ≥ AAR − 0.05 pp** | The two ЕЦБ series being swapped (`DATA_TYPE_MIR` `R` vs `C`). Fees cannot be negative. The 0.05 pp (`APRC_BELOW_AAR_TOLERANCE_PP`) absorbs the two series rounding independently of each other, and nothing else — a genuine swap puts the pair 0.3 pp the wrong way round | 3 |
+| **БНБ vs ЕЦБ cross-check** (≤0.30 pp) | Either side's outstanding-stock read drifting. They are the same data — БНБ reports MIR to the ЕЦБ — so disagreement means one read is broken | 3 |
+
+Plus **freshness**: both tiers' reference month must be within 150 days, so a
+source that quietly stops publishing fails instead of serving a stale rate.
+
+A good mortgage run:
+
+```
+→ fetching ECB MIR new business (BG households, house purchase)...
+→ fetching ECB MIR outstanding stock (for the cross-check gate)...
+  AAR 77 months (BGN→EUR spliced at 2026-01), APRC 77, volume 77
+→ fetching BNB housing-loan XLSX (outstanding stock, EUR)...
+  got 233 monthly rows
+→ gate: rate plausibility bounds + series completeness...
+→ gate: APRC ≥ AAR (fees cannot be negative)...
+→ gate: freshness (both tiers within the publication lag)...
+→ gate: BNB vs ECB MIR agree on the outstanding book...
+  BNB 2.6717% vs ECB 2.67% → Δ 0.0017 pp (tolerance 0.3 pp)
+OK: wrote mortgage.json — new_business AAR=2.43% / APRC=2.77% (2026-05), outstanding_stock=2.6717% (2026-05)
+```
+
+An exit **4** here is usually the БНБ TLS quirk — their server omits an
+intermediate certificate, so a client with no cached copy of it cannot complete
+the chain. The error message points at the fix; `data-sources.md` §БНБ has the
+detail.
+
+## Which gates run for which `--source`
+
+| `--source` | Gates | Notes |
+|---|---|---|
+| `hicp` | all six (gate 6 unless `--skip-link-check`) | The full set |
+| `mortgage` | the five mortgage gates + freshness on both tiers | No best-effort tier |
+| `sofia-price` | bounds [100, 10000] €/m²; <20 districts = exit 2 | WARNs when имот.bg publishes no «обновена на» date, so a frozen page is visible |
+| `sofia-salary` | Sofia city must exceed Sofia province, else exit 2 | Regression guard on the row selector |
+| `salary-dist` | P1 floored at the statutory minimum wage | — |
+| `payroll` | no network; parity-checked against the SPA sentinel | `test_payroll.py` reads `mirror.js` |
+| `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
+
+## A good HICP run
+
+```
+→ fetching item weights (prc_hicp_iw, latest year) for BG...
+  got 557 weight rows · vintage 2026 · 46 groups in BG's basket
+→ fetching annual rates (prc_hicp_minr RCH_A, last 12 months)...
+  got 5023 rows
+→ fetching monthly index (prc_hicp_minr I15, since 2020)...
+  got 35807 rows
+  weights sum (CP01..CP13): 99.9990% (expected 100.0)
+→ gate: classification agreement (59 codes × prc_hicp_iw vs prc_hicp_minr)...
+→ gate: chain reconciliation (divisions rebuild the all-items index, ±0.02 pp)...
+→ gate: basket sum (Σ(w·r) near headline, ±0.5 pp)...
+→ gate: group consistency (each division's groups sum to it)...
+→ gate: coverage (every division AND group, every completed year 2020→2025; partial 2026 excluded)...
+→ gate: link status (52 URLs — both extracts per division plus a sampled group, body inspection)...
+→ publishing to ../data/published/
+OK: wrote hicp_categories.json (13 divisions + 46 groups, 2026 weights) + hicp_headline.json (headline 5.2% / 2026-06)
+```
+
+**Six gate lines is the pass condition.** A run that publishes with fewer has
+skipped one — usually `--skip-link-check`.
+
+A failing run stops at the gate that caught it:
+
+```
+→ gate: classification agreement (59 codes × prc_hicp_iw vs prc_hicp_minr)...
+GATE FAILED: classification: 1 code(s) mean different things in the two cubes — CP12: weights say 'Miscellaneous goods and services' but rates say 'Insurance and financial services'. Publishing would show one bucket's weight next to another bucket's rate.
+```
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | All gates passed, JSON written |
+| `2` | Input / transform error (wrong shape, missing data) |
+| `3` | A validation gate failed |
+| `4` | Network / HTTP error (upstream down, timeout, rate-limit, БНБ TLS chain) |
+
+These are stable; scripts and CI rely on them.
+
+## What the gates do not catch
+
+| Failure mode | Caught? |
+|---|---|
+| Eurostat publishes a wrong number | **No** — we trust Eurostat verbatim by design |
+| A weight is revised but its rate is not, within a year | **Partly** — gate 2 catches a vintage mismatch, not a same-year revision to one cube |
+| Two cubes meaning different things by the same code | **Yes, gate 1** |
+| A whole division missing from the published basket | **Yes** — the transform raises rather than skipping, and gates 1–3 fail on a short basket |
+| A hand-edited payload in `data/published/` | **Partly** — no file integrity check, but the offline suites re-check the published payloads' identities and CI runs them on every push |
+| The SPA feeds a correct number into the wrong formula | **Yes** — `site/scripts/verify_view.mjs`. The pipeline gates structurally cannot see this: everything they check is already correct on disk |
+| A published field with no consumer | **Partly** — `test_published_contracts.py` asserts every payload has a publisher and a loader; an unread *field* inside a payload is not caught |
+| A refresh that ran but was never committed | **No** — the CI `data` job catches the missing file, not the stale one |
+
+## How the gates are tested
+
+| Where | Question it answers | Runs |
+|---|---|---|
+| `pipeline/tests/test_validate.py`, `test_mortgage.py` | Does the gate raise on the wrong value it exists to catch? | `pytest -q` |
+| `pipeline/tests/test_cli.py`, `test_cli_mortgage.py` | Is the gate wired into the refresh, does it abort **before** publishing, does it exit with the documented code? | `pytest -q` |
+| `test_published_contracts.py`, `test_mortgage.py` (published section), `site/scripts/verify_data_contracts.mjs` | Does the JSON **committed in this repo** still satisfy what the gate promised? | `pytest -q`, `npm run verify:math` |
+| `site/scripts/verify_view.mjs` | Does the SPA feed the right published number into the right formula? | `npm run verify:math` |
+
+All of them run in CI on every push.
+
+Three rules keep this honest:
+
+- **Every gate test must fail when the gate is removed.** Break the production
+  code on purpose once and watch the test go red.
+- **Do not widen a tolerance to make a test pass.** The tolerances (0.02 pp
+  chain, 0.5 pp basket sum, 0.02 pp group sums, 0.30 pp БНБ↔ЕЦБ, [0.25%, 12%]
+  rate bounds) are pinned by their own tests so that widening one is a visible,
+  deliberate act. If a gate trips on real data, the cause is upstream.
+- **A tolerance that fails on correct data is a wrong formula, not a tight
+  number.** Before retuning, check whether you are measuring the identity the
+  data actually satisfies.
+
+### Probing the upstreams
+
+The gates protect against bad data; `pytest -m live` protects against the
+premise changing underneath them. `tests/test_live_upstreams.py` calls the real
+connectors and asserts the live responses still have the shape the parsers
+expect — the rate cube is still current, every ЕЦБ series key still resolves to
+its own series, the НСИ workbook still has the Sofia-city row, БНБ still agrees
+with ЕЦБ MIR. Excluded from the default run; never gates a commit. Run it when a
+refresh looks wrong, or before trusting a fixture.
+
+## Cross-references
+
+- [`math.md`](./math.md) — why each reconciliation is shaped the way it is
+- [`data-sources.md`](./data-sources.md) — the upstream quirks the gates guard against
+- [`local-development.md`](./local-development.md) — running a refresh, and reading a failed one
+- [`local-development.md`](./local-development.md) — running the suites

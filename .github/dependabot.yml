@@ -1,0 +1,103 @@
+# Routine dependency updates.
+#
+# This project gets attention in bursts. Between them nobody is watching npm or
+# PyPI, and the failure this guards against is not a dramatic one — it is a
+# repository that quietly stops building on a current toolchain because nothing
+# has been bumped in eight months.
+#
+# Deliberately low-noise, because an update bot that opens twelve pull requests
+# a week trains its maintainer to ignore it, which is worse than not having one:
+#
+#   - monthly, not weekly. Nine direct dependencies across two ecosystems do not
+#     change fast enough to justify more.
+#   - grouped into ONE pull request per ecosystem. Every dependency here is a
+#     dev/build tool; bumping them individually buys nothing and costs a review
+#     each. CI runs both suites, the build and the browser smoke test on the
+#     group, which is the same gate a hand-written change gets.
+#   - a hard limit of one open pull request per ecosystem, so a month that is
+#     ignored does not compound into a backlog.
+#   - a cooldown, so a release published hours ago is not installed here on the
+#     strength of being newest. A compromised package is caught upstream in days
+#     rather than minutes, and nothing in this repository is urgent enough to
+#     want the very latest build of a dev tool.
+#
+# Note what this file does NOT do: it does not turn on security updates. Those
+# come from Dependabot *alerts*, which are a repository setting, not a config
+# file, and they are the half that actually matters. This file cannot turn them
+# on.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      site:
+        patterns: ["*"]
+    commit-message:
+      prefix: "site"
+    cooldown:
+      default-days: 5
+      semver-major-days: 14
+    ignore:
+      # TypeScript 7 cannot be installed here yet, and the blocker is upstream:
+      # `svelte-check` 4.7.4 — the latest — declares
+      # `peer typescript: "^5.0.0 || ^6.0.0"`, having deliberately NARROWED it
+      # from `>=5.0.0` in 4.7.3. So `npm ci` fails with ERESOLVE on any TS 7,
+      # which is what took the whole grouped bump red rather than just this one
+      # package.
+      #
+      # Ignoring the major keeps the rest of the group mergeable instead of one
+      # unresolvable dependency blocking three that are fine. Lift this the
+      # moment svelte-check widens the peer range — check with
+      # `npm view svelte-check peerDependencies.typescript` — and take TS 7 in
+      # its own pull request, since a compiler major deserves its own review.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+
+  # Reads `pipeline/requirements*.txt` — pip-compile output, every transitive
+  # dependency pinned with a hash. Dependabot recognises the pip-compile header
+  # and regenerates the whole tree rather than editing one line, which is what
+  # makes hashed locks maintainable by a bot at all.
+  #
+  # It had nothing to bump before those files existed: `pyproject.toml` declares
+  # unbounded floors (`httpx>=0.27`, …), so every new release already satisfied
+  # the constraint and there was no version string to rewrite. This entry sat
+  # here for months without ever opening a pull request.
+  #
+  # `make lock` regenerates both files; the pyproject ranges stay the source of
+  # truth for what is allowed, and the lock records what was actually resolved.
+  - package-ecosystem: pip
+    directory: /pipeline
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      pipeline:
+        patterns: ["*"]
+    commit-message:
+      prefix: "pipeline"
+    cooldown:
+      default-days: 5
+      semver-major-days: 14
+
+  # The actions in ci.yml are pinned to commit SHAs, with the human-readable
+  # version in a trailing comment. A floating major tag (`@v7`) is mutable: a
+  # tag move upstream changes what runs here with no commit in this repository,
+  # which is the supply-chain shape worth closing even for first-party actions.
+  #
+  # This entry is what keeps the pins from going stale — Dependabot rewrites the
+  # SHA and the `# v7.x.y` comment beside it together. Read a replacement SHA
+  # from GitHub if you ever edit one by hand; an invented one breaks CI on the
+  # spot.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"

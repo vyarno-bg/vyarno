@@ -1,0 +1,533 @@
+<!--
+  The national strip: five or six stat cards under the calculator, describing
+  the country rather than the visitor.
+
+  Everything here is read-only — published figures and the links that prove
+  them. The one piece of state it owns is the measured width of the Sofia
+  housing card, which the sparkline is drawn against.
+-->
+<script>
+  import { lang } from "$lib/stores.js";
+  import { COPY, HOME, t } from "$lib/content.js";
+  import { number, integer, percentSigned } from "$lib/format.js";
+  import { fastestRisingDivision } from "$lib/view.js";
+
+  const {
+    /** Published HICP divisions, for the fastest-rising card. */
+    categories = [],
+    /** The loaded payloads, for the two cards that read them directly. */
+    data = {},
+    /** Official annual HICP rate; the strip's first card. */
+    headline = 0,
+    /** 11-point gross earnings ladder; index 5 is the median. */
+    ladder = [],
+    /** Sofia's median NET wage, for the comparator card. */
+    sofiaNet = 0,
+    salaryShapeUrl = "",
+    salaryShapeYear = "",
+    salaryAnchorPeriod = "",
+    /** Sofia €/m² median and its provenance. */
+    sofiaEurPerM2 = 0,
+    sofiaMeanGrossUrl = "",
+    sofiaSalaryAsOf = "",
+    sofiaNDistricts = 0,
+    /** True when the €/m² came from sofia_price.json, not the offline constant. */
+    sofiaPriceIsLive = false,
+    sofiaPriceDated = "",
+    /** Per-year €/m² medians back to 2015, for the sparkline. */
+    sofiaHistorical = [],
+    sofiaSince2015Pct = 0,
+    sofiaBaselineYear = 0,
+    sofiaBaselineMedian = 0,
+    /** Builds a category's Eurostat verify link; anchor-dependent, so it is
+        passed in rather than rebuilt here. */
+    estatCatUrl,
+  } = $props();
+
+  const fmt = (x, d = 1) => number(x, d, $lang);
+  const fmt0 = (x) => integer(x, $lang);
+  const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
+
+  // The sparkline is drawn in user units scaled to the card's measured width,
+  // so it has no intrinsic size to lay out against until the card exists.
+  let histW = $state(300);
+
+  // Both are singleton figures rather than one per category, so their verify
+  // links are fixed extracts rather than anything derived. They point at the
+  // exact dissemination query behind the number, not the Data Browser table:
+  // that would land on the silently-defaulted CP01/Food view (the headline is
+  // all-items, CP00 → TOTAL upstream) or on the dataset's default geo instead
+  // of BG. The bare dataset links in the Sources footer stay as they are —
+  // those cite whole datasets, not a single figure.
+  const estatHeadlineUrl =
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&coicop18=TOTAL&unit=RCH_A&lastTimePeriod=12";
+  const estatUnempUrl =
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_m?geo=BG&s_adj=SA&sex=T&age=TOTAL&unit=PC_ACT&sinceTimePeriod=2020-01";
+</script>
+
+<section class="strip">
+  <div class="shead">
+    <h2>
+      <span class="l-bg">{COPY.stripHead.bg}</span>
+      <span class="l-en">{COPY.stripHead.en}</span>
+    </h2>
+    <span class="rule"></span>
+    <!-- No "next data" line here: the page header already shows it, and
+         the same string twice on first paint competes with the strip's
+         actual job (five stat cards). -->
+  </div>
+  <!-- The strip is a flex row, not an auto-fit grid, and the order runs
+       tiles-then-feature on purpose.
+
+       The grid produced a 5-up row plus a lone sixth card sitting in an
+       otherwise empty row — the count is 5 or 6 depending on whether a
+       salary has been typed, and no fixed column count divides both. In
+       a wrapping flex row every item grows, so a row is always full: the
+       tail cards widen instead of leaving a hole, at every width and
+       either count. The Sofia housing card carries a 12-year sparkline,
+       so it takes a wider basis and a heavier grow — and it goes LAST,
+       because the one card that may end up alone on a row is then the
+       one that reads well at full width. -->
+  <div class="stats">
+    {#if headline > 0}
+      <div class="stat">
+        <div class="sv mono">
+          <span>{fmt(headline)}%</span>
+          <span class="sd up mono"
+            >{COPY.yoyLabel[$lang] ?? COPY.yoyLabel.en} · {COPY.srcEurostat[$lang] ??
+              COPY.srcEurostat.en}</span
+          >
+        </div>
+        <div class="sl">
+          <span class="l-bg">{COPY.statInfK.bg}</span><span class="l-en">{COPY.statInfK.en}</span>
+        </div>
+        <div class="ss">
+          <a href={estatHeadlineUrl} target="_blank" rel="noopener"
+            >{COPY.srcEurostat[$lang] ?? COPY.srcEurostat.en}</a
+          >
+          · {data.hicpHeadline?.ref_period ?? ""}
+        </div>
+      </div>
+    {/if}
+    <!-- Median NET pay card — ALWAYS ON (no salary needed). The median
+         is the honest "what people actually earn" figure: half of Sofia
+         earners take less, half take more. Unlike the average it isn't
+         pulled up by a handful of very high salaries — the foot line
+         spells out that gap. {ladder} is the net rung array from
+         buildLadder: [5]=P50 (median), [2]=P20, [8]=P80. -->
+    {#if ladder.length}
+      <div class="stat">
+        <div class="sv mono">
+          <span>{fmt0(ladder[5])} €</span>
+        </div>
+        <div class="sl">
+          <span class="l-bg">{COPY.statMedianK.bg}</span>
+          <span class="l-en">{COPY.statMedianK.en}</span>
+        </div>
+        <!-- ONE footer block, three lines. These were three sibling
+             `.ss` blocks, each with its own rule and 10px of padding —
+             which made this card twice the height of its neighbours and
+             read as a wall of grey. Every fact stays; only the borders
+             between them go. The card was once the one figure on the
+             page carrying no date and no caveat, so the modelled-spread
+             line and the mean-vs-median line are load-bearing (P3). -->
+        <div class="ss">
+          <div>
+            <!-- The band's own caveat, on the band. ladder[2] (P20) and
+                 ladder[8] (P80) are interpolated between the SES survey's
+                 P10/P50/P90 anchors — more modelled than the median beside
+                 them, so they may not be spoken in the same voice as it. -->
+            <span class="l-bg"
+              >{COPY.statMedianSub.bg
+                .replace("{lo}", fmt0(ladder[2]))
+                .replace("{hi}", fmt0(ladder[8]))}
+              {COPY.statMedianSubModelled.bg}</span
+            >
+            <span class="l-en"
+              >{COPY.statMedianSub.en
+                .replace("{lo}", fmt0(ladder[2]))
+                .replace("{hi}", fmt0(ladder[8]))}
+              {COPY.statMedianSubModelled.en}</span
+            >
+            {#if salaryShapeUrl}
+              · <a href={salaryShapeUrl} target="_blank" rel="noopener"
+                >{t(COPY.statMedianSrc, $lang, {
+                  shapeYear: salaryShapeYear,
+                  anchorPeriod: salaryAnchorPeriod,
+                })}</a
+              >
+            {/if}
+          </div>
+          {#if salaryShapeYear}
+            <div>
+              <span class="l-bg"
+                >{t(COPY.statMedianModelled, "bg", { shapeYear: salaryShapeYear })}</span
+              >
+              <span class="l-en"
+                >{t(COPY.statMedianModelled, "en", { shapeYear: salaryShapeYear })}</span
+              >
+            </div>
+          {/if}
+          {#if sofiaNet > 0}
+            <div>
+              <span class="l-bg">{COPY.statMedianVsMean.bg.replace("{mean}", fmt0(sofiaNet))}</span>
+              <span class="l-en">{COPY.statMedianVsMean.en.replace("{mean}", fmt0(sofiaNet))}</span>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
+    <!-- Sofia comparator card: net vs net. The same bgNetSalary
+         formula is applied to both sides, so the comparison is
+         apples-to-apples. No personal verdict here — this is a country
+         reference card, and the verdict lives under the salary input,
+         next to the number it compares against. -->
+    <!-- Always on, like every other card here. Gating it on a typed
+         salary makes "the country at a glance" change shape with what
+         the reader entered, and leaves the strip with a card count no
+         column layout divides. Nothing on this card is personal:
+         `sofiaNet` comes from sofia_salary.json alone. The personal
+         verdict against it lives under the salary input, where the
+         number it compares to is. -->
+    {#if sofiaNet > 0}
+      <div class="stat">
+        <div class="sv mono">
+          <span>{fmt0(sofiaNet)} €</span>
+        </div>
+        <div class="sl">
+          <span class="l-bg">{COPY.statSofiaK.bg}</span>
+          <span class="l-en">{COPY.statSofiaK.en}</span>
+        </div>
+        <div class="ss">
+          <a href={sofiaMeanGrossUrl} target="_blank" rel="noopener">
+            <span class="l-bg"
+              >{COPY.statSofiaSrc.bg
+                .replace("{{as_of}}", sofiaSalaryAsOf || "—")
+                .replace("{{net}}", sofiaNet > 0 ? fmt0(sofiaNet) : "—")}</span
+            >
+            <span class="l-en"
+              >{COPY.statSofiaSrc.en
+                .replace("{{as_of}}", sofiaSalaryAsOf || "—")
+                .replace("{{net}}", sofiaNet > 0 ? fmt0(sofiaNet) : "—")}</span
+            >
+          </a>
+        </div>
+      </div>
+    {/if}
+    {#if categories.length > 0}
+      {@const fastest = fastestRisingDivision(categories)}
+      <div class="stat">
+        <div class="sv mono" style="color: var(--erode)">
+          <!-- Signed: `fastestRisingDivision` returns the highest rate
+               there is, which in a broad price fall is still a negative
+               one. Nothing guarantees the maximum is above zero. -->
+          <span>{signedPct(fastest.annual_rate_pct)}</span>
+          <span class="sd down mono"
+            >{COPY.yoyLabel[$lang] ?? COPY.yoyLabel.en} · {COPY.srcEurostat[$lang] ??
+              COPY.srcEurostat.en}</span
+          >
+        </div>
+        <div class="sl">
+          <span class="l-bg">{fastest.bg_name}</span><span class="l-en">{fastest.en_name}</span>
+          <span class="l-bg">{COPY.statFastK.bg}</span><span class="l-en">{COPY.statFastK.en}</span>
+        </div>
+        <div class="ss">
+          <a href={estatCatUrl(fastest)} target="_blank" rel="noopener"
+            >{COPY.srcEurostat[$lang] ?? COPY.srcEurostat.en}</a
+          >
+          · {fastest.ref_period}
+        </div>
+      </div>
+    {/if}
+    {#if data.unemployment}
+      <div class="stat">
+        <div class="sv mono">
+          <span>{fmt(data.unemployment.value)}%</span>
+          <span class="sd mono">{data.unemployment.ref_period ?? ""}</span>
+        </div>
+        <div class="sl">
+          <span class="l-bg">{COPY.statUnempK.bg}</span>
+          <span class="l-en">{COPY.statUnempK.en}</span>
+        </div>
+        <div class="ss">
+          <a href={estatUnempUrl} target="_blank" rel="noopener"
+            >{COPY.srcEurostat[$lang] ?? COPY.srcEurostat.en}</a
+          >
+          · {data.unemployment.ref_period}
+        </div>
+      </div>
+    {/if}
+    <!-- The housing card is the only one carrying a chart, so it is the
+         only one that is not a tile: it takes a wider basis, sits last,
+         and follows the same value → label → chart → source anatomy as
+         its neighbours instead of stuffing the sparkline into the source
+         caption, which is what starved it of width. -->
+    <!-- Gated on the payload being LIVE, not merely on the number being
+         non-zero. The offline fallback is a round constant; this card
+         captions it «медиана за София от публични обяви» and cites
+         imot.bg/sredni-ceni under it, so rendering it from the sentinel
+         attributed a figure имот.bg never published to имот.bg — with «0
+         квартала» as the only tell. The strip's own rule is that every card
+         is gated on its own payload; this restores it. -->
+    {#if categories.length > 0 && sofiaPriceIsLive && sofiaEurPerM2 > 0}
+      {@const hP = sofiaEurPerM2 * HOME.m2Default}
+      <div class="stat wide">
+        <div class="sv mono" style="color: var(--erode)">
+          <span>€{fmt0(hP)}</span>
+          <span class="sd down mono">{$lang === "bg" ? "70 м² по медиана" : "70 m² at median"}</span
+          >
+        </div>
+        <div class="sl">
+          <span class="l-bg">{COPY.statHomeK.bg}</span>
+          <span class="l-en">{COPY.statHomeK.en}</span>
+        </div>
+        {#if sofiaHistorical.length > 1}
+          {@const _minH = Math.min(...sofiaHistorical.map((r) => r.eur_per_m2_median))}
+          {@const _maxH = Math.max(...sofiaHistorical.map((r) => r.eur_per_m2_median))}
+          {@const _rH = _maxH - _minH || 1}
+          {@const _last = sofiaHistorical.length - 1}
+          <!-- The plot grows with the card instead of staying a 22px
+               ribbon: a 12-point series across 1000px at 22px tall is a
+               flat line with no shape in it. Capped so it stays a
+               sparkline and never becomes the card. -->
+          {@const _h = Math.round(Math.min(96, Math.max(52, histW * 0.11)))}
+          {@const _padX = 6}
+          {@const _padT = 16}
+          {@const _padB = 8}
+          {@const _x = (i) => (_last === 0 ? histW / 2 : _padX + (i * (histW - 2 * _padX)) / _last)}
+          {@const _y = (v) => _h - _padB - ((v - _minH) / _rH) * (_h - _padT - _padB)}
+          <!-- The viewBox is the measured pixel width, so the plot draws
+               1:1. A fixed-width box stretched to fit with
+               preserveAspectRatio="none" scales x and y by different
+               factors: the stroke thins out and every year marker
+               renders as an ellipse. -->
+          <div class="hist" bind:clientWidth={histW}>
+            <svg
+              viewBox="0 0 {histW} {_h}"
+              width="100%"
+              height={_h}
+              role="img"
+              aria-label={($lang === "bg"
+                ? "Медианна цена на кв. м в София, "
+                : "Sofia median €/m², ") +
+                `${sofiaHistorical[0].year}–${sofiaHistorical[_last].year}`}
+            >
+              <polyline
+                points={sofiaHistorical
+                  .map((r, i) => `${_x(i).toFixed(1)},${_y(r.eur_per_m2_median).toFixed(1)}`)
+                  .join(" ")}
+                fill="none"
+                stroke="var(--erode)"
+                stroke-width="2"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+              {#each sofiaHistorical as r, i (r.year)}
+                <circle
+                  cx={_x(i).toFixed(1)}
+                  cy={_y(r.eur_per_m2_median).toFixed(1)}
+                  r={i === _last ? 4 : 2}
+                  fill="var(--erode)"
+                  stroke="var(--surface)"
+                  stroke-width={i === _last ? 2 : 0}
+                />
+              {/each}
+              <!-- Direct end labels: the first and last observation carry
+                   their own value, so the reader never has to match a
+                   floating legend to a point. -->
+              <text class="hist-lbl" x={_x(0)} y={_y(sofiaHistorical[0].eur_per_m2_median) - 9}
+                >€{fmt0(sofiaBaselineMedian)}</text
+              >
+              <text
+                class="hist-lbl"
+                x={_x(_last)}
+                y={_y(sofiaHistorical[_last].eur_per_m2_median) - 11}
+                text-anchor="end">€{fmt0(sofiaEurPerM2)}</text
+              >
+            </svg>
+            <div class="hist-axes mono">
+              <span>{sofiaBaselineYear}</span>
+              <span>{sofiaHistorical[_last].year}</span>
+            </div>
+            <div class="hist-delta mono">
+              <span class="l-bg"
+                >{@html t(COPY.statHomeDelta, "bg", { pct: fmt(sofiaSince2015Pct, 0) })}</span
+              >
+              <span class="l-en"
+                >{@html t(COPY.statHomeDelta, "en", { pct: fmt(sofiaSince2015Pct, 0) })}</span
+              >
+            </div>
+          </div>
+        {/if}
+        <div class="ss">
+          <div title={HOME.eurPerM2_source}>
+            <span class="l-bg">≈{fmt0(sofiaEurPerM2)}€/м² · медиана за София от публични обяви</span
+            >
+            <span class="l-en">≈€{fmt0(sofiaEurPerM2)}/m² · Sofia median from public listings</span>
+          </div>
+          <div>
+            <a href="https://www.imot.bg/sredni-ceni" target="_blank" rel="noopener"
+              >imot.bg/sredni-ceni</a
+            >
+            · {sofiaNDistricts}
+            {$lang === "bg" ? "квартала" : "districts"} · {sofiaPriceDated || "—"}
+          </div>
+        </div>
+      </div>
+    {/if}
+  </div>
+</section>
+
+<style>
+  /* National strip */
+  .strip {
+    margin-top: 40px;
+    border-top: 1px solid var(--line);
+    padding-top: 22px;
+  }
+  .strip .shead {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .strip .shead h2 {
+    font-weight: 700;
+    font-size: var(--fs-body);
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .strip .shead .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+  /* A wrapping flex row, not a grid. `auto-fit` columns hold their width, so
+     a card count that does not divide by the column count leaves a hole — five
+     up and a lone sixth stranded on its own row. Here every card grows, so the
+     tail of a row widens to fill it and there is never an empty cell, at any
+     width and whether the strip carries five cards or six. */
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    /* Cards in the same row are the same height, and each one's source
+       caption is pinned to its foot (`.ss` takes the slack), so the footers
+       line up across the row instead of floating at ragged heights. */
+    align-items: stretch;
+  }
+  /* Every stat card has the same internal structure regardless of height:
+     headline on top, label in the middle, source caption pinned to the
+     bottom by `margin-top: auto` on `.ss`. */
+  .stat {
+    flex: 1 1 180px;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 13px 15px;
+    display: flex;
+    flex-direction: column;
+  }
+  /* The one card with a chart in it takes a row of its own. Two reasons, and
+     the second is the one that bites: the 12-year sparkline needs the width
+     (at a tile's 180px it was a scribble), and a card twice its neighbours'
+     height sharing their row would stretch each of them to match it, which is
+     how you get a stat tile with 120px of nothing under its label. */
+  .stat.wide {
+    flex: 1 1 100%;
+  }
+  /* One rule, carrying both the pinning margin and the typography: a second
+     .stat .ss rule further down would override margin-top and unpin the
+     source caption. */
+  .stat .ss {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+    font-size: var(--fs-micro);
+    color: var(--muted);
+  }
+  /* Extra footer lines stack inside the ONE footer block. Three sibling `.ss`
+     blocks meant three rules and three paddings, which is what made the
+     median-pay card twice the height of its neighbours. */
+  .stat .ss > div + div {
+    margin-top: 5px;
+  }
+  .stat .sv {
+    font-size: var(--fs-h2);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .stat .sd {
+    font-size: var(--fs-fine);
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 2px;
+  }
+  .stat .sd.up {
+    color: var(--real-ink);
+    background: var(--real-soft);
+  }
+  .stat .sd.down {
+    color: var(--erode);
+    background: var(--erode-soft);
+  }
+  .stat .sl {
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+    margin-top: 6px;
+    line-height: 1.35;
+  }
+  /* Sofia price history sparkline: a polyline of the median €/m² from 2015
+     to the current year, one marker per year and a ringed marker on the
+     latest. The axes show the year range and the baseline→current € pair;
+     the since-2015 delta is rendered in the erode colour so it reads as a
+     "this is what it costs you" figure rather than a feature. The SVG is
+     drawn at the measured pixel width (`histW`), so nothing is stretched. */
+  .hist {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--rule);
+  }
+  .hist svg {
+    display: block;
+    overflow: visible;
+  }
+  .hist-axes {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: var(--fs-micro);
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .hist-lbl {
+    font-size: var(--fs-micro);
+    fill: var(--ink-2);
+    font-family: var(--mono);
+  }
+  .hist-delta {
+    font-size: var(--fs-fine);
+    color: var(--erode);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .stat .ss a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--muted);
+  }
+  .stat .ss a:hover {
+    color: var(--real-ink);
+    border-bottom-color: var(--real);
+  }
+</style>

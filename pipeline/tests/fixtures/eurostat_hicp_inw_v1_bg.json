@@ -1,0 +1,104 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "HICP - item weights (1996-2025)",
+ "source": "ESTAT",
+ "updated": "2025-08-20T11:00:00+0200",
+ "value": {
+  "0": 1000.0,
+  "1": 219.66,
+  "2": 56.92,
+  "3": 39.75,
+  "4": 96.55,
+  "5": 69.08,
+  "6": 76.06,
+  "7": 141.19,
+  "8": 53.84,
+  "9": 92.04,
+  "10": 13.93,
+  "11": 82.0,
+  "12": 58.98
+ },
+ "id": [
+  "freq",
+  "coicop",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  13,
+  1,
+  1
+ ],
+ "dimension": {
+  "freq": {
+   "label": "freq",
+   "category": {
+    "index": {
+     "A": 0
+    },
+    "label": {
+     "A": "Annual"
+    }
+   }
+  },
+  "coicop": {
+   "label": "coicop",
+   "category": {
+    "index": {
+     "CP00": 0,
+     "CP01": 1,
+     "CP02": 2,
+     "CP03": 3,
+     "CP04": 4,
+     "CP05": 5,
+     "CP06": 6,
+     "CP07": 7,
+     "CP08": 8,
+     "CP09": 9,
+     "CP10": 10,
+     "CP11": 11,
+     "CP12": 12
+    },
+    "label": {
+     "CP00": "All-items HICP",
+     "CP01": "Food and non-alcoholic beverages",
+     "CP02": "Alcoholic beverages, tobacco and narcotics",
+     "CP03": "Clothing and footwear",
+     "CP04": "Housing, water, electricity, gas and other fuels",
+     "CP05": "Furnishings, household equipment and routine household maintenance",
+     "CP06": "Health",
+     "CP07": "Transport",
+     "CP08": "Communications",
+     "CP09": "Recreation and culture",
+     "CP10": "Education",
+     "CP11": "Restaurants and hotels",
+     "CP12": "Miscellaneous goods and services"
+    }
+   }
+  },
+  "geo": {
+   "label": "geo",
+   "category": {
+    "index": {
+     "BG": 0
+    },
+    "label": {
+     "BG": "Bulgaria"
+    }
+   }
+  },
+  "time": {
+   "label": "time",
+   "category": {
+    "index": {
+     "2025": 0
+    },
+    "label": {
+     "2025": "2025"
+    }
+   }
+  }
+ }
+}

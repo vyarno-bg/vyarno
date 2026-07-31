@@ -1,0 +1,80 @@
+/**
+ * The receipt row: LABEL ···················· VALUE, with an optional
+ * explanation underneath.
+ *
+ * Eight of these make up the results card, and several have grown big enough
+ * to be components of their own (the tax wedge, the home block). Svelte scopes
+ * a component's `<style>` to that component, so the shared anatomy lives here
+ * — otherwise every row that moved into its own file would take a copy of the
+ * same rules with it.
+ *
+ * Loaded once per entry point, next to tokens.css.
+ */
+
+.r-rows {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+}
+.r-row {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+.r-row .rr-top {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+}
+/* Receipt-style dotted leader: LABEL ······················ VALUE.
+   The label's flexible ::after draws the leader between the label
+   text and the value, the way a till receipt or a menu tallies. */
+.r-row .rr-k {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.r-row .rr-k::after {
+  content: "";
+  flex: 1;
+  height: 0;
+  margin: 0 0.6em 4px;
+  border-bottom: 1px dotted var(--line);
+}
+.r-row .rr-v {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+/* The unit on a per-month figure, kept quiet so the amount still reads as
+   one number rather than two. */
+.r-row .rr-v small {
+  font-size: var(--fs-fine);
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.r-row .rr-t {
+  font-size: var(--fs-body);
+  color: var(--ink-2);
+  margin-top: 3px;
+  line-height: 1.45;
+  max-width: 54ch;
+}
+.r-row .rr-t .b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.r-row .rr-note {
+  font-size: var(--fs-fine);
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.4;
+}
