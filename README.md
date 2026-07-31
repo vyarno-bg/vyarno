@@ -39,7 +39,7 @@ git clone https://github.com/vyarno-bg/vyarno.git && cd vyarno
 
 cd pipeline && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e . --no-deps
-pytest -q                                     # 289 tests, offline
+pytest -q                                     # 287 tests, offline
 
 cd ../site && npm install && npm run dev      # http://localhost:5173
 ```
@@ -174,7 +174,7 @@ What is verified, and by what:
 
 | Suite | Runs | What it protects |
 |---|---|---|
-| `pytest` in `pipeline/` | 289 tests, offline | Connectors, transforms, the six validation gates, the published payloads |
+| `pytest` in `pipeline/` | 287 tests, offline | Connectors, transforms, the six validation gates, the published payloads |
 | `node:test` in `site/` | 316 tests | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
 | `node:test` + Playwright | 14 tests | The built page, loaded in a real browser — the only suite that runs the app |
 

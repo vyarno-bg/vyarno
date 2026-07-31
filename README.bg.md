@@ -40,7 +40,7 @@ git clone https://github.com/vyarno-bg/vyarno.git && cd vyarno
 
 cd pipeline && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e . --no-deps
-pytest -q                                     # 289 теста, без интернет
+pytest -q                                     # 287 теста, без интернет
 
 cd ../site && npm install && npm run dev      # http://localhost:5173
 ```
@@ -179,7 +179,7 @@ flowchart LR
 
 | Набор | Пуска | Какво пази |
 |---|---|---|
-| `pytest` в `pipeline/` | 289 теста, без интернет | Конекторите, преобразуванията, шестте проверки, публикуваните файлове |
+| `pytest` в `pipeline/` | 287 теста, без интернет | Конекторите, преобразуванията, шестте проверки, публикуваните файлове |
 | `node:test` в `site/` | 316 теста | Всяка формула, всяка производна стойност, инвариантите на текста, правните твърдения, контраста по WCAG, HTTP заглавките |
 | `node:test` + Playwright | 14 теста | Готовата страница, заредена в истински браузър — единственият набор, който пуска самото приложение |
 
