@@ -143,7 +143,7 @@ takes a single stage — `npm run check:all lint` — when you want one part of 
 
 Read the render count at the end. With no browser that suite skips and still
 exits 0, so `npx playwright install chromium` in `site\` is what turns a green
-0 into a green 15. `node scripts/find-chromium.mjs` will also take a Chrome or
+0 into a green 20. `node scripts/find-chromium.mjs` will also take a Chrome or
 an Edge already installed under `%ProgramFiles%` or `%LOCALAPPDATA%`.
 
 Six things in the repository make that block work, and each is load-bearing

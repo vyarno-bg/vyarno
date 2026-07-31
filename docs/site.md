@@ -619,8 +619,9 @@ rows the calculator answers, and in what order, is forty lines of markup. Each
 row decides for itself whether it renders; `RentRow` is empty without a rent,
 `HomeRow` without the home block.
 
-Their shared anatomy is in `$lib/card.css` (the grid, the two cards, the field)
-and `$lib/result-row.css` (the row itself). Both exist because Svelte scopes a
+Their shared anatomy is in `$lib/card.css` (the grid, the two cards, the field,
+the `.vlink` verify arrow) and `$lib/result-row.css` (the row itself). Both
+exist because Svelte scopes a
 component's `<style>` to its own markup and these rules span three files by
 construction — `.m-grid > .m-card:first-child > .field` cannot be written in
 any one of them. Decoration that belongs to one component stays with it.
@@ -653,6 +654,39 @@ Each card is `value → label → (chart) → source`, with `.ss` taking the sla
 lines stack **inside** that one `.ss`: three sibling `.ss` blocks meant three
 rules and three paddings, which is what made the median-pay card twice the
 height of its neighbours.
+
+### The card says whose salary it is computing with
+
+The €900 default is a worked example — a page whose figures are all em dashes
+until someone types demonstrates nothing — and the hint under the input says so
+in `COPY.medianDefault`. That arrangement holds on a desktop, where the two are
+200px apart, and breaks on a phone: `card.css` orders the results card **first**
+below 880px, which puts the input ~3,100px under «≈ €46 повече всеки месец ти
+струва същият живот отпреди година». Four screens is not a caveat.
+
+So `COPY.startingSalary` repeats it where the figures are, under the headline
+block, until `Calculator#salaryDirty` flips on the first keystroke in the salary
+field — the same shape as `raiseDirty` next to it. It interpolates the live
+`salary` rather than spelling out 900, so the sentence cannot drift from the
+default it describes, and it carries the page's only route from the results back
+to the inputs: `ResultsSummary#focusSalary`, which focuses before it scrolls
+because focus is what raises the phone keyboard.
+
+**`PercentileRow` does not take that deal, and the difference is what the
+sentence claims.** A euro figure is arithmetic about prices scaled by a salary,
+and naming the salary makes it honest. «Изпреварваш 34% от работещите в София»
+is a ranking *of the reader* against their neighbours in the second person, and
+a visitor who earns €2,400 has been told something false about themselves before
+touching the page. No caveat rescues that, so the row waits — corner figure and
+sentence together, because a bare «пред 34%» over a prompt asking for a salary is
+the claim with its caveat removed. It is the treatment `PocketRow` already gives
+an empty raise.
+
+The four render tests that hold this are
+`an_untouched_salary_is_named_where_its_figures_are…`,
+`the_route_from_the_headline_to_the_salary_field_lands_on_it`,
+`the_ladder_row_ranks_nobody_who_has_not_typed_a_salary` and
+`every_verify_link_is_drawn_the_same_in_both_cards`.
 
 ### The pocket row says which state it is in
 

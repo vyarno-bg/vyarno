@@ -634,6 +634,160 @@ test("the explainer causes no horizontal overflow on a 360px viewport", { skip }
   });
 });
 
+test(
+  "an untouched salary is named where its figures are, and clears on typing",
+  { skip },
+  async () => {
+    // The €900 default is a worked example, and the hint that says so is bound
+    // to the input. On a phone the results card is ordered first (card.css) and
+    // that input lands ~3,100px below the figures it qualifies, so the caveat
+    // has to be repeated where the numbers are or it reaches the reader four
+    // screens late. The amount is interpolated, not written into the copy, so
+    // the note cannot drift from `Calculator#salary`.
+    await withApp(async (page, errors) => {
+      const note = page.locator(".m-card .placeholder");
+      assert.equal(
+        await note.count(),
+        1,
+        "the results card names no starting salary on first paint"
+      );
+      assert.match(
+        await note.innerText(),
+        /900/,
+        "the note does not carry the amount it is a caveat about"
+      );
+
+      // …and it goes the moment the figures become the reader's own. A caveat
+      // that outlives its cause teaches the reader to read past it.
+      await page.locator("#inSalary").fill("2400");
+      await page.waitForTimeout(300);
+      assert.equal(
+        await note.count(),
+        0,
+        "the starting-salary note survived the reader typing their own pay"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
+test("the route from the headline to the salary field lands on it", { skip }, async () => {
+  // The only link between the two cards on a phone, where nothing else on the
+  // page connects them. It has to focus rather than merely scroll: focus is
+  // what raises the keyboard, so one tap leaves the reader typing instead of
+  // hunting.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 390, height: 664 });
+    await page.waitForTimeout(200);
+
+    const gap = await page.evaluate(() => {
+      const field = document.getElementById("inSalary");
+      const big = document.querySelector(".r-big");
+      return Math.round(field.getBoundingClientRect().top - big.getBoundingClientRect().top);
+    });
+    assert.ok(
+      gap > 1500,
+      `the salary field is ${gap}px below the headline figure — if the two cards ` +
+        "have come back together on a phone, this route is no longer the thing being tested"
+    );
+
+    await page.locator(".m-card .placeholder button").click();
+    await page.waitForTimeout(300);
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.id),
+      "inSalary",
+      "the button did not put the caret in the salary field"
+    );
+
+    // Focused, and actually on screen: `focus({preventScroll: true})` without
+    // the scroll that follows it leaves the reader typing into a field 3,000px
+    // away, with the page still showing the figure they tapped.
+    const box = await page.locator("#inSalary").boundingBox();
+    const height = page.viewportSize().height;
+    assert.ok(
+      box.y >= 0 && box.y + box.height <= height,
+      `the salary field sits at ${Math.round(box.y)}px in a ${height}px viewport — off screen`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the ladder row ranks nobody who has not typed a salary", { skip }, async () => {
+  // «Изпреварваш 34% от работещите в София» is a claim about the READER, in
+  // the second person, and on first paint it is a claim about whoever earns
+  // the €900 placeholder. Unlike the euro figures above it, no caveat makes
+  // an unasked ranking land well, so the row waits — the same thing PocketRow
+  // does with an empty raise.
+  //
+  // Both halves are gated: the corner figure as well as the sentence. A bare
+  // «пред 34%» above a prompt asking for a salary is the claim with its
+  // caveat removed.
+  await withApp(async (page, errors) => {
+    const row = page.locator(".r-row").filter({ hasText: "къде си по заплата" });
+    assert.equal(await row.count(), 1, "the ladder row is missing from the results card");
+    const idle = await row.innerText();
+    assert.doesNotMatch(
+      idle,
+      /изпреварваш|пред \d/i,
+      `the ladder ranked an untouched placeholder: ${idle.replace(/\s+/g, " ")}`
+    );
+
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+    const answered = await row.innerText();
+    assert.match(
+      answered,
+      /изпреварваш/i,
+      `the ladder stayed silent after a salary was typed: ${answered.replace(/\s+/g, " ")}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("every verify link is drawn the same, in both cards", { skip }, async () => {
+  // `.vlink` is the "↗" that makes a row checkable, and it is drawn in the
+  // basket and in the ranked contributions — two components, so a scoped
+  // `<style>` can only reach one of them. It did: the ranked list rendered
+  // browser-default 14px sans with a solid underline and `white-space:
+  // normal`, which on a 390px phone broke the line between «CP09» and its
+  // arrow and left the arrow hanging alone.
+  //
+  // Comparing the two against each other rather than against literal values
+  // is deliberate — the point is that neither can be restyled alone.
+  await withApp(async (page, errors) => {
+    const styles = await page.evaluate(() => {
+      const read = (el) => {
+        const s = getComputedStyle(el);
+        return {
+          fontFamily: s.fontFamily,
+          fontSize: s.fontSize,
+          color: s.color,
+          whiteSpace: s.whiteSpace,
+          borderBottomStyle: s.borderBottomStyle,
+          textDecorationLine: s.textDecorationLine,
+        };
+      };
+      const basket = document.querySelector("#sliders .vlink");
+      const ranked = document.querySelector(".rank .vlink");
+      return { basket: basket && read(basket), ranked: ranked && read(ranked) };
+    });
+    assert.ok(styles.basket, "no verify link in the basket");
+    assert.ok(styles.ranked, "no verify link in the ranked contributions");
+    assert.deepEqual(
+      styles.ranked,
+      styles.basket,
+      "the two cards draw the same link differently — a scoped copy of `.vlink` " +
+        "has come back into one component and left the other on browser defaults"
+    );
+    assert.equal(
+      styles.ranked.whiteSpace,
+      "nowrap",
+      "the code and its arrow can break across lines"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test.after(async () => {
   await browser?.close();
   site?.server.close();
