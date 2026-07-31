@@ -37,10 +37,10 @@ from vyarno_pipeline.sources.eurostat import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
-IW = json.loads((FIXTURES / "eurostat_hicp_iw_bg.json").read_text())
-RCH = json.loads((FIXTURES / "eurostat_hicp_rch_bg.json").read_text())
-I15 = json.loads((FIXTURES / "eurostat_hicp_i15_bg.json").read_text())
-INW_V1 = json.loads((FIXTURES / "eurostat_hicp_inw_v1_bg.json").read_text())
+IW = json.loads((FIXTURES / "eurostat_hicp_iw_bg.json").read_text(encoding="utf-8"))
+RCH = json.loads((FIXTURES / "eurostat_hicp_rch_bg.json").read_text(encoding="utf-8"))
+I15 = json.loads((FIXTURES / "eurostat_hicp_i15_bg.json").read_text(encoding="utf-8"))
+INW_V1 = json.loads((FIXTURES / "eurostat_hicp_inw_v1_bg.json").read_text(encoding="utf-8"))
 
 MINR_URL = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{MINR_DATASET}"
 IW_URL = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{IW_DATASET}"
