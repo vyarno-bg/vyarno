@@ -584,8 +584,9 @@ Verified against the code on 2026-07-30 and corrected where it did not hold.
   sentence false.
 - **Art. 30 register of processing.** The art. 30(5) exemption for
   organisations under 250 people is not available for processing that is more
-  than occasional, and serving a website logs continuously. The register for
-  this is four lines and costs nothing to keep; keep it. **The art. 2(2)(c)
+  than occasional, and serving a website logs continuously. The register covers
+  two operations, not one — the request log, and the donation records
+  §Donations describes — and costs nothing to keep; keep it. **The art. 2(2)(c)
   household exemption is NOT available** — a public website is by definition not
   purely personal or household activity, and C-101/01 *Lindqvist* settled that.
 - **The vulnerability safe-harbour** («няма да предприемаме действия срещу теб»
@@ -602,11 +603,39 @@ One channel is open: Ko-fi, one-off, no account needed of the person giving.
 — `verify_support.mjs` reads all three and fails if they disagree, so a channel
 cannot be advertised in one place while the others call it closed.
 
+**Ko-fi passes the payment straight through to a Stripe account in the
+recipient's own name.** Nothing sits between the donor and the recipient: Ko-fi
+holds no balance, Stripe is the acquirer, and the person receiving the gift is
+the merchant of record who answers a chargeback and a refund request. That is a
+setting rather than a property of the platform — Ko-fi will also hold the
+balance and pay out on a schedule, and that arrangement puts a foreign
+intermediary in the chain, which is the second of the two facts below. **Do not
+change the payout route without re-reading this section**, because the change
+that looks like a payments preference is the one that moves who receives what
+from whom.
+
 The other three stay `live: false`. GitHub Sponsors is not merely unopened: a
 sponsors account has to belong to `REPO_OWNER`, which `verify_legal.mjs`
 enforces, so it waits on the move to the organisation account rather than on a
 decision. Open Collective waits on a fiscal host, and that is a legal choice
 before it is an operational one — see the last paragraph of this section.
+
+**A donation is the second thing this project processes personal data for**, and
+the privacy notice carries it from version 1.2: name or alias, e-mail address,
+message, amount and date, arriving from Ko-fi and Stripe rather than from the
+donor's own keyboard — which is **GDPR art. 14** and not art. 13, a distinction
+that decides what has to be told to whom. The art. 30 register gains its second
+entry with it. Ko-fi and Stripe are each their own controller for what they
+hold; neither processes on our instructions, so no art. 28 contract is owed to
+either and §"Standing commitments" item 4 stays about the host alone.
+
+**One question is open, and it is a tax adviser's to close**: whether the
+чл. 49, ал. 3 declaration names the дарител. If it does, the municipality is a
+recipient of donor data and the notice owes a sentence saying so. It does not
+carry one yet — a hedged sentence in a statutory document is worse than a
+missing one, and this page publishes settled positions. Ask it in the same
+conversation as the обичаен подарък line below, because the two answers arrive
+together: a gift that needs no declaration discloses nobody.
 
 **A донация under ЗЗД buys nothing, and `support.js` rule 4 keeps it that way**:
 no supporter tier, no badge, no early access, no ad-free mode. Anything given in
@@ -685,7 +714,7 @@ something changes.
 
 ## Standing commitments
 
-Five sentences this repository publishes are true only while somebody keeps them
+Six sentences this repository publishes are true only while somebody keeps them
 true. Each is published under ЗЕТ чл. 4 or the GDPR.
 
 1. **Answer the issue tracker within three working days.** It is a published
@@ -710,6 +739,11 @@ true. Each is published under ЗЕТ чл. 4 or the GDPR.
 5. **Re-read имот.bg's terms on every refresh pass and date the reading.** §V.1
    lets Rezon add a clause at any time, effective on posting, and that section's
    position depends on its continued absence.
+6. **Publish no list of donors, and keep the donation records to the tax
+   periods that need them.** The privacy notice tells a donor we build no
+   profile, send no newsletter and name nobody. A thank-you page is the way that
+   promise gets broken by somebody being nice, and it would break `support.js`
+   rule 4 in the same movement — a name in lights is something given in return.
 
 And on cadence: **re-read all five licences annually, or on any publisher's site
 redesign, and re-date the quotes above.** Eurostat's wording changed under this

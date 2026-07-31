@@ -48,8 +48,8 @@
  * Bump, always. The shortcut is only ever available before anything has been
  * served at all, and that moment has passed.
  */
-export const LEGAL_VERSION = "1.1";
-export const LEGAL_EFFECTIVE = { bg: "30 юли 2026 г.", en: "30 July 2026" };
+export const LEGAL_VERSION = "1.2";
+export const LEGAL_EFFECTIVE = { bg: "31 юли 2026 г.", en: "31 July 2026" };
 
 import { CONTACT, LEGAL_NAV, REPO_ISSUES_URL, REPO_SLUG } from "./legal-nav.js";
 
@@ -628,8 +628,8 @@ const DOC_BODIES = [
         },
         p: [
           {
-            bg: "Заплатата, наемът, спестяванията и кошницата, които въвеждаш, се смятат изцяло в твоя браузър и никога не се изпращат никъде. Не съществува сървър, който да ги получи. Не искаме име, не искаме електронна поща, няма регистрация и няма профил.",
-            en: "The salary, rent, savings and basket you enter are computed entirely in your browser and are never sent anywhere. There is no server to receive them. We ask for no name, no e-mail address, there is no registration and there is no account.",
+            bg: "Заплатата, наемът, спестяванията и кошницата, които въвеждаш, се смятат изцяло в твоя браузър и никога не се изпращат никъде. Не съществува сървър, който да ги получи. Не искаме име, не искаме електронна поща, няма регистрация и няма профил. Единственото, което те извежда извън сайта, е връзката за дарение — какво става, ако я използваш, е описано по-долу.",
+            en: "The salary, rent, savings and basket you enter are computed entirely in your browser and are never sent anywhere. There is no server to receive them. We ask for no name, no e-mail address, there is no registration and there is no account. The only thing that takes you off the site is the donation link — what happens if you use it is set out below.",
           },
           {
             bg: "Останалото описва сайта такъв, какъвто е в тази версия на документа. Днес на страницата не работят инструменти за анализ на посещаемостта, следящи скриптове, пиксели, реклама, скриптове на трети страни и бисквитки. Ако някога добавим нещо, което се изпълнява в твоя браузър или оставя следа в него, то получава свой раздел тук и версията на този документ се сменя — в същото издание, преди промяната да стигне до теб, а не след нея.",
@@ -664,6 +664,27 @@ const DOC_BODIES = [
         ],
       },
       {
+        h: { bg: "Ако решиш да дариш", en: "If you choose to donate" },
+        p: [
+          {
+            bg: "Този сайт не приема плащания и няма форма за дарение. Има само връзка към Ko-fi — натиснеш ли я, излизаш от vyarno.bg. Ако не я натиснеш, нищо в този раздел не се отнася за теб.",
+            en: "This site takes no payments and has no donation form. What it has is a link to Ko-fi — follow it and you leave vyarno.bg. If you do not follow it, nothing in this section is about you.",
+          },
+          {
+            bg: "Ko-fi и Stripe са отделни дружества със свои условия и своя политика за поверителност; там си техен потребител, а не наш. Плащането минава изцяло през Stripe: данните на картата ти не преминават през този сайт и не стигат до нас под никаква форма.",
+            en: "Ko-fi and Stripe are separate companies with their own terms and their own privacy policies; there you are their user, not ours. The payment goes entirely through Stripe: your card details do not pass through this site and do not reach us in any form.",
+          },
+          {
+            bg: "От дарението получаваме името или псевдонима, който си въвел, електронната ти поща, съобщението, ако си оставил такова, сумата и датата. Основанието е самото дарение — то е договор, макар и безвъзмезден — и задължението ни да отчетем полученото пред данъчните органи. Пазим тези записи, докато текат данъчните срокове, които се отнасят за тях, и не ги ползваме за друго: не изграждаме профил, не пращаме бюлетин и не публикуваме списък на дарителите.",
+            en: "From the donation we receive the name or alias you entered, your e-mail address, your message if you left one, the amount and the date. The basis is the donation itself — a contract, gratuitous though it is — and our obligation to account to the tax authorities for what we receive. We keep those records for as long as the tax periods that apply to them run, and we use them for nothing else: we build no profile, we send no newsletter, and we publish no list of donors.",
+          },
+          {
+            bg: "Правата ти по ОРЗД важат и за този запис и се упражняват на същия адрес — contact@vyarno.bg. За това, което Ko-fi и Stripe държат за теб, се обърни към тях: ние нямаме достъп до профила ти при тях и не можем да го променим.",
+            en: "Your GDPR rights cover that record too and are exercised at the same address — contact@vyarno.bg. For what Ko-fi and Stripe hold about you, go to them: we have no access to your account with either and cannot change it.",
+          },
+        ],
+      },
+      {
         h: {
           bg: "Защо това е техническо, а не обещание",
           en: "Why this is enforced, not promised",
@@ -683,12 +704,12 @@ const DOC_BODIES = [
         h: { bg: "Твоите права", en: "Your rights" },
         p: [
           {
-            bg: "Администратор на лични данни по смисъла на ОРЗД (GDPR) е лицето, посочено в раздел „Идентификация“ по-долу. Правното основание за краткото журналиране на заявки е легитимният интерес да доставим страницата, да я защитим от злоупотреба и да преценим обобщено дали изобщо някой я ползва. Единственият получател на тези данни е доставчикът на хостинг, който поддържа машината и обработва журнала само по наше указание, по договор по чл. 28 от ОРЗД. Няма други получатели.",
-            en: "The data controller for the purposes of the GDPR is the person identified in the “Identification” section below. The legal basis for briefly logging requests is the legitimate interest in delivering the page, protecting it from abuse, and judging in aggregate whether anyone is using it at all. The only recipient of that data is the hosting provider that keeps the machine running, which processes the log solely on our instructions under a GDPR art. 28 contract. There are no other recipients.",
+            bg: "Администратор на лични данни по смисъла на ОРЗД (GDPR) е лицето, посочено в раздел „Идентификация“ по-долу. Правното основание за краткото журналиране на заявки е легитимният интерес да доставим страницата, да я защитим от злоупотреба и да преценим обобщено дали изобщо някой я ползва. Единственият получател на данните от журнала е доставчикът на хостинг, който поддържа машината и обработва журнала само по наше указание, по договор по чл. 28 от ОРЗД. Няма друг получател на журнала; за дарението важи разделът по-горе.",
+            en: "The data controller for the purposes of the GDPR is the person identified in the “Identification” section below. The legal basis for briefly logging requests is the legitimate interest in delivering the page, protecting it from abuse, and judging in aggregate whether anyone is using it at all. The only recipient of the log data is the hosting provider that keeps the machine running, which processes the log solely on our instructions under a GDPR art. 28 contract. The log has no other recipient; for a donation, the section above applies.",
           },
           {
-            bg: "ОРЗД ти дава право на достъп, коригиране, изтриване, ограничаване, преносимост и възражение. Тук те опират в необичайна практическа граница: освен журнала на заявките ние не държим нищо, свързано с теб, така че няма към какво да се приложат. Ако все пак искаш да упражниш някое от тях или просто да провериш какво имаме, пиши на contact@vyarno.bg — отговаряме в срок до един месец.",
-            en: "The GDPR gives you rights of access, rectification, erasure, restriction, portability and objection. Here they meet an unusual practical limit: apart from the request log we hold nothing connected to you, so there is nothing for them to attach to. If you would like to exercise one anyway, or simply to check what we have, write to contact@vyarno.bg — we answer within one month.",
+            bg: "ОРЗД ти дава право на достъп, коригиране, изтриване, ограничаване, преносимост и възражение. Тук те опират в необичайна практическа граница: освен журнала на заявките и — ако си дарил — записа за дарението, ние не държим нищо, свързано с теб, така че няма към какво друго да се приложат. Ако все пак искаш да упражниш някое от тях или просто да провериш какво имаме, пиши на contact@vyarno.bg — отговаряме в срок до един месец.",
+            en: "The GDPR gives you rights of access, rectification, erasure, restriction, portability and objection. Here they meet an unusual practical limit: apart from the request log and — if you have donated — the record of that donation, we hold nothing connected to you, so there is nothing else for them to attach to. If you would like to exercise one anyway, or simply to check what we have, write to contact@vyarno.bg — we answer within one month.",
           },
           {
             bg: "Ако смяташ, че обработваме данни неправомерно, имаш право на жалба до Комисията за защита на личните данни (данните са по-долу).",

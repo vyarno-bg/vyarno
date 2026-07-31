@@ -35,6 +35,7 @@ const FUNDING = resolve(ROOT, ".github/FUNDING.yml");
 const { SUPPORT_PLATFORMS, SUPPORT_COPY, livePlatforms, footerDonateLink } = await import(
   resolve(__dirname, "../src/lib/support.js")
 );
+const { DOCS } = await import(resolve(__dirname, "../src/lib/legal.js"));
 
 /**
  * The platform ids GitHub's funding file enables, from its uncommented lines.
@@ -196,6 +197,38 @@ test("the support copy names no amount and offers nothing in return", () => {
         "A donation must buy nothing: the moment it does, the service is " +
         "provided срещу възнаграждение and LEGAL_FORM.takesPayment has to " +
         "flip, which pulls in the rest of ЗЕТ чл. 4. See support.js rule 4."
+    );
+  }
+});
+
+test("an open channel is covered by the privacy notice, in both languages", () => {
+  // A live channel is a second processing operation, and the person it
+  // processes is the one who just gave money — the worst reader to be wrong
+  // about. The notice tells everyone else that apart from the request log
+  // nothing about them is held, and a donor makes that false: their name,
+  // e-mail, message, amount and date arrive from Ko-fi and Stripe.
+  //
+  // The trigger is `live`, not the existence of a donations paragraph, because
+  // the failure worth catching is the ordering one — opening an account is a
+  // two-line change in `support.js` and `FUNDING.yml`, and the notice is
+  // somewhere else entirely. `legal.js` requires a version bump in the same
+  // release as the behaviour it describes, never a release later, and nothing
+  // was holding that across this particular boundary.
+  if (livePlatforms().length === 0) return;
+
+  const privacy = DOCS.find((d) => d.id === "privacy");
+  assert.ok(privacy, "the privacy notice is gone from DOCS");
+  for (const lang of ["bg", "en"]) {
+    const text = privacy.sections
+      .flatMap((s) => [s.h[lang], ...s.p.map((p) => p[lang])])
+      .join("\n");
+    assert.match(
+      text,
+      lang === "bg" ? /дарен/iu : /donat/iu,
+      `a donation channel is live but the ${lang} privacy notice never ` +
+        `mentions a donation. What a donor's data is, where it comes from and ` +
+        `how long it is kept belongs in the notice, in the same release as ` +
+        `the channel — see legal.js LEGAL_VERSION.`
     );
   }
 });
