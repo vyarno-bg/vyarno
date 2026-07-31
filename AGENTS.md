@@ -59,7 +59,7 @@ you moving it is a finding, not noise. `make help` lists the rest;
 **Always, without asking:**
 
 - run `make check` before calling a change done, and read the render count —
-  14 is the pass condition, 0 means it found no browser to run in;
+  15 is the pass condition, 0 means it found no browser to run in;
 - move a test in the same commit as the code it protects;
 - update `docs/data-sources.md` in the same commit as any change to
   `pipeline/src/vyarno_pipeline/sources/*`;

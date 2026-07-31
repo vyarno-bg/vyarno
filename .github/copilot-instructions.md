@@ -5,7 +5,7 @@ commands, the layout, and the boundaries, including the ones that are never to
 be crossed. Read it first. `pipeline/AGENTS.md` and `site/AGENTS.md` cover the
 Python ingest and the Svelte SPA respectively.
 
-Run `make check` before calling a change done, and read the render count — 14
+Run `make check` before calling a change done, and read the render count — 15
 is the pass condition. Run bare, that suite skips and exits 0 where it finds no
 browser; `make check` fails instead of reporting green, and
 `npx playwright install chromium` in `site/` is the fix where nothing resolves.
