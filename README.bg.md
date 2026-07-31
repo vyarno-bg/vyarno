@@ -40,10 +40,17 @@ git clone https://github.com/vyarno-bg/vyarno.git && cd vyarno
 
 cd pipeline && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e . --no-deps
-pytest -q                                     # 287 теста, без интернет
+pytest -q                                     # 288 теста, без интернет
 
 cd ../site && npm install && npm run dev      # http://localhost:5173
 ```
+
+Под Windows виртуалната среда държи изпълнимите файлове в `Scripts\`, а
+интерпретаторът се казва `python`, не `python3`: `python -m venv .venv`, после
+`.\.venv\Scripts\Activate.ps1` — останалото е същото. CI покрива и трите
+операционни системи;
+[`docs/local-development.md`](./docs/local-development.md) §„On Windows“ дава
+пълния списък команди и четирите неща, на които стъпва.
 
 Сайтът чете JSON файловете, които вече са в `data/published/`, така че работи,
 без изобщо да вика външно API. За да пуснеш всичко, което пуска и CI — двата
@@ -179,7 +186,7 @@ flowchart LR
 
 | Набор | Пуска | Какво пази |
 |---|---|---|
-| `pytest` в `pipeline/` | 287 теста, без интернет | Конекторите, преобразуванията, шестте проверки, публикуваните файлове |
+| `pytest` в `pipeline/` | 288 теста, без интернет | Конекторите, преобразуванията, шестте проверки, публикуваните файлове |
 | `node:test` в `site/` | 315 теста | Всяка формула, всяка производна стойност, инвариантите на текста, правните твърдения, контраста по WCAG, HTTP заглавките |
 | `node:test` + Playwright | 15 теста | Готовата страница, заредена в истински браузър — единственият набор, който пуска самото приложение |
 

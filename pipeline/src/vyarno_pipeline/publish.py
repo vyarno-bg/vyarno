@@ -40,10 +40,24 @@ def write_payload(payload: dict, target_dir: Path, filename: str) -> Path:
     payroll table, the imot.bg scrape) cannot land on disk in a shape that
     differs from the ones the writers below produce. Every writer in this
     module ends here.
+
+    `newline="\\n"` because text mode otherwise translates every "\\n" to
+    `os.linesep`, which on Windows means the whole published tree is written
+    CRLF — the same eight files, byte-different, on a refresh run from a
+    different machine than the last one. `.gitattributes` normalises them back
+    on commit, so the damage is not in the repository but in everything that
+    reads the working tree before git does: the copy `site/scripts/copy-data.mjs`
+    puts into `dist/`, and any byte comparison against what was published last
+    time. One argument is cheaper than a rule about which machine may run a
+    refresh.
     """
     target_dir.mkdir(parents=True, exist_ok=True)
     out = target_dir / filename
-    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    out.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     return out
 
 

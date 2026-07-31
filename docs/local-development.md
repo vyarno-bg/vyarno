@@ -97,6 +97,84 @@ npm install                      # once after clone
 npm run dev                      # http://localhost:5173, hot reload
 ```
 
+### On Windows
+
+Two differences, both mechanical. A virtualenv puts its executables in
+`Scripts\` rather than `bin/`, and `python3` is a Microsoft Store stub that
+opens the Store instead of running anything — the interpreter is `python`. The
+Makefile knows both and switches on `OS`, so `make setup` and `make check` work
+under Git Bash, MSYS2 and WSL. GNU Make is not part of a Windows install, so
+without one of those, run the commands themselves. In PowerShell:
+
+```powershell
+cd pipeline
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+pip install -e . --no-deps
+pytest -q
+
+cd ..\site
+npm install
+npm run dev
+```
+
+`Activate.ps1 cannot be loaded because running scripts is disabled on this
+system` is PowerShell's execution policy rather than a broken venv. Either
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use
+`.\.venv\Scripts\activate.bat` from `cmd.exe`, which the policy does not cover.
+
+`make check`, by hand, from the repository root with the venv active:
+
+```powershell
+ruff check .
+ruff format --check .
+cd pipeline ; pytest -q          # 288
+cd ..\site
+npm run lint
+npm run check
+npm run verify:math              # 315
+npm run build:release
+npm run test:render              # 15
+```
+
+Read the last number. With no browser that suite skips and still exits 0, so
+`npx playwright install chromium` in `site\` is what turns a green 0 into a
+green 15. `node scripts/find-chromium.mjs` will also take a Chrome or an Edge
+already installed under `%ProgramFiles%` or `%LOCALAPPDATA%`.
+
+Four things in the repository make that block work, and each is load-bearing
+rather than tidy:
+
+- **`.gitattributes` checks every text file out as LF.** Git for Windows
+  defaults to `core.autocrlf=true`, and CRLF fails `prettier --check` and
+  `ruff format --check` on every file in the tree at once — a formatting error
+  reported against code the contributor never opened.
+- **`colorama` and `tzdata` are declared in `pyproject.toml` with no platform
+  marker**, so pip-compile keeps them on every platform. Both are Windows-only
+  needs — click and pytest want colorama, and `clock.py` cannot open
+  `ZoneInfo("Europe/Sofia")` without tzdata because Windows ships no system tz
+  database — and pip-compile drops a Windows-only dependency when it runs on
+  Linux. A lock with hashes then makes pip refuse the whole install over the
+  package it cannot verify, and a missing tzdata turns every import of `clock`
+  into a collection error.
+- **`build:release` goes through `scripts/release-build.mjs`.** Setting an
+  environment variable by prefixing the command is POSIX shell syntax; cmd.exe
+  reads it as the name of a program.
+- **`publish.write_payload` passes `newline="\n"`.** Text mode translates to
+  `os.linesep`, so a refresh run from Windows would write all eight payloads
+  CRLF — invisible in the diff, because `.gitattributes` normalises them back,
+  and visible to everything that reads the working tree before git does.
+
+The `windows` job in CI runs that block on every push. It is there because all
+four of those are the kind of thing that only breaks on a platform nobody
+tests, and a Linux-only CI cannot contradict a Linux-only assumption.
+
+One thing it does not pin: the interpreter. CI runs 3.11 and `pyproject.toml`
+asks for 3.11 or newer, so a local 3.13 or 3.14 is fine and is not what CI
+resolved the lock against. If a pin behaves differently there, reproduce on
+3.11 before concluding the pin is wrong.
+
 ## Updating dependencies
 
 Both ecosystems are locked, and Dependabot opens one grouped pull request per

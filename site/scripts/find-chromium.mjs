@@ -45,23 +45,66 @@ const BROWSER_FILENAMES = new Set([
 ]);
 
 /**
- * Where a system package manager puts one. Distribution and macOS locations
- * only: anything Playwright manages itself is found by walking its own
- * directory, and anything on `PATH` is found by resolving `PATH`.
+ * Where a system package manager puts one, per platform.
+ *
+ * Anything Playwright manages itself is found by walking its own directory and
+ * anything on `PATH` is found by resolving `PATH`, so this list is only for
+ * browsers installed where neither looks.
+ *
+ * Windows needs its own entries and needs them built from the environment: the
+ * program-files directories are localised and relocatable, so `C:\Program
+ * Files` is a guess and `%ProgramFiles%` is the answer. A 32-bit Chrome on a
+ * 64-bit machine lands in `%ProgramFiles(x86)%` and a per-user install lands in
+ * `%LOCALAPPDATA%`, which is where Chrome puts itself when the installer runs
+ * without administrator rights — the common case on a managed work laptop.
+ *
+ * **Edge counts.** It is Chromium with a different shell, Playwright drives it
+ * through the same protocol, and it is on every Windows machine by default —
+ * which on the one platform where a contributor is least likely to have run
+ * `npx playwright install` is the difference between the render suite running
+ * and the render suite being skipped. Every candidate here is still proved by
+ * launching it, so an Edge that cannot be driven loses to the next entry.
  */
-const SYSTEM_PATHS = [
-  "/usr/bin/chromium",
-  "/usr/bin/chromium-browser",
-  "/usr/bin/google-chrome",
-  "/usr/bin/google-chrome-stable",
-  "/usr/local/bin/chromium",
-  "/snap/bin/chromium",
-  "/Applications/Chromium.app/Contents/MacOS/Chromium",
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-];
+const WINDOWS_ROOTS = [
+  process.env.ProgramFiles,
+  process.env["ProgramFiles(x86)"],
+  process.env.LOCALAPPDATA,
+].filter(Boolean);
 
-/** Names worth resolving against `PATH`, for a browser installed anywhere else. */
-const PATH_NAMES = ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"];
+const SYSTEM_PATHS =
+  process.platform === "win32"
+    ? WINDOWS_ROOTS.flatMap((root) => [
+        join(root, "Google", "Chrome", "Application", "chrome.exe"),
+        join(root, "Chromium", "Application", "chrome.exe"),
+        join(root, "Microsoft", "Edge", "Application", "msedge.exe"),
+      ])
+    : [
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/local/bin/chromium",
+        "/snap/bin/chromium",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      ];
+
+/**
+ * Names worth resolving against `PATH`, for a browser installed anywhere else.
+ *
+ * The `.exe` forms are Windows-only and harmless elsewhere — a POSIX machine
+ * has no `chrome.exe` to find, and listing them unconditionally costs one
+ * `stat` per PATH entry against the alternative of a second platform branch.
+ */
+const PATH_NAMES = [
+  "chromium",
+  "chromium-browser",
+  "google-chrome",
+  "google-chrome-stable",
+  "chrome.exe",
+  "chromium.exe",
+  "msedge.exe",
+];
 
 function isExecutableFile(path) {
   try {

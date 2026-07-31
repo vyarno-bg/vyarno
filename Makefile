@@ -32,15 +32,39 @@
 #   make check     everything CI runs
 #   make help      the full list
 
-SHELL := /bin/bash
-PY := pipeline/.venv/bin/python
-PYTEST := pipeline/.venv/bin/pytest
+# Where a virtualenv puts its executables, and what the interpreter that builds
+# it is called. Both differ on Windows — `Scripts` rather than `bin`, and
+# `python` rather than `python3`, which on Windows is a Store stub that opens
+# the Microsoft Store instead of running anything.
+#
+# `OS` is set to `Windows_NT` by Windows itself, on every version since NT, and
+# is absent everywhere else. It is the one variable a Makefile can read before
+# it knows which shell it has.
+#
+# Under MSYS2, Git Bash or Cygwin, `make` runs POSIX paths against a POSIX
+# shell even though the host is Windows, so those need the `bin` layout. They
+# announce themselves in `MSYSTEM`; native Windows `make` does not set it.
+ifeq ($(OS)$(MSYSTEM),Windows_NT)
+  VENV_BIN := pipeline/.venv/Scripts
+  BOOTSTRAP_PY := python
+else
+  # Only reached on a POSIX shell, so `bash` is a safe thing to require. It is
+  # required rather than assumed: `make` defaults to `/bin/sh`, and a recipe
+  # written against bash that runs under dash fails in ways that read as a
+  # broken toolchain rather than a wrong shell.
+  SHELL := /bin/bash
+  VENV_BIN := pipeline/.venv/bin
+  BOOTSTRAP_PY := python3
+endif
+
+PY := $(VENV_BIN)/python
+PYTEST := $(VENV_BIN)/pytest
 # Ruff comes from the venv `make setup` built, not from PATH. CI installs the
 # pipeline into the job's own environment so a bare `ruff` resolves there, but
-# after `make setup` it lives in pipeline/.venv/bin and is NOT on a
-# contributor's PATH — `make lint` failed with "ruff: command not found" for
-# anyone who had not also installed it globally.
-RUFF := pipeline/.venv/bin/ruff
+# after `make setup` it lives in the venv and is NOT on a contributor's PATH —
+# `make lint` failed with "ruff: command not found" for anyone who had not also
+# installed it globally.
+RUFF := $(VENV_BIN)/ruff
 
 .DEFAULT_GOAL := help
 .PHONY: help setup lock check lint test build browser render coverage clean
@@ -57,7 +81,7 @@ help: ## Show this list
 	@echo "  rather than reporting green over a suite that skipped."
 
 setup: ## Create the Python venv and install both toolchains
-	python3 -m venv pipeline/.venv
+	$(BOOTSTRAP_PY) -m venv pipeline/.venv
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet -r pipeline/requirements-dev.txt
 	$(PY) -m pip install --quiet -e pipeline --no-deps
@@ -102,6 +126,18 @@ lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@# is generated in a throwaway venv holding a pip old enough for it, rather
 	@# than by pinning the pipeline venv's pip backwards for everyone. Installing
 	@# from the lock works on any modern pip — only generating it needs this.
+	@#
+	@# POSIX only, and that is a constraint rather than an oversight. pip-compile
+	@# resolves for the machine it runs on, so a lock generated on Windows drops
+	@# any dependency whose marker is false there — the mirror image of the bug
+	@# that put `colorama` in `pyproject.toml` unconditionally. Generating on
+	@# Linux keeps the file the shape CI installs from. Regenerate there, or in
+	@# WSL, and commit the result.
+ifeq ($(OS)$(MSYSTEM),Windows_NT)
+	@echo "'make lock' generates the lock for the platform it runs on, so it" >&2
+	@echo "runs on Linux or macOS only — see the comment in this target." >&2
+	@exit 1
+else
 	@rm -rf .lockenv
 	@python3 -m venv .lockenv
 	@.lockenv/bin/pip install --quiet "pip<25" && .lockenv/bin/pip install --quiet pip-tools
@@ -112,6 +148,7 @@ lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@rm -rf .lockenv
 	@echo "Regenerated pipeline/requirements.txt and requirements-dev.txt."
 	@echo "Review the diff, then 'make setup' to install the new pins."
+endif
 
 check: lint test render ## Everything CI runs, in CI's order
 	@echo
@@ -125,4 +162,7 @@ coverage: $(PYTEST) ## Measure both suites; see docs/testing-strategy.md for wha
 		| tail -n 40 || true
 
 clean: ## Remove build output and the venv
-	rm -rf site/dist site/node_modules pipeline/.venv site/.sourcemaps
+	@# Node rather than `rm -rf`, which cmd.exe does not have. `force` so a
+	@# path that is already gone is not an error — `clean` is run to reach a
+	@# state, not to delete four specific directories.
+	@node -e "for (const p of ['site/dist','site/node_modules','pipeline/.venv','site/.sourcemaps']) require('node:fs').rmSync(p, {recursive: true, force: true})"

@@ -39,10 +39,17 @@ git clone https://github.com/vyarno-bg/vyarno.git && cd vyarno
 
 cd pipeline && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e . --no-deps
-pytest -q                                     # 287 tests, offline
+pytest -q                                     # 288 tests, offline
 
 cd ../site && npm install && npm run dev      # http://localhost:5173
 ```
+
+On Windows the venv puts its executables in `Scripts\` and the interpreter is
+`python`, not `python3`: `python -m venv .venv` then
+`.\.venv\Scripts\Activate.ps1`, and the rest is identical. Linux, macOS and
+Windows are all covered by CI —
+[`docs/local-development.md`](./docs/local-development.md) §"On Windows" has the
+full block and the four things that make it work.
 
 The site reads the JSONs already committed under `data/published/`, so it runs
 without ever touching an upstream API. To run everything CI runs — both suites,
@@ -174,7 +181,7 @@ What is verified, and by what:
 
 | Suite | Runs | What it protects |
 |---|---|---|
-| `pytest` in `pipeline/` | 287 tests, offline | Connectors, transforms, the six validation gates, the published payloads |
+| `pytest` in `pipeline/` | 288 tests, offline | Connectors, transforms, the six validation gates, the published payloads |
 | `node:test` in `site/` | 315 tests | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
 | `node:test` + Playwright | 15 tests | The built page, loaded in a real browser — the only suite that runs the app |
 

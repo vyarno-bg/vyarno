@@ -39,7 +39,7 @@ from pathlib import Path
 
 import pytest
 
-from vyarno_pipeline import clock
+from vyarno_pipeline import clock, publish
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data" / "published"
@@ -102,6 +102,37 @@ def test_every_published_file_ends_in_a_newline() -> None:
     """
     naked = sorted(p.name for p in DATA_DIR.glob("*.json") if not p.read_bytes().endswith(b"\n"))
     assert not naked, f"published without a final newline: {naked}"
+
+
+def test_write_payload_writes_lf_on_every_platform() -> None:
+    """The published tree is LF wherever the refresh was run from.
+
+    Text mode translates "\\n" to `os.linesep`, so `write_payload` without an
+    explicit `newline` writes CRLF on Windows and every one of the eight
+    payloads comes out byte-different from the same numbers published on Linux.
+    `.gitattributes` normalises them back on commit, which is what makes this
+    worth a test rather than obvious: the repository stays clean while the
+    working tree does not, and what reads the working tree — `copy-data.mjs`
+    filling `dist/`, any byte comparison against the previous publish — sees
+    the difference the diff never shows.
+
+    On a POSIX box this passes whatever `write_payload` does, because there
+    `os.linesep` is already "\\n". The Windows CI job is what gives it teeth,
+    and that is the reason the job exists.
+    """
+    payload = {"note": "кирилица", "value": 1}
+    written = publish.write_payload(payload, DATA_DIR.parent / "_tmp_newline_check", "probe.json")
+    try:
+        raw = written.read_bytes()
+        assert b"\r\n" not in raw, (
+            "write_payload produced CRLF. Text mode translates to os.linesep — "
+            'pass newline="\\n" so the published shape does not depend on the '
+            "machine the refresh ran on."
+        )
+        assert "кирилица" in raw.decode("utf-8"), "write_payload did not write UTF-8"
+    finally:
+        written.unlink()
+        written.parent.rmdir()
 
 
 def test_published_hicp_categories_does_not_contain_partial_year_keys():
