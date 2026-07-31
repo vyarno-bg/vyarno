@@ -70,7 +70,7 @@ PYTEST := pipeline/.venv/bin/pytest
 RUFF := pipeline/.venv/bin/ruff
 
 .DEFAULT_GOAL := help
-.PHONY: help setup lock check fmt lint test build browser render coverage clean
+.PHONY: help setup lock check fmt lint test build render coverage clean
 
 help: ## Show this list
 	@echo "Вярно — make targets:"
@@ -103,33 +103,25 @@ fmt: $(PYTEST) ## Apply what `lint` only checks — ruff format, prettier, eslin
 	$(RUFF) format .
 	cd site && npm run lint:fix
 
-lint: $(PYTEST) ## Ruff, ESLint, Prettier, svelte-check
-	$(RUFF) check .
-	$(RUFF) format --check .
-	cd site && npm run lint
-	cd site && npm run check
+# The four targets below delegate to `site/scripts/check-all.mjs`, which is the
+# same sequence reachable as `npm run check:all` from a machine with no `make`.
+#
+# One list, two entry points. Keeping the commands here as well would be two
+# copies of the same sequence, and the copy the maintainer does not use is the
+# one that goes stale — silently, because whoever changed the other had no
+# reason to open it. The script carries the reasoning for the order and for the
+# two deliberate differences from CI; this file carries the shorthand.
+lint: ## Ruff, ESLint, Prettier, svelte-check
+	@node site/scripts/check-all.mjs lint
 
-test: $(PYTEST) ## Both offline suites — pytest and node:test
-	$(PYTEST) -q --rootdir pipeline pipeline/tests
-	cd site && npm run verify:math
+test: ## Both offline suites — pytest and node:test
+	@node site/scripts/check-all.mjs test
 
 build: ## Production build of the site
 	cd site && npm run build:release
 
-# Resolve a browser BEFORE `build`, so a machine with none is told in a second
-# rather than after a production build it is about to throw away.
-browser:
-	@cd site && node scripts/find-chromium.mjs >/dev/null
-
-render: browser build ## Load the built page in a browser and assert it rendered
-	@# `npm run test:render` skips rather than fails with no browser, on purpose:
-	@# a contributor without one is not blocked. This target promises something
-	@# stronger — its name says the page was loaded — and `make check` inherits
-	@# that promise, which is the whole point. A check that reports green over
-	@# fourteen tests that never ran is worse than one that fails, because the
-	@# only suite that runs the app is the only one that can see a page which
-	@# throws on render.
-	cd site && npm run test:render
+render: ## Build, then load the built page in a browser and assert it rendered
+	@node site/scripts/check-all.mjs render
 
 lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@# pip-compile reaches into pip's internals, and the current release (7.6.0)
@@ -137,7 +129,6 @@ lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@# is generated in a throwaway venv holding a pip old enough for it, rather
 	@# than by pinning the pipeline venv's pip backwards for everyone. Installing
 	@# from the lock works on any modern pip — only generating it needs this.
-	@#
 	@#
 	@# Regenerate this on Linux, and in WSL rather than in Git Bash if you are on
 	@# Windows. pip-compile resolves for the machine it runs on, so a lock built
@@ -156,9 +147,11 @@ lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@echo "Regenerated pipeline/requirements.txt and requirements-dev.txt."
 	@echo "Review the diff, then 'make setup' to install the new pins."
 
-check: lint test render ## Everything CI runs, in CI's order
-	@echo
-	@echo "All green."
+check: ## Everything CI runs, in CI's order
+	@# One process rather than three targets, so the sequence and its ordering
+	@# live in the script and not half here. `npm run check:all` from site/ is
+	@# the identical run for anyone without make.
+	@node site/scripts/check-all.mjs
 
 coverage: $(PYTEST) ## Measure both suites; see docs/testing-strategy.md for what is uncovered and why
 	$(PYTEST) -q --rootdir pipeline pipeline/tests \

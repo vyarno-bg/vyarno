@@ -20,6 +20,7 @@ below ends at the doc that carries the detail.
 ```sh
 make setup                                   # venv + npm, once after cloning
 make check                                   # everything CI runs, in CI's order
+cd site && npm run check:all                 # the same run, without make
 ```
 
 `make check` is `lint` → `test` → `render`:

@@ -54,7 +54,9 @@ full block and the six things that make it work.
 The site reads the JSONs already committed under `data/published/`, so it runs
 without ever touching an upstream API. To run everything CI runs — both suites,
 the linters, the production build and the browser smoke test — use `make check`
-from the repository root (`make help` lists the targets).
+from the repository root (`make help` lists the targets), or
+`cd site && npm run check:all`, which is the same sequence for a machine with no
+`make`.
 
 ![The calculator: net pay and basket on the left, the reader's own inflation rate and its per-category decomposition on the right](./docs/img/screenshot.png)
 
