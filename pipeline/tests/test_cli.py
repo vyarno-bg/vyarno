@@ -113,7 +113,9 @@ def test_published_cp12_is_insurance_and_cp13_exists(tmp_path: Path, cubes):
     assert _run(tmp_path, "--skip-link-check").exit_code == 0
     cats = {
         c["cp_code"]: c
-        for c in json.loads((tmp_path / "hicp_categories.json").read_text(encoding="utf-8"))["categories"]
+        for c in json.loads((tmp_path / "hicp_categories.json").read_text(encoding="utf-8"))[
+            "categories"
+        ]
     }
 
     cp12 = cats["CP12"]
