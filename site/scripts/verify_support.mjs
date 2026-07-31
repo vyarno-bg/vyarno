@@ -23,7 +23,7 @@
  *     возмездна and pulls in the rest of ЗЕТ чл. 4.
  */
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -32,10 +32,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../..");
 const FUNDING = resolve(ROOT, ".github/FUNDING.yml");
 
+// `await import()` takes a URL, not a path. On POSIX `resolve()` returns a
+// path the loader happens to accept; on Windows it is `C:\…` and the loader
+// rejects it with `ERR_UNSUPPORTED_ESM_URL_SCHEME`. `pathToFileURL` is the
+// documented way to bridge the two — it is a one-liner on POSIX and the only
+// portable answer on Windows.
 const { SUPPORT_PLATFORMS, SUPPORT_COPY, livePlatforms, footerDonateLink } = await import(
-  resolve(__dirname, "../src/lib/support.js")
+  pathToFileURL(resolve(__dirname, "../src/lib/support.js")).href
 );
-const { DOCS } = await import(resolve(__dirname, "../src/lib/legal.js"));
+const { DOCS } = await import(pathToFileURL(resolve(__dirname, "../src/lib/legal.js")).href);
 
 /**
  * The platform ids GitHub's funding file enables, from its uncommented lines.

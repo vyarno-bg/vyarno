@@ -31,7 +31,7 @@
  */
 import { mkdir, readdir, rename, rm, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve, join, relative } from "node:path";
+import { dirname, resolve, join, relative, sep } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, "../dist");
@@ -67,7 +67,12 @@ await mkdir(MAPS, { recursive: true });
 
 const maps = all.filter((f) => f.endsWith(".map"));
 for (const m of maps) {
-  const dest = join(MAPS, relative(DIST, m).replaceAll("/", "__"));
+  // `relative()` returns platform-native separators (`\` on Windows, `/` on
+  // POSIX); `replaceAll("/", "__")` only sees POSIX. Collapsing both means the
+  // destination is a single filename under MAPS, which is what `rename` needs
+  // on Windows — the destination directory exists, but nesting `assets\` under
+  // it would require a second `mkdir` per source subdirectory.
+  const dest = join(MAPS, relative(DIST, m).replaceAll(sep, "__"));
   await rename(m, dest);
 }
 
