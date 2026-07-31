@@ -100,6 +100,24 @@ def _trim(payload: dict, dim: str, keep_codes: set[str], keep_times: list[str]) 
     }
 
 
+def _write(name: str, payload: dict) -> None:
+    """Write one fixture, in the shape the committed ones already have.
+
+    `encoding` and `newline` are both explicit because neither default is the
+    same on every machine. Text mode writes in the locale encoding, which on a
+    Bulgarian Windows box is cp1251 and turns the Cyrillic category labels
+    `ensure_ascii=False` preserves into mojibake; and it translates "\\n" to
+    `os.linesep`, which rewrites all four files CRLF. Either one makes a
+    regenerated fixture differ from the committed one in every line while the
+    data inside it is identical — a diff nobody can review.
+    """
+    (HERE / name).write_text(
+        json.dumps(payload, ensure_ascii=False, indent=1) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
 def main() -> None:
     with httpx.Client(timeout=180.0, follow_redirects=True) as client:
 
@@ -116,21 +134,13 @@ def main() -> None:
             for c in iw["dimension"]["coicop18"]["category"]["index"]
             if re.fullmatch(r"CP\d{2,3}", c)
         }
-        (HERE / "eurostat_hicp_iw_bg.json").write_text(
-            json.dumps(_trim(iw, "coicop18", keep, ["2026"]), ensure_ascii=False, indent=1) + "\n"
-        )
+        _write("eurostat_hicp_iw_bg.json", _trim(iw, "coicop18", keep, ["2026"]))
 
         rch = get("prc_hicp_minr", unit="RCH_A", lastTimePeriod=2)
-        (HERE / "eurostat_hicp_rch_bg.json").write_text(
-            json.dumps(_trim(rch, "coicop18", keep, RATE_PERIODS), ensure_ascii=False, indent=1)
-            + "\n"
-        )
+        _write("eurostat_hicp_rch_bg.json", _trim(rch, "coicop18", keep, RATE_PERIODS))
 
         i15 = get("prc_hicp_minr", unit="I15", sinceTimePeriod="2020-01")
-        (HERE / "eurostat_hicp_i15_bg.json").write_text(
-            json.dumps(_trim(i15, "coicop18", keep, INDEX_PERIODS), ensure_ascii=False, indent=1)
-            + "\n"
-        )
+        _write("eurostat_hicp_i15_bg.json", _trim(i15, "coicop18", keep, INDEX_PERIODS))
 
         inw = get("prc_hicp_inw", lastTimePeriod=1)
         keep_v1 = {"CP00"} | {
@@ -138,9 +148,7 @@ def main() -> None:
             for c in inw["dimension"]["coicop"]["category"]["index"]
             if re.fullmatch(r"CP\d{2}", c)
         }
-        (HERE / "eurostat_hicp_inw_v1_bg.json").write_text(
-            json.dumps(_trim(inw, "coicop", keep_v1, ["2025"]), ensure_ascii=False, indent=1) + "\n"
-        )
+        _write("eurostat_hicp_inw_v1_bg.json", _trim(inw, "coicop", keep_v1, ["2025"]))
 
     print("wrote 4 fixtures to", HERE)
 

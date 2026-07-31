@@ -1,0 +1,49 @@
+# Line endings, decided here rather than by whoever cloned the repository.
+#
+# Git on Windows defaults to `core.autocrlf=true`, which rewrites every text
+# file to CRLF on checkout. Nothing about that is visible until a check runs:
+# Prettier's `endOfLine` defaults to "lf" and `ruff format` normalises to LF
+# too, so `npm run lint` fails on every file in the tree at once, reporting a
+# formatting problem in code the contributor has not touched. The honest fix is
+# to stop the rewrite rather than to relax both formatters, because the
+# formatters are right — this repository is LF and the published bundle is LF.
+#
+# `text=auto eol=lf` means: decide text-vs-binary by content, and check text
+# out as LF on every platform. The working tree then matches the index, which
+# is what makes a Windows clone lint clean.
+* text=auto eol=lf
+
+# Binary, stated rather than sniffed. The font files are the ones that matter:
+# each is its publisher's own build byte for byte, and `docs/legal.md` §"Bundled
+# fonts" turns on that being true — OFL 1.1 condition 3 forbids a Reserved Font
+# Name on a modified version, and a newline conversion is a modification. A
+# corrupted woff2 also fails silently, as a page that renders in a fallback
+# face rather than as an error.
+*.woff2 binary
+*.woff   binary
+*.ttf    binary
+*.otf    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.ico    binary
+*.pdf    binary
+*.xlsx   binary
+*.xls    binary
+
+# Committed data. LF, and diffed as text — `data/published/` is reviewed by
+# reading its diff, which is the whole point of committing it.
+*.json text eol=lf
+
+# The vendored fonts and the licence text beside them: left exactly as their
+# publisher shipped them, newlines included.
+#
+# `site/public/fonts/ibm-plex/OFL.txt` is committed CRLF because that is how IBM
+# ship it, and the rule above would rewrite it on the next checkout. The
+# rewrite would not breach the OFL — condition 3's Reserved Font Name applies to
+# a Modified Version of the font, not to the licence file — but `docs/legal.md`
+# §"Bundled fonts" rests on every file in these directories being the
+# publisher's own, verified by `cmp` against the npm package, and a normalised
+# copy is one that no longer compares equal. The check that proves the claim is
+# worth more than consistent newlines in a file nobody edits.
+site/public/fonts/** -text

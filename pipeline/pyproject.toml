@@ -32,7 +32,37 @@ dependencies = [
     "pydantic>=2.6",
     "click>=8.1",
     "openpyxl>=3.1",
-]  
+    # Declared here although nothing imports it, and declared WITHOUT the
+    # `platform_system == "Windows"` marker click and pytest attach to it.
+    #
+    # `make lock` runs pip-compile, which resolves for the machine it runs on
+    # and drops a dependency whose marker is false there. The lock is generated
+    # on Linux, so a Windows-only transitive dependency never enters the file —
+    # and because the file carries hashes, pip turns on --require-hashes and
+    # refuses the whole install rather than skipping the one package it cannot
+    # verify. `pip install -r requirements-dev.txt` therefore fails outright on
+    # Windows with "colorama ... not pinned with ==", naming a package nobody
+    # asked for.
+    #
+    # An unconditional declaration is what survives regeneration: pip-compile
+    # keeps it on every platform, so the lock installs everywhere. The cost is
+    # 20 kB of inert wheel on Linux and macOS, where click and pytest guard the
+    # import by platform and never load it. A marker here would be tidier and
+    # would vanish the next time somebody runs `make lock`.
+    "colorama>=0.4.6",
+    # Same shape as colorama and a harder failure. `clock.py` opens
+    # `ZoneInfo("Europe/Sofia")` at import, and Windows ships no system tz
+    # database — zoneinfo falls back to this package and raises
+    # ZoneInfoNotFoundError without it, so every module that reaches `clock`
+    # fails to import and pytest cannot even collect. Linux and macOS read
+    # /usr/share/zoneinfo and never need it, which is exactly why a lock
+    # generated there does not carry it.
+    #
+    # Unconditional for the same reason as colorama: a marker is correct until
+    # the next `make lock`. On a POSIX box zoneinfo prefers the system database
+    # anyway, so an installed tzdata changes no behaviour and no timestamp.
+    "tzdata>=2025.1",
+]
 
 [project.optional-dependencies]
 dev = [

@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build && node scripts/copy-data.mjs && node scripts/gen-sitemap.mjs && node scripts/gen-version.mjs && node scripts/strip-sourcemaps.mjs && node scripts/check-identity.mjs",
-    "build:release": "VYARNO_RELEASE=1 npm run build",
+    "build:release": "node scripts/release-build.mjs",
     "preview": "vite preview",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint . --fix && prettier --write .",

@@ -44,6 +44,11 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
+On Windows: `python -m venv .venv` and `.\.venv\Scripts\Activate.ps1`, and use
+Git Bash or WSL if you want `make`. Everything else is the same, and CI runs the
+whole thing on `windows-latest` so it stays that way —
+[`docs/local-development.md`](./docs/local-development.md) §"On Windows".
+
 Before opening a pull request, run what CI runs:
 
 ```bash
