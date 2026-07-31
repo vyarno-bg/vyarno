@@ -135,7 +135,7 @@ for (const stage of stages) {
 console.log(
   "\nAll green." +
     (stages.includes("render")
-      ? "\nRead the render count: 20 is the pass condition, and a green 0 means" +
+      ? "\nRead the render count: 25 is the pass condition, and a green 0 means" +
         "\nit found no browser rather than that it passed."
       : "")
 );

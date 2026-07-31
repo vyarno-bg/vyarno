@@ -136,7 +136,9 @@ test("the calculator renders with no console errors", { skip }, async () => {
       ["skip link", "a.skip"],
       ["header", "header.site"],
       ["as-of strip", ".data-strip"],
-      ["inputs card", ".m-grid > .m-card"],
+      ["pay field", ".m-grid .m-pay"],
+      ["inputs card", ".m-grid .m-inputs"],
+      ["results card shell", ".m-grid .m-results"],
       ["basket sliders", "#sliders .cat"],
       ["results card", ".r-big"],
       ["result rows", ".r-row"],
@@ -498,6 +500,14 @@ test("the disclosure chip reads as a control, and not as a verdict", { skip }, a
   // interaction. A resting chip painted in a semantic verdict colour puts two
   // meanings of one colour beside each other.
   await withApp(async (page, errors) => {
+    // A salary first, because the payslip breakdown is the chip a reader
+    // actually meets and it waits for one — until then the only `.disclose` on
+    // the page is the formula block nested inside the closed explainer, whose
+    // summary measures 0px because its ancestor is not rendered. Measuring
+    // that one asserts nothing about a control anybody can tap.
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+
     const chip = page.locator("summary.disclose").first();
     // Same reason as the strip test above. This one degraded twice over: the
     // early return skipped the style assertions, and the caret check below
@@ -672,24 +682,19 @@ test(
 );
 
 test("the route from the headline to the salary field lands on it", { skip }, async () => {
-  // The only link between the two cards on a phone, where nothing else on the
-  // page connects them. It has to focus rather than merely scroll: focus is
-  // what raises the keyboard, so one tap leaves the reader typing instead of
-  // hunting.
+  // The link from the figures to the field they are priced off. It has to
+  // focus rather than merely scroll: focus is what raises the phone keyboard,
+  // so one tap leaves the reader typing instead of hunting.
+  //
+  // It used to be the ONLY connection between the two, across 3,100px of
+  // phone. The pay field now sits above the results, so the journey is short
+  // and the button is a convenience rather than a lifeline — which is a reason
+  // to keep testing it and no reason to assert on the distance. The old
+  // version required a gap of 1,500px before it would test anything, so
+  // shortening the page would have quietly turned the test off.
   await withApp(async (page, errors) => {
     await page.setViewportSize({ width: 390, height: 664 });
     await page.waitForTimeout(200);
-
-    const gap = await page.evaluate(() => {
-      const field = document.getElementById("inSalary");
-      const big = document.querySelector(".r-big");
-      return Math.round(field.getBoundingClientRect().top - big.getBoundingClientRect().top);
-    });
-    assert.ok(
-      gap > 1500,
-      `the salary field is ${gap}px below the headline figure — if the two cards ` +
-        "have come back together on a phone, this route is no longer the thing being tested"
-    );
 
     await page.locator(".m-card .placeholder button").click();
     await page.waitForTimeout(300);
@@ -784,6 +789,156 @@ test("every verify link is drawn the same, in both cards", { skip }, async () =>
       "nowrap",
       "the code and its arrow can break across lines"
     );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("a phone is asked before it is told", { skip }, async () => {
+  // The order below 820px is ask, answer, refine: the pay field, then the
+  // results, then everything the reader can leave alone. It used to be answer
+  // then everything, which put the one input the whole page is priced off
+  // 2,969px down a 6,670px page — five screens past the figures computed from
+  // it.
+  //
+  // Asserted as an ordering rather than against pixel numbers, which move with
+  // every copy edit. What must hold is the sequence, and that the field is
+  // reachable without a scroll on the shortest phone we design for.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 390, height: 664 });
+    await page.waitForTimeout(300);
+
+    const y = await page.evaluate(() => {
+      const top = (sel) =>
+        document.querySelector(sel)?.getBoundingClientRect().top + window.scrollY;
+      return { pay: top(".m-pay"), results: top(".m-results"), inputs: top(".m-inputs") };
+    });
+    assert.ok(
+      y.pay < y.results && y.results < y.inputs,
+      `the phone order is not ask/answer/refine: pay=${y.pay} results=${y.results} inputs=${y.inputs}`
+    );
+    assert.ok(
+      y.pay < 664,
+      `the salary field is ${Math.round(y.pay)}px down — off the first screen of a 664px phone`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("a portrait tablet gets two columns, not the phone stack", { skip }, async () => {
+  // 820px is an iPad in portrait, and at 880 it was taking the phone layout —
+  // salary field 2,465px down a screen with room for both columns side by
+  // side. The breakpoint is the boundary, so it is checked from both sides:
+  // one column below it, two above, and no width in between where the cards
+  // overlap or the page scrolls sideways.
+  await withApp(async (page, errors) => {
+    for (const [width, columns] of [
+      [390, 1],
+      [820, 1],
+      [821, 2],
+      [1280, 2],
+    ]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.waitForTimeout(250);
+      const side = await page.evaluate(() => {
+        const pay = document.querySelector(".m-pay").getBoundingClientRect();
+        const res = document.querySelector(".m-results").getBoundingClientRect();
+        // Two columns when the results card starts to the right of the pay
+        // card's right edge; one when it sits below it.
+        return {
+          sideBySide: res.left >= pay.right - 1,
+          overlap: res.left < pay.right - 1 && res.top < pay.bottom - 1,
+        };
+      });
+      assert.equal(
+        side.sideBySide ? 2 : 1,
+        columns,
+        `at ${width}px the layout is ${side.sideBySide ? 2 : 1} column(s), expected ${columns}`
+      );
+      assert.ok(!side.overlap, `the cards overlap at ${width}px`);
+      const scrollW = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert.ok(scrollW <= width, `the page is ${scrollW}px wide in a ${width}px viewport`);
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the two input cards read as one on a wide screen", { skip }, async () => {
+  // The pay field is its own card so a phone can put the results between it
+  // and the rest of the inputs. On a desktop that split has no reason to be
+  // visible, so the seam is closed: no gap, and the join drawn once.
+  //
+  // The gap is the assertion that matters. The first attempt placed the two in
+  // separate grid rows with the results card spanning both — the spanning card
+  // sized the rows, `align-items: start` parked each input card at the top of
+  // one far taller than it, and a 28px hole opened between two cards that are
+  // supposed to look like one.
+  await withApp(async (page, errors) => {
+    const seam = await page.evaluate(() => {
+      const pay = document.querySelector(".m-pay").getBoundingClientRect();
+      const inputs = document.querySelector(".m-inputs").getBoundingClientRect();
+      return {
+        gap: Math.round(inputs.top - pay.bottom),
+        leftAligned: Math.abs(inputs.left - pay.left) < 1,
+      };
+    });
+    assert.ok(
+      seam.gap <= 1,
+      `there is a ${seam.gap}px hole between the pay card and the inputs card on a desktop`
+    );
+    assert.ok(seam.leftAligned, "the two input cards do not share a left edge");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("a narrow column folds the ranked table and still adds up", { skip }, async () => {
+  // Eight rows is about a screen and a half of table between the headline and
+  // «в джоба» on a phone. A narrow list draws five and folds the rest, and the
+  // fold is only safe because `rankedSplit` puts what it cut into the
+  // remainder — so the fold is checked together with the remainder that makes
+  // the lead sentence true, never on its own.
+  await withApp(async (page, errors) => {
+    const rows = () => page.locator(".rank .rankrow").count();
+    const wide = await rows();
+    assert.ok(wide > 5, `a desktop draws ${wide} ranked rows, so the fold cannot be observed`);
+
+    await page.setViewportSize({ width: 390, height: 664 });
+    await page.waitForTimeout(350);
+    const narrow = await rows();
+    assert.ok(narrow < wide, `a phone draws ${narrow} ranked rows, the same as a desktop`);
+    assert.equal(
+      await page.locator(".rank .rankrest").count(),
+      1,
+      "the folded rows left no remainder line, so the column no longer sums to the number rankLead promises"
+    );
+
+    // …and the rest are reachable. A cap with no way past it is a table that
+    // decided for the reader which of their own groups they may see.
+    await page.locator(".rank .rank-more").click();
+    await page.waitForTimeout(300);
+    assert.ok((await rows()) > narrow, "the show-all control did not unfold the rest of the table");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the placeholder's payslip and comparator wait for a salary", { skip }, async () => {
+  // The gross, the deductions and the Sofia comparison are facts about
+  // whoever earns the €900 placeholder until the reader replaces it — the same
+  // reasoning that keeps the ladder row silent. Withholding them also keeps
+  // the first paint short enough that the headline figure stays on the first
+  // screen of a phone with the pay field above it.
+  await withApp(async (page, errors) => {
+    const pay = page.locator(".m-pay");
+    const idle = await pay.innerText();
+    assert.doesNotMatch(
+      idle,
+      /бруто|осигуровки|под средната|над средната/i,
+      `the pay card describes a placeholder's payslip: ${idle.replace(/\s+/g, " ")}`
+    );
+
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+    const answered = await pay.innerText();
+    assert.match(answered, /бруто/i, "the payslip summary never appeared after a salary was typed");
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });

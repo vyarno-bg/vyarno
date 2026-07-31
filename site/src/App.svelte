@@ -22,6 +22,7 @@
   import DataBanner from "./components/DataBanner.svelte";
   import NationalStrip from "./components/NationalStrip.svelte";
   import ExplainerBand from "./components/ExplainerBand.svelte";
+  import PayField from "./components/PayField.svelte";
   import InputsCard from "./components/InputsCard.svelte";
   import ResultsCard from "./components/ResultsCard.svelte";
   import { COPY, t } from "./lib/content.js";
@@ -121,8 +122,16 @@
         </p>
       </div>
     {:else}
+      <!-- Three grid children, not two, and the order here is the phone's
+           order: ask, answer, refine. `card.css` puts the pay field and the
+           rest of the inputs back into one column on a wide screen, with the
+           seam between them closed, so the desktop layout is the two cards it
+           has always been. -->
       <div class="m-grid">
-        <InputsCard {calc} />
+        <div class="m-col">
+          <PayField {calc} />
+          <InputsCard {calc} />
+        </div>
         <ResultsCard {calc} {sofiaPriceDated} />
       </div>
 

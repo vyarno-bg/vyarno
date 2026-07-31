@@ -1,11 +1,11 @@
 /**
- * The two cards, the grid that holds them, and the anatomy of an input field.
+ * The three cards, the grid that holds them, and the anatomy of an input field.
  *
  * Svelte scopes a component's `<style>` to that component's own markup, and
  * these rules deliberately reach across a component boundary: the grid is in
- * `App.svelte`, each card is the root of `InputsCard`/`ResultsCard`, and the
- * fields are inside the first of those. `.m-grid > .m-card:first-child >
- * .field` cannot be written in any one of the three.
+ * `App.svelte`, each card is the root of `PayField`/`InputsCard`/`ResultsCard`,
+ * and the fields are inside the first two. `.m-inputs > .field` cannot be
+ * written in any one of the four.
  *
  * The same reasoning as `result-row.css` next door — shared anatomy lives in a
  * stylesheet, component-specific decoration stays with the component.
@@ -13,21 +13,82 @@
  * Loaded once per entry point, next to tokens.css.
  */
 
+/* Three cards, and every rule below names the one it means.
+ *
+ * They were `:first-child` and `:nth-child(2)` while there were two, which is
+ * a selector that keeps matching after a card is inserted between them and
+ * silently means something else — the field rhythm and the flex column would
+ * have moved to whichever card happened to be first. `.m-pay` / `.m-inputs` /
+ * `.m-results` cannot retarget, so the DOM order in App.svelte is free to be
+ * the order a phone should read in rather than the order the CSS needs. */
 .m-grid {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 18px;
   align-items: start;
 }
-@media (max-width: 880px) {
+/* The left column, and it is a real element rather than two grid rows.
+ *
+ * Two rows plus a results card spanning both looks equivalent and is not: the
+ * spanning card is the tallest thing in the grid, so it sizes both rows, and
+ * `align-items: start` then parks each input card at the top of a row far
+ * taller than it — a 28px hole opens between two cards that are supposed to
+ * read as one. A flex column has no rows to stretch. */
+.m-col {
+  display: flex;
+  flex-direction: column;
+}
+/* The seam. `.m-pay` and `.m-inputs` are one card to look at on a wide screen
+   and two boxes to place, so the border and the radius between them are
+   dropped and the join is drawn once. Without this, splitting the card for the
+   phone's sake would be a visible change to a desktop layout that had nothing
+   wrong with it. */
+.m-col > .m-pay {
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  padding-bottom: 4px;
+}
+.m-col > .m-inputs {
+  border-radius: 0 0 6px 6px;
+}
+
+@media (max-width: 820px) {
+  /* One column, and the reading order becomes ask, answer, refine.
+   *
+   * The results card is ordered ahead of the rest of the inputs because the
+   * payoff should not sit under thirteen basket sliders — but the field the
+   * payoff is priced off has to come before both, or the reader scrolls five
+   * screens past their own figures to find where to put their salary. That is
+   * what `.m-pay` is a separate card for.
+   *
+   * 820px rather than 880: an iPad in portrait is 820 CSS px and was getting
+   * the phone stack, which put its salary field 2,465px down a screen with
+   * room for both columns side by side. Two columns hold their shape to about
+   * 800px; below that the basket sliders and their labels start colliding. */
   .m-grid {
     grid-template-columns: 1fr;
   }
-  /* Surface the result first on phones so the payoff isn't buried under
-     the 12 basket sliders. Shows the typical (median-default) picture;
-     the inputs sit right below to make it yours. */
-  .m-grid > .m-card:nth-child(2) {
-    order: -1;
+  /* The column dissolves, so its two cards become grid items in their own
+     right and `order` can put the results card between them. Wrapping them in
+     an element the phone has to see through is what lets one DOM order serve
+     both layouts — the alternative is rendering the pay field twice and
+     keeping two inputs bound to one value in step. */
+  .m-col {
+    display: contents;
+  }
+  .m-pay {
+    order: 1;
+    /* Three separate cards again, so the seam treatment is undone. */
+    border-bottom: 1px solid var(--line);
+    border-radius: 6px;
+    padding-bottom: 20px;
+  }
+  .m-results {
+    order: 2;
+  }
+  .m-inputs {
+    order: 3;
+    border-radius: 6px;
   }
 }
 
@@ -65,22 +126,24 @@
     grid-template-columns: 1fr;
   }
 }
-/* Vertical rhythm between the stacked .field units in YOUR NUMBERS. 14px
-   matches .h4row's margin-bottom, and the rule is scoped to the first
-   .m-card so the home block's f-row fields, which have their own grid gap,
-   do not double up. */
-.m-grid > .m-card:first-child > .field {
+/* Vertical rhythm between the stacked .field units the reader types into.
+   14px matches .h4row's margin-bottom, and the rule names the two input cards
+   so the home block's f-row fields, which have their own grid gap, do not
+   double up. */
+.m-pay > .field,
+.m-inputs > .field {
   margin-bottom: 14px;
 }
-.m-grid > .m-card:first-child > .field:last-child {
+.m-pay > .field:last-child,
+.m-inputs > .field:last-child {
   margin-bottom: 0;
 }
 /* The results card fills the m-grid row so its bottom items (drawer, share
    button, brand footer) anchor to the bottom instead of floating mid-card
-   when the inputs card is taller. Only the right card is a flex column; the
+   when the inputs column is taller. Only the right card is a flex column; the
    `margin-top: auto` that pushes the footer down lives on `.r-brand` in
    ShareCard, which renders it. */
-.m-grid > .m-card:nth-child(2) {
+.m-results {
   display: flex;
   flex-direction: column;
 }

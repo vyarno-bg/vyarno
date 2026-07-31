@@ -30,7 +30,7 @@
   const { calc, sofiaPriceDated } = $props();
 </script>
 
-<div class="m-card">
+<div class="m-card m-results">
   <ResultsSummary {calc} />
 
   <RankedContributions

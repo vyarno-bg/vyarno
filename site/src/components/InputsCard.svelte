@@ -1,17 +1,21 @@
 <script>
   /**
-   * Everything the reader types: pay, raise, rent, savings, the home block,
-   * and the basket underneath them.
+   * Everything the reader can leave alone: the comparison period, the raise,
+   * rent, savings, the home block, and the basket underneath them.
    *
-   * Single-column on purpose — the fields have very different heights (net pay
-   * carries several sub-hints, the anchor is a dropdown plus a hint), so a
+   * Net pay is not here. It is the one input every figure on the page is
+   * priced off, so it has its own card and its own place in the grid —
+   * `PayField.svelte` says why, and it matters most on a phone, where this
+   * card is ordered last.
+   *
+   * Single-column on purpose — the fields have very different heights (the
+   * anchor is a dropdown plus a hint, the home block opens a grid), so a
    * two-column grid leaves ungrounded voids between them. Every field is a
    * full-width unit: label + hint + input + optional sub-hint.
    */
   import { lang } from "../lib/stores.js";
   import { number, integer, period } from "../lib/format.js";
   import { COPY, HOME, t } from "../lib/content.js";
-  import PayslipTable from "./PayslipTable.svelte";
   import BasketEditor from "./BasketEditor.svelte";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
@@ -45,108 +49,17 @@
   }
 </script>
 
-<div class="m-card">
+<div class="m-card m-inputs">
   <h4>
-    <span class="l-bg">{COPY.yourNumbers.bg}</span>
-    <span class="l-en">{COPY.yourNumbers.en}</span>
+    <span class="l-bg">{COPY.restOfNumbers.bg}</span>
+    <span class="l-en">{COPY.restOfNumbers.en}</span>
   </h4>
 
   <!-- Single-column on purpose: the fields have very different
-     heights (net pay carries several sub-hints, the anchor is a
-     dropdown plus a hint), so a two-column grid leaves ungrounded
-     voids between them. Every field is a full-width unit: label +
-     hint + input + optional sub-hint. -->
-  <div class="field">
-    <label for="inSalary">
-      <span class="l-bg">{COPY.netPay.bg}</span>
-      <span class="l-en">{COPY.netPay.en}</span>
-      <span class="hint">
-        <span class="l-bg">{COPY.netPayHint.bg}</span>
-        <span class="l-en">{COPY.netPayHint.en}</span>
-      </span>
-    </label>
-    <span class="unit" data-u="€">
-      <input
-        id="inSalary"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="10"
-        bind:value={calc.salary}
-        oninput={calc.onSalaryInput}
-        aria-label={t(COPY.netPay, $lang)}
-      />
-    </span>
-    <div class="hint" style="margin-top:4px">
-      <span class="l-bg">{COPY.medianDefault.bg}</span>
-      <span class="l-en">{COPY.medianDefault.en}</span>
-    </div>
-    <!-- Back-computed gross + tax breakdown from the typed
-       net salary. Shows what the contract GROSS is and
-       the effective rate.
-       «ефективно 22,4%» was the internal name of the rate rendered
-       straight at a reader: a share with no stated denominator, in a
-       word nobody uses about their own payslip. It now says what the
-       percentage is a share OF.
-       The one-line summary is the answer; the <details> below it is
-       the working. A single gross figure is not checkable — a reader
-       comparing it against another calculator has no way to see WHICH
-       step differs, and the step that differs is nearly always the
-       insurance ceiling. Closed by default: the summary is enough for
-       the reader who believes us, and the table is one click for the
-       reader who does not. -->
-    {#if calc.payslip}
-      <div class="hint" style="margin-top:4px; color:var(--ink-2)">
-        <span class="l-bg"
-          >по договор (бруто) това е ≈ {fmt0(calc.payslip.gross)} € - от тях {fmt0(
-            calc.payslip.insurance
-          )} € осигуровки и {fmt0(calc.payslip.tax)} € данък, или {fmt(
-            calc.payslip.effectiveRatePct
-          )}% удръжки</span
-        >
-        <span class="l-en"
-          >on the contract (gross) that's ≈ {fmt0(calc.payslip.gross)} € - of which {fmt0(
-            calc.payslip.insurance
-          )} € contributions and {fmt0(calc.payslip.tax)} € tax, i.e. {fmt(
-            calc.payslip.effectiveRatePct
-          )}% deducted</span
-        >
-      </div>
-      <PayslipTable payslip={calc.payslip} />
-    {/if}
-    <!-- The personal Sofia comparison sits under the user's typed
-       salary, next to the input it compares against — the Sofia card
-       in the national strip is a country reference and carries no
-       personal verdict. Colour follows the rent-burden pattern
-       (--real above, --erode below, neutral when ≈ equal). {delta}
-       is built here from {sign} + {n}% + {dirWord} and spliced into
-       the COPY string as one clause, which is what keeps the
-       Bulgarian grammatical. -->
-    {#if calc.salary > 0 && calc.sofiaNet > 0}
-      {@const sofiaDiff = Math.round((100 * (calc.salary - calc.sofiaNet)) / calc.sofiaNet)}
-      {@const sofiaDirKey =
-        sofiaDiff > 1 ? "statSofiaAbove" : sofiaDiff < -1 ? "statSofiaBelow" : "statSofiaEqual"}
-      <!-- No sign here. The direction word already carries it, and
-         emitting both produced «-39% под средната» / "-39% below the
-         average" — a double negative that reads, literally, as 39%
-         less far below. The magnitude is unsigned; «под»/"below" and
-         «над»/"above" say which way, and the colour reinforces it. -->
-      {@const sofiaDirWord = COPY[sofiaDirKey][$lang] ?? COPY[sofiaDirKey].bg}
-      {@const sofiaDelta =
-        sofiaDirKey === "statSofiaEqual" ? sofiaDirWord : `${Math.abs(sofiaDiff)}% ${sofiaDirWord}`}
-      {@const sofiaColor =
-        sofiaDiff > 1 ? "var(--real)" : sofiaDiff < -1 ? "var(--erode)" : "var(--ink-2)"}
-      <div class="hint" style="margin-top:4px; color:{sofiaColor}">
-        <span class="l-bg"
-          >{@html COPY.statSofiaDiff.bg.replace("{delta}", `<b>${sofiaDelta}</b>`)}</span
-        >
-        <span class="l-en"
-          >{@html COPY.statSofiaDiff.en.replace("{delta}", `<b>${sofiaDelta}</b>`)}</span
-        >
-      </div>
-    {/if}
-  </div>
-
+     heights (the anchor is a dropdown plus a hint, the home block
+     opens a grid), so a two-column grid leaves ungrounded voids
+     between them. Every field is a full-width unit: label + hint +
+     input + optional sub-hint. -->
   <div class="field">
     <label for="inAnchor">
       <span class="l-bg">{COPY.anchor.bg}</span>
