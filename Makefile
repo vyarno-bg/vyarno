@@ -32,39 +32,42 @@
 #   make check     everything CI runs
 #   make help      the full list
 
-# Where a virtualenv puts its executables, and what the interpreter that builds
-# it is called. Both differ on Windows — `Scripts` rather than `bin`, and
-# `python` rather than `python3`, which on Windows is a Store stub that opens
-# the Microsoft Store instead of running anything.
+# This Makefile needs a POSIX shell, and says so rather than half-working.
 #
 # `OS` is set to `Windows_NT` by Windows itself, on every version since NT, and
-# is absent everywhere else. It is the one variable a Makefile can read before
-# it knows which shell it has.
+# is absent everywhere else. Under MSYS2, Git Bash, Cygwin and WSL the host may
+# be Windows but the shell is POSIX and the paths below resolve; those announce
+# themselves in `MSYSTEM`, which native Windows `make` does not set. So this
+# guard fires for exactly one case: GNU Make installed on Windows and run from
+# cmd.exe or PowerShell.
 #
-# Under MSYS2, Git Bash or Cygwin, `make` runs POSIX paths against a POSIX
-# shell even though the host is Windows, so those need the `bin` layout. They
-# announce themselves in `MSYSTEM`; native Windows `make` does not set it.
+# It refuses instead of adapting because adapting is more than a variable. Make
+# hands each recipe to cmd.exe there, and cmd reads `/` as the start of a
+# switch — `pipeline/.venv/Scripts/ruff check .` is not a command it can run,
+# so every target would need its separators converted, and nothing in CI would
+# ever execute the converted form. The `windows` job runs the commands directly
+# for that reason. An untested branch that produces
+# "The syntax of the command is incorrect" teaches a contributor nothing; a
+# refusal that names three shells that do work teaches them where to go.
 ifeq ($(OS)$(MSYSTEM),Windows_NT)
-  VENV_BIN := pipeline/.venv/Scripts
-  BOOTSTRAP_PY := python
-else
-  # Only reached on a POSIX shell, so `bash` is a safe thing to require. It is
-  # required rather than assumed: `make` defaults to `/bin/sh`, and a recipe
-  # written against bash that runs under dash fails in ways that read as a
-  # broken toolchain rather than a wrong shell.
-  SHELL := /bin/bash
-  VENV_BIN := pipeline/.venv/bin
-  BOOTSTRAP_PY := python3
+  $(error This Makefile needs a POSIX shell. On Windows use Git Bash, MSYS2 or \
+    WSL, where every target below works — or run the commands directly, which \
+    docs/local-development.md §"On Windows" lists in full)
 endif
 
-PY := $(VENV_BIN)/python
-PYTEST := $(VENV_BIN)/pytest
+# `make` defaults to `/bin/sh`, and a recipe written against bash that runs
+# under dash fails in ways that read as a broken toolchain rather than a wrong
+# shell. Required, not assumed.
+SHELL := /bin/bash
+
+PY := pipeline/.venv/bin/python
+PYTEST := pipeline/.venv/bin/pytest
 # Ruff comes from the venv `make setup` built, not from PATH. CI installs the
 # pipeline into the job's own environment so a bare `ruff` resolves there, but
 # after `make setup` it lives in the venv and is NOT on a contributor's PATH —
 # `make lint` failed with "ruff: command not found" for anyone who had not also
 # installed it globally.
-RUFF := $(VENV_BIN)/ruff
+RUFF := pipeline/.venv/bin/ruff
 
 .DEFAULT_GOAL := help
 .PHONY: help setup lock check lint test build browser render coverage clean
@@ -81,7 +84,7 @@ help: ## Show this list
 	@echo "  rather than reporting green over a suite that skipped."
 
 setup: ## Create the Python venv and install both toolchains
-	$(BOOTSTRAP_PY) -m venv pipeline/.venv
+	python3 -m venv pipeline/.venv
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet -r pipeline/requirements-dev.txt
 	$(PY) -m pip install --quiet -e pipeline --no-deps
@@ -127,17 +130,13 @@ lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@# than by pinning the pipeline venv's pip backwards for everyone. Installing
 	@# from the lock works on any modern pip — only generating it needs this.
 	@#
-	@# POSIX only, and that is a constraint rather than an oversight. pip-compile
-	@# resolves for the machine it runs on, so a lock generated on Windows drops
-	@# any dependency whose marker is false there — the mirror image of the bug
-	@# that put `colorama` in `pyproject.toml` unconditionally. Generating on
-	@# Linux keeps the file the shape CI installs from. Regenerate there, or in
-	@# WSL, and commit the result.
-ifeq ($(OS)$(MSYSTEM),Windows_NT)
-	@echo "'make lock' generates the lock for the platform it runs on, so it" >&2
-	@echo "runs on Linux or macOS only — see the comment in this target." >&2
-	@exit 1
-else
+	@#
+	@# Regenerate this on Linux, and in WSL rather than in Git Bash if you are on
+	@# Windows. pip-compile resolves for the machine it runs on, so a lock built
+	@# under MSYS would drop any dependency whose marker is false there — the
+	@# mirror image of the bug that put `colorama` and `tzdata` in
+	@# `pyproject.toml` without markers. The guard at the top of this file stops
+	@# cmd.exe from reaching any of this; it cannot tell Git Bash from Linux.
 	@rm -rf .lockenv
 	@python3 -m venv .lockenv
 	@.lockenv/bin/pip install --quiet "pip<25" && .lockenv/bin/pip install --quiet pip-tools
@@ -148,7 +147,6 @@ else
 	@rm -rf .lockenv
 	@echo "Regenerated pipeline/requirements.txt and requirements-dev.txt."
 	@echo "Review the diff, then 'make setup' to install the new pins."
-endif
 
 check: lint test render ## Everything CI runs, in CI's order
 	@echo

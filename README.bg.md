@@ -47,8 +47,8 @@ cd ../site && npm install && npm run dev      # http://localhost:5173
 
 Под Windows виртуалната среда държи изпълнимите файлове в `Scripts\`, а
 интерпретаторът се казва `python`, не `python3`: `python -m venv .venv`, после
-`.\.venv\Scripts\Activate.ps1` — останалото е същото. CI покрива и трите
-операционни системи;
+`.\.venv\Scripts\Activate.ps1` — останалото е същото. CI покрива Linux и
+Windows;
 [`docs/local-development.md`](./docs/local-development.md) §„On Windows“ дава
 пълния списък команди и шестте неща, на които стъпва.
 
