@@ -49,6 +49,3 @@ Thumbs.db
 pipeline/.cache/
 pipeline/.tmp/
 .lockenv/
-
-# Agent workspace — kept out of the published repository
-.hermes/
