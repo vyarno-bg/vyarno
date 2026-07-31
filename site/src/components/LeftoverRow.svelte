@@ -9,6 +9,17 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  // The denominator of `leftoverPct` is `spendable` = take-home − housing,
+  // and `housingCost` is the carve-out that produced it. When it's non-zero,
+  // the row names the amount so the percentage is legible: «X% от … след
+  // €Y за жилище». When it's zero, "what's left of your take-home" is the
+  // honest phrasing. There are two variants of each sentence (one with
+  // housing named, one without) and verify_copy.mjs pins both rules. The
+  // ternary sits INSIDE `t(...)` so the template-safety scanner sees two
+  // rooted `COPY.<key>.<lang>` leaves; dynamic-key access (`COPY[leadKey]`)
+  // fails that static check.
+  const hasHousing = $derived(calc.housingCost > 0);
 </script>
 
 <!-- NOT PLACED — the money the basket was never told about.
@@ -41,15 +52,17 @@
     </div>
     <div class="rr-t">
       <span class="l-bg"
-        >{@html t(COPY.leftLead, "bg", {
+        >{@html t(hasHousing ? COPY.leftLeadWithHousing : COPY.leftLeadNoHousing, "bg", {
           m: fmt0(calc.budget.leftover),
           p: fmt0(calc.budget.leftoverPct),
+          h: fmt0(calc.housingCost),
         })}</span
       >
       <span class="l-en"
-        >{@html t(COPY.leftLead, "en", {
+        >{@html t(hasHousing ? COPY.leftLeadWithHousing : COPY.leftLeadNoHousing, "en", {
           m: fmt0(calc.budget.leftover),
           p: fmt0(calc.budget.leftoverPct),
+          h: fmt0(calc.housingCost),
         })}</span
       >
     </div>
@@ -89,8 +102,18 @@
       >
     </div>
     <div class="rr-t">
-      <span class="l-bg">{@html t(COPY.leftOver, "bg", { m: fmt0(calc.budget.over) })}</span>
-      <span class="l-en">{@html t(COPY.leftOver, "en", { m: fmt0(calc.budget.over) })}</span>
+      <span class="l-bg"
+        >{@html t(hasHousing ? COPY.leftOverWithHousing : COPY.leftOverNoHousing, "bg", {
+          m: fmt0(calc.budget.over),
+          h: fmt0(calc.housingCost),
+        })}</span
+      >
+      <span class="l-en"
+        >{@html t(hasHousing ? COPY.leftOverWithHousing : COPY.leftOverNoHousing, "en", {
+          m: fmt0(calc.budget.over),
+          h: fmt0(calc.housingCost),
+        })}</span
+      >
     </div>
   </div>
 {/if}
