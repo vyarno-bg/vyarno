@@ -42,7 +42,7 @@ with no browser, and it is the only suite that runs the app — a template error
 that renders the page blank is invisible to every other test in the repository,
 so a green run without it proves less than it looks.
 
-Expected: **288 pytest, 313 node:test, 16 render.** A count that moved without
+Expected: **288 pytest, 316 node:test, 20 render.** A count that moved without
 you moving it is a finding, not noise. `make help` lists the rest;
 `docs/local-development.md` is the long form.
 
@@ -60,7 +60,7 @@ you moving it is a finding, not noise. `make help` lists the rest;
 **Always, without asking:**
 
 - run `make check` before calling a change done, and read the render count —
-  15 is the pass condition, 0 means it found no browser to run in;
+  20 is the pass condition, 0 means it found no browser to run in;
 - move a test in the same commit as the code it protects;
 - update `docs/data-sources.md` in the same commit as any change to
   `pipeline/src/vyarno_pipeline/sources/*`;

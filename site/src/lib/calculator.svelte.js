@@ -113,6 +113,16 @@ export class Calculator {
   // percentile — which is why the copy under this field asks the user to
   // replace it rather than calling it typical.
   salary = $state(900);
+  // Whether the reader has typed over that placeholder. The figures derived
+  // from it are second-person claims — what the same life costs *you*, where
+  // *you* sit on the Sofia ladder — and every one of them is about a person
+  // earning €900 until this flips. The hint that says so is attached to the
+  // input, which on a phone is 3,100px below the first of those claims: the
+  // results card is ordered first there (card.css), so a reader meets the
+  // sentences four screens before the caveat. The rule this restores is the
+  // one `presetActive` already keeps for the hand-made baskets — a caveat
+  // travels with its number, not with the control that produced it.
+  salaryDirty = $state(false);
   raise = $state(NaN); // empty by default — no fake nominal wage index
   raiseDirty = $state(false);
   anchor = $state("y1");
@@ -665,6 +675,15 @@ export class Calculator {
   /** Anchor change → keep raise empty (we don't have a nominal default). */
   onAnchorChange = (e) => {
     this.anchor = e.target.value === "y1" ? "y1" : +e.target.value;
+  };
+
+  // Sits alongside `bind:value` rather than replacing it: the bind already
+  // carries the number, and all this records is that a human touched the
+  // field. Clearing the box back to empty still counts as touched — the
+  // reader has told us the placeholder is not theirs, which is the whole
+  // question the flag answers.
+  onSalaryInput = () => {
+    this.salaryDirty = true;
   };
 
   onRaiseInput = (e) => {

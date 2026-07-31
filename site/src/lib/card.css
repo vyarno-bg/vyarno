@@ -142,6 +142,41 @@
   color: var(--muted);
   pointer-events: none;
 }
+/* The "↗" that makes a row checkable — the link from a division or a group to
+   the Eurostat extract its rate came from (docs/site.md §"Every row stays
+   verifiable").
+ *
+ * It is here rather than in a component because it is drawn in BOTH cards:
+ * beside every basket row in the inputs card, and beside every row of the
+ * ranked contributions in the results card. It used to live in
+ * `BasketEditor`'s scoped block, and Svelte scopes a `<style>` to its own
+ * markup — so when the ranked list was extracted into its own component it
+ * silently lost every one of these rules and rendered the browser default
+ * instead: 14px sans with a solid underline, against 11px mono with a dotted
+ * rule three inches away, and `white-space: normal`, which on a 390px phone
+ * breaks the line between the code and its arrow and leaves a bare "↗"
+ * hanging under «Свободно време и култура CP09».
+ *
+ * That is the failure mode a scoped duplicate has: the copy left behind stays
+ * correct, so nothing looks wrong in the file anyone opens. `nowrap` is
+ * load-bearing rather than cosmetic — the code and the arrow are one target,
+ * and half of it on the next line reads as debris.
+ */
+.vlink {
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  border-bottom: 1px dotted var(--muted);
+  padding-bottom: 1px;
+  white-space: nowrap;
+}
+.vlink:hover {
+  color: var(--real-ink);
+  border-bottom-color: var(--real);
+}
+
 .homeTog {
   display: inline-flex;
   align-items: center;

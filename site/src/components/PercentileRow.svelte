@@ -8,6 +8,20 @@
   const { calc } = $props();
 
   const fmt0 = (x) => integer(x, $lang);
+
+  // This row waits for the reader, where the rest of the card demonstrates
+  // itself on the €900 placeholder.
+  //
+  // The difference is what the sentence claims. «≈ €46 повече всеки месец» is
+  // arithmetic about prices that happens to be scaled by a salary, and the
+  // note under the headline says whose. «Изпреварваш 34% от работещите в
+  // София» is a ranking OF THE READER against their neighbours, addressed to
+  // them in the second person, and there is no caveat that makes an unasked
+  // one land well — a visitor who earns €2,400 and is told on arrival that
+  // they out-earn a third of Sofia has been told something false about
+  // themselves before typing a character. So the row does what PocketRow does
+  // with an empty raise: it says what it needs and computes nothing.
+  const answered = $derived(calc.salaryDirty && calc.salary > 0 && calc.pctRank > 0);
 </script>
 
 <!-- PERCENTILE -->
@@ -19,13 +33,15 @@
     <!-- Position from the bottom: "ahead of X%". Higher income →
          bigger number. Honest for below-median incomes (no
          "top 63%" that reads as an achievement). -->
+    <!-- The corner figure is gated on the same condition as the sentence
+         below it, not on `pctAhead` alone. A bare «пред 34%» in the corner
+         over a prompt asking for a salary is the claim with its caveat
+         removed, which is the arrangement this row exists to avoid. -->
     <span class="rr-v mono"
-      >{calc.pctAhead > 0
-        ? `${$lang === "bg" ? "пред " : "ahead of "}${calc.pctAhead}%`
-        : "—"}</span
+      >{answered ? `${$lang === "bg" ? "пред " : "ahead of "}${calc.pctAhead}%` : "—"}</span
     >
   </div>
-  {#if calc.salary > 0 && calc.pctRank > 0}
+  {#if answered}
     <div class="rr-t">
       <span class="l-bg"
         >{@html COPY.pctTopTxt.bg
@@ -75,8 +91,8 @@
     </div>
   {:else}
     <div class="rr-t">
-      <span class="l-bg">Въведи заплата горе.</span>
-      <span class="l-en">Enter your pay above.</span>
+      <span class="l-bg">{COPY.pctNoSalary.bg}</span>
+      <span class="l-en">{COPY.pctNoSalary.en}</span>
     </div>
   {/if}
 </div>

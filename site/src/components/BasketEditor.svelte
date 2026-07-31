@@ -628,20 +628,8 @@
   .meta {
     white-space: nowrap;
   }
-  .vlink {
-    font-family: var(--mono);
-    font-size: var(--fs-micro);
-    color: var(--muted);
-    text-decoration: none;
-    letter-spacing: 0.03em;
-    border-bottom: 1px dotted var(--muted);
-    padding-bottom: 1px;
-    white-space: nowrap;
-  }
-  .vlink:hover {
-    color: var(--real-ink);
-    border-bottom-color: var(--real);
-  }
+  /* `.vlink` is in $lib/card.css — both cards draw it, and the copy that
+     lived here did not reach the ranked list next door. */
 
   .cat input[type="range"] {
     width: 100%;

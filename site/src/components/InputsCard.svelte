@@ -73,6 +73,7 @@
         min="0"
         step="10"
         bind:value={calc.salary}
+        oninput={calc.onSalaryInput}
         aria-label={t(COPY.netPay, $lang)}
       />
     </span>

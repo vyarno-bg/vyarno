@@ -37,6 +37,30 @@
   // question this card answers is "is your basket dearer than the average
   // Bulgarian's?", so a high-but-typical basket is not painted as a loss.
   const verdictCls = $derived(calc.nearOfficial ? "" : calc.dpi > 0 ? "er" : "em");
+
+  // The one link from the results back to the inputs. It reaches across a
+  // component boundary by id, the same way the header's skip link reaches
+  // `#main`, because on a phone there is no shorter route: the two cards are
+  // 3,100px apart and Svelte gives a sibling component no handle on the
+  // other's field.
+  //
+  // Focus first with the scroll suppressed, then scroll deliberately. The
+  // other order scrolls twice — focus() brings the element into view on its
+  // own terms and undoes the framing chosen here. `block: "center"` and not
+  // "start", so the field does not land under the sticky header. The jump is
+  // instant on purpose: a smooth flight over four screens is a long time to
+  // watch, and this is a control the reader asked to be taken to.
+  //
+  // Focusing rather than merely scrolling is the point on a phone — it raises
+  // the keyboard, so the tap that says «въведи своята заплата» leaves the
+  // reader able to type, instead of needing a second tap on a field they must
+  // first find.
+  function focusSalary() {
+    const field = document.getElementById("inSalary");
+    if (!field) return;
+    field.focus({ preventScroll: true });
+    field.scrollIntoView({ block: "center" });
+  }
 </script>
 
 <div class="h4row">
@@ -113,6 +137,21 @@
     </div>
   {/if}
 </div>
+
+<!-- Outside the aria-live block above, deliberately. Inside it, the note and
+     its button would be re-announced on every slider tick along with the ~50
+     figures the live region already re-reads; and it is not a result, it is a
+     standing statement about the ones above it. -->
+{#if !calc.salaryDirty && calc.salary > 0}
+  <div class="placeholder">
+    <span class="l-bg">{t(COPY.startingSalary, "bg", { s: fmt0(calc.salary) })}</span>
+    <span class="l-en">{t(COPY.startingSalary, "en", { s: fmt0(calc.salary) })}</span>
+    <button type="button" onclick={focusSalary}>
+      <span class="l-bg">{COPY.startingSalaryCta.bg}</span>
+      <span class="l-en">{COPY.startingSalaryCta.en}</span>
+    </button>
+  </div>
+{/if}
 
 <div class="bars-cap mono">
   {#if calc.anchor === "y1"}
@@ -224,7 +263,13 @@
 
 <style>
   /* Layout / shell */
-  .m-preset-note {
+  /* One treatment, because the two are the same kind of sentence: a figure
+     above is standing on something the reader did not choose — a hand-made
+     preset, or the €900 placeholder — and the note says which. Giving the
+     newer one its own box would make the page look like it carries two grades
+     of caveat when it carries one. */
+  .m-preset-note,
+  .placeholder {
     margin: 8px 0 0;
     padding: 7px 9px;
     font-size: var(--fs-small);
@@ -233,6 +278,27 @@
     background: var(--paper-2);
     border-left: 2px solid var(--muted);
     border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  /* The route to the field reads as a link, not as a call to action. A filled
+     button here would out-shout the figure it sits under, which is the number
+     the reader came for — the same reasoning that keeps the footer's donate
+     ask one quiet line. */
+  .placeholder button {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: var(--real-ink);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--real);
+    cursor: pointer;
+  }
+  .placeholder button:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
   }
 
   /* Results */

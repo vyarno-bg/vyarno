@@ -396,6 +396,29 @@ export const COPY = {
   },
   // Results card
   yourReal: { bg: "Твоето реално", en: "Your real picture" },
+  // What the card says while the salary is still the €900 placeholder.
+  //
+  // Two jobs, and it exists because of where the results card sits. On a
+  // phone it is rendered FIRST (card.css) and the salary field lands 3,100px
+  // below it, so «числото е просто начална стойност» — the hint attached to
+  // the input — reaches the reader four screens after «≈ €46 повече всеки
+  // месец ти струва същият живот». A caveat that far from its number is not a
+  // caveat. So the note is repeated here, where the figure is, and it names
+  // the amount rather than describing it: a reader who has scrolled past
+  // «€900» in the field can match the two.
+  //
+  // It says «не с твоята» and stops. The card is not wrong — it is a worked
+  // example, which is the point of having a default at all — and calling it
+  // wrong would teach the reader to distrust figures that are about to become
+  // theirs. Naming whose money it is does the whole job.
+  startingSalary: {
+    bg: "Сметнато е с начална заплата €{s} на месец - не с твоята.",
+    en: "Computed with a starting pay of €{s} a month - not yours.",
+  },
+  // The button beside it. This is the only route from the results to the
+  // inputs on a phone, where the two are four screens apart and nothing else
+  // on the page links them.
+  startingSalaryCta: { bg: "Въведи своята заплата", en: "Enter your own pay" },
   yourBasket: { bg: "твоята кошница", en: "your basket" },
   // The basket-weighted number using official weights was once called
   // "официалната кошница" (the official basket), which users misread as the
@@ -456,6 +479,18 @@ export const COPY = {
     en: "Your pay buys about <b>€{m}</b> less every month.",
   },
   pctK: { bg: "къде си по заплата", en: "where you stand" },
+  // The row's empty state, and it now covers the untouched placeholder as well
+  // as an empty field — see PercentileRow.
+  //
+  // «Въведи заплата ГОРЕ» is what it used to say, and the direction was wrong
+  // on every phone: the results card is ordered first there, so the field is
+  // below. A prompt that points the wrong way is worse than one that points
+  // nowhere, and this row has no need to say where — the button under the
+  // headline figure is what carries the reader to the field.
+  pctNoSalary: {
+    bg: "Въведи своята заплата, за да видиш къде си.",
+    en: "Enter your own pay to see where you sit.",
+  },
   // Phrased from the BOTTOM ("ahead of {r}%"), NOT "top {n}%". "Top 63%" for
   // a below-median pay reads as an achievement when it isn't. {r} is the rank
   // from the bottom (mirror.js percentile), so higher pay → bigger number →
