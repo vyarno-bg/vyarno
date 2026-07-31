@@ -1,0 +1,214 @@
+/**
+ * The `<details>` patterns, shared by more than one component.
+ *
+ * Three places in the app open something in place: the method drawer under the
+ * results, the explainer band at the foot of the page, and the itemised payslip
+ * under the salary input. They are one visual pattern with one set of rules,
+ * and Svelte scopes a component's `<style>` to that component — so keeping
+ * these here is what lets the markup live wherever it belongs without the
+ * rules being copied alongside it.
+ *
+ * Loaded once per entry point, next to tokens.css.
+ */
+
+/* Drawer */
+.how {
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: var(--paper-2);
+  margin-top: 14px;
+}
+.how summary {
+  cursor: pointer;
+  padding: 11px 14px;
+  font-weight: 600;
+  font-size: var(--fs-meta);
+  color: var(--ink-2);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.how summary::-webkit-details-marker {
+  display: none;
+}
+.how summary .plus {
+  color: var(--muted);
+}
+.how[open] summary .plus {
+  transform: rotate(45deg);
+}
+.how ol {
+  margin: 0;
+  padding: 0 14px 4px 30px;
+  font-size: var(--fs-meta);
+  color: var(--ink-2);
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* The method block, at the end of the explainer band and closed. It is the
+   single place the formulas are published — the results drawer carries no
+   algebra, so there is one block here rather than one per drawer item.
+   The summary is styled by `.disclose` below and must not take a muted,
+   dotted-underline treatment of its own: that is the app's CAPTION
+   vocabulary, and it reads as a label rather than as a control. */
+.how .fx {
+  margin-top: 14px;
+}
+.how .fx[open] > summary {
+  margin-bottom: 3px;
+}
+/* No `display` here on purpose: these spans are .l-bg/.l-en, and the
+   language toggle in tokens.css works by setting `display: none` on the
+   hidden one. A scoped rule here outranks it and would show both. */
+.how .fx > span {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  line-height: 1.6;
+}
+.how .frm {
+  font-size: var(--fs-small);
+  color: var(--ink-2);
+  margin: 10px 14px 0;
+  line-height: 1.6;
+}
+.how table {
+  border-collapse: collapse;
+  margin: 10px 14px;
+  font-size: var(--fs-fine);
+}
+.how td,
+.how th {
+  text-align: left;
+  padding: 2.5px 12px 2.5px 0;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+.how th {
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.05em;
+}
+.how td a,
+.how .srcline a {
+  color: var(--real);
+  text-decoration: none;
+  border-bottom: 1px solid var(--real-soft);
+}
+.how .srcline {
+  font-size: var(--fs-fine);
+  color: var(--muted);
+  margin: 0 14px 12px;
+  line-height: 1.5;
+}
+
+/* -------------------------------------------------------------------------
+   INLINE DISCLOSURE — the shared treatment for every "one click further in"
+   control: «виж формулата» in the drawer (×4) and «виж разбивката» under the
+   salary field.
+
+   These were all 11.5px in `--muted` under a dotted underline, which is this
+   app's CAPTION vocabulary — the same colour and weight as source lines,
+   hints and the wordmark tagline. They were camouflaged by the design system
+   rather than by accident: nothing about them said "control". A reveal
+   nobody notices is a reveal nobody opens, and for the payslip that means
+   the gross figure stays a number you cannot check, which is the whole thing
+   the breakdown exists to fix.
+
+   Two tiers, deliberately kept apart. Section bars (`.how`, `.how.explain`)
+   stay boxed with a right-aligned `+`; inline reveals become an outlined
+   chip with a leading caret.
+
+   SHAPE, not colour, carries the affordance — and that is the load-bearing
+   decision here. The obvious move is to paint these `--real`, since that is
+   what links and buttons use. But in THIS app `--real` is the verdict
+   colour: it means the user's own number is the good one — gaining on
+   inflation, within the mortgage line, above the Sofia average. The Sofia
+   comparison renders in `--real` two lines below this control. A green
+   disclosure there sits directly under a green verdict meaning something
+   entirely different, and the reader has to learn which green is which. So
+   the resting state borrows no semantic colour at all: a border and a
+   caret say "control", `--real` appears only on hover and focus, where an
+   accent is unambiguously about the interaction rather than about the
+   money.
+
+   Restraint is part of the spec. This sits inside the inputs card and must
+   not compete with the salary field: an outline, not a fill; no bold; and
+   no motion beyond the caret's rotation — anything that animated here would
+   re-fire on every keystroke of the salary input, next to a number the
+   reader is trying to read.
+
+   Written as `summary.disclose` to outrank `.how summary`, and placed after
+   it: the drawer's own summary rule is (0,1,1) and would otherwise repaint
+   the four formula toggles back to the section-bar treatment. */
+summary.disclose {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 6px;
+  /* A real hit area. The old inline text was ~14px tall, well under any
+     tap-target guidance. */
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  /* Transparent, not a surface token: this chip renders both on the inputs
+     card (`--surface`) and inside the drawer (`--paper-2`), so any fill that
+     reads as raised on one reads as invisible on the other. The border is
+     the part that works on both. */
+  background: transparent;
+  font-size: var(--fs-meta);
+  font-weight: 500;
+  color: var(--ink-2);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+summary.disclose::-webkit-details-marker {
+  display: none;
+}
+.dc-caret {
+  display: inline-block;
+  font-size: var(--fs-body);
+  line-height: 1;
+  color: var(--muted);
+  transform: translateY(1px);
+  transition:
+    transform 0.15s ease,
+    color 0.12s ease;
+}
+[open] > summary.disclose .dc-caret {
+  transform: translateY(1px) rotate(90deg);
+}
+summary.disclose:hover {
+  border-color: var(--real);
+  background: var(--real-soft);
+  color: var(--real);
+}
+summary.disclose:hover .dc-caret {
+  color: var(--real);
+}
+/* Until now NO summary in the app had a focus style — a keyboard user could
+   not see which control they were on. Matches the ring already used by the
+   inputs and the sliders. */
+summary.disclose:focus-visible {
+  outline: 2px solid var(--real);
+  outline-offset: 1px;
+}
+/* The teaser. A label that states what the control DOES is weaker than one
+   that shows what is behind it, so the payslip's summary carries the figure
+   the reader came for — the total coming out of their pay. */
+.dc-teaser {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+summary.disclose:hover .dc-teaser {
+  color: var(--real);
+}

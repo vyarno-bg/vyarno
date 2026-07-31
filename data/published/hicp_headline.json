@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "as_of": "2026-07-27",
+  "source": "eurostat",
+  "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table?lang=en",
+  "notes": "Headline all-items HICP for BG (ECOICOP ver.2, TOTAL, annual rate of change). index_by_year and latest_index are DERIVED, not published as such by Eurostat: index_by_year takes the December reading of each year out of the monthly series (a year without a December is omitted), and both are rebased from Eurostat's published 2015=100 base to 2020=100. The annual rate of change is Eurostat's own figure, unmodified.",
+  "headline_rate_pct": 5.2,
+  "ref_period": "2026-06",
+  "index_base_year": 2020,
+  "unit": "index_2020=100",
+  "index_by_year": {
+    "2020": 100.0,
+    "2021": 106.58648877196278,
+    "2022": 121.85474020482945,
+    "2023": 127.9338532368693,
+    "2024": 130.59287794794702,
+    "2025": 135.14046791318236
+  },
+  "latest_index": {
+    "time": "2026-06",
+    "value": 139.86657897209435
+  }
+}

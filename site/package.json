@@ -1,0 +1,39 @@
+{
+  "name": "vyarno-site",
+  "private": true,
+  "license": "Apache-2.0",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vyarno-bg/vyarno.git"
+  },
+  "homepage": "https://vyarno.bg",
+  "type": "module",
+  "description": "\u0412\u044f\u0440\u043d\u043e.bg \u2014 the economy, honestly: personal inflation, real wage, salary percentile, tax wedge, rent, savings and path to home for Bulgaria. Static SPA.",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build && node scripts/copy-data.mjs && node scripts/gen-sitemap.mjs && node scripts/gen-version.mjs && node scripts/strip-sourcemaps.mjs && node scripts/check-identity.mjs",
+    "build:release": "VYARNO_RELEASE=1 npm run build",
+    "preview": "vite preview",
+    "lint": "eslint . && prettier --check .",
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "check": "svelte-check --tsconfig ./jsconfig.json",
+    "verify:math": "node --test scripts/verify_format.mjs scripts/verify_net_salary.mjs scripts/verify_mirror_math.mjs scripts/verify_view.mjs scripts/verify_stores.mjs scripts/verify_contrast.mjs scripts/verify_data_contracts.mjs scripts/verify_legal.mjs scripts/verify_static_assets.mjs scripts/verify_support.mjs scripts/verify_copy.mjs scripts/verify_template_safety.mjs scripts/verify_wiring.mjs scripts/verify_no_changelog_comments.mjs",
+    "test:render": "node --test scripts/verify_render.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-svelte": "^3.22.0",
+    "globals": "^17.8.0",
+    "playwright": "^1.62.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-svelte": "^4.1.1",
+    "svelte": "^5.56.8",
+    "svelte-check": "^4.7.4",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.5"
+  }
+}

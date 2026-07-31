@@ -1,0 +1,32 @@
+# https://editorconfig.org — the settings a formatter cannot express, applied by
+# the editor before either formatter runs. Ruff owns Python layout and Prettier
+# owns JS/Svelte/CSS/JSON/Markdown; this file exists so files neither of them
+# touches (shell, YAML, plain text) still come out consistent, and so a new
+# checkout does not depend on anyone's personal editor defaults.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+[*.{js,mjs,svelte,css,json,html}]
+indent_size = 2
+
+[*.{sh,bash}]
+indent_size = 2
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab

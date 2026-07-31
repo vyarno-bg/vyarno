@@ -1,0 +1,108 @@
+# robots.txt for vyarno.bg
+#
+# Three decisions, and the reasoning for each, because the defaults are wrong
+# for a product whose data IS the product.
+#
+# 1. SEARCH ENGINES ARE WELCOME ON THE PAGES.
+#    A Bulgarian-language calculator lives or dies on organic search. Someone
+#    typing "лична инфлация" or "колко години заплата за жилище" is exactly who
+#    the product is for, and there is nothing on the human-facing pages we
+#    would rather they did not find. The legal page is indexable on purpose:
+#    ЗЕТ чл. 4 wants the provider's identity permanently and directly
+#    accessible, and a page search engines are told to skip is one a person
+#    cannot find either.
+#
+# 2. SEARCH ENGINES DO NOT INDEX /data/published/.
+#    Not because the files are secret — they are not. The whole repository is
+#    Apache-2.0 and public, and these payloads sit in git with their history,
+#    schema and refresh dates. This is purely about search quality: a result
+#    pointing at hicp_categories.json helps no human reader, and a raw JSON
+#    blob outranking the page that explains it is a worse outcome for the
+#    person searching.
+#
+#    Anyone who wants the data by machine should take it from the repository
+#    rather than this box: github.com/vyarno-bg/vyarno. It is faster, it is
+#    versioned, and it does not cost a small server anything. That route is
+#    named in the terms of use too.
+#
+#    NOTE, because it is the thing people get wrong: the CODE is openly
+#    licensed, the FIGURES are not ours to license. Each one carries a
+#    source_url and travels under its publisher's terms. See NOTICE.
+#
+# 3. TRAINING CRAWLERS ARE DECLINED — the whole site, not just the data.
+#    The distinction we draw is attribution, not exclusivity, and it is worth
+#    being clear that this is NOT a licence restriction: the code is
+#    Apache-2.0 and anyone may fork it, including to train on. This asks one
+#    specific thing of one specific kind of consumer.
+#
+#    A search engine sends a person to the number with its source and its
+#    date attached. A model trained on the rendered page answers "inflation
+#    in Bulgaria is 5.2%" with no date, no source and no way to check — and
+#    an unsourced, undated number is the exact thing this project exists to
+#    replace. Stating a figure without its provenance is the harm, whoever
+#    does it.
+#
+#    And the limit, stated plainly: this is a request about the rendered site,
+#    not a fence around the content — the figures are published, the method is
+#    documented and the code is Apache-2.0. It is honoured by operators who
+#    honour robots.txt and by nobody else.
+#
+#    Say the asymmetry out loud, because it is the obvious objection: we take
+#    143 district averages from imot.bg. We take them manually, in thirteen
+#    requests, only the aggregates the site itself publishes, and we name the
+#    source with a link on the page where the figure appears. We are asking for
+#    exactly what we give — cite the source — and not for a right of refusal we
+#    do not honour ourselves.
+#
+# robots.txt is a request, not a fence. Everything here is enforceable only
+# through the terms of use; see https://vyarno.bg/legal/#terms.
+
+User-agent: *
+Disallow: /data/published/
+Allow: /
+
+# --- Model-training and content-ingestion crawlers ------------------------
+# Declined for the reason in note 3 above. Each of these is documented by its
+# operator as respecting robots.txt; the ones that do not are not addressable
+# from this file in any case.
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+Sitemap: https://vyarno.bg/sitemap.xml

@@ -1,0 +1,199 @@
+# Continuous integration: both test suites and the production build.
+#
+# It does NOT refresh the data. Two of the five upstreams need network paths a
+# cloud runner does not have, and a scheduled job that silently publishes a
+# partial panel is worse than a manual one that fails loudly. The `live` probes
+# are excluded for the same reason — run them from an ordinary network with
+# `pytest -m live`.
+
+name: CI
+
+# `main` is the only long-lived branch; work happens on short-lived branches
+# that merge into it (docs/local-development.md §"Branches, CI and pushing").
+# The trigger is an unfiltered `push`, so
+# every branch is gated before the merge and `main` is re-checked after it.
+# There is deliberately no `pull_request` trigger: the head commit of a PR has
+# already been pushed and checked, and branch protection matches the check by
+# commit SHA, so adding one would double every run to gate nothing.
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pipeline:
+    name: pipeline · ruff + pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Install
+        working-directory: pipeline
+        # From the lock, not from the ranges in pyproject.toml: `requirements-dev.txt`
+        # pins every transitive dependency with a hash, so a CI run resolves to the
+        # same tree a contributor got and a tampered artifact fails the install
+        # rather than the tests. The package itself goes in `--no-deps` because an
+        # editable install has nothing to hash.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e . --no-deps
+      - name: Lint and format (ruff)
+        # Config: ../ruff.toml. `format --check` is a check, never a fix — CI
+        # reports the diff and the commit is what gets corrected.
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Offline suite (gates, transforms, connectors, published payloads)
+        working-directory: pipeline
+        # `live` probes are deselected by default — they hit real upstreams.
+        run: pytest -q
+
+  site:
+    name: site · lint + types + math + contracts + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install
+        working-directory: site
+        run: npm ci
+      - name: Lint and format (eslint, prettier)
+        working-directory: site
+        run: npm run lint
+      - name: Types and component syntax (svelte-check)
+        working-directory: site
+        run: npm run check
+      - name: Math, wiring, contracts and contrast
+        working-directory: site
+        run: npm run verify:math
+      - name: Build
+        working-directory: site
+        run: npm run build
+      - name: Install Chromium for the render smoke test
+        working-directory: site
+        run: npx playwright install --with-deps chromium
+      - name: The built page actually renders
+        working-directory: site
+        # The only suite that runs the app. Everything above it tests a module
+        # or reads a template as text, and neither can see a page that throws
+        # on render — which is how a broken `{#each}` key once shipped past a
+        # fully green build.
+        run: npm run test:render
+
+  authorship:
+    name: authorship · every commit is signed by a person
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The check walks history back to a baseline, so a shallow clone
+          # would report every commit as new on the first push of a branch.
+          fetch-depth: 0
+      - name: No commit is authored by a coding agent
+        # A commit's author is the record of who is answerable for it, and
+        # CONTRIBUTING.md §"Contributions written with a coding agent" puts that
+        # on the person: "The agent wrote it" is not available as an explanation
+        # for a number that turned out wrong. An agent identity in the author
+        # field contradicts that in the one place a reader checks first.
+        #
+        # This bites hardest in a cloud agent session, where the container sets
+        # its own git identity and rebuilds fresh every time, so a local fix
+        # does not survive. The person running the session sets their own
+        # identity; this is what notices when they have not.
+        #
+        # A DENYLIST rather than an allowlist of known contributors, and that is
+        # the whole design. An allowlist makes a first-time contributor's PR
+        # fail on a file they cannot edit, which is a barrier this project does
+        # not want. Naming the agents costs a line each time a new one appears
+        # and lets every human through on their first try.
+        run: |
+          set -euo pipefail
+          # The rule applies from this commit forward, and the baseline may only
+          # ever move forward. Moving it back turns commits other clones already
+          # hold into failures that cannot be fixed without rewriting SHAs.
+          BASELINE=73f00f3968f2dcda5d56700ff0b5c4e13d034944
+          git cat-file -e "$BASELINE^{commit}" 2>/dev/null || {
+            echo "::notice::baseline $BASELINE absent from history, nothing to check"
+            exit 0
+          }
+          fail=0
+          while IFS='|' read -r sha name email; do
+            [ -n "$sha" ] || continue
+            reason=""
+            # Emails match as substrings — an agent's address is distinctive
+            # enough that no person shares one.
+            case "${email,,}" in
+              *noreply@anthropic.com*) reason="a coding agent" ;;
+              *you@example.com*|*@localhost|*@localhost.localdomain)
+                reason="a placeholder identity" ;;
+            esac
+            # Names match WHOLE, never as a prefix. "Claude" is banned and
+            # Claudia is a person; a glob would refuse her first contribution
+            # and give her no way to tell why.
+            case "${name,,}" in
+              claude|"claude code"|cursor|codex|devin|aider|"github copilot"|copilot)
+                reason="a coding agent" ;;
+              root|unknown|"your name"|"") reason="a placeholder identity" ;;
+            esac
+            [ -n "$reason" ] || continue
+            echo "::error::$sha is authored by $reason: $name <$email>"
+            fail=1
+          done < <(git log --format='%H|%an|%ae' "$BASELINE..HEAD")
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::Set your own name and email before committing. In a cloud"
+            echo "::error::agent session that means GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL,"
+            echo "::error::GIT_COMMITTER_NAME and GIT_COMMITTER_EMAIL in the environment"
+            echo "::error::settings — the container's gitconfig resets every session."
+            echo "::error::CONTRIBUTING.md §'Who a commit is from' has the detail."
+            exit 1
+          fi
+          echo "$(git rev-list --count "$BASELINE..HEAD") commit(s) since the baseline, each authored by a person"
+
+  data:
+    name: data · published JSON is committed and parses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Every payload the SPA loads is present and valid JSON
+        # The pipeline gates run against live rows at publish time and are
+        # gone by the time anyone reviews a diff. This catches the operational
+        # half: a refresh that ran but was never committed.
+        #
+        # The list comes from `site/src/lib/payloads.js` — the SPA's own
+        # manifest — and never from a copy of it kept here. A hardcoded list in
+        # this file is a payload set nothing reconciles against the SPA, and it
+        # goes stale silently, which is the whole reason the list is read from
+        # the manifest rather than kept here. `payloads.js` imports nothing, so
+        # bare node reads it with no npm install and this job stays install-free.
+        run: |
+          set -euo pipefail
+          files=$(node --input-type=module -e \
+            "import {PAYLOAD_FILES} from './site/src/lib/payloads.js'; console.log(PAYLOAD_FILES.join(' '))")
+          [ -n "$files" ] || { echo "::error::payloads.js declared no payloads"; exit 1; }
+          for f in $files; do
+            python3 -c "import json,sys; json.load(open('data/published/$f.json'))" \
+              || { echo "::error file=data/published/$f.json::missing or not valid JSON"; exit 1; }
+          done
+          # …and nothing published that the SPA does not read. An orphan payload
+          # still dates the deployed site and still gets cited as a source.
+          for path in data/published/*.json; do
+            stem=$(basename "$path" .json)
+            case " $files " in
+              *" $stem "*) ;;
+              *) echo "::error file=$path::published but absent from payloads.js"; exit 1 ;;
+            esac
+          done
+          echo "$(echo "$files" | wc -w) payloads present, parseable, and all read by the SPA"

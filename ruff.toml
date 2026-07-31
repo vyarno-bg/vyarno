@@ -1,0 +1,71 @@
+# Ruff configuration for every Python file in the repository: the pipeline
+# package, its tests, and the handful of build-time scripts under site/.
+#
+# One config at the root rather than a `[tool.ruff]` block in
+# pipeline/pyproject.toml, because site/scripts/make_og_image.py and
+# pipeline/tests/fixtures/make_hicp_fixtures.py sit outside that package and
+# should be held to the same standard.
+
+target-version = "py311"
+
+# 100, not the default 88. The pipeline carries long literal source URLs and
+# Cyrillic column labels that a shorter limit would force into worse shapes.
+line-length = 100
+
+exclude = [
+    ".venv",
+    "node_modules",
+    "dist",
+]
+
+[lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # import order
+    "UP",    # pyupgrade — the floor is 3.11, so say so
+    "B",     # bugbear: mutable defaults, shadowed loop vars, silent excepts
+    "C4",    # comprehension shape
+    "SIM",   # obvious simplifications
+    "DTZ",   # naive datetimes. A pipeline that stamps "as of" dates must not
+             # take the runner's local clock for granted.
+    "PIE",
+    "RET",   # returns that could be flattened
+    "ARG",   # unused arguments
+    "PTH",   # os.path -> pathlib
+    "RUF",
+]
+
+ignore = [
+    # Formatter's job, and it disagrees with the linter on continuation lines.
+    "E501",
+    # `zip(..., strict=)` is the right call in library code, but these are
+    # equal-length series built two lines above; the keyword adds noise.
+    "B905",
+    # Ruff wants `raise ... from err` inside every except. The connectors
+    # deliberately re-raise a domain error without the upstream traceback in
+    # some paths; where the chain matters it is written explicitly.
+    "B904",
+    # "Ambiguous unicode character" — Cyrillic that looks like Latin. This is a
+    # Bulgarian project: НСИ column headers, БНБ sheet names and Bulgarian UI
+    # copy are the subject matter, not a homoglyph attack. Suppressed
+    # repository-wide rather than with ~140 inline noqa comments.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[lint.per-file-ignores]
+# Stub callables handed to `monkeypatch.setattr` and respx `side_effect` must
+# match the signature they replace, so unused parameters are the point.
+"pipeline/tests/*" = ["ARG001", "ARG002", "ARG005"]
+
+[lint.isort]
+known-first-party = ["vyarno_pipeline"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = false

@@ -1,0 +1,68 @@
+name: "Source problem or new data source"
+description: "An upstream link is dead or moved, a publisher changed their terms, or you want to propose a new source."
+title: "[source] "
+labels: ["data-source"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Upstream publishers restructure their sites and revise their reuse
+        terms without notice. Both are real defects here: a dead `source_url`
+        breaks the project's central claim that every figure is checkable.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of report is this?
+      options:
+        - A source link is dead or has moved
+        - A publisher changed their terms of reuse
+        - A published series changed definition, base year or method
+        - Proposing a new data source
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Which source?
+      placeholder: "НСИ — average wages by district"
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      placeholder: "https://www.nsi.bg/..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: Details
+      description: What changed, and how did you notice?
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### If you are proposing a new source
+
+        One thing is required before a source can be used — see
+        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md):
+
+        **Its reuse terms, quoted verbatim in the original language, with the
+        date you read them.** "It's public data" is not a licence.
+
+  - type: textarea
+    id: terms
+    attributes:
+      label: Reuse terms (for a new source)
+      description: >
+        Paste the publisher's own words, in the original language, with a link
+        and the date you read them.
+    validations:
+      required: false
