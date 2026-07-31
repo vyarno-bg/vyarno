@@ -54,7 +54,6 @@ to do to count is §"The standard a test has to meet".
 | `site/scripts/verify_static_assets.mjs` | `node:test` | `robots.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
 | `site/scripts/verify_render.mjs` | `node:test` + Playwright | The built page, in a browser |
 | `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
-| `site/scripts/verify_no_changelog_comments.mjs` | `node:test` | That no comment in `site/` or `pipeline/` describes an earlier version of the code |
 
 `make check` runs all of it in CI's order. **The three totals live in
 [`AGENTS.md`](../AGENTS.md) §Commands and nowhere else.** A per-file count in
@@ -63,21 +62,18 @@ that file, and twelve of them go stale twelve different ways — read the totals
 from the run you just did instead. A count that moved without you moving it is
 still a finding.
 
-**The odd one out is the last row**, and it is worth saying why a prose rule is
-enforced by a test at all. `docs/writing-style.md` has said "never write a
-changelog into the source" from the beginning, and the repository accumulated
-about two hundred sentences doing it anyway — `// it used to be 92 days`,
-`// this line previously named ilc_di01`. A rule that is stated and never
-checked is a rule that quietly stops being one, and this is the rule agents and
-people alike break most, because after a change the delta is the freshest thing
-in anybody's head. It costs a reader here more than in most repositories: this
-one publishes without its history, so `// it used to be 92 days` names a
-commit nobody can find.
+**Every suite above tests behaviour, and that is the line.** A test here fails
+because a number is wrong, a contract is broken, a template passes the wrong
+value or the page does not render. None of them fails because of how a sentence
+is phrased.
 
-It reads comments and never string literals — the shipped legal copy
-legitimately tells a reader that a practice is not done — and it carries its
-own scanner test, because a scanner that silently matched nothing would pass
-the suite on any repository at all.
+`docs/writing-style.md` §"Write the constraint, never the diff" is a rule about
+phrasing and it has no suite, deliberately. A regex over prose cannot tell a
+comment narrating the repository's edit history from one describing a build
+artefact that holds code the tree does not — so the check that scanned for
+`used to` and `no longer` failed on sentences that broke no rule. A style gate
+that is occasionally wrong trains a contributor to argue with the tooling, and
+that costs more than the comments it catches. Style is what review is for.
 
 **`docs/` is outside its roots, and that is a decision rather than an
 oversight.** The scanner works because a code comment has one job and a

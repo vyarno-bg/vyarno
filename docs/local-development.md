@@ -302,12 +302,9 @@ Fourteen files under Node's built-in test runner, no dependencies. The list is
   sentence can be false while the arithmetic is right.
 - `verify_template_safety.mjs` — the `{@html}` invariants.
 - `verify_wiring.mjs` — which value the markup passes to which function.
-- `verify_no_changelog_comments.mjs` — that no comment under `site/` or
-  `pipeline/` describes an earlier version of the code. A prose rule gets a
-  test because this is the one agents and people break most.
 
-`verify_render.mjs` is the fifteenth and runs separately, under
-`npm run test:render`, because it needs a browser.
+`verify_render.mjs` runs separately, under `npm run test:render`, because it
+needs a browser.
 
 All of them also run in CI on every push, alongside `pytest -q` and the
 production build.

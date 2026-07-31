@@ -37,7 +37,6 @@ site/
 │   ├── verify_support.mjs         # the donation rules (support.js ↔ FUNDING.yml)
 │   ├── verify_template_safety.mjs # the {@html} invariants, both directions
 │   ├── verify_static_assets.mjs   # robots · security.txt · sitemap · the CSP
-│   ├── verify_no_changelog_comments.mjs  # no comment describes older code
 │   ├── verify_render.mjs          # the built page, in a browser
 │   ├── make_og_image.py           # regenerates the share card + the two
 │   │                              # README banners (stdlib only)
