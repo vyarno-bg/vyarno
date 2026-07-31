@@ -76,9 +76,15 @@ says something the code cannot.
 ### Write the constraint, never the diff
 
 **No comment in this repository describes an earlier version of this code.**
-`site/scripts/verify_no_changelog_comments.mjs` fails the build on `used to`,
-`no longer`, `previously`, `originally`, `left behind` and their kin, in
-comments and docstrings, across `site/src`, `site/scripts` and `pipeline`.
+`used to`, `no longer`, `previously`, `originally`, `left behind` and their kin
+are the phrasings to catch in yourself, in comments and docstrings alike.
+
+Nothing enforces this and that is deliberate. A regex over prose cannot tell
+`// it used to be 92 days` from a comment that legitimately says a build
+artefact holds code no longer in the tree, so the check that was here failed on
+sentences that broke no rule — and a style gate that is wrong even occasionally
+teaches a contributor to argue with the tooling rather than read the guidance.
+It is a review note now. Nobody's contribution is turned away over one.
 
 **This is the rule the repository breaks most often, and the reason is worth
 knowing, because knowing it is most of the fix.** You break it while *editing*.

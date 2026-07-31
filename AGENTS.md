@@ -42,7 +42,7 @@ with no browser, and it is the only suite that runs the app — a template error
 that renders the page blank is invisible to every other test in the repository,
 so a green run without it proves less than it looks.
 
-Expected: **288 pytest, 315 node:test, 15 render.** A count that moved without
+Expected: **288 pytest, 313 node:test, 15 render.** A count that moved without
 you moving it is a finding, not noise. `make help` lists the rest;
 `docs/local-development.md` is the long form.
 
@@ -161,8 +161,8 @@ that the diff does not already tell them?** If no, cut it.
   comments reasoning on purpose.
 - **A comment states the constraint, never the diff.** `// it used to be 92
   days`, `// this line previously named ilc_di01` — no comment here describes
-  an earlier version of this code, and `verify_no_changelog_comments.mjs` fails
-  the build on the phrasing. You will break this while *editing*, because after
+  an earlier version of this code. Nothing checks it, so it is on you and on
+  review. You will break this while *editing*, because after
   a change the delta is the freshest thing in your head. Ask what the old
   version got wrong and write that as something the code has to keep doing;
   keep the numbers and the failure, drop the tense.

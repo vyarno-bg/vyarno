@@ -174,8 +174,9 @@ already a rule above and each caught by something:
   ([`validation-gates.md`](./docs/validation-gates.md));
 - **narrating the edit in a comment** — `// this used to be 92 days`. The
   freshest thing in your context after a change is the delta, and it is the one
-  thing a reader here cannot use: this repository publishes without its
-  history. `verify_no_changelog_comments.mjs` fails the build on the phrasing;
+  thing a reader does not need: git has it, dated and attributed, and the
+  comment is a second copy that nothing keeps honest. Nothing fails the build
+  over it — it comes up in review;
 - **writing new copy in one language.** A missing string renders as a blank
   line, not a fallback;
 - **describing the published figures as openly licensed.** The code is
