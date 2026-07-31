@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "as_of": "2026-08-01",
+  "source": "legislation",
+  "source_url": "https://www.parliament.bg/",
+  "payload_name": "payroll",
+  "effective_year": 2026,
+  "effective_from": "2026-08-01",
+  "bgn_per_eur": 1.95583,
+  "employee_contrib_rates": {
+    "pension": 0.0658,
+    "pension2": 0.022,
+    "sickness_maternity": 0.014,
+    "unemployment": 0.004,
+    "health": 0.032,
+    "total": 0.1378
+  },
+  "income_tax_rate": 0.1,
+  "max_insurable_income_eur": 2300.0,
+  "max_insurable_income_bgn": 4498.41,
+  "min_wage_gross_eur": 620.2,
+  "min_wage_gross_bgn": 1213.0,
+  "scheduled_changes": [],
+  "notes": "Bulgarian payroll parameters for employee net-pay math (effective 2026). Employee social contributions total 13.78% (III категория труд, born after 1959) plus a 10% flat income tax; social contributions are capped at the maximum insurable income (the income-tax base is NOT capped). Legislative constants — there is no machine-readable feed; maintained as a dated table in pipeline/src/vyarno_pipeline/payroll.py. State Social Insurance Budget Act 2026 (ЗБДОО 2026), adopted by the National Assembly on 2026-07-22, in force 2026-08-01: the maximum insurable income rises to €2300 for all insured persons. Contribution rates, the 10% flat tax and the €620.20 minimum wage are unchanged from 2026-01-01."
+}

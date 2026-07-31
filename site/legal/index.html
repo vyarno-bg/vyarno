@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="bg" data-lang="bg" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вярно — правна информация</title>
+    <meta
+      name="description"
+      content="Условия за ползване, поверителност, идентификация на доставчика и източниците на данните на vyarno.bg."
+    />
+    <link rel="canonical" href="https://vyarno.bg/legal/" />
+
+    <!--
+    Indexable on purpose. ЗЕТ чл. 4 wants the provider's identifying
+    information permanently and directly accessible, and "findable" is part of
+    accessible — a page search engines are told to skip is one a person cannot
+    find either. There is no og:image: a legal page shared as a link card is
+    not a thing worth designing for, and the calculator's card should not be
+    reused here.
+  -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Вярно · vyarno.bg" />
+    <meta property="og:locale" content="bg_BG" />
+    <meta property="og:url" content="https://vyarno.bg/legal/" />
+    <meta property="og:title" content="Вярно — правна информация" />
+    <meta
+      property="og:description"
+      content="Условия за ползване, поверителност, идентификация на доставчика и източниците на данните."
+    />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#E8ECEF" />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <!--
+        Client-side render, so with JavaScript off #app is empty. ЗЕТ чл. 4
+        wants the provider's identity permanently accessible, so a no-JS reader
+        is pointed at how to reach it; the upstream attribution is a licence
+        condition that must appear on every page including this one.
+      -->
+      <div
+        style="
+          max-width: 40rem;
+          margin: 3rem auto;
+          padding: 0 1.25rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.55;
+        "
+      >
+        <p lang="bg">
+          Правната информация на Вярно се показва с JavaScript. Включи го и презареди, или пиши на
+          contact@vyarno.bg.
+        </p>
+        <p lang="en">
+          Vyarno's legal information renders with JavaScript. Turn it on and reload, or write to
+          contact@vyarno.bg.
+        </p>
+        <p>
+          <small
+            >Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg · Data from Eurostat / ECB / NSI / BNB /
+            imot.bg</small
+          >
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/legal-main.js"></script>
+  </body>
+</html>

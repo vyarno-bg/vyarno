@@ -1,0 +1,161 @@
+/**
+ * The two cards, the grid that holds them, and the anatomy of an input field.
+ *
+ * Svelte scopes a component's `<style>` to that component's own markup, and
+ * these rules deliberately reach across a component boundary: the grid is in
+ * `App.svelte`, each card is the root of `InputsCard`/`ResultsCard`, and the
+ * fields are inside the first of those. `.m-grid > .m-card:first-child >
+ * .field` cannot be written in any one of the three.
+ *
+ * The same reasoning as `result-row.css` next door — shared anatomy lives in a
+ * stylesheet, component-specific decoration stays with the component.
+ *
+ * Loaded once per entry point, next to tokens.css.
+ */
+
+.m-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 880px) {
+  .m-grid {
+    grid-template-columns: 1fr;
+  }
+  /* Surface the result first on phones so the payoff isn't buried under
+     the 12 basket sliders. Shows the typical (median-default) picture;
+     the inputs sit right below to make it yours. */
+  .m-grid > .m-card:nth-child(2) {
+    order: -1;
+  }
+}
+
+.m-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 20px;
+}
+.m-card h4 {
+  font-weight: 600;
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+.h4row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.f-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 420px) {
+  .f-row {
+    grid-template-columns: 1fr;
+  }
+}
+/* Vertical rhythm between the stacked .field units in YOUR NUMBERS. 14px
+   matches .h4row's margin-bottom, and the rule is scoped to the first
+   .m-card so the home block's f-row fields, which have their own grid gap,
+   do not double up. */
+.m-grid > .m-card:first-child > .field {
+  margin-bottom: 14px;
+}
+.m-grid > .m-card:first-child > .field:last-child {
+  margin-bottom: 0;
+}
+/* The results card fills the m-grid row so its bottom items (drawer, share
+   button, brand footer) anchor to the bottom instead of floating mid-card
+   when the inputs card is taller. Only the right card is a flex column; the
+   `margin-top: auto` that pushes the footer down lives on `.r-brand` in
+   ShareCard, which renders it. */
+.m-grid > .m-card:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+}
+.field label {
+  display: block;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 5px;
+}
+.field .hint {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: var(--fs-small);
+}
+/* `--fs-lead` is 16px and that is a floor, not a preference: iOS Safari
+   zooms the whole viewport when a focused text field is smaller, so a 15px
+   salary box threw the layout sideways the moment someone tapped it. */
+.field input,
+.field select {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: var(--fs-lead);
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 9px 11px;
+  font-variant-numeric: tabular-nums;
+}
+/* The y1 option text ("посл. 12 месеца · 2024.12 → 2025.12") overflows the
+   closed dropdown at the shared control size, so the anchor select alone
+   drops two steps. It is a `<select>`, not a text field, so the 16px
+   iOS-zoom floor that binds the inputs does not apply to it. */
+.field select#inAnchor {
+  font-size: var(--fs-meta);
+}
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--real);
+  outline-offset: 1px;
+  border-color: var(--real);
+}
+.field .unit {
+  position: relative;
+  display: block;
+}
+.field .unit input {
+  padding-right: 38px;
+}
+.field .unit::after {
+  content: attr(data-u);
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: var(--fs-meta);
+  color: var(--muted);
+  pointer-events: none;
+}
+.homeTog {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: var(--fs-small);
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+.homeTog input {
+  accent-color: var(--real);
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+}

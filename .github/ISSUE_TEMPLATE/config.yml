@@ -1,0 +1,13 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: mailto:contact@vyarno.bg
+    about: >
+      Please report security problems privately, not as a public issue.
+      SECURITY.md has what to include and what to expect. If this repository
+      offers "Report a vulnerability" on its Security tab, that works too.
+  - name: Question about a figure, a method or the licence
+    url: mailto:contact@vyarno.bg
+    about: >
+      Happy to answer. If the answer turns out to be interesting, it usually
+      ends up in docs/ afterwards.

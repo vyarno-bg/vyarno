@@ -1,0 +1,22 @@
+# security.txt — RFC 9116
+#
+# Any site handling other people's attention needs a published route for "I
+# found a problem" that is not a guess at an address — a public-interest tool
+# most of all, because the people who report things to it are volunteering.
+# The policy this points at also states what we ask of a researcher and what we
+# will not do to them, which is the half of a disclosure policy that actually
+# matters.
+#
+# The code is Apache-2.0, so a reporter who has the source can read it before
+# writing in. SECURITY.md in the repo root is the same policy for that audience.
+#
+# `Expires` is mandatory under RFC 9116 §2.5.5 and a file past its expiry is
+# to be treated as stale. `verify_static_assets.mjs` fails while it is within
+# 30 days of expiring, so this gets renewed by a test going red rather than by
+# someone remembering.
+
+Contact: mailto:contact@vyarno.bg
+Expires: 2027-07-26T00:00:00.000Z
+Policy: https://vyarno.bg/legal/#security
+Preferred-Languages: bg, en
+Canonical: https://vyarno.bg/.well-known/security.txt

@@ -1,0 +1,71 @@
+name: "Incorrect figure"
+description: "A number on the site looks wrong. This is the most valuable report you can make."
+title: "[figure] "
+labels: ["incorrect-figure"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you — a wrong number is the most serious kind of bug this project
+        has, and finding one is a real contribution.
+
+        You do not need to know where the error comes from. "This says 5.2% and
+        the НСИ page says 4.8%" is a complete and useful report.
+
+  - type: input
+    id: figure
+    attributes:
+      label: Which figure?
+      description: Where on the site, and what does it currently say?
+      placeholder: 'The "official inflation" line in the country strip says 5.2%'
+    validations:
+      required: true
+
+  - type: input
+    id: expected
+    attributes:
+      label: What should it say?
+      description: If you know. Leave blank if you only know it looks wrong.
+      placeholder: "4.8%"
+    validations:
+      required: false
+
+  - type: input
+    id: source
+    attributes:
+      label: Source for the correct value
+      description: >
+        A link to the official page or dataset, if you have one. This is what
+        lets the fix be verified rather than argued about.
+      placeholder: "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr"
+    validations:
+      required: false
+
+  - type: input
+    id: reference_period
+    attributes:
+      label: Reference period
+      description: Which month, quarter or year the figure covers.
+      placeholder: "June 2026"
+    validations:
+      required: false
+
+  - type: input
+    id: as_of
+    attributes:
+      label: The "data as of" date shown on the site
+      description: >
+        Shown in the strip header. This tells us whether you are looking at a
+        stale refresh rather than a computation error — a different bug with a
+        different fix.
+      placeholder: "2026-07-24"
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Inputs you entered, browser, screenshot — whatever helps.
+    validations:
+      required: false

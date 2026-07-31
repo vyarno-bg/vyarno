@@ -1,0 +1,315 @@
+/**
+ * Design tokens — palette, type scale, dark theme, @font-face for self-hosted fonts.
+ * Single source of truth for colours and typography. Mirrors the prototype.
+ *
+ * Fonts: "IBM Plex Sans" / "IBM Plex Mono" + Source Serif 4, all self-hosted
+ * woff2 under /fonts/. NO Google Fonts / no third-party CSS — locked tenet
+ * (docs/principles.md §"Identity"). Cyrillic subsets shipped; Latin glyphs fall through
+ * the system stack so EN copy still renders correctly.
+ *
+ * EVERY FONT FILE HERE IS ITS PUBLISHER'S OWN BUILD, BYTE FOR BYTE, AND THAT
+ * IS WHAT KEEPS THE NAMES USABLE
+ *
+ * The eight Cyrillic files are IBM's own split woff2 — verified identical to
+ * `@ibm/plex-sans@1.1.0` and `@ibm/plex-mono@1.0.0` — and the Source Serif
+ * files are Adobe's own WOFF2 release. Nothing here was subsetted, converted
+ * or re-compressed by this project.
+ *
+ * That matters because both families are OFL 1.1 with a Reserved Font Name —
+ * "Plex" and "Source". OFL condition 3 forbids a MODIFIED Version from using
+ * one, and SIL's OFL FAQ 2.6 counts subsetting a webfont as modification. An
+ * unmodified publisher build is not a Modified Version, so the names stand.
+ *
+ * **The rule this leaves behind: do not re-subset these files.** Running them
+ * through pyftsubset to drop a few unused glyphs would save a couple of
+ * kilobytes and would, at that moment, make every `font-family` line below a
+ * breach of a third party's licence. If a smaller file is ever genuinely
+ * needed, take a family with no Reserved Font Name instead.
+ *
+ * `OFL.txt` and `OFL.md` sit beside the fonts because condition 2 requires the
+ * licence to travel with them, and naming it in NOTICE is not including it.
+ * That was the one thing actually missing.
+ */
+
+/* ---------- @font-face (all local, no third-party CSS) ---------- */
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-Medium-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-SemiBold-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-Bold-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-Regular-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-Medium-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-SemiBold-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-Bold-Cyrillic.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/source-serif/SourceSerif4-Regular.ttf.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/source-serif/SourceSerif4-Semibold.ttf.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/source-serif/SourceSerif4-Bold.ttf.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/source-serif/SourceSerif4-It.ttf.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/source-serif/SourceSerif4-SemiboldIt.ttf.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/source-serif/SourceSerif4-BoldIt.ttf.woff2") format("woff2");
+  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+}
+
+/* ---------- Tokens ---------- */
+
+:root {
+  /* Palette — light theme. "Ledger paper": chosen green-grey neutrals
+     (deliberately NOT cream), green-black ink, and a two-hue semantic
+     system — accountant's green = brand + healthy, brick red = loss. */
+  --paper: #eceee8;
+  --paper-2: #f1f3ec;
+  --surface: #fafbf6;
+  --ink: #17211b;
+  --ink-2: #495049;
+  /* --muted is the colour of the smallest text on the page: source captions,
+     hints, the 9.5px wordmark tagline. It clears WCAG AA (4.5:1) against all
+     three light surfaces, and verify_contrast.mjs fails the build if a retune
+     drops it below. There is no large-text exemption — see docs/site.md. */
+  --muted: #676e64;
+  --line: #d3d8cc;
+  --line-2: #e0e4da;
+  --real: #1c6b54;
+  --real-soft: rgba(28, 107, 84, 0.12);
+  --real-ink: #145140;
+  --erode: #b23a2e;
+  --erode-soft: rgba(178, 58, 46, 0.13);
+  --gain-band: rgba(28, 107, 84, 0.07);
+  --rule: rgba(23, 33, 27, 0.05); /* faint ledger rule */
+  --stamp: #b23a2e; /* official-mark accent (source refs) */
+  --hdr: rgba(236, 238, 232, 0.88);
+  --track: #17211b0a;
+
+  /* Typography */
+  --serif: "Source Serif 4", Georgia, serif;
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* ---------- The type scale ----------
+     Nine steps, and every font-size in the app is one of them. Two rules
+     about it are load-bearing rather than cosmetic.
+
+     1. **The steps are in `rem`, never `px`.** A reader who has raised the
+        default font size in their browser — the single most common thing a
+        person with weak eyesight does, and the accessibility setting the web
+        actually honours — gets a proportionally bigger page. A `px` size
+        ignores that setting outright, which is why the old hand-tuned ladder
+        (9px … 21px) could not be scaled by the people who most needed to.
+     2. **The floor is 11px, not 9px.** The ledger look leans on small mono
+        captions and it should; but the previous floor put source lines, unit
+        suffixes and the "≈ €128" column under the threshold at which ordinary
+        middle-aged eyesight reads comfortably, and this page is read by people
+        checking what their groceries cost. The scale is compressed rather than
+        uniformly enlarged: the bottom rose ~22%, the top ~6%, so the hierarchy
+        survives while nothing is tiny any more.
+
+     `--fs-lead` (16px) is also the floor for every `<input>` and `<select>`:
+     iOS Safari zooms the viewport when a focused field is smaller than that,
+     which yanks the layout sideways mid-typing. Do not drop a form control
+     below it.
+
+     Sizes that must track the viewport (the h1, the big result figure) use
+     `clamp()` with rem bounds, for the same reason as rule 1. */
+  --fs-micro: 0.6875rem; /* 11px — mono tags, stamps, the wordmark tagline */
+  --fs-fine: 0.75rem; /* 12px — source captions, unit suffixes */
+  --fs-small: 0.8125rem; /* 13px — hints, legends, chips, toggles */
+  --fs-meta: 0.875rem; /* 14px — field labels, card headings, notes */
+  --fs-body: 0.9375rem; /* 15px — secondary body copy */
+  --fs-lead: 1rem; /* 16px — primary body copy AND every form control */
+  --fs-strong: 1.0625rem; /* 17px — emphasised body, big-figure sub-labels */
+  --fs-h3: 1.1875rem; /* 19px — the wordmark, sub-headings */
+  --fs-h2: 1.375rem; /* 22px — section headings */
+
+  /* Layout */
+  --maxw: 1120px;
+  --gutter: clamp(16px, 4vw, 56px);
+  --radius: 3px;
+}
+
+html[data-theme="dark"] {
+  /* "Ledger at night": deep green-black ground, warm-white ink, the same
+     two-hue system brightened to hold contrast on a dark field. */
+  --paper: #10140f;
+  --paper-2: #161b14;
+  --surface: #1b211a;
+  --ink: #e7ece1;
+  --ink-2: #a6af9f;
+  /* Same rule as the light theme's --muted: 4.5:1 on all three dark
+     surfaces, enforced by verify_contrast.mjs. */
+  --muted: #7f897b;
+  --line: #2a322a;
+  --line-2: #212821;
+  --real: #4fb08f;
+  --real-soft: rgba(79, 176, 143, 0.17);
+  --real-ink: #7ecaab;
+  --erode: #db6a57;
+  --erode-soft: rgba(219, 106, 87, 0.17);
+  --gain-band: rgba(79, 176, 143, 0.11);
+  --rule: rgba(231, 236, 225, 0.055);
+  --stamp: #db6a57;
+  --hdr: rgba(16, 20, 15, 0.86);
+  --track: #e7ece111;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* No `font-size` here on purpose: the root keeps the browser's own default, so
+   1rem IS whatever the reader set, and the whole scale above moves with it. */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* BG/EN toggle: .l-bg visible when data-lang="bg", .l-en when data-lang="en" */
+html[data-lang="bg"] .l-en {
+  display: none;
+}
+html[data-lang="en"] .l-bg {
+  display: none;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--real);
+  color: var(--surface);
+}
+
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+/* Focus-visible */
+button:focus-visible,
+.pill:focus-visible,
+a:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--real);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

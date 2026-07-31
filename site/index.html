@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="bg" data-lang="bg" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вярно — сметни своята инфлация</title>
+    <!--
+    The description names what the page actually computes, not just the
+    inflation half. "Калкулатор за лична инфлация" was the description
+    everywhere for a while and it describes roughly a third of what ships:
+    somebody searching for «колко ми взима данъкът» or «стига ли ми за
+    жилище» has no way to tell this page answers them. Kept under ~160
+    characters so search results do not truncate mid-clause.
+  -->
+    <meta
+      name="description"
+      content="Личната ти инфлация, реалната ти заплата, данъкът, наемът и пътят до жилище — сметнато в браузъра ти от официални данни. Нищо не се изпраща."
+    />
+    <link rel="canonical" href="https://vyarno.bg/" />
+
+    <!--
+    Share previews. Until 2026-07-25 there was no og:image, no og:url, no
+    canonical and no twitter:card, so every link posted to Viber, Messenger or
+    X — which is how things actually spread in Bulgaria — previewed as a blank
+    card. The share button has shipped since 2026-07-22, so this was live.
+
+    og:image is a static 1200×630 PNG baked into /public. It carries the
+    wordmark and the strapline only: NO number, deliberately. Preview images
+    are cached hard by every platform, and a stale inflation figure in a cached
+    card is our credibility, not theirs (docs/principles.md P4).
+  -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Вярно · vyarno.bg" />
+    <meta property="og:locale" content="bg_BG" />
+    <meta property="og:url" content="https://vyarno.bg/" />
+    <meta property="og:title" content="Вярно — сметни своята инфлация" />
+    <meta
+      property="og:description"
+      content="Инфлацията ти, реалната ти заплата и пътят до жилище — за 30 секунди, без регистрация, от официални данни, изцяло в твоя браузър."
+    />
+    <meta property="og:image" content="https://vyarno.bg/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Вярно · vyarno.bg — сметни своята инфлация, от официалните данни на Евростат"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Вярно — сметни своята инфлация" />
+    <meta
+      name="twitter:description"
+      content="Инфлацията ти, реалната ти заплата и пътят до жилище — за 30 секунди, без регистрация, от официални данни, изцяло в твоя браузър."
+    />
+    <meta name="twitter:image" content="https://vyarno.bg/og-image.png" />
+
+    <!-- SVG only: 592 bytes, scales to every slot, no rasterised set to keep
+       in sync. Same geometry as the in-app wordmark in App.svelte. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/og-image.png" />
+    <meta name="theme-color" id="metaTheme" content="#E8ECEF" />
+    <!--
+    Self-hosted fonts. No third-party CSS / no Google Fonts: CSP
+    "no third-party scripts" is a locked tenet (docs/principles.md §"Identity").
+    Only the Cyrillic + Latin subsets are shipped — keeps total
+    transfer under 250 kB.
+  -->
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex/IBMPlexSans-SemiBold-Cyrillic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <!--
+        The calculator renders client-side, so with JavaScript off #app stays
+        empty and a reader without it — or a crawler that does not run scripts —
+        gets a blank page. This is the only thing they see, so it says the app
+        needs JavaScript and computes entirely in the browser, and it carries
+        the upstream attribution: a licence condition of several sources that
+        must appear on every page and otherwise renders only from the bundle.
+      -->
+      <div
+        style="
+          max-width: 40rem;
+          margin: 3rem auto;
+          padding: 0 1.25rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.55;
+        "
+      >
+        <p lang="bg">
+          Вярно смята изцяло в браузъра ти и затова има нужда от JavaScript. Включи го и презареди
+          страницата — нищо от числата ти не се изпраща никъде.
+        </p>
+        <p lang="en">
+          Vyarno computes entirely in your browser, so it needs JavaScript. Turn it on and reload —
+          none of your figures are sent anywhere.
+        </p>
+        <p>
+          <small
+            >Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg · Data from Eurostat / ECB / NSI / BNB /
+            imot.bg</small
+          >
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

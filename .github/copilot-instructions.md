@@ -1,0 +1,35 @@
+# Copilot instructions
+
+`AGENTS.md` at the repo root is the instruction file for this repository — the
+commands, the layout, and the boundaries, including the ones that are never to
+be crossed. Read it first. `pipeline/AGENTS.md` and `site/AGENTS.md` cover the
+Python ingest and the Svelte SPA respectively.
+
+Run `make check` before calling a change done, and read the render count — 14
+is the pass condition. Run bare, that suite skips and exits 0 where it finds no
+browser; `make check` fails instead of reporting green, and
+`npx playwright install chromium` in `site/` is the fix where nothing resolves.
+
+## Writing
+
+`docs/writing-style.md` is the full list; change a rule there rather than here.
+The essentials:
+
+- Commit subject: imperative, sentence case, ≤72 chars, no full stop. The body
+  says **why** — what was wrong before, what you rejected, what you ran and its
+  counts. No `## Summary` scaffolding, no bullet list of the changed files.
+- PR bodies fill `.github/pull_request_template.md` and stop. No per-file
+  walkthrough; the Files tab is the walkthrough.
+- Comments explain the reasoning, never the mechanics. Long why-comments are
+  house style here.
+- A comment states the constraint, never the diff. No comment may describe an
+  earlier version of the code — "it used to be X", "this previously read Y" —
+  and a test fails the build on that phrasing. You will reach for it while
+  editing, because the delta is what is freshest in your head. Ask what the old
+  version got wrong and write that as a rule the code has to keep.
+- No emoji anywhere. No "successfully implemented", no self-attribution.
+- None of the tells: binary contrast ("it's not X, it's Y"), throat-clearing,
+  colon reveals, negative listing, a closing paragraph restating the one above,
+  or comprehensive / seamless / robust / leverage.
+- Em-dashes stay — they are how this repo attaches a reason to a claim.
+- New user-facing copy is written in both BG and EN in the same commit.

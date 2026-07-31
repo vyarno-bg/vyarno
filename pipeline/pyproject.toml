@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vyarno-pipeline"
+version = "0.1.0"
+description = "vyarno.bg data ingest + validation pipeline"
+requires-python = ">=3.11"
+# Apache-2.0, like the rest of the project. See ../LICENSE and ../NOTICE.
+#
+# The carve-out that matters is not in this file: the FIGURES in
+# `data/published/` belong to Eurostat, the ЕЦБ, БНБ, НСИ and имот.bg and
+# are not ours to license. This licence covers the pipeline's own code —
+# the connectors, transforms and gates — not the numbers they fetch.
+# ../NOTICE states the boundary; docs/legal.md quotes each publisher.
+license = "Apache-2.0"
+license-files = ["../LICENSE", "../NOTICE"]
+# No "License :: OSI Approved :: ..." trove classifier: PEP 639 superseded
+# those with the SPDX `license` expression above, and setuptools now refuses
+# to build when both are present. The expression is the licence declaration.
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: Bulgarian",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.6",
+    "click>=8.1",
+    "openpyxl>=3.1",
+]  
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "hypothesis>=6.95",
+    "respx>=0.21",
+    # Lint and format. Configured in ../ruff.toml, which covers the build-time
+    # scripts under site/ as well as this package. CI runs `ruff check` and
+    # `ruff format --check`, so an unformatted commit fails there.
+    "ruff>=0.16",
+]
+
+[project.urls]
+Homepage = "https://vyarno.bg"
+Source = "https://github.com/vyarno-bg/vyarno"
+Documentation = "https://github.com/vyarno-bg/vyarno/blob/main/docs/README.md"
+# Package metadata is a third place a donation channel can be advertised,
+# alongside `.github/FUNDING.yml` and `SUPPORT_PLATFORMS` in
+# site/src/lib/support.js. It is rendered on PyPI and read by tooling, so a URL
+# here is a live donate link whatever the site says — and it is the one of the
+# three that nobody thinks to check. `verify_support.mjs` reads all three and
+# fails when they disagree: this key names a platform `support.js` marks
+# `live: true`, or it is absent.
+Funding = "https://ko-fi.com/vyarno"
+
+[project.scripts]
+vyarno-pipeline = "vyarno_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# `-m "not live"` keeps the default run offline and deterministic. Override
+# it on the command line (`pytest -m live`) to probe the real upstreams;
+# see tests/test_live_upstreams.py.
+addopts = "--strict-markers --tb=short -m 'not live'"
+markers = [
+    "live: hits real Eurostat/ECB/NSI/BNB/imot.bg endpoints. Excluded from the default run; select with `pytest -m live`.",
+]
+filterwarnings = [
+    # BNB's workbook carries a print header openpyxl can't parse. Cosmetic,
+    # unrelated to the cells we read; the connector mutes it too.
+    "ignore:Cannot parse header or footer so it will be ignored:UserWarning",
+]
