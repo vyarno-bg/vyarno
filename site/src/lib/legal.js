@@ -48,8 +48,8 @@
  * Bump, always. The shortcut is only ever available before anything has been
  * served at all, and that moment has passed.
  */
-export const LEGAL_VERSION = "1.2";
-export const LEGAL_EFFECTIVE = { bg: "31 юли 2026 г.", en: "31 July 2026" };
+export const LEGAL_VERSION = "1.3";
+export const LEGAL_EFFECTIVE = { bg: "1 август 2026 г.", en: "1 August 2026" };
 
 import { CONTACT, LEGAL_NAV, REPO_ISSUES_URL, REPO_SLUG } from "./legal-nav.js";
 
@@ -667,20 +667,35 @@ const DOC_BODIES = [
         h: { bg: "Ако решиш да дариш", en: "If you choose to donate" },
         p: [
           {
-            bg: "Този сайт не приема плащания и няма форма за дарение. Има само връзка към Ko-fi — натиснеш ли я, излизаш от vyarno.bg. Ако не я натиснеш, нищо в този раздел не се отнася за теб.",
-            en: "This site takes no payments and has no donation form. What it has is a link to Ko-fi — follow it and you leave vyarno.bg. If you do not follow it, nothing in this section is about you.",
+            bg: "Този сайт не приема плащания и няма форма за дарение. Има само връзки към Ko-fi и GitHub Sponsors — натиснеш ли някоя от тях, излизаш от vyarno.bg. Ако не ги натиснеш, нищо в този раздел не се отнася за теб.",
+            en: "This site takes no payments and has no donation form. What it has is links to Ko-fi and GitHub Sponsors — follow one and you leave vyarno.bg. If you do not follow them, nothing in this section is about you.",
           },
           {
-            bg: "Ko-fi и Stripe са отделни дружества със свои условия и своя политика за поверителност; там си техен потребител, а не наш. Плащането минава изцяло през Stripe: данните на картата ти не преминават през този сайт и не стигат до нас под никаква форма.",
-            en: "Ko-fi and Stripe are separate companies with their own terms and their own privacy policies; there you are their user, not ours. The payment goes entirely through Stripe: your card details do not pass through this site and do not reach us in any form.",
+            bg: "Ko-fi, GitHub и Stripe са отделни дружества със свои условия и своя политика за поверителност; там си техен потребител, а не наш. Плащането минава изцяло през платформата и нейния доставчик на разплащания: данните на картата ти не преминават през този сайт и не стигат до нас под никаква форма.",
+            en: "Ko-fi, GitHub and Stripe are separate companies with their own terms and their own privacy policies; there you are their user, not ours. The payment goes entirely through the platform and its own payment provider: your card details do not pass through this site and do not reach us in any form.",
           },
           {
             bg: "От дарението получаваме името или псевдонима, който си въвел, електронната ти поща, съобщението, ако си оставил такова, сумата и датата. Основанието е самото дарение — то е договор, макар и безвъзмезден — и задължението ни да отчетем полученото пред данъчните органи. Пазим тези записи, докато текат данъчните срокове, които се отнасят за тях, и не ги ползваме за друго: не изграждаме профил, не пращаме бюлетин и не публикуваме списък на дарителите.",
             en: "From the donation we receive the name or alias you entered, your e-mail address, your message if you left one, the amount and the date. The basis is the donation itself — a contract, gratuitous though it is — and our obligation to account to the tax authorities for what we receive. We keep those records for as long as the tax periods that apply to them run, and we use them for nothing else: we build no profile, we send no newsletter, and we publish no list of donors.",
           },
           {
-            bg: "Правата ти по ОРЗД важат и за този запис и се упражняват на същия адрес — contact@vyarno.bg. За това, което Ko-fi и Stripe държат за теб, се обърни към тях: ние нямаме достъп до профила ти при тях и не можем да го променим.",
-            en: "Your GDPR rights cover that record too and are exercised at the same address — contact@vyarno.bg. For what Ko-fi and Stripe hold about you, go to them: we have no access to your account with either and cannot change it.",
+            // GitHub Sponsors shows sponsors on the recipient's own GitHub
+            // profile unless the sponsor sets themselves private. That is the
+            // platform's page and the person's own setting there, and the
+            // notice has to say so: "we publish no list of donors" is true of
+            // vyarno.bg and would otherwise read as a promise that a name
+            // becomes public nowhere.
+            //
+            // It is also the boundary `support.js` rule 4 sits behind on this
+            // channel. Copying that list onto vyarno.bg would make it
+            // something the project gives back for a donation — which is
+            // exactly what flips `LEGAL_FORM.takesPayment`.
+            bg: "Някои платформи показват дарителите на своята собствена страница — GitHub Sponsors прави така, освен ако не се отбележиш като частен дарител там. Това е тяхната страница и твоята настройка при тях; ние не пренасяме такъв списък тук, не подреждаме дарители и не даваме нищо в замяна на дарение.",
+            en: "Some platforms show supporters on a page of their own — GitHub Sponsors does, unless you mark yourself a private sponsor there. That is their page and your setting with them; we copy no such list onto this site, we rank nobody, and we give nothing in return for a donation.",
+          },
+          {
+            bg: "Правата ти по ОРЗД важат и за този запис и се упражняват на същия адрес — contact@vyarno.bg. За това, което Ko-fi, GitHub или Stripe държат за теб, се обърни към тях: ние нямаме достъп до профила ти при тях и не можем да го променим.",
+            en: "Your GDPR rights cover that record too and are exercised at the same address — contact@vyarno.bg. For what Ko-fi, GitHub or Stripe hold about you, go to them: we have no access to your account with any of them and cannot change it.",
           },
         ],
       },

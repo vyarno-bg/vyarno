@@ -331,13 +331,14 @@ would rather not give, nothing changes for you.
 The site says all of this itself, at [vyarno.bg/support/](https://vyarno.bg/support/) —
 its own URL rather than a fragment of the legal page, so it can be linked to.
 
-**[Ko-fi](https://ko-fi.com/vyarno)** — one-off, no account needed. It is the
-only channel open. The other three are declared in
+**[Ko-fi](https://ko-fi.com/vyarno)** — one-off, no account needed.
+**[GitHub Sponsors](https://github.com/sponsors/vyarno-bg)** — one-off or
+monthly. Open Collective and Liberapay are declared in
 [`.github/FUNDING.yml`](./.github/FUNDING.yml) and
 [`site/src/lib/support.js`](./site/src/lib/support.js) and stay switched off
 until an account actually exists — a donate button pointing at a 404 is worse
 than no button. `site/scripts/verify_support.mjs` fails the build if the two
-ever disagree.
+ever disagree, and again if a live channel is missing from the privacy notice.
 
 Money is not the most useful support, though: report a wrong number, fix
 something ([Contributing](#contributing) is ordered by usefulness), or just tell
