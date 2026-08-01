@@ -9,6 +9,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY } from "$lib/content.js";
+  import { SUPPORT_COPY } from "$lib/support.js";
   import { integer } from "$lib/format.js";
 
   const {
@@ -259,6 +260,34 @@
           >
         </p>
 
+        <!-- The second of the two surfaces `support.js` rule 1 allows, and it
+             sits here rather than anywhere nearer the figures because of what
+             it is: an answer to a question, next to the other answer of that
+             kind. «А моите данни?» above it is the same shape — a reader who
+             has just been told what their groceries cost wants to know what it
+             cost them to be told, and who benefited from the sentence.
+
+             It states a fact and offers a link. It does not appeal, it names
+             no sum, and nothing about it changes between a first visit and a
+             hundredth. If this becomes a call to action, or acquires a second
+             copy anywhere on the page, the rule it is permitted by has been
+             broken by the code it permits. -->
+        <h4>
+          <span class="l-bg">{SUPPORT_COPY.explainK.bg}</span><span class="l-en"
+            >{SUPPORT_COPY.explainK.en}</span
+          >
+        </h4>
+        <p>
+          <span class="l-bg"
+            >{SUPPORT_COPY.explainBody.bg}
+            <a class="support-more" href="/support/">{SUPPORT_COPY.moreK.bg} →</a></span
+          >
+          <span class="l-en"
+            >{SUPPORT_COPY.explainBody.en}
+            <a class="support-more" href="/support/">{SUPPORT_COPY.moreK.en} →</a></span
+          >
+        </p>
+
         <!-- THE METHOD, IN ONE PLACE. Every formula behind the four figures in
              the results card, at the very end of the page, closed. One block
              here rather than a toggle under each item in the results drawer:
@@ -371,5 +400,17 @@
     font-size: var(--fs-meta);
     line-height: 1.62;
     color: var(--ink-2);
+  }
+  /* An underline and the link colour, at the size of the prose it ends. No
+     fill, no padding box, no arrow button — the same specification the
+     footer's donate link keeps, for the same reason (support.js rule 1). */
+  .support-more {
+    color: var(--real-ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--real-soft);
+    white-space: nowrap;
+  }
+  .support-more:hover {
+    border-bottom-color: var(--real);
   }
 </style>

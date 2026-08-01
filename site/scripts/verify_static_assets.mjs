@@ -157,10 +157,16 @@ test("the sitemap lists the pages that exist and nothing that is disallowed", ()
   const xml = sitemapXml([
     { loc: "/", lastmod: "2026-06-30" },
     { loc: "/legal/", lastmod: "2026-07-26" },
+    { loc: "/support/" },
   ]);
   assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
   assert.ok(xml.includes('xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'));
   assert.ok(xml.includes(`<loc>${ORIGIN}/legal/</loc>`));
+  assert.ok(
+    xml.includes(`<loc>${ORIGIN}/support/</loc>`),
+    "the sitemap omits /support/. It is a real page and the one whose whole " +
+      "purpose is to be findable by someone looking for it."
+  );
   assert.ok(
     !xml.includes("/data/published/") && !xml.includes("404"),
     "the sitemap lists a path robots.txt disallows or a noindex error page — " +
@@ -172,15 +178,20 @@ test("the sitemap lists the pages that exist and nothing that is disallowed", ()
 // the pages themselves
 // ---------------------------------------------------------------------------
 
-test("the three build entries exist where vite.config.js expects them", () => {
-  for (const p of [["index.html"], ["legal", "index.html"], ["404.html"]]) {
+test("the four build entries exist where vite.config.js expects them", () => {
+  for (const p of [
+    ["index.html"],
+    ["legal", "index.html"],
+    ["support", "index.html"],
+    ["404.html"],
+  ]) {
     assert.ok(
       existsSync(site(...p)),
       `${p.join("/")} is missing — the build input list points at it`
     );
   }
   const cfg = read("vite.config.js");
-  for (const entry of ["index.html", "legal/index.html", "404.html"]) {
+  for (const entry of ["index.html", "legal/index.html", "support/index.html", "404.html"]) {
     assert.ok(
       cfg.includes(`"${entry}"`) || cfg.includes(`'${entry}'`),
       `vite.config.js no longer builds ${entry}; it would silently stop being ` +
@@ -341,7 +352,7 @@ test("the two cache lifetimes that ship stale numbers if reversed", () => {
     !/immutable/.test(data),
     "/data/published/* is marked immutable — the numbers change, that is the point."
   );
-  for (const entry of ["/index.html", "/legal/index.html", "/404.html"]) {
+  for (const entry of ["/index.html", "/legal/index.html", "/support/index.html", "/404.html"]) {
     const rule = (blocks[entry] ?? []).join(" ");
     assert.match(
       rule,

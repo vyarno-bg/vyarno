@@ -9,11 +9,17 @@
  * payloads, which is genuinely when the page's content last changed; the legal
  * page's is its effective date.
  *
- * Two pages, and that is the whole site: `/` and `/legal/`. `/404.html` is
- * deliberately absent (it is `noindex`, and listing an error page is a
- * crawl-budget bug), and `/data/published/*` is absent because `robots.txt`
- * disallows it — a sitemap that lists a disallowed path is a contradiction a
- * crawler reports back as an error.
+ * Three pages, and that is the whole site: `/`, `/legal/` and `/support/`.
+ * `/404.html` is deliberately absent (it is `noindex`, and listing an error
+ * page is a crawl-budget bug), and `/data/published/*` is absent because
+ * `robots.txt` disallows it — a sitemap that lists a disallowed path is a
+ * contradiction a crawler reports back as an error.
+ *
+ * `/support/` carries no `lastmod`. Its content changes when a channel opens
+ * or the copy is edited, and neither is a date anything in this build can
+ * read; a hand-maintained constant beside `LEGAL_LASTMOD` would be wrong from
+ * the first commit that forgot it. The field is optional, and an omitted
+ * `lastmod` costs a crawler nothing next to a false one.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -97,10 +103,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const xml = sitemapXml([
     { loc: "/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/legal/", lastmod: LEGAL_LASTMOD, changefreq: "yearly" },
+    { loc: "/support/", changefreq: "yearly" },
   ]);
 
   await writeFile(join(DIST, "sitemap.xml"), xml, "utf8");
   console.log(
-    `[gen-sitemap] wrote dist/sitemap.xml — 2 pages, data lastmod ${dataLastmod ?? "omitted"}`
+    `[gen-sitemap] wrote dist/sitemap.xml — 3 pages, data lastmod ${dataLastmod ?? "omitted"}`
   );
 }

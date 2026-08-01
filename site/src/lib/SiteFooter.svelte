@@ -30,8 +30,16 @@
   import { SUPPORT_COPY, footerDonateLink } from "./support.js";
   import { BUILD_ID } from "./build.js";
 
-  /** `true` on the legal page itself, where linking to the same page is noise. */
-  const { onLegalPage = false } = $props();
+  /**
+   * Which page this footer is on: `"legal"`, `"support"`, or `""` elsewhere.
+   *
+   * It exists so a page does not link to itself, which is noise — on `/legal/`
+   * the document links become in-page fragments. One name rather than a
+   * boolean per page: several booleans make "on the legal page AND the support
+   * page" expressible, which means nothing, and anything expressible
+   * eventually gets written.
+   */
+  const { page = "" } = $props();
 
   /**
    * The one open channel, or `null` while there are none or several.
@@ -51,12 +59,12 @@
 
     <nav class="legal-links" aria-label="legal">
       {#each LEGAL_NAV as doc (doc.id)}
-        <a href={onLegalPage ? `#${doc.id}` : `/legal/#${doc.id}`}>
+        <a href={page === "legal" ? `#${doc.id}` : `/legal/#${doc.id}`}>
           <span class="l-bg">{doc.nav.bg}</span>
           <span class="l-en">{doc.nav.en}</span>
         </a>
       {/each}
-      <a href={onLegalPage ? "#support" : "/legal/#support"}>
+      <a href="/support/">
         <span class="l-bg">{SUPPORT_COPY.navK.bg}</span>
         <span class="l-en">{SUPPORT_COPY.navK.en}</span>
       </a>
@@ -134,12 +142,22 @@
   }
   /* Quieter than the credits above it, and no link styling of its own — the
      link is the "Подкрепа" item in the nav row. This is a fact about the
-     project, printed at the size of a fact. */
+     project, printed at the size of a fact.
+
+     **No `opacity` on this rule, and none on anything inside it.** `--muted` is
+     pinned at exactly 4.5:1 against all three surfaces in both themes
+     (`tokens.css`, `verify_contrast.mjs`), which means any fade on top of it
+     lands below WCAG AA — 0.85 computes to 3.53:1 on `--paper-2` in the light
+     theme and 3.82:1 in the dark one. The token check cannot see that, because
+     it reads `tokens.css` and the fade is here; `verify_contrast.mjs` therefore
+     parses this rule and recomputes the ratio it actually renders at. Quiet is
+     a size and a colour, and the colour is already the quietest one that stays
+     readable — going further makes the one line the project has unreadable to
+     the people most likely to be squinting at a footer. */
   .support {
     padding: 0 0 30px;
     font-size: var(--fs-fine);
     color: var(--muted);
-    opacity: 0.85;
     line-height: 1.6;
   }
   /* The legal links' treatment exactly, and that is the whole specification:

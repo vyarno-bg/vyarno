@@ -5,14 +5,24 @@ calculator. The user's browser never calls an upstream API.
 
 ## Layout
 
-**Three build entries, three real URLs**, so each resolves on a static host with
+**Four build entries, four real URLs**, so each resolves on a static host with
 no router and no rewrite rules (`vite.config.js#rollupOptions.input`):
 
 | Entry | URL | What it is |
 |---|---|---|
 | `index.html` → `src/main.js` → `App.svelte` | `/` | the calculator |
 | `legal/index.html` → `src/legal-main.js` → `Legal.svelte` | `/legal/` | terms, privacy, ЗЕТ чл. 4 identity, sources |
+| `support/index.html` → `src/support-main.js` → `Support.svelte` | `/support/` | how the project is paid for |
 | `404.html` → `src/notfound-main.js` → `NotFound.svelte` | `/404.html` | served for any unmatched path by name |
+
+`/support/` is a page rather than a section of `/legal/` because it is not a
+legal document: it carries no obligation, it is not versioned with the four,
+and reaching it through the legal entry cost a reader the ~30 kB of terms of
+use that entry loads. It is also the one URL the project needs to be able to
+hand somebody. What may be said on it, and how many other places may say any of
+it, is `src/lib/support.js` — rule 1 allows two surfaces (the footer line and
+the explainer's «Кой плаща за това?») plus this page, and `verify_support.mjs`
+holds the import list that keeps the count honest.
 
 ```
 site/
@@ -45,7 +55,7 @@ site/
 │   ├── _headers · robots.txt · .well-known/security.txt
 │   ├── favicon.svg · og-image.png · fonts/ (self-hosted, vendored unmodified)
 └── src/
-    ├── App.svelte · Legal.svelte · NotFound.svelte
+    ├── App.svelte · Legal.svelte · Support.svelte · NotFound.svelte
     ├── components/   # the calculator, one file per part
     └── lib/
         ├── payloads.js   # WHICH payloads exist at all (the manifest)
@@ -64,10 +74,10 @@ site/
         └── tokens.css · card.css · result-row.css · disclosure.css
 ```
 
-`SiteFooter.svelte` is shared by all three pages on purpose: it carries the
+`SiteFooter.svelte` is shared by all four pages on purpose: it carries the
 upstream attribution (a licence condition) and the legal links (ЗЕТ чл. 4 wants
 the provider's identity reachable from every page). A page that declares its own
-`<footer>` fails `all_three_pages_mount_the_shared_footer_and_none_declares_its_own`.
+`<footer>` fails `all_four_pages_mount_the_shared_footer_and_none_declares_its_own`.
 
 ## The five-layer split
 
@@ -917,6 +927,13 @@ relative luminance of each `--ink*` / `--muted` / `--real*` / `--erode` against
 large-text exemption on purpose: every role checked is small text — source
 captions, hints, the wordmark tagline. If a design change needs a lighter muted,
 the captions have to get bigger first.
+
+**`opacity` on text is the way past all of that, so it is checked separately.**
+`--muted` sits at exactly 4.5:1, so any fade over it renders below AA while the
+token's own check stays green — `opacity: 0.85` on `--paper-2` composites to
+3.53:1 light and 3.82:1 dark. The same suite therefore parses `SiteFooter`'s
+`.support` rule and recomputes the ratio that rule actually renders at, because
+the palette cannot see a fade declared in a component.
 
 ### The type scale
 

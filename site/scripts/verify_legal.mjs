@@ -950,12 +950,12 @@ test("the recomputed-figures disclaimer accounts for имот.bg", () => {
   }
 });
 
-test("all three pages mount the shared footer and none declares its own", () => {
+test("all four pages mount the shared footer and none declares its own", () => {
   // The footer carries the upstream attribution (a licence condition) and the
   // legal links (ЗЕТ чл. 4 wants the provider's identity reachable from every
   // page). A page that grew its own <footer> is the same list maintained twice,
   // and the copy drifts.
-  for (const page of ["App.svelte", "Legal.svelte", "NotFound.svelte"]) {
+  for (const page of ["App.svelte", "Legal.svelte", "Support.svelte", "NotFound.svelte"]) {
     const src = read("src", page).replace(/<!--[\s\S]*?-->/g, " ");
     assert.ok(
       src.includes("<SiteFooter"),

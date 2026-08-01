@@ -102,6 +102,58 @@ test("--muted specifically stays readable — it carries the smallest type", () 
   }
 });
 
+test("the footer's support line renders at the ratio its token promises", () => {
+  // Everything above reads `tokens.css`, so a fade applied anywhere else is
+  // invisible to all of it — and `--muted` sits at exactly 4.5:1, which means
+  // ANY fade over it lands below AA while `--muted`'s own check stays green.
+  // `opacity: 0.85` on the footer's support line composites to 3.53:1 in the
+  // light theme and 3.82:1 in the dark one, on the one sentence that says how
+  // the project is paid for.
+  //
+  // `opacity` is what makes this class of defect invisible in review: it looks
+  // like a taste dial and it is arithmetic on a contrast ratio. So this
+  // recomputes the ratio the rule actually renders at, reading the component
+  // rather than the palette, and the lever cannot be pulled quietly.
+  const FOOTER = readFileSync(join(HERE, "..", "src", "lib", "SiteFooter.svelte"), "utf-8");
+  const rule = FOOTER.match(/\.support\s*\{([^}]*)\}/);
+  assert.ok(rule, ".support is gone from SiteFooter.svelte — the support line with it?");
+
+  const colour = rule[1].match(/color:\s*var\(--([\w-]+)\)/);
+  assert.ok(colour, ".support no longer paints its text from a token");
+  const fade = rule[1].match(/opacity:\s*([\d.]+)/);
+  const alpha = fade ? Number(fade[1]) : 1;
+
+  for (const [themeName, block] of [
+    ["light", ":root {"],
+    ["dark", 'html[data-theme="dark"] {'],
+  ]) {
+    // The footer sits on --paper-2. Compositing a partly transparent
+    // foreground over it is what the browser does, so it is what this does.
+    const bg = token(block, "paper-2");
+    const fg = token(block, colour[1]);
+    const mixed =
+      "#" +
+      [1, 3, 5]
+        .map((i) => {
+          const f = parseInt(fg.slice(i, i + 2), 16);
+          const b = parseInt(bg.slice(i, i + 2), 16);
+          return Math.round(alpha * f + (1 - alpha) * b)
+            .toString(16)
+            .padStart(2, "0");
+        })
+        .join("");
+    const r = ratio(mixed, bg);
+    assert.ok(
+      r >= AA_BODY,
+      `${themeName}: the footer support line renders at ${r.toFixed(2)}:1 ` +
+        `(--${colour[1]} at opacity ${alpha} on --paper-2), below ${AA_BODY}:1. ` +
+        `Quiet is a size and a colour; --${colour[1]} is already the quietest ` +
+        `token that stays readable, and fading it further makes the line ` +
+        `unreadable rather than discreet.`
+    );
+  }
+});
+
 test("the two themes are both defined, so neither can be silently dropped", () => {
   assert.ok(CSS.includes(":root {"), "light theme block is gone");
   assert.ok(CSS.includes('html[data-theme="dark"] {'), "dark theme block is gone");
