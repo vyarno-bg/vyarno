@@ -47,6 +47,10 @@ import {
   bgNetSalary,
   bgMarginalRatePct,
   bgTaxWedge,
+  bgGrossFromNet,
+  bgPayslipFromNet,
+  householdNet,
+  bgHouseholdPayroll,
   BG_PAYROLL_DEFAULT,
 } from "../src/lib/mirror.js";
 
@@ -800,5 +804,119 @@ test("below the cap the effective and marginal rates are the SAME number", () =>
       near(pt.effectivePct, pt.marginalPct, 1e-9),
       `at ${pt.gross}: effective ${pt.effectivePct} != marginal ${pt.marginalPct}`
     );
+  }
+});
+
+// ---------------------------------------------------------------------------
+// THE HOUSEHOLD — the insurance ceiling is per contract, not per family
+// ---------------------------------------------------------------------------
+
+test("householdNet adds the earners and ignores the ones nobody described", () => {
+  assert.equal(householdNet([900]), 900);
+  assert.equal(householdNet([900, 750]), 1650);
+  // A second field that has been added but not filled in arrives as one of
+  // these. Counting it as anything at all — including NaN, which would blank
+  // every figure on the page — is the failure this drops.
+  for (const blank of [null, undefined, NaN, "", 0, -100]) {
+    assert.equal(householdNet([900, blank]), 900, String(blank));
+  }
+  assert.equal(householdNet([]), 0);
+  assert.equal(householdNet(undefined), 0);
+});
+
+test("a household's gross is the sum of its contracts, NOT one salary inverted", () => {
+  // THE DEFECT THIS FILE EXISTS TO HOLD SHUT. Two people at €2000 gross are
+  // both under the €2300 ceiling and pay 13.78% on every euro. Add their nets
+  // first and invert once, and one ceiling is applied to two people.
+  const params = BG_PAYROLL_DEFAULT;
+  const each = bgNetSalary(2000, params).net;
+  assert.ok(each * 2 > params.maxInsurable, "test premise: the pair clears the ceiling together");
+  assert.ok(2000 < params.maxInsurable, "test premise: neither of them clears it alone");
+
+  const household = bgHouseholdPayroll([each, each], params);
+  assert.ok(
+    near(household.gross, 4000, 0.02),
+    `two €2000 contracts came to ${household.gross} gross, not 4000`
+  );
+
+  // And the wrong answer is a real, plausible number rather than a crash —
+  // which is why the assertion above is not enough on its own. Anyone who
+  // "simplifies" this to a single inversion gets this figure, and nothing else
+  // on the page would look wrong.
+  const asOneSalary = bgGrossFromNet(each * 2, params);
+  assert.ok(
+    asOneSalary < 3800,
+    `inverting the combined net gave ${asOneSalary}, which is no longer the ` +
+      "wrong answer this test is guarding against"
+  );
+  assert.ok(household.gross - asOneSalary > 200, "the gap the household treatment recovers");
+});
+
+test("the household column balances to the cent, like each column in it", () => {
+  // A breakdown whose rows do not add up to its own total teaches the reader
+  // to distrust the total. That holds for the household's column too, and it
+  // holds only because the totals are sums of already-rounded cent figures
+  // rather than a second rounding of full-precision ones.
+  for (const nets of [[900], [900, 750], [2100, 640, 1500], [3000, 3000]]) {
+    const h = bgHouseholdPayroll(nets, BG_PAYROLL_DEFAULT);
+    assert.ok(
+      near(h.gross - h.totalDeductions, h.net, 1e-9),
+      `${nets}: ${h.gross} − ${h.totalDeductions} ≠ ${h.net}`
+    );
+    assert.ok(near(h.insurance + h.tax, h.totalDeductions, 1e-9), String(nets));
+    assert.ok(near(h.net, householdNet(nets), 0.02), `${nets}: the net is not what was typed`);
+    assert.equal(h.earners.length, nets.length);
+  }
+});
+
+test("each earner in a household keeps their own ceiling", () => {
+  const params = BG_PAYROLL_DEFAULT;
+  const over = bgNetSalary(params.maxInsurable + 800, params).net;
+  const under = bgNetSalary(1200, params).net;
+  const h = bgHouseholdPayroll([over, under], params);
+  assert.equal(h.earners[0].insuranceCapped, true, "the high earner was not capped");
+  assert.equal(h.earners[1].insuranceCapped, false, "the low earner was capped by their partner");
+  assert.equal(h.anyCapped, true);
+  // Each earner's own breakdown is the one they would get on their own.
+  assert.deepEqual(h.earners[1].lines, bgPayslipFromNet(under, params).lines);
+});
+
+test("the household's effective rate is weighted by pay, not one vote each", () => {
+  const params = BG_PAYROLL_DEFAULT;
+  const big = bgNetSalary(3000, params).net;
+  const small = bgNetSalary(700, params).net;
+  const h = bgHouseholdPayroll([big, small], params);
+
+  const mean = (h.earners[0].effectiveRatePct + h.earners[1].effectiveRatePct) / 2;
+  assert.ok(
+    near(h.effectiveRatePct, (100 * h.totalDeductions) / h.gross, 1e-9),
+    "the household rate is not its own deductions over its own gross"
+  );
+  assert.ok(
+    Math.abs(h.effectiveRatePct - mean) > 0.1,
+    `the pay-weighted rate (${h.effectiveRatePct.toFixed(3)}) and the plain ` +
+      `average of the two (${mean.toFixed(3)}) are too close for this test to ` +
+      "tell them apart — pick a more unequal pair"
+  );
+});
+
+test("earners carry the index they were typed at, blanks and all", () => {
+  // The card draws one row per income and has to say WHICH income a column
+  // belongs to. Re-deriving that from the position in a filtered list
+  // mislabels every earner after a blank one.
+  const h = bgHouseholdPayroll([null, 1200, 0, 800], BG_PAYROLL_DEFAULT);
+  assert.deepEqual(
+    h.earners.map((e) => e.index),
+    [1, 3]
+  );
+});
+
+test("a household of nobody computes nothing rather than dividing by zero", () => {
+  for (const nets of [[], [0], [null, NaN], undefined]) {
+    const h = bgHouseholdPayroll(nets, BG_PAYROLL_DEFAULT);
+    assert.deepEqual(h.earners, [], String(nets));
+    assert.equal(h.gross, 0);
+    assert.equal(h.effectiveRatePct, 0, "a rate was reported for a household with no pay");
+    assert.equal(h.anyCapped, false);
   }
 });

@@ -426,6 +426,48 @@ net ladder, the wedge); the breakdown is a display layer over it, and
 `verify_net_salary.mjs` asserts the two never differ by more than display
 rounding.
 
+### A household is several contracts, and the ceiling belongs to each of them
+
+The insurance ceiling caps one contract's contribution base. It is not a
+household allowance, so a household's gross is the sum of its earners' grosses
+and never the inverse of their combined net:
+
+| Two earners, €2,000 gross each | |
+|---|---|
+| each takes home | €1,551.96 |
+| together | €3,103.92 |
+| **inverted as one salary** | **€3,765.75 gross** |
+| **summed per contract** | **€4,000.00 gross** |
+
+The single inversion applies one ceiling to two people and lands €234 a month
+low. Nothing about the wrong figure looks wrong — it sits inside every plausible
+band — and the error grows with the household.
+
+So `mirror.js#bgHouseholdPayroll` is the only entry point for more than one
+income: it maps `bgPayslipFromNet` over the earners and adds the columns
+afterwards. The household totals are sums of already-rounded cent figures, so
+`gross − totalDeductions === net` holds for the household exactly as it holds
+for each person in it, and the household's effective rate is total deductions
+over total gross — **pay-weighted, not the average of the per-earner rates**,
+which differ by whole points once anyone clears the ceiling.
+
+**Which figures are per person and which are per household** follows from what
+the figure is about, and the split is enforced by the argument shapes rather
+than by review:
+
+| Per person — the function takes a LIST | Per household — the function takes the total |
+|---|---|
+| the payslip and the gross (`payslipPanel`) | the basket and what it costs (`housingCarveOut`, `exposedSpend`) |
+| the position on the net ladder (`earnerRanks`) | rent as a share of take-home (`rentBurden`) |
+| the comparison with НСИ's Sofia average (`sofiaGap`) | the mortgage payment, the 30% line, years-to-a-home (`mortgagePanel`, `homeYears`) |
+| each point on the tax-wedge curve (`taxWedgePanel`) | the real-pay verdict in euro (`pocketPerMonth`) |
+
+The left column takes `nets` and has no scalar parameter, so a caller holding
+only the household total cannot express the mistake. The rule behind the split:
+a **person** is what НСИ's wage, Eurostat's earnings ladder and the insurance
+ceiling are all measured on; **money** is what arrives and gets spent, and rent
+does not care who earned it.
+
 ## HICP vs the national CPI
 
 Bulgaria has two official inflation gauges:
@@ -472,6 +514,9 @@ not fetch or publish the national CPI.
 | a shared number must not reconstruct a private one | `view.js#shareSentence` (no €, asserted in both languages) |
 | the payslip itemises the GROSS, never the typed net | `view.js#payslipPanel` inverts internally; it does not accept a gross |
 | the breakdown's rates are the published ones | `payslipPanel` takes `payroll.json`, not a params object |
+| the insurance ceiling is per contract, never per household | `payslipPanel` and `taxWedgePanel` take `nets` (a list) and have no scalar parameter |
+| the earnings ladder ranks people, not households | `view.js#earnerRanks` returns one row per earner; there is no total to pass it |
+| the Sofia comparator measures a wage against a wage | `view.js#sofiaGap` compares earner by earner |
 
 ## Cross-references
 

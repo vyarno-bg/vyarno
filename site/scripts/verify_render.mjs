@@ -943,6 +943,103 @@ test("the placeholder's payslip and comparator wait for a salary", { skip }, asy
   });
 });
 
+test("adding an income changes nothing until it is answered", { skip }, async () => {
+  // A second field seeded with the €900 placeholder would add €900 to the rent
+  // burden, the mortgage cap and the basket the moment it appeared — a figure
+  // the reader never typed, moving every number on the page in the flattering
+  // direction. So the row arrives empty and contributes nothing.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+    // The gross out of the summary line, whichever of the two wordings is on
+    // screen. The SENTENCE is expected to change — with two incomes it has to
+    // say which one it is about — and the FIGURE is expected not to.
+    const grossNow = async () =>
+      /бруто\)[^\d]*([\d\s\u00a0\u202f]+)/.exec(await page.locator(".m-pay").innerText())?.[1];
+
+    const before = await page.locator(".r-big").innerText();
+    const grossBefore = await grossNow();
+    assert.ok(grossBefore, "no gross was rendered for a typed salary");
+
+    await page.getByRole("button", { name: /добави още един доход/i }).click();
+    await page.waitForTimeout(400);
+
+    assert.equal(await page.locator("#inEarner1").count(), 1, "no second field appeared");
+    assert.equal(
+      await page.locator(".r-big").innerText(),
+      before,
+      "an empty second income moved the reader's inflation figure"
+    );
+    assert.equal(
+      await grossNow(),
+      grossBefore,
+      "an empty second income moved the household's gross"
+    );
+    assert.equal(
+      await page.locator(".m-pay details.payslip").count(),
+      1,
+      "an empty second income drew a payslip for a person nobody described"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("two incomes are taxed as two contracts, not as one salary", { skip }, async () => {
+  // THE DEFECT THIS FEATURE EXISTS TO FIX, checked on the rendered page rather
+  // than on a function. Two people taking home €2,000 each are both under the
+  // insurance ceiling, so their contracts come to ≈€5,078 gross. Adding the
+  // nets first and inverting once applies one ceiling to two people and prints
+  // ≈€4,761 — €317 a month adrift, inside every plausible band, and wrong in a
+  // way no other test on this page can see.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2000");
+    await page.getByRole("button", { name: /добави още един доход/i }).click();
+    await page.locator("#inEarner1").fill("2000");
+    await page.waitForTimeout(400);
+
+    const pay = await page.locator(".m-pay").innerText();
+    const gross = Number(
+      (/по договорите \(бруто\) заедно ≈ ([\d\s ]+)/.exec(pay)?.[1] ?? "0").replace(/\D/g, "")
+    );
+    assert.ok(
+      gross >= 5000,
+      `the household's gross rendered as ${gross}, which is the single-salary ` +
+        "inversion rather than the sum of two contracts"
+    );
+    // One payslip per person, because a payslip is a document one person gets.
+    assert.equal(await page.locator(".m-pay details.payslip").count(), 2, "not one payslip each");
+    assert.match(pay, /общо в домакинството/i, "the household total is not stated");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the ladder ranks each earner, and marks each of them", { skip }, async () => {
+  // The rungs are individual full-time earnings. Ranking a household total on
+  // them reports two people on €900 each as out-earning 78% of Sofia — a
+  // position nobody in that household holds.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("900");
+    await page.getByRole("button", { name: /добави още един доход/i }).click();
+    await page.locator("#inEarner1").fill("900");
+    await page.waitForTimeout(400);
+
+    const row = page.locator(".r-row").filter({ hasText: "къде си по заплата" });
+    assert.equal(await row.locator(".pctbar .me").count(), 2, "not one marker per earner");
+    const text = await row.innerText();
+    assert.match(text, /доход 1/i, "the first income has no line of its own");
+    assert.match(text, /доход 2/i, "the second income has no line of its own");
+    // Two equal earners sit at the same rung, so the corner states one figure
+    // rather than a range — and it is each of theirs, not their sum's.
+    const alone = /доход 1[^\n]*изпреварва[^\d]*(\d+)%/i.exec(text)?.[1];
+    assert.ok(alone, `no rank was rendered for the first income: ${text.replace(/\s+/g, " ")}`);
+    assert.ok(
+      Number(alone) < 50,
+      `€900 was ranked at the ${alone}th percentile — the household total was ranked instead`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test.after(async () => {
   await browser?.close();
   site?.server.close();

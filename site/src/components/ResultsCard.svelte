@@ -37,7 +37,7 @@
     ranked={calc.ranked}
     {rankedSplit}
     enteredTotal={calc.enteredTotal}
-    salary={calc.salary}
+    householdNet={calc.householdNet}
     pi={calc.pi}
     estatCatUrl={calc.estatCatUrl}
   />
@@ -49,7 +49,7 @@
     <RentRow {calc} />
     <HomeRow
       homeOn={calc.homeOn}
-      salary={calc.salary}
+      householdNet={calc.householdNet}
       downPayPct={calc.downPayPct}
       m2={calc.m2}
       homePrice={calc.homePrice}

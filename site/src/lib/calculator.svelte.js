@@ -54,7 +54,6 @@ import {
   pocketReal,
   extraPerMonth,
   pocketPerMonth,
-  percentile,
   buildLadder,
   rentBurden,
   rentDays,
@@ -66,6 +65,7 @@ import {
   officialSplit,
   contributions,
   personalInflationDetailed,
+  householdNet as sumHouseholdNet,
 } from "./mirror.js";
 // The derived values below live in $lib/view as pure functions, so the wiring
 // between a formula and its input is testable. Wiring that lives in a
@@ -73,8 +73,9 @@ import {
 import {
   officialBasketWeights,
   dataAge,
+  earnerRanks,
   headlineRate,
-  pctAhead as pctAheadOf,
+  sofiaGap,
   sofiaQuarter as publishedSofiaQuarter,
   savingsSince2020,
   housingCarveOut,
@@ -88,6 +89,18 @@ import {
   taxWedgePanel,
   payslipPanel,
 } from "./view.js";
+
+/**
+ * How many incomes the pay card will hold.
+ *
+ * Not a statement about households — it is where the card stops being
+ * readable. Every earner draws an input, a gross summary, a payslip, a
+ * comparator sentence and a marker on two charts, and past six of those the
+ * card is longer than the results it feeds. The control disappears at the
+ * limit rather than the seventh income being accepted and ignored: an input
+ * that takes a number and drops it is the failure this bound exists to avoid.
+ */
+export const MAX_EARNERS = 6;
 
 export class Calculator {
   // ---------------------------------------------------------------------
@@ -105,14 +118,25 @@ export class Calculator {
   // ---------------------------------------------------------------------
   // What the user types
   // ---------------------------------------------------------------------
-  // salary = 900 EUR is a round PLACEHOLDER, not a statistic: no published
-  // series here carries a national median net wage, so there is nothing to
-  // source a "typical" default to (docs/principles.md P7 — no unsourced defaults). For
+  // ONE ENTRY PER EARNER, monthly NET take-home in EUR. Never a household
+  // total: the insurance ceiling is per contract, so summing first and
+  // inverting afterwards understates a two-earner household's gross by
+  // hundreds of euro a month (mirror.js#bgHouseholdPayroll has the worked
+  // example). The total is `householdNet` below, derived from this and never
+  // typed into.
+  //
+  // 900 EUR is a round PLACEHOLDER, not a statistic: no published series here
+  // carries a national median net wage, so there is nothing to source a
+  // "typical" default to (docs/principles.md P7 — no unsourced defaults). For
   // reference, the one median we DO publish is the Sofia net ladder's P50,
   // ~€1,104 (salary_dist.json → buildLadder), and €900 sits at its 34th
   // percentile — which is why the copy under this field asks the user to
   // replace it rather than calling it typical.
-  salary = $state(900);
+  //
+  // A single-earner household is a list of one, and the page renders exactly
+  // as it did before anybody thought about households. Nothing about the
+  // second income exists until the reader asks for it.
+  earners = $state([900]);
   // Whether the reader has typed over that placeholder. The figures derived
   // from it are second-person claims — what the same life costs *you*, where
   // *you* sit on the Sofia ladder — and every one of them is about a person
@@ -122,7 +146,11 @@ export class Calculator {
   // sentences four screens before the caveat. The rule this restores is the
   // one `presetActive` already keeps for the hand-made baskets — a caveat
   // travels with its number, not with the control that produced it.
-  salaryDirty = $state(false);
+  //
+  // Adding an income does NOT set it. An empty second field is a question the
+  // reader has started answering, not an answer, and the €900 in the first one
+  // is still the placeholder every figure is standing on.
+  earnersDirty = $state(false);
   raise = $state(NaN); // empty by default — no fake nominal wage index
   raiseDirty = $state(false);
   anchor = $state("y1");
@@ -368,21 +396,46 @@ export class Calculator {
   // ---------------------------------------------------------------------
   // Derived: the pay packet
   // ---------------------------------------------------------------------
+  /**
+   * What the household brings home, and the denominator of every figure that
+   * is about money rather than about a person: the basket, rent, the mortgage
+   * cap, the cost of the year's prices.
+   *
+   * **It is derived and never typed into.** The reader enters earners; this is
+   * their sum. There is no field on the page that sets it, so there is no path
+   * by which a total reaches the per-person functions that must not see one.
+   */
+  householdNet = $derived(sumHouseholdNet(this.earners));
+  /** True once the reader has described more than one income. */
+  hasHousehold = $derived(this.earners.length > 1);
+  /** Whether another income can be added — the card's own limit, not a claim. */
+  canAddEarner = $derived(this.earners.length < MAX_EARNERS);
+
   // Salary input is NET take-home (most users know their payslip, not their
   // GROSS contract amount), so the contract gross is back-computed from it.
   // `payslipPanel` owns both the inversion and the itemisation, takes the
   // PUBLISHED payload rather than the mapped params, and returns null for an
   // empty field rather than a column of zeroes.
-  payslip = $derived(payslipPanel({ payroll: this.data.payroll, netSalary: this.salary }));
+  //
+  // It is handed `earners` and not `householdNet`, and that is the whole
+  // household fix: each contract is inverted against its own insurance
+  // ceiling, then the columns are added. The panel takes no scalar, so the
+  // total cannot be passed here even by accident.
+  payslip = $derived(payslipPanel({ payroll: this.data.payroll, nets: this.earners }));
   sofiaNet = $derived(bgNetSalary(this.sofiaMeanGrossEur, this.payroll).net);
 
   // "The flat tax is not flat" — the tax wedge. Takes the PUBLISHED payroll
   // payload (not `payroll`, the already-mapped params) so the panel derives
   // its own parameters and reads the legislated cap change out of the
-  // payload's `scheduled_changes`; and takes the NET the user typed, because
-  // it recovers the gross itself. Both are §3.3 constraints, not style: the
+  // payload's `scheduled_changes`; and takes the NETS the reader typed, one
+  // per earner, because it recovers each gross itself and every earner stands
+  // at their own point on the curve. Both are §3.3 constraints, not style: the
   // wrong wiring here is a 12.4 pp error that no sanity band would catch.
-  wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, netSalary: this.salary }));
+  wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, nets: this.earners }));
+
+  // How each earner compares with the Sofia average wage — per earner, because
+  // НСИ publish a wage rather than a household income. See view.js#sofiaGap.
+  sofiaGaps = $derived(sofiaGap({ nets: this.earners, sofiaNet: this.sofiaNet }));
 
   // ---------------------------------------------------------------------
   // Derived: inflation
@@ -401,7 +454,7 @@ export class Calculator {
   // still renting until the deal closes.
   carveOut = $derived(
     housingCarveOut({
-      salary: this.salary,
+      salary: this.householdNet,
       homeOn: this.homeOn,
       monthlyMortgage: this.monthlyMort,
       rent: this.rent,
@@ -437,7 +490,12 @@ export class Calculator {
   // The pocket verdict in euro. Rounded here, once, because the copy is CHOSEN
   // by whether it rounds to zero: «≈ €0 повече всеки месец» is noise, so at
   // that size the row says the percentage and stops.
-  pocketEur = $derived(Math.round(pocketPerMonth(this.salary, this.pocket)));
+  // The pocket verdict in euro, on the HOUSEHOLD's take-home, because the
+  // raise field asks for one figure and gets one. With several earners that
+  // figure is the household's own change in pay — the hint under the input
+  // says so — and pricing it against one earner's salary would answer a
+  // question nobody asked.
+  pocketEur = $derived(Math.round(pocketPerMonth(this.householdNet, this.pocket)));
 
   // What a year of unplaced money would be worth held as cash. Takes the
   // HEADLINE payload, never π — money that is not being spent on the user's
@@ -466,7 +524,7 @@ export class Calculator {
       : []
   );
   bite = $derived(
-    this.ranked.length > 0 && this.salary > 0
+    this.ranked.length > 0 && this.householdNet > 0
       ? {
           index: this.ranked[0].index,
           category: this.ranked[0].division,
@@ -503,8 +561,12 @@ export class Calculator {
   // ---------------------------------------------------------------------
   // Derived: rent, the percentile ladder, the home
   // ---------------------------------------------------------------------
-  rentBurdenPct = $derived(rentBurden(this.rent, this.salary));
-  rentDay = $derived(rentDays(this.rent, this.salary));
+  // Rent against the HOUSEHOLD's take-home. A flat is one payment out of the
+  // money that arrives, whoever earned it; charging it to one earner would
+  // report a couple splitting €600 rent on €1,800 together as carrying a 67%
+  // burden each.
+  rentBurdenPct = $derived(rentBurden(this.rent, this.householdNet));
+  rentDay = $derived(rentDays(this.rent, this.householdNet));
 
   // Fresh individual-earnings ladder. `salary_dist.json` carries the Eurostat
   // SES shape at SES's own level and nothing else; `buildLadder` re-levels it
@@ -516,15 +578,23 @@ export class Calculator {
       ? buildLadder(this.data.salaryDist, this.sofiaMeanGrossEur, this.payroll)
       : []
   );
-  pctRank = $derived(
-    this.salary > 0 && this.ladder.length ? percentile(this.salary, this.ladder) : 0
-  );
-  // Position from the BOTTOM: "you're ahead of {pctAhead}% of households".
-  // percentile() returns 1 = bottom 1%, 99 = top 1%. We render this directly
+  // ONE RANK PER EARNER. The rungs are individual full-time earnings, so a
+  // household total read off them is the unit mismatch that once pushed every
+  // Sofia salary to the 99th percentile — two people on €900 each are not a
+  // person on €1,800. See view.js#earnerRanks.
+  //
+  // Position from the BOTTOM: "you're ahead of {ahead}% of Sofia earners".
+  // percentile() returns 1 = bottom 1%, 99 = top 1%. We render that directly
   // (NOT `100 - rank` / "top N%") so higher income → bigger number → the
   // marker moves right and a below-median income never reads as an
-  // achievement. Clamp [1, 99] so the extremes don't show 0% / 100%.
-  pctAhead = $derived(pctAheadOf(this.pctRank));
+  // achievement. `pctAhead` clamps to [1,99] so the extremes don't show 0%.
+  ranks = $derived(earnerRanks({ nets: this.earners, ladder: this.ladder }));
+  /** The span the row's corner states when there is more than one earner. */
+  rankRange = $derived.by(() => {
+    const ahead = this.ranks.map((r) => r.ahead);
+    if (!ahead.length) return null;
+    return { low: Math.min(...ahead), high: Math.max(...ahead) };
+  });
   // Provenance for the percentile-card source line (same ↗-link contract as
   // the basket cards). SHAPE = Eurostat SES; LEVEL = NSI Sofia average wage.
   salaryShapeUrl = $derived(this.data.salaryDist?.shape?.source_url ?? "");
@@ -547,7 +617,7 @@ export class Calculator {
   // €/m² reading shown to the user as feedback in manual mode:
   // "your €150,000 ÷ 60 m² = €2,500/m² (Sofia median is €2,501/m²)"
   manualEurPerM2 = $derived(this.m2 > 0 && this.manualPrice > 0 ? this.manualPrice / this.m2 : 0);
-  homeYearsVal = $derived(homeYears(this.homePrice, this.salary));
+  homeYearsVal = $derived(homeYears(this.homePrice, this.householdNet));
   // The whole home block, from one call. `rate` is the AAR (ECB MIR new
   // business) — the interest rate the annuity needs. The APRC lives beside it
   // as "what it really costs" and must never enter this formula; the down
@@ -559,7 +629,13 @@ export class Calculator {
       price: this.homePrice,
       ratePct: this.rate,
       termYears: this.term,
-      netSalary: this.salary,
+      // The HOUSEHOLD's net. A joint application is assessed on the incomes
+      // that service the loan, and the 30% line is drawn against the money
+      // that actually arrives. This is also the one place where taking the
+      // total is strictly stricter than taking one earner: a bigger
+      // denominator raises the cap, so the alternative would understate what a
+      // couple can carry rather than overstate it.
+      netSalary: this.householdNet,
       eurPerM2: this.sofiaEurPerM2,
       limits: this.limits,
     })
@@ -681,9 +757,35 @@ export class Calculator {
   // carries the number, and all this records is that a human touched the
   // field. Clearing the box back to empty still counts as touched — the
   // reader has told us the placeholder is not theirs, which is the whole
-  // question the flag answers.
-  onSalaryInput = () => {
-    this.salaryDirty = true;
+  // question the flag answers. Any earner's field counts, including a second
+  // one: typing €700 into it says the €900 above is not a stand-in either.
+  onEarnerInput = () => {
+    this.earnersDirty = true;
+  };
+
+  /**
+   * Add an income to the household.
+   *
+   * Seeded EMPTY rather than with the placeholder. A second field arriving
+   * pre-filled with €900 would add €900 to the rent burden, the mortgage cap
+   * and the basket the moment it appeared — a figure the reader never typed,
+   * moving every number on the page in the flattering direction. The empty
+   * field contributes nothing until it is answered (`mirror.js#householdNet`
+   * skips it), so adding a row changes no result.
+   */
+  addEarner = () => {
+    if (!this.canAddEarner) return;
+    this.earners = [...this.earners, null];
+  };
+
+  /**
+   * Drop an income. The first one cannot be removed — a household with no
+   * incomes has nothing to compute, and the card would have no field to put a
+   * salary back into.
+   */
+  removeEarner = (i) => {
+    if (this.earners.length <= 1) return;
+    this.earners = this.earners.filter((_, k) => k !== i);
   };
 
   onRaiseInput = (e) => {

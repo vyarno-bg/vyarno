@@ -93,6 +93,11 @@ const APP = calculatorSource();
 const LIVE = live(APP);
 const FLAT = flat(APP);
 const CONTENT = read("lib", "content.js");
+// Two sources read on their own, where an assertion is about ONE file rather
+// than about the graph: the pay card is the only component that may compute a
+// comparison, and `view.js` is where it must have been computed instead.
+const PAY = live(read("components", "PayField.svelte"));
+const VIEW = read("lib", "view.js");
 
 /**
  * The formulas the explainer band publishes, as they appear on the page.
@@ -323,19 +328,31 @@ test("every basket row carries its own verify link", () => {
   );
 });
 
-test("the percentile marker is bound to the bottom-referenced rank", () => {
+test("the percentile marker is bound to the bottom-referenced rank, per earner", () => {
   // `percentile()` returns a position FROM THE BOTTOM (1 = poorest). The
-  // inverted `100 - pctRank` framing rendered a below-median income as "top
-  // 63%" and put the marker on the wrong side of the ladder. The arithmetic is
+  // inverted `100 - rank` framing rendered a below-median income as "top 63%"
+  // and put the marker on the wrong side of the ladder. The arithmetic is
   // tested in verify_view.mjs; this is the wiring, and the wording rule lives
   // in verify_copy.mjs.
   assert.ok(
-    LIVE.includes("pctAheadOf(pctRank)"),
-    "the calculator no longer derives pctAhead from view.js#pctAhead"
+    LIVE.includes("earnerRanks({ nets: earners, ladder: ladder })"),
+    "the calculator no longer ranks through view.js#earnerRanks"
   );
   assert.ok(
-    LIVE.includes('style="left:{pctAhead}%"'),
-    "the ladder marker must bind to `pctAhead` so a higher income moves it right"
+    LIVE.includes('style="left:{r.ahead}%"'),
+    "the ladder marker must bind to `ahead` so a higher income moves it right"
+  );
+  // The ladder rungs are INDIVIDUAL earnings. Ranking the household total on
+  // them reports two people on €900 each as out-earning 78% of Sofia, which is
+  // nobody's position — so the row must draw one marker per earner rather than
+  // one for the sum.
+  assert.ok(
+    /\{#each ranks as r[^}]*\}\s*<span class="me"/.test(FLAT),
+    "the ladder draws one marker for the household instead of one per earner"
+  );
+  assert.ok(
+    !LIVE.includes("percentile(householdNet"),
+    "the household total is being ranked on a ladder of individual earnings"
   );
 });
 
@@ -379,9 +396,17 @@ test("the Sofia comparator reads the live НСИ wage and links to it", () => {
   for (const name of ["sofiaMeanGrossEur", "sofiaMeanGrossUrl"]) {
     assert.ok(LIVE.includes(name), `the calculator no longer derives \`${name}\``);
   }
+  // The gap itself is decided in view.js#sofiaGap, per earner, and the
+  // component only picks the word and the colour. Both halves matter: НСИ
+  // publish a WAGE, so measuring a two-earner total against it reports a
+  // household of two on €900 each as above the average worker.
   assert.ok(
-    LIVE.includes("salary - sofia"),
-    "the comparator no longer computes the (reader − Sofia) gap"
+    LIVE.includes("sofiaGap({ nets: earners, sofiaNet: sofiaNet })"),
+    "the comparator no longer computes the (earner − Sofia) gap through view.js"
+  );
+  assert.ok(
+    !PAY.includes("householdNet - sofiaNet"),
+    "the comparator is back on the household total instead of one earner at a time"
   );
 });
 
@@ -650,14 +675,19 @@ test("the results drawer explains in words and carries no algebra", () => {
 test("the Sofia comparator states the gap once, not twice", () => {
   // «-39% под средната» is a double negative: the sign and the direction word
   // say the same thing, and together they read as −39% BELOW, which is +39%.
-  const delta = /@const sofiaDelta =[\s\S]*?\}(?=\s*\{@const)/.exec(FLAT);
+  const delta = /function deltaPhrase\([\s\S]*?\n {2}\}/.exec(PAY);
   assert.ok(delta, "the Sofia comparator no longer builds a {delta} clause");
   assert.ok(
-    !LIVE.includes("sofiaSign"),
+    !PAY.includes("sofiaSign") && !PAY.includes("signedPct"),
     "the Sofia comparator emits a sign alongside the direction word again"
   );
   assert.ok(
-    delta[0].includes("Math.abs(sofiaDiff)"),
+    delta[0].includes("magnitudePct"),
     "the comparator no longer takes the magnitude unsigned"
+  );
+  // And the magnitude is unsigned where it is COMPUTED, not fixed up here.
+  assert.ok(
+    VIEW.includes("magnitudePct: Math.abs(diffPct)"),
+    "view.js#sofiaGap no longer publishes an unsigned magnitude"
   );
 });

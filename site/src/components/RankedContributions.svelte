@@ -20,7 +20,7 @@
     /** Sum of the basket entries; the list is hidden when nothing is entered. */
     enteredTotal = 0,
     /** Monthly take-home; without it the euro column has no basis. */
-    salary = 0,
+    householdNet = 0,
     /** Personal inflation, in percent — the total these rows add up to. */
     pi = 0,
     /** Builds a category's Eurostat verify link. */
@@ -114,7 +114,7 @@
           ></div>
         </div>
         <div class="rankwhy">
-          {#if salary > 0}
+          {#if householdNet > 0}
             <span class="l-bg"
               >{@html t(COPY.rankRow, "bg", {
                 s: fmt0(r.spendEur),
@@ -182,7 +182,7 @@
         {/if}
       </button>
     {/if}
-    {#if salary <= 0}
+    {#if householdNet <= 0}
       <p class="leg">
         <span class="l-bg">{COPY.rankNoSalary.bg}</span>
         <span class="l-en">{COPY.rankNoSalary.en}</span>

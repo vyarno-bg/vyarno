@@ -15,8 +15,10 @@
   const {
     /** The row renders only when the home block is switched on. */
     homeOn = false,
-    /** Monthly take-home, the denominator for every share below. */
-    salary = 0,
+    /** Monthly take-home for the WHOLE household, the denominator for every
+     * share below. A joint application is assessed on the incomes that service
+     * the loan, and the 30% line is drawn against the money that arrives. */
+    householdNet = 0,
     /** Annual interest rate (%) and term in years, as entered. */
     rate = 0,
     term = 0,
@@ -33,7 +35,7 @@
     mortCapGap = 0,
     /** Years of whole take-home the price amounts to. */
     homeYearsVal = 0,
-    /** The reverse reading: the most this salary could carry. */
+    /** The reverse reading: the most this income could carry. */
     maxAffordPrice = 0,
     maxAffordM2 = 0,
     /** БНБ lending limits (DSTI/LTV/maturity) for the same period. */
@@ -56,7 +58,7 @@
 </script>
 
 <!-- HOME -->
-{#if homeOn && salary > 0}
+{#if homeOn && householdNet > 0}
   <div class="r-row">
     <div class="rr-top">
       <span class="rr-k"
@@ -172,7 +174,7 @@
         <span class="l-en" style="margin-left:auto">100%</span>
       </div>
       <span class="l-bg"
-        >граница {prudentDstiPct}% от заплатата =
+        >граница {prudentDstiPct}% от нетния доход =
         <b>{fmt0(mortCapEur)} €/мес</b>.
         {#if mortCapGap > 0}
           вноската е с <b style="color:var(--erode)">{fmt0(mortCapGap)} €/мес над</b> границата.
@@ -197,13 +199,12 @@
       {#if mortCapGap > 0}
         <div class="mort-reverse over">
           <span class="l-bg"
-            >при тази заплата, лихва и срок можеш да си позволиш дом до <b
-              >{fmt0(maxAffordPrice)} €</b
+            >при този доход, лихва и срок можеш да си позволиш дом до <b>{fmt0(maxAffordPrice)} €</b
             >
             · <b>{fmt(maxAffordM2, 0)} м²</b> в София.</span
           >
           <span class="l-en"
-            >at this salary, rate, and term you can afford up to <b>{fmt0(maxAffordPrice)} €</b>
+            >at this income, rate, and term you can afford up to <b>{fmt0(maxAffordPrice)} €</b>
             · <b>{fmt(maxAffordM2, 0)} m²</b> in Sofia (at this rate and term).</span
           >
         </div>

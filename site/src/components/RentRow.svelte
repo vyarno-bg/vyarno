@@ -29,17 +29,17 @@
          <b>...</b> markup. -->
     <div class="rr-t">
       <span class="l-bg"
-        >{@html t(COPY.rentEntered, $lang, {
+        >{@html t(calc.hasHousehold ? COPY.rentEnteredHousehold : COPY.rentEntered, "bg", {
           r: fmt0(calc.rent),
           p: fmt(calc.rentBurdenPct, 0),
-          s: fmt0(calc.salary),
+          s: fmt0(calc.householdNet),
         })}</span
       >
       <span class="l-en"
-        >{@html t(COPY.rentEntered, $lang, {
+        >{@html t(calc.hasHousehold ? COPY.rentEnteredHousehold : COPY.rentEntered, "en", {
           r: fmt0(calc.rent),
           p: fmt(calc.rentBurdenPct, 0),
-          s: fmt0(calc.salary),
+          s: fmt0(calc.householdNet),
         })}</span
       >
     </div>

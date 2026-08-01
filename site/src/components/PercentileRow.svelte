@@ -2,7 +2,7 @@
   /** Where the reader's pay sits on the published net-earnings ladder. */
   import { lang } from "../lib/stores.js";
   import { integer, period, httpUrl } from "../lib/format.js";
-  import { COPY } from "../lib/content.js";
+  import { COPY, t } from "../lib/content.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
@@ -21,7 +21,23 @@
   // they out-earn a third of Sofia has been told something false about
   // themselves before typing a character. So the row does what PocketRow does
   // with an empty raise: it says what it needs and computes nothing.
-  const answered = $derived(calc.salaryDirty && calc.salary > 0 && calc.pctRank > 0);
+  //
+  // With several incomes there is one position per earner, because the ladder
+  // ranks people: its rungs are individual full-time earnings, so reading a
+  // household total off it would report two people on €900 each as out-earning
+  // 78% of Sofia when what is true is that each of them out-earns 34%.
+  const answered = $derived(calc.earnersDirty && calc.ranks.length > 0);
+  // What the corner states when there is more than one. A RANGE, not a single
+  // figure: the row has no way to choose which earner the corner is about, and
+  // picking the first would make an arbitrary one speak for the household.
+  // «пред 34-62%» is a true statement about where the people in this household
+  // sit; any single number in that corner is not.
+  const cornerText = $derived.by(() => {
+    if (!answered) return "—";
+    const lead = $lang === "bg" ? "пред " : "ahead of ";
+    const { low, high } = calc.rankRange;
+    return low === high ? `${lead}${low}%` : `${lead}${low}-${high}%`;
+  });
 </script>
 
 <!-- PERCENTILE -->
@@ -37,28 +53,58 @@
          below it, not on `pctAhead` alone. A bare «пред 34%» in the corner
          over a prompt asking for a salary is the claim with its caveat
          removed, which is the arrangement this row exists to avoid. -->
-    <span class="rr-v mono"
-      >{answered ? `${$lang === "bg" ? "пред " : "ahead of "}${calc.pctAhead}%` : "—"}</span
-    >
+    <span class="rr-v mono">{cornerText}</span>
   </div>
   {#if answered}
-    <div class="rr-t">
-      <span class="l-bg"
-        >{@html COPY.pctTopTxt.bg
-          .replace("{r}", fmt0(calc.pctAhead))
-          .replace("{m}", fmt0(calc.ladder[5] ?? 0))}</span
-      >
-      <span class="l-en"
-        >{@html COPY.pctTopTxt.en
-          .replace("{r}", fmt0(calc.pctAhead))
-          .replace("{m}", fmt0(calc.ladder[5] ?? 0))}</span
-      >
-    </div>
-    <!-- Caveat: salary (per earner or household) is compared to a
-         household-disposable-income ladder. Different units
-         if per earner (caveat fires), same units if the
-         user typed the household net. Either way, treat as
-         directional. -->
+    {#if calc.hasHousehold}
+      <!-- One line per income, then the median once. The second person is
+           dropped here on purpose: «изпреварваш» addressed to a household is a
+           claim about a person who does not exist. -->
+      {#each calc.ranks as r (r.index)}
+        <div class="rr-t">
+          <span class="l-bg"
+            >{@html t(COPY.pctEarnerLine, "bg", {
+              n: fmt0(r.ordinal),
+              s: fmt0(r.net),
+              r: fmt0(r.ahead),
+            })}</span
+          >
+          <span class="l-en"
+            >{@html t(COPY.pctEarnerLine, "en", {
+              n: fmt0(r.ordinal),
+              s: fmt0(r.net),
+              r: fmt0(r.ahead),
+            })}</span
+          >
+        </div>
+      {/each}
+      <div class="rr-t">
+        <span class="l-bg">{@html t(COPY.pctMedian, "bg", { m: fmt0(calc.ladder[5] ?? 0) })}</span>
+        <span class="l-en">{@html t(COPY.pctMedian, "en", { m: fmt0(calc.ladder[5] ?? 0) })}</span>
+      </div>
+      <div class="rr-note">
+        <span class="l-bg">{COPY.pctHouseholdNote.bg}</span>
+        <span class="l-en">{COPY.pctHouseholdNote.en}</span>
+      </div>
+    {:else}
+      <div class="rr-t">
+        <span class="l-bg"
+          >{@html COPY.pctTopTxt.bg
+            .replace("{r}", fmt0(calc.ranks[0].ahead))
+            .replace("{m}", fmt0(calc.ladder[5] ?? 0))}</span
+        >
+        <span class="l-en"
+          >{@html COPY.pctTopTxt.en
+            .replace("{r}", fmt0(calc.ranks[0].ahead))
+            .replace("{m}", fmt0(calc.ladder[5] ?? 0))}</span
+        >
+      </div>
+    {/if}
+    <!-- The standing caveat, and it is about the DATA rather than the units:
+         both sides are one person's monthly net, so the comparison is
+         like-for-like. What stays approximate is that the spread comes from a
+         national survey re-levelled onto Sofia's average, which the copy says
+         in as many words. -->
     <div class="rr-note">
       <span class="l-bg">{COPY.pctCaveat.bg}</span>
       <span class="l-en">{COPY.pctCaveat.en}</span>
@@ -81,13 +127,18 @@
           .replace("{anchorPeriod}", period(calc.salaryAnchorPeriod))}</span
       >
     </div>
+    <!-- One marker per earner. Two people at the same rung draw two markers on
+         the same spot, which is what the ladder actually says about them —
+         nudging one aside would place somebody where they do not stand. -->
     <div class="pctbar" aria-hidden="true">
       <span class="seg" style="left:10%"></span><span class="seg" style="left:20%"></span>
       <span class="seg" style="left:30%"></span><span class="seg" style="left:40%"></span>
       <span class="seg" style="left:50%"></span><span class="seg" style="left:60%"></span>
       <span class="seg" style="left:70%"></span><span class="seg" style="left:80%"></span>
       <span class="seg" style="left:90%"></span>
-      <span class="me" style="left:{calc.pctAhead}%"></span>
+      {#each calc.ranks as r (r.index)}
+        <span class="me" style="left:{r.ahead}%"></span>
+      {/each}
     </div>
   {:else}
     <div class="rr-t">

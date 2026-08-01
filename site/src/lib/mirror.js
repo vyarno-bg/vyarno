@@ -934,6 +934,93 @@ export function bgPayslipFromNet(net, params = BG_PAYROLL_DEFAULT) {
 }
 
 // ---------------------------------------------------------------------------
+// THE HOUSEHOLD — several incomes, each taxed on its own
+// ---------------------------------------------------------------------------
+
+/**
+ * What the household brings home: the sum of the earners' net pay.
+ *
+ * Anything that is not a positive number is skipped rather than counted as
+ * zero-and-included or propagated as NaN. Both failure modes are reachable from
+ * the keyboard: a second income field that has been added but not filled in
+ * arrives as `undefined`, and a field cleared back to empty arrives the same
+ * way. One `NaN` in this sum would blank every figure on the page, so a person
+ * who has not been described yet contributes nothing and the rest of the
+ * household still answers.
+ *
+ * @param {Array<number|null|undefined>} nets  one monthly NET take-home per earner
+ * @returns {number} EUR/month
+ */
+export function householdNet(nets) {
+  return (nets ?? []).reduce((sum, n) => {
+    const v = Number(n);
+    return Number.isFinite(v) && v > 0 ? sum + v : sum;
+  }, 0);
+}
+
+/**
+ * The household payslip: one itemised breakdown per earner, and the totals.
+ *
+ * **WHY THIS IS NOT `bgPayslipFromNet(householdNet(nets))`.** The insurance
+ * ceiling is a property of one contract, not of a family. Two people earning
+ * €2000 gross each are both under the €2300 ceiling and pay the full 13.78% on
+ * every euro; one person earning €4000 pays it on €2300 and nothing above.
+ * Inverting a combined net as though it were a single salary applies one
+ * ceiling to two people and understates the household's gross:
+ *
+ *   two earners at €2000 gross     net 1551.96 each  = 3103.92 together
+ *   inverted as one salary         gross 3765.75     — €234 short of €4000
+ *   summed per earner              gross 4000.00     — the contracts they signed
+ *
+ * The error is silent, it is inside every plausible band, and it grows with the
+ * household. So the ONLY entry point for a household is this function, which
+ * takes the earners separately and never sees a combined figure.
+ *
+ * Every earner's column already balances to the cent (`bgPayslipFromNet`), and
+ * the household totals are sums of those cent figures rather than a second
+ * rounding of full-precision values — so `gross − totalDeductions === net`
+ * holds for the household exactly as it holds for each person in it.
+ *
+ * Non-positive entries are dropped, and each surviving entry carries the
+ * `index` it had in the input. The UI draws one row per earner and has to be
+ * able to say WHICH earner a column belongs to; re-deriving that from the
+ * position in a filtered array would mislabel every earner after a blank one.
+ *
+ * @param {Array<number|null|undefined>} nets  monthly NET take-home per earner
+ * @param {{rates:object, totalEmployeeRate:number, incomeTaxRate:number, maxInsurable:number}} [params]
+ * @returns {{earners:Array<ReturnType<typeof bgPayrollBreakdown> & {index:number}>,
+ *            gross:number, insurance:number, tax:number, totalDeductions:number,
+ *            net:number, effectiveRatePct:number, anyCapped:boolean}}
+ */
+export function bgHouseholdPayroll(nets, params = BG_PAYROLL_DEFAULT) {
+  const earners = [];
+  (nets ?? []).forEach((n, index) => {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) return;
+    earners.push({ index, ...bgPayslipFromNet(v, params) });
+  });
+
+  const total = (key) => round2(earners.reduce((s, e) => s + e[key], 0));
+  const gross = total("gross");
+  const totalDeductions = total("totalDeductions");
+
+  return {
+    earners,
+    gross,
+    insurance: total("insurance"),
+    tax: total("tax"),
+    totalDeductions,
+    net: total("net"),
+    // Total deductions over total gross — NOT the mean of the per-earner rates.
+    // A €3,000 earner beside a €700 one is weighted by pay, not counted one
+    // each, and the two answers differ by whole points once anybody clears the
+    // ceiling.
+    effectiveRatePct: gross > 0 ? (100 * totalDeductions) / gross : 0,
+    anyCapped: earners.some((e) => e.insuranceCapped),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // THE TAX WEDGE — what "flat tax" leaves out (the tax wedge)
 // ---------------------------------------------------------------------------
 

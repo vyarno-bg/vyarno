@@ -162,7 +162,7 @@
      bar that only looks finished at the full salary instructs the
      reader to assign every euro, which is the instruction the "not
      placed" row exists to withdraw. -->
-{#if calc.spendMode === "eur" && calc.salary > 0}
+{#if calc.spendMode === "eur" && calc.householdNet > 0}
   <div class="budgetbar" aria-hidden="true">
     <div
       class="fill"
@@ -245,7 +245,7 @@
                the SHARE (not the rate-inclusive cost) so the column
                reads as "how much of your take-home goes here" —
                the natural budget reading. -->
-          <small>{calc.salary > 0 ? `≈ €${fmt0(calc.divisionEur(i))}` : ""}</small>
+          <small>{calc.householdNet > 0 ? `≈ €${fmt0(calc.divisionEur(i))}` : ""}</small>
         </span>
       </div>
       {#if calc.spendMode === "eur"}
@@ -308,7 +308,7 @@
                 <span class="pc mono">
                   <span>{fmt0(spTotal > 0 ? (100 * Math.max(0, sp[gi])) / spTotal : 0)}%</span>
                   <small
-                    >{calc.salary > 0 && spTotal > 0
+                    >{calc.householdNet > 0 && spTotal > 0
                       ? `≈ €${fmt0((calc.divisionEur(i) * Math.max(0, sp[gi])) / spTotal)}`
                       : ""}</small
                   >

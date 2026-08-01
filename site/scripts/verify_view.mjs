@@ -43,6 +43,8 @@ import {
   fastestRisingDivision,
   taxWedgePanel,
   payslipPanel,
+  earnerRanks,
+  sofiaGap,
   scheduledMaxInsurable,
   scheduledMaxInsurableFrom,
   rankedSplit,
@@ -53,6 +55,7 @@ import {
   officialInflation,
   annuityPayment,
   composeLadder,
+  buildLadder,
   percentile,
   bgNetSalary,
   payrollParams,
@@ -948,7 +951,7 @@ const PAYROLL = read("payroll");
 
 test("taxWedgePanel reads the cap and the rates out of the PUBLISHED payload", () => {
   if (!PAYROLL) return;
-  const panel = taxWedgePanel({ payroll: PAYROLL, netSalary: 0 });
+  const panel = taxWedgePanel({ payroll: PAYROLL, nets: [] });
   assert.ok(
     near(panel.capGross, PAYROLL.max_insurable_income_eur, 1e-9),
     `the panel's cap (${panel.capGross}) is not payroll.json's ` +
@@ -959,7 +962,7 @@ test("taxWedgePanel reads the cap and the rates out of the PUBLISHED payload", (
   // fail this one.
   const raised = taxWedgePanel({
     payroll: { ...PAYROLL, max_insurable_income_eur: 3000 },
-    netSalary: 0,
+    nets: [],
   });
   assert.ok(near(raised.capGross, 3000, 1e-9), "the cap is hardcoded, not read");
 });
@@ -974,22 +977,29 @@ test("taxWedgePanel places the user by their GROSS, not the net they typed", () 
   const net = bgNetSalary(grossOverCap, params).net;
   assert.ok(net < params.maxInsurable, "test premise: the net is below the cap");
 
-  const panel = taxWedgePanel({ payroll: PAYROLL, netSalary: net });
-  assert.ok(panel.you, "no user point was produced for a positive salary");
+  const panel = taxWedgePanel({ payroll: PAYROLL, nets: [net] });
+  assert.equal(panel.earners.length, 1, "no earner point was produced for a positive salary");
+  const [you] = panel.earners;
   assert.ok(
-    near(panel.you.gross, grossOverCap, 0.01),
-    `placed the user at ${panel.you.gross} instead of ${grossOverCap}`
+    near(you.gross, grossOverCap, 0.01),
+    `placed the earner at ${you.gross} instead of ${grossOverCap}`
   );
-  assert.equal(panel.you.overCap, true, "the user was placed below a cap they are over");
-  assert.ok(near(panel.you.marginalPct, 10, 1e-9), panel.you.marginalPct);
+  assert.equal(you.overCap, true, "the earner was placed below a cap they are over");
+  assert.ok(near(you.marginalPct, 10, 1e-9), you.marginalPct);
+  // With one earner the corner figure is that earner's own rate, unchanged
+  // from before households existed.
+  assert.ok(near(panel.headlineEffectivePct, you.effectivePct, 1e-9));
 });
 
 test("taxWedgePanel says nothing about a user who has typed nothing", () => {
   // P7: no unsourced default. An empty salary field must not silently render
   // someone at the median, or at zero.
   for (const v of [0, -100, NaN, undefined, null]) {
-    assert.equal(taxWedgePanel({ payroll: PAYROLL, netSalary: v }).you, null, String(v));
+    const panel = taxWedgePanel({ payroll: PAYROLL, nets: [v] });
+    assert.deepEqual(panel.earners, [], String(v));
+    assert.equal(panel.headlineEffectivePct, null, String(v));
   }
+  assert.deepEqual(taxWedgePanel({ payroll: PAYROLL, nets: [] }).earners, []);
 });
 
 test("scheduledMaxInsurable reads the right row, or nothing", () => {
@@ -1053,7 +1063,7 @@ test("the panel degrades to the offline sentinel rather than crashing", () => {
 test("payslipPanel itemises the GROSS, not the net that was typed", () => {
   if (!PAYROLL) return;
   const net = 2100;
-  const panel = payslipPanel({ payroll: PAYROLL, netSalary: net });
+  const panel = payslipPanel({ payroll: PAYROLL, nets: [net] });
   assert.ok(panel, "no panel for a positive salary");
   assert.ok(
     panel.gross > net,
@@ -1069,12 +1079,13 @@ test("payslipPanel itemises the GROSS, not the net that was typed", () => {
       `${(panel.gross - panel.totalDeductions).toFixed(2)}, not ${net}`
   );
   assert.ok(near(panel.net, net, 0.005), panel.net);
-  assert.equal(panel.netRequested, net);
+  assert.equal(panel.earners.length, 1);
+  assert.equal(panel.earners[0].index, 0);
 });
 
 test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload", () => {
   if (!PAYROLL) return;
-  const panel = payslipPanel({ payroll: PAYROLL, netSalary: 2100 });
+  const panel = payslipPanel({ payroll: PAYROLL, nets: [2100] });
   assert.ok(
     near(panel.maxInsurable, PAYROLL.max_insurable_income_eur, 1e-9),
     `the panel's ceiling (${panel.maxInsurable}) is not payroll.json's`
@@ -1089,11 +1100,11 @@ test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload"
   // sentinel would pass every assertion above and fail all of these.
   const raised = payslipPanel({
     payroll: { ...PAYROLL, max_insurable_income_eur: 4000 },
-    netSalary: 2100,
+    nets: [2100],
   });
   assert.ok(near(raised.maxInsurable, 4000, 1e-9), "the ceiling is hardcoded, not read");
   assert.equal(
-    raised.insuranceCapped,
+    raised.anyCapped,
     false,
     "a gross under a raised ceiling was still reported as capped"
   );
@@ -1109,7 +1120,7 @@ test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload"
         Object.entries(PAYROLL.employee_contrib_rates).map(([k, v]) => [k, v * 2])
       ),
     },
-    netSalary: 2100,
+    nets: [2100],
   });
   assert.ok(
     doubled.insurance > panel.insurance * 1.9,
@@ -1121,14 +1132,14 @@ test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload"
 test("payslipPanel's rows account for every cent it says was withheld", () => {
   if (!PAYROLL) return;
   for (const net of [700, 1200, 1638, 1700, 2100, 4000]) {
-    const p = payslipPanel({ payroll: PAYROLL, netSalary: net });
-    const sum = p.lines.reduce((a, l) => a + l.amount, 0);
+    const p = payslipPanel({ payroll: PAYROLL, nets: [net] });
+    const sum = p.earners[0].lines.reduce((a, l) => a + l.amount, 0);
     assert.ok(
       near(sum, p.insurance, 1e-9),
       `net ${net}: rows sum to ${sum.toFixed(2)}, total says ${p.insurance}`
     );
     assert.deepEqual(
-      p.lines.map((l) => l.key),
+      p.earners[0].lines.map((l) => l.key),
       [...BG_CONTRIB_LINES],
       `net ${net}: a published contribution line is missing from the breakdown`
     );
@@ -1139,14 +1150,16 @@ test("payslipPanel says nothing about a user who has typed nothing", () => {
   // P7 again: an empty field must not render a column of zeroes for the
   // reader to check. There is no payslip for a salary nobody typed.
   for (const v of [0, -100, NaN, undefined, null, ""]) {
-    assert.equal(payslipPanel({ payroll: PAYROLL, netSalary: v }), null, String(v));
+    assert.equal(payslipPanel({ payroll: PAYROLL, nets: [v] }), null, String(v));
   }
+  assert.equal(payslipPanel({ payroll: PAYROLL, nets: [] }), null, "empty list");
+  assert.equal(payslipPanel({ payroll: PAYROLL, nets: undefined }), null, "no list at all");
 });
 
 test("payslipPanel degrades to the offline sentinel rather than crashing", () => {
   // First paint, before payroll.json resolves.
-  const p = payslipPanel({ payroll: null, netSalary: 2100 });
-  assert.ok(p && p.gross > 0 && p.lines.length === 5);
+  const p = payslipPanel({ payroll: null, nets: [2100] });
+  assert.ok(p && p.gross > 0 && p.earners[0].lines.length === 5);
   assert.equal(p.effectiveYear, null, "invented an effective year with no payload");
 });
 
@@ -1256,4 +1269,123 @@ test("scheduledMaxInsurableFrom returns a real date or nothing at all", () => {
   ]) {
     assert.equal(scheduledMaxInsurableFrom(p), null);
   }
+});
+
+// ---------------------------------------------------------------------------
+// THE HOUSEHOLD — which figures describe a person, and which describe money
+//
+// The rule the four blocks below hold: a figure about a PERSON is computed per
+// earner and never from the total, and a figure about MONEY is computed from
+// the total and never from one earner. Getting it backwards is wrong in a way
+// that reads perfectly: nothing on the page looks broken when a couple's
+// combined pay is ranked against individual earnings, it just says something
+// false about them.
+// ---------------------------------------------------------------------------
+
+test("payslipPanel adds the households's columns AFTER taxing each contract", () => {
+  if (!PAYROLL) return;
+  const params = payrollParams(PAYROLL);
+  const each = bgNetSalary(2000, params).net;
+  const panel = payslipPanel({ payroll: PAYROLL, nets: [each, each] });
+
+  assert.equal(panel.earners.length, 2);
+  assert.ok(
+    near(panel.gross, 4000, 0.02),
+    `the household's gross came to ${panel.gross}, not the 4000 they contracted for`
+  );
+  // The panel takes no scalar, so the only way to express the wrong answer is
+  // to compute it elsewhere and pass it in as a household of one. That is what
+  // this compares against, and it is the number a single-salary calculator
+  // gives a couple who add their payslips up first.
+  const asOne = payslipPanel({ payroll: PAYROLL, nets: [each * 2] });
+  assert.ok(
+    panel.gross - asOne.gross > 200,
+    `the household treatment recovered only ${(panel.gross - asOne.gross).toFixed(2)}`
+  );
+
+  // Each earner still carries the ceiling and the rate year, so the row that
+  // draws one payslip needs no second prop to stay correct.
+  for (const e of panel.earners) {
+    assert.ok(near(e.maxInsurable, PAYROLL.max_insurable_income_eur, 1e-9));
+    assert.equal(e.effectiveYear, PAYROLL.effective_year);
+  }
+});
+
+test("taxWedgePanel marks every earner, and states the household's own rate", () => {
+  if (!PAYROLL) return;
+  const params = payrollParams(PAYROLL);
+  const big = bgNetSalary(params.maxInsurable + 700, params).net;
+  const small = bgNetSalary(800, params).net;
+  const panel = taxWedgePanel({ payroll: PAYROLL, nets: [big, small] });
+
+  assert.equal(panel.earners.length, 2, "an earner was dropped off the curve");
+  assert.equal(panel.earners[0].overCap, true);
+  assert.equal(panel.earners[1].overCap, false);
+  assert.deepEqual(
+    panel.earners.map((e) => e.index),
+    [0, 1]
+  );
+
+  // The corner figure is pay-weighted, not the average of the two lines under
+  // it. A marker at their COMBINED gross would also stand where nobody in the
+  // household does, which is why there is no such marker to test for.
+  const mean = (panel.earners[0].effectivePct + panel.earners[1].effectivePct) / 2;
+  assert.ok(
+    Math.abs(panel.headlineEffectivePct - mean) > 0.1,
+    `the household rate (${panel.headlineEffectivePct.toFixed(3)}) is the plain ` +
+      `average of its earners (${mean.toFixed(3)})`
+  );
+  assert.ok(
+    panel.householdGross > panel.earners[0].gross,
+    "the stated household gross is not the whole household"
+  );
+});
+
+test("earnerRanks ranks PEOPLE, never the household total", () => {
+  const ladder = buildLadder(read("salary_dist"), 1915, payrollParams(PAYROLL));
+  if (!ladder.length) return;
+
+  const [one] = earnerRanks({ nets: [900], ladder });
+  const both = earnerRanks({ nets: [900, 900], ladder });
+  assert.equal(both.length, 2, "a household got one rank instead of one each");
+  assert.equal(both[0].ahead, one.ahead, "adding a partner moved the first earner's rank");
+  assert.equal(both[1].ahead, one.ahead, "two equal earners were ranked differently");
+
+  // The failure this replaces: ranking €1,800 against a ladder of individual
+  // earnings. It is a strictly higher position, and it is nobody's.
+  const [asOne] = earnerRanks({ nets: [1800], ladder });
+  assert.ok(
+    asOne.ahead > one.ahead,
+    "test premise: the combined figure would rank higher than either earner"
+  );
+
+  // Blanks keep their place in the numbering — the row says «доход 2».
+  const skipped = earnerRanks({ nets: [null, 1200], ladder });
+  assert.deepEqual(
+    skipped.map((r) => r.index),
+    [1]
+  );
+  assert.deepEqual(earnerRanks({ nets: [900], ladder: [] }), [], "ranked against no ladder");
+});
+
+test("sofiaGap compares each earner with the average WAGE, one at a time", () => {
+  const sofiaNet = 1486;
+  const both = sofiaGap({ nets: [900, 900], sofiaNet });
+  assert.equal(both.length, 2);
+  assert.equal(both[0].direction, "below");
+  assert.equal(both[0].magnitudePct, 39);
+  // The claim this prevents: two people on €900 each reported as above the
+  // average worker, which is what measuring their €1,800 against a wage says.
+  const asOne = sofiaGap({ nets: [1800], sofiaNet })[0];
+  assert.equal(asOne.direction, "above");
+
+  // The magnitude is rounded BEFORE the direction is chosen, so the word and
+  // the figure cannot disagree. At +1.4% the rounded figure is 1%, which is
+  // inside the dead zone the direction words exist to stay quiet about.
+  const edge = sofiaGap({ nets: [sofiaNet * 1.014], sofiaNet })[0];
+  assert.equal(edge.magnitudePct, 1);
+  assert.equal(edge.direction, "equal", "«над» printed beside a figure inside the dead zone");
+
+  assert.deepEqual(sofiaGap({ nets: [900], sofiaNet: 0 }), [], "compared against no average");
+  assert.deepEqual(sofiaGap({ nets: [0, null], sofiaNet }), []);
 });

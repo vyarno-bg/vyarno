@@ -229,8 +229,15 @@ test("every {@html} expression is rooted in an in-repo constant", () => {
  * template. Everything here either formats a number or picks a string from a
  * literal table in this repository.
  */
+// `rateSourceLabel` and `deltaPhrase` are component-local functions that
+// assemble a clause out of a COPY string and an already-formatted number, and
+// return nothing else. They are named here rather than matched by shape because
+// that is the only way this check can see through a call — and the alternative,
+// splicing the clause together from separate holes in the template, is what
+// produced «-39% под средната». Add a name here only when the function's whole
+// body is COPY plus formatter output.
 const SAFE_VALUE_SOURCES =
-  /^(fmt0?|fmtDate|signedPct|period|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|String)\b/;
+  /^(fmt0?|fmtDate|signedPct|period|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|deltaPhrase|String)\b/;
 
 /**
  * The `{@const NAME = …}` bindings a component declares, as name → expression.
