@@ -907,6 +907,49 @@ test("the footer credits every upstream the pipeline pulls from", () => {
   }
 });
 
+test("the recomputed-figures disclaimer accounts for имот.bg", () => {
+  // имот.bg imposes no condition either way (docs/legal.md §имот.bg), so this
+  // half of the section is owed to the reader and to nobody else — which makes
+  // it the half a tidying pass can drop without anything upstream objecting.
+  // The housing card prints one €/m² for Sofia beneath a link to a page that
+  // publishes 143 district figures and no city total, so a reader who follows
+  // the link finds nothing matching the number they arrived from. This section
+  // is where they are told that the median across those districts, and the
+  // change since 2015 built on it, are ours.
+  const section = docById("sources").sections.find((s) => /преизчислените числа/.test(s.h.bg));
+  assert.ok(section, "the sources document lost its recomputed-figures section");
+
+  // Each pattern has to pin a claim rather than a keyword, because every
+  // keyword here occurs twice in the paragraph. /медиана/ alone matches the
+  // clause about the 2015 comparison, so it survives the €/m² losing the word
+  // that says which statistic it is; /наши/ alone matches "тези наши
+  // преработки" four sentences up, which discloses a different figure for a
+  // different publisher. `\w` is ASCII-only in JS, so a Cyrillic suffix
+  // needs `\S*`.
+  const claims = {
+    bg: [
+      /имот\.bg/,
+      /медиана\S*\s+на[^.]*квартални цени/,
+      /промяната спрямо 2015/,
+      /числа са наши/,
+    ],
+    en: [/имот\.bg/, /median across[^.]*district/, /change since 2015/, /figures are ours/],
+  };
+  for (const lang of LANGS) {
+    const body = section.p.map((p) => p[lang]).join("\n");
+    for (const re of claims[lang]) {
+      assert.match(
+        body,
+        re,
+        `the ${lang} recomputed-figures disclaimer no longer matches ${re}. ` +
+          "The Sofia €/m² is a median across имот.bg's per-district rows and " +
+          "the since-2015 change is computed from it; naming the four sources " +
+          "shown verbatim and omitting the fifth reads as if it were one of them."
+      );
+    }
+  }
+});
+
 test("all three pages mount the shared footer and none declares its own", () => {
   // The footer carries the upstream attribution (a licence condition) and the
   // legal links (ЗЕТ чл. 4 wants the provider's identity reachable from every
