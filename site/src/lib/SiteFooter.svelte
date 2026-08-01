@@ -26,7 +26,7 @@
   // ~30 kB of terms of use on the calculator's critical path. `support.js` is
   // tiny and safe to pull in here for the same reason.
   import { COPY } from "./content.js";
-  import { CONTACT, LEGAL_NAV } from "./legal-nav.js";
+  import { CONTACT, LEGAL_NAV, REPO_URL } from "./legal-nav.js";
   import { SUPPORT_COPY, footerDonateLink } from "./support.js";
   import { BUILD_ID } from "./build.js";
 
@@ -73,6 +73,40 @@
         <span class="l-en">{COPY.contactK.en}</span>
       </a>
     </nav>
+
+    <!--
+      The source, next to the build stamp and not inside the legal nav: those
+      four links discharge ЗЕТ чл. 4 and this one does not, and a landmark
+      labelled "legal" should hold only what is.
+
+      The mark is inline SVG from GitHub's own Octicons set, drawn in
+      `currentColor`. Not an <img>, not a webfont, not a CDN sprite — the CSP
+      is `img-src 'self' data:` and `connect-src 'self'`, and the privacy
+      notice's claim that the browser makes not one third-party request is what
+      that policy exists to keep true. An icon is not a reason to spend it.
+
+      `aria-hidden` on the SVG with the label in a real text span, rather than
+      an `aria-label` on the anchor: the label is also what a reader sees when
+      the viewport has room, so the sighted and the announced name are the same
+      string instead of two that can drift.
+    -->
+    <a class="repo" href={REPO_URL} target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path
+          fill="currentColor"
+          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+             0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+             -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+             .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+             -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27
+             .68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+             .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+             0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+        />
+      </svg>
+      <span class="l-bg">{COPY.repoK.bg}</span>
+      <span class="l-en">{COPY.repoK.en}</span>
+    </a>
 
     <span class="build" title="build">{BUILD_ID}</span>
   </div>
@@ -132,6 +166,27 @@
     border-bottom: 1px solid var(--line);
   }
   .legal-links a:hover {
+    color: var(--real-ink);
+    border-bottom-color: var(--real);
+  }
+  /* The legal links' treatment plus the mark, so the source sits in the same
+     row of small type rather than announcing itself. The icon is baseline-
+     aligned to the label by `vertical-align`, not by flex centring: this is
+     one line of text inside a `baseline`-aligned footer row, and a flex
+     container here would take the anchor's own baseline off the row and drop
+     it a pixel below the links beside it. */
+  .repo {
+    color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .repo svg {
+    vertical-align: -2px;
+    margin-right: 5px;
+  }
+  .repo:hover {
     color: var(--real-ink);
     border-bottom-color: var(--real);
   }
