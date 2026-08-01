@@ -23,8 +23,12 @@ to satisfy, are in [`README.md`](./README.md) §"Who this is for".
   (`CONTRIBUTING.md`, and a checkbox in the PR template).
 - **Sustained by donations**, which are gratuitous and buy nothing.
   `site/src/lib/support.js` carries the rules about how they may be asked for —
-  one quiet footer line, no amounts in shipped copy, nothing given in return —
-  and `site/scripts/verify_support.mjs` enforces them. Rule 4 (nothing in
+  two static surfaces (the footer line and the explainer's «Кой плаща за
+  това?») pointing at `/support/`, no amounts in shipped copy, nothing
+  conditioned on use, nothing given in return — and
+  `site/scripts/verify_support.mjs` enforces them, including the count: it
+  holds the list of files allowed to import that module, so a third surface is
+  a red test rather than one more import. Rule 4 (nothing in
   return) is load-bearing legally: attaching any benefit to a donation makes the
   service възмездна and flips `LEGAL_FORM.takesPayment`, which pulls in the rest
   of ЗЕТ чл. 4.
@@ -173,7 +177,16 @@ billing code. Do not add pricing, billing, paywall or advertising code, copy or
 docs. Donations buy nothing — no supporter tier, no badge, no early access, no
 ad-free mode — because anything given in return makes the service възмездна,
 flips `LEGAL_FORM.takesPayment` and pulls in the rest of ЗЕТ чл. 4
-(`site/src/lib/support.js` rule 4, enforced by `verify_support.mjs`). A grant
+(`site/src/lib/support.js` rule 4, enforced by `verify_support.mjs`).
+
+**How it may be asked is decided too, and the ceiling is two.** The footer
+line, one answer inside the explainer's closed disclosure, and `/support/`
+behind both. No modal, no interstitial, no toast, no banner, no sticky bar, no
+floating button, nothing conditioned on how often somebody has used the site,
+and nothing that moves. The reasoning, and what a third surface would cost, is
+written out in `support.js` rule 1; raising the ceiling means amending that
+rule and the allowlist in `verify_support.mjs` in the same commit, which is the
+point of holding the count in a test rather than in a sentence. A grant
 that came with a condition touching the table above is declined on those
 grounds rather than negotiated.
 

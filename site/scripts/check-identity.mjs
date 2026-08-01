@@ -81,8 +81,8 @@ for (const id of missing) {
 // would trip on a comment explaining why we do NOT sell subscriptions. Docs are
 // not shipped to anyone, so they stay out of scope too.
 //
-// `SUPPORT_COPY` and the platform notes ship in the footer and on
-// `/legal/#support`, and they are the copy most likely to acquire a price —
+// `SUPPORT_COPY` and the platform notes ship in the footer, in the explainer
+// band and on `/support/`, and they are the copy most likely to acquire a price —
 // a suggested amount is the first thing anybody reaches for when a donation
 // channel is not converting. The scan covers every module whose strings reach
 // a reader, and this is one of them.

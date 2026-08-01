@@ -245,6 +245,71 @@ test("the legal page renders every published document", { skip }, async () => {
   }, "/legal/");
 });
 
+test("the support page resolves as its own URL and carries the whole ask", { skip }, async () => {
+  // `/support/` exists so the funding answer has an address a person can be
+  // given, which means the thing to assert is that the address resolves — a
+  // static host serves `support/index.html` for it or it does not, and there
+  // is no router to fall back on. A mistyped Vite entry ships a 404 at the one
+  // URL the footer and the explainer both point at, with every other suite
+  // green.
+  await withApp(async (page, errors) => {
+    assert.ok(await page.locator("main.support h1").count(), "the support page has no heading");
+    assert.ok(
+      (await page.locator("main.support a[href^='https://']").count()) > 0,
+      "the support page offers no outbound link — a page about how to give " +
+        "that gives no route is worse than the footer line it replaced"
+    );
+    assert.ok(await page.locator("footer").count(), "the support page drops the shared footer");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/support/");
+});
+
+test("the calculator asks in two places and neither interrupts", { skip }, async () => {
+  // `support.js` rule 1 permits exactly two surfaces on this page, and the
+  // second one — «Кой плаща за това?» — is permitted BECAUSE it sits inside a
+  // disclosure the reader chose to open. Rendering it open by default, or
+  // lifting it out of the band, converts an answer into an interruption
+  // without changing a word of the copy, which is precisely the change no
+  // string check can see.
+  await withApp(async (page, errors) => {
+    // Counted by PLACE, not by anchor: both language variants sit in the DOM
+    // at once (`.l-bg` / `.l-en`, hidden with `display:none`), so a link
+    // written inside a sentence is two `<a>` elements and a link beside one is
+    // a single element wrapping both spans. Anchors would therefore measure
+    // how the copy is assembled; what rule 1 caps is how many parts of the
+    // page ask.
+    const total = await page.locator("a[href^='/support/']").count();
+    const footer = await page.locator("footer a[href^='/support/']").count();
+    const explainer = await page.locator(".explain-band a[href^='/support/']").count();
+    assert.ok(footer > 0, "the footer no longer routes to /support/");
+    assert.ok(explainer > 0, "the explainer's support item is missing");
+    assert.equal(
+      footer + explainer,
+      total,
+      "the calculator points at /support/ from a third place. Rule 1 allows " +
+        "the footer line and the explainer's answer; a third surface means " +
+        "amending the rule, not adding the link."
+    );
+
+    const item = page.locator(".explain-band a[href^='/support/']").first();
+    assert.equal(
+      await item.isVisible(),
+      false,
+      "the explainer's support answer is visible before the reader opened the " +
+        "band. Inside a closed disclosure is the whole reason rule 1 allows it."
+    );
+
+    const bg = await item.evaluate((el) => getComputedStyle(el).backgroundColor);
+    assert.match(
+      bg,
+      /rgba\(0, 0, 0, 0\)|transparent/,
+      `the explainer's support link is drawn with a filled background (${bg}), ` +
+        "which makes it a button — the same thing rule 1 forbids the footer's."
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 // ---------------------------------------------------------------------------
 // **Every assertion below is on an EFFECT, never on a declaration.** A regex
 // over a `<style>` block — does `.stats` say `flex-wrap: wrap`, does `.stat`

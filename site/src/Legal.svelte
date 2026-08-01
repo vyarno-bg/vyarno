@@ -25,13 +25,6 @@
     UPSTREAMS,
     identityRows,
   } from "./lib/legal.js";
-  import { SUPPORT_COPY, livePlatforms } from "./lib/support.js";
-
-  // Only platforms whose account is actually open. All four are declared in
-  // `support.js` with `live: false` until someone opens them, so today this is
-  // empty and the block renders the honest "not open yet" line instead of four
-  // links to 404s.
-  const SUPPORT_LIVE = livePlatforms();
 
   // Only the ЗЕТ чл. 4 rows the legal form we actually are owes today. Rows
   // that become due when Вярно starts taking payment are declared in legal.js
@@ -87,11 +80,6 @@
         <span class="l-en">{doc.nav.en}</span>
       </a>
     {/each}
-    <!-- Last, and outside the loop: funding is not a legal document. -->
-    <a href="#support">
-      <span class="l-bg">{SUPPORT_COPY.navK.bg}</span>
-      <span class="l-en">{SUPPORT_COPY.navK.en}</span>
-    </a>
   </nav>
 
   <p class="version mono">
@@ -203,43 +191,6 @@
     </article>
   {/each}
 
-  <!--
-    Funding, on the page where someone who followed the footer link is already
-    reading. It is NOT one of the four legal documents — it carries no legal
-    obligation and is not versioned with them — so it sits outside the `DOCS`
-    loop and after it. `support.js` governs what may be said here.
-  -->
-  <article id="support">
-    <h1>
-      <span class="l-bg">{SUPPORT_COPY.head.bg}</span>
-      <span class="l-en">{SUPPORT_COPY.head.en}</span>
-    </h1>
-    <p>
-      <span class="l-bg">{SUPPORT_COPY.body.bg}</span>
-      <span class="l-en">{SUPPORT_COPY.body.en}</span>
-    </p>
-
-    {#if SUPPORT_LIVE.length > 0}
-      <ul class="cards">
-        {#each SUPPORT_LIVE as p (p.id)}
-          <li>
-            <b>{p.label}</b>
-            <span class="note">
-              <span class="l-bg">{p.note.bg}</span>
-              <span class="l-en">{p.note.en}</span>
-            </span>
-            <a href={p.url} target="_blank" rel="noopener">{p.url}</a>
-          </li>
-        {/each}
-      </ul>
-    {:else}
-      <p class="note">
-        <span class="l-bg">{SUPPORT_COPY.pending.bg}</span>
-        <span class="l-en">{SUPPORT_COPY.pending.en}</span>
-      </p>
-    {/if}
-  </article>
-
   <p class="reach mono">
     <span class="l-bg"
       >Въпрос по нещо от тази страница: <a href="mailto:{CONTACT.general}">{CONTACT.general}</a
@@ -253,7 +204,7 @@
   </p>
 </main>
 
-<SiteFooter onLegalPage={true} />
+<SiteFooter page="legal" />
 
 <style>
   header.site {

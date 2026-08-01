@@ -95,18 +95,21 @@ export default defineConfig({
     target: "es2022",
     outDir: "dist",
     emptyOutDir: true,
-    // Three entries, three real URLs on a static host with no rewrite rules:
-    //   index.html      → /            the calculator
-    //   legal/index.html → /legal/     terms, privacy, ЗЕТ чл. 4 identity, sources
-    //   404.html        → /404.html    served by name for any unmatched path,
-    //                                  which every static host does unconfigured
-    // The legal page is a separate entry rather than a route inside the SPA so
-    // it resolves without a client-side router or a host rewrite, and so
-    // someone who came to read the terms does not download the calculator.
+    // Four entries, four real URLs on a static host with no rewrite rules:
+    //   index.html        → /            the calculator
+    //   legal/index.html  → /legal/      terms, privacy, ЗЕТ чл. 4 identity, sources
+    //   support/index.html → /support/   how the project is paid for
+    //   404.html          → /404.html    served by name for any unmatched path,
+    //                                    which every static host does unconfigured
+    // Each is a separate entry rather than a route inside the SPA so it
+    // resolves without a client-side router or a host rewrite, and so someone
+    // who came to read the terms — or to find out who pays for this — does not
+    // download the calculator to do it.
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
         legal: resolve(__dirname, "legal/index.html"),
+        support: resolve(__dirname, "support/index.html"),
         notFound: resolve(__dirname, "404.html"),
       },
     },

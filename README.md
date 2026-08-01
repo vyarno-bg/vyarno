@@ -328,6 +328,9 @@ there are no salaries, no company and no investor. A donation buys nothing: no
 features, no priority, no influence over any figure the site publishes. If you
 would rather not give, nothing changes for you.
 
+The site says all of this itself, at [vyarno.bg/support/](https://vyarno.bg/support/) —
+its own URL rather than a fragment of the legal page, so it can be linked to.
+
 **[Ko-fi](https://ko-fi.com/vyarno)** — one-off, no account needed. It is the
 only channel open. The other three are declared in
 [`.github/FUNDING.yml`](./.github/FUNDING.yml) and

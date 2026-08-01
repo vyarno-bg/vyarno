@@ -16,13 +16,16 @@
  * Also enforced here, because they are the rules that keep the ask honest and
  * they are easy to erode one commit at a time (see `support.js`):
  *
+ *   - **how many places may ask at all** — rule 1 allows two surfaces and the
+ *     page they point at, and a count that is only written down is a count
+ *     that grows one reasonable commit at a time;
  *   - no amounts in shipped support copy — a suggested figure is a price, and
  *     `commercialSignals()` in `legal.js` would fail the release build on the
  *     "€N/month" form anyway;
  *   - nothing offered in return — a supporter tier makes the service
  *     возмездна and pulls in the rest of ЗЕТ чл. 4.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
@@ -238,8 +241,85 @@ test("an open channel is covered by the privacy notice, in both languages", () =
   }
 });
 
+test("only the three permitted surfaces render the support copy", () => {
+  // `support.js` rule 1 allows two surfaces — the footer line and the
+  // explainer's «Кой плаща за това?» — plus `/support/`, which is the page
+  // both point at and the only one that goes into detail.
+  //
+  // The count is the thing worth enforcing, and it is not enforceable from
+  // inside any one component: every individual addition is defensible at the
+  // moment somebody makes it (a line under the results, a note beside the
+  // share button, a sentence in the method drawer), and the failure is the
+  // accumulation rather than any single one of them. Reading the import graph
+  // is what turns "two" into a number the repository actually holds to — a
+  // fourth file importing this module is a red test rather than a design
+  // conversation nobody remembers to have.
+  //
+  // Raising the ceiling means editing this list and the rule it enforces, in
+  // the same commit, with the reasoning written out. That is the point: the
+  // change becomes visible in a diff instead of arriving as one more import.
+  const ALLOWED = new Set([
+    "lib/SiteFooter.svelte", // surface 1 — the footer line
+    "components/ExplainerBand.svelte", // surface 2 — "who pays for this?"
+    "Support.svelte", // the page they both point at
+  ]);
+
+  const SRC = resolve(__dirname, "../src");
+  const found = new Set();
+  const walk = (dir, prefix) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const rel = prefix ? `${prefix}/${e.name}` : e.name;
+      if (e.isDirectory()) {
+        walk(resolve(dir, e.name), rel);
+        continue;
+      }
+      if (!/\.(svelte|js)$/.test(e.name) || rel === "lib/support.js") continue;
+      // Any path ending in `support.js`, so `$lib/support.js`, `./support.js`
+      // and `../lib/support.js` all count — an alias is not an exemption.
+      if (/\bfrom\s+["'][^"']*support\.js["']/.test(readFileSync(resolve(dir, e.name), "utf8"))) {
+        found.add(rel);
+      }
+    }
+  };
+  walk(SRC, "");
+
+  for (const file of found) {
+    assert.ok(
+      ALLOWED.has(file),
+      `src/${file} imports support.js, which makes it a place the site asks ` +
+        `for money. support.js rule 1 allows ${ALLOWED.size}: ` +
+        `${[...ALLOWED].join(", ")}. Amend the rule and this list together, ` +
+        `or render nothing from that module here.`
+    );
+  }
+  for (const file of ALLOWED) {
+    assert.ok(
+      found.has(file),
+      `src/${file} no longer renders any support copy, so the surface this ` +
+        `list permits does not exist. Either it was removed — drop it here in ` +
+        `the same commit — or it broke.`
+    );
+  }
+});
+
 test("the footer support line exists in both languages", () => {
-  for (const k of ["navK", "line", "donateK", "head", "body", "pending"]) {
+  for (const k of [
+    "navK",
+    "line",
+    "donateK",
+    "head",
+    "body",
+    "pending",
+    "explainK",
+    "explainBody",
+    "moreK",
+    "offsiteK",
+    "offsite",
+    "privacyK",
+    "otherK",
+    "other",
+    "issuesK",
+  ]) {
     assert.ok(SUPPORT_COPY[k]?.bg, `SUPPORT_COPY.${k} has no Bulgarian string`);
     assert.ok(SUPPORT_COPY[k]?.en, `SUPPORT_COPY.${k} has no English string`);
   }
@@ -262,9 +342,9 @@ test("the footer links direct only while exactly one channel is open", () => {
   assert.equal(
     footerDonateLink(mk(true, true)),
     null,
-    "two channels open, so the footer sends the reader to /legal/#support " +
-      "where each platform carries the note explaining what it is, rather " +
-      "than silently picking the first one declared"
+    "two channels open, so the footer sends the reader to /support/ where " +
+      "each platform carries the note explaining what it is, rather than " +
+      "silently picking the first one declared"
   );
 
   // Against the real list, so the shipped footer's destination is asserted

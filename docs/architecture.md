@@ -51,8 +51,8 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │   │   └── sources/      # eurostat · bnb · ecb · imot · nsi
 │   └── tests/       `pytest -q` offline; `-m live` hits real upstreams
 ├── data/published/  8 JSON envelopes, committed — these ARE served to the site
-└── site/            Vite 8 + Svelte 5, three build entries · AGENTS.md
-    ├── index.html · legal/index.html · 404.html
+└── site/            Vite 8 + Svelte 5, four build entries · AGENTS.md
+    ├── index.html · legal/index.html · support/index.html · 404.html
     ├── public/      _headers (CSP + cache) · robots.txt ·
     │                .well-known/security.txt · favicon · og-image · fonts
     ├── eslint.config.js · .prettierrc.json · svelte.config.js
@@ -60,7 +60,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
     │                (`npm run test:render`, the built page in a browser) ·
     │                copy-data · gen-sitemap · gen-version ·
     │                strip-sourcemaps · check-identity
-    └── src/         App.svelte · Legal.svelte · NotFound.svelte
+    └── src/         App.svelte · Legal.svelte · Support.svelte · NotFound.svelte
         ├── components/  the calculator's parts: SiteHeader · DataBanner ·
         │                DataPanel ·
         │                InputsCard · BasketEditor · PayslipTable ·
