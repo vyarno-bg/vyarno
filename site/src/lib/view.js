@@ -33,6 +33,7 @@ import {
   bgMarginalRatePct,
   bgNetSalary,
   bgTaxWedge,
+  householdNetRaisePct,
   cashErosion,
   officialCumulativeSince2020,
   payrollParams,
@@ -573,18 +574,23 @@ export function mortgagePanel({ price, ratePct, termYears, netSalary, eurPerM2, 
  * express that mistake here, because the argument this function accepts is not
  * the shape that figure has. One earner is a list of one.
  *
+ * **The list arrives inside a `pay` object that also states its basis**, so an
+ * amount cannot be passed without saying what it is. A gross typed into a
+ * parameter named `nets` is a ~29% error on every figure below it, and it looks
+ * entirely ordinary — the same class of mistake as the ceiling, one layer up.
+ *
  * `null` for an empty field. There is no payslip for a salary nobody typed,
  * and rendering one at zero invites the reader to check a column of zeroes.
  *
  * @param {object} args
  * @param {object|null} args.payroll   data.payroll (payroll.json), unmodified
- * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
+ * @param {{basis:'net'|'gross', amounts:Array<number|null|undefined>}} args.pay
  * @returns {null | (ReturnType<typeof bgHouseholdPayroll> & {
  *            maxInsurable:number, effectiveYear:number|null })}
  */
-export function payslipPanel({ payroll, nets }) {
+export function payslipPanel({ payroll, pay }) {
   const params = payrollParams(payroll);
-  const household = bgHouseholdPayroll(nets, params);
+  const household = bgHouseholdPayroll(pay?.amounts, params, pay?.basis);
   if (!household.earners.length) return null;
 
   // The ceiling and the rate year are carried through so the template can name
@@ -635,7 +641,7 @@ export function payslipPanel({ payroll, nets }) {
  *
  * @param {object} args
  * @param {object|null} args.payroll   data.payroll (payroll.json), unmodified
- * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
+ * @param {{basis:'net'|'gross', amounts:Array<number|null|undefined>}} args.pay
  * @returns {{capGross:number, peakEffectivePct:number, marginalBelowPct:number,
  *            marginalAbovePct:number, capRisePerMonth:number|null,
  *            points:Array<{gross:number, effectivePct:number, marginalPct:number}>,
@@ -643,15 +649,17 @@ export function payslipPanel({ payroll, nets }) {
  *                           marginalPct:number, overCap:boolean}>,
  *            headlineEffectivePct:number|null}}
  */
-export function taxWedgePanel({ payroll, nets }) {
+export function taxWedgePanel({ payroll, pay }) {
   const params = payrollParams(payroll);
   const wedge = bgTaxWedge({ params, nextCap: scheduledMaxInsurable(payroll) });
 
   const earners = [];
-  (nets ?? []).forEach((n, index) => {
-    const net = Number(n);
-    if (!Number.isFinite(net) || net <= 0) return;
-    const gross = bgGrossFromNet(net, params);
+  (pay?.amounts ?? []).forEach((n, index) => {
+    const amount = Number(n);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    // In gross mode the reader already typed the figure this curve is drawn
+    // against, so there is nothing to recover.
+    const gross = pay?.basis === "gross" ? amount : bgGrossFromNet(amount, params);
     earners.push({
       index,
       ordinal: index + 1,
@@ -668,7 +676,7 @@ export function taxWedgePanel({ payroll, nets }) {
   // weighted rate is also where the obvious wrong one lives — the plain average
   // of the per-earner rates, which is off by whole points the moment the
   // earners are unequal.
-  const household = bgHouseholdPayroll(nets, params);
+  const household = bgHouseholdPayroll(pay?.amounts, params, pay?.basis);
 
   return {
     ...wedge,
@@ -691,6 +699,106 @@ export function taxWedgePanel({ payroll, nets }) {
 // ---------------------------------------------------------------------------
 // THE HOUSEHOLD, EARNER BY EARNER
 // ---------------------------------------------------------------------------
+
+/**
+ * Every earner's monthly NET take-home, whichever basis they were typed in.
+ *
+ * **The one place a gross becomes a net**, and therefore the only thing the
+ * rest of the page has to trust. Rent as a share of pay, the basket, the 30%
+ * mortgage line and the position on the earnings ladder are all statements
+ * about take-home; fed a gross they are each wrong by around 29% while looking
+ * completely ordinary — and the mortgage one is wrong in the direction that
+ * says a home is affordable when it is not, which
+ * `AGENTS.md` forbids in as many words.
+ *
+ * Blanks stay blank rather than becoming zero: a second income field nobody has
+ * filled in yet is a person not yet described, and `householdNet` skips it.
+ *
+ * @param {{basis:'net'|'gross', amounts:Array<number|null|undefined>}} pay
+ * @param {object|null} payroll  data.payroll (payroll.json), unmodified
+ * @returns {Array<number|null>} one net per entry, in the same positions
+ */
+export function netsOf(pay, payroll) {
+  const params = payrollParams(payroll);
+  return (pay?.amounts ?? []).map((n) => {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    return pay?.basis === "gross" ? bgNetSalary(v, params).net : v;
+  });
+}
+
+/**
+ * The same amounts read in the other basis, for the moment the reader flips the
+ * toggle.
+ *
+ * **Converting in place is what keeps the toggle a display choice.** The figure
+ * in the box changes from €900 to €1,160 and not one number below it moves,
+ * which is the contract the %/€ basket toggle already keeps
+ * (`Calculator#setSpendMode`). The alternative — leaving 900 in the box and
+ * re-reading it as a gross — silently rewrites every result on the page while
+ * the reader believes they changed a label.
+ *
+ * Rounded to the cent, because it lands in a number input the reader will type
+ * over. The round trip is protected by the caller stashing what was typed, not
+ * by this rounding being lossless — it is not: €900 net → €1,159.82 gross →
+ * €900.00 back is fine, but the general case drifts a cent per flip and a
+ * salary that creeps while nobody edits it is its own kind of wrong.
+ *
+ * @param {{basis:'net'|'gross', amounts:Array<number|null|undefined>}} pay
+ * @param {object|null} payroll
+ * @returns {Array<number|null>}
+ */
+export function convertPay(pay, payroll) {
+  const params = payrollParams(payroll);
+  const to = pay?.basis === "gross" ? "net" : "gross";
+  return (pay?.amounts ?? []).map((n) => {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    const out = to === "gross" ? bgGrossFromNet(v, params) : bgNetSalary(v, params).net;
+    return Math.round(out * 100) / 100;
+  });
+}
+
+/**
+ * The household's nominal change in take-home, and which earners still owe an
+ * answer for it.
+ *
+ * The two travel together because the row renders one or the other and must
+ * never render both: a percentage computed over the earners who happen to have
+ * filled the field in, beside a prompt asking the rest to fill it in, is a
+ * figure about part of a household presented as the household's.
+ * `mirror.js#householdNetRaisePct` returns NaN in that state; this says who to
+ * name.
+ *
+ * @param {object} args
+ * @param {{basis:'net'|'gross', amounts:Array<number|null|undefined>}} args.pay
+ * @param {Array<number|null|undefined>} args.raises  percent, one per earner
+ * @param {object|null} args.payroll
+ * @returns {{pct:number, missing:Array<{index:number, ordinal:number}>}}
+ */
+export function householdRaise({ pay, raises, payroll }) {
+  const missing = [];
+  (pay?.amounts ?? []).forEach((n, index) => {
+    const amount = Number(n);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    // Same guard as `householdNetRaisePct`, and for the same reason: 0 is an
+    // answer and `null` is not, but both coerce to 0. The two must agree about
+    // which earners are missing, or the row names nobody while the figure stays
+    // NaN.
+    const stated = (raises ?? [])[index];
+    const r = Number(stated);
+    const unanswered =
+      stated === null || stated === undefined || stated === "" || !Number.isFinite(r) || r <= -100;
+    if (unanswered) missing.push({ index, ordinal: index + 1 });
+  });
+  return {
+    pct: householdNetRaisePct(
+      { basis: pay?.basis ?? "net", amounts: pay?.amounts, raises },
+      payrollParams(payroll)
+    ),
+    missing,
+  };
+}
 
 /**
  * Where each earner sits on the published net-earnings ladder.

@@ -122,6 +122,15 @@ export const COPY = {
     bg: "(чистата заплата на един човек, на месец)",
     en: "(one person's take-home, monthly)",
   },
+  // The same field in the other basis. The label and the hint have to follow
+  // the toggle: a box holding €2,983 under «Нетна заплата» is a wrong number
+  // with a correct one inside it, and the reader has no way to tell which of
+  // the two the page believes.
+  grossPay: { bg: "Брутна заплата", en: "Gross pay" },
+  grossPayHint: {
+    bg: "(брутната заплата на един човек по договор, на месец)",
+    en: "(one person's gross contract pay, monthly)",
+  },
   // NOT a claim about what people earn. We publish no national median net
   // wage — the only median in the data is the Sofia net ladder's P50 (~€1104),
   // and this placeholder sits at its 34th percentile, on the same screen as
@@ -172,6 +181,35 @@ export const COPY = {
     en: "Each wage is insured separately, up to its own ceiling - so the sum of the gross salaries is not what a single person would be paid for the same take-home.",
   },
   earnerPayslipHead: { bg: "Доход {n} · {s} € нето", en: "Income {n} · {s} € net" },
+
+  // NET OR GROSS
+  //
+  // The payslip states a net and the contract states a gross, and which of the
+  // two a reader knows is not something to guess at. The toggle changes only
+  // which one they type: the amounts convert in place, so the number in the box
+  // moves and nothing below it does. Everything downstream runs on the net
+  // either way (view.js#netsOf).
+  basisNet: { bg: "нето", en: "net" },
+  basisGross: { bg: "бруто", en: "gross" },
+  basisGroup: { bg: "Каква заплата въвеждаш", en: "Which figure you are entering" },
+  basisHint: {
+    bg: "Въведи каквото знаеш - чистото, което ти влиза, или брутното от договора. Сметките отдолу са едни и същи.",
+    en: "Enter whichever you know - what actually reaches you, or the gross on your contract. The figures below are the same either way.",
+  },
+  // Both readings, always, so the toggle never leaves the reader wondering
+  // which basis the page is in. `payGross` below states the same conversion in
+  // a sentence; this is the pair at a glance, next to the field.
+  payBothNet: { bg: "{n} € нето · {g} € бруто", en: "{n} € net · {g} € gross" },
+  // In gross mode the answer runs the other way: they typed the contract, so
+  // the sentence reports what reaches them.
+  payNetFromGross: {
+    bg: "на ръка (нето) това е ≈ {n} € - удържат се {i} € осигуровки и {t} € данък, или {r}%",
+    en: "in hand (net) that's ≈ {n} € - {i} € contributions and {t} € tax are withheld, i.e. {r}%",
+  },
+  payNetFromGrossHousehold: {
+    bg: "на ръка (нето) заедно ≈ {n} € - удържат се {i} € осигуровки и {t} € данък, или {r}% общо",
+    en: "in hand (net) together ≈ {n} € - {i} € contributions and {t} € tax withheld, i.e. {r}% overall",
+  },
   // The itemised payslip behind the back-computed gross. The one-line summary
   // under the salary input states a gross, a contributions figure and a tax
   // figure; this is the same arithmetic opened out, so a reader can check it
@@ -219,6 +257,29 @@ export const COPY = {
   raiseLabel: { bg: "Увеличение за 1 година", en: "Raise over 1 year" },
   raiseSince: { bg: "Увеличение от {y}", en: "Raise since {y}" },
   raiseHint: { bg: "(приблизително)", en: "(a rough guess)" },
+  // One raise per income, because a household's rise is not one number people
+  // share. The combined figure is weighted by what each earner was paid BEFORE
+  // — see mirror.js#householdNetRaisePct — and every income has to answer
+  // before it can be stated at all: a blank read as 0% is an invented number
+  // that drags the household's figure down (P7).
+  raiseLabelEarner: {
+    bg: "Увеличение за 1 година - доход {n}",
+    en: "Raise over 1 year - income {n}",
+  },
+  raiseSinceEarner: { bg: "Увеличение от {y} - доход {n}", en: "Raise since {y} - income {n}" },
+  pocketMissingOne: {
+    bg: "Въведи увеличението и за доход {n} - иначе не знаем какво стана с дохода на домакинството.",
+    en: "Enter the raise for income {n} too - without it we cannot tell what happened to the household's pay.",
+  },
+  pocketMissingMany: {
+    bg: "Въведи увеличението и за останалите доходи ({n}) - иначе не знаем какво стана с дохода на домакинството.",
+    en: "Enter the raise for the other incomes ({n}) too - without them we cannot tell what happened to the household's pay.",
+  },
+  // The combined figure is not one of the numbers the reader typed, so the row
+  // shows the parts it was built from. Without them «на фиш: +9,1%» is a figure
+  // nobody entered and nobody can check.
+  pocketRaiseParts: { bg: "доход {n}: {r}", en: "income {n}: {r}" },
+  pocketCombined: { bg: "общо за домакинството", en: "the household together" },
   // Inline hint under the raise input explaining why we ask for it.
   // Sits below the input box (not in the label) so the field reads
   // as a complete unit like the other inputs. Tells the user the

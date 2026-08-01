@@ -302,6 +302,11 @@ What is in it:
   SPA collects **net** take-home (most people know that, not their contract
   gross), back-computes the gross for the Sofia comparator, and applies the same
   formula to Sofia's gross — so the comparison is net vs net.
+- **Net or gross:** the pay field takes either, and `view.js#netsOf` is the one
+  place one becomes the other. Amounts travel as `pay = { basis, amounts }` so
+  none can arrive without saying what it is; flipping the toggle converts in
+  place, and what was typed in the outgoing basis is stashed so a round trip
+  restores it verbatim rather than creeping a cent per flip.
 - **The household:** `householdNet(nets)` and `bgHouseholdPayroll(nets, params)`.
   The pay card collects **one net per earner**, and the total is derived from
   that list rather than typed. Inverting a combined net as a single salary
@@ -790,6 +795,14 @@ payslip, the position on the ladder, the comparison with НСИ's Sofia average,
 and the marker on the wedge curve. Once: the household's take-home, the basket,
 rent, and everything about a home. [`math.md`](./math.md) §"A household is
 several contracts" carries the table and the reason.
+
+**One raise per income**, and they live in `InputsCard` rather than beside the
+pay fields — the raise is optional, and the pay card is ordered first on a phone
+precisely so the question it asks stays short. The combined figure is weighted
+by what each earner was paid *before* ([`math.md`](./math.md)), so it is not one
+of the numbers the reader typed and not the average of them either; `PocketRow`
+prints the parts underneath so it can be checked. Until every income has
+answered, the row names the ones still missing and states nothing.
 
 Two consequences worth knowing before editing a sentence here:
 

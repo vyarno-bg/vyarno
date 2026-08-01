@@ -67,6 +67,34 @@
   // beside a word that already carries one, which reads as 39% less far below.
   // The magnitude arrives unsigned from view.js#sofiaGap and is formatted here,
   // so nothing reaches the markup that a formatter has not been through.
+  // The field's own name and hint follow the toggle. A box holding a gross
+  // under «Нетна заплата» is a right number with a wrong name on it, and the
+  // reader has no way to tell which of the two the page went on to use.
+  const payLabel = $derived(calc.payBasis === "gross" ? COPY.grossPay : COPY.netPay);
+  const payHint = $derived(calc.payBasis === "gross" ? COPY.grossPayHint : COPY.netPayHint);
+
+  // Which sentence the summary line tells, and with which figures. In net mode
+  // the reader typed the take-home and the answer is the contract; in gross
+  // mode it runs the other way. Decided here rather than in four nested
+  // ternaries in the markup, where the wrong pairing of key and arguments
+  // renders a gross figure under a sentence naming it a net.
+  const summaryKey = $derived(
+    calc.payBasis === "gross"
+      ? calc.hasHousehold
+        ? COPY.payNetFromGrossHousehold
+        : COPY.payNetFromGross
+      : calc.hasHousehold
+        ? COPY.payGrossHousehold
+        : COPY.payGross
+  );
+  const summaryArgs = $derived({
+    g: fmt0(calc.payslip?.gross ?? 0),
+    n: fmt0(calc.payslip?.net ?? 0),
+    i: fmt0(calc.payslip?.insurance ?? 0),
+    t: fmt0(calc.payslip?.tax ?? 0),
+    r: fmt(calc.payslip?.effectiveRatePct ?? 0),
+  });
+
   function deltaPhrase(gap, l) {
     const word = COPY[DIR_KEY[gap.direction]][l] ?? COPY[DIR_KEY[gap.direction]].bg;
     return gap.direction === "equal" ? word : `${fmt0(gap.magnitudePct)}% ${word}`;
@@ -79,6 +107,27 @@
     <span class="l-en">{COPY.yourNumbers.en}</span>
   </h4>
 
+  <!-- Which figure the fields carry. The segmented control is the pattern the
+       basket's %/€ toggle already uses, and it keeps the same contract: the
+       amounts convert in place, so the number in the box changes and nothing
+       below it does. -->
+  <div class="seg basis" role="group" aria-label={t(COPY.basisGroup, $lang)}>
+    <button
+      class="segbtn"
+      aria-pressed={calc.payBasis === "net"}
+      onclick={() => calc.setPayBasis("net")}
+    >
+      <span class="l-bg">{COPY.basisNet.bg}</span><span class="l-en">{COPY.basisNet.en}</span>
+    </button>
+    <button
+      class="segbtn"
+      aria-pressed={calc.payBasis === "gross"}
+      onclick={() => calc.setPayBasis("gross")}
+    >
+      <span class="l-bg">{COPY.basisGross.bg}</span><span class="l-en">{COPY.basisGross.en}</span>
+    </button>
+  </div>
+
   <div class="field">
     <!-- The first field keeps the id `inSalary`: ResultsSummary's «въведи
          своята заплата» button focuses it by id across the component boundary,
@@ -87,14 +136,14 @@
          would scroll nowhere and raise no keyboard. -->
     <label for="inSalary">
       <span class="l-bg"
-        >{calc.hasHousehold ? t(COPY.earnerLabel, "bg", { n: 1 }) : COPY.netPay.bg}</span
+        >{calc.hasHousehold ? t(COPY.earnerLabel, "bg", { n: 1 }) : payLabel.bg}</span
       >
       <span class="l-en"
-        >{calc.hasHousehold ? t(COPY.earnerLabel, "en", { n: 1 }) : COPY.netPay.en}</span
+        >{calc.hasHousehold ? t(COPY.earnerLabel, "en", { n: 1 }) : payLabel.en}</span
       >
       <span class="hint">
-        <span class="l-bg">{COPY.netPayHint.bg}</span>
-        <span class="l-en">{COPY.netPayHint.en}</span>
+        <span class="l-bg">{payHint.bg}</span>
+        <span class="l-en">{payHint.en}</span>
       </span>
     </label>
     <span class="unit" data-u="€">
@@ -104,16 +153,18 @@
         inputmode="numeric"
         min="0"
         step="10"
-        bind:value={calc.earners[0]}
-        oninput={calc.onEarnerInput}
-        aria-label={calc.hasHousehold
-          ? t(COPY.earnerLabel, $lang, { n: 1 })
-          : t(COPY.netPay, $lang)}
+        bind:value={calc.earners[0].amount}
+        oninput={() => calc.onEarnerInput(0)}
+        aria-label={calc.hasHousehold ? t(COPY.earnerLabel, $lang, { n: 1 }) : t(payLabel, $lang)}
       />
     </span>
     <div class="hint" style="margin-top:4px">
       <span class="l-bg">{COPY.medianDefault.bg}</span>
       <span class="l-en">{COPY.medianDefault.en}</span>
+    </div>
+    <div class="hint" style="margin-top:2px">
+      <span class="l-bg">{COPY.basisHint.bg}</span>
+      <span class="l-en">{COPY.basisHint.en}</span>
     </div>
 
     <!-- The further incomes. Keyed by index rather than by value: two people
@@ -134,8 +185,8 @@
               inputmode="numeric"
               min="0"
               step="10"
-              bind:value={calc.earners[i]}
-              oninput={calc.onEarnerInput}
+              bind:value={calc.earners[i].amount}
+              oninput={() => calc.onEarnerInput(i)}
               aria-label={t(COPY.earnerLabel, $lang, { n: i + 1 })}
             />
           </span>
@@ -193,20 +244,23 @@
        above them adds the columns up. -->
     {#if calc.earnersDirty && calc.payslip}
       <div class="hint" style="margin-top:4px; color:var(--ink-2)">
+        <span class="l-bg">{t(summaryKey, "bg", summaryArgs)}</span>
+        <span class="l-en">{t(summaryKey, "en", summaryArgs)}</span>
+      </div>
+      <!-- Both readings side by side, always. The toggle changes which one the
+           reader edits, and showing only the other half leaves them working out
+           which basis the page is in from the wording of a sentence. -->
+      <div class="hint pair mono" style="margin-top:2px">
         <span class="l-bg"
-          >{t(calc.hasHousehold ? COPY.payGrossHousehold : COPY.payGross, "bg", {
+          >{t(COPY.payBothNet, "bg", {
+            n: fmt0(calc.payslip.net),
             g: fmt0(calc.payslip.gross),
-            i: fmt0(calc.payslip.insurance),
-            t: fmt0(calc.payslip.tax),
-            r: fmt(calc.payslip.effectiveRatePct),
           })}</span
         >
         <span class="l-en"
-          >{t(calc.hasHousehold ? COPY.payGrossHousehold : COPY.payGross, "en", {
+          >{t(COPY.payBothNet, "en", {
+            n: fmt0(calc.payslip.net),
             g: fmt0(calc.payslip.gross),
-            i: fmt0(calc.payslip.insurance),
-            t: fmt0(calc.payslip.tax),
-            r: fmt(calc.payslip.effectiveRatePct),
           })}</span
         >
       </div>
@@ -323,6 +377,15 @@
   }
   .earner-add:hover {
     color: var(--ink);
+  }
+  /* The toggle sits above the field it governs and reads as chrome, not as a
+     result: it is the smallest control on the card because it is the one the
+     reader touches least. */
+  .basis {
+    margin-bottom: 8px;
+  }
+  .hint.pair {
+    color: var(--muted);
   }
   .hint.total {
     color: var(--ink-2);

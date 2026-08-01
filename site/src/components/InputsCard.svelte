@@ -27,6 +27,20 @@
   // Short source label for the live-mortgage hint. We map the fallback chain
   // to a visible provenance string so the user can see WHICH tier the rate
   // they're typing over came from.
+  // The raise field's label: it names the window (a year, or since a year) and,
+  // when there is more than one income, which one it is about. Built here
+  // because it combines two COPY keys with the anchor, and a template that does
+  // that inline picks the wrong key on one of the four combinations.
+  function raiseLabel(l, i) {
+    const many = calc.earners.length > 1;
+    if (calc.anchor === "y1") {
+      return many ? t(COPY.raiseLabelEarner, l, { n: i + 1 }) : t(COPY.raiseLabel, l);
+    }
+    return many
+      ? t(COPY.raiseSinceEarner, l, { y: calc.anchor, n: i + 1 })
+      : t(COPY.raiseSince, l, { y: calc.anchor });
+  }
+
   function rateSourceLabel(l) {
     const labels = {
       new_business: { bg: "ЕЦБ · нови жилищни кредити", en: "ECB · new home loans" },
@@ -122,35 +136,39 @@
     </div>
   </div>
 
-  <div class="field">
-    <label for="inRaise">
-      <span class="l-bg"
-        >{calc.anchor === "y1"
-          ? COPY.raiseLabel.bg
-          : COPY.raiseSince.bg.replace("{y}", calc.anchor)}</span
-      >
-      <span class="l-en"
-        >{calc.anchor === "y1"
-          ? COPY.raiseLabel.en
-          : COPY.raiseSince.en.replace("{y}", calc.anchor)}</span
-      >
-      <span class="hint">
-        <span class="l-bg">{COPY.raiseHint.bg}</span>
-        <span class="l-en">{COPY.raiseHint.en}</span>
+  <!-- ONE RAISE PER INCOME. A household's rise is not a number people share:
+       +10% for one earner and nothing for the other is not "+5% between us",
+       and the combined figure is weighted by what each was paid BEFORE
+       (mirror.js#householdNetRaisePct). Asking once and applying it to
+       everybody would invent the missing answer.
+       The fields stay in THIS card rather than moving next to the pay inputs:
+       the raise is optional, and the pay card is ordered first on a phone
+       precisely so the question it asks is short. -->
+  {#each calc.earners as earner, i (i)}
+    <div class="field">
+      <label for={i === 0 ? "inRaise" : `inRaise${i}`}>
+        <span class="l-bg">{raiseLabel("bg", i)}</span>
+        <span class="l-en">{raiseLabel("en", i)}</span>
+        <span class="hint">
+          <span class="l-bg">{COPY.raiseHint.bg}</span>
+          <span class="l-en">{COPY.raiseHint.en}</span>
+        </span>
+      </label>
+      <span class="unit" data-u="%">
+        <input
+          id={i === 0 ? "inRaise" : `inRaise${i}`}
+          type="number"
+          inputmode="decimal"
+          step="0.5"
+          placeholder="—"
+          value={Number.isFinite(earner.raise) ? earner.raise : ""}
+          oninput={(e) => calc.onRaiseInput(i, e)}
+          aria-label={raiseLabel($lang, i)}
+        />
       </span>
-    </label>
-    <span class="unit" data-u="%">
-      <input
-        id="inRaise"
-        type="number"
-        inputmode="decimal"
-        step="0.5"
-        placeholder="—"
-        value={Number.isFinite(calc.raise) ? calc.raise : ""}
-        oninput={calc.onRaiseInput}
-        aria-label={t(COPY.raiseLabel, $lang)}
-      />
-    </span>
+    </div>
+  {/each}
+  <div class="field">
     <!-- A sub-hint keeps this field a complete unit like the others
        (label + input + hint), and says WHY we ask: outpacing
        inflation. -->
