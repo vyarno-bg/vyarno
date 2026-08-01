@@ -109,7 +109,7 @@ Every layer has one job, and they do not overlap.
 | Layer | Files | Job |
 |---|---|---|
 | Source | `sources/{eurostat,bnb,ecb,imot,nsi}.py` | Call one upstream, prove the response is what was asked for, return flat rows. **No math.** |
-| Transform | `transform.py` | Reshape rows into published shapes: the 2020 rebase, year-end selection, the salary ladder. **No network, no validation.** |
+| Transform | `transform.py` | Reshape rows into published shapes: year-end selection, the salary ladder. **No network, no validation.** |
 | Validate | `validate.py`, `mortgage.py` | Gates that block the publish. A gate raises; it never repairs. |
 | Publish | `publish.py` | Write the envelopes, including the provenance frame every payload carries. |
 | CLI | `cli.py` | One arm per `--source`, and the exit codes. **No domain logic.** |
@@ -158,8 +158,9 @@ most of the frame; a composite one carries it one level down.
 
 Field-level detail sits beside the connector that produces it, in
 [`data-sources.md`](./data-sources.md). The load-bearing schema rule is in
-[`math.md`](./math.md): **every index field is on the 2020=100 base**, because
-the SPA divides `latest_index / index_by_year[anchor]`.
+[`math.md`](./math.md): **every index field carries Eurostat's own value, on
+the base `index_base_year` names**, because the SPA divides
+`latest_index / index_by_year[anchor]` and the two have to share a base.
 
 ## The five layers in the SPA
 

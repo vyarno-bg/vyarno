@@ -83,31 +83,36 @@
           >
         </p>
 
-        <!-- The old version of this section leaned on a "sticker" metaphor and
-             then did the arithmetic inside it ("today's sticker ÷ the sticker
-             from the year you pick"), which asks the reader to hold a made-up
-             object and a division at the same time. One idea per sentence, and
-             the numbers spelled out in words before any ÷ appears. -->
+        <!-- Two rules for this section, both learned the hard way. No metaphor
+             that then has arithmetic done inside it ("today's sticker ÷ the
+             sticker from the year you pick") — that asks the reader to hold a
+             made-up object and a division at once. And one idea per sentence,
+             with the numbers said in words before any ÷ appears.
+
+             The figures here must stay recognisable against the published
+             payload: a reader who follows the ↗ link lands on the same index
+             this paragraph is teaching them to read. -->
         <h4>
           <span class="l-bg">Какво е „индекс"?</span><span class="l-en">What is an "index"?</span>
         </h4>
         <p>
           <span class="l-bg"
-            >Индексът е число, което следи цените на една група. Уговорката е проста: през 2020 г.
-            всяка група тръгва от <b>100</b>. Ако днес числото на храната е <b>160</b>, значи
-            храната, която през 2020 г. е струвала 100, днес струва 160 - тоест е с
-            <b>60% по-скъпа</b>. Ако беше 130, поскъпването щеше да е 30%. Приложението прави точно
-            това сравнение за периода, който си избрал: днешното число срещу числото за твоята
-            година. И понеже всички групи тръгват от една и съща година, могат да се сравняват
-            честно помежду си.</span
+            >Индексът е число, което следи цените на една група. Само по себе си то не значи нищо -
+            значение има отношението между две негови стойности. Ако индексът на храната в края на
+            2020 г. е <b>115</b>, а днес е <b>185</b>, храната е с <b>60% по-скъпа</b> (185 ÷ 115 = 1,6).
+            Ако днес беше 150, поскъпването щеше да е 30%. Приложението прави точно това сравнение за
+            периода, който си избрал: днешното число срещу числото за твоята година. Откъде тръгва всеки
+            индекс няма значение - при делението изходната точка се съкращава, затова оставяме числата
+            такива, каквито ги публикува Евростат, и връзката ↗ до реда връща същите цифри.</span
           >
           <span class="l-en"
-            >An index is a number that tracks one group's prices. The convention is simple: in 2020
-            every group starts at <b>100</b>. If food's number today is <b>160</b>, then what cost
-            100 in 2020 costs 160 now - food is <b>60% more expensive</b>. Had it been 130, the rise
-            would be 30%. The app makes exactly that comparison for the period you pick: today's
-            number against the number for your year. And because every group starts from the same
-            year, they can be compared fairly with one another.</span
+            >An index is a number that tracks one group's prices. On its own it means nothing - what
+            means something is the ratio between two of its readings. If food's index at the end of
+            2020 was <b>115</b> and today it is <b>185</b>, food is <b>60% more expensive</b> (185 ÷ 115
+            = 1.6). Had today's been 150, the rise would be 30%. The app makes exactly that comparison
+            for the period you pick: today's number against the number for your year. Where each index
+            starts does not matter - the starting point cancels in the division, so we leave the numbers
+            exactly as Eurostat publishes them and the ↗ link on the row returns the same digits.</span
           >
         </p>
 
@@ -278,14 +283,15 @@
               годишният темп (Eurostat, prc_hicp_minr, RCH_A).
             {:else}
               r<sub>i</sub> = I<sub>i</sub>(сега) ÷ I<sub>i</sub>({anchor}) − 1, където I<sub>i</sub
-              > е ценовият индекс на групата (prc_hicp_minr, база 2020=100).
+              > е ценовият индекс на групата така, както го публикува Евростат (prc_hicp_minr). Базата
+              на индекса се съкращава при делението, затова не я пипаме.
             {/if}
             <br /><b>В джоба.</b> <code>реално = (1 + увеличение) ÷ (1 + π) − 1</code>
             <br /><b>Спестеното.</b> <code>стойност днес = сума ÷ (1 + поскъпване от 2020)</code>,
             където поскъпването е {#if cashEroded.basis === "all_items"}<code
                 >I(сега) ÷ I(2020) − 1</code
-              > по общия индекс на Евростат (prc_hicp_minr, TOTAL, база 2020=100){:else}сборът на
-              13-те групи с официалните им тегла{/if}
+              > по общия индекс на Евростат (prc_hicp_minr, TOTAL), както е публикуван{:else}сборът
+              на 13-те групи с официалните им тегла{/if}
             <br /><b>Домът.</b> <code>цена = €/м² × квадратура</code> ·
             <code>години = цена ÷ (12 × заплата)</code>. Вноската е анюитет:
             <code>P = L × m ÷ (1 − (1 + m)<sup>−n</sup>)</code>, където L = {fmt0(
@@ -305,12 +311,13 @@
             <code>r<sub>i</sub> = I<sub>i</sub>(now) ÷ I<sub>i</sub>(Y) − 1</code>, where I<sub
               >i</sub
             >
-            is the group's price index (prc_hicp_minr, base 2020=100).
+            is the group's price index exactly as Eurostat publishes it (prc_hicp_minr). The index base
+            cancels in the division, so we leave it alone.
             <br /><b>In your pocket.</b> <code>real = (1 + raise) ÷ (1 + π) − 1</code>
             <br /><b>Your savings.</b>
             <code>value today = amount ÷ (1 + the rise since 2020)</code>, where the rise is {#if cashEroded.basis === "all_items"}<code
                 >I(now) ÷ I(2020) − 1</code
-              > on Eurostat's all-items index (prc_hicp_minr, TOTAL, base 2020=100){:else}the 13
+              > on Eurostat's all-items index (prc_hicp_minr, TOTAL) as published{:else}the 13
               groups summed at their official weights{/if}
             <br /><b>A home.</b> <code>price = €/m² × size</code> ·
             <code>years = price ÷ (12 × pay)</code>. The payment is an annuity:

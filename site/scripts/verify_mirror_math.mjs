@@ -54,9 +54,12 @@ const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
 
 /**
  * A category shaped like the published `hicp_categories.json` entries.
- * Deliberately built on a NON-100 raw base scaled to 2020=100, so a
- * regression that mixes bases shows up as a wildly wrong number rather
- * than a rounding difference.
+ *
+ * No anchor reads 100 in any fixture below, and that is the point: the payload
+ * carries Eurostat's own index values, where an anchor year reading exactly
+ * 100 would be a coincidence. Code that divides by a literal 100 instead of
+ * looking the anchor up returns a plausible-looking percentage, so the fixture
+ * has to be the thing that refuses to cooperate with it.
  */
 function cat({ rate, idx, latest, weight = 10 }) {
   return {
@@ -67,18 +70,19 @@ function cat({ rate, idx, latest, weight = 10 }) {
   };
 }
 
-// Food-like: 2020=100 → 2026-06 = 159.9 (+59.9% since 2020).
+// Food-like: 115 at end-2020 → 183.885 at 2026-06 (+59.9% since 2020).
 const FOOD = cat({
   rate: 5.2,
-  idx: { 2020: 100, 2021: 104.5, 2024: 148.9, 2025: 155.2 },
-  latest: 159.9,
+  idx: { 2020: 115, 2021: 120.175, 2024: 171.235, 2025: 178.48 },
+  latest: 183.885,
   weight: 22,
 });
-// Transport-like: cheaper cumulative, higher weight.
+// Transport-like: cheaper cumulative, higher weight, and a different base
+// again — divisions do not share one, so nothing may assume they do.
 const TRANSPORT = cat({
   rate: 1.4,
-  idx: { 2020: 100, 2021: 103.1, 2024: 128.4, 2025: 130.0 },
-  latest: 131.5,
+  idx: { 2020: 108, 2021: 111.348, 2024: 138.672, 2025: 140.4 },
+  latest: 142.02,
   weight: 14,
 });
 
@@ -94,11 +98,12 @@ test("rateFor(c,'y1') returns Eurostat's published rate VERBATIM, never derived"
 });
 
 test("rateFor(c, year) = latest_index / index_by_year[year] − 1, on ONE base", () => {
-  // Since 2020: 159.9 / 100 − 1 = +59.9%.
+  // Since 2020: 183.885 / 115 − 1 = +59.9%.
   assert.ok(near(rateFor(FOOD, 2020), 59.9, 1e-9), rateFor(FOOD, 2020));
-  // Since 2025: 159.9 / 155.2 − 1 = +3.0283%. A regression that dropped the
-  // anchor lookup (dividing by a constant 100) would report 59.9% here.
-  assert.ok(near(rateFor(FOOD, 2025), 100 * (159.9 / 155.2 - 1), 1e-9));
+  // Since 2025: 183.885 / 178.48 − 1 = +3.0283%. A regression that dropped the
+  // anchor lookup and divided by a literal 100 reports +83.9% here, and +83.9%
+  // for every other anchor too.
+  assert.ok(near(rateFor(FOOD, 2025), 100 * (183.885 / 178.48 - 1), 1e-9));
   assert.ok(
     Math.abs(rateFor(FOOD, 2025) - rateFor(FOOD, 2020)) > 50,
     "since-2025 and since-2020 must not collapse to the same number"
@@ -111,13 +116,14 @@ test("rateFor accepts the anchor year as a number or a string key", () => {
 });
 
 test("a base mismatch between latest_index and index_by_year is detectable", () => {
-  // Regression guard for the base-mismatch bug (docs/math.md #1): if the
-  // pipeline published latest_index on the raw 2015=100 base while
-  // index_by_year was rebased to 2020=100, the since-anchor number inflates
-  // by the raw Dec-2020 factor. Here: raw base 115.65 → +84.9% instead of
-  // the true +59.9%. The test pins the size of that error so the invariant
-  // has teeth on the SPA side too, not only in the pipeline.
-  const broken = cat({ rate: 5.2, idx: { 2020: 100 }, latest: 184.98 });
+  // Regression guard for the base-mismatch bug (docs/math.md #1). The way it
+  // gets in is somebody scaling ONE of the two fields — most plausibly by
+  // dividing index_by_year through so an anchor year reads a round 100, and
+  // leaving latest_index as Eurostat published it. Here that turns FOOD's true
+  // +59.9% into +83.9%, and nothing else on the page changes. The test pins
+  // the size of the error so the invariant has teeth on the SPA side too, not
+  // only in the pipeline.
+  const broken = cat({ rate: 5.2, idx: { 2020: 100 }, latest: 183.885 });
   const wrong = rateFor(broken, 2020);
   assert.ok(wrong > 80, `expected an obviously wrong number, got ${wrong}`);
   assert.ok(
@@ -473,35 +479,39 @@ test("payrollParams falls back per-field on a partial or absent payload", () => 
 // ---------------------------------------------------------------------------
 //
 // Shaped like the published `hicp_categories.json` entries: a division with
-// `groups[]`, each group carrying its own rate, index and
-// `weight_pct_of_parent`.
+// `groups[]`, each group carrying its own rate, index and `weight_pct`.
+//
+// A group's `weight_pct` is its share of the WHOLE basket, so the three below
+// sum to the division's 14.277 rather than to 100. `officialSplit` normalises
+// against that sum, which is why it lands on the within-division shares
+// (14.4 / 59.0 / 26.6 percent) without the payload having to carry them.
 
 const CAR = {
   weight_pct: 14.277,
   annual_rate_pct: 11.0,
-  index_by_year: { 2020: 100, 2024: 110.6, 2025: 113.0 },
-  latest_index: { time: "2026-06", value: 122.8 },
+  index_by_year: { 2020: 112, 2024: 123.872, 2025: 126.56 },
+  latest_index: { time: "2026-06", value: 137.536 },
   groups: [
     {
       // buying a vehicle — got cheaper
-      weight_pct_of_parent: 14.4,
+      weight_pct: 2.055888,
       annual_rate_pct: -0.4,
-      index_by_year: { 2020: 100, 2024: 108.0, 2025: 108.4 },
-      latest_index: { time: "2026-06", value: 108.0 },
+      index_by_year: { 2020: 112, 2024: 120.96, 2025: 121.408 },
+      latest_index: { time: "2026-06", value: 120.96 },
     },
     {
       // running your car — the fuel line
-      weight_pct_of_parent: 59.0,
+      weight_pct: 8.42343,
       annual_rate_pct: 17.3,
-      index_by_year: { 2020: 100, 2024: 112.0, 2025: 115.0 },
-      latest_index: { time: "2026-06", value: 134.9 },
+      index_by_year: { 2020: 112, 2024: 125.44, 2025: 128.8 },
+      latest_index: { time: "2026-06", value: 151.088 },
     },
     {
       // tickets & passenger transport
-      weight_pct_of_parent: 26.6,
+      weight_pct: 3.797682,
       annual_rate_pct: 0.3,
-      index_by_year: { 2020: 100, 2024: 106.0, 2025: 106.2 },
-      latest_index: { time: "2026-06", value: 106.5 },
+      index_by_year: { 2020: 112, 2024: 118.72, 2025: 118.944 },
+      latest_index: { time: "2026-06", value: 119.28 },
     },
   ],
 };
@@ -545,6 +555,16 @@ test("divisionRate falls back to the division when a split is all zeros", () => 
 test("officialSplit distributes a division's amount by Eurostat's own shares", () => {
   const s = officialSplit(CAR, 100);
   assert.equal(s.length, 3);
+  // The published invariant the normalisation leans on: a division's groups
+  // carry whole-basket weights that sum to the division's own.
+  assert.ok(
+    near(
+      CAR.groups.reduce((a, g) => a + g.weight_pct, 0),
+      CAR.weight_pct,
+      1e-9
+    ),
+    "the groups' basket shares must sum to the division's"
+  );
   assert.ok(
     near(
       s.reduce((a, b) => a + b, 0),

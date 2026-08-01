@@ -152,9 +152,14 @@ test("the drill-down reads every group field from the payload", () => {
   ]) {
     assert.ok(FLAT.includes(field), `the drill-down does not render ${field} from the payload`);
   }
+  // The payload carries one weight per group — its share of the WHOLE basket,
+  // as Eurostat publishes it. A share-of-division field is not there to read,
+  // and reading a missing field gives NaN, which `officialSplit` swallows into
+  // an equal split: every group in a drill-down showing the same amount, no
+  // error, no clue. So the name staying absent is the check.
   assert.ok(
-    live(MIRROR).includes("weight_pct_of_parent"),
-    "the default within-division split must come from the published shares"
+    !live(MIRROR).includes("weight_pct_of_parent"),
+    "officialSplit reads a share-of-division field the published payload does not carry"
   );
 });
 

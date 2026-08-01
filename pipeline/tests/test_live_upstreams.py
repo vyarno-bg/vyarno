@@ -102,12 +102,14 @@ def test_eurostat_still_serves_the_live_rate_cube():
 
 
 def test_eurostat_still_serves_the_index_back_to_2020():
-    """The index (I15) must reach back to 2020 — the site's earliest anchor."""
+    """The index must reach back to 2020 — the site's earliest anchor."""
     times = {r["time"] for r in fetch_hicp_index_bg(geo="BG", since_year=2020).rows}
     assert any(t.startswith("2020") for t in times), (
         "the live index no longer covers 2020; every since-2020 number on the site depends on it"
     )
-    assert "2020-12" in times, "December 2020 is missing — the rebase base"
+    assert "2020-12" in times, (
+        "December 2020 is missing — it is the denominator of every since-2020 figure"
+    )
 
 
 def test_eurostat_ver2_weights_still_sum_to_the_full_basket():

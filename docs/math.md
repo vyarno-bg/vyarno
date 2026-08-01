@@ -8,14 +8,22 @@ The precise provenance contract. For the plain-language version, read
 Each one, if broken, silently ships a wrong number to someone making a real
 decision.
 
-1. **One index base per observation (2020=100).** `index_by_year` and
-   `latest_index` are both rebased to 2020=100, because the SPA computes
-   since-anchor cumulatives as `latest_index / index_by_year[anchor] − 1` and
-   the numerator and denominator must share a base. Eurostat's raw index
-   arrives on 2015=100 (unit I15); `rows_to_category_observations` rebases both
-   with the same Dec-2020 base. **Trap:** the 12-month rate is base-invariant,
-   so it stays correct even when the base is wrong. Always verify a since-year
-   number against the raw series too.
+1. **One index base per observation, and it is Eurostat's.** `index_by_year`
+   and `latest_index` carry the values `prc_hicp_minr` returns at `INDEX_UNIT`,
+   unscaled, because the SPA computes since-anchor cumulatives as
+   `latest_index / index_by_year[anchor] − 1` and the numerator and denominator
+   must share a base. Nothing rescales either one, so nothing can rescale one
+   and not the other. **Trap:** the 12-month rate is base-invariant, so it
+   stays correct even when the base is wrong — a since-year figure is the only
+   thing on the page that would show the damage. Check one against the row's
+   own verify link, which returns the published digits.
+
+   Rescaling is a standing temptation, because a round 100 at the anchor year
+   reads better in a payload. It buys nothing: every figure built from these is
+   a ratio of two of them, so the factor cancels. And it costs the provenance —
+   a scaled level is a modified figure under Eurostat's copyright notice, owing
+   a disclaimer at every number, while the verify link starts returning digits
+   that do not match the payload.
 
 2. **Rates are verbatim from Eurostat, never derived from the index.**
    `annual_rate_pct` is taken as published (`prc_hicp_minr`, unit=RCH_A).
@@ -55,18 +63,17 @@ fields are exactly as traceable as a division's.
 |---|---|---|---|
 | `hicp_headline.json.headline_rate_pct` | `prc_hicp_minr` RCH_A (TOTAL) | latest month | none — verbatim |
 | `hicp_headline.json.ref_period` | `prc_hicp_minr` RCH_A (TOTAL) | latest month | none |
-| `hicp_headline.json.index_by_year` | `prc_hicp_minr` I15 (TOTAL) | Dec of completed years, since 2020 | rebase to 2020=100 |
-| `hicp_headline.json.latest_index` | `prc_hicp_minr` I15 (TOTAL) | freshest monthly reading | rebase to 2020=100 |
+| `hicp_headline.json.index_by_year` | `prc_hicp_minr` I15 (TOTAL) | Dec of completed years, since 2020 | none — verbatim |
+| `hicp_headline.json.latest_index` | `prc_hicp_minr` I15 (TOTAL) | freshest monthly reading | none — verbatim |
 | `categories[*].annual_rate_pct` | `prc_hicp_minr` RCH_A (CPnn) | latest month | none — verbatim |
 | `categories[*].ref_period` | `prc_hicp_minr` RCH_A (CPnn) | latest month | none |
 | `categories[*].weight_pct` | `prc_hicp_iw` (CPnn) | most recent year | per-thousand → percent (÷10) |
 | `categories[*].eurostat_label` | `prc_hicp_minr` dimension label | — | none — the cube's own English name |
 | `categories[*].groups[*].*` | same cubes, group code (CPnnx) | same anchors | same as the division |
-| `categories[*].groups[*].weight_pct_of_parent` | `prc_hicp_iw` | most recent year | group weight ÷ division weight × 100 |
-| `categories[*].index_by_year` | `prc_hicp_minr` I15 (CPnn) | Dec of completed years, since 2020 | rebase to 2020=100 |
-| `categories[*].value` | `prc_hicp_minr` I15 (CPnn) | year-end of the latest completed year | rebase to 2020=100 |
-| `categories[*].latest_index` | `prc_hicp_minr` I15 (CPnn) | freshest monthly reading | rebase to 2020=100 |
-| `categories[*].unit` | constant | — | always `"index_2020=100"` |
+| `categories[*].index_by_year` | `prc_hicp_minr` I15 (CPnn) | Dec of completed years, since 2020 | none — verbatim |
+| `categories[*].value` | `prc_hicp_minr` I15 (CPnn) | year-end of the latest completed year | none — verbatim |
+| `categories[*].latest_index` | `prc_hicp_minr` I15 (CPnn) | freshest monthly reading | none — verbatim |
+| `categories[*].unit` / `index_base_year` | `INDEX_UNIT`'s base | — | names the base the values are on, and `api_url_index` resolves to that unit |
 | `classification.*` (envelope) | constants + the weights cube's time dim | — | names the version, dimension, both datasets and the weights vintage |
 
 Because rate and index come from the same cube at the same publication,
@@ -79,22 +86,25 @@ key would silently mean "June 2026" instead of "end of 2026" and contaminate
 the anchor dropdown, the cumulative-since-anchor math and the savings card.
 
 **Freshness rule.** Each category also carries `latest_index = {time, value}` —
-the freshest monthly reading, rebased. This is what "your basket is up X% since
-year Y" divides by (`latest_index / index_by_year[Y] − 1`).
+the freshest monthly reading. This is what "your basket is up X% since year Y"
+divides by (`latest_index / index_by_year[Y] − 1`).
 
-## The rebase
+## Which base the index is on
 
-`prc_hicp_minr` unit=I15 publishes index = 100 at 2015. The anchor selector
-starts at 2020, so `transform.rebase_index_to_2020` scales:
+Whichever base `INDEX_UNIT` is published on. `prc_hicp_minr` offers exactly two
+index units — `I15` (2015=100) and `I25` (2025=100), ver.2's official base —
+and no 2020 one, which is the question a reader asks first given the anchor
+selector starts at 2020. The answer is that the anchor needs no base of its
+own: `mirror.js#rateFor` computes `latest_index / index_by_year[anchor] − 1`,
+and a ratio of two readings on one base is the same number on any base.
 
-```
-index_rebased[t] = index_published[t] / index_published[Dec 2020] × 100
-```
+So the payload publishes what the cube returns, `index_base_year` names that
+base, and `api_url_index` resolves to that unit — open it and the same digits
+come back. Switching to `I25` moves both constants in `sources/eurostat.py` and
+every published level; no ratio the site renders moves at all.
 
-A pure scaling: the YoY rate and the shape of the curve are unchanged. The site
-then computes `mirror.js#rateFor` = `latest_index / index_by_year[anchor] − 1`.
-That is the only arithmetic the site does on top of the published JSON;
-everything else is rendering.
+That division is the only arithmetic the site does on top of the published
+index. Everything else is rendering.
 
 ## Two reconciliations
 
@@ -169,11 +179,12 @@ Chain identity at 2026-06, linked at Dec-2025:
   Gap                                       0.0036 pp   (limit 0.02)
 ```
 
-Since-year math, both operands on the shared 2020=100 base:
+Since-year math, both operands as Eurostat publishes them:
 
 ```
-CP01 latest_index (2026-06) = 159.95   (raw 184.98 ÷ 115.65 × 100)
-CP01 index_by_year["2020"]  = 100.00
+CP01 latest_index (2026-06) = 184.98
+CP01 index_by_year["2020"]  = 115.65
+                    ratio − 1 = +59.95%
 ```
 
 ## Two since-2020 cumulatives, and which card gets which

@@ -284,7 +284,8 @@ export function pctAhead(rank) {
  * "since 2020" in fixed copy — and there is no argument to pass it through.
  *
  * **Prefers Eurostat's own all-items index** (`hicp_headline.json`'s CP00
- * `latest_index / index_by_year["2020"]`), and falls back to rebuilding the
+ * `latest_index / index_by_year["2020"]`, both their published values), and
+ * falls back to rebuilding the
  * cumulative from the divisions only when the headline payload has no index.
  * The two differ by ~1.9 pp over this span — 39.9% vs 41.8% today — and only
  * the first is a figure Eurostat publishes.

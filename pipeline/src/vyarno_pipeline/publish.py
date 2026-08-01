@@ -17,6 +17,7 @@ from vyarno_pipeline.models import CategoryObservation, TimeSeriesObservation
 from vyarno_pipeline.sources.eurostat import (
     CLASSIFICATION,
     COICOP_DIM,
+    INDEX_BASE_YEAR,
     IW_DATASET,
     MINR_DATASET,
 )
@@ -65,23 +66,32 @@ def write_payload(payload: dict, target_dir: Path, filename: str) -> Path:
 # "When reuse involves translations of publications or modifications to the data
 # or text, this must be stated clearly to the end user of the information."
 #
-# Every rate we publish is Eurostat's own figure, verbatim. The INDEX is not:
+# Every index value in these two payloads is now Eurostat's own, at the unit
+# `sources/eurostat.py` names, arriving in the JSON as the cube returned it.
+# What is left is a SELECTION — which readings appear, not what they say:
 # `rows_to_yearly_index` keeps December and drops any year without one, and
-# `rebase_index_to_2020` divides through by the 2020 value because the cube we
-# request is published on 2015=100. Two transformations, and until this constant
-# existed neither payload's `notes` mentioned either — while docs/legal.md
-# asserted that "every derived figure we publish already says what was done to
-# it in its own `notes`". It did not.
+# `index_years_from_2020` drops the years the anchor selector cannot reach.
 #
-# One string, used by both writers, so the statement cannot drift from the
-# transform it describes. If you change `rows_to_yearly_index` or
-# `rebase_index_to_2020`, this sentence changes in the same commit.
+# So this note describes a choice of rows rather than a modification of them,
+# and keeping it that way is worth some discipline. Every figure the site
+# builds from the index is a ratio of two of its own members, so scaling the
+# series — to make an anchor year read 100, to fit a chart axis — cannot move
+# anything a reader sees. What it can do is put a number in front of that
+# reader which no Eurostat page will return, under a heading naming Eurostat,
+# and oblige every one of those numbers to carry a modification disclaimer.
+# Selection carries no such obligation. The trade is all cost, no benefit.
+#
+# One string, used by both writers, so the statement cannot drift from what the
+# pipeline does. If a scaling step is ever justified, this sentence says so in
+# the same commit, and the word is "modified", not "selected".
 INDEX_DERIVATION_NOTE = (
-    "index_by_year and latest_index are DERIVED, not published as such by "
-    "Eurostat: index_by_year takes the December reading of each year out of the "
-    "monthly series (a year without a December is omitted), and both are rebased "
-    "from Eurostat's published 2015=100 base to 2020=100. The annual rate of "
-    "change is Eurostat's own figure, unmodified."
+    "index_by_year and latest_index carry Eurostat's published index values "
+    "unmodified, at the unit named in each row's api_url_index — open it and "
+    "the same digits come back. What is ours is the SELECTION: index_by_year "
+    "takes the December reading of each year out of the monthly series (a year "
+    "without a December is omitted) and starts at 2020, and latest_index is the "
+    "most recent month published. The annual rate of change is Eurostat's own "
+    "figure, unmodified."
 )
 
 
@@ -193,9 +203,10 @@ def write_hicp_headline(
     published figures, but only one of them is a figure Eurostat publishes, and
     on a card about somebody's savings that difference is €960 per €100k.
 
-    `index_by_year` and `latest_index` are on the **2020=100 base**, rebased by
-    the same `rebase_index_to_2020` the categories use, so a since-year figure
-    computed from either source sits on the same base (`math.md` invariant #1).
+    `index_by_year` and `latest_index` come through the same `index_fields` the
+    categories use, so a since-year figure computed from this payload and one
+    computed from a division sit on the same base (`math.md` invariant #1) —
+    Eurostat's, in both cases, because neither is scaled on the way through.
     """
     payload = _envelope(
         as_of=as_of,
@@ -211,8 +222,8 @@ def write_hicp_headline(
     payload["headline_rate_pct"] = headline_rate_pct
     payload["ref_period"] = ref_period
     if index_by_year:
-        payload["index_base_year"] = 2020
-        payload["unit"] = "index_2020=100"
+        payload["index_base_year"] = INDEX_BASE_YEAR
+        payload["unit"] = f"index_{INDEX_BASE_YEAR}=100"
         payload["index_by_year"] = {str(y): v for y, v in sorted(index_by_year.items())}
     if latest_index:
         payload["latest_index"] = latest_index

@@ -60,12 +60,12 @@ def test_category_observation_carries_index_history():
         annual_rate_pct=2.4,
         api_url="https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_manr?geo=BG&coicop=CP01",
         api_url_index="https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&coicop18=CP01&unit=I15&sinceTimePeriod=2020-01",
-        index_base_year=2020,
+        index_base_year=2015,
         index_by_year={2020: 100.0, 2021: 104.0, 2026: 150.0},
         latest_index={"time": "2026-12", "value": 150.0},
         ref_period="2026-12",
         published_at=date(2026, 7, 17),
-        unit="index_2020=100",
+        unit="index_2015=100",
         value=150.0,
     )
     assert c.cp_code == "CP01"
@@ -92,12 +92,12 @@ def _category_kwargs(**overrides):
         "annual_rate_pct": 1.0,
         "api_url": "https://example.com/cp01",
         "api_url_index": "https://example.com/index/cp01",
-        "index_base_year": 2020,
+        "index_base_year": 2015,
         "index_by_year": {2020: 100.0, 2026: 150.0},
         "latest_index": {"time": "2026-12", "value": 150.0},
         "ref_period": "2026-12",
         "published_at": date(2026, 7, 17),
-        "unit": "index_2020=100",
+        "unit": "index_2015=100",
         "value": 150.0,
     }
     kwargs.update(overrides)
@@ -121,7 +121,7 @@ def test_category_index_validator_rejects_empty_dict():
 
 
 def test_category_index_validator_rejects_a_non_positive_base():
-    """A base-year index of 0 would make every rebased number infinite."""
+    """A base-year index of 0 makes every since-anchor ratio infinite."""
     with pytest.raises(ValidationError, match="must be > 0"):
         CategoryObservation(**_category_kwargs(index_by_year={2020: 0.0, 2026: 150.0}))
 

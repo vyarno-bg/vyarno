@@ -15,8 +15,10 @@ Provenance contract (single source of truth for headline math):
 - `annual_rate_pct` is taken VERBATIM from `prc_hicp_minr` (unit=RCH_A,
   Eurostat's published annual rate of change) at the latest available month.
   NOT derived from the index.
-- `index_by_year` and `latest_index` come from the SAME `prc_hicp_minr` cube
-  (unit=I15), rebased to 2020=100.
+- `index_by_year` and `latest_index` are Eurostat's own index values from the
+  SAME `prc_hicp_minr` cube at `INDEX_UNIT`, published unscaled. The pipeline
+  chooses which readings appear — December, and 2020 onwards — and changes
+  none of them.
 - `weight_pct` comes from `prc_hicp_iw` for the most recent year — refreshed
   every run, never hardcoded.
 - All three cubes are ECOICOP **ver.2**, keyed by `coicop18`, so a code's
@@ -48,6 +50,8 @@ from vyarno_pipeline.models import (
 )
 from vyarno_pipeline.sources.eurostat import (
     CP_DIVISIONS,
+    INDEX_BASE_YEAR,
+    INDEX_UNIT,
     IW_DATASET,
     MINR_DATASET,
     HicpCube,
@@ -155,17 +159,27 @@ COICOP_META: dict[str, tuple[str, str]] = {
 # fmt: on
 
 
-def rebase_index_to_2020(index_by_year: dict[int, float]) -> dict[int, float]:
-    """Rebase a {year: value} index so 2020 == 100. Drops years < 2020.
+def index_years_from_2020(index_by_year: dict[int, float]) -> dict[int, float]:
+    """Keep 2020 onwards. Values pass through at whatever base they arrive on.
 
-    Eurostat's prc_hicp_minr is published base 2015=100. The site renders
-    "change vs 2020", so we rebase here. Years before 2020 are dropped —
-    the calculator's anchor selector starts at 2020.
+    This selects years; it scales nothing. Every figure the site builds out of
+    the series is a ratio of two of its own members —
+    `latest_index / index_by_year[anchor]` — and a ratio is unchanged by the
+    base both members sit on. So dividing through to make 2020 read 100 would
+    move no number a reader sees, and it would turn every published level into
+    one Eurostat cannot be asked to stand behind. Their copyright notice makes
+    that a disclosure obligation, not a matter of taste: adapted data has to be
+    declared as adapted, with a disclaimer, at every figure. Publishing their
+    values is how that obligation stops existing.
+
+    2020 must be present, and the failure is loud rather than a short map: the
+    savings card divides by it (`allItemsCumulativeSince2020`), so a series
+    that skipped it would render a blank card and no error. Earlier years are
+    dropped because the anchor selector cannot reach them.
     """
     if 2020 not in index_by_year:
-        raise ValueError("Cannot rebase: 2020 not in index_by_year")
-    base = index_by_year[2020]
-    return {y: v / base * 100 for y, v in index_by_year.items() if y >= 2020}
+        raise ValueError("2020 not in index_by_year — the since-2020 anchor has no base")
+    return {y: v for y, v in index_by_year.items() if y >= 2020}
 
 
 def rows_to_yearly_index(rows: list[dict]) -> dict[int, float]:
@@ -226,10 +240,17 @@ def rate_api_url(cp: str, geo: str = "BG") -> str:
 
 
 def index_api_url(cp: str, geo: str = "BG", since_year: int = 2020) -> str:
-    """The per-code I15 (index) dissemination extract — the since-year link."""
+    """The per-code index dissemination extract — the since-year link.
+
+    It resolves to the same unit the payload's values came from, which is what
+    makes it a check rather than a gesture: a reader who opens it reads the
+    published number back, digit for digit, instead of a series they would have
+    to rescale first.
+    """
     return (
         f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data"
-        f"/{MINR_DATASET}?geo={geo}&coicop18={cp}&unit=I15&sinceTimePeriod={since_year}-01"
+        f"/{MINR_DATASET}?geo={geo}&coicop18={cp}&unit={INDEX_UNIT}"
+        f"&sinceTimePeriod={since_year}-01"
     )
 
 
@@ -246,29 +267,27 @@ def index_fields(
     rows: list[dict],
     cp: str,
 ) -> tuple[dict[int, float], dict[str, float | str], float]:
-    """(index_by_year rebased to 2020=100, latest_index rebased, latest value).
+    """(index_by_year from 2020, latest_index, the latest year-end value).
 
-    `index_by_year` is year-end only (see `rows_to_yearly_index`); the returned
-    `latest_index` is the freshest monthly reading on the SAME 2020=100 base.
-    They MUST share a base — the SPA divides one by the other, and a mismatch
-    silently inflates every since-anchor number by the raw Dec-2020 factor
-    (docs/math.md invariant #1).
+    Both index fields are Eurostat's own values off one cube at one unit, so
+    they share a base by construction rather than by an arithmetic step
+    somebody has to keep matched. That is the whole safety argument: the SPA
+    divides one by the other, and the way that division used to be able to go
+    wrong was one of them being rescaled and the other not. There is now
+    nothing to rescale (docs/math.md invariant #1).
+
+    `index_by_year` is year-end only (see `rows_to_yearly_index`);
+    `latest_index` is the freshest monthly reading, December or not.
     """
     if not rows:
         raise MissingSeriesError(f"{cp}: no index rows")
-    yearly_raw = rows_to_yearly_index(rows)
-    yearly = rebase_index_to_2020(yearly_raw)
+    yearly = index_years_from_2020(rows_to_yearly_index(rows))
     if not yearly:
         raise MissingSeriesError(f"{cp}: no year-end index reading")
-    base_2020 = yearly_raw[2020]
     latest = latest_monthly_index(rows)
     if latest is None:
         raise MissingSeriesError(f"{cp}: no monthly index reading")
-    return (
-        yearly,
-        {"time": latest["time"], "value": latest["value"] / base_2020 * 100},
-        yearly[max(yearly)],
-    )
+    return yearly, latest, yearly[max(yearly)]
 
 
 def rows_to_category_observations(
@@ -290,16 +309,17 @@ def rows_to_category_observations(
     - `annual_rate_pct` — VERBATIM from the RCH_A rows at the LATEST month.
       Eurostat's published figure, never derived from the index.
     - `ref_period` — that month (e.g. "2026-06").
-    - `index_by_year` / `latest_index` — from the I15 rows, both rebased to
-      2020=100 (see `index_fields`).
+    - `index_by_year` / `latest_index` — Eurostat's index values off the
+      `INDEX_UNIT` rows, unscaled (see `index_fields`).
     - `weight_pct` — from `weights` (percent of the whole basket).
     - `eurostat_label` — the rates cube's own English name for the code.
-    - `api_url` / `api_url_index` — the RCH_A and I15 dissemination extracts.
+    - `api_url` / `api_url_index` — the RCH_A and index dissemination extracts.
 
     `group_codes` (ECOICOP level 2, e.g. CP072) are nested under their parent
-    division and carry `weight_pct_of_parent` — the default within-division
-    split the SPA's detailed mode starts from. Pass None to publish divisions
-    only.
+    division. A group carries only its share of the WHOLE basket: the SPA's
+    within-division default split normalises the groups against each other, so
+    a share-of-parent field would be the same number twice, one of them ours.
+    Pass None to publish divisions only.
 
     Raises `MissingSeriesError` if any requested code lacks a rate, a weight or
     an index. Nothing is skipped silently.
@@ -336,7 +356,6 @@ def rows_to_category_observations(
         rate_row, weight_pct, bg_name, en_name, label = _require(cp)
         yearly, latest, _ = index_fields(by_cp_index.get(cp, []), cp)
         parent = cp[:4]
-        parent_weight = weights.get(parent, 0.0)
         groups_by_parent.setdefault(parent, []).append(
             GroupObservation(
                 cp_code=cp,
@@ -345,12 +364,9 @@ def rows_to_category_observations(
                 en_name=en_name,
                 eurostat_label=label,
                 weight_pct=weight_pct,
-                weight_pct_of_parent=(
-                    100.0 * weight_pct / parent_weight if parent_weight > 0 else 0.0
-                ),
                 annual_rate_pct=float(rate_row["value"]),
                 ref_period=str(rate_row["time"]),
-                index_base_year=2020,
+                index_base_year=INDEX_BASE_YEAR,
                 index_by_year=yearly,
                 latest_index=latest,
                 api_url=HttpUrl(rate_api_url(cp)),
@@ -377,12 +393,12 @@ def rows_to_category_observations(
             annual_rate_pct=float(rate_row["value"]),
             api_url=HttpUrl(rate_api_url(cp)),
             api_url_index=HttpUrl(index_api_url(cp)),
-            index_base_year=2020,
+            index_base_year=INDEX_BASE_YEAR,
             index_by_year=yearly,
             latest_index=latest,
             ref_period=str(rate_row["time"]),
             published_at=as_of,
-            unit="index_2020=100",
+            unit=f"index_{INDEX_BASE_YEAR}=100",
             value=latest_year_value,
             groups=sorted(groups_by_parent.get(cp, []), key=lambda g: g.cp_code),
         )

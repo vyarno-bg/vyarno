@@ -113,13 +113,15 @@ disclosure — the non-responsibility disclaimer — and НСИ is not in this g
 all: theirs is a prohibition rather than a condition, so no disclosure satisfies
 it and the answer has to be architectural. §НСИ is that answer.
 
-**That rule was asserted here before it was true.** `hicp_headline.json` and
-`hicp_categories.json` publish `index_by_year` and `latest_index`, which are
-derived twice — a December-only selection out of the monthly series, and a
-rebase from Eurostat's published 2015=100 to 2020=100 — and neither payload's
-`notes` said so. Both now do, from one constant
-(`publish.py#INDEX_DERIVATION_NOTE`) so the statement cannot drift from the
-transform.
+**The rule binds the two HICP payloads in particular.** `hicp_headline.json`
+and `hicp_categories.json` publish `index_by_year` and `latest_index` carrying
+Eurostat's own index values, so there is no modification to disclose on them —
+but there is a selection, December out of the monthly series and 2020 onwards,
+and a reader deciding whether a verify link ought to match needs to be told
+which. Both payloads say it from one constant
+(`publish.py#INDEX_DERIVATION_NOTE`), so the statement cannot drift from what
+the pipeline does. Anything that starts scaling those values turns the
+selection into a modification, and the same constant is where that gets said.
 
 **НСИ is different in kind:** their licence does not ask for a disclosure, it
 forbids an act — «Нямате право да разпространявате производни и сборни
@@ -156,18 +158,22 @@ half is met, and it is met by the SPA and not by the payload. **If the method
 drawer is ever removed, the Eurostat condition breaks with it**, and that
 dependency did not exist in writing until now.
 
-**The second sentence was cut, and nothing in the repository satisfied it.**
-"A disclaimer regarding the non-responsibility of Eurostat **shall** be
-included" is a condition, not a note about tone, and it is engaged three times:
-`hicp_headline.json` and `hicp_categories.json` publish a December selection
-rebased from 2015=100 to 2020=100, and `salary_dist.json` interpolates the
-intermediate deciles and extrapolates the P1/P99 tails out of the three deciles
-SES publishes. There was no such disclaimer on the site, in the payloads, in
-`NOTICE` or on this page. There is now: the shipped sources document carries its
-own section, «Уговорка за преизчислените числа» / "Disclaimer on the figures we
-recompute", which names each derivation and disclaims Eurostat's responsibility
-for it. It is a section rather than a sentence so that a copy edit cannot
-dissolve it into a paragraph about something else.
+**The second sentence is the one that is easy to skip.** "A disclaimer
+regarding the non-responsibility of Eurostat **shall** be included" is a
+condition, not a note about tone, and two things engage it. `salary_dist.json`
+interpolates the intermediate deciles and extrapolates the P1/P99 tails out of
+the three deciles SES publishes — genuinely our arithmetic, because there are
+no intermediate deciles in the cube to read. And `weight_pct` is Eurostat's
+item weight converted out of per-thousand into percent, which is a unit rather
+than a figure, but it is still not the number their cube returns.
+
+The shipped sources document carries its own section, «Уговорка за
+преизчислените числа» / "Disclaimer on the figures we recompute", which names
+both and disclaims Eurostat's responsibility for them. It is a section rather
+than a sentence so that a copy edit cannot dissolve it into a paragraph about
+something else. The same section states what is *not* modified — the price
+index — because that is what tells a reader whether a verify link's digits
+ought to match the page.
 
 The commercial-redissemination exclusions (non-EU/EFTA country data, Swiss and
 Austrian trade detail, logos and trademarks) touch nothing we pull.

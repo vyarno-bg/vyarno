@@ -13,10 +13,13 @@
  * see docs/math.md §"Two reconciliations".
  *
  * Index-base invariant (load-bearing): the category fields `latest_index`
- * and `index_by_year` are BOTH on the 2020=100 base. `rateFor(c, year)` and
- * `officialCumulativeSince2020` divide `latest_index / index_by_year[anchor]`,
- * so a base mismatch silently inflates every since-anchor number. Always
- * sanity-check a since-YEAR number against the raw Eurostat series.
+ * and `index_by_year` are Eurostat's published index values off one cube at
+ * one unit — the unit each row's `api_url_index` resolves to. `rateFor(c, year)`
+ * and `officialCumulativeSince2020` divide `latest_index / index_by_year[anchor]`,
+ * so a base mismatch between the two silently inflates every since-anchor
+ * number, and no 12-month rate on the page would look wrong. Opening the row's
+ * verify link reads the published number back digit for digit, which is the
+ * cheapest way to sanity-check a since-YEAR figure.
  * See docs/math.md §"Invariants that must never break" #1.
  *
  * Math conventions:
@@ -38,7 +41,9 @@
  * anchor === year  → (latest_index / index_by_year[year] − 1) × 100.
  *                     Uses `latest_index` (freshest month) as the end-point
  *                     so "since 2024" spans end-of-2024 → the latest month.
- *                     Both operands are on the 2020=100 base (invariant #1).
+ *                     Both operands are Eurostat's own index values on one
+ *                     base, which is what makes the ratio meaningful
+ *                     (invariant #1).
  *
  * @param {{annual_rate_pct:number, index_by_year:Record<string,number>, latest_index:{time:string, value:number}}} c
  * @param {'y1' | number} anchor
@@ -100,11 +105,10 @@ export function officialInflation(categories, anchor) {
  * monthly index Eurostat has published) as the "now" end-point, so the
  * user sees the most current cumulative inflation the data supports.
  *
- * `latest_index` and `index_by_year` are BOTH on the 2020=100 base
- * (the pipeline rebases `latest_index` with the same raw Dec-2020 base
- * it uses for `index_by_year`), so this division is base-consistent.
- * If `latest_index` were left on its raw 2015=100 base, this would be off by
- * the raw Dec-2020 factor.
+ * `latest_index` and `index_by_year` are Eurostat's own values off one cube at
+ * one unit, so this division is base-consistent without anything having to be
+ * kept matched. The number the ratio produces is ours; both numbers it divides
+ * are theirs.
  *
  * Example, on the current published data:
  *   basket-weighted idx[2026-06] / idx[2020] - 1 ≈ +41.64% since 2020
@@ -131,9 +135,9 @@ export function officialCumulativeSince2020(categories) {
  * the figure Eurostat publishes, not one assembled from the divisions.
  *
  * `hicp_headline.json` carries `index_by_year` and `latest_index` for CP00
- * (TOTAL), rebased to 2020=100 by the same pipeline helper the categories go
- * through, so this division is base-consistent for the same reason
- * `officialCumulativeSince2020` is.
+ * (TOTAL), through the same pipeline helper the categories go through, so this
+ * division is base-consistent for the same reason `officialCumulativeSince2020`
+ * is.
  *
  * **Why this exists next to that function.** Over a 12-month window the two
  * constructions differ by ~0.16 pp and the UI shows both. Over five and a half
@@ -266,21 +270,28 @@ export function divisionRate(division, split, anchor) {
 /**
  * The official within-division split, as amounts summing to `total`.
  *
- * This is what a drill-down starts from: Eurostat's own `weight_pct_of_parent`
- * for each group, scaled to whatever the user has allocated to the division.
- * Editing from here is editing away from the national average, which is the
- * whole point of the detailed mode.
+ * This is what a drill-down starts from: each group's Eurostat weight, scaled
+ * to whatever the user has allocated to the division. Editing from here is
+ * editing away from the national average, which is the whole point of the
+ * detailed mode.
  *
- * @param {{groups?: Array<{weight_pct_of_parent:number}>}} division
+ * `weight_pct` is the share of the WHOLE basket, and the normalisation below
+ * is why that is the right field rather than a share-of-division one. Dividing
+ * each group by the group total cancels whatever common factor they carry, so
+ * a per-division share would land on the same amounts — while being a number
+ * we computed, published under Eurostat's name, needing its own disclaimer.
+ * A field that changes no output is not worth a licence obligation.
+ *
+ * @param {{groups?: Array<{weight_pct:number}>}} division
  * @param {number} total  the division's amount (percent share or €/month)
  * @returns {number[]}
  */
 export function officialSplit(division, total) {
   const groups = division.groups ?? [];
   if (groups.length === 0) return [];
-  const sum = groups.reduce((s, g) => s + g.weight_pct_of_parent, 0);
+  const sum = groups.reduce((s, g) => s + g.weight_pct, 0);
   if (sum <= 0) return groups.map(() => total / groups.length);
-  return groups.map((g) => (total * g.weight_pct_of_parent) / sum);
+  return groups.map((g) => (total * g.weight_pct) / sum);
 }
 
 /**

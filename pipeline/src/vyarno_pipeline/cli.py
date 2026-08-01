@@ -402,8 +402,9 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
     headline_rate = float(headline_row["value"])
     headline_period = str(headline_row.get("time", ""))
 
-    # Raw (un-rebased) index series, keyed by period — the chain gate needs
-    # the December link month, which the rebased year-end map doesn't carry.
+    # The index series keyed by PERIOD, not by year — the chain gate needs the
+    # December link month itself, which a year-end map keyed by year cannot
+    # name.
     raw_index: dict[str, dict[str, float]] = {}
     for r in index_cube.rows:
         raw_index.setdefault(r["coicop"], {})[str(r["time"])] = float(r["value"])
@@ -479,16 +480,16 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
         # into `categories[]`.
         ref_period=headline_period,
     )
-    # The all-items index alongside the rate, on the same 2020=100 base the
-    # categories use. `raw_index["CP00"]` is already the un-rebased TOTAL
-    # series the chain gate consumed, so this adds no fetch and cannot drift
-    # from what that gate just checked.
+    # The all-items index alongside the rate. `raw_index["CP00"]` is the same
+    # TOTAL series the chain gate just consumed, so this adds no fetch and
+    # cannot drift from what that gate checked.
     #
     # It goes through `index_fields` — the SAME helper every division uses —
-    # rather than a local rebase. Two rebases in two places is how the
-    # numerator and the denominator of a since-year division end up on
-    # different bases, which is the one failure `math.md` invariant #1 exists
-    # to prevent and the one a 12-month rate cannot reveal.
+    # rather than a local copy of the selection rules. Two implementations of
+    # "which reading is this year's" in two places is how the numerator and the
+    # denominator of a since-year division end up describing different months,
+    # which is the one failure `math.md` invariant #1 exists to prevent and the
+    # one a 12-month rate cannot reveal.
     cp00_index_rows = [
         {"time": t, "value": v} for t, v in sorted(raw_index.get("CP00", {}).items())
     ]

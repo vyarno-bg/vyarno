@@ -4,12 +4,12 @@ from datetime import date
 
 import pytest
 
-from vyarno_pipeline.sources.eurostat import CP_DIVISIONS, HicpCube
+from vyarno_pipeline.sources.eurostat import CP_DIVISIONS, INDEX_BASE_YEAR, HicpCube
 from vyarno_pipeline.transform import (
     COICOP_META,
     MissingSeriesError,
+    index_years_from_2020,
     latest_monthly_index,
-    rebase_index_to_2020,
     rows_to_category_observations,
     rows_to_yearly_index,
 )
@@ -55,27 +55,37 @@ def test_coicop_metadata_covers_every_group_of_every_division():
         assert g[:4] in CP_DIVISIONS, f"{g} has no published parent division"
 
 
-def test_rebase_index_to_2020_simple():
-    """If 2020 = 95 in the source index, rebase makes it 100 and 2026 scales proportionally."""
+def test_index_years_from_2020_leaves_every_value_untouched():
+    """Eurostat's values reach the payload as they came, at their own base.
+
+    The temptation is to divide through so the anchor year reads a round 100.
+    It would move nothing a reader sees — every published figure is a ratio of
+    two of these — and it would make each of them a modified figure under
+    Eurostat's copyright notice, needing a disclaimer at the number. So the
+    thing to protect is that this function does no arithmetic at all.
+    """
     src = {2020: 95.0, 2026: 130.0}
-    out = rebase_index_to_2020(src)
-    assert out[2020] == pytest.approx(100.0, rel=1e-9)
-    assert out[2026] == pytest.approx(130.0 / 95.0 * 100.0, rel=1e-9)
+    out = index_years_from_2020(src)
+    assert out == src
+    assert out[2020] == 95.0, "an anchor year rescaled to 100 is a modified figure"
 
 
-def test_rebase_drops_years_before_2020():
-    """We never care about pre-2020 indices for the site."""
+def test_index_years_from_2020_drops_years_the_anchor_selector_cannot_reach():
+    """Pre-2020 years are unreachable in the UI, so publishing them is dead weight."""
     src = {2018: 80.0, 2019: 90.0, 2020: 100.0, 2021: 104.0}
-    out = rebase_index_to_2020(src)
-    assert 2018 not in out
-    assert 2019 not in out
-    assert out[2020] == pytest.approx(100.0)
+    out = index_years_from_2020(src)
+    assert set(out) == {2020, 2021}
+    assert out[2021] == 104.0
 
 
-def test_rebase_raises_when_2020_missing():
-    """Cannot rebase without the base year."""
+def test_index_years_from_2020_raises_when_2020_missing():
+    """The savings card divides by 2020; a series without it renders a blank card.
+
+    Raising here is the difference between a refresh that fails and a page that
+    quietly stops answering its own question.
+    """
     with pytest.raises(ValueError, match="2020"):
-        rebase_index_to_2020({2019: 90.0, 2021: 110.0})
+        index_years_from_2020({2019: 90.0, 2021: 110.0})
 
 
 def test_rows_to_yearly_index_picks_december_when_present():
@@ -292,29 +302,28 @@ def test_latest_index_is_fresher_than_the_year_end_series():
     assert cp01.latest_index["time"] == "2026-06"
 
 
-def test_latest_index_is_rebased_to_2020_base_like_index_by_year():
+def test_both_index_fields_reach_the_payload_at_the_cube_s_own_base():
     """REGRESSION GUARD for the base-mismatch bug.
 
-    `index_by_year` is rebased to 2020=100, and every SPA consumer that
-    computes a since-anchor cumulative divides
+    Every SPA consumer of a since-anchor cumulative divides
     `latest_index.value / index_by_year[anchor]` (rateFor(year),
-    officialCumulativeSince2020, contributions). If `latest_index` is left on its
-    raw 2015=100 base while `index_by_year` is rebased, that division mixes
-    two bases and reports a cumulative wrong by the raw Dec-2020 factor —
-    food "up 85% since 2020" when the truth is 60%.
+    officialCumulativeSince2020, contributions), so the two fields have to sit
+    on one base. Scaling either of them — most temptingly `index_by_year`, so
+    the anchor year reads a round 100 — reports a cumulative wrong by the scale
+    factor: food "up 85% since 2020" when the truth is 60%.
 
-    The raw Dec-2020 base here is 115.65 (NOT 100), so a regression that
-    stops rebasing `latest_index` fails here. A base of 100 makes rebasing a
-    no-op and cannot catch the bug.
+    The base here is 115.65, deliberately not 100, so a scaling step fails this
+    test on the value it changes. A fixture on 100 would make one no-op and
+    could not catch it.
     """
     index_rows = [
-        {"coicop": "CP01", "time": "2020-12", "value": 115.65},  # rebase base ≠ 100
+        {"coicop": "CP01", "time": "2020-12", "value": 115.65},  # anchor base ≠ 100
         {"coicop": "CP01", "time": "2021-12", "value": 130.0},
         {"coicop": "CP01", "time": "2022-12", "value": 150.0},
         {"coicop": "CP01", "time": "2023-12", "value": 160.0},
         {"coicop": "CP01", "time": "2024-12", "value": 172.14},
         {"coicop": "CP01", "time": "2025-12", "value": 182.45},
-        {"coicop": "CP01", "time": "2026-06", "value": 184.98},  # latest (raw)
+        {"coicop": "CP01", "time": "2026-06", "value": 184.98},  # latest
     ]
     rate_rows = [{"coicop": "CP01", "time": "2026-06", "value": 2.3}]
     weights = {"CP01": 21.966}
@@ -330,8 +339,9 @@ def test_latest_index_is_rebased_to_2020_base_like_index_by_year():
         as_of=date(2026, 7, 1),
     )
     cp01 = cats["CP01"]
-    assert cp01.index_by_year[2020] == pytest.approx(100.0)
-    assert cp01.latest_index["value"] == pytest.approx(184.98 / 115.65 * 100, rel=1e-9)
+    assert cp01.index_by_year[2020] == 115.65, "the anchor reading was scaled on the way through"
+    assert cp01.latest_index["value"] == 184.98, "the latest reading was scaled on the way through"
+    assert cp01.index_base_year == INDEX_BASE_YEAR
     since_2020 = 100 * (cp01.latest_index["value"] / cp01.index_by_year[2020] - 1)
     assert since_2020 == pytest.approx(59.95, abs=0.1)
 
@@ -339,10 +349,11 @@ def test_latest_index_is_rebased_to_2020_base_like_index_by_year():
 # ---- groups ---------------------------------------------------------------
 
 
-def test_groups_are_nested_under_their_parent_with_a_within_division_share():
-    """The detailed mode's default split. `weight_pct` is the share of the
-    WHOLE basket; `weight_pct_of_parent` is the share within the division,
-    which is what the drill-down starts from."""
+def test_groups_are_nested_under_their_parent_carrying_the_basket_share():
+    """The detailed mode's default split starts from `weight_pct` — Eurostat's
+    own share of the WHOLE basket. The groups of a division sum to it, which is
+    what lets the SPA normalise them against each other and land on the
+    within-division shares without a second weight field to compute."""
     index_rows, rate_rows, weights = _all_division_inputs()
     weights["CP07"] = 100.0 / 13
     for code, w, r in (("CP071", 2.0, -0.4), ("CP072", 100.0 / 13 - 2.0, 17.3)):
@@ -361,7 +372,9 @@ def test_groups_are_nested_under_their_parent_with_a_within_division_share():
     assert [g.cp_code for g in cp07.groups] == ["CP071", "CP072"]
     assert all(g.parent_cp_code == "CP07" for g in cp07.groups)
     assert sum(g.weight_pct for g in cp07.groups) == pytest.approx(cp07.weight_pct)
-    assert sum(g.weight_pct_of_parent for g in cp07.groups) == pytest.approx(100.0)
+    assert not hasattr(cp07.groups[0], "weight_pct_of_parent"), (
+        "a share-of-division field is `weight_pct` restated, and ours rather than Eurostat's"
+    )
     assert cp07.groups[1].annual_rate_pct == pytest.approx(17.3)
     # Every other division still renders, just without groups this time.
     assert cats["CP01"].groups == []

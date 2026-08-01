@@ -234,7 +234,7 @@ cd pipeline && source .venv/bin/activate
 pytest -q                          # all tests, summary
 pytest -v                          # one line per test
 pytest tests/test_transform.py     # one file
-pytest tests/test_transform.py::test_rebase_index_to_2020_simple
+pytest tests/test_transform.py::test_index_years_from_2020_leaves_every_value_untouched
 pytest -x                          # stop on first failure
 pytest --tb=short                  # shorter tracebacks
 ```
@@ -347,9 +347,10 @@ jq '.categories[] | {code, name_bg, weight_pct, annual_rate_pct}' \
 ```
 
 Two things to check by eye after a refresh: **`as_of` is today** (all eight should
-match — one pipeline run), and **`latest_index` is on the 2020=100 base**,
-because the SPA divides `latest_index / index_by_year[anchor]` and a 12-month
-rate looks correct even when the base is wrong.
+match — one pipeline run), and **`latest_index` and `index_by_year` are on the
+same base**, because the SPA divides one by the other and a 12-month rate looks
+correct even when the base is wrong. Both carry Eurostat's own values, so the
+check is that opening a row's `api_url_index` returns the digits in the file.
 
 To decode an ND-cube by hand (`_cube_to_rows` in `sources/eurostat.py` is the
 production version):

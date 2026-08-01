@@ -267,9 +267,10 @@ closures over hardcoded data. The conventions:
 - Real change = `(1+r) / (1+π) − 1`, **never** subtraction.
 - Multi-year rate = `idx[now] / idx[year] − 1`, **never** subtraction.
 - Two-decimal display rounding; full precision internally.
-- **Index base:** `latest_index` and `index_by_year` are both on 2020=100.
-  `rateFor(c, year)` and `officialCumulativeSince2020` divide one by the other,
-  so they must share a base. The `y1` path returns the verbatim
+- **Index base:** `latest_index` and `index_by_year` both carry Eurostat's
+  published values, on the base `index_base_year` names. `rateFor(c, year)` and
+  `officialCumulativeSince2020` divide one by the other, so they must share a
+  base — and nothing scales either, so nothing can scale one alone. The `y1` path returns the verbatim
   `annual_rate_pct`, which is base-invariant and therefore cannot reveal a base
   bug — always check a since-year number too ([`math.md`](./math.md)).
 
