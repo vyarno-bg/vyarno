@@ -910,6 +910,12 @@ export const COPY = {
   // labels live in `lib/legal.js` next to the documents themselves, so a
   // renamed document cannot leave a stale link label behind.
   contactK: { bg: "Контакт", en: "Contact" },
+  // The repository link's accessible name. The footer note beside it says the
+  // code is open; this is where a reader goes to read it, and «отворен код»
+  // with no address is a claim with no source — which is the one thing this
+  // product is not allowed to print. The mark alone carries no name for a
+  // screen reader, so the label is not decoration: it is the link's text.
+  repoK: { bg: "Кодът в GitHub", en: "The code on GitHub" },
 
   // National strip
   stripHead: { bg: "Страната накратко", en: "The country at a glance" },
