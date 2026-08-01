@@ -283,7 +283,7 @@ def test_refresh_aborts_on_coverage_failure(tmp_path: Path, cubes):
     """Punch a hole in the middle of the index and the coverage gate must
     fail: 2022 would render as a broken anchor in the year dropdown.
 
-    2020-12 (the rebase base), 2025-12 (the chain link) and 2026-06 (the
+    2020-12 (the earliest anchor), 2025-12 (the chain link) and 2026-06 (the
     latest month) are kept so the earlier gates pass and this one is what
     actually fires.
     """

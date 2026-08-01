@@ -56,34 +56,38 @@ separate annual dataset.
 ## 4. What an index is
 
 Instead of tracking prices in currency, Eurostat gives each category an
-**index** — a plain number that starts somewhere and climbs as prices go up. In
-the app we re-label every index so that **2020 = 100**:
+**index** — a plain number that starts somewhere and climbs as prices go up.
+Where it starts does not matter, because only the ratio between two readings
+does:
 
 ```
-food index in 2020 = 100
-food index today   ≈ 160
-→ 160 ÷ 100 = 1.6 → food costs 60% more than in 2020
+food index at the end of 2020 ≈ 115
+food index today              ≈ 185
+→ 185 ÷ 115 = 1.6 → food costs 60% more than in 2020
 ```
 
 That single division — today's index ÷ the index in the year you pick — is how
 the app produces every "your basket is up X% since [year]" number. Pick 2022 and
 it divides by the 2022 index instead. No magic, just a ratio.
 
-### Why "2020 = 100"
+### Why the index numbers look odd
 
-Eurostat starts its indices at 100 back in **2015**, so the raw numbers look
-off (food's raw 2020 index is about 115, not 100). The app **rebases** every
-index onto a 2020 = 100 scale so the anchor selector, which starts at 2020,
-reads cleanly.
+Eurostat starts its indices at 100 back in **2015**, so the levels do not read
+the way you might expect: food's 2020 index is about 115, not 100, even though
+the anchor selector starts at 2020. We leave them exactly as published rather
+than rescaling them to a tidier scale, and nothing on screen suffers for it —
+every figure the app shows is one index value divided by another, and a common
+scale cancels in a division. What it buys is that the "check this number" link
+next to a row returns the same digits the app used.
 
-The trap: rebasing has to be applied to **every** index value used in a division
-— both the "now" value and the "old" one. Rebasing the yearly values but not
-the freshest one means dividing a 2015-scale number by a 2020-scale number. It
-is like measuring your height in inches at the top and centimetres at the
-bottom: a number comes out, and it is nonsense.
+The trap is what happens if only *some* of the values get rescaled. Dividing a
+2015-scale number by a 2020-scale one is like measuring your height in inches
+at the top and centimetres at the bottom: a number comes out, and it is
+nonsense.
 
-**The rule: every index field lives on the same 2020 = 100 base.** In the data
-that means `index_by_year` and `latest_index` are rebased together.
+**The rule: every index field stays on the base Eurostat published it on.** In
+the data that means `index_by_year` and `latest_index` are never scaled, so
+they cannot drift apart.
 
 There is a corollary worth knowing. The "last 12 months" number divides this
 month's index by the index twelve months ago. If both are wrong by the same
@@ -183,8 +187,7 @@ Full provenance for each is in [`data-sources.md`](./data-sources.md).
 ## 8. How a number gets from Eurostat to the screen
 
 The pipeline runs on demand, on a laptop: it copies the official data, runs the
-gates, rebases every index to 2020 = 100, and writes eight small JSON files, each
-stamped with its date. Those files are committed to the repository and shipped
+gates, and writes eight small JSON files, each stamped with its date. Those files are committed to the repository and shipped
 alongside the site.
 
 **Your browser downloads those files and never calls Eurostat.** Everything
@@ -201,7 +204,7 @@ The full system map is in [`architecture.md`](./architecture.md).
 Read [`math.md`](./math.md) §"Invariants that must never break" first. The short
 version:
 
-1. Keep every index field on the **same 2020 = 100 base** (§4).
+1. Keep every index field on the base Eurostat published it on — the same one, unscaled (§4).
 2. The 12-month view hides base bugs — **also check a since-year number** (§4).
 3. Take the official rate **verbatim**; do not recompute it (§6).
 4. Never widen a reconciliation tolerance to make a red gate go green (§6).

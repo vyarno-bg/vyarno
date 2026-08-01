@@ -17,7 +17,7 @@
  *   2. The SHIPPED JSON, read through the SPA's own functions. The pipeline
  *      validates what it publishes; this validates what the browser will
  *      actually compute from the files in the repo — reconciliation, the
- *      2020=100 index base, the payroll sentinel parity, the salary ladder.
+ *      index base, the payroll sentinel parity, the salary ladder.
  *
  * If a published file is missing (a fresh clone before the first refresh),
  * the JSON-backed tests skip rather than fail — but the file list itself
@@ -231,26 +231,43 @@ test("the published basket is ECOICOP ver.2 — 13 divisions, each with groups",
   }
 });
 
-test("published categories are on ONE 2020=100 base, so since-anchor math is honest", () => {
-  // docs/math.md §"Invariants that must never break" #1. If latest_index were
-  // published on Eurostat's raw 2015=100 base while index_by_year is rebased,
-  // every "since 2020" number inflates by the raw Dec-2020 factor.
+test("published categories are on ONE base, and it is the base the verify link resolves to", () => {
+  // docs/math.md §"Invariants that must never break" #1. `latest_index` and
+  // `index_by_year` are divided by each other, so they have to share a base;
+  // scaling one and not the other inflates every "since 2020" number by the
+  // scale factor and no 12-month rate on the page looks wrong.
+  //
+  // The base is Eurostat's, and `api_url_index` has to resolve to the unit it
+  // belongs to. That pairing is what turns the link into a check: a reader who
+  // opens it reads the published number back. A payload whose values were
+  // scaled would still link to a real Eurostat page, showing different digits.
+  const UNIT_BASE = { I15: 2015, I25: 2025 };
   const cats = read("hicp_categories")?.categories;
   if (!cats) return;
   for (const c of cats) {
-    assert.ok(
-      Math.abs(c.index_by_year["2020"] - 100) < 1e-6,
-      `${c.cp_code}: index_by_year[2020] = ${c.index_by_year["2020"]}, expected 100`
+    const unit = /[?&]unit=([A-Z0-9_]+)/.exec(c.api_url_index)?.[1];
+    assert.equal(
+      c.index_base_year,
+      UNIT_BASE[unit],
+      `${c.cp_code}: published base ${c.index_base_year} is not unit ${unit}'s base`
     );
-    // NOT "latest ≥ base": a category can genuinely deflate (CP08 phone &
-    // internet is ~92 vs its 2020 base). What must hold is that the latest
-    // reading sits on the SAME base — a raw 2015=100 value would land far
-    // outside this band.
+    assert.equal(c.unit, `index_${c.index_base_year}=100`, `${c.cp_code}: unit is ${c.unit}`);
+    // NOT "latest ≥ 2020": a category can genuinely deflate (CP08 phone &
+    // internet has). What must hold is that both readings sit on one base, and
+    // an HICP index on any of Eurostat's bases lands inside this band.
     assert.ok(
       c.latest_index.value > 50 && c.latest_index.value < 400,
-      `${c.cp_code}: latest_index ${c.latest_index.value} is not on the 2020=100 base`
+      `${c.cp_code}: latest_index ${c.latest_index.value} is off the published base`
     );
   }
+  // A rescaled series gives itself away: dividing through by an anchor makes
+  // EVERY category read exactly 100 at that anchor. Eurostat's own values do
+  // that for at most one category, by coincidence.
+  const at100 = cats.filter((c) => Math.abs(c.index_by_year["2020"] - 100) < 1e-9);
+  assert.ok(
+    at100.length <= 1,
+    `${at100.length} categories read exactly 100 at 2020 — the series has been rebased`
+  );
   // The basket-wide cumulative has to land in a sane band for BG since 2020.
   // A base mismatch shows up here as a number in the hundreds of percent.
   const cum = officialCumulativeSince2020(cats);

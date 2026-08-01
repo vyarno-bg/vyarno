@@ -170,8 +170,8 @@ def test_published_hicp_categories_latest_index_is_fresh_and_linked():
     Freshness: `latest_index.time` ≥ `ref_period`, because the monthly index
     is published at least as early as the annual rate — an older index would
     contradict the rate series.
-    Provenance: `api_url_index` must be the same CP's minr cube at unit=I15,
-    the series we rebase from, so the user can check the number themselves.
+    Provenance: `api_url_index` must be the same CP's minr cube at unit=I15 —
+    the series the published values ARE, so opening it returns those digits.
     """
     payload = _published("hicp_categories")
     if payload is None:
@@ -200,33 +200,48 @@ def test_published_hicp_categories_latest_index_is_fresh_and_linked():
         )
 
 
-def test_published_hicp_index_is_on_the_2020_base():
-    """`index_by_year` and `latest_index` must share the 2020=100 base.
+def test_published_hicp_index_is_eurostat_s_own_values_on_the_linked_base():
+    """Both index fields must be Eurostat's values, on the base the link names.
 
-    The SPA divides `latest_index / index_by_year[anchor]`. Publishing
-    `latest_index` on Eurostat's raw 2015=100 base while `index_by_year` is
-    rebased inflates every since-anchor number by the raw Dec-2020 factor —
-    food "up 85% since 2020" when the truth is 60%. See docs/math.md
-    §"Invariants that must never break" #1.
+    The SPA divides `latest_index / index_by_year[anchor]`, so the two have to
+    share a base; scaling one and not the other inflates every since-anchor
+    number by the scale factor — food "up 85% since 2020" when the truth is
+    60%. See docs/math.md §"Invariants that must never break" #1.
+
+    And the base has to be the one `api_url_index` resolves to. That is what
+    makes the link a check: open it and the published digits come back. A
+    payload scaled to some in-house base still links to a genuine Eurostat
+    page — showing different numbers, with nothing on the page to say why.
     """
     payload = _published("hicp_categories")
     if payload is None:
         pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
+    unit_base = {"I15": 2015, "I25": 2025}
     for cat in payload["categories"]:
         cp = cat["cp_code"]
-        assert cat["index_base_year"] == 2020, f"{cp}: index_base_year != 2020"
-        assert cat["unit"] == "index_2020=100", f"{cp}: unit is {cat['unit']!r}"
-        assert abs(cat["index_by_year"]["2020"] - 100.0) < 1e-6, (
-            f"{cp}: index_by_year[2020] = {cat['index_by_year']['2020']}, "
-            f"expected exactly 100 after rebasing."
+        unit = re.search(r"[?&]unit=([A-Z0-9_]+)", cat["api_url_index"]).group(1)
+        assert cat["index_base_year"] == unit_base[unit], (
+            f"{cp}: published base {cat['index_base_year']} is not unit {unit}'s base"
         )
-        # A raw 2015=100 reading would sit far outside this band. Categories
-        # may legitimately deflate (CP08 is below 100), so this is a band,
-        # not a floor.
+        assert cat["unit"] == f"index_{cat['index_base_year']}=100", (
+            f"{cp}: unit is {cat['unit']!r}"
+        )
+        # Categories may legitimately deflate, so this is a band, not a floor:
+        # what it catches is a reading that has been scaled off the base.
         assert 50 < cat["latest_index"]["value"] < 400, (
-            f"{cp}: latest_index {cat['latest_index']['value']} is not on the 2020=100 base."
+            f"{cp}: latest_index {cat['latest_index']['value']} is off the published base."
         )
+
+    # A rescaled series gives itself away: dividing through by an anchor makes
+    # EVERY division read exactly 100 there. Eurostat's own values do that for
+    # at most one, by coincidence.
+    at_100 = [
+        c["cp_code"]
+        for c in payload["categories"]
+        if abs(c["index_by_year"]["2020"] - 100.0) < 1e-9
+    ]
+    assert len(at_100) <= 1, f"{len(at_100)} divisions read exactly 100 at 2020: {at_100}"
 
 
 def test_published_hicp_reconciles_within_tolerance():
@@ -350,9 +365,13 @@ def test_published_groups_sum_to_their_division():
         assert abs(child_sum - cat["weight_pct"]) < 0.02, (
             f"{cat['cp_code']}: weight {cat['weight_pct']:.4f}% but groups sum to {child_sum:.4f}%"
         )
-        of_parent = sum(g["weight_pct_of_parent"] for g in cat["groups"])
-        assert abs(of_parent - 100.0) < 0.2, (
-            f"{cat['cp_code']}: within-division shares sum to {of_parent:.2f}%"
+        # That sum is the whole reason the payload carries one weight per
+        # group and not two. The SPA's default split normalises the groups
+        # against their own total, so a published share-of-division field would
+        # reproduce these same amounts — as a number we computed, sitting in a
+        # payload sourced to Eurostat.
+        assert "weight_pct_of_parent" not in cat["groups"][0], (
+            f"{cat['cp_code']}: a share-of-division field is `weight_pct` restated, and ours"
         )
 
 
@@ -450,7 +469,7 @@ def test_the_deploy_artefact_stays_lean_and_the_licence_is_declared() -> None:
 # footer's links point at documents which exist.
 
 
-def test_published_headline_carries_the_all_items_index_on_the_2020_base() -> None:
+def test_published_headline_carries_the_all_items_index_unscaled() -> None:
     """`hicp_headline.json` must publish the CP00 index, not just the rate.
 
     The savings card asks a cumulative question ("what does money kept since
@@ -459,9 +478,10 @@ def test_published_headline_carries_the_all_items_index_on_the_2020_base() -> No
     index gives ~39.9%. On €100k of savings that is €960 under the word
     "official".
 
-    Both operands must sit on the 2020=100 base, or the division silently
-    inflates by the raw Dec-2020 factor — the failure `math.md` invariant #1
-    exists for, and the one a 12-month rate cannot reveal.
+    Both operands must sit on one base, or the division silently inflates by
+    whatever scaled them apart — the failure `math.md` invariant #1 exists for,
+    and the one a 12-month rate cannot reveal. They do, because neither is
+    scaled: this payload's index is Eurostat's, as the categories' is.
     """
     payload = _published("hicp_headline")
     if payload is None:
@@ -472,11 +492,13 @@ def test_published_headline_carries_the_all_items_index_on_the_2020_base() -> No
     assert idx, "hicp_headline.json carries no index_by_year — the savings card falls back"
     assert latest and "value" in latest and "time" in latest
 
-    assert payload.get("index_base_year") == 2020
-    assert idx["2020"] == pytest.approx(100.0, abs=1e-9), (
-        f"index_by_year['2020'] is {idx['2020']}, not 100 — this series is not "
-        f"rebased to the base the SPA divides against"
-    )
+    cats = _published("hicp_categories")
+    if cats is not None:
+        assert payload["index_base_year"] == cats["categories"][0]["index_base_year"], (
+            "the headline and the divisions are on different bases — the savings card "
+            "and the basket chart would answer the same question differently"
+        )
+    assert payload["unit"] == f"index_{payload['index_base_year']}=100"
     # No partial-year key: a year appears only once its December is published.
     assert str(clock.today().year) not in idx, (
         "the current, partial year is in index_by_year — a calendar-year key must mean end-of-year"

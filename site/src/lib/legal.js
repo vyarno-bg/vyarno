@@ -409,8 +409,8 @@ export const UPSTREAMS = [
       en: "Bulgaria's Harmonised Index of Consumer Prices (HICP) — the official inflation figure, the 13 basket divisions with their weights, the price index by year and the unemployment rate. The shape of the pay distribution comes from the Structure of Earnings Survey.",
     },
     requires: {
-      bg: "Позволява възпроизвеждане и разпространение, включително с търговска цел, при посочване на Евростат като източник. Когато данните са адаптирани или преизчислени, това трябва да е заявено ясно на крайния потребител и да е придружено от уговорка, че Евростат не носи отговорност — затова всяко наше преобразуване е описано до самото число, а уговорката стои по-долу.",
-      en: "Permits reproduction and dissemination, commercial included, provided Eurostat is acknowledged as the source. Where data are adapted or modified this must be stated clearly to the end user and accompanied by a disclaimer of Eurostat's responsibility — which is why every transformation we make is described next to the figure itself, and the disclaimer stands below.",
+      bg: "Позволява възпроизвеждане и разпространение, включително с търговска цел, при посочване на Евростат като източник. Когато данните са адаптирани или преизчислени, това трябва да е заявено ясно на крайния потребител и да е придружено от уговорка, че Евростат не носи отговорност — затова показваме числата им непроменени, където може, описваме преработката до самото число, където не може, а уговорката стои по-долу.",
+      en: "Permits reproduction and dissemination, commercial included, provided Eurostat is acknowledged as the source. Where data are adapted or modified this must be stated clearly to the end user and accompanied by a disclaimer of Eurostat's responsibility — so we show their figures untouched where we can, describe the rework next to the figure where we cannot, and the disclaimer stands below.",
     },
     url: "https://ec.europa.eu/eurostat/data/database",
     termsUrl: "https://ec.europa.eu/eurostat/help/copyright-notice",
@@ -825,17 +825,23 @@ const DOC_BODIES = [
       {
         // Eurostat's copyright notice (read 2026-07-30) does not stop at
         // "state the modification". It continues: "A disclaimer regarding the
-        // non-responsibility of Eurostat shall be included." Three published
-        // payloads carry figures derived from Eurostat's — the two HICP index
-        // series and the pay ladder — so the condition is engaged. It is a
-        // licence condition rather than a courtesy, which is why it is its own
-        // section: folded into a paragraph about something else, a copy edit
-        // dissolves it without anyone noticing what was lost.
+        // non-responsibility of Eurostat shall be included." The pay ladder is
+        // modelled from their deciles and the basket weights are converted out
+        // of per-thousand, so the condition is engaged and this section is how
+        // it is met. It is a licence condition rather than a courtesy, which is
+        // why it is its own section: folded into a paragraph about something
+        // else, a copy edit dissolves it without anyone noticing what was lost.
+        //
+        // The paragraph also states what is NOT modified, and that half earns
+        // its space. A reader who opens a verify link needs to know whether the
+        // digits should match before deciding that a mismatch is a mistake —
+        // for the index they should, and saying so is what makes the link a
+        // check rather than a decoration.
         h: { bg: "Уговорка за преизчислените числа", en: "Disclaimer on the figures we recompute" },
         p: [
           {
-            bg: "Част от числата тук са преизчислени от нас върху публикувани данни на Евростат: индексът на цените по години е декемврийското четене на всяка година, пребазирано от 2015=100 към 2020=100, а подредбата на заплатите е моделирана от трите публикувани децила на изследването за структурата на заплатите. Всяко такова число е обозначено до самото него. Евростат не носи отговорност за тези преизчисления, нито за изводите, които някой прави от тях — отговорността за преработката е наша. Числата на НСИ, БНБ и ЕЦБ се показват така, както са публикувани, без преизчисление.",
-            en: "Some of the figures here are recomputed by us from Eurostat's published data: the price index by year is each year's December reading, rebased from 2015=100 to 2020=100, and the pay ladder is modelled from the three published deciles of the Structure of Earnings Survey. Every such figure is marked as such next to itself. Eurostat bears no responsibility for those recomputations, nor for any conclusion drawn from them — the reworking is ours. The figures from НСИ, БНБ and the ECB are shown as published, with no recomputation.",
+            bg: "Ценовият индекс на Евростат стои тук такъв, какъвто е публикуван — не го пребазираме и не го преизчисляваме. Наш е само изборът кои четения показваме: за всяка година вземаме декемврийското, а годините без декември изпадат. Едно число обаче е наистина преизчислено — подредбата на заплатите е моделирана от трите публикувани децила на изследването за структурата на заплатите, защото Евростат публикува само тях, а между тях няма междинни. Обозначено е до самото число. Тежестите на групите в кошницата са на Евростат, но в проценти, а не в промили, както ги публикуват. Евростат не носи отговорност за тези наши преработки, нито за изводите, които някой прави от тях — отговорността е наша. Числата на НСИ, БНБ и ЕЦБ се показват така, както са публикувани.",
+            en: "Eurostat's price index stands here as published — we do not rebase it and we do not recompute it. What is ours is only the choice of which readings to show: for each year we take the December one, and a year without a December drops out. One figure is genuinely recomputed: the pay ladder is modelled from the three published deciles of the Structure of Earnings Survey, because those three are all Eurostat publishes and there is nothing in between them. It is marked as such next to the figure. The basket weights are Eurostat's, shown in percent rather than the per-thousand they publish. Eurostat bears no responsibility for that work of ours, nor for any conclusion drawn from it — the responsibility is ours. The figures from НСИ, БНБ and the ECB are shown as published.",
           },
         ],
       },

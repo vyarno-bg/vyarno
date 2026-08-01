@@ -22,8 +22,11 @@ ver.2 rate cube by raw CP code puts one bucket's weight beside another bucket's
 rate. **A shared code string is not evidence of a shared meaning.**
 
 The official ver.2 index base is 2025=100 (unit=I25); we request I15 (2015=100,
-provided as a recalculated back-series) because we rebase to 2020=100 anyway, so
-the choice is immaterial after rebasing.
+provided as a recalculated back-series) because the whole published back-series
+sits on one base there, and every figure the site builds from the index is a
+ratio of two of its own members, which does not move when the base does.
+Whichever unit we ask for, the values we publish are the ones the cube returns
+— see `INDEX_UNIT` below.
 
 Response shape (ND-cube): `id` lists dimensions, `size` their cardinalities,
 `dimension.<name>.category.index` maps category label → linear index,
@@ -75,6 +78,16 @@ CP_DIVISIONS: list[str] = [f"CP{n:02d}" for n in range(1, 14)]
 # Dataset codes. Both ver.2; both keyed by `coicop18`.
 MINR_DATASET: str = "prc_hicp_minr"  # index (I15) + annual rate (RCH_A)
 IW_DATASET: str = "prc_hicp_iw"  # item weights
+
+# The index unit we request, and the base year that unit is published on.
+# They are one fact and travel together: we publish Eurostat's index values
+# untouched, so the base named in the payload has to be the base of the cube
+# the verify link resolves to. `prc_hicp_minr` offers exactly two index units,
+# I15 and I25 — there is no 2020 base to ask for, which is why the site works
+# in ratios instead. Switching to I25 means changing both lines, and every
+# published index level moves; no ratio the site renders does.
+INDEX_UNIT: str = "I15"
+INDEX_BASE_YEAR: int = 2015
 
 # A ver.2 GROUP code is a division plus one digit (CP011 "Food", CP072
 # "Operation of personal transport equipment", ...). This is the second level
@@ -239,13 +252,14 @@ def fetch_hicp_index_bg(
     since_year: int = 2020,
     codes: list[str] | None = None,
 ) -> HicpCube:
-    """Monthly index (2015=100) since `since_year`, whole BG slice, one call.
+    """Monthly index on `INDEX_UNIT`'s base since `since_year`, one call.
 
-    Caller rebases to 2020=100 via `transform.rebase_index_to_2020`. Filter is
-    `unit=I15` so the rebase logic stays intact; switching to the new official
-    `I25` base is a transform.py change, not a connector change.
+    The values travel through to `data/published/` unchanged — the pipeline
+    selects which of them to publish (December, and 2020 onwards) and scales
+    none of them. `INDEX_BASE_YEAR` is what the payload names as their base,
+    so the two constants are the only place the choice of unit is recorded.
     """
-    cube = _fetch_minr(geo, "I15", {"sinceTimePeriod": f"{since_year}-01"})
+    cube = _fetch_minr(geo, INDEX_UNIT, {"sinceTimePeriod": f"{since_year}-01"})
     _require_codes(cube, codes if codes is not None else ["CP00", *CP_DIVISIONS])
     return cube
 

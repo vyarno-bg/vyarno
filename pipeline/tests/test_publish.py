@@ -29,12 +29,12 @@ def _cat(cp: str = "CP01", weight: float = 23.0, rate: float = 2.4) -> CategoryO
         annual_rate_pct=rate,
         api_url=f"https://example.com/{cp}",
         api_url_index=f"https://example.com/index/{cp}",
-        index_base_year=2020,
+        index_base_year=2015,
         index_by_year={2020: 100.0, 2021: 104.0, 2026: 150.0},
         latest_index={"time": "2026-12", "value": 150.0},
         ref_period="2026-12",
         published_at=date(2026, 12, 31),
-        unit="index_2020=100",
+        unit="index_2015=100",
         value=150.0,
     )
 

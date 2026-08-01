@@ -24,7 +24,7 @@ class Observation(BaseModel):
     source_url: HttpUrl
     ref_period: str  # e.g. "2026-06" or "Q1-2026"
     published_at: date
-    unit: str  # "percent" | "index_2020=100" | "eur" | "eur_per_year" | "count"
+    unit: str  # "percent" | "index_2015=100" | "eur" | "eur_per_year" | "count"
     value: float
 
 
@@ -38,9 +38,14 @@ class GroupObservation(BaseModel):
 
     Same contract as `CategoryObservation`, minus the envelope fields the
     parent already carries: `weight_pct` is the share of the WHOLE basket (so
-    all groups across all divisions sum to 100), `weight_pct_of_parent` is the
-    share within its own division (the default split when the user drills in),
-    and both index fields are on the 2020=100 base.
+    all groups across all divisions sum to 100), and both index fields carry
+    Eurostat's own values.
+
+    There is deliberately no share-of-division field. The SPA's drill-down
+    normalises a division's groups against each other, and that normalisation
+    cancels the division's own weight — so a share-of-parent number would be
+    `weight_pct` restated, except computed by us and therefore a figure
+    Eurostat would have to be disclaimed for.
 
     `eurostat_label` is the cube's own English name for the code. It is the
     evidence that weight, rate and index describe the same bucket — the
@@ -54,7 +59,6 @@ class GroupObservation(BaseModel):
     en_name: str
     eurostat_label: str
     weight_pct: float = Field(ge=0, le=100)
-    weight_pct_of_parent: float = Field(ge=0, le=100)
     annual_rate_pct: float
     ref_period: str
     index_base_year: int
@@ -78,12 +82,14 @@ class CategoryObservation(Observation):
     observation is one live vintage. See `rows_to_yearly_index` for the
     year-end exclusion rule that keeps `index_by_year` honest.
 
-    BASE CONTRACT (do not break): `index_by_year` and `latest_index` are BOTH
-    on the 2020=100 base. The SPA divides `latest_index / index_by_year[anchor]`,
-    so they must share a base — publishing `latest_index` on Eurostat's raw
-    2015=100 base while `index_by_year` is rebased inflates every since-anchor
-    cumulative by the raw Dec-2020 factor. See docs/math.md §"Invariants that
-    must never break" #1.
+    BASE CONTRACT (do not break): `index_by_year` and `latest_index` carry
+    Eurostat's published values off one cube at one unit, and `index_base_year`
+    names that unit's base. The SPA divides `latest_index / index_by_year[anchor]`,
+    so the two have to sit on the same base; scaling either one — to make an
+    anchor year read 100, to match a chart axis — inflates every since-anchor
+    cumulative by the scale factor, and a 12-month rate cannot reveal it. The
+    protection is that there is no arithmetic here to get wrong. See
+    docs/math.md §"Invariants that must never break" #1.
     """
 
     cp_code: str  # "CP01".."CP13" (ECOICOP ver.2 has 13 divisions)
@@ -97,7 +103,7 @@ class CategoryObservation(Observation):
     weight_pct: float = Field(ge=0, le=100)
     annual_rate_pct: float
     api_url: HttpUrl  # prc_hicp_minr RCH_A (rate) — the rate's provenance link
-    api_url_index: HttpUrl  # prc_hicp_minr I15 (index) — the since-year math link
+    api_url_index: HttpUrl  # prc_hicp_minr index — the since-year math link
     index_base_year: int
     index_by_year: dict[int, float]
     # {"time": "YYYY-MM", "value": float} — pydantic can't enforce the
