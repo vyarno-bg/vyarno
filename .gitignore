@@ -49,3 +49,9 @@ Thumbs.db
 pipeline/.cache/
 pipeline/.tmp/
 .lockenv/
+
+# Test-count reports. Written by the suites on every run (a TAP reporter
+# alongside the live one, and pytest's junit-xml), read by check-all.mjs to
+# check no suite has silently shrunk. Regenerated constantly; never committed.
+.report-*.tap
+.report-*.xml

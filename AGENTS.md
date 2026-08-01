@@ -42,9 +42,13 @@ with no browser, and it is the only suite that runs the app — a template error
 that renders the page blank is invisible to every other test in the repository,
 so a green run without it proves less than it looks.
 
-Expected: **288 pytest, 338 node:test, 30 render.** A count that moved without
-you moving it is a finding, not noise. `make help` lists the rest;
-`docs/local-development.md` is the long form.
+**Do not write a test count into a doc.** The run reports its own, and
+`site/scripts/check-all.mjs` holds the only counts in the repository — floors
+rather than exact totals, so adding tests needs no bookkeeping and a suite that
+SHRANK fails the run. Lower a floor only alongside the deletion that made it
+necessary, and say in the commit message which tests went and why.
+
+`make help` lists the rest; `docs/local-development.md` is the long form.
 
 ## Layout
 
