@@ -114,14 +114,25 @@ all: theirs is a prohibition rather than a condition, so no disclosure satisfies
 it and the answer has to be architectural. §НСИ is that answer.
 
 **The rule binds the two HICP payloads in particular.** `hicp_headline.json`
-and `hicp_categories.json` publish `index_by_year` and `latest_index` carrying
-Eurostat's own index values, so there is no modification to disclose on them —
-but there is a selection, December out of the monthly series and 2020 onwards,
-and a reader deciding whether a verify link ought to match needs to be told
-which. Both payloads say it from one constant
-(`publish.py#INDEX_DERIVATION_NOTE`), so the statement cannot drift from what
-the pipeline does. Anything that starts scaling those values turns the
-selection into a modification, and the same constant is where that gets said.
+and `hicp_categories.json` publish `index_by_year`, `latest_index` and — in the
+categories file — `value`, all three carrying Eurostat's own index values, so
+there is no modification to disclose on them — but there is a selection,
+December out of the monthly series and 2020 onwards, and a reader deciding
+whether a verify link ought to match needs to be told which. Both payloads say
+it from one constant (`publish.py#INDEX_DERIVATION_NOTE`), so the statement
+cannot drift from what the pipeline does. Anything that starts scaling those
+values turns the selection into a modification, and the same constant is where
+that gets said.
+
+`value` is the third of those and the one that needs a test rather than a
+reader's attention: it is the newest completed December, the same reading
+`index_by_year` already carries under its newest year key, and nothing in the
+SPA reads it. A `value` that drifts off the base therefore moves no figure on
+screen and reddens no suite that exercises the page — it sits in a file served
+under a Eurostat heading, disagreeing with the unit printed beside it, until
+somebody reuses the payload.
+`test_published_contracts.py::test_published_hicp_index_is_eurostat_s_own_values_on_the_linked_base`
+holds the equality for exactly that reason.
 
 **НСИ is different in kind:** their licence does not ask for a disclosure, it
 forbids an act — «Нямате право да разпространявате производни и сборни
