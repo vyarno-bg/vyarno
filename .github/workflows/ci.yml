@@ -55,7 +55,15 @@ jobs:
       - name: Offline suite (gates, transforms, connectors, published payloads)
         working-directory: pipeline
         # `live` probes are deselected by default — they hit real upstreams.
-        run: pytest -q
+        # The junit-xml is not a second run: it is the count `check-test-floors`
+        # reads in the next step, so the number comes from pytest rather than
+        # from a figure somebody typed into a doc.
+        run: pytest -q --junitxml=../.report-pytest.xml
+      - name: No suite got smaller
+        # This job and the site job are separate runners with separate disks, so
+        # each checks the reports it produced and no step waits on the other.
+        # Node is preinstalled on the runner image; this needs no setup-node.
+        run: node site/scripts/check-test-floors.mjs pytest
 
   site:
     name: site · lint + types + math + contracts + build
@@ -92,6 +100,16 @@ jobs:
         # on render — which is how a broken `{#each}` key once shipped past a
         # fully green build.
         run: npm run test:render
+      - name: No suite got smaller
+        working-directory: site
+        # This job runs the suites directly rather than through
+        # `check-all.mjs`, so the floor check has to be asked for here too —
+        # otherwise the guard exists only for people running `make check`
+        # locally, which is the half of the world that already reads the
+        # output. A missing report fails: `test:render` exits 0 having
+        # asserted nothing when it finds no browser, and that is exactly the
+        # run this must not let through.
+        run: node scripts/check-test-floors.mjs node render
 
   windows:
     name: windows · both toolchains install and both suites run

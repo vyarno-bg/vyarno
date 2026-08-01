@@ -34,9 +34,14 @@
  * green there and never the reverse.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+// The test counts live in one file, and it is not this one — see its header for
+// why they are floors and why they are not written into any doc. CI calls the
+// same script directly, because it runs the suites itself rather than through
+// this orchestrator.
+import { FLOORS, checkFloors, shortfallMessage } from "./check-test-floors.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SITE = resolve(__dirname, "..");
@@ -77,7 +82,17 @@ const STAGES = {
     ["npm", ["run", "check"], SITE],
   ],
   test: [
-    [exe("pytest"), ["-q", "--rootdir", "pipeline", join("pipeline", "tests")], ROOT],
+    [
+      exe("pytest"),
+      [
+        "-q",
+        "--rootdir",
+        "pipeline",
+        join("pipeline", "tests"),
+        `--junitxml=${FLOORS.pytest.report}`,
+      ],
+      ROOT,
+    ],
     ["npm", ["run", "verify:math"], SITE],
   ],
   render: [
@@ -86,6 +101,9 @@ const STAGES = {
     ["npm", ["run", "test:render"], SITE],
   ],
 };
+
+/** Which floors a stage is answerable for. */
+const COUNTED_BY_STAGE = { lint: [], test: ["pytest", "node"], render: ["render"] };
 
 const ORDER = ["lint", "test", "render"];
 
@@ -104,6 +122,13 @@ if (!existsSync(exe("ruff")) || !existsSync(exe("pytest"))) {
       `${VENV}\n\nRun:\n\n${SETUP_HINT}\n`
   );
   process.exit(1);
+}
+
+// A report left behind by an earlier run would be read as this one's, and a
+// suite that failed to start would then pass its own floor on last week's
+// number. Removed before the stage that writes it, never after.
+for (const stage of stages) {
+  for (const key of COUNTED_BY_STAGE[stage]) rmSync(FLOORS[key].report, { force: true });
 }
 
 for (const stage of stages) {
@@ -132,10 +157,14 @@ for (const stage of stages) {
   }
 }
 
-console.log(
-  "\nAll green." +
-    (stages.includes("render")
-      ? "\nRead the render count: 25 is the pass condition, and a green 0 means" +
-        "\nit found no browser rather than that it passed."
-      : "")
-);
+// The counts, and the floors they had to clear. Reported at the end rather
+// than left for the reader to find: three suites print three summaries hundreds
+// of lines apart, and the one that matters is whichever shrank.
+const { summary, problems } = checkFloors(stages.flatMap((stage) => COUNTED_BY_STAGE[stage]));
+if (summary) console.log(`\n${summary}`);
+if (problems.length) {
+  console.error(shortfallMessage(problems));
+  process.exit(1);
+}
+
+console.log("\nAll green.");

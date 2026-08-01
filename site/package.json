@@ -18,8 +18,8 @@
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint . --fix && prettier --write .",
     "check": "svelte-check --tsconfig ./jsconfig.json",
-    "verify:math": "node --test scripts/verify_format.mjs scripts/verify_net_salary.mjs scripts/verify_mirror_math.mjs scripts/verify_view.mjs scripts/verify_stores.mjs scripts/verify_contrast.mjs scripts/verify_data_contracts.mjs scripts/verify_legal.mjs scripts/verify_static_assets.mjs scripts/verify_support.mjs scripts/verify_copy.mjs scripts/verify_template_safety.mjs scripts/verify_wiring.mjs",
-    "test:render": "node --test scripts/verify_render.mjs",
+    "verify:math": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=.report-node.tap scripts/verify_format.mjs scripts/verify_net_salary.mjs scripts/verify_mirror_math.mjs scripts/verify_view.mjs scripts/verify_stores.mjs scripts/verify_contrast.mjs scripts/verify_data_contracts.mjs scripts/verify_legal.mjs scripts/verify_static_assets.mjs scripts/verify_support.mjs scripts/verify_copy.mjs scripts/verify_template_safety.mjs scripts/verify_wiring.mjs",
+    "test:render": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=.report-render.tap scripts/verify_render.mjs",
     "check:all": "node scripts/check-all.mjs"
   },
   "devDependencies": {

@@ -55,6 +55,31 @@ to do to count is §"The standard a test has to meet".
 | `site/scripts/verify_render.mjs` | `node:test` + Playwright | The built page, in a browser |
 | `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
 
+## No suite may get smaller
+
+**Do not write a test count into a doc.** `site/scripts/check-test-floors.mjs`
+holds the only counts in the repository, and they are **floors** rather than
+exact totals: adding tests needs no bookkeeping, and a suite that shrank fails
+the run.
+
+That split keeps the half of the guard worth having. The failure worth catching
+is an assertion deleted to make something pass, a file dropped from the runner's
+argument list, or a suite that silently stopped running — the same rule
+`AGENTS.md` states and nothing enforced. A count going up is somebody doing
+their job.
+
+The counts come from the reports the suites already write — a TAP reporter
+beside the live one, and pytest's junit-xml — so nothing runs twice and the
+number is the runner's own. **A missing report fails too**, and that is not the
+same as a count of zero: `npm run test:render` exits 0 having asserted nothing
+when it finds no browser, which is exactly the run that must not pass.
+
+`make check` reports the counts at the end; CI runs the same script directly,
+per job, because its two jobs are separate runners with separate disks.
+
+Lower a floor only in the same commit as the deletion that made it necessary,
+and say in the commit message which tests went and why.
+
 `make check` runs all of it in CI's order. **The three totals live in
 [`AGENTS.md`](../AGENTS.md) §Commands and nowhere else.** A per-file count in
 this table is a number that goes stale the next time somebody adds a test to

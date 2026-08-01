@@ -141,10 +141,13 @@ file rather than a second copy of the list. It resolves the venv's executables
 per platform, stops at the first failure and names the command that failed, and
 takes a single stage — `npm run check:all lint` — when you want one part of it.
 
-Read the render count at the end. With no browser that suite skips and still
-exits 0, so `npx playwright install chromium` in `site\` is what turns a green
-0 into a green 25. `node scripts/find-chromium.mjs` will also take a Chrome or
-an Edge already installed under `%ProgramFiles%` or `%LOCALAPPDATA%`.
+The run ends with each suite's count beside the floor it had to clear, and
+fails when one has shrunk — so there is no number to check by eye, and none
+belongs in a doc. With no browser the render suite skips and still exits 0
+having asserted nothing, which is why `check-all.mjs` treats a missing report as
+a suite that did not run; `npx playwright install chromium` in `site\` is the
+fix. `node scripts/find-chromium.mjs` will also take a Chrome or an Edge already
+installed under `%ProgramFiles%` or `%LOCALAPPDATA%`.
 
 Six things in the repository make that block work, and each is load-bearing
 rather than tidy:
