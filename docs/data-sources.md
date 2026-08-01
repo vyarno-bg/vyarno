@@ -533,9 +533,16 @@ insurable income **€2111.64** (4130 BGN); statutory minimum gross wage
 
 **From 2026-08-01, and this is the entry `payroll.json` currently carries:** the
 maximum insurable income rises to **€2300** for all insured persons — ЗБДОО
-2026, adopted by the National Assembly **2026-07-22**. Nothing else moves: the
-five contribution lines, the 10% flat tax and the €620.20 minimum wage are
-unchanged. Which entry ships is whichever was in force on the refresh's `as_of`,
+2026, adopted **2026-07-22**, promulgated **ДВ бр. 68 от 28.07.2026**. Nothing
+else moves: the five contribution lines, the 10% flat tax and the €620.20
+minimum wage are unchanged. The draft of that act is the thing to be careful of,
+because it still outranks the act itself in search: it carried a **€2352**
+ceiling and raised фонд "Пенсии" from 14.8% to 16.8% for those born after 1959,
+and neither was enacted. Two changes the act does make sit outside this table on
+purpose — ТЗПБ moves for seven economic activities and is wholly employer-side,
+and държавни служители begin paying personal contributions at 80:20, a different
+insured category from the III категория труд employee modelled here.
+Which entry ships is whichever was in force on the refresh's `as_of`,
 so the way to read the shipped figure is `payroll.json`'s `effective_from`
 rather than this list.
 
@@ -726,7 +733,7 @@ Dated or conditional changes we already know are coming.
 | **A new ECOICOP version** | Eurostat announces one (ver.2 landed with three months' notice) | The classification gate fails the publish the moment the two cubes disagree. Enumerate the catalogue (`/api/dissemination/catalogue/toc/txt?lang=en`) to find the new dataset codes — **do not guess them**; the ver.2 weights cube is `prc_hicp_iw`, not the `prc_hicp_inw2` the pattern suggests. Then update `MINR_DATASET` / `IW_DATASET` / `COICOP_DIM` / `CP_DIVISIONS` in `sources/eurostat.py`, add friendly names to `COICOP_META`, and regenerate the fixtures (`pipeline/tests/fixtures/make_hicp_fixtures.py`). |
 | **BG's group set changes** | Bulgaria starts or stops spending in a group (e.g. `CP082`, currently weight 0) | Nothing to do — the set is discovered at refresh time. But a group with no name in `COICOP_META` **fails the publish** by design; add a BG/EN name and re-run. |
 | **Eurostat retires the I15 base** | ver.2's official base is 2025=100 (`I25`); `I15` is a recalculated back-series | Set `INDEX_UNIT = "I25"` and `INDEX_BASE_YEAR = 2025` in `sources/eurostat.py` — together, or the payload names a base its values are not on and `api_url_index` stops returning the published digits. Every index level in `data/published/` moves; no percentage the site renders does. |
-| **Any max-insurable-income change** | A ЗБДОО amendment. The last was ЗБДОО 2026: €2111.64 → €2300, adopted **2026-07-22**, in force **2026-08-01**, and the shipped payload carries €2300 | Add the dated entry to `BG_PAYROLL_TABLE`; `in_force_entry` switches on the publish date, so a payload baked before the boundary correctly still carries the old ceiling. **Nothing re-runs the pipeline on its own** — run `--source payroll` on or after the effective date or the site serves the superseded ceiling with a real `as_of` on it, which is the failure mode this row exists for. Three things move in that same commit: `mirror.js#BG_2026_MAX_INSURABLE` (the offline sentinel, or first paint computes a net pay the fetch then corrects), the date `test_parity_with_spa_frozen_constants` builds at, and any worked example in `verify_net_salary.mjs` whose gross clears the ceiling. `test_the_spa_sentinel_matches_the_payroll_json_actually_shipped` fails until the sentinel agrees with what shipped. |
+| **Any max-insurable-income change** | A ЗБДОО amendment. The last was ЗБДОО 2026: €2111.64 → €2300, promulgated **ДВ бр. 68 от 28.07.2026**, in force **2026-08-01**, and the shipped payload carries €2300 | Add the dated entry to `BG_PAYROLL_TABLE`; `in_force_entry` switches on the publish date, so a payload baked before the boundary correctly still carries the old ceiling. **Nothing re-runs the pipeline on its own** — run `--source payroll` on or after the effective date or the site serves the superseded ceiling with a real `as_of` on it, which is the failure mode this row exists for. Three things move in that same commit: `mirror.js#BG_2026_MAX_INSURABLE` (the offline sentinel, or first paint computes a net pay the fetch then corrects), the date `test_parity_with_spa_frozen_constants` builds at, and any worked example in `verify_net_salary.mjs` whose gross clears the ceiling. `test_the_spa_sentinel_matches_the_payroll_json_actually_shipped` fails until the sentinel agrees with what shipped. |
 | **The euro-native ceiling** | Structural, from 2026-01-01 | BG now legislates these amounts in EUR. A table entry sets **exactly one** of `<field>_eur` / `<field>_bgn` and `_pair()` derives the other; setting both raises. €2300 is the statute — deriving it from the "≈4500 лв" the press rounds to would publish €2300.81. |
 | **Minimum wage uprating** | A new MRZ (typically 1 Jan) | New dated entry (`min_wage_gross_bgn`). This re-floors the ladder's P1 automatically. |
 | **Contribution or flat-tax rate change** | Legislation | New dated entry. `test_payroll.py` flags the SPA sentinel until `mirror.js#BG_2026_RATES` matches. |
