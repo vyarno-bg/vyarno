@@ -133,12 +133,32 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
         ),
     },
     {
-        # ЗБДОО 2026, adopted by the National Assembly on 2026-07-22, in force
-        # 2026-08-01. Only the insurance ceiling moves: the five employee
-        # contribution lines, the flat tax and the minimum wage are unchanged,
-        # so they are restated verbatim rather than referenced — an entry is
-        # the FULL parameter set in force, and a partial one would silently
-        # inherit whatever a future edit did to the row above it.
+        # ЗБДОО 2026, обн. ДВ бр. 68 от 28.07.2026, in force 2026-08-01. Only
+        # the insurance ceiling moves: the five employee contribution lines, the
+        # flat tax and the minimum wage are unchanged, so they are restated
+        # verbatim rather than referenced — an entry is the FULL parameter set
+        # in force, and a partial one would silently inherit whatever a future
+        # edit did to the row above it.
+        #
+        # These rates have to survive a re-derivation from press coverage,
+        # because the coverage that ranks highest describes the DRAFT budget
+        # rather than this act. The draft carried a €2352 ceiling and raised
+        # фонд "Пенсии" from 14.8% to 16.8% for those born after 1959, which
+        # would have lifted the 6.58% employee pension line and the 13.78% total
+        # with it. The National Assembly enacted neither. So anyone reconciling
+        # this table against an article dated before 2026-07-22 meets two
+        # figures that look like corrections and are not — the enacted text
+        # keeps every rate and moves only the ceiling.
+        #
+        # ЗБДОО 2026 does change two things this table deliberately does not
+        # carry. ТЗПБ moves for seven economic activities, and it is wholly
+        # employer-side: `employee_contrib_rates` and the tax wedge in
+        # `mirror.js` are the employee's own deductions, so no figure the reader
+        # sees depends on it. Държавни служители start paying personal
+        # contributions at 80:20 until 2026-12-31, then 60:40 — a different
+        # insured category from the III категория труд employee this table
+        # models. Adding either would mean a second parameter set and a question
+        # the calculator does not ask.
         "effective_from": date(2026, 8, 1),
         "effective_year": 2026,
         "employee_contrib_rates": {
@@ -159,12 +179,19 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
         "max_insurable_income_eur": 2300.0,
         "min_wage_gross_bgn": 1213.0,
         "scheduled_changes": [],
-        "source_url": "https://www.parliament.bg/",
+        # ДВ is where the act is promulgated, and now that it has been, it is
+        # the citation rather than the National Assembly's bill page: бр. 68 of
+        # 2026-07-28 is the text in force. Still the landing page and not a
+        # per-issue permalink — dv.parliament.bg builds those from a session-side
+        # id that is not derivable from the issue number, and a guessed one
+        # would 404 for the reader who checks.
+        "source_url": "https://dv.parliament.bg/",
         "note": (
             "State Social Insurance Budget Act 2026 (ЗБДОО 2026), adopted by "
-            "the National Assembly on 2026-07-22, in force 2026-08-01: the "
-            "maximum insurable income rises to €2300 for all insured persons. "
-            "Contribution rates, the 10% flat tax and the €620.20 minimum wage "
+            "the National Assembly on 2026-07-22, promulgated in ДВ бр. 68 of "
+            "2026-07-28 and in force 2026-08-01: the maximum insurable income "
+            "rises to €2300 for all insured persons. The five employee "
+            "contribution rates, the 10% flat tax and the €620.20 minimum wage "
             "are unchanged from 2026-01-01."
         ),
     },
