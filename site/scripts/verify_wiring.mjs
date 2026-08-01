@@ -335,7 +335,7 @@ test("the percentile marker is bound to the bottom-referenced rank, per earner",
   // tested in verify_view.mjs; this is the wiring, and the wording rule lives
   // in verify_copy.mjs.
   assert.ok(
-    LIVE.includes("earnerRanks({ nets: earners, ladder: ladder })"),
+    LIVE.includes("earnerRanks({ nets: nets, ladder: ladder })"),
     "the calculator no longer ranks through view.js#earnerRanks"
   );
   assert.ok(
@@ -353,6 +353,51 @@ test("the percentile marker is bound to the bottom-referenced rank, per earner",
   assert.ok(
     !LIVE.includes("percentile(householdNet"),
     "the household total is being ranked on a ladder of individual earnings"
+  );
+});
+
+test("a gross becomes a net in exactly one place", () => {
+  // The pay field takes either basis, and everything below it is a statement
+  // about TAKE-HOME: rent as a share of pay, the basket, the 30% mortgage line,
+  // the position on the earnings ladder. Each is wrong by around 29% when fed a
+  // gross, and the mortgage one is wrong in the direction that calls a home
+  // affordable — which AGENTS.md forbids in as many words.
+  assert.ok(
+    LIVE.includes("nets = $derived(netsOf(pay, data.payroll))"),
+    "the calculator no longer converts through view.js#netsOf"
+  );
+  // Every per-person panel takes the `pay` object, which carries the basis with
+  // the amounts, so an amount cannot arrive anywhere without saying what it is.
+  for (const panel of [
+    "payslipPanel({ payroll: data.payroll, pay: pay })",
+    "taxWedgePanel({ payroll: data.payroll, pay: pay })",
+  ]) {
+    assert.ok(LIVE.includes(panel), `${panel} is no longer how the panel is fed`);
+  }
+  // And the household total is built from the CONVERTED nets, never from what
+  // was typed — the one line where a gross would reach the basket and the rent.
+  assert.ok(
+    LIVE.includes("householdNet = $derived(sumHouseholdNet(nets))"),
+    "the household total is no longer summed from the converted nets"
+  );
+});
+
+test("every income is asked for its own raise", () => {
+  // A household's rise is not a number people share. Asking once and applying
+  // it to everybody invents the missing answer, and weighting the combined
+  // figure by TODAY's pay rather than the earlier pay overstates it — always in
+  // the flattering direction (mirror.js#householdNetRaisePct).
+  assert.ok(
+    LIVE.includes("householdRaise({"),
+    "the calculator no longer combines the raises through view.js#householdRaise"
+  );
+  assert.ok(
+    !LIVE.includes("raise = $state("),
+    "the raise is a single field again, shared across every earner"
+  );
+  assert.ok(
+    FLAT.includes("{#each earners as earner, i (i)}"),
+    "the inputs card no longer draws a raise field per income"
   );
 });
 
@@ -401,7 +446,7 @@ test("the Sofia comparator reads the live НСИ wage and links to it", () => {
   // publish a WAGE, so measuring a two-earner total against it reports a
   // household of two on €900 each as above the average worker.
   assert.ok(
-    LIVE.includes("sofiaGap({ nets: earners, sofiaNet: sofiaNet })"),
+    LIVE.includes("sofiaGap({ nets: nets, sofiaNet: sofiaNet })"),
     "the comparator no longer computes the (earner − Sofia) gap through view.js"
   );
   assert.ok(

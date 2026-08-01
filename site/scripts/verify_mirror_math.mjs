@@ -51,6 +51,7 @@ import {
   bgPayslipFromNet,
   householdNet,
   bgHouseholdPayroll,
+  householdNetRaisePct,
   BG_PAYROLL_DEFAULT,
 } from "../src/lib/mirror.js";
 
@@ -919,4 +920,82 @@ test("a household of nobody computes nothing rather than dividing by zero", () =
     assert.equal(h.effectiveRatePct, 0, "a rate was reported for a household with no pay");
     assert.equal(h.anyCapped, false);
   }
+});
+
+// ---------------------------------------------------------------------------
+// THE HOUSEHOLD'S RAISE — weighted by what they were paid BEFORE
+// ---------------------------------------------------------------------------
+
+test("one earner's household raise is exactly the raise they typed", () => {
+  // The single-earner case is what this page has always shown, and it must not
+  // move by a rounding hair now that it goes through a weighted formula.
+  for (const r of [0, 3.5, 12.7, -4]) {
+    const got = householdNetRaisePct({ basis: "net", amounts: [1800], raises: [r] });
+    assert.ok(near(got, r, 1e-9), `${r} came back as ${got}`);
+  }
+});
+
+test("a household's raise is weighted by the earlier pay, not by today's", () => {
+  // Two earners on €1,000 today, one of whom got +20% and one nothing: the
+  // household went from €1,833.33 to €2,000, a rise of 9.09%. The straight
+  // average of the two rates says 10%, and it is wrong in the flattering
+  // direction — the earner who got the rise is the one whose CURRENT pay is
+  // inflated by it, so weighting by today over-counts them.
+  const got = householdNetRaisePct({ basis: "net", amounts: [1000, 1000], raises: [20, 0] });
+  assert.ok(near(got, 100 * (2000 / (1000 / 1.2 + 1000) - 1), 1e-9), got);
+  assert.ok(got < 10, `the household's raise came back as ${got.toFixed(4)}%, the plain average`);
+  assert.ok(near(got, 9.0909, 1e-3), got);
+});
+
+test("a gross raise above the ceiling is worth more than it says in the pocket", () => {
+  // Contributions stop at the ceiling but pay does not, so a 10% rise on a
+  // contract that clears it lifts take-home by MORE than 10%. Converting the
+  // before and after separately is the only way that stays true; applying the
+  // gross percentage to the net would understate the gain.
+  const params = BG_PAYROLL_DEFAULT;
+  const grossNow = 3300;
+  const r = 10;
+  assert.ok(grossNow / 1.1 > params.maxInsurable, "test premise: both ends clear the ceiling");
+  const got = householdNetRaisePct({ basis: "gross", amounts: [grossNow], raises: [r] }, params);
+  const expected =
+    100 * (bgNetSalary(grossNow, params).net / bgNetSalary(grossNow / 1.1, params).net - 1);
+  assert.ok(near(got, expected, 1e-9), `${got} vs ${expected}`);
+  assert.ok(got > r + 1, `a gross rise of ${r}% came back as ${got.toFixed(2)}% of take-home`);
+});
+
+test("a household with an unanswered raise says nothing at all", () => {
+  // P7: a blank read as 0% is an invented number, and it drags the household's
+  // figure down. The row that renders this names the missing income instead.
+  for (const raises of [
+    [10, NaN],
+    [NaN, 10],
+    [10, null],
+    [10, undefined],
+    [10, -100],
+  ]) {
+    assert.ok(
+      Number.isNaN(householdNetRaisePct({ basis: "net", amounts: [1000, 1000], raises })),
+      String(raises)
+    );
+  }
+  // An earner with no PAY is not owed a raise — they are not in the household
+  // yet, and an empty second field must not silence the first one's answer.
+  assert.ok(
+    near(householdNetRaisePct({ basis: "net", amounts: [1000, null], raises: [10, NaN] }), 10, 1e-9)
+  );
+  assert.ok(Number.isNaN(householdNetRaisePct({ basis: "net", amounts: [], raises: [] })));
+});
+
+test("a household payslip can be read from the gross side without a round trip", () => {
+  // In gross mode the reader typed the contract amount, so it must appear in
+  // the breakdown unchanged. Going gross → net → gross to reuse one code path
+  // lands a cent away on the one line they can check against their contract.
+  const h = bgHouseholdPayroll([2000, 1350], BG_PAYROLL_DEFAULT, "gross");
+  assert.ok(near(h.gross, 3350, 1e-9), `the typed grosses came back as ${h.gross}`);
+  assert.ok(near(h.gross - h.totalDeductions, h.net, 1e-9), "the column stopped balancing");
+  // And each earner is still taxed on their own contract.
+  assert.deepEqual(
+    h.earners.map((e) => e.gross),
+    [2000, 1350]
+  );
 });

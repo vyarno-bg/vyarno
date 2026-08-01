@@ -468,6 +468,47 @@ a **person** is what НСИ's wage, Eurostat's earnings ladder and the insurance
 ceiling are all measured on; **money** is what arrives and gets spent, and rent
 does not care who earned it.
 
+### The reader may type either side, and it converts in exactly one place
+
+The payslip states a net and the contract states a gross. Which one a reader
+knows is not something to guess at, so the pay field takes both and
+`view.js#netsOf` is the **only** place one becomes the other. Everything below
+it — the basket, rent as a share of pay, the 30%-of-net mortgage line, the
+position on the earnings ladder — is a statement about take-home, and each is
+wrong by around 29% when fed a gross. The mortgage one is wrong in the direction
+that calls a home affordable, which `AGENTS.md` forbids in as many words.
+
+The amounts travel inside a `pay` object carrying `{ basis, amounts }`, so an
+amount cannot reach a function without saying what it is. In gross mode the
+payslip is computed **forwards** (`bgPayrollBreakdown`) rather than round-tripped
+through the inverse, so the contract figure the reader typed appears in the
+breakdown unchanged.
+
+Flipping the toggle **converts in place**: the figure in the box changes and no
+result on the page moves — the contract the basket's %/€ toggle already keeps.
+What the reader typed in the outgoing basis is stashed, because the round trip
+is lossy by a cent in the general case and a salary that creeps while nobody
+edits it is its own kind of wrong.
+
+### A household's raise is weighted by what they were paid BEFORE
+
+Each income carries its own raise, and the household's figure is
+`Σ net_now / Σ net_before − 1` — not the average of the rates. Two earners on
+€1,000 today, one of whom got +20% and one nothing, went from €1,833.33 to
+€2,000: a rise of **9.09%**, where the plain average says 10%. The
+overstatement always flatters, because the earner who got the rise is the one
+whose *current* pay is inflated by it.
+
+In gross mode the before-and-after are converted to net **separately**, so a
+10% rise on a contract that clears the ceiling is correctly worth more than 10%
+in the pocket — contributions stop but the pay does not.
+
+`householdNetRaisePct` returns **NaN unless every earner with pay has stated a
+raise**, and the guard runs before the numeric coercion: `null`, `undefined`
+and `""` all coerce to 0, and 0 is a legitimate answer («нямаше увеличение»).
+A blank read as "no raise" is an invented number (P7) that drags the household's
+figure down. The row names the missing income instead of answering around it.
+
 ## HICP vs the national CPI
 
 Bulgaria has two official inflation gauges:
@@ -514,7 +555,9 @@ not fetch or publish the national CPI.
 | a shared number must not reconstruct a private one | `view.js#shareSentence` (no €, asserted in both languages) |
 | the payslip itemises the GROSS, never the typed net | `view.js#payslipPanel` inverts internally; it does not accept a gross |
 | the breakdown's rates are the published ones | `payslipPanel` takes `payroll.json`, not a params object |
-| the insurance ceiling is per contract, never per household | `payslipPanel` and `taxWedgePanel` take `nets` (a list) and have no scalar parameter |
+| the insurance ceiling is per contract, never per household | `payslipPanel` and `taxWedgePanel` take a list and have no scalar parameter |
+| an amount never travels without its basis | both take `pay = { basis, amounts }`; `view.js#netsOf` is the only net↔gross conversion |
+| a household's raise is weighted by the earlier pay | `mirror.js#householdNetRaisePct`; a blank raise returns NaN rather than reading as 0% |
 | the earnings ladder ranks people, not households | `view.js#earnerRanks` returns one row per earner; there is no total to pass it |
 | the Sofia comparator measures a wage against a wage | `view.js#sofiaGap` compares earner by earner |
 

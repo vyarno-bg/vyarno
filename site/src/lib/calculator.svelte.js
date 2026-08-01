@@ -72,9 +72,12 @@ import {
 // `$derived(...)` is wiring nothing can test — see view.js's header.
 import {
   officialBasketWeights,
+  convertPay,
   dataAge,
   earnerRanks,
   headlineRate,
+  householdRaise,
+  netsOf,
   sofiaGap,
   sofiaQuarter as publishedSofiaQuarter,
   savingsSince2020,
@@ -136,7 +139,29 @@ export class Calculator {
   // A single-earner household is a list of one, and the page renders exactly
   // as it did before anybody thought about households. Nothing about the
   // second income exists until the reader asks for it.
-  earners = $state([900]);
+  //
+  // Each entry is `{ amount, stashed, raise }`, never a bare number:
+  //   amount   what the reader typed, in whatever `payBasis` says
+  //   stashed  the last amount they typed in the OTHER basis, or null
+  //   raise    that earner's own change over the window, percent, NaN if unsaid
+  // One object per person rather than three parallel arrays, because removing
+  // an income has to remove all three and parallel arrays are where that goes
+  // wrong — silently, and one earner out of step.
+  earners = $state([{ amount: 900, stashed: null, raise: NaN }]);
+  /**
+   * Which figure the pay fields carry.
+   *
+   * The reader's payslip states a net and their contract states a gross, and
+   * which of the two they know is not something we can guess. Everything below
+   * runs on the net either way: `netsOf` is the single place the conversion
+   * happens, so no downstream figure has to care.
+   *
+   * NET stays the default. Every result on this page is a statement about
+   * take-home, and the €900 placeholder is documented against the Sofia NET
+   * ladder — changing which basis a reader meets first is a P7 decision with no
+   * data behind it.
+   */
+  payBasis = $state("net");
   // Whether the reader has typed over that placeholder. The figures derived
   // from it are second-person claims — what the same life costs *you*, where
   // *you* sit on the Sofia ladder — and every one of them is about a person
@@ -151,7 +176,9 @@ export class Calculator {
   // reader has started answering, not an answer, and the €900 in the first one
   // is still the placeholder every figure is standing on.
   earnersDirty = $state(false);
-  raise = $state(NaN); // empty by default — no fake nominal wage index
+  // Whether any raise field has been touched. The raises themselves live on
+  // the earners; this is only the "has a human been here" flag, and it is
+  // separate from `earnersDirty` because the two gate different sentences.
   raiseDirty = $state(false);
   anchor = $state("y1");
   rent = $state(0);
@@ -405,7 +432,19 @@ export class Calculator {
    * their sum. There is no field on the page that sets it, so there is no path
    * by which a total reaches the per-person functions that must not see one.
    */
-  householdNet = $derived(sumHouseholdNet(this.earners));
+  /**
+   * What the reader typed, and what it is. One object, so nothing downstream
+   * can receive an amount without its basis — see view.js#payslipPanel.
+   */
+  pay = $derived({ basis: this.payBasis, amounts: this.earners.map((e) => e.amount) });
+  /**
+   * Every earner's take-home, whichever basis they typed in. The ONE place a
+   * gross becomes a net (view.js#netsOf); everything below reads this and never
+   * `pay` — rent, the basket and the 30% mortgage line are all statements about
+   * take-home, and fed a gross each is wrong by around 29%.
+   */
+  nets = $derived(netsOf(this.pay, this.data.payroll));
+  householdNet = $derived(sumHouseholdNet(this.nets));
   /** True once the reader has described more than one income. */
   hasHousehold = $derived(this.earners.length > 1);
   /** Whether another income can be added — the card's own limit, not a claim. */
@@ -421,7 +460,7 @@ export class Calculator {
   // household fix: each contract is inverted against its own insurance
   // ceiling, then the columns are added. The panel takes no scalar, so the
   // total cannot be passed here even by accident.
-  payslip = $derived(payslipPanel({ payroll: this.data.payroll, nets: this.earners }));
+  payslip = $derived(payslipPanel({ payroll: this.data.payroll, pay: this.pay }));
   sofiaNet = $derived(bgNetSalary(this.sofiaMeanGrossEur, this.payroll).net);
 
   // "The flat tax is not flat" — the tax wedge. Takes the PUBLISHED payroll
@@ -431,11 +470,11 @@ export class Calculator {
   // per earner, because it recovers each gross itself and every earner stands
   // at their own point on the curve. Both are §3.3 constraints, not style: the
   // wrong wiring here is a 12.4 pp error that no sanity band would catch.
-  wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, nets: this.earners }));
+  wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, pay: this.pay }));
 
   // How each earner compares with the Sofia average wage — per earner, because
   // НСИ publish a wage rather than a household income. See view.js#sofiaGap.
-  sofiaGaps = $derived(sofiaGap({ nets: this.earners, sofiaNet: this.sofiaNet }));
+  sofiaGaps = $derived(sofiaGap({ nets: this.nets, sofiaNet: this.sofiaNet }));
 
   // ---------------------------------------------------------------------
   // Derived: inflation
@@ -446,6 +485,24 @@ export class Calculator {
       ? personalInflationDetailed(this.weights, this.categories, this.splits, this.anchor, this.off)
       : 0
   );
+  /**
+   * The household's nominal change in take-home, and who has not said theirs.
+   *
+   * Weighted by what each earner was paid BEFORE, which is what a percentage
+   * change is — a straight average of the rates overstates it, always in the
+   * flattering direction (mirror.js#householdNetRaisePct). With one earner in
+   * net mode it is exactly the number they typed.
+   */
+  raiseState = $derived(
+    householdRaise({
+      pay: this.pay,
+      raises: this.earners.map((e) => e.raise),
+      payroll: this.data.payroll,
+    })
+  );
+  raise = $derived(this.raiseState.pct);
+  /** The earners still owing a raise, so the row can name them instead of guessing. */
+  missingRaises = $derived(this.raiseState.missing);
   pocket = $derived(Number.isFinite(this.raise) ? pocketReal(this.raise, this.pi) : NaN);
 
   // What the per-group € column is carved out of: take-home minus the housing
@@ -588,7 +645,7 @@ export class Calculator {
   // (NOT `100 - rank` / "top N%") so higher income → bigger number → the
   // marker moves right and a below-median income never reads as an
   // achievement. `pctAhead` clamps to [1,99] so the extremes don't show 0%.
-  ranks = $derived(earnerRanks({ nets: this.earners, ladder: this.ladder }));
+  ranks = $derived(earnerRanks({ nets: this.nets, ladder: this.ladder }));
   /** The span the row's corner states when there is more than one earner. */
   rankRange = $derived.by(() => {
     const ahead = this.ranks.map((r) => r.ahead);
@@ -759,8 +816,11 @@ export class Calculator {
   // reader has told us the placeholder is not theirs, which is the whole
   // question the flag answers. Any earner's field counts, including a second
   // one: typing €700 into it says the €900 above is not a stand-in either.
-  onEarnerInput = () => {
+  // The stash is what the reader last typed in the OTHER basis, so typing here
+  // makes it stale — a flip after this must convert rather than restore.
+  onEarnerInput = (i) => {
     this.earnersDirty = true;
+    this.earners[i].stashed = null;
   };
 
   /**
@@ -775,7 +835,7 @@ export class Calculator {
    */
   addEarner = () => {
     if (!this.canAddEarner) return;
-    this.earners = [...this.earners, null];
+    this.earners = [...this.earners, { amount: null, stashed: null, raise: NaN }];
   };
 
   /**
@@ -788,10 +848,31 @@ export class Calculator {
     this.earners = this.earners.filter((_, k) => k !== i);
   };
 
-  onRaiseInput = (e) => {
+  onRaiseInput = (i, event) => {
     this.raiseDirty = true;
-    const v = parseFloat(e.currentTarget.value);
-    this.raise = isFinite(v) ? v : NaN;
+    const v = parseFloat(event.currentTarget.value);
+    this.earners[i].raise = isFinite(v) ? v : NaN;
+  };
+
+  /**
+   * Switch between typing net and typing gross.
+   *
+   * The amounts convert in place, so the figure in the box changes and nothing
+   * below it does — the contract `setSpendMode` already keeps for the basket's
+   * %/€ toggle. What the reader typed in the outgoing basis is stashed, so
+   * flipping back restores it verbatim rather than a converted-and-rounded
+   * version of itself: the round trip is lossy by a cent in the general case,
+   * and a salary that creeps while nobody edits it is its own kind of wrong.
+   */
+  setPayBasis = (next) => {
+    if (next === this.payBasis) return;
+    const converted = convertPay(this.pay, this.data.payroll);
+    this.earners = this.earners.map((e, i) => ({
+      ...e,
+      amount: e.stashed ?? converted[i],
+      stashed: e.amount,
+    }));
+    this.payBasis = next;
   };
 
   applyPreset = (name) => {

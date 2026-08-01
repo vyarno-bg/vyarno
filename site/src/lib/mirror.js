@@ -986,18 +986,27 @@ export function householdNet(nets) {
  * able to say WHICH earner a column belongs to; re-deriving that from the
  * position in a filtered array would mislabel every earner after a blank one.
  *
- * @param {Array<number|null|undefined>} nets  monthly NET take-home per earner
+ * @param {Array<number|null|undefined>} amounts  one monthly figure per earner
  * @param {{rates:object, totalEmployeeRate:number, incomeTaxRate:number, maxInsurable:number}} [params]
+ * @param {'net'|'gross'} [basis]  which figure `amounts` carries
  * @returns {{earners:Array<ReturnType<typeof bgPayrollBreakdown> & {index:number}>,
  *            gross:number, insurance:number, tax:number, totalDeductions:number,
  *            net:number, effectiveRatePct:number, anyCapped:boolean}}
  */
-export function bgHouseholdPayroll(nets, params = BG_PAYROLL_DEFAULT) {
+export function bgHouseholdPayroll(amounts, params = BG_PAYROLL_DEFAULT, basis = "net") {
   const earners = [];
-  (nets ?? []).forEach((n, index) => {
+  (amounts ?? []).forEach((n, index) => {
     const v = Number(n);
     if (!Number.isFinite(v) || v <= 0) return;
-    earners.push({ index, ...bgPayslipFromNet(v, params) });
+    // In gross mode the reader typed the contract amount, so the payslip is
+    // computed FORWARDS and there is no inversion to round-trip. Going
+    // gross → net → gross to reuse one code path would put the answer a cent
+    // away from the number they typed, on the one line they can check against
+    // their own contract.
+    earners.push({
+      index,
+      ...(basis === "gross" ? bgPayrollBreakdown(v, params) : bgPayslipFromNet(v, params)),
+    });
   });
 
   const total = (key) => round2(earners.reduce((s, e) => s + e[key], 0));
@@ -1018,6 +1027,67 @@ export function bgHouseholdPayroll(nets, params = BG_PAYROLL_DEFAULT) {
     effectiveRatePct: gross > 0 ? (100 * totalDeductions) / gross : 0,
     anyCapped: earners.some((e) => e.insuranceCapped),
   };
+}
+
+/**
+ * The household's nominal change in TAKE-HOME pay over the raise window.
+ *
+ * **Weighted by what each earner was paid BEFORE, not by what they are paid
+ * now**, because that is what a percentage change is. Two earners on €1,000
+ * today, one of whom got +20% and one nothing, are a household that went from
+ * €1,833.33 to €2,000 — a rise of 9.09%, not the 10% a straight average of the
+ * two rates gives. The overstatement grows with the spread between them, and it
+ * always flatters: the earner who got the bigger rise is the one whose current
+ * pay is inflated by it.
+ *
+ * **It answers in NET terms whichever basis the reader is typing in**, because
+ * the figure it feeds is deflated by their own prices, and prices are paid out
+ * of take-home. In gross mode a 10% rise on a contract that clears the
+ * insurance ceiling is worth more than 10% in the pocket — contributions stop
+ * but the pay does not — so converting the before-and-after separately is the
+ * only way the answer stays true either side of the ceiling.
+ *
+ * **NaN unless every earner who has pay also has a raise.** A blank raise
+ * treated as 0% is an invented number (docs/principles.md P7) that drags the
+ * household's figure down, and one treated as "same as the others" invents a
+ * different one. The row that renders this says which income is still missing
+ * rather than answering around it.
+ *
+ * Reduces EXACTLY to the typed raise for a single earner in net mode, which is
+ * what it has always been.
+ *
+ * @param {object} pay
+ * @param {'net'|'gross'} pay.basis
+ * @param {Array<number|null|undefined>} pay.amounts  one per earner
+ * @param {Array<number|null|undefined>} pay.raises   percent, one per earner
+ * @param {object} [params]  payroll parameters
+ * @returns {number} percent, or NaN when the household is not fully described
+ */
+export function householdNetRaisePct(
+  { basis = "net", amounts, raises },
+  params = BG_PAYROLL_DEFAULT
+) {
+  let now = 0;
+  let before = 0;
+  const list = amounts ?? [];
+  for (let i = 0; i < list.length; i += 1) {
+    const amount = Number(list[i]);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    // `null`, `undefined` and `""` all coerce to 0, and 0 is a legitimate
+    // answer — «нямаше увеличение». So the unanswered cases are checked BEFORE
+    // the coercion; without that, a blank field reads as "no raise" and drags
+    // the household's figure down with a number nobody entered.
+    const stated = (raises ?? [])[i];
+    if (stated === null || stated === undefined || stated === "") return NaN;
+    const r = Number(stated);
+    // −100% and below would put the earlier pay at infinity or make it negative.
+    if (!Number.isFinite(r) || r <= -100) return NaN;
+    const earlier = amount / (1 + r / 100);
+    now += basis === "gross" ? bgNetSalary(amount, params).net : amount;
+    before += basis === "gross" ? bgNetSalary(earlier, params).net : earlier;
+  }
+  if (!(before > 0)) return NaN;
+  return 100 * (now / before - 1);
 }
 
 // ---------------------------------------------------------------------------

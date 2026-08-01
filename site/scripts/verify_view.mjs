@@ -45,6 +45,9 @@ import {
   payslipPanel,
   earnerRanks,
   sofiaGap,
+  netsOf,
+  convertPay,
+  householdRaise,
   scheduledMaxInsurable,
   scheduledMaxInsurableFrom,
   rankedSplit,
@@ -951,7 +954,7 @@ const PAYROLL = read("payroll");
 
 test("taxWedgePanel reads the cap and the rates out of the PUBLISHED payload", () => {
   if (!PAYROLL) return;
-  const panel = taxWedgePanel({ payroll: PAYROLL, nets: [] });
+  const panel = taxWedgePanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [] } });
   assert.ok(
     near(panel.capGross, PAYROLL.max_insurable_income_eur, 1e-9),
     `the panel's cap (${panel.capGross}) is not payroll.json's ` +
@@ -962,7 +965,7 @@ test("taxWedgePanel reads the cap and the rates out of the PUBLISHED payload", (
   // fail this one.
   const raised = taxWedgePanel({
     payroll: { ...PAYROLL, max_insurable_income_eur: 3000 },
-    nets: [],
+    pay: { basis: "net", amounts: [] },
   });
   assert.ok(near(raised.capGross, 3000, 1e-9), "the cap is hardcoded, not read");
 });
@@ -977,7 +980,7 @@ test("taxWedgePanel places the user by their GROSS, not the net they typed", () 
   const net = bgNetSalary(grossOverCap, params).net;
   assert.ok(net < params.maxInsurable, "test premise: the net is below the cap");
 
-  const panel = taxWedgePanel({ payroll: PAYROLL, nets: [net] });
+  const panel = taxWedgePanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [net] } });
   assert.equal(panel.earners.length, 1, "no earner point was produced for a positive salary");
   const [you] = panel.earners;
   assert.ok(
@@ -995,11 +998,14 @@ test("taxWedgePanel says nothing about a user who has typed nothing", () => {
   // P7: no unsourced default. An empty salary field must not silently render
   // someone at the median, or at zero.
   for (const v of [0, -100, NaN, undefined, null]) {
-    const panel = taxWedgePanel({ payroll: PAYROLL, nets: [v] });
+    const panel = taxWedgePanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [v] } });
     assert.deepEqual(panel.earners, [], String(v));
     assert.equal(panel.headlineEffectivePct, null, String(v));
   }
-  assert.deepEqual(taxWedgePanel({ payroll: PAYROLL, nets: [] }).earners, []);
+  assert.deepEqual(
+    taxWedgePanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [] } }).earners,
+    []
+  );
 });
 
 test("scheduledMaxInsurable reads the right row, or nothing", () => {
@@ -1063,7 +1069,7 @@ test("the panel degrades to the offline sentinel rather than crashing", () => {
 test("payslipPanel itemises the GROSS, not the net that was typed", () => {
   if (!PAYROLL) return;
   const net = 2100;
-  const panel = payslipPanel({ payroll: PAYROLL, nets: [net] });
+  const panel = payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [net] } });
   assert.ok(panel, "no panel for a positive salary");
   assert.ok(
     panel.gross > net,
@@ -1085,7 +1091,7 @@ test("payslipPanel itemises the GROSS, not the net that was typed", () => {
 
 test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload", () => {
   if (!PAYROLL) return;
-  const panel = payslipPanel({ payroll: PAYROLL, nets: [2100] });
+  const panel = payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [2100] } });
   assert.ok(
     near(panel.maxInsurable, PAYROLL.max_insurable_income_eur, 1e-9),
     `the panel's ceiling (${panel.maxInsurable}) is not payroll.json's`
@@ -1100,7 +1106,7 @@ test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload"
   // sentinel would pass every assertion above and fail all of these.
   const raised = payslipPanel({
     payroll: { ...PAYROLL, max_insurable_income_eur: 4000 },
-    nets: [2100],
+    pay: { basis: "net", amounts: [2100] },
   });
   assert.ok(near(raised.maxInsurable, 4000, 1e-9), "the ceiling is hardcoded, not read");
   assert.equal(
@@ -1120,7 +1126,7 @@ test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload"
         Object.entries(PAYROLL.employee_contrib_rates).map(([k, v]) => [k, v * 2])
       ),
     },
-    nets: [2100],
+    pay: { basis: "net", amounts: [2100] },
   });
   assert.ok(
     doubled.insurance > panel.insurance * 1.9,
@@ -1132,7 +1138,7 @@ test("payslipPanel reads the rates and the ceiling out of the PUBLISHED payload"
 test("payslipPanel's rows account for every cent it says was withheld", () => {
   if (!PAYROLL) return;
   for (const net of [700, 1200, 1638, 1700, 2100, 4000]) {
-    const p = payslipPanel({ payroll: PAYROLL, nets: [net] });
+    const p = payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [net] } });
     const sum = p.earners[0].lines.reduce((a, l) => a + l.amount, 0);
     assert.ok(
       near(sum, p.insurance, 1e-9),
@@ -1150,15 +1156,27 @@ test("payslipPanel says nothing about a user who has typed nothing", () => {
   // P7 again: an empty field must not render a column of zeroes for the
   // reader to check. There is no payslip for a salary nobody typed.
   for (const v of [0, -100, NaN, undefined, null, ""]) {
-    assert.equal(payslipPanel({ payroll: PAYROLL, nets: [v] }), null, String(v));
+    assert.equal(
+      payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [v] } }),
+      null,
+      String(v)
+    );
   }
-  assert.equal(payslipPanel({ payroll: PAYROLL, nets: [] }), null, "empty list");
-  assert.equal(payslipPanel({ payroll: PAYROLL, nets: undefined }), null, "no list at all");
+  assert.equal(
+    payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [] } }),
+    null,
+    "empty list"
+  );
+  assert.equal(
+    payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: undefined } }),
+    null,
+    "no list at all"
+  );
 });
 
 test("payslipPanel degrades to the offline sentinel rather than crashing", () => {
   // First paint, before payroll.json resolves.
-  const p = payslipPanel({ payroll: null, nets: [2100] });
+  const p = payslipPanel({ payroll: null, pay: { basis: "net", amounts: [2100] } });
   assert.ok(p && p.gross > 0 && p.earners[0].lines.length === 5);
   assert.equal(p.effectiveYear, null, "invented an effective year with no payload");
 });
@@ -1286,7 +1304,7 @@ test("payslipPanel adds the households's columns AFTER taxing each contract", ()
   if (!PAYROLL) return;
   const params = payrollParams(PAYROLL);
   const each = bgNetSalary(2000, params).net;
-  const panel = payslipPanel({ payroll: PAYROLL, nets: [each, each] });
+  const panel = payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [each, each] } });
 
   assert.equal(panel.earners.length, 2);
   assert.ok(
@@ -1297,7 +1315,7 @@ test("payslipPanel adds the households's columns AFTER taxing each contract", ()
   // to compute it elsewhere and pass it in as a household of one. That is what
   // this compares against, and it is the number a single-salary calculator
   // gives a couple who add their payslips up first.
-  const asOne = payslipPanel({ payroll: PAYROLL, nets: [each * 2] });
+  const asOne = payslipPanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [each * 2] } });
   assert.ok(
     panel.gross - asOne.gross > 200,
     `the household treatment recovered only ${(panel.gross - asOne.gross).toFixed(2)}`
@@ -1316,7 +1334,7 @@ test("taxWedgePanel marks every earner, and states the household's own rate", ()
   const params = payrollParams(PAYROLL);
   const big = bgNetSalary(params.maxInsurable + 700, params).net;
   const small = bgNetSalary(800, params).net;
-  const panel = taxWedgePanel({ payroll: PAYROLL, nets: [big, small] });
+  const panel = taxWedgePanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [big, small] } });
 
   assert.equal(panel.earners.length, 2, "an earner was dropped off the curve");
   assert.equal(panel.earners[0].overCap, true);
@@ -1388,4 +1406,90 @@ test("sofiaGap compares each earner with the average WAGE, one at a time", () =>
 
   assert.deepEqual(sofiaGap({ nets: [900], sofiaNet: 0 }), [], "compared against no average");
   assert.deepEqual(sofiaGap({ nets: [0, null], sofiaNet }), []);
+});
+
+// ---------------------------------------------------------------------------
+// NET OR GROSS — one conversion point, and a toggle that moves no result
+// ---------------------------------------------------------------------------
+
+test("netsOf is the ONE place a gross becomes a net", () => {
+  if (!PAYROLL) return;
+  const params = payrollParams(PAYROLL);
+  assert.deepEqual(netsOf({ basis: "net", amounts: [900, 1200] }, PAYROLL), [900, 1200]);
+
+  const gross = [2000, 1350];
+  const asNet = netsOf({ basis: "gross", amounts: gross }, PAYROLL);
+  assert.deepEqual(
+    asNet,
+    gross.map((g) => bgNetSalary(g, params).net)
+  );
+  // Everything downstream of this is a statement about take-home. Handing it a
+  // gross would understate the rent burden, inflate the basket, and — the one
+  // that AGENTS.md forbids in as many words — raise the 30%-of-net mortgage
+  // line by about a third.
+  assert.ok(asNet[0] < gross[0] * 0.82, `€${gross[0]} gross came back as €${asNet[0]} net`);
+
+  // A blank stays blank in its own position, so the earner numbering downstream
+  // still lines up with the fields on screen.
+  assert.deepEqual(netsOf({ basis: "net", amounts: [900, null, 0, 1200] }, PAYROLL), [
+    900,
+    null,
+    null,
+    1200,
+  ]);
+  assert.deepEqual(netsOf(undefined, PAYROLL), []);
+});
+
+test("flipping the basis converts in place, so no result on the page moves", () => {
+  if (!PAYROLL) return;
+  const params = payrollParams(PAYROLL);
+  const net = [900, 1350];
+  const asGross = convertPay({ basis: "net", amounts: net }, PAYROLL);
+
+  // The figure in the box changes...
+  assert.ok(asGross[0] > net[0], "the net was not converted to a gross");
+  // ...and what the page is computed from does not.
+  const back = netsOf({ basis: "gross", amounts: asGross }, PAYROLL);
+  for (let i = 0; i < net.length; i += 1) {
+    assert.ok(
+      near(back[i], net[i], 0.01),
+      `€${net[i]} net → €${asGross[i]} gross → €${back[i]} net: the toggle moved the reader's pay`
+    );
+  }
+
+  // Rounded to the cent, because it lands in a field the reader types over.
+  for (const g of asGross) assert.equal(g, Math.round(g * 100) / 100);
+  // And it is a real inversion, not a fixed multiplier: a gross over the
+  // ceiling keeps more of the next euro, so the ratio is not the same at both
+  // ends of the range.
+  const low = convertPay({ basis: "net", amounts: [700] }, PAYROLL)[0] / 700;
+  const high = convertPay({ basis: "net", amounts: [4000] }, PAYROLL)[0] / 4000;
+  assert.ok(low > high, `the conversion is a flat ${low.toFixed(4)}× at every salary`);
+  assert.ok(near(bgNetSalary(asGross[0], params).net, net[0], 0.01));
+});
+
+test("householdRaise answers only when every income has answered", () => {
+  if (!PAYROLL) return;
+  const pay = { basis: "net", amounts: [1000, 1000] };
+
+  const full = householdRaise({ pay, raises: [20, 0], payroll: PAYROLL });
+  assert.deepEqual(full.missing, []);
+  assert.ok(near(full.pct, 9.0909, 1e-3), full.pct);
+
+  // A blank is not a zero. The figure withholds itself AND the row is told
+  // which income to name — the two have to agree, or the page prints a prompt
+  // naming nobody beside a figure that never arrives.
+  const partial = householdRaise({ pay, raises: [20, null], payroll: PAYROLL });
+  assert.ok(Number.isNaN(partial.pct), partial.pct);
+  assert.deepEqual(partial.missing, [{ index: 1, ordinal: 2 }]);
+
+  // An earner with no PAY is not owed a raise: an empty second field must not
+  // silence the first one's answer.
+  const oneTyped = householdRaise({
+    pay: { basis: "net", amounts: [1000, null] },
+    raises: [10, NaN],
+    payroll: PAYROLL,
+  });
+  assert.deepEqual(oneTyped.missing, []);
+  assert.ok(near(oneTyped.pct, 10, 1e-9));
 });

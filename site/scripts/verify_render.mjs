@@ -929,16 +929,28 @@ test("the placeholder's payslip and comparator wait for a salary", { skip }, asy
   await withApp(async (page, errors) => {
     const pay = page.locator(".m-pay");
     const idle = await pay.innerText();
+    // Matched on the payslip's own sentences, not on the word «бруто» alone:
+    // the net/gross toggle is a CONTROL labelled with it, and it is drawn
+    // whether or not anybody has typed. What must wait is the figures.
     assert.doesNotMatch(
       idle,
-      /бруто|осигуровки|под средната|над средната/i,
+      /по договор|на ръка|осигуровки и|под средната|над средната/i,
       `the pay card describes a placeholder's payslip: ${idle.replace(/\s+/g, " ")}`
+    );
+    assert.equal(
+      await pay.locator("details.payslip").count(),
+      0,
+      "a payslip was itemised for whoever earns the placeholder"
     );
 
     await page.locator("#inSalary").fill("2400");
     await page.waitForTimeout(400);
     const answered = await pay.innerText();
-    assert.match(answered, /бруто/i, "the payslip summary never appeared after a salary was typed");
+    assert.match(
+      answered,
+      /по договор/i,
+      "the payslip summary never appeared after a salary was typed"
+    );
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
@@ -1039,6 +1051,98 @@ test("the ladder ranks each earner, and marks each of them", { skip }, async () 
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
+
+test("switching to gross moves the field and nothing else", { skip }, async () => {
+  // The toggle is a display choice, the same contract the basket's %/€ toggle
+  // keeps: the number in the box changes and no result does. Re-reading the
+  // typed 900 as a gross instead would rewrite every figure on the page while
+  // the reader believes they changed a label.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+    const inflation = await page.locator(".r-big").innerText();
+    const pairBefore = await page.locator(".m-pay .pair").innerText();
+
+    await page.getByRole("button", { name: /^бруто$/i }).click();
+    await page.waitForTimeout(400);
+
+    const typed = Number(await page.locator("#inSalary").inputValue());
+    assert.ok(
+      typed > 2400 * 1.2,
+      `the field still reads ${typed} — the toggle relabelled the number instead of converting it`
+    );
+    assert.equal(
+      await page.locator(".r-big").innerText(),
+      inflation,
+      "flipping the basis moved the reader's inflation figure"
+    );
+    assert.equal(
+      await page.locator(".m-pay .pair").innerText(),
+      pairBefore,
+      "flipping the basis moved the net/gross pair it is supposed to leave alone"
+    );
+
+    // Back again restores exactly what was typed, rather than a rounded
+    // conversion of a rounded conversion.
+    await page.getByRole("button", { name: /^нето$/i }).click();
+    await page.waitForTimeout(400);
+    assert.equal(
+      await page.locator("#inSalary").inputValue(),
+      "2400",
+      "the salary crept on a round trip"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test(
+  "each income is asked for its own raise, and the row waits for all of them",
+  { skip },
+  async () => {
+    // A household's rise is not one number people share, and a blank read as 0%
+    // is an invented figure that drags the combined answer down. So the pocket
+    // row names the income still missing rather than answering around it.
+    await withApp(async (page, errors) => {
+      await page.locator("#inSalary").fill("1000");
+      await page.getByRole("button", { name: /добави още един доход/i }).click();
+      await page.locator("#inEarner1").fill("1000");
+      await page.waitForTimeout(400);
+
+      assert.equal(
+        await page.locator("#inRaise1").count(),
+        1,
+        "the second income got no raise field"
+      );
+
+      await page.locator("#inRaise").fill("20");
+      await page.waitForTimeout(400);
+      const row = page.locator(".r-row").filter({ hasText: "джоб" }).first();
+      const waiting = await row.innerText();
+      assert.match(
+        waiting,
+        /доход 2/i,
+        `the row did not name the income it is waiting for: ${waiting.replace(/\s+/g, " ")}`
+      );
+
+      await page.locator("#inRaise1").fill("0");
+      await page.waitForTimeout(400);
+      const answered = await row.innerText();
+      // €1,000 each, one at +20% and one at nothing: the household went from
+      // €1,833 to €2,000, a rise of 9.1% — NOT the 10% a plain average gives.
+      assert.match(
+        answered,
+        /9[.,]1%/,
+        `the combined raise was not weighted by the earlier pay: ${answered.replace(/\s+/g, " ")}`
+      );
+      assert.match(
+        answered,
+        /доход 1: \+20/i,
+        "the parts the combined figure was built from are not shown"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
 
 test.after(async () => {
   await browser?.close();
