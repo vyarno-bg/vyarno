@@ -302,6 +302,13 @@ What is in it:
   SPA collects **net** take-home (most people know that, not their contract
   gross), back-computes the gross for the Sofia comparator, and applies the same
   formula to Sofia's gross — so the comparison is net vs net.
+- **The household:** `householdNet(nets)` and `bgHouseholdPayroll(nets, params)`.
+  The pay card collects **one net per earner**, and the total is derived from
+  that list rather than typed. Inverting a combined net as a single salary
+  applies one insurance ceiling to several people and understates a two-earner
+  household's gross by €234/month at €2,000 gross each — [`math.md`](./math.md)
+  §"A household is several contracts" has the table, and the split between the
+  figures that are per person and the ones that are per household.
 
 With the official weights, `officialInflation` lands *near* the headline HICP
 rate but not on it — HICP chain-links at December, so a 12-month window
@@ -761,6 +768,39 @@ The render tests that hold all of this are
 `the_ladder_row_ranks_nobody_who_has_not_typed_a_salary`,
 `the_placeholders_payslip_and_comparator_wait_for_a_salary` and
 `every_verify_link_is_drawn_the_same_in_both_cards`.
+
+### More than one income, and which figures know it
+
+`PayField` holds a **list** of incomes and starts with one, so a single earner
+meets a card that has not changed: one field, one payslip, and no control
+describing a situation they are not in. There is no "household mode" flag —
+`earners.length` is the only state, because a checkbox would be a second source
+of truth able to say "household, one income", which means nothing and would have
+to be handled everywhere.
+
+Adding an income seeds it **empty**, not with the €900 placeholder. A prefilled
+second field adds €900 to the rent burden, the mortgage cap and the basket the
+moment it appears — figures the reader never typed, all of them moving in the
+flattering direction. `an_empty_second_income_changes_nothing_until_it_is_answered`
+holds it.
+
+Below the fields, a figure appears **once per person** where it describes a
+person and **once** where it describes money. Per person: the gross and its
+payslip, the position on the ladder, the comparison with НСИ's Sofia average,
+and the marker on the wedge curve. Once: the household's take-home, the basket,
+rent, and everything about a home. [`math.md`](./math.md) §"A household is
+several contracts" carries the table and the reason.
+
+Two consequences worth knowing before editing a sentence here:
+
+- **The second person has to go** once there are several earners. «Изпреварваш
+  61%» addressed to a household is a claim about a person who does not exist, so
+  the ladder switches to a line per income (`COPY.pctEarnerLine`) and states the
+  median once underneath.
+- **The corner figure becomes a range.** The row cannot choose which earner
+  speaks for the household, and picking the first makes an arbitrary one do it.
+  «пред 34-62%» is true about where the people in this household sit; any single
+  number in that corner is not.
 
 ### The pocket row says which state it is in
 

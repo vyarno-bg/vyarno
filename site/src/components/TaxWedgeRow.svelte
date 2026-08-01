@@ -1,6 +1,6 @@
 <!--
   The tax-wedge row: what share of a Bulgarian gross salary is deducted, drawn
-  across the income range with the reader's own salary marked on it.
+  across the income range with each earner's own salary marked on it.
 
   The finding is the shape — the effective rate PEAKS at the social-insurance
   ceiling and falls above it — so the chart is inline SVG with no chart library
@@ -14,7 +14,7 @@
   import { number, integer } from "$lib/format.js";
 
   const {
-    /** The whole panel from view.js#taxWedgePanel: points, cap, peak, you. */
+    /** The whole panel from view.js#taxWedgePanel: points, cap, peak, earners. */
     wedge,
   } = $props();
 
@@ -60,7 +60,9 @@
   // Suppressed when the reader's own marker is close enough to the right edge
   // to sit under it. The marker wins: it is this reader's own salary, and the
   // sentence above the chart already gives them the same figure in words.
-  const wedgeShowEndLabel = $derived(!wedge.you || wedge.you.gross < 0.85 * wedgeMaxGross);
+  const wedgeShowEndLabel = $derived(!wedge.earners.some((e) => e.gross >= 0.85 * wedgeMaxGross));
+  /** The single earner, when there is exactly one — the row's original case. */
+  const only = $derived(wedge.earners.length === 1 ? wedge.earners[0] : null);
   // Closed back down to the baseline, so the marginal step reads as a filled
   // band rather than a line that spends a third of the plot underneath the
   // effective one.
@@ -80,40 +82,78 @@
     <span class="rr-k"
       ><span class="l-bg">{COPY.wedgeK.bg}</span><span class="l-en">{COPY.wedgeK.en}</span></span
     >
-    <span class="rr-v mono"
-      >{fmt(wedge.you ? wedge.you.effectivePct : wedge.peakEffectivePct)}%</span
-    >
+    <span class="rr-v mono">{fmt(wedge.headlineEffectivePct ?? wedge.peakEffectivePct)}%</span>
   </div>
   <div class="rr-t">
-    {#if wedge.you && wedge.you.overCap}
+    {#if wedge.earners.length > 1}
+      <!-- The household's own rate, then where each income stands. The ceiling
+           is per contract, so a single sentence over several earners would
+           bury the one thing this row is drawn to show. -->
+      <span class="l-bg"
+        >{@html t(COPY.wedgeHouseholdLead, "bg", {
+          gross: fmt0(wedge.householdGross),
+          eff: fmt(wedge.headlineEffectivePct),
+          cap: fmt0(wedge.capGross),
+        })}</span
+      >
+      <span class="l-en"
+        >{@html t(COPY.wedgeHouseholdLead, "en", {
+          gross: fmt0(wedge.householdGross),
+          eff: fmt(wedge.headlineEffectivePct),
+          cap: fmt0(wedge.capGross),
+        })}</span
+      >
+      <ul class="wedge-earners">
+        {#each wedge.earners as e (e.index)}
+          <li>
+            <span class="l-bg"
+              >{@html t(COPY.wedgeEarnerLine, "bg", {
+                n: fmt0(e.ordinal),
+                gross: fmt0(e.gross),
+                eff: fmt(e.effectivePct),
+                cap: e.overCap ? COPY.wedgeEarnerOverCap.bg : "",
+              })}</span
+            >
+            <span class="l-en"
+              >{@html t(COPY.wedgeEarnerLine, "en", {
+                n: fmt0(e.ordinal),
+                gross: fmt0(e.gross),
+                eff: fmt(e.effectivePct),
+                cap: e.overCap ? COPY.wedgeEarnerOverCap.en : "",
+              })}</span
+            >
+          </li>
+        {/each}
+      </ul>
+    {:else if only && only.overCap}
       <span class="l-bg"
         >{@html t(COPY.wedgeOver, "bg", {
-          gross: fmt0(wedge.you.gross),
+          gross: fmt0(only.gross),
           cap: fmt0(wedge.capGross),
           peak: fmt(wedge.peakEffectivePct),
-          eff: fmt(wedge.you.effectivePct),
+          eff: fmt(only.effectivePct),
         })}</span
       >
       <span class="l-en"
         >{@html t(COPY.wedgeOver, "en", {
-          gross: fmt0(wedge.you.gross),
+          gross: fmt0(only.gross),
           cap: fmt0(wedge.capGross),
           peak: fmt(wedge.peakEffectivePct),
-          eff: fmt(wedge.you.effectivePct),
+          eff: fmt(only.effectivePct),
         })}</span
       >
-    {:else if wedge.you}
+    {:else if only}
       <span class="l-bg"
         >{@html t(COPY.wedgeUnder, "bg", {
-          gross: fmt0(wedge.you.gross),
-          eff: fmt(wedge.you.effectivePct),
+          gross: fmt0(only.gross),
+          eff: fmt(only.effectivePct),
           cap: fmt0(wedge.capGross),
         })}</span
       >
       <span class="l-en"
         >{@html t(COPY.wedgeUnder, "en", {
-          gross: fmt0(wedge.you.gross),
-          eff: fmt(wedge.you.effectivePct),
+          gross: fmt0(only.gross),
+          eff: fmt(only.effectivePct),
           cap: fmt0(wedge.capGross),
         })}</span
       >
@@ -203,14 +243,17 @@
     <text class="wedge-lbl" x={WEDGE_W - WEDGE_PAD_X} y={WEDGE_BASE + 13} text-anchor="end"
       >€{fmt0(wedgeMaxGross)}</text
     >
-    {#if wedge.you}
+    <!-- One marker per earner: each contract sits at its own point on this
+         curve, and a marker at their combined pay would stand where nobody in
+         the household does. -->
+    {#each wedge.earners as e (e.index)}
       <circle
         class="wedge-you"
-        cx={wedgeX(Math.min(wedge.you.gross, wedgeMaxGross))}
-        cy={wedgeY(wedge.you.effectivePct)}
+        cx={wedgeX(Math.min(e.gross, wedgeMaxGross))}
+        cy={wedgeY(e.effectivePct)}
         r="4"
       />
-    {/if}
+    {/each}
   </svg>
   <div class="wedge-key">
     <span class="wk e"
@@ -297,6 +340,14 @@
     font-size: var(--fs-micro);
     fill: var(--muted);
     font-family: var(--mono);
+  }
+  /* One line per income under the household sentence. Unbulleted and indented
+     to the sentence above it: these are the parts of that total, not a list of
+     separate findings. */
+  .wedge-earners {
+    margin: 4px 0 0;
+    padding: 0 0 0 12px;
+    list-style: none;
   }
   .wedge-key {
     display: flex;

@@ -18,11 +18,30 @@
    * between them closed (`.m-pay` / `.m-inputs` in card.css), so the split is
    * invisible there and nothing about the wide layout moves.
    *
-   * Everything below the input is gated on `salaryDirty`. The gross, the
+   * Everything below the input is gated on `earnersDirty`. The gross, the
    * deductions and the Sofia comparison are facts about whoever earns the €900
    * placeholder until the reader replaces it — the same reasoning that keeps
    * PercentileRow silent, and here it also keeps the first paint short enough
    * that the headline figure stays above the fold on a 664px phone.
+   *
+   * ## More than one income
+   *
+   * The card holds a LIST of incomes and starts with one, so a single earner
+   * meets the page exactly as they always have: one field, one label, one
+   * payslip, and no control describing a situation they are not in. The second
+   * income appears only when asked for.
+   *
+   * It is a list and not a checkbox-plus-second-field because a checkbox is a
+   * second source of truth for something the list already knows. "Household
+   * mode on, one income" is a state that means nothing and would have to be
+   * handled everywhere; `earners.length` cannot disagree with itself.
+   *
+   * Each income is entered on its own because the insurance ceiling is per
+   * contract — see `mirror.js#bgHouseholdPayroll` for what summing first costs.
+   * Everything below the fields therefore comes in two shapes: per earner where
+   * the figure describes a person (the gross, the payslip, the comparison with
+   * the Sofia average) and once for the household where it describes money (the
+   * total take-home).
    */
   import { lang } from "../lib/stores.js";
   import { number, integer } from "../lib/format.js";
@@ -34,6 +53,24 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  // The direction word carries the sign, so the magnitude is unsigned. Emitting
+  // both produced «-39% под средната» / "-39% below the average" — a double
+  // negative that reads, literally, as 39% less far below.
+  const DIR_KEY = { above: "statSofiaAbove", below: "statSofiaBelow", equal: "statSofiaEqual" };
+  const DIR_COLOR = { above: "var(--real)", below: "var(--erode)", equal: "var(--ink-2)" };
+
+  // The whole «28% над» / "28% above" clause, built here and spliced into the
+  // COPY string as ONE placeholder — which is what keeps the Bulgarian
+  // grammatical. Assembling it out of separate {sign}{n}{word} holes in the
+  // template is what produced «-39% под средната»: a magnitude carrying a sign
+  // beside a word that already carries one, which reads as 39% less far below.
+  // The magnitude arrives unsigned from view.js#sofiaGap and is formatted here,
+  // so nothing reaches the markup that a formatter has not been through.
+  function deltaPhrase(gap, l) {
+    const word = COPY[DIR_KEY[gap.direction]][l] ?? COPY[DIR_KEY[gap.direction]].bg;
+    return gap.direction === "equal" ? word : `${fmt0(gap.magnitudePct)}% ${word}`;
+  }
 </script>
 
 <div class="m-card m-pay">
@@ -43,9 +80,18 @@
   </h4>
 
   <div class="field">
+    <!-- The first field keeps the id `inSalary`: ResultsSummary's «въведи
+         своята заплата» button focuses it by id across the component boundary,
+         and on a phone that tap is the whole route from the answer back to the
+         question. Renaming it would break the route silently — the button
+         would scroll nowhere and raise no keyboard. -->
     <label for="inSalary">
-      <span class="l-bg">{COPY.netPay.bg}</span>
-      <span class="l-en">{COPY.netPay.en}</span>
+      <span class="l-bg"
+        >{calc.hasHousehold ? t(COPY.earnerLabel, "bg", { n: 1 }) : COPY.netPay.bg}</span
+      >
+      <span class="l-en"
+        >{calc.hasHousehold ? t(COPY.earnerLabel, "en", { n: 1 }) : COPY.netPay.en}</span
+      >
       <span class="hint">
         <span class="l-bg">{COPY.netPayHint.bg}</span>
         <span class="l-en">{COPY.netPayHint.en}</span>
@@ -58,15 +104,77 @@
         inputmode="numeric"
         min="0"
         step="10"
-        bind:value={calc.salary}
-        oninput={calc.onSalaryInput}
-        aria-label={t(COPY.netPay, $lang)}
+        bind:value={calc.earners[0]}
+        oninput={calc.onEarnerInput}
+        aria-label={calc.hasHousehold
+          ? t(COPY.earnerLabel, $lang, { n: 1 })
+          : t(COPY.netPay, $lang)}
       />
     </span>
     <div class="hint" style="margin-top:4px">
       <span class="l-bg">{COPY.medianDefault.bg}</span>
       <span class="l-en">{COPY.medianDefault.en}</span>
     </div>
+
+    <!-- The further incomes. Keyed by index rather than by value: two people
+         earning the same amount are two rows, and a keyed-by-value each block
+         would collapse them into one. -->
+    {#each calc.earners.slice(1) as _, k (k)}
+      {@const i = k + 1}
+      <div class="earner">
+        <label for="inEarner{i}">
+          <span class="l-bg">{t(COPY.earnerLabel, "bg", { n: i + 1 })}</span>
+          <span class="l-en">{t(COPY.earnerLabel, "en", { n: i + 1 })}</span>
+        </label>
+        <div class="earner-in">
+          <span class="unit" data-u="€">
+            <input
+              id="inEarner{i}"
+              type="number"
+              inputmode="numeric"
+              min="0"
+              step="10"
+              bind:value={calc.earners[i]}
+              oninput={calc.onEarnerInput}
+              aria-label={t(COPY.earnerLabel, $lang, { n: i + 1 })}
+            />
+          </span>
+          <button
+            type="button"
+            class="earner-rm"
+            onclick={() => calc.removeEarner(i)}
+            aria-label={t(COPY.earnerRemove, $lang, { n: i + 1 })}
+            title={t(COPY.earnerRemove, $lang, { n: i + 1 })}>×</button
+          >
+        </div>
+      </div>
+    {/each}
+
+    <!-- The control disappears at the limit rather than the next income being
+         accepted and dropped. See Calculator#MAX_EARNERS. -->
+    {#if calc.canAddEarner}
+      <button type="button" class="earner-add" onclick={calc.addEarner}>
+        <span class="l-bg">{COPY.earnerAdd.bg}</span>
+        <span class="l-en">{COPY.earnerAdd.en}</span>
+      </button>
+    {/if}
+    {#if !calc.hasHousehold}
+      <div class="hint" style="margin-top:2px">
+        <span class="l-bg">{COPY.earnerAddHint.bg}</span>
+        <span class="l-en">{COPY.earnerAddHint.en}</span>
+      </div>
+    {/if}
+    {#if calc.hasHousehold && calc.householdNet > 0}
+      <div class="hint total" style="margin-top:6px">
+        <span class="l-bg"
+          >{@html t(COPY.householdTotal, "bg", { s: fmt0(calc.householdNet) })}</span
+        >
+        <span class="l-en"
+          >{@html t(COPY.householdTotal, "en", { s: fmt0(calc.householdNet) })}</span
+        >
+      </div>
+    {/if}
+
     <!-- Back-computed gross + tax breakdown from the typed net salary. Shows
        what the contract GROSS is and the effective rate.
        «ефективно 22,4%» was the internal name of the rate rendered
@@ -79,56 +187,152 @@
        step differs, and the step that differs is nearly always the
        insurance ceiling. Closed by default: the summary is enough for
        the reader who believes us, and the table is one click for the
-       reader who does not. -->
-    {#if calc.salaryDirty && calc.payslip}
+       reader who does not.
+       With several incomes there is one payslip per person, because a
+       payslip is a document one person receives. The household line
+       above them adds the columns up. -->
+    {#if calc.earnersDirty && calc.payslip}
       <div class="hint" style="margin-top:4px; color:var(--ink-2)">
         <span class="l-bg"
-          >по договор (бруто) това е ≈ {fmt0(calc.payslip.gross)} € - от тях {fmt0(
-            calc.payslip.insurance
-          )} € осигуровки и {fmt0(calc.payslip.tax)} € данък, или {fmt(
-            calc.payslip.effectiveRatePct
-          )}% удръжки</span
+          >{t(calc.hasHousehold ? COPY.payGrossHousehold : COPY.payGross, "bg", {
+            g: fmt0(calc.payslip.gross),
+            i: fmt0(calc.payslip.insurance),
+            t: fmt0(calc.payslip.tax),
+            r: fmt(calc.payslip.effectiveRatePct),
+          })}</span
         >
         <span class="l-en"
-          >on the contract (gross) that's ≈ {fmt0(calc.payslip.gross)} € - of which {fmt0(
-            calc.payslip.insurance
-          )} € contributions and {fmt0(calc.payslip.tax)} € tax, i.e. {fmt(
-            calc.payslip.effectiveRatePct
-          )}% deducted</span
+          >{t(calc.hasHousehold ? COPY.payGrossHousehold : COPY.payGross, "en", {
+            g: fmt0(calc.payslip.gross),
+            i: fmt0(calc.payslip.insurance),
+            t: fmt0(calc.payslip.tax),
+            r: fmt(calc.payslip.effectiveRatePct),
+          })}</span
         >
       </div>
-      <PayslipTable payslip={calc.payslip} />
+      {#if calc.payslip.earners.length > 1}
+        <div class="hint" style="margin-top:4px">
+          <span class="l-bg">{COPY.householdSeparate.bg}</span>
+          <span class="l-en">{COPY.householdSeparate.en}</span>
+        </div>
+      {/if}
+      {#each calc.payslip.earners as earner (earner.index)}
+        {#if calc.payslip.earners.length > 1}
+          <div class="earner-head mono">
+            <span class="l-bg"
+              >{t(COPY.earnerPayslipHead, "bg", {
+                n: fmt0(earner.ordinal),
+                s: fmt0(earner.net),
+              })}</span
+            >
+            <span class="l-en"
+              >{t(COPY.earnerPayslipHead, "en", {
+                n: fmt0(earner.ordinal),
+                s: fmt0(earner.net),
+              })}</span
+            >
+          </div>
+        {/if}
+        <PayslipTable payslip={earner} />
+      {/each}
     {/if}
-    <!-- The personal Sofia comparison sits under the user's typed
+
+    <!-- The personal Sofia comparison sits under the reader's typed
        salary, next to the input it compares against — the Sofia card
        in the national strip is a country reference and carries no
        personal verdict. Colour follows the rent-burden pattern
-       (--real above, --erode below, neutral when ≈ equal). {delta}
-       is built here from {sign} + {n}% + {dirWord} and spliced into
-       the COPY string as one clause, which is what keeps the
-       Bulgarian grammatical. -->
-    {#if calc.salaryDirty && calc.salary > 0 && calc.sofiaNet > 0}
-      {@const sofiaDiff = Math.round((100 * (calc.salary - calc.sofiaNet)) / calc.sofiaNet)}
-      {@const sofiaDirKey =
-        sofiaDiff > 1 ? "statSofiaAbove" : sofiaDiff < -1 ? "statSofiaBelow" : "statSofiaEqual"}
-      <!-- No sign here. The direction word already carries it, and
-         emitting both produced «-39% под средната» / "-39% below the
-         average" — a double negative that reads, literally, as 39%
-         less far below. The magnitude is unsigned; «под»/"below" and
-         «над»/"above" say which way, and the colour reinforces it. -->
-      {@const sofiaDirWord = COPY[sofiaDirKey][$lang] ?? COPY[sofiaDirKey].bg}
-      {@const sofiaDelta =
-        sofiaDirKey === "statSofiaEqual" ? sofiaDirWord : `${Math.abs(sofiaDiff)}% ${sofiaDirWord}`}
-      {@const sofiaColor =
-        sofiaDiff > 1 ? "var(--real)" : sofiaDiff < -1 ? "var(--erode)" : "var(--ink-2)"}
-      <div class="hint" style="margin-top:4px; color:{sofiaColor}">
-        <span class="l-bg"
-          >{@html COPY.statSofiaDiff.bg.replace("{delta}", `<b>${sofiaDelta}</b>`)}</span
-        >
-        <span class="l-en"
-          >{@html COPY.statSofiaDiff.en.replace("{delta}", `<b>${sofiaDelta}</b>`)}</span
-        >
-      </div>
+       (--real above, --erode below, neutral when ≈ equal).
+       One line per income: НСИ publish a WAGE, so comparing a
+       two-earner total against it would report a household of two on
+       €900 each as 21% above the average worker. The magnitude, the
+       direction word and the dead zone are decided in
+       view.js#sofiaGap; this picks the words and the colour. -->
+    {#if calc.earnersDirty}
+      {#each calc.sofiaGaps as gap (gap.index)}
+        <div class="hint" style="margin-top:4px; color:{DIR_COLOR[gap.direction]}">
+          <span class="l-bg"
+            >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "bg", {
+              n: fmt0(gap.ordinal),
+              delta: deltaPhrase(gap, "bg"),
+            })}</span
+          >
+          <span class="l-en"
+            >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "en", {
+              n: fmt0(gap.ordinal),
+              delta: deltaPhrase(gap, "en"),
+            })}</span
+          >
+        </div>
+      {/each}
     {/if}
   </div>
 </div>
+
+<style>
+  /* A further income is the same field as the first, minus the hint stack:
+     the label above it already says which income it is, and repeating
+     «(чиста заплата на месец)» under every row turns one instruction into a
+     column of them. */
+  .earner {
+    margin-top: 10px;
+  }
+  .earner-in {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .earner-in .unit {
+    flex: 1;
+  }
+  /* The remove control is a quiet × rather than a labelled button: it sits on
+     every row after the first, and a row of «премахни» buttons reads as the
+     card's main action when the card's main action is typing a number. The
+     accessible name is the full sentence, so a screen reader is not handed a
+     multiplication sign. */
+  .earner-rm {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-family: var(--sans);
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .earner-rm:hover {
+    color: var(--erode);
+    border-color: var(--erode);
+  }
+  /* Reads as a link, not a call to action — the same reasoning that keeps the
+     «въведи своята заплата» route quiet. Adding an income is a thing some
+     readers need, not the thing the card wants them to do. */
+  .earner-add {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 0;
+    font-family: var(--mono);
+    font-size: var(--fs-small);
+    color: var(--real-ink);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .earner-add:hover {
+    color: var(--ink);
+  }
+  .hint.total {
+    color: var(--ink-2);
+  }
+  /* Names the person a payslip belongs to. Only drawn when there is more than
+     one, because a single payslip under a single field needs no heading to say
+     whose it is. */
+  .earner-head {
+    margin-top: 10px;
+    font-size: var(--fs-small);
+    color: var(--ink-2);
+  }
+</style>

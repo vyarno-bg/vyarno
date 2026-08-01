@@ -99,7 +99,7 @@
       <span class="l-en">your basket's rise since {calc.anchor}</span>
     {/if}
   </div>
-  {#if calc.salary > 0}
+  {#if calc.householdNet > 0}
     <div class="r-money">
       {#if calc.anchor === "y1"}
         ≈ <span class="b">€{fmt0(calc.extra)}</span>
@@ -109,7 +109,7 @@
         <span class="l-en">is what the same life as a year ago costs you</span>
       {:else}
         <span class="l-bg"
-          >≈ <span class="b">€{fmt0(calc.extra)}</span> от всяка твоя заплата днес</span
+          >≈ <span class="b">€{fmt0(calc.extra)}</span> от всеки твой доход днес</span
         >
         <span class="l-en"
           >≈ <span class="b">€{fmt0(calc.extra)}</span> of every paycheck today</span
@@ -119,7 +119,7 @@
       {/if}
     </div>
   {/if}
-  {#if calc.bite.category && calc.salary > 0 && calc.weights.reduce((s, x) => s + x, 0) > 0}
+  {#if calc.bite.category && calc.householdNet > 0 && calc.weights.reduce((s, x) => s + x, 0) > 0}
     <div class="r-money">
       <!-- «най-голямата хапка» is the English metaphor carried over word for
            word: in Bulgarian «хапка» is a mouthful of food and nothing takes
@@ -142,10 +142,10 @@
      its button would be re-announced on every slider tick along with the ~50
      figures the live region already re-reads; and it is not a result, it is a
      standing statement about the ones above it. -->
-{#if !calc.salaryDirty && calc.salary > 0}
+{#if !calc.earnersDirty && calc.householdNet > 0}
   <div class="placeholder">
-    <span class="l-bg">{t(COPY.startingSalary, "bg", { s: fmt0(calc.salary) })}</span>
-    <span class="l-en">{t(COPY.startingSalary, "en", { s: fmt0(calc.salary) })}</span>
+    <span class="l-bg">{t(COPY.startingSalary, "bg", { s: fmt0(calc.householdNet) })}</span>
+    <span class="l-en">{t(COPY.startingSalary, "en", { s: fmt0(calc.householdNet) })}</span>
     <button type="button" onclick={focusSalary}>
       <span class="l-bg">{COPY.startingSalaryCta.bg}</span>
       <span class="l-en">{COPY.startingSalaryCta.en}</span>

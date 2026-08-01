@@ -110,13 +110,17 @@ export const COPY = {
   // it has to be filled in for the page to answer.
   restOfNumbers: { bg: "Ако искаш - още за теб", en: "If you like - more about you" },
   netPay: { bg: "Нетна заплата", en: "Net pay" },
-  // Single hint covers both single-earner and household use. The math is
-  // the same either way — what changes is only the comparator on the
-  // national strip (same-units when household, directional when
-  // per-earner). Deliberately short.
+  // ONE person's take-home, and the hint has to keep saying so. It used to
+  // offer «твоята или общо за домакинството» — enter yours, or the household's
+  // — which invites the reader to add two payslips up and type the total. That
+  // is the one entry this calculator cannot compute correctly: contributions
+  // stop at a ceiling per contract, so a combined net inverted as a single
+  // salary understates the household's gross by hundreds of euro a month. The
+  // household is described by adding incomes, and `earnerAddHint` under the
+  // field is where that is said.
   netPayHint: {
-    bg: "(чиста заплата на месец - твоята или общо за домакинството)",
-    en: "(take-home, monthly - yours alone or the household's)",
+    bg: "(чистата заплата на един човек, на месец)",
+    en: "(one person's take-home, monthly)",
   },
   // NOT a claim about what people earn. We publish no national median net
   // wage — the only median in the data is the Sofia net ladder's P50 (~€1104),
@@ -127,6 +131,47 @@ export const COPY = {
     bg: "числото е просто начална стойност - смени го с твоята заплата",
     en: "that's just a starting value - replace it with your own pay",
   },
+
+  // MORE THAN ONE INCOME
+  //
+  // Each income is entered on its own, and that is arithmetic rather than
+  // presentation. Social contributions stop at the ceiling PER CONTRACT, so two
+  // people on €2000 gross each pay the full 13.78% on all of it while one
+  // person on €4000 pays it on €2300 and nothing above. Add the nets together
+  // first and invert once, and the household's gross comes out €234 a month
+  // short of the contracts they actually signed. Every string below has to keep
+  // saying «всеки» / "each", because the numbers depend on it being true.
+  earnerAdd: { bg: "+ добави още един доход", en: "+ add another income" },
+  earnerLabel: { bg: "Доход {n}", en: "Income {n}" },
+  earnerRemove: { bg: "Премахни доход {n}", en: "Remove income {n}" },
+  earnerAddHint: {
+    bg: "(ако в домакинството влизат две или повече заплати, въведи всяка поотделно)",
+    en: "(if two or more wages come into the household, enter each one separately)",
+  },
+  householdTotal: {
+    bg: "общо в домакинството: <b>{s} €</b> нето на месец",
+    en: "the household brings home <b>{s} €</b> net a month",
+  },
+  // The one-line answer under the pay field. Unchanged wording for a single
+  // earner — it is the sentence that was already there.
+  payGross: {
+    bg: "по договор (бруто) това е ≈ {g} € - от тях {i} € осигуровки и {t} € данък, или {r}% удръжки",
+    en: "on the contract (gross) that's ≈ {g} € - of which {i} € contributions and {t} € tax, i.e. {r}% deducted",
+  },
+  payGrossHousehold: {
+    bg: "по договорите (бруто) заедно ≈ {g} € - от тях {i} € осигуровки и {t} € данък, или {r}% удръжки общо",
+    en: "on the contracts (gross) together ≈ {g} € - of which {i} € contributions and {t} € tax, i.e. {r}% deducted overall",
+  },
+  // Why the household gross is not what one person on the same take-home would
+  // earn. This is the whole reason the incomes are entered separately, and a
+  // reader checking our gross against a single-salary calculator will otherwise
+  // conclude we are wrong — they will get a smaller number, and it will be the
+  // wrong one.
+  householdSeparate: {
+    bg: "Всяка заплата се осигурява поотделно, до свой таван - затова сборът от брутните заплати не е това, което един човек би получавал за същото нето.",
+    en: "Each wage is insured separately, up to its own ceiling - so the sum of the gross salaries is not what a single person would be paid for the same take-home.",
+  },
+  earnerPayslipHead: { bg: "Доход {n} · {s} € нето", en: "Income {n} · {s} € net" },
   // The itemised payslip behind the back-computed gross. The one-line summary
   // under the salary input states a gross, a contributions figure and a tax
   // figure; this is the same arithmetic opened out, so a reader can check it
@@ -514,6 +559,24 @@ export const COPY = {
     bg: "По нетна заплата изпреварваш <b>{r}%</b> от работещите в София. Медианната нетна заплата е <b>€{m}/мес</b>.",
     en: "By net pay you're ahead of <b>{r}%</b> of Sofia earners - the median net pay is <b>€{m}/mo</b>.",
   },
+  // With several incomes the sentence stops being second person, because the
+  // ladder ranks PEOPLE. «Изпреварвате 61%» addressed to a household is a claim
+  // about a person who does not exist: the rungs are individual full-time
+  // earnings, and a household total read off them is the unit mismatch that
+  // once put every Sofia salary in the 99th percentile. So each income gets its
+  // own line and the median is stated once underneath.
+  pctEarnerLine: {
+    bg: "Доход {n} - <b>€{s}</b> - изпреварва <b>{r}%</b> от работещите в София.",
+    en: "Income {n} - <b>€{s}</b> - is ahead of <b>{r}%</b> of Sofia earners.",
+  },
+  pctMedian: {
+    bg: "Медианната нетна заплата в София е <b>€{m}/мес</b>.",
+    en: "The median net pay in Sofia is <b>€{m}/mo</b>.",
+  },
+  pctHouseholdNote: {
+    bg: "Класираме всяка заплата поотделно - стълбицата показва какво изкарват отделните хора, а не домакинствата. Две заплати по €900 не са един човек с €1800.",
+    en: "Each wage is ranked on its own - the ladder is what individual people earn, not what households do. Two wages of €900 are not one person on €1,800.",
+  },
   // The comparison is now net-vs-net (individual), so it's a direct rank, not
   // a cross-unit approximation. The remaining caveat: the distribution SHAPE
   // is from the 4-yearly Eurostat earnings survey, re-leveled to today's Sofia
@@ -546,8 +609,8 @@ export const COPY = {
   // below: this is the one card whose job is admitting how the number is made,
   // and it fails if the admission needs a statistician to parse.
   pctCaveat: {
-    bg: "Сравняваме твоята чиста заплата с това, което изкарват останалите в София. Кой колко изкарва знаем от изследване на Евростат от 2022 г. (само хора на пълен работен ден, без държавната администрация), но то е за цялата страна, а не отделно за София, така че приемаме, че разликата между ниските и високите заплати в София е като в останалата страна. Самите суми преизчисляваме спрямо последната средна заплата за София на НСИ, за да са актуални. Затова числото показва приблизително къде си, а не точно. Извън София същата заплата те нарежда по-нагоре.",
-    en: "We compare your take-home pay with what other people in Sofia earn. Who earns what comes from a 2022 Eurostat survey (full-time employees only, public administration excluded), but that survey covers the whole country rather than Sofia alone, so we assume the gap between low and high pay in Sofia looks like the national one. The amounts themselves are set from the latest NSI average wage for Sofia so they stay current. So the figure shows roughly where you stand, not exactly. Outside Sofia the same pay places you higher.",
+    bg: "Сравняваме всяка чиста заплата с това, което изкарват останалите в София. Кой колко изкарва знаем от изследване на Евростат от 2022 г. (само хора на пълен работен ден, без държавната администрация), но то е за цялата страна, а не отделно за София, така че приемаме, че разликата между ниските и високите заплати в София е като в останалата страна. Самите суми преизчисляваме спрямо последната средна заплата за София на НСИ, за да са актуални. Затова числото показва приблизително къде си, а не точно. Извън София същата заплата те нарежда по-нагоре.",
+    en: "We compare each take-home pay with what other people in Sofia earn. Who earns what comes from a 2022 Eurostat survey (full-time employees only, public administration excluded), but that survey covers the whole country rather than Sofia alone, so we assume the gap between low and high pay in Sofia looks like the national one. The amounts themselves are set from the latest NSI average wage for Sofia so they stay current. So the figure shows roughly where you stand, not exactly. Outside Sofia the same pay places you higher.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE
@@ -602,6 +665,21 @@ export const COPY = {
     bg: "Заплатата ти преди удръжките (бруто) е ≈ <b>€{gross}</b> - над границата, до която се плащат осигуровки (<b>€{cap}</b> на месец). Затова от увеличение на заплатата ти ще удържат само <b>10%</b> данък, а не <b>{peak}%</b>, колкото удържат на човек под границата. Общо от заплатата ти отиват <b>{eff}%</b> - и този дял намалява с всяко следващо увеличение.",
     en: "Your pay before deductions (gross) is ≈ <b>€{gross}</b> - above the line up to which contributions are paid (<b>€{cap}</b> a month). So a raise loses only <b>10%</b> to tax, not the <b>{peak}%</b> taken from someone below the line. In total <b>{eff}%</b> of your pay is taken, and that share shrinks with every further raise.",
   },
+  // Shown when the household has more than one income. The lead states the
+  // household's own rate — total deductions over total gross, which is NOT the
+  // average of the lines under it — and each income then says where it stands,
+  // because the ceiling is per contract and that is the entire finding of this
+  // row. A single figure over two earners would hide the one thing the chart is
+  // drawn to show.
+  wedgeHouseholdLead: {
+    bg: "Заплатите в домакинството преди удръжките (бруто) са ≈ <b>€{gross}</b> общо. От тях <b>{eff}%</b> отиват за осигуровки и данък. Осигуровките спират на <b>€{cap}</b> бруто на месец - но поотделно за всяка заплата, не за сбора:",
+    en: "The household's pay before deductions (gross) is ≈ <b>€{gross}</b> in total. Of it, <b>{eff}%</b> goes to contributions and tax. Contributions stop at <b>€{cap}</b> gross a month - but for each wage on its own, not for the sum:",
+  },
+  wedgeEarnerLine: {
+    bg: "доход {n}: ≈ <b>€{gross}</b> бруто - удържат се <b>{eff}%</b>{cap}",
+    en: "income {n}: ≈ <b>€{gross}</b> gross - <b>{eff}%</b> deducted{cap}",
+  },
+  wedgeEarnerOverCap: { bg: " (над границата)", en: " (over the line)" },
   // Shown when no salary has been entered — the figure without a person in it.
   wedgeNone: {
     bg: "Удръжките стигат до <b>{peak}%</b> от заплатата при <b>€{cap}</b> бруто на месец, а над тази граница делът намалява. Въведи заплата горе, за да видиш къде си.",
@@ -668,6 +746,13 @@ export const COPY = {
   rentEntered: {
     bg: "Ти въведе <b>€{r}/мес</b> наем - това е <b>{p}%</b> от <b>€{s}</b> нетно.",
     en: "You entered <b>€{r}/mo</b> rent - that's <b>{p}%</b> of <b>€{s}</b> net.",
+  },
+  // The household variant names whose €{s} it is. Rent is one payment out of
+  // the money that arrives, whoever earned it — charging it to one earner would
+  // report a couple splitting €600 on €1,800 together as carrying 67% each.
+  rentEnteredHousehold: {
+    bg: "Ти въведе <b>€{r}/мес</b> наем - това е <b>{p}%</b> от <b>€{s}</b> нетно за домакинството.",
+    en: "You entered <b>€{r}/mo</b> rent - that's <b>{p}%</b> of the household's <b>€{s}</b> net.",
   },
   // The markup is owned by the copy, not the template: a tag spliced into a
   // template literal renders as literal text.
@@ -825,6 +910,13 @@ export const COPY = {
   statSofiaDiff: {
     bg: "твоята нетна заплата е <b>{delta}</b> средната нетна заплата в София",
     en: "your net pay is <b>{delta}</b> the Sofia net average",
+  },
+  // Per income, for the same reason the ladder is: НСИ publish a WAGE. Measured
+  // against a two-earner total, a household of two on €900 each reads as 21%
+  // above the average worker — two true numbers making one false sentence.
+  statSofiaDiffEarner: {
+    bg: "доход {n} е <b>{delta}</b> средната нетна заплата в София",
+    en: "income {n} is <b>{delta}</b> the Sofia net average",
   },
   statSofiaAbove: { bg: "над", en: "above" },
   statSofiaBelow: { bg: "под", en: "below" },

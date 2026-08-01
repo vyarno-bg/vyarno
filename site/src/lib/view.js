@@ -29,13 +29,14 @@ import {
   annuityPayment,
   annuityReverse,
   bgGrossFromNet,
+  bgHouseholdPayroll,
   bgMarginalRatePct,
   bgNetSalary,
-  bgPayslipFromNet,
   bgTaxWedge,
   cashErosion,
   officialCumulativeSince2020,
   payrollParams,
+  percentile,
 } from "./mirror.js";
 
 // ---------------------------------------------------------------------------
@@ -564,34 +565,46 @@ export function mortgagePanel({ price, ratePct, termYears, netSalary, eurPerM2, 
  * the recovered gross) would itemise someone's €2,100 as though €2,100 were
  * the contract amount: every line ~20% light, none of them obviously so.
  *
+ * **It takes a LIST, and there is no scalar parameter to pass a total to.**
+ * That is the §3.3 rule applied to the household: the insurance ceiling is per
+ * contract, so a combined net inverted as one salary understates a two-earner
+ * household's gross by hundreds of euro a month (`mirror.js#bgHouseholdPayroll`
+ * carries the worked example). A caller holding only `householdNet` cannot
+ * express that mistake here, because the argument this function accepts is not
+ * the shape that figure has. One earner is a list of one.
+ *
  * `null` for an empty field. There is no payslip for a salary nobody typed,
  * and rendering one at zero invites the reader to check a column of zeroes.
  *
  * @param {object} args
  * @param {object|null} args.payroll   data.payroll (payroll.json), unmodified
- * @param {number} args.netSalary      the user's monthly NET take-home, or 0
- * @returns {null | (ReturnType<typeof bgPayslipFromNet> & {
- *            maxInsurable:number, netRequested:number })}
+ * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
+ * @returns {null | (ReturnType<typeof bgHouseholdPayroll> & {
+ *            maxInsurable:number, effectiveYear:number|null })}
  */
-export function payslipPanel({ payroll, netSalary }) {
-  const net = Number(netSalary);
-  if (!Number.isFinite(net) || net <= 0) return null;
-
+export function payslipPanel({ payroll, nets }) {
   const params = payrollParams(payroll);
-  return {
-    ...bgPayslipFromNet(net, params),
-    // The ceiling is carried through so the template can name the figure in
-    // the "contributions stop here" row without re-deriving it — a second
-    // derivation is a second chance to derive it from the wrong payload.
+  const household = bgHouseholdPayroll(nets, params);
+  if (!household.earners.length) return null;
+
+  // The ceiling and the rate year are carried through so the template can name
+  // them without re-deriving either — a second derivation is a second chance to
+  // take them off the wrong payload, and a breakdown captioned "2026 rates"
+  // over last year's figures is wrong in a way nothing else would catch.
+  //
+  // They ride on EVERY earner as well as on the panel, so the row component
+  // renders one earner's breakdown from one object and needs no second prop to
+  // stay correct. Attaching them once at the top and letting the row reach for
+  // `panel.maxInsurable` is the arrangement where a row can be handed the wrong
+  // household's ceiling.
+  const carried = {
     maxInsurable: params.maxInsurable,
-    // What the user actually typed, so a caller can show the rounding gap
-    // instead of quietly presenting a cent of drift as the user's own number.
-    netRequested: net,
-    // The year these rates are legislated for, off the SAME payload the rates
-    // came from. A template reading `data.payroll.effective_year` separately
-    // would caption a breakdown "2026 rates" on whatever year the payload
-    // happened to carry, and the two could drift apart with nothing failing.
     effectiveYear: payroll?.effective_year ?? null,
+  };
+  return {
+    ...household,
+    earners: household.earners.map((e) => ({ ...e, ordinal: e.index + 1, ...carried })),
+    ...carried,
   };
 }
 
@@ -606,39 +619,155 @@ export function payslipPanel({ payroll, netSalary }) {
  * `scheduled_changes` rather than accepted as an argument — a hardcoded €2300
  * would keep rendering a stale "coming change" long after it arrived.
  *
- * **The user's own position is derived from their GROSS**, recovered from the
+ * **Each earner's position is derived from their GROSS**, recovered from the
  * net they typed with `bgGrossFromNet`. Feeding the net straight in would place
  * someone earning €2,200 gross below a €2,111.64 cap they are actually over —
  * a wrong answer inside every plausible band, exactly the class of error
  * `docs/data-sources.md` §"A plausible number is not a verified number"
  * exists for.
  *
+ * **Every earner gets their own point on the curve, and the curve is where the
+ * household stops being a single reader.** The whole finding this row exists to
+ * show — the effective rate peaks at the ceiling and falls above it — is a
+ * statement about one contract. Two people on €1,200 and one on €2,400 sit at
+ * three different places on it, and marking their combined pay would put a
+ * marker where nobody in the household stands.
+ *
  * @param {object} args
  * @param {object|null} args.payroll   data.payroll (payroll.json), unmodified
- * @param {number} args.netSalary      the user's monthly NET take-home, or 0
+ * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
  * @returns {{capGross:number, peakEffectivePct:number, marginalBelowPct:number,
  *            marginalAbovePct:number, capRisePerMonth:number|null,
  *            points:Array<{gross:number, effectivePct:number, marginalPct:number}>,
- *            you:null|{gross:number, effectivePct:number, marginalPct:number,
- *                      overCap:boolean}}}
+ *            earners:Array<{index:number, gross:number, effectivePct:number,
+ *                           marginalPct:number, overCap:boolean}>,
+ *            headlineEffectivePct:number|null}}
  */
-export function taxWedgePanel({ payroll, netSalary }) {
+export function taxWedgePanel({ payroll, nets }) {
   const params = payrollParams(payroll);
   const wedge = bgTaxWedge({ params, nextCap: scheduledMaxInsurable(payroll) });
 
-  const net = Number(netSalary);
-  if (!Number.isFinite(net) || net <= 0) return { ...wedge, you: null };
-
-  const gross = bgGrossFromNet(net, params);
-  return {
-    ...wedge,
-    you: {
+  const earners = [];
+  (nets ?? []).forEach((n, index) => {
+    const net = Number(n);
+    if (!Number.isFinite(net) || net <= 0) return;
+    const gross = bgGrossFromNet(net, params);
+    earners.push({
+      index,
+      ordinal: index + 1,
       gross,
       effectivePct: bgNetSalary(gross, params).effectiveRatePct,
       marginalPct: bgMarginalRatePct(gross, params),
       overCap: gross >= params.maxInsurable,
-    },
+    });
+  });
+
+  // The household aggregates come from `bgHouseholdPayroll` rather than being
+  // re-added here, so the corner of this row and the payslip under the pay
+  // field cannot disagree about either figure. A second implementation of the
+  // weighted rate is also where the obvious wrong one lives — the plain average
+  // of the per-earner rates, which is off by whole points the moment the
+  // earners are unequal.
+  const household = bgHouseholdPayroll(nets, params);
+
+  return {
+    ...wedge,
+    earners,
+    // What the row's corner states. One earner: their own rate at full
+    // precision, which is the figure this row has always shown. Several: the
+    // household's, total deductions over total gross.
+    headlineEffectivePct: earners.length
+      ? earners.length === 1
+        ? earners[0].effectivePct
+        : household.effectiveRatePct
+      : null,
+    // Stated in the household sentence. Summing `earners[].gross` in the
+    // template would put arithmetic in the render layer, where no test reaches
+    // it — docs/site.md §"A correct formula fed the wrong number".
+    householdGross: household.gross,
   };
+}
+
+// ---------------------------------------------------------------------------
+// THE HOUSEHOLD, EARNER BY EARNER
+// ---------------------------------------------------------------------------
+
+/**
+ * Where each earner sits on the published net-earnings ladder.
+ *
+ * **The ladder ranks people, not households.** Its rungs are individual
+ * full-time earnings (Eurostat SES, re-levelled onto НСИ's Sofia mean — see
+ * `mirror.js#buildLadder`), so a household total read off it is a unit
+ * mismatch of exactly the kind that once pushed every Sofia salary to the 99th
+ * percentile: two people on €900 each would be reported as out-earning 78% of
+ * Sofia, when what is true is that each of them out-earns 34%.
+ *
+ * So this ranks earner by earner and returns one row apiece. There is no
+ * argument through which a total could be passed, which is the point.
+ *
+ * @param {object} args
+ * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
+ * @param {number[]} args.ladder  the 11 NET rungs from mirror.js#buildLadder
+ * @returns {Array<{index:number, net:number, rank:number, ahead:number}>}
+ */
+export function earnerRanks({ nets, ladder }) {
+  if (!ladder?.length) return [];
+  const out = [];
+  (nets ?? []).forEach((n, index) => {
+    const net = Number(n);
+    if (!Number.isFinite(net) || net <= 0) return;
+    const rank = percentile(net, ladder);
+    if (rank > 0) out.push({ index, ordinal: index + 1, net, rank, ahead: pctAhead(rank) });
+  });
+  return out;
+}
+
+/**
+ * Each earner against the Sofia average, as a percentage and a direction.
+ *
+ * **Per earner, because НСИ publish a wage and not a household income.** The
+ * comparator asks "how does what you earn compare with what people here earn",
+ * and answering it with a two-earner total says a household of two on €900 each
+ * is 21% above the average worker. Both halves of that sentence are true
+ * numbers; together they are a false claim.
+ *
+ * The percentage is **rounded before the direction is chosen**, so the word and
+ * the figure can never disagree. Choosing «над» off the exact value and then
+ * printing a rounded 1% leaves «1% над средната» sitting inside the dead zone
+ * the direction words exist to keep quiet about.
+ *
+ * `direction` and not a word: this file picks numbers, and the component that
+ * renders them picks the language. Returning «над» here would put Bulgarian in
+ * the layer that has no `$lang` to switch it with.
+ *
+ * @param {object} args
+ * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
+ * @param {number} args.sofiaNet  the Sofia average wage, net, EUR/month
+ * @returns {Array<{index:number, net:number, diffPct:number, magnitudePct:number,
+ *                  direction:'above'|'below'|'equal'}>}
+ */
+export function sofiaGap({ nets, sofiaNet }) {
+  const ref = Number(sofiaNet);
+  if (!Number.isFinite(ref) || ref <= 0) return [];
+  const out = [];
+  (nets ?? []).forEach((n, index) => {
+    const net = Number(n);
+    if (!Number.isFinite(net) || net <= 0) return;
+    const diffPct = Math.round((100 * (net - ref)) / ref);
+    out.push({
+      index,
+      // Which income the sentence is about, as the reader counts them. Decided
+      // here so no template does `index + 1` in the middle of a string —
+      // arithmetic in the render layer is arithmetic no test can reach, and
+      // `verify_template_safety` refuses to see it interpolated into markup.
+      ordinal: index + 1,
+      net,
+      diffPct,
+      magnitudePct: Math.abs(diffPct),
+      direction: diffPct > 1 ? "above" : diffPct < -1 ? "below" : "equal",
+    });
+  });
+  return out;
 }
 
 /**
