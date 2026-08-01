@@ -196,18 +196,26 @@ export const SUPPORT_COPY = Object.freeze({
    */
   explainK: { bg: "Кой плаща за това?", en: "Who pays for this?" },
   explainBody: {
-    bg: "Никой не ни плаща да ти го покаже. Няма реклами, няма платена версия и не взимаме пари от банка, кредитен посредник, брокер или застраховател — нито едно число тук не зависи от това кой плаща. Домейнът и сървърът се покриват от дарения.",
+    bg: "Никой не ни плаща да ти показваме тези числа. Няма реклами, няма платена версия и не взимаме пари от банки, кредитни посредници, брокери или застрахователи — нито едно число тук не зависи от това кой плаща. Домейнът и сървърът се плащат от дарения.",
     en: "Nobody pays us to show it to you. There is no advertising, no paid version, and we take no money from a bank, a credit intermediary, a broker or an insurer — no figure here depends on who is paying. The domain and the server are covered by donations.",
   },
 
   /** The link that closes the explainer item, and the only route it offers. */
   moreK: {
-    bg: "Какво покриват и какво не купуват",
-    en: "What they cover, and what they do not buy",
+    bg: "Какво покриват даренията и какво не купуват",
+    en: "What donations cover, and what they do not buy",
   },
 
-  /** Heading for `/support/`. */
-  head: { bg: "Подкрепа на проекта", en: "Supporting the project" },
+  /**
+   * Heading for `/support/`.
+   *
+   * The same question the explainer item asks, deliberately word for word:
+   * «Подкрепа на проекта» is a nominalisation — correct Bulgarian and nothing
+   * anybody says — and it also frames the page as an appeal, which the copy
+   * inside it is careful not to be. A reader who followed «Кой плаща за това?»
+   * should land on a heading that answers it rather than one that renames it.
+   */
+  head: { bg: "Кой плаща за Вярно", en: "Who pays for Vyarno" },
 
   /**
    * The longer explanation, on `/support/` where someone who followed the
@@ -244,7 +252,7 @@ export const SUPPORT_COPY = Object.freeze({
     en: "The payment does not go through this site",
   },
   offsite: {
-    bg: "Вярно не приема плащания и няма форма за дарение — даряваш при платформата, не тук, и данните на картата ти не стигат до нас под никаква форма. Какво получаваме оттам — име или псевдоним, поща, съобщение, сума и дата — стои в Поверителност.",
+    bg: "Вярно не приема плащания и няма форма за дарение — даряваш през платформата, не тук, и данните на картата ти не стигат до нас по никакъв начин. Какво получаваме оттам — име или псевдоним, електронна поща, съобщение, сума и дата — е описано в Поверителност.",
     en: "Vyarno takes no payments and has no donation form — you give on the platform rather than here, and your card details reach us in no form at all. What we do receive from there — a name or alias, an e-mail address, a message, the amount and the date — is set out in the privacy notice.",
   },
   privacyK: { bg: "Поверителност", en: "The privacy notice" },
@@ -260,7 +268,7 @@ export const SUPPORT_COPY = Object.freeze({
    */
   otherK: { bg: "По-полезно от пари", en: "More useful than money" },
   other: {
-    bg: "Съобщи за сгрешено число, поправи нещо в кода или просто кажи на някого, че сайтът съществува. Кодът е под лиценз Apache-2.0 и всяка поправка се вижда в хранилището; едно съобщено грешно число струва повече от всяко дарение, защото него никой друг не го е забелязал.",
+    bg: "Съобщи за сгрешено число, поправи нещо в кода или просто кажи на някого, че сайтът съществува. Кодът е под лиценз Apache-2.0 и всяка поправка се вижда в хранилището; едно съобщено грешно число струва повече от всяко дарение, защото никой друг не го е забелязал.",
     en: "Report a wrong figure, fix something in the code, or just tell someone the site exists. The code is Apache-2.0 and every correction is visible in the repository; one reported wrong figure is worth more than any donation, because nobody else had noticed it.",
   },
   issuesK: { bg: "Съобщи за грешка", en: "Report an error" },

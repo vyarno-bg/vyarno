@@ -671,7 +671,7 @@ const DOC_BODIES = [
             en: "This site takes no payments and has no donation form. What it has is links to Ko-fi and GitHub Sponsors — follow one and you leave vyarno.bg. If you do not follow them, nothing in this section is about you.",
           },
           {
-            bg: "Ko-fi, GitHub и Stripe са отделни дружества със свои условия и своя политика за поверителност; там си техен потребител, а не наш. Плащането минава изцяло през платформата и нейния доставчик на разплащания: данните на картата ти не преминават през този сайт и не стигат до нас под никаква форма.",
+            bg: "Ko-fi, GitHub и Stripe са отделни дружества със свои условия и своя политика за поверителност; там си техен потребител, а не наш. Плащането минава изцяло през платформата и нейния доставчик на платежни услуги: данните на картата ти не преминават през този сайт и не стигат до нас под никаква форма.",
             en: "Ko-fi, GitHub and Stripe are separate companies with their own terms and their own privacy policies; there you are their user, not ours. The payment goes entirely through the platform and its own payment provider: your card details do not pass through this site and do not reach us in any form.",
           },
           {
@@ -690,7 +690,7 @@ const DOC_BODIES = [
             // channel. Copying that list onto vyarno.bg would make it
             // something the project gives back for a donation — which is
             // exactly what flips `LEGAL_FORM.takesPayment`.
-            bg: "Някои платформи показват дарителите на своята собствена страница — GitHub Sponsors прави така, освен ако не се отбележиш като частен дарител там. Това е тяхната страница и твоята настройка при тях; ние не пренасяме такъв списък тук, не подреждаме дарители и не даваме нищо в замяна на дарение.",
+            bg: "Някои платформи показват дарителите на собствената си страница — GitHub Sponsors прави точно това, освен ако там не се отбележиш като частен дарител. Това е тяхната страница и твоята настройка при тях; ние не показваме такъв списък тук, не подреждаме дарителите и не даваме нищо в замяна на дарение.",
             en: "Some platforms show supporters on a page of their own — GitHub Sponsors does, unless you mark yourself a private sponsor there. That is their page and your setting with them; we copy no such list onto this site, we rank nobody, and we give nothing in return for a donation.",
           },
           {
