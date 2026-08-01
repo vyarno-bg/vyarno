@@ -201,7 +201,7 @@ def test_published_hicp_categories_latest_index_is_fresh_and_linked():
 
 
 def test_published_hicp_index_is_eurostat_s_own_values_on_the_linked_base():
-    """Both index fields must be Eurostat's values, on the base the link names.
+    """All three index fields must be Eurostat's values, on the base the link names.
 
     The SPA divides `latest_index / index_by_year[anchor]`, so the two have to
     share a base; scaling one and not the other inflates every since-anchor
@@ -212,6 +212,15 @@ def test_published_hicp_index_is_eurostat_s_own_values_on_the_linked_base():
     makes the link a check: open it and the published digits come back. A
     payload scaled to some in-house base still links to a genuine Eurostat
     page — showing different numbers, with nothing on the page to say why.
+
+    `value` is the third field, and it is the one that can rot unwatched. No
+    part of the SPA reads it, so a wrong `value` moves nothing on screen and
+    reddens no other suite — the payload is the only place it is ever seen, and
+    the envelope there names Eurostat. It is the newest completed December,
+    which is exactly `index_by_year`'s newest entry, so that equality is the
+    whole check. Divide it through by the 2020 reading and CP12 publishes
+    129.90 where the cube returns 170.37, 23.75% off a base the same object
+    names as 2015.
     """
     payload = _published("hicp_categories")
     if payload is None:
@@ -231,6 +240,13 @@ def test_published_hicp_index_is_eurostat_s_own_values_on_the_linked_base():
         # what it catches is a reading that has been scaled off the base.
         assert 50 < cat["latest_index"]["value"] < 400, (
             f"{cp}: latest_index {cat['latest_index']['value']} is off the published base."
+        )
+        newest = str(max(int(year) for year in cat["index_by_year"]))
+        assert cat["value"] == cat["index_by_year"][newest], (
+            f"{cp}: value {cat['value']} is not index_by_year[{newest}] "
+            f"({cat['index_by_year'][newest]}). The two name the same reading — "
+            f"the newest completed December — so they cannot disagree without "
+            f"one of them having been through arithmetic."
         )
 
     # A rescaled series gives itself away: dividing through by an anchor makes

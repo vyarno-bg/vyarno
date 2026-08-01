@@ -18,6 +18,13 @@ decision.
    thing on the page that would show the damage. Check one against the row's
    own verify link, which returns the published digits.
 
+   `categories[*].value` is on that base too, and it is the field the trap
+   above cannot catch at all: the SPA reads it nowhere, so no figure on screen
+   moves however wrong it is. It names the newest completed December, which is
+   the reading `index_by_year` already carries under its newest year key, so
+   the two must be equal to the digit — and a contract test asserts that,
+   because nothing else would notice.
+
    Rescaling is a standing temptation, because a round 100 at the anchor year
    reads better in a payload. It buys nothing: every figure built from these is
    a ratio of two of them, so the factor cancels. And it costs the provenance —
