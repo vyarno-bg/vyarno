@@ -17,13 +17,20 @@
 #   3. flip `live: true` for that platform in `site/src/lib/support.js`.
 # Doing 2 without 3 (or the reverse) is what the verify script catches.
 #
-# GitHub Sponsors is the one that costs more than three steps: the sponsors
-# account has to belong to `REPO_OWNER` in `site/src/lib/legal-nav.js`, which
-# `verify_legal.mjs` checks, so it waits on the move to the organisation
-# account rather than on somebody remembering to uncomment it.
+# GitHub Sponsors costs more than three steps: the sponsors account has to
+# belong to `REPO_OWNER` in `site/src/lib/legal-nav.js`, which
+# `verify_legal.mjs` checks, so a sponsors account under any other name is a
+# red test rather than a Sponsor button pointing somewhere the project does
+# not control.
+#
+# A channel is also a processor of a donor's name, e-mail and message, so the
+# privacy notice has to name it — `verify_support.mjs` fails if a live
+# platform is missing from `legal.js`'s notice, and `LEGAL_VERSION` moves in
+# the same release. That is step 4, and it is the one nothing about opening an
+# account reminds anybody of.
 
+github: [vyarno-bg]
 ko_fi: vyarno
 
-# github: [vyarno-bg]
 # open_collective: vyarno
 # liberapay: vyarno

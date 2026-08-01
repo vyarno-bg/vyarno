@@ -24,7 +24,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join, normalize, extname } from "node:path";
 import { launchChromium } from "./find-chromium.mjs";
 
@@ -153,37 +153,70 @@ test("the calculator renders with no console errors", { skip }, async () => {
   });
 });
 
-test("the footer's donate link is a link, on every page", { skip }, async () => {
+test("the footer's route to donating is a link, on every page", { skip }, async () => {
   // The footer is shared, so this is the ask as a reader meets it on the
   // calculator — not on `/legal/`, where they already went looking for it.
+  //
+  // The shape depends on how many channels are open, and the suite asserts
+  // whichever one `support.js` currently produces rather than pinning the
+  // single-channel case: a direct outbound link while exactly one channel is
+  // open, and `/support/` once the destination is a choice the footer is the
+  // wrong width to explain. Pinning "exactly one `a.donate`" would go red the
+  // day a second account opens — on a change that broke nothing — which is how
+  // a suite teaches people to edit it rather than read it.
   //
   // The computed-background assertion is the one that needs a browser, and it
   // is the rule this suite exists to hold: `support.js` rule 1 forbids the ask
   // growing into a component, and "a donate button" is what every donation
   // guide recommends adding next. A CSS rule filling it in reads as a tidy
   // style tweak in a diff and lands as the thing the module forbids by name.
+  const { livePlatforms, footerDonateLink } = await import(
+    pathToFileURL(join(SITE, "src", "lib", "support.js")).href
+  );
+  const direct = footerDonateLink();
+
   await withApp(async (page, errors) => {
     const donate = page.locator("footer a.donate");
-    assert.equal(await donate.count(), 1, "the footer prints exactly one donate link");
-
-    const href = await donate.getAttribute("href");
-    assert.match(href ?? "", /^https:\/\//, `the donate link is not absolute https: ${href}`);
     assert.equal(
-      await donate.getAttribute("rel"),
-      "noopener",
-      "an outbound link opened in a new tab needs rel=noopener"
-    );
-    assert.ok(
-      (await donate.innerText()).trim().length > 0,
-      "the donate link renders no text — a missing string is a blank line, not a fallback"
+      await donate.count(),
+      direct ? 1 : 0,
+      direct
+        ? "one channel is open, so the footer prints one direct donate link"
+        : `${livePlatforms().length} channels are open, so the footer must not ` +
+            "pick one for the reader — the route is the Подкрепа item, which " +
+            "leads to the page where each platform carries its note"
     );
 
-    const bg = await donate.evaluate((el) => getComputedStyle(el).backgroundColor);
+    // Whichever shape it took, there is a route out of the footer and it is a
+    // link. A support line with nothing to follow is a statement about money
+    // with no answer to it.
+    const route = direct ? donate : page.locator("footer a[href^='/support/']");
+    assert.ok(await route.count(), "the footer offers no route to supporting the project");
+
+    const href = await route.first().getAttribute("href");
+    assert.match(
+      href ?? "",
+      direct ? /^https:\/\// : /^\/support\//,
+      `the footer's support route points at ${href}`
+    );
+    if (direct) {
+      assert.equal(
+        await donate.getAttribute("rel"),
+        "noopener",
+        "an outbound link opened in a new tab needs rel=noopener"
+      );
+    }
+    assert.ok(
+      (await route.first().innerText()).trim().length > 0,
+      "the support route renders no text — a missing string is a blank line, not a fallback"
+    );
+
+    const bg = await route.first().evaluate((el) => getComputedStyle(el).backgroundColor);
     assert.match(
       bg,
       /rgba\(0, 0, 0, 0\)|transparent/,
-      `the donate link is drawn with a filled background (${bg}), which makes it ` +
-        "a button. support.js rule 1: the ask is one quiet line and one link."
+      `the footer's support link is drawn with a filled background (${bg}), which ` +
+        "makes it a button. support.js rule 1: the ask is one quiet line and one link."
     );
     assert.deepEqual(errors, [], errors.join(" | "));
   });

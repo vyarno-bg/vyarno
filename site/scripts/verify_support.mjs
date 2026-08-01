@@ -222,7 +222,8 @@ test("an open channel is covered by the privacy notice, in both languages", () =
   // somewhere else entirely. `legal.js` requires a version bump in the same
   // release as the behaviour it describes, never a release later, and nothing
   // was holding that across this particular boundary.
-  if (livePlatforms().length === 0) return;
+  const live = livePlatforms();
+  if (live.length === 0) return;
 
   const privacy = DOCS.find((d) => d.id === "privacy");
   assert.ok(privacy, "the privacy notice is gone from DOCS");
@@ -238,6 +239,22 @@ test("an open channel is covered by the privacy notice, in both languages", () =
         `how long it is kept belongs in the notice, in the same release as ` +
         `the channel — see legal.js LEGAL_VERSION.`
     );
+
+    // Naming them individually, because the general paragraph survives the
+    // second channel unchanged while becoming wrong about it: a notice that
+    // says "a link to Ko-fi" beside a live GitHub Sponsors button describes a
+    // site nobody is being served. Each live platform is a separate recipient
+    // of a donor's name, e-mail and message, and a donor cannot exercise a
+    // GDPR right against a company the notice never told them about.
+    for (const p of live) {
+      assert.ok(
+        text.includes(p.label),
+        `"${p.label}" is live in support.js but the ${lang} privacy notice ` +
+          `never names it. Opening a channel is two lines here and in ` +
+          `FUNDING.yml; the notice is somewhere else entirely, which is why ` +
+          `this asserts it — and LEGAL_VERSION moves in the same release.`
+      );
+    }
   }
 });
 

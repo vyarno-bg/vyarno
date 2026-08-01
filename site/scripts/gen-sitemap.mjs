@@ -34,7 +34,7 @@ const DIST = resolve(__dirname, "../dist");
 export const ORIGIN = "https://vyarno.bg";
 
 /** The legal documents' effective date — see `src/lib/legal.js`. */
-export const LEGAL_LASTMOD = "2026-07-26";
+export const LEGAL_LASTMOD = "2026-08-01";
 
 /**
  * Newest `as_of` across the published payloads, as `YYYY-MM-DD`.

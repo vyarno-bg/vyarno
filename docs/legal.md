@@ -614,11 +614,19 @@ Verified against the code on 2026-07-30 and corrected where it did not hold.
 
 ## Donations, and the tax that reaches them first
 
-One channel is open: Ko-fi, one-off, no account needed of the person giving.
-`.github/FUNDING.yml` enables `ko_fi`, the matching `SUPPORT_PLATFORMS` entry is
-`live: true`, and `pipeline/pyproject.toml` carries the same URL under `Funding`
-— `verify_support.mjs` reads all three and fails if they disagree, so a channel
+Two channels are open: Ko-fi, one-off and needing no account of the person
+giving, and GitHub Sponsors, one-off or monthly. `.github/FUNDING.yml` enables
+`ko_fi` and `github`, the matching `SUPPORT_PLATFORMS` entries are `live: true`,
+and `pipeline/pyproject.toml` carries a live platform's URL under `Funding` —
+`verify_support.mjs` reads all three and fails if they disagree, so a channel
 cannot be advertised in one place while the others call it closed.
+
+**Two open channels change what the footer does**, and that is by design rather
+than a consequence: `footerDonateLink()` returns a platform only while exactly
+one is open, so the footer stops choosing for the reader and routes to
+`/support/`, where each platform carries the note saying what is different about
+it. `verify_support.mjs` and the render suite both assert the shape that
+matches the count.
 
 **Ko-fi passes the payment straight through to a Stripe account in the
 recipient's own name.** Nothing sits between the donor and the recipient: Ko-fi
@@ -631,20 +639,32 @@ change the payout route without re-reading this section**, because the change
 that looks like a payments preference is the one that moves who receives what
 from whom.
 
-The other three stay `live: false`. GitHub Sponsors is not merely unopened: a
-sponsors account has to belong to `REPO_OWNER`, which `verify_legal.mjs`
-enforces, so it waits on the move to the organisation account rather than on a
-decision. Open Collective waits on a fiscal host, and that is a legal choice
-before it is an operational one — see the last paragraph of this section.
+**GitHub Sponsors carries one hazard the other channels do not**, and it is a
+rule 4 hazard rather than a payments one: GitHub lists sponsors on the
+recipient's own profile unless the sponsor marks themselves private. That page
+is GitHub's, that default is GitHub's and that setting is the sponsor's, so
+nothing there is given by this project — but **mirroring the list onto
+vyarno.bg, ordering it, or making the appearance conditional on an amount would
+be a name in lights given in return for money**, which flips
+`LEGAL_FORM.takesPayment`. The privacy notice states the boundary from the
+donor's side, in the version that opened the channel.
+
+The remaining two stay `live: false`. Open Collective waits on a fiscal host,
+and that is a legal choice before it is an operational one — see the last
+paragraph of this section. Liberapay waits on nothing but a decision.
+
+A sponsors account also has to belong to `REPO_OWNER`, which `verify_legal.mjs`
+enforces: a Sponsor button under any other name sends money to an account this
+project does not control, and nothing about opening one would have said so.
 
 **A donation is the second thing this project processes personal data for**, and
-the privacy notice carries it from version 1.2: name or alias, e-mail address,
-message, amount and date, arriving from Ko-fi and Stripe rather than from the
-donor's own keyboard — which is **GDPR art. 14** and not art. 13, a distinction
+the privacy notice carries it from version 1.2, naming both open channels from
+1.3: name or alias, e-mail address, message, amount and date, arriving from the
+platform rather than from the donor's own keyboard — which is **GDPR art. 14** and not art. 13, a distinction
 that decides what has to be told to whom. The art. 30 register gains its second
-entry with it. Ko-fi and Stripe are each their own controller for what they
-hold; neither processes on our instructions, so no art. 28 contract is owed to
-either and §"Standing commitments" item 4 stays about the host alone.
+entry with it. Ko-fi, GitHub and Stripe are each their own controller for what
+they hold; none processes on our instructions, so no art. 28 contract is owed to
+any of them and §"Standing commitments" item 4 stays about the host alone.
 
 **One question is open, and it is a tax adviser's to close**: whether the
 чл. 49, ал. 3 declaration names the дарител. If it does, the municipality is a

@@ -69,11 +69,20 @@ export const SUPPORT_PLATFORMS = [
     id: "github",
     label: "GitHub Sponsors",
     url: "https://github.com/sponsors/vyarno-bg",
-    live: false,
+    live: true,
     note: {
       bg: "еднократно или месечно, през GitHub",
       en: "one-off or monthly, through GitHub",
     },
+    // This channel is the one that brushes rule 4, and it does not break it.
+    // GitHub shows sponsors on the recipient's own GitHub profile unless the
+    // sponsor marks themselves private — that is GitHub's page, GitHub's
+    // default and the sponsor's own setting, and nothing there is offered by
+    // this project. **What would break rule 4 is mirroring it**: a supporter
+    // list on vyarno.bg, an ordering of it, or a tier that unlocks the
+    // appearance. Any of those is a name in lights given in return for money,
+    // and it flips `LEGAL_FORM.takesPayment`. The privacy notice states the
+    // boundary from the donor's side so it is checkable rather than assumed.
   },
   {
     id: "opencollective",
