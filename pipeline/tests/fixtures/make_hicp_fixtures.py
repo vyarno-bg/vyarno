@@ -5,19 +5,26 @@ changes:
 
     python pipeline/tests/fixtures/make_hicp_fixtures.py
 
-It writes four files next to this script, each a REAL Eurostat ND-cube
+It writes five files next to this script, each a REAL Eurostat ND-cube
 response trimmed to the codes and periods the tests need — same `id` / `size`
 / `dimension` / `value` layout the connector parses in production, so a test
 that passes against them is testing the real parser, not a hand-written stub.
 
-    eurostat_hicp_iw_bg.json     ECOICOP ver.2 item weights (prc_hicp_iw)
-    eurostat_hicp_rch_bg.json    ver.2 annual rates      (prc_hicp_minr RCH_A)
-    eurostat_hicp_i15_bg.json    ver.2 monthly index     (prc_hicp_minr I15)
-    eurostat_hicp_inw_v1_bg.json ARCHIVED ver.1 weights  (prc_hicp_inw)
+    eurostat_hicp_iw_bg.json       ECOICOP ver.2 item weights (prc_hicp_iw)
+    eurostat_hicp_rch_bg.json      ver.2 annual rates      (prc_hicp_minr RCH_A)
+    eurostat_hicp_rch_bg_flash.json  the same cube one month on, mid-flash
+    eurostat_hicp_i15_bg.json      ver.2 monthly index     (prc_hicp_minr I15)
+    eurostat_hicp_inw_v1_bg.json   ARCHIVED ver.1 weights  (prc_hicp_inw)
 
 The last one is deliberate: it is the input that produced the July-2026
 cross-version bug, kept so the regression test can prove the
 classification-agreement gate rejects it.
+
+The flash cube is the other release shape the CLI has to handle, and it can
+only be captured at the fortnight it describes: the all-items rate for a month
+with no divisions and no index behind it yet. Regenerated outside that window
+it becomes a third ordinary month, and the flash test then proves nothing while
+still passing.
 """
 
 from __future__ import annotations
@@ -35,14 +42,19 @@ HERE = Path(__file__).parent
 # 2025 (the chain link month), plus the two most recent published months.
 INDEX_PERIODS = [f"{y}-12" for y in range(2020, 2026)] + ["2026-05", "2026-06"]
 RATE_PERIODS = ["2026-05", "2026-06"]
+# The flash fixture adds the month Eurostat published the all-items rate for
+# ahead of everything else. It is a SEPARATE file rather than a third period on
+# the shared one because the shared fixture's expectations are the full release
+# — 5.2% at 2026-06, thirteen divisions, an index at every month — and a flash
+# month contradicts all three.
+FLASH_RATE_PERIODS = [*RATE_PERIODS, "2026-07"]
 
 
-def _trim(payload: dict, dim: str, keep_codes: set[str], keep_times: list[str]) -> dict:
-    """Rebuild an ND-cube keeping only `keep_codes` × `keep_times`."""
+def _decode(payload: dict) -> list[tuple[dict[str, str], float]]:
+    """Flat `value` keys → [({dim: member}, value)], row-major, last dim fastest."""
     dims: list[str] = payload["id"]
     sizes: list[int] = payload["size"]
-    cats = [payload["dimension"][d]["category"] for d in dims]
-    inv = [{v: k for k, v in c["index"].items()} for c in cats]
+    inv = [{v: k for k, v in payload["dimension"][d]["category"]["index"].items()} for d in dims]
 
     decoded: list[tuple[dict[str, str], float]] = []
     for linear_str, val in payload["value"].items():
@@ -52,6 +64,14 @@ def _trim(payload: dict, dim: str, keep_codes: set[str], keep_times: list[str]) 
             idxs.insert(0, rem % s)
             rem //= s
         decoded.append(({dims[i]: inv[i][idxs[i]] for i in range(len(dims))}, val))
+    return decoded
+
+
+def _trim(payload: dict, dim: str, keep_codes: set[str], keep_times: list[str]) -> dict:
+    """Rebuild an ND-cube keeping only `keep_codes` × `keep_times`."""
+    dims: list[str] = payload["id"]
+    cats = [payload["dimension"][d]["category"] for d in dims]
+    decoded = _decode(payload)
 
     times = [t for t in keep_times if t in payload["dimension"]["time"]["category"]["index"]]
     kept = [(row, val) for row, val in decoded if row[dim] in keep_codes and row["time"] in times]
@@ -136,8 +156,22 @@ def main() -> None:
         }
         _write("eurostat_hicp_iw_bg.json", _trim(iw, "coicop18", keep, ["2026"]))
 
-        rch = get("prc_hicp_minr", unit="RCH_A", lastTimePeriod=2)
+        rch = get("prc_hicp_minr", unit="RCH_A", lastTimePeriod=3)
         _write("eurostat_hicp_rch_bg.json", _trim(rch, "coicop18", keep, RATE_PERIODS))
+
+        # The flash fixture keeps the aggregates too — FOOD, NRG, SERV and the
+        # rest — because a flash publishes those alongside TOTAL, and they are
+        # what makes "is this month a flash?" a question rather than a lookup.
+        # Trimmed to the divisions alone, the cube would say the flash month
+        # holds nothing but TOTAL, and a detector keyed on "any code other than
+        # the headline's" would pass here and fail on the first live flash.
+        flash_codes = keep | {
+            row["coicop18"] for row, _ in _decode(rch) if row["time"] == FLASH_RATE_PERIODS[-1]
+        }
+        _write(
+            "eurostat_hicp_rch_bg_flash.json",
+            _trim(rch, "coicop18", flash_codes, FLASH_RATE_PERIODS),
+        )
 
         i15 = get("prc_hicp_minr", unit="I15", sinceTimePeriod="2020-01")
         _write("eurostat_hicp_i15_bg.json", _trim(i15, "coicop18", keep, INDEX_PERIODS))
@@ -150,7 +184,7 @@ def main() -> None:
         }
         _write("eurostat_hicp_inw_v1_bg.json", _trim(inw, "coicop", keep_v1, ["2025"]))
 
-    print("wrote 4 fixtures to", HERE)
+    print("wrote 5 fixtures to", HERE)
 
 
 if __name__ == "__main__":

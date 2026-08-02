@@ -143,6 +143,15 @@ exists to make impossible rather than merely testable.
 4. **Guard the sentence, not only the number.** A user-visible claim can be
    false while every formula behind it is right, and no arithmetic test can see
    it. `verify_copy.mjs` guards the claims the copy makes.
+5. **A label belongs to the field it labels, not to the nearest payload.** The
+   basket's "1 year ago" option is dated from `categories[].ref_period`, beside
+   the `annual_rate_pct` that `rateFor(c, "y1")` returns verbatim — never from
+   `hicp_headline.json`, whose month Eurostat's flash release puts two weeks
+   ahead of the divisions. Taken from the headline, the dropdown reads
+   "2025.07 → 2026.07" over thirteen June rates: every figure on the page is
+   Eurostat's own, and the sentence over them is false. The render suite asserts
+   the rendered option against the payload the page fetched, because the defect
+   only exists as a string on a screen.
 
 ## Boot path
 

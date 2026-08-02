@@ -189,6 +189,7 @@ def write_hicp_headline(
     filename: str = HICP_HEADLINE_FILE,
     index_by_year: dict[int, float] | None = None,
     latest_index: dict | None = None,
+    flash: bool = False,
 ) -> Path:
     """Write the CP00 all-items headline — the 12-month rate AND the index.
 
@@ -207,6 +208,13 @@ def write_hicp_headline(
     categories use, so a since-year figure computed from this payload and one
     computed from a division sit on the same base (`math.md` invariant #1) —
     Eurostat's, in both cases, because neither is scaled on the way through.
+
+    **`flash`** says the rate is Eurostat's early all-items estimate, published
+    about two weeks before the rest of the month's cube. It changes no figure;
+    it adds the sentence that stops `ref_period` and `latest_index.time` looking
+    like a bug when they name different months. A consumer that needs to know
+    whether they line up should compare the two fields, which is why this is a
+    sentence in `notes` and not a boolean of ours for them to trust.
     """
     payload = _envelope(
         as_of=as_of,
@@ -216,7 +224,18 @@ def write_hicp_headline(
         ),
         notes=(
             f"Headline all-items HICP for BG ({CLASSIFICATION}, TOTAL, annual "
-            f"rate of change). {INDEX_DERIVATION_NOTE}"
+            f"rate of change). "
+            + (
+                "This is Eurostat's FLASH estimate: the all-items rate for "
+                "ref_period, published ahead of the divisions and of that "
+                "month's index, so latest_index names an earlier month than "
+                "ref_period does and hicp_categories.json is a month behind "
+                "this payload. Both figures are published Eurostat readings at "
+                "the months they each name. "
+                if flash
+                else ""
+            )
+            + INDEX_DERIVATION_NOTE
         ),
     )
     payload["headline_rate_pct"] = headline_rate_pct

@@ -3,14 +3,14 @@
   come from, what happens to what the visitor typed, and — in the closed block
   at the end — every formula the calculator uses, published once.
 
-  It is almost entirely prose. The three props are the figures the formulas
+  It is almost entirely prose. The props are the figures the formulas
   quote back, so the algebra shown matches the numbers above it.
 -->
 <script>
   import { lang } from "$lib/stores.js";
-  import { COPY } from "$lib/content.js";
+  import { COPY, t } from "$lib/content.js";
   import { SUPPORT_COPY } from "$lib/support.js";
-  import { integer } from "$lib/format.js";
+  import { integer, periodLong } from "$lib/format.js";
 
   const {
     /** "y1" for the rolling 12 months, or a year — the formula names it. */
@@ -19,9 +19,20 @@
     downPayPct = 0,
     /** Which index the savings figure was eroded by; the prose branches on it. */
     cashEroded = { basis: "all_items" },
+    /** The month the strip's all-items headline describes, as "YYYY-MM". */
+    headlineMonth = "",
+    /** The month the per-group figures describe. Equal to the above, except
+     *  during Eurostat's flash — see COPY.explainSplitMonth. */
+    basketMonth = "",
   } = $props();
 
   const fmt0 = (x) => integer(x, $lang);
+  // Both months, or neither: with one payload missing there is nothing to
+  // compare, and the reassuring sentence is the safer of the two to fall back
+  // on — it claims nothing about a month the page cannot name.
+  const monthsSplit = $derived(
+    Boolean(headlineMonth) && Boolean(basketMonth) && headlineMonth !== basketMonth
+  );
 </script>
 
 <section class="explain-band">
@@ -146,15 +157,26 @@
         <p>
           <span class="l-bg"
             >Числото в лентата най-горе е официалната инфлация на Евростат за <b>цялата</b> кошница
-            - всички българи, събрани заедно. Твоето число ползва <b>твоите</b> дялове по групи, затова
-            се различава: ако харчиш повече за групи, които поскъпват по-бързо, твоята инфлация е по-висока
-            - и обратно. И двете са за един и същ най-нов месец.</span
+            - всички българи, събрани заедно. Твоето число ползва <b>твоите</b> дялове по групи,
+            затова се различава: ако харчиш повече за групи, които поскъпват по-бързо, твоята
+            инфлация е по-висока - и обратно. {monthsSplit
+              ? t(COPY.explainSplitMonth, "bg", {
+                  headline: periodLong(headlineMonth, "bg"),
+                  basket: periodLong(basketMonth, "bg"),
+                })
+              : COPY.explainSameMonth.bg}</span
           >
           <span class="l-en"
             >The number in the strip up top is Eurostat's official inflation for the <b>whole</b>
-            basket - every Bulgarian pooled together. Your number uses <b>your</b> group shares, so it
-            differs: if you spend more on faster-rising groups, your inflation is higher - and vice-versa.
-            Both are for the same latest month.</span
+            basket - every Bulgarian pooled together. Your number uses <b>your</b> group shares, so
+            it differs: if you spend more on faster-rising groups, your inflation is higher - and
+            vice-versa.
+            {monthsSplit
+              ? t(COPY.explainSplitMonth, "en", {
+                  headline: periodLong(headlineMonth, "en"),
+                  basket: periodLong(basketMonth, "en"),
+                })
+              : COPY.explainSameMonth.en}</span
           >
         </p>
 

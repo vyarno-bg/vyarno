@@ -72,6 +72,25 @@ anchor drifted.
 classification, then the weights vintage, then the December link month. **The
 fix is never to widen 0.02 pp.**
 
+**On a flash release this gate has no inputs, and does not run.** Eurostat
+publishes the all-items rate about two weeks before that month's index exists,
+so `I_total(m)` — the left-hand side above — is not a number anybody has
+published yet, for TOTAL or for any division. `cli.py#_refresh_hicp` detects the
+flash from the cube (the headline's month missing from both the index series and
+CP01..CP13) and skips gates 2, 3 and 4 on that path only. Gates 1, 5 and 6 keep
+their inputs and still run, because they describe the cube the headline itself
+was drawn from.
+
+That is a narrower thing than it reads as. The flash path publishes
+`hicp_headline.json` alone; `hicp_categories.json` is left exactly as the last
+full release wrote it, and those divisions passed this gate then. Nothing
+reaches `data/published/` ungated — what changes is that the two payloads name
+different months for two or three weeks, which the headline's `notes` states and
+`test_published_contracts.py` enforces through `latest_index.time` rather than
+through `ref_period`. During that window the committed pair is reconciled
+through the index instead: the same identity as above, on the month both
+payloads still share.
+
 ## Gate 3 — basket sum
 
 `validate.py::validate_reconciliation`
@@ -191,7 +210,8 @@ detail.
 
 | `--source` | Gates | Notes |
 |---|---|---|
-| `hicp` | all six (gate 6 unless `--skip-link-check`) | The full set |
+| `hicp` (full release) | all six (gate 6 unless `--skip-link-check`) | The full set; writes both payloads |
+| `hicp` (flash) | 1, 5 and 6 — 2, 3 and 4 have no inputs at the flash month | Writes `hicp_headline.json` only, exit 0 |
 | `mortgage` | the five mortgage gates + freshness on both tiers | No best-effort tier |
 | `sofia-price` | bounds [100, 10000] €/m²; <20 districts = exit 2 | WARNs when имот.bg publishes no «обновена на» date, so a frozen page is visible |
 | `sofia-salary` | Sofia city must exceed Sofia province, else exit 2 | Regression guard on the row selector |
@@ -221,6 +241,27 @@ OK: wrote hicp_categories.json (13 divisions + 46 groups, 2026 weights) + hicp_h
 
 **Six gate lines is the pass condition.** A run that publishes with fewer has
 skipped one — usually `--skip-link-check`.
+
+## A good HICP flash run
+
+```
+  weights sum (CP01..CP13): 99.9990% (expected 100.0)
+→ gate: classification agreement (59 codes × prc_hicp_iw vs prc_hicp_minr)...
+  FLASH: 2026-07 carries CP00 alone — the divisions and the index are still at 2026-06
+→ gates: chain reconciliation, basket sum, group consistency SKIPPED — no index and no divisions at the flash month to feed them
+→ gate: coverage (every division AND group, every completed year 2020→2025; partial 2026 excluded)...
+→ gate: link status (52 URLs — both extracts per division plus a sampled group, body inspection)...
+→ publishing to ../data/published/
+  hicp_categories.json left untouched — the flash has no divisions
+OK: wrote hicp_headline.json only (flash headline 4.1% / 2026-07; index still 2026-06) — hicp_categories.json untouched
+```
+
+**The `FLASH:` line is the pass condition here, and its absence is the one to
+check first.** Without it the run took the full-release path, and a full-release
+path on a flash cube dies at gate 2 with exit 3 rather than publishing anything
+— which is the correct failure, not a bug to route around. Seeing the skip line
+on a month whose divisions Eurostat has already published is the reverse fault,
+and the more serious one.
 
 A failing run stops at the gate that caught it:
 

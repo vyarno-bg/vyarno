@@ -782,6 +782,37 @@ test("the explainer accounts for the headline-versus-basket gap", () => {
   }
 });
 
+test("the explainer's 'same month' reassurance follows the months it is about", () => {
+  // The paragraph answering "why is my number different from the official one"
+  // closes by telling the reader the two are at least comparable, and what
+  // makes them comparable is being the same month. Eurostat's flash publishes
+  // the all-items rate about two weeks ahead of the per-group figures, so for
+  // that fortnight they are not — and a flat "both are for the same latest
+  // month" is then false in the one paragraph a doubting reader opened to
+  // check. Static copy cannot be right in both states, so the claim branches.
+  const band = EXPLAINER;
+  assert.ok(band.includes("explain-band"), "the explain-band section is gone");
+  for (const claim of ["explainSameMonth", "explainSplitMonth"]) {
+    assert.ok(band.includes(claim), `the explainer no longer renders COPY.${claim}`);
+  }
+  assert.equal(
+    band.split("monthsSplit").length - 1 >= 3,
+    true,
+    "the months claim must branch in BOTH language spans, not just one — a hardcoded " +
+      "sentence in the other renders the wrong month for every reader of that language"
+  );
+  for (const hardcoded of [
+    "И двете са за един и същ най-нов месец",
+    "Both are for the same latest month",
+  ]) {
+    assert.ok(
+      !band.includes(hardcoded),
+      `"${hardcoded}" is written into the explainer as a literal — it is a claim about ` +
+        "two months that can be false, so it belongs behind the branch"
+    );
+  }
+});
+
 test("the savings copy does not call our reconstruction the official figure", () => {
   // The savings card deflates by Σw·(Iᵢ(now)/Iᵢ(2020) − 1) at Eurostat's current
   // weights — about 41.8% today. Eurostat's own chain-linked all-items index

@@ -228,6 +228,45 @@ test("the footer's route to donating is a link, on every page", { skip }, async 
   });
 });
 
+test("the basket's 12-month window names the divisions' month", { skip }, async () => {
+  // The y1 anchor's per-division numbers ARE `categories[].annual_rate_pct`,
+  // taken verbatim. Eurostat's flash publishes the all-items rate about two
+  // weeks before those, so labelling the window from `hicp_headline.json`
+  // dates June's rates as a July window — every figure on the page correct,
+  // the sentence over them false, and no pipeline gate able to see it because
+  // nothing published is wrong. Asserted in a browser against the payloads the
+  // page actually fetched, because the failure is a rendered string.
+  const [cats, head] = await Promise.all(
+    ["hicp_categories", "hicp_headline"].map(async (n) =>
+      JSON.parse(await readFile(join(DIST, "data", "published", `${n}.json`), "utf8"))
+    )
+  );
+  const month = String(cats.categories[0].ref_period);
+  await withApp(async (page, errors) => {
+    const label = await page.locator("#inAnchor option[value='y1']").innerText();
+    assert.ok(
+      label.includes(month.replace("-", ".")),
+      `the 12-month option reads "${label}" but the divisions describe ${month}`
+    );
+    if (head.ref_period !== month) {
+      assert.ok(
+        !label.includes(String(head.ref_period).replace("-", ".")),
+        `the 12-month option reads "${label}" — that is the headline's month, and the ` +
+          `divisions under it are at ${month}`
+      );
+    }
+    // The hint under the same dropdown has always read the categories. It is
+    // in the assertion so the two cannot drift apart again: a label and a hint
+    // naming different months is the visible form of this bug.
+    const hint = await page.locator("#inAnchor ~ .hint").first().innerText();
+    assert.ok(
+      hint.includes(month),
+      `the anchor hint reads "${hint}" but the divisions describe ${month}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("typing a salary moves the euro figures", { skip }, async () => {
   await withApp(async (page, errors) => {
     const salary = page.locator("input[type=number]").first();

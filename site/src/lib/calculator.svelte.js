@@ -329,8 +329,16 @@ export class Calculator {
    * A reader quoting "inflation is 2.6%" needs to know it is June's figure. That
    * we downloaded it on 27 July tells them nothing and reads as though the prices
    * were current to that day. The fetch dates are in the panel, one per payload.
+   *
+   * The BASKET's month, not the headline's, and they differ only during
+   * Eurostat's flash. "Числата са към…" is a claim about the page, and almost
+   * every figure on it — thirteen divisions, forty-six groups, the personal
+   * rate, the savings card — comes from `hicp_categories.json`. Dating the page
+   * by the one payload that ran ahead would post July over a page of June.
+   * The headline keeps its own date either way: it is rendered beside this with
+   * `ref_period` in the same strip.
    */
-  asOfDisplay = $derived(this.headlineRefPeriod);
+  asOfDisplay = $derived(this.basketRefPeriod || this.headlineRefPeriod);
   showStaleBanner = $derived(this.dataReady && this.dataStale);
   /** How many payloads are overdue against their own cadence — what the banner counts. */
   dataOverdueCount = $derived(this.dataRows.filter((r) => r.status === "overdue").length);
@@ -746,24 +754,36 @@ export class Calculator {
         )
       : ""
   );
-  // Headline's ref_period (e.g. "2026-06") — the latest month Eurostat has
-  // published the annual rate for. Rate and index now come from the same
-  // prc_hicp_minr cube, so this equals the freshest index month.
+  // Headline's ref_period (e.g. "2026-07") — the latest month Eurostat has
+  // published the all-items annual rate for. It dates the national strip and
+  // the data panel, and NOTHING in the basket: Eurostat's flash publishes this
+  // rate about two weeks ahead of the divisions, so it can name a month the
+  // per-division figures do not describe.
   headlineRefPeriod = $derived(String(this.data.hicpHeadline?.ref_period ?? ""));
-  freshestLatestTime = $derived(
-    this.categories.length > 0 ? String(this.categories[0].latest_index?.time ?? "") : ""
+  // The month the DIVISIONS' 12-month rates describe: `categories[].ref_period`,
+  // the field `annual_rate_pct` sits directly beside in the payload.
+  //
+  // Every label below is built from this and not from the headline, because
+  // `rateFor(c, "y1")` returns `annual_rate_pct` verbatim. Take the window from
+  // the headline and a flash release dates June's per-division rates as a July
+  // window — every number correct, every one of them labelled a month it does
+  // not cover, and the hint two lines under the same dropdown naming the real
+  // one. docs/site.md §"A correct formula fed the wrong number" is this exact
+  // shape: no gate upstream can see it, because nothing published is wrong.
+  basketRefPeriod = $derived(
+    this.categories.length > 0 ? String(this.categories[0].ref_period ?? "") : ""
   );
   // 12-month window end-point and its 1-year-earlier start, for the y1 option
   // label (e.g. "2025.06 → 2026.06").
-  headlinePrevPeriod = $derived.by(() => {
-    const r = this.headlineRefPeriod;
+  basketPrevPeriod = $derived.by(() => {
+    const r = this.basketRefPeriod;
     if (!/^\d{4}-\d{2}$/.test(r)) return "";
     const [y, m] = r.split("-").map(Number);
     return `${y - 1}-${String(m).padStart(2, "0")}`;
   });
   yoyWindowLabel = $derived.by(() => {
-    const r = this.headlineRefPeriod;
-    const p = this.headlinePrevPeriod;
+    const r = this.basketRefPeriod;
+    const p = this.basketPrevPeriod;
     if (!r || !p) return "";
     return `${p.replace("-", ".")} → ${r.replace("-", ".")}`;
   });

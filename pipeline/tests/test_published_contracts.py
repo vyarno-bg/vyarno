@@ -269,12 +269,21 @@ def test_published_hicp_reconciles_within_tolerance():
 
     NB this is the LOOSE band, not the tight one: Σ(w·r) is not an identity
     (the 12-month window straddles December's chain link), so it sits ~0.16 pp
-    above the headline on correct BG data. The exact check is
-    `validate.validate_chain_reconciliation`, which needs the raw index
-    series and therefore runs at publish time only.
+    above the headline on correct BG data.
+
+    **The rate half of this cannot run during a flash**, and nothing can make
+    it: Σ(w·r) is the divisions' month and the headline is a month ahead, so
+    the committed pair holds no all-items RATE at the month the divisions
+    describe. Comparing them anyway reads the release itself as a 1.26 pp
+    break. What replaces it for those two or three weeks is the CHAIN identity
+    below, on the index values both payloads carry at the month they share —
+    the same arithmetic `validate.validate_chain_reconciliation` runs at
+    publish time, and a tighter check than the one it stands in for. So the
+    committed pair is never unreconciled, only reconciled through the other
+    field.
     """
     from vyarno_pipeline.sources.eurostat import CP_DIVISIONS
-    from vyarno_pipeline.validate import BASKET_SUM_TOLERANCE_PP
+    from vyarno_pipeline.validate import BASKET_SUM_TOLERANCE_PP, CHAIN_TOLERANCE_PP
 
     cats_payload, head_payload = _published("hicp_categories"), _published("hicp_headline")
     if cats_payload is None or head_payload is None:
@@ -291,12 +300,43 @@ def test_published_hicp_reconciles_within_tolerance():
     assert abs(total_weight - 100.0) <= 0.05, (
         f"published weights sum to {total_weight:.4f}, expected 100.0"
     )
-    weighted = sum(c["weight_pct"] * c["annual_rate_pct"] for c in cats) / total_weight
-    gap = abs(weighted - headline)
-    assert gap <= BASKET_SUM_TOLERANCE_PP, (
-        f"published reconciliation broken: Σ(w·r)/Σw = {weighted:.4f}% vs "
-        f"headline {headline:.4f}%, gap {gap:.4f} pp. The committed JSON is "
-        f"internally inconsistent — re-run `refresh --source hicp`."
+    index_month = head_payload["latest_index"]["time"]
+    same_month = index_month == head_payload["ref_period"]
+
+    if same_month:
+        weighted = sum(c["weight_pct"] * c["annual_rate_pct"] for c in cats) / total_weight
+        gap = abs(weighted - headline)
+        assert gap <= BASKET_SUM_TOLERANCE_PP, (
+            f"published reconciliation broken: Σ(w·r)/Σw = {weighted:.4f}% vs "
+            f"headline {headline:.4f}%, gap {gap:.4f} pp. The committed JSON is "
+            f"internally inconsistent — re-run `refresh --source hicp`."
+        )
+    else:
+        assert "FLASH" in head_payload["notes"], (
+            f"the headline rate is at {head_payload['ref_period']} and its index at "
+            f"{index_month} with nothing saying why — Σ(w·r) has no headline to "
+            f"reconcile against and this is not a flash. Re-run `refresh --source hicp`."
+        )
+
+    # Both payloads carry the all-items and per-division index at the month
+    # they share, so the chain identity is checkable offline whichever release
+    # this is. Every division's index and the total's are Eurostat's own, on
+    # one base, so this is an identity rather than a band: it lands within a
+    # few thousandths of a point, and the 2 dp the payloads round to is what
+    # spends most of that.
+    link = str(int(index_month[:4]) - 1)  # the December the chain links through
+    rebuilt = (
+        100
+        * sum(c["weight_pct"] * c["latest_index"]["value"] / c["index_by_year"][link] for c in cats)
+        / total_weight
+    )
+    official = 100 * head_payload["latest_index"]["value"] / head_payload["index_by_year"][link]
+    chain_gap = abs(rebuilt - official)
+    assert chain_gap <= CHAIN_TOLERANCE_PP, (
+        f"published chain reconciliation broken at {index_month}: the divisions "
+        f"rebuild {rebuilt:.4f} against the all-items {official:.4f} (December "
+        f"{link} = 100 basis), gap {chain_gap:.4f} pp. The two payloads are not "
+        f"the same vintage of the same basket — re-run `refresh --source hicp`."
     )
 
 
@@ -392,22 +432,46 @@ def test_published_groups_sum_to_their_division():
 
 
 def test_published_headline_and_categories_are_the_same_vintage():
-    """The headline and the category rates must come from the same month.
+    """The categories must match the headline's INDEX month, always.
 
-    They are the same cube at the same publication; a mismatch means one of
-    the two was refreshed alone, and the reconciliation identity above would
-    be comparing different months.
+    Normally that is the headline's `ref_period` too — one cube, one call, one
+    month — and a mismatch means one of the two payloads was refreshed alone,
+    with the reconciliation identity above then comparing different months.
+
+    Eurostat's flash breaks the equality with `ref_period` on purpose: the
+    all-items rate for a month is published about two weeks before the
+    divisions are, so the headline legitimately runs a month ahead of
+    hicp_categories.json until the full release lands. What separates that from
+    an accidental solo refresh is the index. A flash carries no index either, so
+    the headline's `latest_index` stays back with the divisions; a headline
+    refreshed alone off a FULL release moves both of its months forward and
+    strands the divisions behind them. So the categories are allowed to lag
+    `ref_period`, and never allowed to lag `latest_index.time` — which is the
+    month the divisions are actually compared against, in the two tests below
+    and in the SPA's savings card.
     """
     cats_payload, head_payload = _published("hicp_categories"), _published("hicp_headline")
     if cats_payload is None or head_payload is None:
         pytest.skip("published HICP JSON not on disk — run a refresh first")
 
     ref = head_payload["ref_period"]
-    mismatched = [c["cp_code"] for c in cats_payload["categories"] if c["ref_period"] != ref]
+    index_month = (head_payload.get("latest_index") or {}).get("time", ref)
+    assert index_month <= ref, (
+        f"the all-items index ({index_month}) is ahead of the rate it is published "
+        f"beside ({ref}) — Eurostat releases them the other way round"
+    )
+    mismatched = [
+        c["cp_code"] for c in cats_payload["categories"] if c["ref_period"] != index_month
+    ]
     assert not mismatched, (
-        f"headline ref_period is {ref} but these categories disagree: "
+        f"the headline's index is at {index_month} but these categories disagree: "
         f"{mismatched}. Refresh both together."
     )
+    if index_month != ref:
+        assert "FLASH" in head_payload["notes"], (
+            f"headline ref_period {ref} runs ahead of its index {index_month} but the "
+            f"payload does not say it is a flash — so this reads as a solo refresh"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -519,10 +583,26 @@ def test_published_headline_carries_the_all_items_index_unscaled() -> None:
     assert str(clock.today().year) not in idx, (
         "the current, partial year is in index_by_year — a calendar-year key must mean end-of-year"
     )
-    # The freshest index must be the same month as the headline rate: both come
-    # from one cube at one publication, so a gap means they were assembled from
-    # different runs.
-    assert latest["time"] == payload["ref_period"]
+    # The freshest index is normally the same month as the headline rate: both
+    # come from one cube at one publication. A flash is the one release that
+    # separates them — the rate arrives about two weeks before that month's
+    # index exists — so the index may sit a month behind, and never ahead. Any
+    # wider gap is two runs assembled into one payload.
+    #
+    # Both operands of the savings card's cumulative still come from this
+    # payload, on Eurostat's base, so the division stays the one `math.md`
+    # invariant #1 describes; what a flash moves is the END-POINT's month, and
+    # `latest_index.time` is the field that states it.
+    ref, latest_time = payload["ref_period"], latest["time"]
+    assert latest_time <= ref, f"the index ({latest_time}) is ahead of the rate ({ref})"
+    if latest_time != ref:
+        y, m = (int(x) for x in ref.split("-"))
+        prev = f"{y - 1}-12" if m == 1 else f"{y}-{m - 1:02d}"
+        assert latest_time == prev, (
+            f"the index is at {latest_time} while the rate is at {ref} — a flash is "
+            f"one month early, so anything wider is two runs in one payload"
+        )
+        assert "FLASH" in payload["notes"]
 
     cum = 100 * (latest["value"] / idx["2020"] - 1)
     assert 20 < cum < 80, f"since-2020 cumulative of {cum}% fails the sanity band"

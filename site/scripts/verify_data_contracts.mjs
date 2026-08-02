@@ -199,9 +199,29 @@ test("the SPA's own math lands near the published headline (basket-sum sanity)",
   // Σ(w·r) is NOT an identity: HICP chain-links at December, so a 12-month
   // window re-weights mid-flight and the two land ~0.16 pp apart on correct
   // BG data. See docs/math.md §"Two reconciliations".
+  // Both sides must describe the same month, and after Eurostat's flash they
+  // do not: the all-items rate arrives about two weeks before the divisions,
+  // so the committed pair holds July's headline against June's basket and the
+  // band reads the release itself as a 1.26 pp break. There is no all-items
+  // rate at the divisions' month to compare against — Eurostat has not
+  // published one — so the comparison has no inputs rather than a looser
+  // answer, and the band stays where it is. `latest_index.time` is what says
+  // which month the payload's index half describes, and the pipeline's
+  // published-contract suite reconciles the two payloads through it meanwhile.
+  const headPayload = read("hicp_headline");
   const cats = read("hicp_categories")?.categories;
-  const head = read("hicp_headline")?.headline_rate_pct;
+  const head = headPayload?.headline_rate_pct;
   if (!cats || head == null) return;
+  if (headPayload.latest_index?.time !== headPayload.ref_period) {
+    assert.match(
+      headPayload.notes ?? "",
+      /FLASH/,
+      `hicp_headline.json is dated ${headPayload.ref_period} with its index at ` +
+        `${headPayload.latest_index?.time} and nothing saying why — that is a stale ` +
+        `pair, not a flash, and Σ(w·r) has no headline to reconcile against`
+    );
+    return;
+  }
   const spa = officialInflation(cats, "y1");
   assert.ok(
     Math.abs(spa - head) <= 0.5,

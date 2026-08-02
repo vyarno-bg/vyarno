@@ -83,9 +83,27 @@ fields are exactly as traceable as a division's.
 | `categories[*].unit` / `index_base_year` | `INDEX_UNIT`'s base | — | names the base the values are on, and `api_url_index` resolves to that unit |
 | `classification.*` (envelope) | constants + the weights cube's time dim | — | names the version, dimension, both datasets and the weights vintage |
 
-Because rate and index come from the same cube at the same publication,
-`annual_rate_pct`'s month equals `latest_index`'s month equals the headline's
-month. There is no vintage gap to reconcile.
+Rate and index come from the same cube, and on a full release at the same
+publication, so `annual_rate_pct`'s month equals `latest_index`'s month equals
+the headline's month.
+
+**Eurostat's flash release separates them, and every field above states its own
+month for exactly this reason.** The all-items rate for a month is published
+about two weeks before that month's index and before any division — so
+`hicp_headline.json` can carry `ref_period` 2026-07 beside a `latest_index` at
+2026-06, with `hicp_categories.json` still wholly at 2026-06. Both figures are
+Eurostat's, at the months they name; neither is estimated, extrapolated or
+carried forward. Read the months, never assume them: the pair to compare a
+division against is `latest_index`, and the pair to date the national headline
+by is `ref_period`.
+
+The alternative was to omit `latest_index` until the full release caught up.
+That is worse, and not by a little: the SPA's fallback rebuilds the
+since-2020 cumulative from the divisions at current weights, which is 41.8%
+against the official index's 39.9% — €960 on €100,000 of somebody's savings —
+and it says on the page that the official index failed to load, which would not
+be true. A published figure at a stated month beats a better-aligned month with
+no figure in it.
 
 **Year-end rule.** A year appears in `index_by_year` only once its December
 reading is published. Storing the latest available month under a calendar-year

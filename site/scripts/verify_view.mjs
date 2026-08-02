@@ -352,6 +352,17 @@ test("the strip headline is NOT the sum of the divisions — they differ by the 
     Math.abs(basketSum - official) > 0.05,
     "the gap these two carry is load-bearing copy — if it vanished, check why"
   );
+  // The upper band compares two figures at one month, and Eurostat's flash
+  // publishes the headline a month ahead of the divisions. While that is what
+  // the payloads say — provably, via the index month and the payload's own
+  // note — the gap is the release calendar and not a methodological one, and
+  // there is no all-items rate at the divisions' month to band it against.
+  // Everything above still holds: a flash widens this gap, it never closes it,
+  // so the claim the copy rests on is the half that keeps its inputs.
+  if (head.latest_index?.time !== head.ref_period) {
+    assert.match(head.notes ?? "", /FLASH/, "the payloads are a month apart for no stated reason");
+    return;
+  }
   assert.ok(Math.abs(basketSum - official) <= 0.5, "…but it must stay inside the sanity band");
 });
 

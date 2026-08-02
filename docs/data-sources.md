@@ -72,8 +72,20 @@ one response shape and one decoder (`_cube_to_rows`).
 
 - **`coicop18`** is the ver.2 dimension name. The connector normalises
   `TOTAL ↔ CP00`.
-- Rate and index come from the same cube at the same publication, so
-  `annual_rate_pct`, `latest_index` and the headline all share the latest month.
+- Rate and index come from the same cube, and on a **full** release at the same
+  publication, so `annual_rate_pct`, `latest_index` and the headline all share
+  the latest month.
+- **The flash release breaks that, on purpose.** Eurostat publishes BG's
+  all-items rate about two weeks ahead of the rest of the month's cube: at
+  `unit=RCH_A` the flash month carries TOTAL and nine aggregates (`FOOD`, `NRG`,
+  `SERV`, `TOT_X_NRG`…) and no `CPnn` at all, and at `unit=I15` it carries
+  nothing. So the freshest CP00 rate can be one month ahead of every other
+  figure in both payloads. `cli.py#_refresh_hicp` detects that from the cube —
+  the headline's month missing from both the index series and CP01..CP13 —
+  publishes `hicp_headline.json` alone, and leaves `hicp_categories.json`
+  untouched until the full release lands. The aggregates are why the detector
+  names the divisions rather than "any code but CP00": both fetches are
+  unfiltered, so those nine are in the response, at the flash month.
 - **No COICOP filter, one call per (dataset × unit).** A multi-value
   `coicop18=A+B+C` filter returns an **empty** cube with HTTP 200 — never batch
   one. An *unfiltered* `geo + unit` query returns the complete BG slice: 555

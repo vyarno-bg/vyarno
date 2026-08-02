@@ -882,6 +882,30 @@ export const COPY = {
     bg: "Накратко: не измисляме нито едно число. Взимаме официалните данни на Евростат, показваме ти ги и ти даваме връзка да ги провериш сам.",
     en: "In short: we invent no number. We take Eurostat's official data, show it to you, and give you a link to check it yourself.",
   },
+  // The closing line of "why does your number differ from the official one".
+  // The reassuring half of that answer is that the two are comparable, and what
+  // makes them comparable is being the same month — so the sentence has to
+  // follow the months rather than assert them.
+  //
+  // Eurostat publishes the all-items rate about two weeks before the figures
+  // per group, and for that fortnight the two on this page are a month apart.
+  // Saying "both are for the same latest month" then is false, and false in the
+  // one paragraph a doubting reader opened to check. The split version names
+  // both months and says why they differ, because a reader who spots the gap
+  // unexplained has no way to tell it from a stale page.
+  explainSameMonth: {
+    bg: "И двете са за един и същ най-нов месец.",
+    en: "Both are for the same latest month.",
+  },
+  // The months land at the END of each sentence on purpose: `periodLong` writes
+  // the Bulgarian month as «юни 2026 г.» — the abbreviation carries its own full
+  // stop — so a sentence built to continue after it either doubles the stop or
+  // has to strip one, and stripping it would be reaching into a formatter to fix
+  // a sentence. English gets its own full stop because "June 2026" has none.
+  explainSplitMonth: {
+    bg: "Този път двете са за различни месеци - Евростат публикува общата инфлация около две седмици преди разбивката по групи, а ние показваме всяко число с неговия месец, вместо да задържим по-новото. Общото е за {headline}, а числата по групи - за {basket}",
+    en: "This time the two are for different months - Eurostat publishes the overall rate about two weeks before the group breakdown, and we show each figure with its own month rather than hold the newer one back. The overall figure is for {headline}, the per-group figures for {basket}.",
+  },
   // The algebra behind all four figures, in ONE closed block at the very end
   // of the page-level explainer — the last thing on the page, for the one
   // reader in a hundred who wants to re-derive a number by hand. **Not inside
