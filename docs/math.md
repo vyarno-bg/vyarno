@@ -552,7 +552,8 @@ not fetch or publish the national CPI.
 | the savings card deflates by Eurostat's own all-items index | `view.js#savingsSince2020` prefers `hicp_headline.json`'s TOTAL index and returns `basis` |
 | the loan is bounded by regulation | `mortgagePanel` reads `lending_limits`; it does not accept a down payment |
 | a verify link resolves to the number beside it | `view.js#verifyUrl(row, anchor)` |
-| a shared number must not reconstruct a private one | `view.js#shareSentence` (no €, asserted in both languages) |
+| a shared number must not reconstruct a private one | `view.js#sharePayload` takes no salary; `SHARE_FIELDS` is the closed list of what travels, and no € reaches `shareSentence` in either language |
+| a shared ranking must not reconstruct a private one either | the ladder position is kept off every share surface: `mirror.js#percentile` inverts through the published rungs, so "ahead of 34%" IS the salary |
 | the payslip itemises the GROSS, never the typed net | `view.js#payslipPanel` inverts internally; it does not accept a gross |
 | the breakdown's rates are the published ones | `payslipPanel` takes `payroll.json`, not a params object |
 | the insurance ceiling is per contract, never per household | `payslipPanel` and `taxWedgePanel` take a list and have no scalar parameter |

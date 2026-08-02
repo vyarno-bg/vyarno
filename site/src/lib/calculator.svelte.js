@@ -91,6 +91,7 @@ import {
   verifyUrl,
   taxWedgePanel,
   payslipPanel,
+  sharePayload,
 } from "./view.js";
 
 /**
@@ -599,6 +600,28 @@ export class Calculator {
   // is basket mix — which is exactly what this card shows.
   nearOfficial = $derived(
     Math.abs(this.dpi) < (this.anchor === "y1" ? 0.8 : Math.max(1.2, this.off * 0.08))
+  );
+
+  /**
+   * The fields a share surface may carry, and nothing else.
+   *
+   * `sharePayload` takes no salary, so no € figure can be derived from what
+   * this hands to `ShareCard.svelte` — the inversion `salary × π/(100+π)` has
+   * nothing to invert (docs/principles.md P2). `nearOfficial` is passed rather
+   * than recomputed so the picture and the verdict above it cannot disagree
+   * about the same basket.
+   */
+  share = $derived(
+    this.dataReady
+      ? sharePayload({
+          pi: this.pi,
+          official: this.off,
+          near: this.nearOfficial,
+          anchor: this.anchor,
+          ranked: this.ranked,
+          refPeriod: this.headlineRefPeriod,
+        })
+      : null
   );
 
   // Prescription (B#5): target raise to stand still, and to gain +5% real.

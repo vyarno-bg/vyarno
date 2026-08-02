@@ -25,6 +25,7 @@
   import SavingsRow from "./SavingsRow.svelte";
   import MethodDrawer from "./MethodDrawer.svelte";
   import ShareCard from "./ShareCard.svelte";
+  import ResultsWordmark from "./ResultsWordmark.svelte";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator, sofiaPriceDated: string }} */
   const { calc, sofiaPriceDated } = $props();
@@ -84,5 +85,7 @@
     estatCatUrl={calc.estatCatUrl}
   />
 
-  <ShareCard />
+  <ShareCard share={calc.share} />
+
+  <ResultsWordmark />
 </div>

@@ -11,9 +11,19 @@
   import { lang } from "../lib/stores.js";
   import { number, integer, percentSigned } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
+  import { barCeiling } from "../lib/view.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
+
+  // The value both bars are drawn against, from `view.js` rather than written
+  // into the two `style=` expressions below. The share image draws the same
+  // pair, and a scale computed in a template is a scale no test can reach — so
+  // the two would drift with nothing to notice, and the picture a reader sends
+  // would show a different comparison from the one they are looking at.
+  const ceiling = $derived(
+    barCeiling({ piPct: calc.pi, officialPct: calc.off, anchor: calc.anchor })
+  );
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
@@ -181,11 +191,7 @@
     <div class="track">
       <div
         class="fill"
-        style="width:{Math.max(
-          2,
-          (100 * calc.pi) /
-            Math.max(calc.pi, calc.off, calc.anchor === 'y1' ? 8 : calc.off * 1.35, 1)
-        )}%;background: {calc.nearOfficial
+        style="width:{Math.max(2, (100 * calc.pi) / ceiling)}%;background: {calc.nearOfficial
           ? 'var(--real)'
           : calc.dpi > 0
             ? 'var(--erode)'
@@ -203,16 +209,7 @@
       <span class="num mono">{fmt(calc.off)}%</span>
     </div>
     <div class="track">
-      <div
-        class="fill"
-        style="width:{(100 * calc.off) /
-          Math.max(
-            calc.pi,
-            calc.off,
-            calc.anchor === 'y1' ? 8 : calc.off * 1.35,
-            1
-          )}%;background: var(--muted)"
-      ></div>
+      <div class="fill" style="width:{(100 * calc.off) / ceiling}%;background: var(--muted)"></div>
     </div>
   </div>
 </div>
