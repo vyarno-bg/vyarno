@@ -1242,7 +1242,7 @@ export const COPY = {
   //
   // These three ARE the app talking to the reader, and are in the second
   // person on purpose.
-  shareHead: { bg: "Прати числото си", en: "Send your number" },
+  shareHead: { bg: "Сподели числото си", en: "Share your number" },
   // The block renders the picture rather than describing it, and this line is
   // why: a product whose claim is that a reader's figures stay on their device
   // should show the whole of what leaves it, not put it behind a button.
@@ -1254,7 +1254,12 @@ export const COPY = {
     bg: "Картинката се готви, щом числата се заредят.",
     en: "The picture is ready once the figures load.",
   },
-  shareSend: { bg: "Изпрати", en: "Send" },
+  // The button hands the picture to the OS share sheet, whose destinations are
+  // social apps and group chats, so the label names the act rather than the
+  // transport: a word like «изпрати» / "send" promises one named recipient that
+  // the sheet never asks for. The two buttons beside it name their own outcome
+  // the same way — copy the text, download the picture.
+  shareSend: { bg: "Сподели", en: "Share" },
   shareCopy: { bg: "Копирай текста", en: "Copy the text" },
   shareCopied: { bg: "Копирано", en: "Copied" },
   shareDownload: { bg: "Свали картинката", en: "Download the image" },
