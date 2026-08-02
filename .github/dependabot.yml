@@ -81,6 +81,29 @@ updates:
     cooldown:
       default-days: 5
       semver-major-days: 14
+    ignore:
+      # pydantic-core has no version of its own to choose. pydantic pins it
+      # with `==` — 2.13.4 requires exactly 2.46.4 — so a lock carrying any
+      # other pydantic-core cannot be installed at all: pip reports
+      # `ResolutionImpossible` before a single test runs, on Linux and on
+      # Windows both, and the grouped bump goes red on a package nobody
+      # asked to change.
+      #
+      # Dependabot cannot see the lockstep from the lock file. pip-compile
+      # writes every transitive dependency as a plain `name==version` line,
+      # identical in shape to a direct one, so a bumpable release of
+      # pydantic-core reads as an update to take. Nothing in this repository
+      # can accept it: `pyproject.toml` asks for `pydantic>=2.6`, and the
+      # newest STABLE pydantic decides which pydantic-core that resolves to.
+      # A pydantic-core published ahead of the pydantic that will carry it —
+      # 2.47.0 reached PyPI while only a pydantic alpha required it — is
+      # unreachable here until that pydantic ships.
+      #
+      # Ignoring it costs nothing, because the version pydantic wants still
+      # arrives: Dependabot recompiles the whole tree when it bumps pydantic
+      # itself, and pydantic-core follows in that same pull request. `make
+      # lock` is the manual equivalent if it ever lags.
+      - dependency-name: pydantic-core
 
   # The actions in ci.yml are pinned to commit SHAs, with the human-readable
   # version in a trailing comment. A floating major tag (`@v7`) is mutable: a
