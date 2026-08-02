@@ -125,12 +125,12 @@
     <div class="hint" style="margin-top:4px;font-size: var(--fs-small)">
       <span class="l-bg"
         >{calc.anchor === "y1"
-          ? t(COPY.anchorY1Hint, $lang, { latest_month: calc.freshestLatestTime })
+          ? t(COPY.anchorY1Hint, $lang, { latest_month: calc.basketRefPeriod })
           : t(COPY.anchorSinceHint, $lang)}</span
       >
       <span class="l-en"
         >{calc.anchor === "y1"
-          ? t(COPY.anchorY1Hint, $lang, { latest_month: calc.freshestLatestTime })
+          ? t(COPY.anchorY1Hint, $lang, { latest_month: calc.basketRefPeriod })
           : t(COPY.anchorSinceHint, $lang)}</span
       >
     </div>

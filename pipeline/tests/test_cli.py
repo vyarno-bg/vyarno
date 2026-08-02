@@ -174,6 +174,87 @@ def test_refresh_hicp_publishes_the_headline_from_cp00_at_its_own_month(tmp_path
 
 
 # ---------------------------------------------------------------------------
+# The flash release
+# ---------------------------------------------------------------------------
+
+
+@respx.mock
+def test_refresh_publishes_a_flash_headline_and_leaves_the_categories_alone(tmp_path: Path, cubes):
+    """Eurostat's flash carries the all-items rate alone, about two weeks early.
+
+    `eurostat_hicp_rch_bg_flash.json` is the real cube at that moment: 2026-07
+    holds TOTAL 4.1 and nothing else, while the divisions and the whole index
+    cube are still at 2026-06. The run must publish the headline at its own
+    month and stop there — writing divisions would mean publishing June's rates
+    under a July date, and the categories file on disk is a complete, correct
+    June payload that the flash gives no reason to touch.
+    """
+    cubes["rch"] = _fixture("eurostat_hicp_rch_bg_flash.json")
+    # A previous full release, already on disk. Byte-compared afterwards rather
+    # than checked for absence: the failure this guards against is a rewrite
+    # that moves `as_of` forward while every figure inside stays June's, and a
+    # file that merely EXISTS afterwards would pass an existence check.
+    stale = tmp_path / "hicp_categories.json"
+    stale.write_text('{"ref_period": "2026-06", "categories": []}\n', encoding="utf-8")
+    before = stale.read_bytes()
+    _mock(cubes)
+
+    result = _run(tmp_path, "--skip-link-check")
+
+    assert result.exit_code == 0, result.output
+    headline = json.loads((tmp_path / "hicp_headline.json").read_text(encoding="utf-8"))
+    assert headline["headline_rate_pct"] == pytest.approx(4.1)
+    assert headline["ref_period"] == "2026-07"
+    assert stale.read_bytes() == before, "the flash rewrote hicp_categories.json"
+
+    # The index stays at the last month Eurostat published one for, naming that
+    # month itself. Dropping the key would send the SPA to its fallback, which
+    # rebuilds the since-2020 cumulative from the divisions — a different number
+    # under prose that tells the reader the official index failed to load.
+    assert headline["latest_index"] == {"time": "2026-06", "value": pytest.approx(148.86)}
+    assert headline["index_by_year"]["2020"] == pytest.approx(106.43)
+    assert "FLASH" in headline["notes"], "the payload does not say the two months differ on purpose"
+
+    # Gates 1, 5 and 6 keep their inputs on this path; 2, 3 and 4 do not.
+    assert "classification agreement" in result.output
+    assert "coverage" in result.output
+    assert "SKIPPED" in result.output and "chain reconciliation" in result.output
+    assert "GATE FAILED" not in result.output
+
+
+@respx.mock
+def test_a_missing_index_month_is_not_mistaken_for_a_flash(tmp_path: Path, cubes):
+    """The detection needs BOTH halves, and this is the half that earns the second.
+
+    Delete the headline's month from the index cube of a FULL release and the
+    first condition — "no index at the headline's month" — holds on its own. If
+    that were the whole test, a cube that lost a month upstream would be read as
+    a flash and skip the three gates that exist to notice, publishing a headline
+    nothing had reconciled. The divisions still carry 2026-06, so it is not a
+    flash, and gate 2 fires exactly as it does for any other broken index.
+    """
+    cube = cubes["i15"]
+    tcat = cube["dimension"]["time"]["category"]
+    time_axis = cube["id"].index("time")
+    stride = 1
+    for s in cube["size"][time_axis + 1 :]:
+        stride *= s
+    dropped = tcat["index"]["2026-06"]
+    n_time = cube["size"][time_axis]
+    cube["value"] = {
+        k: v for k, v in cube["value"].items() if (int(k) // stride) % n_time != dropped
+    }
+    _mock(cubes)
+
+    result = _run(tmp_path, "--skip-link-check")
+
+    assert result.exit_code == 3, result.output
+    assert "FLASH" not in result.output
+    assert "chain reconciliation" in result.output
+    assert not (tmp_path / "hicp_categories.json").exists()
+
+
+# ---------------------------------------------------------------------------
 # Gate failures — every one of these must leave the published files untouched
 # ---------------------------------------------------------------------------
 

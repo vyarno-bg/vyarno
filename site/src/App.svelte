@@ -160,7 +160,13 @@
   </section>
 </main>
 
-<ExplainerBand anchor={calc.anchor} downPayPct={calc.downPayPct} cashEroded={calc.cashEroded} />
+<ExplainerBand
+  anchor={calc.anchor}
+  downPayPct={calc.downPayPct}
+  cashEroded={calc.cashEroded}
+  headlineMonth={calc.headlineRefPeriod}
+  basketMonth={calc.basketRefPeriod}
+/>
 
 <SiteFooter />
 

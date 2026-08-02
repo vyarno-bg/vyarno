@@ -414,8 +414,8 @@ test("the anchor dropdown names the window its maths actually uses", () => {
 
   for (const name of [
     "yoyWindowLabel",
-    "headlineRefPeriod",
-    "headlinePrevPeriod",
+    "basketRefPeriod",
+    "basketPrevPeriod",
     "idxLatestYearLabel",
   ]) {
     assert.ok(

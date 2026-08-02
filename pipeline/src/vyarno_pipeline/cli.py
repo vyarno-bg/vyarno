@@ -304,6 +304,12 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
     for the index and the rate, `prc_hicp_iw` for the weights — so a code's
     weight, rate, index, label and verify link all describe the same bucket.
     The classification-agreement gate proves it rather than assuming it.
+
+    Two release shapes reach this arm. A full release carries every code at the
+    same month and writes both payloads. A **flash** carries the all-items rate
+    alone, two weeks early, and writes the headline only — `is_flash` below
+    detects which one arrived by looking at the cube, and says what that costs
+    the three gates whose inputs the flash does not include.
     """
     try:
         click.echo(f"→ fetching item weights ({IW_DATASET}, latest year) for {geo}...")
@@ -409,24 +415,82 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
     for r in index_cube.rows:
         raw_index.setdefault(r["coicop"], {})[str(r["time"])] = float(r["value"])
 
-    try:
+    # Eurostat publishes the all-items rate for a month about two weeks before
+    # the full release, and that flash estimate carries TOTAL alone: no
+    # divisions, no index, nothing else in the cube for that month. So the
+    # freshest CP00 rate can be a month ahead of everything it is normally
+    # published beside.
+    #
+    # Detected from the DATA, never from a date or a flag. A calendar rule
+    # ("the last week of the month is flash season") is wrong the first time
+    # Eurostat moves a release, and it would be wrong SILENTLY — the run would
+    # take the flash branch on a full cube and skip three gates that had their
+    # inputs all along. The two conditions below cannot both hold on a full
+    # release, because a full release is what puts that month into the index
+    # cube and into the divisions' rates.
+    #
+    # The second condition names CP01..CP13 and nothing else. Neither fetch
+    # filters by code upstream — both bring back the whole BG cube — so
+    # `rate_cube.rows` also carries Eurostat's own aggregates (FOOD, NRG, SERV,
+    # TOT_X_NRG and the rest), and the flash publishes THOSE at the flash month.
+    # "Any code other than CP00 has this month" is therefore true on a flash,
+    # and the run would go down the full-release path and die on gate 2. The
+    # divisions are the right set to ask about: they are what
+    # hicp_categories.json is built from, and what the three skipped gates read.
+    divisions = set(CP_DIVISIONS)
+    division_rate_periods = {str(r["time"]) for r in rate_cube.rows if r["coicop"] in divisions}
+    is_flash = (
+        headline_period not in raw_index.get("CP00", {})
+        and headline_period not in division_rate_periods
+    )
+    if is_flash:
         click.echo(
-            f"→ gate: chain reconciliation (divisions rebuild the all-items index, "
-            f"±{CHAIN_TOLERANCE_PP} pp)..."
-        )
-        validate_chain_reconciliation(
-            categories=list(cats.values()),
-            total_index_by_period=raw_index.get("CP00", {}),
-            division_index_by_period=raw_index,
-            ref_period=headline_period,
-            weights_year=weights_year,
+            f"  FLASH: {headline_period} carries CP00 alone — the divisions and the "
+            f"index are still at {max(division_rate_periods, default='?')}"
         )
 
-        click.echo(f"→ gate: basket sum (Σ(w·r) near headline, ±{BASKET_SUM_TOLERANCE_PP} pp)...")
-        validate_reconciliation(list(cats.values()), headline_rate)
+    try:
+        if is_flash:
+            # Gates 2, 3 and 4 do not run here because their inputs do not
+            # exist for this month — not because a flash release is trusted
+            # more than a full one.
+            #
+            # Chain reconciliation rebuilds the all-items index at ref_period
+            # out of the divisions' indices, and the flash publishes no index
+            # at all, for TOTAL or for anyone else. Basket sum compares Σ(w·r)
+            # against the headline, and on a flash those are two different
+            # months: the older basket against the newer headline reads the
+            # release itself as a break, and measured on BG's 2026-07 flash
+            # that is 5.2 against 4.1 — more than twice the tolerance. Group
+            # consistency checks a categories payload this path does not write.
+            #
+            # Gates 1, 5 and 6 DO have their inputs, and still run below: they
+            # describe the cube the headline was drawn from, and a flash run
+            # that finds that cube broken must not publish off it either.
+            click.echo(
+                "→ gates: chain reconciliation, basket sum, group consistency "
+                "SKIPPED — no index and no divisions at the flash month to feed them"
+            )
+        else:
+            click.echo(
+                f"→ gate: chain reconciliation (divisions rebuild the all-items index, "
+                f"±{CHAIN_TOLERANCE_PP} pp)..."
+            )
+            validate_chain_reconciliation(
+                categories=list(cats.values()),
+                total_index_by_period=raw_index.get("CP00", {}),
+                division_index_by_period=raw_index,
+                ref_period=headline_period,
+                weights_year=weights_year,
+            )
 
-        click.echo("→ gate: group consistency (each division's groups sum to it)...")
-        validate_group_consistency(list(cats.values()))
+            click.echo(
+                f"→ gate: basket sum (Σ(w·r) near headline, ±{BASKET_SUM_TOLERANCE_PP} pp)..."
+            )
+            validate_reconciliation(list(cats.values()), headline_rate)
+
+            click.echo("→ gate: group consistency (each division's groups sum to it)...")
+            validate_group_consistency(list(cats.values()))
 
         # Coverage gate requires every CP to have every COMPLETED year.
         # A year is "completed" only if its December reading has been
@@ -470,16 +534,24 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
         sys.exit(3)
 
     click.echo(f"→ publishing to {out}/")
-    write_hicp_categories(
-        cats,
-        as_of=as_of,
-        target_dir=out,
-        weights_year=weights_year,
-        # One cube, one call, one month: the same period the headline reports.
-        # On the envelope so a consumer can date the payload without reading
-        # into `categories[]`.
-        ref_period=headline_period,
-    )
+    if is_flash:
+        # hicp_categories.json is left exactly as it is on disk, byte for byte.
+        # Rewriting it with June's figures would move its `as_of` forward while
+        # every number inside it stayed the same — a payload dated fresher than
+        # anything it carries, and the site's data panel reads `as_of` to decide
+        # whether a row is up to date.
+        click.echo(f"  {HICP_CATEGORIES_FILE} left untouched — the flash has no divisions")
+    else:
+        write_hicp_categories(
+            cats,
+            as_of=as_of,
+            target_dir=out,
+            weights_year=weights_year,
+            # One cube, one call, one month: the same period the headline reports.
+            # On the envelope so a consumer can date the payload without reading
+            # into `categories[]`.
+            ref_period=headline_period,
+        )
     # The all-items index alongside the rate. `raw_index["CP00"]` is the same
     # TOTAL series the chain gate just consumed, so this adds no fetch and
     # cannot drift from what that gate checked.
@@ -501,6 +573,14 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
     except MissingSeriesError as e:
         click.echo(f"ERROR: transform failed on the all-items index: {e}", err=True)
         sys.exit(2)
+    # `total_latest` is the freshest month in the INDEX cube, which on a flash
+    # is the month before the headline's. That gap is the point: the June index
+    # is a figure Eurostat has published, and carrying it keeps the savings card
+    # on Eurostat's own chain-linked all-items series. Dropping the key instead
+    # would send the SPA down its fallback, which rebuilds the cumulative from
+    # the divisions at current weights — 41.8% where the official index gives
+    # 39.9%, about €960 per €100k, under prose that tells the reader the index
+    # failed to load. Each field states its own month; nothing here is derived.
     write_hicp_headline(
         as_of=as_of,
         headline_rate_pct=headline_rate,
@@ -508,7 +588,16 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
         target_dir=out,
         index_by_year=total_by_year,
         latest_index=total_latest,
+        flash=is_flash,
     )
+
+    if is_flash:
+        click.echo(
+            f"OK: wrote {HICP_HEADLINE_FILE} only (flash headline {headline_rate}% / "
+            f"{headline_period}; index still {total_latest['time']}) — "
+            f"{HICP_CATEGORIES_FILE} untouched"
+        )
+        return
 
     n_groups = sum(len(c.groups) for c in cats.values())
     click.echo(
