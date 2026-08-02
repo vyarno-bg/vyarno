@@ -583,6 +583,53 @@ test("a hand-made preset says so where its number is read", () => {
   }
 });
 
+test("a ready-made basket names a basket, never the reader", () => {
+  // Five mutually-cancelling buttons phrased in the first person — «карам кола
+  // всеки ден», «пенсионер съм» — are a persona picker, and a persona picker
+  // asks which one of these five people you are. A reader answering that
+  // question concludes the calculator cannot hold a man who drives to work AND
+  // feeds a family, because his row only lets one of them be true: the app
+  // then looks like it holds five lives, none of them his. The thirteen
+  // sliders are where a mixed life is described, so a chip may name a basket
+  // and may not make a claim about the person reading it.
+  // `\b` is ASCII-only in JavaScript — a Cyrillic letter is a non-word
+  // character to it, so `/\bкарам\b/` matches nothing at all and the rule
+  // would pass on every string it exists to catch. The BG side delimits with
+  // lookarounds over the alphabet instead.
+  const FIRST_PERSON = {
+    bg: /(?<![а-яА-Я])(съм|карам|храня|нямам|имам|живея)(?![а-яА-Я])/i,
+    en: /\b(I|I'm|my|me)\b/,
+  };
+  for (const key of [
+    "presetOfficial",
+    "presetDriver",
+    "presetFamily",
+    "presetNoCar",
+    "presetPensioner",
+  ]) {
+    const [bg, en] = pair(key);
+    assert.ok(!FIRST_PERSON.bg.test(bg), `COPY.${key}.bg speaks as the reader: "${bg}"`);
+    assert.ok(!FIRST_PERSON.en.test(en), `COPY.${key}.en speaks as the reader: "${en}"`);
+  }
+
+  // The row's own line carries the provenance, because four of the five
+  // baskets are invented and the number they produce is read in the same voice
+  // as a Eurostat figure (docs/principles.md P3, P7). It has to say which one
+  // is not ours by naming who published it.
+  const [hintBg, hintEn] = pair("presetsHint");
+  assert.match(
+    hintBg,
+    /Евростат/,
+    "the BG line by the chips does not say whose the real basket is"
+  );
+  assert.match(
+    hintEn,
+    /Eurostat/,
+    "the EN line by the chips does not say whose the real basket is"
+  );
+  assert.ok(LIVE_SOURCES.includes("COPY.presetsHint"), "the ready-made baskets carry no caveat");
+});
+
 test("the over-budget line describes rather than advises", () => {
   // docs/principles.md P6 — we state the gap; the reader draws the conclusion. The
   // `maxAffordPrice` line directly below already says the honest version, with

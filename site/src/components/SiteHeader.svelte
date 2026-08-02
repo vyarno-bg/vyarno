@@ -8,7 +8,7 @@
 -->
 <script>
   import { theme, lang, toggleLang, toggleTheme } from "$lib/stores.js";
-  import { COPY } from "$lib/content.js";
+  import { COPY, t } from "$lib/content.js";
 </script>
 
 <!-- The skip link. `.skip` has had styles in this file all along with no
@@ -44,10 +44,10 @@
       </span>
     </a>
     <div class="controls">
-      <button class="pill" onclick={toggleTheme} aria-label="Toggle theme">
+      <button class="pill" onclick={toggleTheme} aria-label={t(COPY.themeToggle, $lang)}>
         {$theme === "dark" ? "☀" : "☾"}
       </button>
-      <button class="pill" onclick={toggleLang} aria-label="Toggle language">
+      <button class="pill" onclick={toggleLang} aria-label={t(COPY.langToggle, $lang)}>
         {$lang === "bg" ? "EN" : "BG"}
       </button>
     </div>
