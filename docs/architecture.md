@@ -67,7 +67,8 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
         │                ResultsCard · ResultsSummary · RankedContributions ·
         │                PocketRow · PercentileRow · TaxWedgeRow · RentRow ·
         │                HomeRow · LeftoverRow · SavingsRow · MethodDrawer ·
-        │                ShareCard · NationalStrip · ExplainerBand
+        │                ShareCard · ResultsWordmark · NationalStrip ·
+        │                ExplainerBand
         └── lib/     payloads.js   WHICH payloads exist at all (the manifest)
                      data.js       WHICH published number (fallback chains)
                      view.js       WHICH input feeds which formula (the wiring)
@@ -75,6 +76,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
                      calculator.svelte.js  the STATE everything reads
                      format.js     how a number or a date is written
                      content.js    BG/EN copy + presets + offline sentinels
+                     share-card.js the PNG a reader sends, drawn on a canvas
                      legal.js      the legal documents + ЗЕТ чл. 4 identity
                      legal-nav.js  contact addresses + document names
                      support.js    the donation rules — what may be offered

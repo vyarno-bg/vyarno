@@ -29,6 +29,8 @@ import { dirname, join } from "node:path";
 
 import { COPY } from "../src/lib/content.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
+import { SHARE_COPY_KEYS, SHARE_DOMAIN, SHARE_ORIGIN } from "../src/lib/view.js";
+import { shareCardText, SHARE_CARD_COPY_KEYS } from "../src/lib/share-card.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, "..", "src");
@@ -870,4 +872,167 @@ test("the percentile caveat admits the survey behind it is national", () => {
     LIVE_SOURCES.includes("COPY.pctCaveat"),
     "the percentile row no longer renders its caveat"
   );
+});
+
+// ---------------------------------------------------------------------------
+// The share surfaces — docs/principles.md P2 and P9
+// ---------------------------------------------------------------------------
+
+/**
+ * A currency on a share surface, and nothing that merely contains one.
+ *
+ * The lookarounds are load-bearing rather than fussy. `\b` in JavaScript is
+ * defined over `[A-Za-z0-9_]`, so it does nothing useful either side of
+ * Cyrillic — and a plain substring test flags «Евростат» for containing
+ * «евро» and "Eurostat" for containing "Eur". Both belong on the card: P9
+ * requires the publisher's name on a format that cannot carry a link, so a
+ * check that forbids naming the source would push the card into breaking the
+ * principle beside the one it enforces.
+ */
+const CURRENCY = /€|(?<!\p{L})(EUR|евро|лв)(?!\p{L})/iu;
+
+/**
+ * Second person, in either language — «твоята кошница» addressed to a stranger.
+ *
+ * `\p{L}*` and not `\w*` for the stem endings. `\w` is `[A-Za-z0-9_]` even
+ * under the `u` flag, so `тво\w*` matches «тво» and then refuses «твоята»,
+ * which is the one form the copy would actually be written in. A pronoun check
+ * that cannot see an inflected pronoun passes everything it exists to catch.
+ */
+const SECOND_PERSON =
+  /(?<!\p{L})(тво\p{L}*|теб\p{L}*|ти|ви|вие|ваш\p{L}*|you|your|yours)(?!\p{L})/iu;
+
+/** Enough of a payload to draw a card, at both anchors and every verdict. */
+function shareCases() {
+  const base = {
+    piPct: 7.24,
+    officialPct: 5.2,
+    anchor: "y1",
+    refPeriod: "2026-06",
+    topBgName: "Транспорт",
+    topEnName: "Transport",
+    topPp: 1.62,
+    domain: SHARE_DOMAIN,
+    url: SHARE_ORIGIN,
+  };
+  const cases = [];
+  for (const anchor of ["y1", 2020]) {
+    for (const verdict of ["dearer", "cheaper", "close"]) {
+      cases.push({ ...base, anchor, verdict });
+      // A basket weighted onto the falling groups, which the noun-phrase
+      // wording has to survive: «поскъпна с −1,2%» contradicts its own number.
+      cases.push({ ...base, anchor, verdict, piPct: -1.2, topPp: -0.4 });
+      // No division leads, so there is no biggest bite to name.
+      cases.push({ ...base, anchor, verdict, topBgName: "", topEnName: "", topPp: NaN });
+    }
+  }
+  return cases;
+}
+
+test("every line on the share card is filled in, in both languages", () => {
+  const offenders = [];
+  for (const share of shareCases()) {
+    for (const lang of ["bg", "en"]) {
+      const text = shareCardText({ share, copy: COPY, lang });
+      for (const [slot, value] of Object.entries(text)) {
+        // `detail` is the one line the card is allowed to drop — an empty
+        // basket has no leading division, and a dangling «Най-тежко удря:»
+        // with nothing after it is worse than the silence.
+        if (slot === "detail" && !Number.isFinite(share.topPp)) continue;
+        if (!value || !String(value).trim()) {
+          offenders.push(`${lang} ${share.verdict}@${share.anchor}: ${slot} is blank`);
+        }
+        if (/[{}]/.test(String(value))) {
+          offenders.push(`${lang} ${share.verdict}@${share.anchor}: ${slot} = ${value}`);
+        }
+        // An em dash is what `format.js` returns for a value it cannot render,
+        // and a picture already in somebody's chat is the wrong place to find
+        // out that the period was unparseable.
+        if (String(value).includes("—")) {
+          offenders.push(`${lang} ${share.verdict}@${share.anchor}: ${slot} = ${value}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], offenders.join("; "));
+});
+
+test("no share surface prints a currency", () => {
+  // P2: `mirror.js#extraPerMonth` is salary × r/(100+r) and inverts exactly,
+  // so a euro figure beside the rate it came from publishes the sender's pay
+  // to everyone the picture reaches. The closed list in principles.md names
+  // this case in as many words.
+  const offenders = [];
+  for (const share of shareCases()) {
+    for (const lang of ["bg", "en"]) {
+      for (const [slot, value] of Object.entries(shareCardText({ share, copy: COPY, lang }))) {
+        if (CURRENCY.test(String(value))) offenders.push(`${lang} ${slot}: ${value}`);
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], offenders.join("; "));
+});
+
+test("the share card carries its source, its period and the domain", () => {
+  // P9: verifiability scales down, not away. A picture cannot carry a link, so
+  // it carries the publisher's name, the period the figures are from and the
+  // address a stranger can type. A shared number with no provenance is the
+  // thing this project exists not to be.
+  for (const lang of ["bg", "en"]) {
+    const text = shareCardText({ share: shareCases()[0], copy: COPY, lang });
+    assert.match(text.source, lang === "bg" ? /Евростат/ : /Eurostat/, text.source);
+    assert.match(text.source, /2026/, text.source);
+    assert.ok(text.cta.includes(SHARE_DOMAIN), text.cta);
+  }
+});
+
+test("the copy that leaves the device speaks in the first person", () => {
+  // Every other sentence in the app says «ти» because it is talking to the
+  // reader. These are spoken BY the reader to somebody who has never opened
+  // the site, and «твоята кошница» arriving in a stranger's chat addresses the
+  // wrong person entirely.
+  //
+  // The set is the two key lists the share surfaces are actually assembled
+  // from, not every key beginning "share": `shareHead` and `shareNote` are the
+  // app talking to the reader about what is about to leave, and are correctly
+  // in the second person. A heuristic over key names would need an exception
+  // list that grows silently; these lists are the code's own.
+  // The exception is the invitation, and it is the point rather than an
+  // oversight: «Сметни своята» / "Work out yours" is the one clause the sender
+  // aims at whoever is reading, and it is what turns a statement into a reason
+  // to open the site. So the split is CLAIM in the first person, INVITATION in
+  // the second — and the invitation is checked for doing its own job below
+  // rather than merely excused from this one.
+  const invitations = ["shareCta", "shareCardCta"];
+  const spoken = [...SHARE_COPY_KEYS, ...SHARE_CARD_COPY_KEYS].filter(
+    (key) => !invitations.includes(key)
+  );
+  assert.ok(spoken.length > 0, "no share copy found — did the keys get renamed?");
+  const offenders = [];
+  for (const key of spoken) {
+    for (const lang of ["bg", "en"]) {
+      if (SECOND_PERSON.test(COPY[key][lang])) offenders.push(`COPY.${key}.${lang}`);
+    }
+  }
+  assert.deepEqual(offenders, [], `share copy addressing the recipient: ${offenders.join(", ")}`);
+
+  // A recipient with no way back has been sent a statistic and no product.
+  for (const key of invitations) {
+    for (const lang of ["bg", "en"]) {
+      assert.ok(COPY[key][lang].includes("{u}"), `COPY.${key}.${lang} names no address`);
+    }
+  }
+});
+
+test("the share note states the boundary rather than advertising it", () => {
+  // The line under the preview is the one place the app claims something about
+  // its own privacy, so it has to be a description of what is on the picture —
+  // checkable by looking at it — and not a badge. It names what is absent.
+  for (const lang of ["bg", "en"]) {
+    const note = COPY.shareNote[lang];
+    const named =
+      lang === "bg" ? ["Заплата", "наем", "спестявания"] : ["Salary", "rent", "savings"];
+    for (const word of named) assert.ok(note.includes(word), `${lang}: ${note}`);
+    assert.doesNotMatch(note, /100%|напълно|гарантирано|completely|fully guaranteed/i, note);
+  }
 });

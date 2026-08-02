@@ -1130,6 +1130,110 @@ export const COPY = {
   // Eurostat"). Spelled out, because "YoY" does not read as a 12-month
   // comparison to a non-specialist.
   yoyLabel: { bg: "за 1 г.", en: "in 1 yr" },
+
+  // --- Sharing -------------------------------------------------------------
+  //
+  // EVERY CLAIM BELOW IS IN THE FIRST PERSON, AND THAT IS THE ONE RULE THIS
+  // BLOCK HAS.
+  //
+  // The rest of the app says «ти» because it is talking to the reader. These
+  // sentences are spoken BY the reader TO somebody who has never opened the
+  // site, so «твоята кошница поскъпна» arrives in a stranger's chat addressing
+  // the wrong person. The reader is the author here, not the audience.
+  //
+  // The invitation is the deliberate exception and is checked for being one:
+  // «Сметни своята» is aimed at whoever is reading, and it is what turns a
+  // statement into a reason to open the site.
+  //
+  // Nothing here carries a € amount, and that is a privacy boundary rather
+  // than a stylistic one: `mirror.js#extraPerMonth` is salary × r/(100+r), so
+  // a euro figure printed beside the rate it came from publishes the sender's
+  // pay to everyone the message reaches (docs/principles.md P2, and
+  // `view.js#sharePayload` is where the rule is made unexpressible rather than
+  // merely asserted).
+  //
+  // A noun phrase, never «поскъпна с {p}%»: a basket weighted onto the groups
+  // that are FALLING makes the figure negative, and the verb then contradicts
+  // its own number. The comparative closing clause survives either sign — if
+  // both fell and mine fell further, «при мен е по-евтино» is still what
+  // happened.
+  shareWindowY1: { bg: "за последната година", en: "over the past year" },
+  shareWindowSince: { bg: "от {y} насам", en: "since {y}" },
+  shareLineDearer: {
+    bg: "Моята кошница {w}: {p}%. Средната за България: {o}%. При мен е по-скъпо от средното.",
+    en: "My basket {w}: {p}%. The national average: {o}%. Mine is dearer than average.",
+  },
+  shareLineCheaper: {
+    bg: "Моята кошница {w}: {p}%. Средната за България: {o}%. При мен е по-евтино от средното.",
+    en: "My basket {w}: {p}%. The national average: {o}%. Mine is cheaper than average.",
+  },
+  shareLineClose: {
+    bg: "Моята кошница {w}: {p}%. Средната за България: {o}%. Горе-долу колкото средното.",
+    en: "My basket {w}: {p}%. The national average: {o}%. Much the same as average.",
+  },
+  // The full address, not the bare domain: this is the one surface that CAN
+  // carry a link, and P9 asks a format to scale verifiability down only where
+  // it physically cannot. The image, which cannot, falls back to `shareCardCta`
+  // below and the domain in plain text.
+  shareCta: { bg: "Сметни своята: {u}", en: "Work out yours: {u}" },
+
+  // --- The generated image -------------------------------------------------
+  //
+  // Read by a stranger, at a glance, with no link to click — so the source
+  // name, the period and the domain are on the picture itself (P9).
+  shareCardKicker: { bg: "моята кошница · {w}", en: "my basket · {w}" },
+  shareCardMine: { bg: "моята кошница", en: "my basket" },
+  shareCardAverage: { bg: "средната за България", en: "the national average" },
+  // The same three verdicts the results card states in the second person. They
+  // are written out again rather than shared with `m-verdict` because the
+  // person changes; keeping the wording otherwise identical is what stops the
+  // image and the screen it came from reading as two different judgements.
+  shareCardVerdictDearer: {
+    bg: "При мен е по-скъпо, отколкото при средния българин.",
+    en: "For me it's pricier than for the average Bulgarian.",
+  },
+  shareCardVerdictCheaper: {
+    bg: "При мен е по-евтино, отколкото при средния българин.",
+    en: "For me it's cheaper than for the average Bulgarian.",
+  },
+  shareCardVerdictClose: {
+    bg: "Кошницата ми е близо до средната.",
+    en: "My basket is close to the average one.",
+  },
+  // {pp} of {p} points, never a euro amount and never a sum the reader is
+  // invited to add up: this is one row's share of the total, which is exactly
+  // what the ranked list beneath the results already says.
+  shareCardTop: {
+    bg: "Най-тежко удря: {c} - {pp} от {p} пункта",
+    en: "The biggest bite: {c} - {pp} of {p} points",
+  },
+  shareCardSource: { bg: "Данни: Евростат (HICP), {d}", en: "Data: Eurostat (HICP), {d}" },
+  shareCardCta: { bg: "сметни своята на {u}", en: "work out yours at {u}" },
+
+  // --- The share block in the results card ---------------------------------
+  //
+  // These three ARE the app talking to the reader, and are in the second
+  // person on purpose.
+  shareHead: { bg: "Прати числото си", en: "Send your number" },
+  // The block renders the picture rather than describing it, and this line is
+  // why: a product whose claim is that a reader's figures stay on their device
+  // should show the whole of what leaves it, not put it behind a button.
+  shareNote: {
+    bg: "Това е всичко, което напуска устройството ти. Заплата, наем и спестявания не влизат в картинката - от процент не се вади сума.",
+    en: "This is everything that leaves your device. Salary, rent and savings are not in the picture - a percentage yields no amount.",
+  },
+  shareWait: {
+    bg: "Картинката се готви, щом числата се заредят.",
+    en: "The picture is ready once the figures load.",
+  },
+  shareSend: { bg: "Изпрати", en: "Send" },
+  shareCopy: { bg: "Копирай текста", en: "Copy the text" },
+  shareCopied: { bg: "Копирано", en: "Copied" },
+  shareDownload: { bg: "Свали картинката", en: "Download the image" },
+  shareCardAlt: {
+    bg: "Картинка за споделяне: моята кошница {p}% срещу средната за България {o}%.",
+    en: "Share image: my basket {p}% against the national average {o}%.",
+  },
 };
 
 /**

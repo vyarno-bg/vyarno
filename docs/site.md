@@ -48,8 +48,8 @@ site/
 │   ├── verify_template_safety.mjs # the {@html} invariants, both directions
 │   ├── verify_static_assets.mjs   # robots · security.txt · sitemap · the CSP
 │   ├── verify_render.mjs          # the built page, in a browser
-│   ├── make_og_image.py           # regenerates the share card + the two
-│   │                              # README banners (stdlib only)
+│   ├── make_og_image.py           # regenerates the static OG preview + the
+│   │                              # two README banners (stdlib only)
 │   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png
 ├── public/             # copied verbatim into dist/ — no build step
 │   ├── _headers · robots.txt · .well-known/security.txt
@@ -64,6 +64,7 @@ site/
         ├── view.js       # pure DERIVED VALUES (the wiring)  ← read this
         ├── calculator.svelte.js  # the STATE the components read
         ├── content.js    # BG/EN copy + presets + HOME constants
+        ├── share-card.js # the PNG a reader sends, drawn on a canvas
         ├── format.js     # how a number or a date is written
         ├── legal.js      # the four legal documents + the ЗЕТ чл. 4 identity
         ├── legal-nav.js  # contact addresses + document names (every page)
@@ -388,7 +389,9 @@ are shaped to make a wrong wiring *unexpressible*:
 | `verifyUrl(row, anchor)` | the "↗" target for one row | linking to the index cube while showing a rate |
 | `fastestRisingDivision(categories)` | the highest-rate division | advertising the *slowest*-rising division as the fastest |
 | `rankedSplit(ranked, limit)` | the rows the ranked list draws **plus the folded remainder** | a capped list under a sentence promising the column adds up — 5.1 points on screen against a stated 5.4 |
-| `shareSentence({…})` | the share-button text | **a € figure beside the percentage, which inverts to the salary** |
+| `sharePayload({…})` | the closed set of fields a share surface may carry | **a € figure beside the percentage, which inverts to the salary** |
+| `shareSentence({share, copy, lang})` | the message a reader copies or hands to the share sheet | a shared number with no national figure beside it, which nobody can place |
+| `barCeiling({…})` | the value both comparison bars are drawn against | the picture a reader sends showing a different comparison from the screen it came from |
 
 ### Three of these are boundaries, not conveniences
 
@@ -398,12 +401,29 @@ an annualised figure; compounding them monthly overstates the payment by
 ~€24/month on the published Sofia median — plausible enough that no sanity band
 would catch it. **APRC is for comparing, AAR is for computing.**
 
-**`shareSentence` carries percentages and never a € amount.** This is a privacy
-boundary: `extraPerMonth = salary × π/(100+π)` inverts exactly, so "my inflation
-is 5.4%, that's €48/month" reveals the salary to everyone who reads the message.
-`verify_view.mjs` asserts no `€`, `EUR`, `евро` or `лв` reaches the string in
-either language, at any anchor — check any new share surface against the
-**inversion**, not against intent.
+**`sharePayload` takes no salary, and that is how the € rule is kept.**
+`extraPerMonth = salary × π/(100+π)` inverts exactly, so "my inflation is 5.4%,
+that's €48/month" reveals the salary to everyone who reads the message. The
+function that decides what may cross onto a share surface therefore has no
+salary parameter at all — there is nothing for a caller to pass and nothing
+downstream to invert. `verify_view.mjs` still asserts no `€`, `EUR`, `евро` or
+`лв` reaches the finished string in either language at any anchor, and reads
+the signature back to check the parameter list has not grown; the assertion is
+the second lock rather than the only one.
+
+**Two figures the site already computes are excluded by the same rule, and
+neither carries a currency symbol.** The ladder position inverts:
+`mirror.js#percentile` interpolates over rungs composed from
+`salary_dist.json` and `sofia_salary.json`, both committed and public, so
+"ahead of 34% of Sofia" reconstructs the net pay to within a rung's width. A
+*personal* tax-wedge rate inverts above the insurance ceiling, where the
+effective rate falls with every extra euro of gross. **Check a new share
+surface against the inversion, not against the presence of a euro sign** — the
+dangerous fields are the ones that look safe.
+
+`SHARE_FIELDS` is the closed list of what does travel, and `verify_view.mjs`
+compares it against the returned object key for key. Adding a figure to a card
+means adding it there first, which is where the argument happens.
 
 **`basketBudget` decides what the € column is a share of, and the two entry
 modes answer differently on purpose.** A basket of *percentage shares* says how
@@ -623,8 +643,10 @@ Two rules it holds to:
 - **Nothing computes here.** Every `$derived` is a call into `view.js` or
   `mirror.js` with named arguments. See the note under the layer table.
 - **Nothing picks words here.** The module is language-agnostic, so
-  `sofiaPriceDated`, the preset label and the share sentence live in the
-  components that render them — where `$lang` auto-subscription works anyway.
+  `sofiaPriceDated` and the preset label live in the components that render
+  them — where `$lang` auto-subscription works anyway. `shareSentence` is the
+  shape this takes for a string built in `view.js`: the words arrive as an
+  argument and the component chooses which language to ask for.
 
 One convention, with no exception to remember: **every mutating handler is an
 arrow-function class field, never a method.** A template that passes a method
@@ -641,6 +663,21 @@ component per receipt row — `ResultsSummary`, `PocketRow`, `PercentileRow`,
 rows the calculator answers, and in what order, is forty lines of markup. Each
 row decides for itself whether it renders; `RentRow` is empty without a rent,
 `HomeRow` without the home block.
+
+Two components close the card and they are not rows. `ShareCard` draws the
+picture a reader sends; `ResultsWordmark` is the wordmark and the tagline
+anchored to the bottom edge. **The names are worth reading carefully, because
+they were once one file and the wrong way round** — a component called
+`ShareCard` that rendered a wordmark is a name that costs the next person an
+afternoon, which is why the share work started by fixing it.
+
+`ShareCard` is the only canvas in the app, where every chart is inline SVG, and
+the reason is narrow: the artefact has to leave the page as a PNG, and an SVG
+serialised into an `<img>` resolves no `@font-face` from the document that made
+it, so the card would come back set in the system stack. Getting the faces back
+means base64-ing four woff2 files into every card. A canvas draws with the
+fonts the page already has, and it is still zero dependencies and still nothing
+third-party, which is what the SVG rule was protecting.
 
 Their shared anatomy is in `$lib/card.css` (the grid, the two cards, the field,
 the `.vlink` verify arrow) and `$lib/result-row.css` (the row itself). Both
