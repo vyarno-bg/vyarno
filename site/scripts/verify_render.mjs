@@ -95,8 +95,8 @@ const origin = site ? `http://127.0.0.1:${site.port}` : "";
  * render leaves the surrounding markup in place, so asserting on elements
  * alone would pass on a page the visitor sees as half-drawn.
  */
-async function openApp(path = "/") {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 1200 } });
+async function openApp(path = "/", context = {}) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 1200 }, ...context });
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
@@ -113,9 +113,15 @@ async function openApp(path = "/") {
  * times is not the thing worth isolating. Each test gets its OWN page, because
  * they type into the same inputs and `localStorage` carries the language and
  * theme across a reload.
+ *
+ * `context` reaches Playwright's context options, which is how a test asks for
+ * a reader the default page cannot represent — `reducedMotion: "reduce"` is the
+ * one in use, because `tokens.css` drops every transition for them and an
+ * affordance built out of motion is invisible to that reader while passing
+ * every other test in this file.
  */
-async function withApp(fn, path = "/") {
-  const { page, errors } = await openApp(path);
+async function withApp(fn, path = "/", context = {}) {
+  const { page, errors } = await openApp(path, context);
   try {
     await fn(page, errors);
   } finally {
@@ -639,6 +645,236 @@ test("the disclosure chip reads as a control, and not as a verdict", { skip }, a
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
+
+test("the ready-made baskets sit under the rows they fill", { skip }, async () => {
+  // Where the chips sit is the whole of what they claim to be. Directly under
+  // «За какво отиват парите ти?» five mutually-cancelling buttons ARE the
+  // answer to that question, and the thirteen rows below them read as the
+  // readout it produced — which is how a reader arrives at "I can't pick 'I
+  // drive daily' and 'feeding a family' at the same time", having seen the
+  // sliders and classified them as output. Under the list the same chips are
+  // somewhere to start, found after the instrument, and no sentence has to
+  // say so. Two already do and both lost to this ordering.
+  await withApp(async (page, errors) => {
+    assert.ok(await page.locator(".presets").count(), "the ready-made basket row is gone");
+    const geom = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll("#sliders .cat")];
+      return {
+        rows: rows.length,
+        lastRowBottom: rows.at(-1)?.getBoundingClientRect().bottom ?? null,
+        presetsTop: document.querySelector(".presets").getBoundingClientRect().top,
+      };
+    });
+    assert.ok(geom.rows >= 13, `${geom.rows} basket rows — the published list is not being drawn`);
+    assert.ok(
+      geom.presetsTop >= geom.lastRowBottom,
+      `the ready-made baskets start at ${geom.presetsTop}px, above the last row's bottom edge ` +
+        `at ${geom.lastRowBottom}px — they are answering the heading again`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the loaded basket is marked, not crowned", { skip }, async () => {
+  // A solid `--ink` fill is the strongest "this is the answer" signal the app
+  // has, and the chip it sat on had only seeded thirteen sliders that outrank
+  // it. The state still has to be legible — which basket is loaded is a real
+  // question — so this asserts both directions: not the ink fill, and not
+  // identical to an unpressed chip either.
+  await withApp(async (page, errors) => {
+    const style = await page.evaluate(() => {
+      const probe = document.createElement("div");
+      probe.style.background = "var(--ink)";
+      document.body.append(probe);
+      const ink = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      const on = document.querySelector('.presets .chip[aria-pressed="true"]');
+      const off = document.querySelector('.presets .chip[aria-pressed="false"]');
+      if (!on || !off) return null;
+      const read = (el) => {
+        const s = getComputedStyle(el);
+        return {
+          background: s.backgroundColor,
+          color: s.color,
+          border: parseFloat(s.borderTopWidth),
+          borderColor: s.borderTopColor,
+        };
+      };
+      return { ink, on: read(on), off: read(off) };
+    });
+    assert.ok(
+      style,
+      "the basket row reports no loaded basket, or no unloaded one to compare it to"
+    );
+    assert.notEqual(
+      style.on.background,
+      style.ink,
+      "the loaded basket is filled with --ink again — a starting point painted as the verdict"
+    );
+    assert.ok(
+      style.on.border > 0,
+      "the loaded chip lost its border, so nothing marks it a control"
+    );
+    assert.notDeepEqual(
+      [style.on.background, style.on.borderColor, style.on.color],
+      [style.off.background, style.off.borderColor, style.off.color],
+      "the loaded basket is drawn exactly like the ones that are not — nothing says which is on"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test(
+  "a basket row is a handle, and moving one unseats the ready-made basket",
+  { skip },
+  async () => {
+    // The row competes with the app's own bar charts — `.rank .track` in the
+    // results card is the same rail under the same name · code · rate · value
+    // line — so the control has to be legible as one before it is touched: 24px
+    // of hit area on a phone that has no hover, and a name a screen reader can
+    // announce. Then the behaviour that settles which of the two outranks the
+    // other: one arrow key on any row and no ready-made basket is loaded any
+    // more, because the reader's own number has replaced it.
+    await withApp(async (page, errors) => {
+      const rows = await page.evaluate(() =>
+        [...document.querySelectorAll("#sliders .cat > input[type=range]")].map((el) => ({
+          height: el.getBoundingClientRect().height,
+          name: el.getAttribute("aria-label") ?? "",
+        }))
+      );
+      assert.ok(rows.length >= 13, `${rows.length} division sliders — the list is not being drawn`);
+      for (const row of rows) {
+        assert.ok(
+          row.height >= 24,
+          `a basket slider is ${row.height}px of hit area — under a thumb that is a chart, not a control`
+        );
+        assert.ok(row.name.trim(), "a basket slider has no accessible name");
+      }
+
+      const slider = page.locator("#sliders .cat > input[type=range]").first();
+      const before = await slider.inputValue();
+      await slider.focus();
+      await page.keyboard.press("ArrowRight");
+      await page.waitForTimeout(200);
+      assert.notEqual(
+        await slider.inputValue(),
+        before,
+        "the slider does not move under the keyboard"
+      );
+      assert.equal(
+        await page.locator('.presets .chip[aria-pressed="true"]').count(),
+        0,
+        "a ready-made basket is still marked as loaded after the reader moved a row of their own"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
+test("the basket keeps its affordances for a reader who turned motion off", { skip }, async () => {
+  // `tokens.css` drops every animation and transition under
+  // `prefers-reduced-motion`, so anything that says "control" by moving says
+  // nothing at all to that reader — and every other test in this file runs on
+  // a page where motion is on, which is what makes the regression invisible.
+  // What has to survive: the hit area, and the row-level focus mark a keyboard
+  // reader tracks down thirteen near-identical lines.
+  await withApp(
+    async (page, errors) => {
+      const slider = page.locator("#sliders .cat > input[type=range]").first();
+      const box = await slider.boundingBox();
+      assert.ok(box.height >= 24, `the slider is ${box.height}px tall with motion off`);
+
+      await slider.focus();
+      const row = await page.evaluate(() => {
+        const focused = document.querySelector("#sliders .cat:focus-within");
+        const plain = document.querySelector("#sliders .cat:not(:focus-within)");
+        if (!focused || !plain) return null;
+        const read = (el) => {
+          const s = getComputedStyle(el);
+          return { shadow: s.boxShadow, background: s.backgroundColor };
+        };
+        return { focused: read(focused), plain: read(plain) };
+      });
+      assert.ok(row, "focusing a slider marks no row at all");
+      assert.notEqual(
+        row.focused.shadow,
+        "none",
+        "the focused row carries no static mark — the affordance is motion, which this reader never sees"
+      );
+      assert.notEqual(
+        row.focused.background,
+        row.plain.background,
+        "a focused basket row is drawn exactly like an untouched one"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/",
+    { reducedMotion: "reduce" }
+  );
+});
+
+test("the basket fits a 360px column, chips and all", { skip }, async () => {
+  // 360px is the phone the reader in the report was holding. The chip row
+  // wraps to four lines there, and a chip that overhangs the column is the
+  // one control nobody scrolls sideways to find.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.waitForTimeout(200);
+    const geom = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+      widest: Math.max(
+        ...[...document.querySelectorAll(".presets .chip, #sliders .cat")].map(
+          (el) => el.getBoundingClientRect().right
+        )
+      ),
+    }));
+    assert.ok(
+      geom.scrollWidth <= geom.clientWidth,
+      `the page is ${geom.scrollWidth}px wide in a ${geom.clientWidth}px viewport`
+    );
+    assert.ok(geom.widest <= 360, `the basket's widest element reaches ${geom.widest}px`);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test(
+  "the controls that carry no words name themselves in the reader's language",
+  { skip },
+  async () => {
+    // A glyph button's accessible name is the only thing that says what it does,
+    // and BG is the primary language here — an English label leaves a Bulgarian
+    // screen-reader user with the controls they cannot guess at from content.
+    // The basket's chip row is the same case: five buttons after thirteen
+    // sliders, announced as a group or as nothing.
+    await withApp(async (page, errors) => {
+      const names = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll("header .pill, .presets")].map(
+            (el) => el.getAttribute("aria-label") ?? ""
+          )
+        );
+      const bg = await names();
+      assert.equal(
+        bg.length,
+        3,
+        `${bg.length} of the three unlabelled controls carry an aria-label`
+      );
+      for (const name of bg) {
+        assert.match(name, /[Ѐ-ӿ]/, `"${name}" reaches a Bulgarian reader in English`);
+      }
+
+      await page.locator("header .pill").last().click();
+      await page.waitForTimeout(300);
+      const en = await names();
+      for (const [i, name] of en.entries()) {
+        assert.ok(name.trim(), "a control lost its accessible name in English");
+        assert.notEqual(name, bg[i], `"${name}" is the same string in both languages`);
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
 
 test("the results card announces the headline, not fifty numbers", { skip }, async () => {
   // The whole `.m-card` was a polite live region, so a screen-reader user

@@ -31,14 +31,15 @@
   <span class="l-bg">{COPY.basketLegend.bg}</span>
   <span class="l-en">{COPY.basketLegend.en}</span>
 </p>
-<!-- Carve-out note: when a home is on, the € column drops
-     because the mortgage is on top. Percentages don't change.
-     Sits between the legend and the preset chips so the user
-     sees the "why" before the chips reframe the basket. -->
-<!-- Carve-out hint(s). Both can show — a user can have rent AND a
-     mortgage active (buying while still renting, or renting a room
-     in the new place). Each hint is independent and only renders
-     when its housing payment is actually nonzero. -->
+<!-- Carve-out hint(s): when a home or a rent is on, the € column is
+     drawn from what is left after it and the percentages do not move.
+     They sit above the list because they explain a column the reader
+     is about to read, not one they have read.
+
+     Both can show — a user can have rent AND a mortgage active (buying
+     while still renting, or renting a room in the new place). Each hint
+     is independent and only renders when its housing payment is
+     actually nonzero. -->
 {#if calc.homeOn && calc.monthlyMort > 0}
   <p class="leg" style="color:var(--ink-2); margin-top:2px">
     <span class="l-bg"
@@ -59,62 +60,6 @@
     >
   </p>
 {/if}
-<div class="presets" role="group" aria-label="Presets">
-  <button
-    class="chip"
-    data-preset="official"
-    aria-pressed={calc.activePreset === "official"}
-    onclick={() => calc.applyPreset("official")}
-  >
-    <span class="l-bg">{COPY.presetOfficial.bg}</span>
-    <span class="l-en">{COPY.presetOfficial.en}</span>
-  </button>
-  <button
-    class="chip"
-    data-preset="driver"
-    aria-pressed={calc.activePreset === "driver"}
-    onclick={() => calc.applyPreset("driver")}
-  >
-    <span class="l-bg">{COPY.presetDriver.bg}</span>
-    <span class="l-en">{COPY.presetDriver.en}</span>
-  </button>
-  <button
-    class="chip"
-    data-preset="noCar"
-    aria-pressed={calc.activePreset === "noCar"}
-    onclick={() => calc.applyPreset("noCar")}
-  >
-    <span class="l-bg">{COPY.presetNoCar.bg}</span>
-    <span class="l-en">{COPY.presetNoCar.en}</span>
-  </button>
-  <button
-    class="chip"
-    data-preset="family"
-    aria-pressed={calc.activePreset === "family"}
-    onclick={() => calc.applyPreset("family")}
-  >
-    <span class="l-bg">{COPY.presetFamily.bg}</span>
-    <span class="l-en">{COPY.presetFamily.en}</span>
-  </button>
-  <button
-    class="chip"
-    data-preset="pensioner"
-    aria-pressed={calc.activePreset === "pensioner"}
-    onclick={() => calc.applyPreset("pensioner")}
-  >
-    <span class="l-bg">{COPY.presetPensioner.bg}</span>
-    <span class="l-en">{COPY.presetPensioner.en}</span>
-  </button>
-  <!-- There is deliberately no "fit to my housing payment" chip:
-       the right column already carves mortgage and rent out of the
-       € figures, and rescaling the user's hand-tuned percentages on
-       top of that would overwrite what they typed. -->
-</div>
-<p class="leg">
-  <span class="l-bg">{COPY.presetsHint.bg}</span>
-  <span class="l-en">{COPY.presetsHint.en}</span>
-</p>
-
 <!-- INPUT MODE: percentage shares vs actual euros per month.
      People know their euros better than their percentages, so the
      € mode is a first-class way in, not a power-user extra. Both
@@ -333,12 +278,96 @@
   {/each}
 </div>
 
+<!-- READY-MADE BASKETS, under the rows they fill.
+     A row of chips directly beneath «За какво отиват парите ти?» is read as
+     the answer to that question, and the thirteen rows below it as the
+     readout it produced — so a reader concludes the app holds five lives and
+     his is not among them. Two sentences already say the sliders are the
+     instrument; both lose, because a sentence cannot outvote a layout that
+     puts the shortcut where the answer goes. Below the list the same chips
+     are what they actually are: somewhere to start, found after the reader
+     has scrolled the thing that does the work.
+
+     There is deliberately no "fit to my housing payment" chip: the right
+     column already carves mortgage and rent out of the € figures, and
+     rescaling the user's hand-tuned percentages on top of that would
+     overwrite what they typed. Nor is there a chip that combines two of the
+     four — averaging two invented baskets yields a third with less basis
+     than either, in the same voice as a Eurostat figure (P3, P7). Combining
+     is what the sliders are. -->
+<p class="leg presetlead">
+  <span class="l-bg">{COPY.presetsHint.bg}</span>
+  <span class="l-en">{COPY.presetsHint.en}</span>
+</p>
+<div class="presets" role="group" aria-label={t(COPY.presetsAria, $lang)}>
+  <button
+    class="chip"
+    data-preset="driver"
+    aria-pressed={calc.activePreset === "driver"}
+    onclick={() => calc.applyPreset("driver")}
+  >
+    <span class="l-bg">{COPY.presetDriver.bg}</span>
+    <span class="l-en">{COPY.presetDriver.en}</span>
+  </button>
+  <button
+    class="chip"
+    data-preset="noCar"
+    aria-pressed={calc.activePreset === "noCar"}
+    onclick={() => calc.applyPreset("noCar")}
+  >
+    <span class="l-bg">{COPY.presetNoCar.bg}</span>
+    <span class="l-en">{COPY.presetNoCar.en}</span>
+  </button>
+  <button
+    class="chip"
+    data-preset="family"
+    aria-pressed={calc.activePreset === "family"}
+    onclick={() => calc.applyPreset("family")}
+  >
+    <span class="l-bg">{COPY.presetFamily.bg}</span>
+    <span class="l-en">{COPY.presetFamily.en}</span>
+  </button>
+  <button
+    class="chip"
+    data-preset="pensioner"
+    aria-pressed={calc.activePreset === "pensioner"}
+    onclick={() => calc.applyPreset("pensioner")}
+  >
+    <span class="l-bg">{COPY.presetPensioner.bg}</span>
+    <span class="l-en">{COPY.presetPensioner.en}</span>
+  </button>
+  <!-- «или» separates the four illustrations from the one real basket. The
+       official chip is live Eurostat data with a source behind it, so it
+       cannot sit in the same enumeration as four baskets we invented. -->
+  <span class="or">
+    <span class="l-bg">{COPY.presetsOr.bg}</span>
+    <span class="l-en">{COPY.presetsOr.en}</span>
+  </span>
+  <button
+    class="chip"
+    data-preset="official"
+    aria-pressed={calc.activePreset === "official"}
+    onclick={() => calc.applyPreset("official")}
+  >
+    <span class="l-bg">{COPY.presetOfficial.bg}</span>
+    <span class="l-en">{COPY.presetOfficial.en}</span>
+  </button>
+</div>
+
 <style>
   .presets {
     display: flex;
+    align-items: center;
     gap: 7px;
     flex-wrap: wrap;
     margin: 2px 0 12px;
+  }
+  .presetlead {
+    margin-top: 14px;
+  }
+  .presets .or {
+    font-size: var(--fs-small);
+    color: var(--muted);
   }
   .chip {
     font-family: var(--mono);
@@ -354,10 +383,15 @@
     border-color: var(--real);
     color: var(--real-ink);
   }
+  /* Marked, not crowned. A solid `--ink` fill is the strongest "this is the
+     answer" signal the app has, and on a chip that only seeded the sliders it
+     says the reader has finished — the loaded basket is a starting position,
+     and the thirteen rows above are what settles the number. The accent-soft
+     treatment says which one is loaded without outranking them. */
   .chip[aria-pressed="true"] {
-    background: var(--ink);
-    color: var(--paper);
-    border-color: var(--ink);
+    background: var(--real-soft);
+    color: var(--real-ink);
+    border-color: var(--real);
   }
   .leg {
     margin: 0 0 10px;
@@ -439,6 +473,16 @@
   }
   .cat.open {
     background: var(--paper-2);
+  }
+  /* Focus is marked on the ROW, not only on the 6px rail inside it. A keyboard
+     reader arrowing down the basket is otherwise tracking a two-pixel outline
+     against thirteen near-identical lines, and the row's name — the only thing
+     that says which division they are about to change — is at the other end of
+     it. Last of the three background rules, so it wins over the ledger banding
+     and the opened-division tint at equal specificity. */
+  .cat:focus-within {
+    background: var(--real-soft);
+    box-shadow: inset 3px 0 0 var(--real);
   }
 
   /* Disclosure control for the ECOICOP level-2 drill-down. A plain +/− in
@@ -548,9 +592,15 @@
     font-size: var(--fs-micro);
     color: var(--muted);
   }
+  /* The sub-group rail carries the same groove and handle as its parent, one
+     step quieter. A sub-row that reads as a chart while the division above it
+     reads as a control teaches the hierarchy wrong: the drill-down is where
+     the decisions people actually make live (car vs tickets, rent vs
+     electricity), and it is worth nothing if a reader takes it for a
+     breakdown. */
   .sub input[type="range"] {
     width: 100%;
-    height: 16px;
+    height: 20px;
     margin: 0;
     appearance: none;
     -webkit-appearance: none;
@@ -565,21 +615,27 @@
       var(--real) 0 var(--f, 50%),
       var(--track) var(--f, 50%) 100%
     );
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .sub input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 11px;
-    height: 11px;
-    margin-top: -3.5px;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
     border-radius: 100px;
-    background: var(--surface);
+    background:
+      linear-gradient(var(--real) 0 0) 40% 50% / 1px 5px no-repeat,
+      linear-gradient(var(--real) 0 0) 60% 50% / 1px 5px no-repeat,
+      var(--surface);
     border: 2px solid var(--real);
   }
   .sub input[type="range"]::-moz-range-track {
     height: 4px;
     border-radius: 2px;
     background: var(--track);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .sub input[type="range"]::-moz-range-progress {
     height: 4px;
@@ -587,10 +643,14 @@
     background: var(--real);
   }
   .sub input[type="range"]::-moz-range-thumb {
-    width: 9px;
-    height: 9px;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
     border-radius: 100px;
-    background: var(--surface);
+    background:
+      linear-gradient(var(--real) 0 0) 40% 50% / 1px 5px no-repeat,
+      linear-gradient(var(--real) 0 0) 60% 50% / 1px 5px no-repeat,
+      var(--surface);
     border: 2px solid var(--real);
   }
   .sub input[type="range"]:focus-visible {
@@ -631,9 +691,22 @@
   /* `.vlink` is in $lib/card.css — both cards draw it, and the copy that
      lived here did not reach the ranked list next door. */
 
+  /* A basket row has to be legible as something the reader may seize, and it
+     is competing with the app's own bar charts: `.rank .track` in the results
+     card is the same rounded 5px rail with a coloured fill, under the same
+     name · code · rate · value line. Two things separate them, and neither is
+     motion — `tokens.css` kills every transition under
+     `prefers-reduced-motion`, so an affordance that animates does not exist
+     for those readers:
+
+       - the track is a GROOVE. The inset hairline reads as something cut into
+         the row; a chart's bar sits on top of it and never carries one.
+       - the thumb is a HANDLE, 18px with a grip. A chart has no handle at all,
+         and 18px on a 24px input is a tap target rather than a decoration —
+         the 360px phone this has to work on has no hover to fall back on. */
   .cat input[type="range"] {
     width: 100%;
-    height: 20px;
+    height: 24px;
     margin: 0;
     appearance: none;
     -webkit-appearance: none;
@@ -648,21 +721,27 @@
       var(--real) 0 var(--f, 50%),
       var(--track) var(--f, 50%) 100%
     );
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .cat input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 15px;
-    height: 15px;
-    margin-top: -4.5px;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
+    margin-top: -6px;
     border-radius: 100px;
-    background: var(--surface);
+    background:
+      linear-gradient(var(--real) 0 0) 40% 50% / 1px 7px no-repeat,
+      linear-gradient(var(--real) 0 0) 60% 50% / 1px 7px no-repeat,
+      var(--surface);
     border: 2px solid var(--real);
   }
   .cat input[type="range"]::-moz-range-track {
     height: 6px;
     border-radius: 3px;
     background: var(--track);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .cat input[type="range"]::-moz-range-progress {
     height: 6px;
@@ -670,10 +749,14 @@
     background: var(--real);
   }
   .cat input[type="range"]::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
     border-radius: 100px;
-    background: var(--surface);
+    background:
+      linear-gradient(var(--real) 0 0) 40% 50% / 1px 7px no-repeat,
+      linear-gradient(var(--real) 0 0) 60% 50% / 1px 7px no-repeat,
+      var(--surface);
     border: 2px solid var(--real);
   }
   .cat input[type="range"]:focus-visible {

@@ -100,6 +100,13 @@ export const COPY = {
     en: "Everything is anonymous, we don't collect personal data",
   },
   brandSmall: { bg: "икономиката, честно", en: "the economy, honestly" },
+  // The header's two buttons carry a glyph and nothing else, so the accessible
+  // name is the only thing that says what they do — and it has to arrive in the
+  // language the reader is being served. BG is the primary language here; an
+  // English-only label leaves a Bulgarian screen-reader user with the one
+  // control they cannot guess at from its content.
+  themeToggle: { bg: "смени темата", en: "toggle theme" },
+  langToggle: { bg: "смени езика", en: "toggle language" },
 
   // Inputs card
   yourNumbers: { bg: "Твоите числа", en: "Your numbers" },
@@ -352,9 +359,15 @@ export const COPY = {
 
   // Sliders / basket
   basketHead: { bg: "За какво отиват парите ти?", en: "Where does your money go?" },
+  // The line has to say whose the rows are before it says how to read them.
+  // Thirteen rows carrying a name, a rate, a share and a €/month have the same
+  // anatomy as the ranked contributions in the results card — name, code, rate,
+  // value, bar — and a reader who has met that row as an OUTPUT reads these as
+  // one too. A legend that opens by explaining the columns confirms it: it is
+  // the app teaching them to read a table one line before they decide it is one.
   basketLegend: {
-    bg: "13-те групи са официалните на Евростат. До името на всяка: колко е поскъпнала за избрания период. Вдясно: твоят дял и ≈ €/месец.",
-    en: "The 13 groups are Eurostat's own. By each name: how much it rose over the chosen period. Right: your share and ≈ €/month.",
+    bg: "Тринайсетте групи са на Евростат, но числата до тях са твои - всеки ред се мести. До името е поскъпването за избрания период, вдясно - твоят дял и ≈ €/месец.",
+    en: "The thirteen groups are Eurostat's, but the numbers beside them are yours - every row moves. By the name, how much it rose over the chosen period; on the right, your share and ≈ €/month.",
   },
   // Shown when home is on. Tells the user why the € column drops after
   // they pick a home: the € per group is carved out of (salary - mortgage)
@@ -372,16 +385,31 @@ export const COPY = {
     bg: "Плащаш наем {rent} €/мес - сумите вдясно вече са от остатъка след него. Процентите не се променят.",
     en: "You pay €{rent}/mo rent - the € per group is now carved out of what's left after it. Percentages stay the same.",
   },
+  // **The chips name a basket, never a person.** In the first person - «карам
+  // кола всеки ден», «пенсионер съм» - five mutually-cancelling buttons are a
+  // persona picker, and a persona picker asks which one of these five people
+  // you are. A reader who answers that question has answered the wrong one: he
+  // concluded the calculator could not represent a man who drives to work AND
+  // feeds a family, because the row he was reading only lets one be true. The
+  // thirteen sliders are where a mixed life is described, so nothing here may
+  // sound like a claim about the reader.
   presetOfficial: { bg: "официалната кошница", en: "official basket" },
-  presetDriver: { bg: "карам кола всеки ден", en: "I drive daily" },
-  presetFamily: { bg: "храня семейство", en: "feeding a family" },
-  presetNoCar: { bg: "нямам кола", en: "I don't drive" },
-  presetPensioner: { bg: "пенсионер съм", en: "I'm retired" },
-  // Says plainly that the four non-official chips are a starting point, not
-  // a measured basket. Only the "official basket" chip is real data.
+  presetDriver: { bg: "с кола всеки ден", en: "a car every day" },
+  presetFamily: { bg: "със семейство", en: "with a family" },
+  presetNoCar: { bg: "без кола", en: "no car" },
+  presetPensioner: { bg: "на пенсия", en: "on a pension" },
+  presetsOr: { bg: "или", en: "or" },
+  // Names the row for a screen reader, which otherwise meets five unexplained
+  // buttons after the thirteen sliders.
+  presetsAria: { bg: "готови кошници", en: "ready-made baskets" },
+  // Labels the row AND carries its provenance, because the four are invented
+  // and the number they produce is read in the same voice as a Eurostat figure
+  // (P3, P7). It states what the baskets are; what to do with the sliders is
+  // the interface's job, not a sentence's - two sentences already tried and
+  // lost to a chip row that looked like the answer.
   presetsHint: {
-    bg: "Освен „официалната кошница“, останалите са само отправна точка - дръпни плъзгачите към своето харчене.",
-    en: 'Apart from "official basket", these are just starting points - drag them towards your own.',
+    bg: "Готови кошници, ако ти е по-лесно да тръгнеш от нещо: четирите са наши, измислени за пример, а „официалната кошница“ е на Евростат.",
+    en: 'Ready-made baskets, if it helps to start from something: the four are ours, invented as illustrations, and the "official basket" is Eurostat\'s.',
   },
   // Shown in the RESULTS card while a hand-made preset is active. The hint
   // above sits by the chips, but the number it produces ends up 400 px away in

@@ -453,6 +453,46 @@ within-division shares — so an upstream reclassification reaches the page as
 soon as the pipeline publishes it. A literal list would pin the basket's length
 here rather than at Eurostat, and `verify_wiring.mjs` fails on one.
 
+**The thirteen rows come first, and the ready-made baskets sit under them.**
+This is an ordering rule rather than a layout preference, and it is worth the
+paragraph because the obvious arrangement is the broken one. A chip row placed
+directly beneath «За какво отиват парите ти?» *answers* that question — five
+first-person options, exactly one of which can be lit, is a persona picker, and
+a persona picker asks which of these five people you are. The thirteen rows
+below it then read as what the answer produced, which they are not: they carry
+a name, a code, a rate, a share and a €/month, the same anatomy as the ranked
+contributions in the results card, so a reader who has met that row as an
+output classifies these as one too. A user did exactly that and reported the
+calculator could not hold a man who drives to work *and* feeds a family — he
+had seen the sliders and read them as a readout. Two sentences in `COPY` said
+otherwise, one beside the chips and one beside the number, and both lost to the
+arrangement around them. Under the list the same chips are what they are:
+somewhere to start, met after the instrument.
+
+Three things follow, each with a test in `verify_render.mjs`:
+
+- **A chip names a basket, never the reader.** «с кола всеки ден», not «карам
+  кола всеки ден». `verify_copy.mjs` holds the first-person markers, in both
+  alphabets — note that `\b` is ASCII-only in JavaScript, so the BG side
+  delimits with lookarounds or matches nothing at all.
+- **The loaded chip is marked, not crowned.** A solid `--ink` fill is the
+  strongest "this is the answer" signal the app has, and a basket somebody can
+  drag away from in one gesture does not get it.
+- **A slider row has to read as a control before it is touched**, against the
+  app's own bar charts: a groove rather than a bar, an 18px handle with a grip
+  rather than a dot, 24px of hit area, and a row-level focus mark. None of it
+  is motion — `tokens.css` drops every transition under
+  `prefers-reduced-motion`, so an affordance that animates does not reach that
+  reader, and the render suite opens a reduced-motion page to prove this one
+  does.
+
+**There is no mechanism for combining two ready-made baskets**, and the request
+for one is the failure above arriving as a feature. Four of the five are
+invented (`content.js`), so averaging two of them yields a third with less basis
+than either, published in the same voice as a Eurostat figure — P3 and P7 in one
+move. A reader who wants to mix two baskets has understood that his life is a
+mixture, which is what the sliders are for.
+
 Eurostat publishes four levels of ECOICOP. We expose **two**:
 
 | Level | Codes for BG | Exposed? | Why |
@@ -569,8 +609,11 @@ time.
   first-paint fallback — the live weights replace it as soon as
   `hicp_categories.json` resolves, and `verify_data_contracts.mjs` fails if the
   copy drifts more than 3 pp. `driver`, `family`, `noCar` and `pensioner` are
-  **hand-made illustrative starting points, not survey data**, and the UI says
-  so under the chips. Every vector must have exactly as many entries as the
+  **hand-made illustrative starting points, not survey data**, and the line
+  above the chip row says so by naming which of the five Eurostat published.
+  The chips sit below the sliders and name baskets rather than people — the
+  ordering rule and its failure are in §"The basket interface" above. Every
+  vector must have exactly as many entries as the
   published basket and sum to 100 — a short vector leaves the tail divisions
   `undefined` and silently drops them from Σw.
   `every_preset_covers_every_published_division_and_sums_to_100` enforces both.
