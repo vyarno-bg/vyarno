@@ -229,10 +229,19 @@ it to the one thing it needs, and assume anything ever committed is permanent.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push to every branch, and on demand:
-the pipeline suite (`pytest -q`, offline), the SPA suite (`npm run
-verify:math`), the production build, and a check that all eight published
-payloads are committed and parse.
+`.github/workflows/ci.yml` runs on every push to every branch, on every pull
+request, and on demand: the pipeline suite (`pytest -q`, offline), the SPA
+suite (`npm run verify:math`), the production build, and a check that all eight
+published payloads are committed and parse.
+
+The two triggers cover different things. A push gates a branch before the merge
+and re-checks `main` after it. A pull request is what reaches a **fork** at
+all — a fork's commits never touch this repository's refs, so no push event
+fires here and no check would ever be created against that SHA. It also builds
+`refs/pull/N/merge` rather than the head, which is the one tree no push ever
+sees: a branch and `main` can each be green and their merge broken. A same-repo
+pull request therefore runs twice, and the second run is not a duplicate of the
+first.
 
 It does **not** refresh data. Two of the five upstreams need network paths a
 cloud runner does not have, and a scheduled job that silently publishes a
@@ -246,6 +255,14 @@ does not refresh data it holds no upstream credential, and that is what lets a
 pull request from a stranger run the full suite. Keep it that way: a refresh
 workflow would need БНБ TLS and a Bulgarian egress path, which is a deliberate
 decision rather than a CI tweak.
+
+That property is also what makes the `pull_request` trigger safe to have. It
+runs **this** repository's copy of the workflow against the merge ref with a
+read-only token, so a fork controls the code under test and nothing else.
+`pull_request_target` is the trigger that would hand a fork a writable token and
+whatever secrets the repository holds; it is not used here and there is nothing
+it could be used for. Every checkout also sets `persist-credentials: false`, so
+the run's own token is not left in `.git/config` for a later step to read.
 
 ## Cross-references
 
