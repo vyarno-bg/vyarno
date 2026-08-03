@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Find a Chromium that `verify_render.mjs` can actually launch.
+ * Find a Chromium that the render suites can actually launch.
  *
  * That suite is the only one that runs the app, and it skips rather than fails
  * where no browser can be launched — a contributor without one is not blocked,

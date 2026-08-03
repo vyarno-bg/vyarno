@@ -133,7 +133,10 @@ enforces the first half.
 - **A test moves with the code it protects, in the same commit.**
   [`docs/testing-strategy.md`](./docs/testing-strategy.md) is the full rule,
   including the standard a test has to meet — break the production code on
-  purpose and watch the test go red.
+  purpose and watch the test go red — and §"What does NOT get a test", which
+  is the other half: a change covered by a rule over a whole collection needs
+  no new assertion, and one that cannot go red while a broader check stays
+  green is a second thing to update rather than a second guard.
 
 ## Contributions written with a coding agent
 
