@@ -15,7 +15,16 @@
     />
     <link rel="canonical" href="https://vyarno.bg/how/" />
 
-    <meta property="og:type" content="article" />
+    <!--
+    `website`, the same as the calculator's, and NOT `article`. OGP's article
+    type is for a dated piece by someone, and its whole vocabulary —
+    published_time, modified_time, author — is metadata this page has none of
+    and must not invent (P7). It is deliberately undated: every FIGURE on it
+    carries the period it describes, and the page carries no moment of its own
+    because it has none. Declaring it an article hands an unfurler a shape it
+    will look for a byline and a date in, and find neither.
+  -->
+    <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Вярно · vyarno.bg" />
     <meta property="og:locale" content="bg_BG" />
     <!--
@@ -53,9 +62,19 @@
     also stopped showing FAQ rich results for most sites, so the trade is a
     frozen number against nothing.
 
-    What is left is a WebPage that says what the page is and whose it is. The
-    licence is scoped to the CODE, like every other licence statement here: the
-    figures belong to five publishers and are not ours to license.
+    What is left is a WebPage that says what the page is and whose it is.
+
+    THE LICENCE SITS ON THE APPLICATION, NEVER ON THE PAGE, and the distinction
+    is the same one the footer's licence clause is scope-checked for — in the
+    form a machine actually parses. `license` on a schema.org node states the
+    terms of THAT node's content, and this page's content is Eurostat's, the
+    ЕЦБ's, БНБ's, НСИ's and имот.bg's figures under five separate sets of terms
+    (docs/legal.md). Apache-2.0 on the WebPage tells a citing agent that a table
+    of НСИ's quarterly wages is ours to give away, which is the one claim
+    AGENTS.md forbids by name — and it says it to the reader least able to check,
+    on the page built for exactly that reader. The WebApplication below is the
+    code, which is what the grant covers; a consumer wanting the page's terms
+    follows the footer to /legal/#sources, where each publisher's own wording is.
   -->
     <script type="application/ld+json">
       {
@@ -67,9 +86,9 @@
         "isPartOf": {
           "@type": "WebApplication",
           "name": "Вярно",
-          "url": "https://vyarno.bg/"
+          "url": "https://vyarno.bg/",
+          "license": "https://www.apache.org/licenses/LICENSE-2.0"
         },
-        "license": "https://www.apache.org/licenses/LICENSE-2.0",
         "description": "Официалните числа за България — инфлация по групи, данъци и осигуровки, разпределение на заплатите, лихви по жилищни кредити, цени на жилищата и безработица — всяко със своя източник, период и връзка за проверка."
       }
     </script>
