@@ -8,14 +8,18 @@
    * of markup rather than by scrolling six hundred. Adding a row means adding
    * a component and one line here; that is the whole ceremony.
    *
-   * The order is not arbitrary. `LeftoverRow` sits immediately above
-   * `SavingsRow` because the two answer the same question about money that is
-   * not being spent — one forward on an assumption, one backward on published
-   * indices.
+   * The order is not arbitrary. `ResultsAnswer` sits between the headline and
+   * the ranked table because it is the answer and the table is the working:
+   * the three things a reader arrives asking are otherwise spread over rows
+   * that begin two and three screens down a phone, each behind its own
+   * derivation. `LeftoverRow` sits immediately above `SavingsRow` because the
+   * two answer the same question about money that is not being spent — one
+   * forward on an assumption, one backward on published indices.
    */
   import { rankedSplit } from "../lib/view.js";
   import RankedContributions from "./RankedContributions.svelte";
   import ResultsSummary from "./ResultsSummary.svelte";
+  import ResultsAnswer from "./ResultsAnswer.svelte";
   import PocketRow from "./PocketRow.svelte";
   import PercentileRow from "./PercentileRow.svelte";
   import TaxWedgeRow from "./TaxWedgeRow.svelte";
@@ -33,6 +37,8 @@
 
 <div class="m-card m-results">
   <ResultsSummary {calc} />
+
+  <ResultsAnswer {calc} />
 
   <RankedContributions
     ranked={calc.ranked}

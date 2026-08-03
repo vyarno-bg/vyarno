@@ -1022,6 +1022,114 @@ export function rankedSplit(ranked, limit = RANK_ROWS_SHOWN) {
 }
 
 // ---------------------------------------------------------------------------
+// THE PLAIN ANSWER
+// ---------------------------------------------------------------------------
+
+/**
+ * Which of the seven pocket verdicts a raise and a real change land in.
+ *
+ * The states are decided here rather than in the row that names them because
+ * two surfaces read them: `PocketRow`, which has a sentence for each of the
+ * seven, and the answer block at the top of the results card, which collapses
+ * the three near-zero cases into one. Two ladders of thresholds written a
+ * screen apart drift, and the way they drift is silent — the summary at the
+ * top saying the raise is ahead while the row below says it is level, over one
+ * number that has not moved.
+ *
+ * The ±1 pp dead zone has three insides on purpose. «Точно» is bound to
+ * `pocket === 0` and nothing else: printed beside a figure reading «−0,3%» it
+ * is a false sentence over correct arithmetic. A pay CUT is its own state
+ * whatever prices did, because «увеличението е изядено» describes a raise that
+ * never happened.
+ *
+ * @param {number} raisePct   nominal change in take-home, percent
+ * @param {number} pocketPct  the same change in real terms, percent
+ * @returns {'ahead'|'behind'|'level'|'nearUp'|'nearDn'|'none'|'cut'|'unsaid'}
+ */
+export function pocketVerdictState(raisePct, pocketPct) {
+  if (!Number.isFinite(raisePct) || !Number.isFinite(pocketPct)) return "unsaid";
+  if (raisePct === 0) return "none";
+  if (raisePct < 0) return "cut";
+  if (pocketPct >= 1) return "ahead";
+  if (pocketPct <= -1) return "behind";
+  if (pocketPct === 0) return "level";
+  return pocketPct > 0 ? "nearUp" : "nearDn";
+}
+
+/**
+ * The three things a reader arrives asking, as states rather than sentences.
+ *
+ * They arrive wanting to know whether their pay is keeping up, where that puts
+ * them, and what is getting dearer or cheaper. Every figure behind those three
+ * is already computed and already on the page — spread over three receipt rows
+ * two to three screens down a phone. This decides WHICH of them can honestly
+ * be stated and in what state; the component that renders it picks the words.
+ *
+ * **Two of the three refuse to speak, and that is the whole of what this
+ * function is for.** `stand` needs `salaryAnswered`, not merely a rank: the
+ * ladder is a claim about the reader in the second person, and a visitor on
+ * €2,400 told on arrival that they out-earn a third of Sofia has been told
+ * something false about themselves before typing a character — the rule
+ * `PercentileRow` already keeps, restated here because a summary that outran
+ * it would reintroduce the defect one screen higher up. `pay` needs a raise;
+ * with none entered there is no real change to report and the clause asks for
+ * one instead of computing over an absent number.
+ *
+ * `mover` reads the reader's OWN basket rows rather than the published
+ * divisions, so a reader who has zeroed a slider is not told that the thing
+ * they do not buy is what is rising fastest. Highest and lowest rate, not
+ * biggest contribution: the headline block already names the group that adds
+ * the most, and "what is getting dearer" is a different question from "what is
+ * costing me most" — a small, fast-rising row answers the first and not the
+ * second.
+ *
+ * @param {object} args
+ * @param {number} args.raise          nominal change in take-home, percent
+ * @param {number} args.pocket         the same change in real terms, percent
+ * @param {boolean} args.salaryAnswered  whether the reader replaced the placeholder
+ * @param {Array<{ahead:number}>} args.ranks    one ladder position per earner
+ * @param {Array<{division:object, rate:number, share:number}>} args.ranked  contributions()
+ * @returns {{pay:object, stand:object, mover:object}}
+ */
+export function answerLine({
+  raise = NaN,
+  pocket = NaN,
+  salaryAnswered = false,
+  ranks = [],
+  ranked = [],
+}) {
+  const positions = salaryAnswered ? (ranks ?? []) : [];
+  const ahead = positions.map((r) => r.ahead);
+  // Only rows the reader actually spends on. A division at share 0 contributes
+  // nothing to their number, so naming it as what is rising fastest describes
+  // somebody else's basket.
+  const spent = (ranked ?? []).filter((r) => r.share > 0);
+  const dearest = spent.length ? spent.reduce((b, r) => (r.rate > b.rate ? r : b)) : null;
+  const cheapest = spent.length ? spent.reduce((b, r) => (r.rate < b.rate ? r : b)) : null;
+  return {
+    pay: { state: pocketVerdictState(raise, pocket), pocketPct: pocket },
+    stand: ahead.length
+      ? {
+          state: ahead.length > 1 ? "many" : "one",
+          low: Math.min(...ahead),
+          high: Math.max(...ahead),
+        }
+      : { state: "unsaid", low: 0, high: 0 },
+    mover: {
+      // Sign-gated in both directions: a basket where nothing has risen must
+      // not be told what rose fastest, and one where nothing has fallen must
+      // not be handed the least-bad row as a saving.
+      up:
+        dearest && dearest.rate > 0 ? { division: dearest.division, ratePct: dearest.rate } : null,
+      down:
+        cheapest && cheapest.rate < 0
+          ? { division: cheapest.division, ratePct: cheapest.rate }
+          : null,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // SHARE — see docs/principles.md P2
 // ---------------------------------------------------------------------------
 

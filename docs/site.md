@@ -398,6 +398,8 @@ are shaped to make a wrong wiring *unexpressible*:
 | `verifyUrl(row, anchor)` | the "↗" target for one row | linking to the index cube while showing a rate |
 | `fastestRisingDivision(categories)` | the highest-rate division | advertising the *slowest*-rising division as the fastest |
 | `rankedSplit(ranked, limit)` | the rows the ranked list draws **plus the folded remainder** | a capped list under a sentence promising the column adds up — 5.1 points on screen against a stated 5.4 |
+| `pocketVerdictState(raise, pocket)` | which of the seven pocket verdicts a raise lands in | the answer block and the pocket row drifting apart over one number that has not moved |
+| `answerLine({…})` | the three things a reader arrives asking, as states | the plain answer ranking a reader who has typed nothing, or naming a mover out of a basket they zeroed |
 | `sharePayload({…})` | the closed set of fields a share surface may carry | **a € figure beside the percentage, which inverts to the salary** |
 | `shareSentence({share, copy, lang})` | the message a reader copies or hands to the share sheet | a shared number with no national figure beside it, which nobody can place |
 | `barCeiling({…})` | the value both comparison bars are drawn against | the picture a reader sends showing a different comparison from the screen it came from |
@@ -541,6 +543,13 @@ you spend ≈ €216/mo · it rose 11.0% · that costs you ≈ €21 more a mont
 - **The euro figure is priced off that row's own spend**, so it does not sum to
   the whole-basket euro figure above — the column is never totalled on screen.
 - **Groups that got cheaper go negative**, coloured the other way, and say so.
+- **The third line is the working, and it starts folded** behind one control
+  for the whole column rather than a disclosure per row. It repeats verbatim
+  down the table, so five rows on a phone is five three-clause sentences
+  between the reader and «в джоба»; five chips would be more furniture than the
+  five sentences they hide. The name, the verify link, the points and the bar
+  stay — what folds is how the points were arrived at, and a reader comparing
+  rows wants that on all of them or none.
 
 - **The list is capped at eight rows and the remainder is still on screen.**
   `rankLead` tells the reader the rows sum to exactly their number, and
@@ -709,12 +718,12 @@ handler, which is to say a silent one.
 ### The components
 
 `PayField`, `InputsCard` (with `BasketEditor` under it) and
-`ResultsCard`. `ResultsCard` is a running order rather than a template: one
-component per receipt row — `ResultsSummary`, `PocketRow`, `PercentileRow`,
-`TaxWedgeRow`, `RentRow`, `HomeRow`, `LeftoverRow`, `SavingsRow` — so which
-rows the calculator answers, and in what order, is forty lines of markup. Each
-row decides for itself whether it renders; `RentRow` is empty without a rent,
-`HomeRow` without the home block.
+`ResultsCard`. `ResultsCard` is a running order rather than a template: the
+headline, then `ResultsAnswer`, then one component per receipt row —
+`ResultsSummary`, `PocketRow`, `PercentileRow`, `TaxWedgeRow`, `RentRow`,
+`HomeRow`, `LeftoverRow`, `SavingsRow` — so which rows the calculator answers,
+and in what order, is forty lines of markup. Each row decides for itself whether
+it renders; `RentRow` is empty without a rent, `HomeRow` without the home block.
 
 Two components close the card and they are not rows. `ShareCard` draws the
 picture a reader sends; `ResultsWordmark` is the wordmark and the tagline
@@ -810,6 +819,76 @@ room for both columns side by side. Two columns hold their shape to about
 the boundary, and `a_phone_is_asked_before_it_is_told` asserts the ordering
 rather than any pixel figure — the numbers above move with every copy edit, the
 sequence must not.
+
+### Three tiers, and the one thing that may never move down one
+
+The results card holds a headline figure, a plain answer and eight receipt rows,
+and readers reported the whole of it as "super hard" — not wrong and not
+missing anything, a wall of small sentences and figures. So each row is tiered,
+and the tiers are a contract rather than a layout preference:
+
+| Tier | What is in it | Where it lives |
+|---|---|---|
+| 1, always visible | the figure, its label, **one** plain sentence of what it means for this reader, **its source caption, its `as_of` and its verify link**, and any caveat the claim cannot stand without | the row itself |
+| 2, one tap | the derivation, the per-earner breakdown, a second finding the reader has to want before the answer is worth reading, the reason a curve bends | a `<details class="rr-more">` with `summary.disclose` (`disclosure.css`) |
+| 3, one tap, page level | the method, the sources table, the explainer | `MethodDrawer`, `DataPanel`, `ExplainerBand` |
+
+**Prose may move down a tier. A source caption, an `as_of` date and a verify
+link may not.** Most of the small grey text on this page is `.rr-note.ss`
+captions and `.vlink` arrows, so folding "the small grey text" is the obvious
+density move and it is the one
+[`principles.md`](./principles.md) §"Publish the method" forbids in bold: a
+caption a reader has to go looking for has been degraded as surely as one that
+was deleted, and the difference is invisible in a diff that only adds a
+`<details>`. `no source caption or verify link is folded out of view` in
+`verify_render.mjs` is what makes it visible.
+
+**A caveat may not be folded away from a claim that stays visible**, and the
+converse is fine: `LeftoverRow` puts the one-year projection and its P5
+assumption behind the same summary, so neither can be met without the other.
+The instance that matters most is the ladder, whose caveat is the longest
+paragraph on the card and therefore the most tempting thing on it to fold —
+over a second-person ranking of the reader against their neighbours. That pair
+has its own test.
+
+The receipt rows are near their floor under that rule. What the tiering bought
+is where the answers land rather than how tall the page is: on a 390px phone
+with a salary and a raise entered, the last of the four things a reader arrives
+asking moved from 2,315px to 1,476px — 2.7 screens to 1.7.
+
+### The plain answer, and why it is a component rather than a paragraph
+
+`ResultsAnswer` sits between the headline figure and the ranked table: after the
+number it is about, before the working that explains it. Readers arrive asking
+whether their pay is keeping up, where that puts them, and what is getting
+dearer or cheaper, and the card answered all three — in the pocket row, the
+ladder row and the ranked list, each under its own derivation, two and three
+screens down.
+
+It introduces no arithmetic. `view.js#answerLine` decides which of the three can
+honestly be stated and in what state, and the component picks the words. Three
+things about it are load-bearing:
+
+- **Two of the three clauses refuse to compute**, and the refusals are the
+  point. `stand` needs a typed salary rather than merely a rank — a visitor on
+  €2,400 told on arrival that they out-earn a third of Sofia has been told
+  something false about themselves before typing a character, which is the rule
+  `PercentileRow` keeps in its own corner. The answer block sits a screen above
+  that row, so a summary that outran it would move the defect up the page rather
+  than remove it.
+- **The pay verdict comes from `view.js#pocketVerdictState`, which `PocketRow`
+  also reads.** Two ladders of thresholds a screen apart drift, and silently:
+  the summary calling a raise ahead while the row below calls it level, over one
+  number that neither of them moved. The row keeps all seven states because it
+  prints them beside a signed figure; the answer block collapses the three
+  near-zero cases, because up there is nothing to contradict.
+- **It is outside the headline's `aria-live` region**, for the same reason the
+  region is scoped at all: four sentences inside it are four sentences re-read
+  on every tick of a slider that moves none of them.
+
+`answerLine` reads the reader's OWN basket rows for the mover clause, and both
+directions are sign-gated — a basket where nothing fell must not be handed its
+least-bad row as a saving.
 
 ### The ranked table folds where the column is narrow
 

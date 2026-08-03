@@ -64,7 +64,8 @@ necessary, and say in the commit message which tests went and why.
 **Always, without asking:**
 
 - run `make check` before calling a change done, and read the render count —
-  25 is the pass condition, 0 means it found no browser to run in;
+  `site/scripts/check-test-floors.mjs` holds the floor it has to clear, and a
+  count of 0 means the suite found no browser to run in;
 - move a test in the same commit as the code it protects;
 - update `docs/data-sources.md` in the same commit as any change to
   `pipeline/src/vyarno_pipeline/sources/*`;

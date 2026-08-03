@@ -103,28 +103,39 @@
           cap: fmt0(wedge.capGross),
         })}</span
       >
-      <ul class="wedge-earners">
-        {#each wedge.earners as e (e.index)}
-          <li>
-            <span class="l-bg"
-              >{@html t(COPY.wedgeEarnerLine, "bg", {
-                n: fmt0(e.ordinal),
-                gross: fmt0(e.gross),
-                eff: fmt(e.effectivePct),
-                cap: e.overCap ? COPY.wedgeEarnerOverCap.bg : "",
-              })}</span
-            >
-            <span class="l-en"
-              >{@html t(COPY.wedgeEarnerLine, "en", {
-                n: fmt0(e.ordinal),
-                gross: fmt0(e.gross),
-                eff: fmt(e.effectivePct),
-                cap: e.overCap ? COPY.wedgeEarnerOverCap.en : "",
-              })}</span
-            >
-          </li>
-        {/each}
-      </ul>
+      <!-- The lead already says the ceiling is per contract, which is the
+           finding. Where each income sits against it is the working behind
+           that sentence, and on a phone six of these lines stand between the
+           household's own rate and the chart that shows what they mean. -->
+      <details class="rr-more">
+        <summary class="disclose">
+          <span class="dc-caret" aria-hidden="true">›</span>
+          <span class="l-bg">{COPY.discloseByEarner.bg}</span>
+          <span class="l-en">{COPY.discloseByEarner.en}</span>
+        </summary>
+        <ul class="wedge-earners">
+          {#each wedge.earners as e (e.index)}
+            <li>
+              <span class="l-bg"
+                >{@html t(COPY.wedgeEarnerLine, "bg", {
+                  n: fmt0(e.ordinal),
+                  gross: fmt0(e.gross),
+                  eff: fmt(e.effectivePct),
+                  cap: e.overCap ? COPY.wedgeEarnerOverCap.bg : "",
+                })}</span
+              >
+              <span class="l-en"
+                >{@html t(COPY.wedgeEarnerLine, "en", {
+                  n: fmt0(e.ordinal),
+                  gross: fmt0(e.gross),
+                  eff: fmt(e.effectivePct),
+                  cap: e.overCap ? COPY.wedgeEarnerOverCap.en : "",
+                })}</span
+              >
+            </li>
+          {/each}
+        </ul>
+      </details>
     {:else if only && only.overCap}
       <span class="l-bg"
         >{@html t(COPY.wedgeOver, "bg", {
@@ -273,20 +284,32 @@
     >
   </div>
 
-  <div class="rr-note">
-    <span class="l-bg"
-      >{@html t(COPY.wedgeWhy, "bg", {
-        peak: fmt(wedge.peakEffectivePct),
-        cap: fmt0(wedge.capGross),
-      })}</span
-    >
-    <span class="l-en"
-      >{@html t(COPY.wedgeWhy, "en", {
-        peak: fmt(wedge.peakEffectivePct),
-        cap: fmt0(wedge.capGross),
-      })}</span
-    >
-  </div>
+  <!-- Why the curve does what the chart shows. It explains the picture rather
+       than qualifying it: the sentences above state the reader's own rate and
+       the chart draws the shape, and neither becomes less true unopened. The
+       key under the chart still names both series, so a reader who does not
+       tap is not left with an unlabelled plot. -->
+  <details class="rr-more">
+    <summary class="disclose">
+      <span class="dc-caret" aria-hidden="true">›</span>
+      <span class="l-bg">{COPY.discloseWedgeWhy.bg}</span>
+      <span class="l-en">{COPY.discloseWedgeWhy.en}</span>
+    </summary>
+    <div class="rr-note rr-more-body">
+      <span class="l-bg"
+        >{@html t(COPY.wedgeWhy, "bg", {
+          peak: fmt(wedge.peakEffectivePct),
+          cap: fmt0(wedge.capGross),
+        })}</span
+      >
+      <span class="l-en"
+        >{@html t(COPY.wedgeWhy, "en", {
+          peak: fmt(wedge.peakEffectivePct),
+          cap: fmt0(wedge.capGross),
+        })}</span
+      >
+    </div>
+  </details>
 </div>
 
 <style>
@@ -341,12 +364,16 @@
     fill: var(--muted);
     font-family: var(--mono);
   }
-  /* One line per income under the household sentence. Unbulleted and indented
-     to the sentence above it: these are the parts of that total, not a list of
-     separate findings. */
+  /* One line per income behind the household sentence's disclosure. Unbulleted
+     and indented: these are the parts of that total, not a list of separate
+     findings. The indent comes from `.rr-more-body`'s rule in disclosure.css,
+     which every folded block on the card shares — a second one here would give
+     this row a deeper step than its neighbours for no reason a reader could
+     name. */
   .wedge-earners {
-    margin: 4px 0 0;
-    padding: 0 0 0 12px;
+    margin: 7px 0 0;
+    padding: 0 0 0 10px;
+    border-left: 1px solid var(--line-2);
     list-style: none;
   }
   .wedge-key {

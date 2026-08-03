@@ -195,33 +195,47 @@
       <!-- Reverse: "what can I afford?" — given salary, rate, term,
            what's the max home the user could finance and stay under
            the 30% cap? Shown whenever the gap > 0 (i.e. the user's
-           current pick is unaffordable). -->
-      {#if mortCapGap > 0}
-        <div class="mort-reverse over">
-          <span class="l-bg"
-            >при този доход, лихва и срок можеш да си позволиш дом до <b>{fmt0(maxAffordPrice)} €</b
+           current pick is unaffordable).
+
+           A second question rather than the working behind the first: the row
+           answers "can I carry this one", and this answers "then what could
+           I". The line above states which side of the 30% mark the payment
+           falls, and the БНБ comparison under it says what that line is and
+           is not — both are the claim and its caveat, and both stay. -->
+      <details class="rr-more">
+        <summary class="disclose">
+          <span class="dc-caret" aria-hidden="true">›</span>
+          <span class="l-bg">{COPY.discloseAfford.bg}</span>
+          <span class="l-en">{COPY.discloseAfford.en}</span>
+        </summary>
+        {#if mortCapGap > 0}
+          <div class="mort-reverse over">
+            <span class="l-bg"
+              >при този доход, лихва и срок можеш да си позволиш дом до <b
+                >{fmt0(maxAffordPrice)} €</b
+              >
+              · <b>{fmt(maxAffordM2, 0)} м²</b> в София.</span
             >
-            · <b>{fmt(maxAffordM2, 0)} м²</b> в София.</span
-          >
-          <span class="l-en"
-            >at this income, rate, and term you can afford up to <b>{fmt0(maxAffordPrice)} €</b>
-            · <b>{fmt(maxAffordM2, 0)} m²</b> in Sofia (at this rate and term).</span
-          >
-        </div>
-      {:else if monthlyMort > 0}
-        <div class="mort-reverse">
-          <span class="l-bg"
-            >можеш да си позволиш дом до <b>{fmt0(maxAffordPrice)} €</b> ·
-            <b>{fmt(maxAffordM2, 0)} м²</b>
-            - избраният ({fmt0(homePrice)} €) е под границата.</span
-          >
-          <span class="l-en"
-            >you can afford up to <b>{fmt0(maxAffordPrice)} €</b> ·
-            <b>{fmt(maxAffordM2, 0)} m²</b>
-            - your pick ({fmt0(homePrice)} €) is under the ceiling.</span
-          >
-        </div>
-      {/if}
+            <span class="l-en"
+              >at this income, rate, and term you can afford up to <b>{fmt0(maxAffordPrice)} €</b>
+              · <b>{fmt(maxAffordM2, 0)} m²</b> in Sofia (at this rate and term).</span
+            >
+          </div>
+        {:else if monthlyMort > 0}
+          <div class="mort-reverse">
+            <span class="l-bg"
+              >можеш да си позволиш дом до <b>{fmt0(maxAffordPrice)} €</b> ·
+              <b>{fmt(maxAffordM2, 0)} м²</b>
+              - избраният ({fmt0(homePrice)} €) е под границата.</span
+            >
+            <span class="l-en"
+              >you can afford up to <b>{fmt0(maxAffordPrice)} €</b> ·
+              <b>{fmt(maxAffordM2, 0)} m²</b>
+              - your pick ({fmt0(homePrice)} €) is under the ceiling.</span
+            >
+          </div>
+        {/if}
+      </details>
       <!-- Where our line sits versus the regulator's and versus
            what BG borrowers actually carry. A bank may approve up
            to DSTI 50% — that is not the same as affordable, and
