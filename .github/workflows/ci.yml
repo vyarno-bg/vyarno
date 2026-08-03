@@ -195,6 +195,13 @@ jobs:
       - name: The built page actually renders
         working-directory: site
         run: npm run test:render
+      # No floor check here, unlike the `site` job, and that is on purpose. How
+      # many tests the repository has is a property of the repository, so
+      # asking twice answers the same question twice — and the second answer is
+      # not guaranteed to match: a suite that skipped a case on one platform
+      # reports fewer passes there, which would fail this job for a reason that
+      # has nothing to do with a deleted test. The `site` and `pipeline` jobs
+      # own that check between them.
 
   authorship:
     name: authorship · every commit is signed by a person

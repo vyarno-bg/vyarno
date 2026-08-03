@@ -9,13 +9,16 @@
 # the same order. Two deliberate differences, and they are here rather than
 # left for someone to find in a diff:
 #
-#   `build` runs `npm run build:release`, while CI runs `npm run build`.
+#   `build` runs `npm run build:release`, while CI's `site` job runs
+#   `npm run build`.
 #
 # The two differ only in `scripts/check-identity.mjs`, which WARNS under
-# `build` and FAILS under `build:release`. CI must not go red over a legal fact
-# — a preview of a branch is not a publication — but a local `make check` is
-# the last thing run before a change is opened, and that is the right place to
-# be told the published identity would not be true.
+# `build` and FAILS under `build:release`. The `site` job must not go red over
+# a legal fact — a preview of a branch is not a publication — but a local
+# `make check` is the last thing run before a change is opened, and that is the
+# right place to be told the published identity would not be true. CI's
+# `windows` job does run `build:release`, for a separate reason it states
+# there, so the release path is exercised somewhere on every push.
 #
 #   `render` refuses to start without a browser, where CI simply installs one.
 #
