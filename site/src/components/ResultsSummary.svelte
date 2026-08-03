@@ -9,7 +9,7 @@
    * unusable with a screen reader.
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, percentSigned } from "../lib/format.js";
+  import { number, integer } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import { barCeiling } from "../lib/view.js";
 
@@ -27,7 +27,6 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
-  const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
   // The four non-official chips are hand-made illustrations, not survey data:
   // there is no BG household-budget microdata at the resolution a data-driven
@@ -43,10 +42,6 @@
   const activePresetLabel = $derived(
     PRESET_LABEL_KEY[calc.activePreset] ? t(COPY[PRESET_LABEL_KEY[calc.activePreset]], $lang) : ""
   );
-  // Verdict colour follows the basket-vs-average gap, not the level: the
-  // question this card answers is "is your basket dearer than the average
-  // Bulgarian's?", so a high-but-typical basket is not painted as a loss.
-  const verdictCls = $derived(calc.nearOfficial ? "" : calc.dpi > 0 ? "er" : "em");
 
   // The one link from the results back to the inputs. It reaches across a
   // component boundary by id, the same way the header's skip link reaches
@@ -90,6 +85,10 @@
 </div>
 
 <div aria-live="polite" aria-atomic="true">
+  <!-- The colour follows the basket-vs-average GAP, not the level: the question
+       this card answers is "is your basket dearer than the average Bulgarian's?",
+       so a high-but-typical basket is not painted as a loss. The same triple
+       paints the bar fill below, which is drawn against the same comparison. -->
   <div
     class="r-big mono"
     style="color: {calc.nearOfficial
@@ -214,39 +213,27 @@
   </div>
 </div>
 
+<!-- The verdict says what the two bars above it MEAN, and carries no figure of
+     its own. Both rates are already stated three lines up — labelled, to one
+     decimal, over the period the caption names — so a paragraph that reprints
+     them puts the same pair of numbers on screen twice, 20px apart, and the
+     reader reads the second copy looking for the difference from the first.
+     What the bars cannot say is which of the two is bigger and whether the gap
+     is worth calling one: that is a sentence, and this is it.
+
+     Nothing folds and nothing leaves the default view — the figures stay where
+     a reader can compare their lengths, which is the one thing the bars are for.
+     `the verdict names the comparison in words, over bars that keep both
+     figures` in verify_render.mjs holds both halves of that. -->
 <p class="m-verdict">
-  {#if calc.anchor === "y1"}
-    <span class="l-bg"
-      ><b>Твоята инфлация: <span class={verdictCls}>{fmt(calc.pi)}%</span>.</b><br
-      />Средностатистическата: {fmt(calc.off)}%.</span
-    >
-    <span class="l-en"
-      ><b>Your inflation: <span class={verdictCls}>{fmt(calc.pi)}%</span>.</b><br />The average: {fmt(
-        calc.off
-      )}%.</span
-    >
-  {:else}
-    <!-- Signed, not «+» glued to a locale-formatted number: a basket
-         weighted onto the groups that are falling makes π negative,
-         and this line — the card's headline — printed «+−1,2%». -->
-    <span class="l-bg"
-      ><b>Твоята кошница от {calc.anchor}: <span class={verdictCls}>{signedPct(calc.pi)}</span>.</b
-      ><br />Средностатистическата: {signedPct(calc.off)}.</span
-    >
-    <span class="l-en"
-      ><b>Your basket since {calc.anchor}: <span class={verdictCls}>{signedPct(calc.pi)}</span>.</b
-      ><br />The average: {signedPct(calc.off)}.</span
-    >
-  {/if}
   {#if calc.nearOfficial}
-    <br /><span class="l-bg">Кошницата ти е близо до средностатистическата.</span>
+    <span class="l-bg">Кошницата ти е близо до средностатистическата.</span>
     <span class="l-en">Your basket is close to the average.</span>
   {:else if calc.dpi > 0}
-    <br /><span class="l-bg">При теб е по-скъпо, отколкото при средностатистическия българин.</span>
+    <span class="l-bg">При теб е по-скъпо, отколкото при средностатистическия българин.</span>
     <span class="l-en">For you it's pricier than for the average Bulgarian.</span>
   {:else}
-    <br /><span class="l-bg">При теб е по-евтино, отколкото при средностатистическия българин.</span
-    >
+    <span class="l-bg">При теб е по-евтино, отколкото при средностатистическия българин.</span>
     <span class="l-en">For you it's cheaper than for the average Bulgarian.</span>
   {/if}
 </p>
@@ -376,11 +363,5 @@
     letter-spacing: -0.01em;
     margin: 12px 0 0;
     max-width: 46ch;
-  }
-  .m-verdict .er {
-    color: var(--erode);
-  }
-  .m-verdict .em {
-    color: var(--real-ink);
   }
 </style>

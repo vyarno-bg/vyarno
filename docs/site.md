@@ -856,6 +856,27 @@ is where the answers land rather than how tall the page is: on a 390px phone
 with a salary and a raise entered, the last of the four things a reader arrives
 asking moved from 2,315px to 1,476px — 2.7 screens to 1.7.
 
+### The two bars carry the figures; the verdict under them carries the words
+
+Density on this card has two moves that look alike and are not. **Folding a
+figure out of the default view is not ours to decide** — the tax-wedge chart and
+the comparison bars stay open for that reason. **Saying the same figure twice on
+one screen is a different thing**, and the pair of comparison bars is where it
+shows: the bars state the reader's rate and the average, labelled, to one
+decimal, over the period their caption names, and `barCeiling` draws them
+against a shared scale so the two can be compared by length. A paragraph
+directly beneath that reprints both rates puts the same pair 20px apart, and a
+reader who meets a number twice reads the second copy looking for the difference
+from the first.
+
+So `.m-verdict` says what the bars cannot: which rate is bigger, and whether the
+gap is worth calling one — `nearOfficial`'s ±0.8 pp dead zone at the one-year
+anchor, wider at the others. Three sentences, no figure. `the verdict names the
+comparison in words, over bars that keep both figures` in `verify_render.mjs`
+holds both halves, because they pull against each other: it asserts each bar
+still states a rate to one decimal AND that the sentence beneath them carries no
+digit.
+
 ### The plain answer, and why it is a component rather than a paragraph
 
 `ResultsAnswer` sits between the headline figure and the ranked table: after the
