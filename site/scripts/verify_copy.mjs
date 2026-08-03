@@ -103,17 +103,45 @@ test("every COPY entry ships both languages, non-empty", () => {
   );
 });
 
+/**
+ * The keys a component reaches by name rather than by `COPY.key`.
+ *
+ * Two of the three sets are imported as values, so a key added to the share
+ * text or the share card joins this automatically. The third is the Sofia
+ * comparator's direction map in `PayField.svelte`, which is a component-local
+ * const and cannot be imported — those three are written out, and the cost of
+ * forgetting is a key reported dead rather than a key silently unguarded.
+ *
+ * Everything NOT here has to appear as `COPY.key`. Accepting a bare `"key"`
+ * string for every key is what let a name mentioned in passing count as a
+ * render site, and it is why three sections kept their own stricter copy of
+ * this check.
+ */
+const REACHED_BY_NAME = new Set([
+  ...SHARE_COPY_KEYS,
+  ...SHARE_CARD_COPY_KEYS,
+  "statSofiaAbove",
+  "statSofiaBelow",
+  "statSofiaEqual",
+]);
+
 test("no COPY key is dead, and no rendered key is missing", () => {
   const sources = LIVE_SOURCES;
   const declared = new Set(Object.keys(COPY));
 
-  // A key with no render site is dead weight that reads as shipped. Both
-  // access forms count: `COPY.key`, and the dynamic `COPY[chosenKey]` the
-  // Sofia comparator uses, where the key name appears as a string literal.
-  const unused = [...declared].filter(
-    (key) => !new RegExp(`COPY\\.${key}\\b|["']${key}["']`).test(sources)
+  // A key with no render site is dead weight that reads as shipped. This is
+  // the only check on that for any key in the file — the sections that carry
+  // editorial rules below assert their own rules and leave this one here.
+  const unused = [...declared].filter((key) =>
+    REACHED_BY_NAME.has(key)
+      ? !new RegExp(`["']${key}["']`).test(sources)
+      : !new RegExp(`COPY\\.${key}\\b`).test(sources)
   );
-  assert.deepEqual(unused, [], `COPY keys nothing renders: ${unused.join(", ")}`);
+  assert.deepEqual(
+    unused,
+    [],
+    `COPY keys nothing renders — wire them or delete them: ${unused.join(", ")}`
+  );
 
   // …and the reverse: a typo'd reference renders "undefined" silently.
   const referenced = new Set([...sources.matchAll(/\bCOPY\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
@@ -409,17 +437,11 @@ const WEDGE_KEYS = [
   "wedgeAxisCap",
 ];
 
-test("every tax-wedge string ships bilingual, in the right alphabet, and is rendered", () => {
+test("every tax-wedge string ships bilingual and in the right alphabet", () => {
   for (const key of WEDGE_KEYS) {
     const [bg, en] = pair(key);
     assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
     assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Bulgarian text`);
-    assert.ok(
-      LIVE_SOURCES.includes(`COPY.${key}`),
-      `COPY.${key} is never rendered — either wire it or delete it ` +
-        "(docs/testing-strategy.md: a test that outlives its feature is a bug, " +
-        "not furniture)"
-    );
   }
 });
 
@@ -496,23 +518,6 @@ test("the only percentage hardcoded in the wedge copy is the published flat rate
 
 // --- the pocket row and the stand-still target -----------------------------
 
-test("the pocket row has a sentence for every state it can be in", () => {
-  // Seven states, seven sentences. A state with no sentence renders a blank
-  // line exactly where the reader is looking for the verdict.
-  for (const key of [
-    "pocketOk",
-    "pocketBad",
-    "pocketZero",
-    "pocketNearUp",
-    "pocketNearDn",
-    "pocketCut",
-    "pocketNone",
-  ]) {
-    pair(key);
-    assert.ok(LIVE_SOURCES.includes(`COPY.${key}`), `COPY.${key} is never rendered`);
-  }
-});
-
 test("only the exactly-cancelling pocket verdict claims to be exact", () => {
   // «точно» / "exactly" is reserved for `pocket === 0`. The near-miss verdicts
   // are shown for a RANGE of values, so claiming exactness there is false for
@@ -553,11 +558,6 @@ test("the one-year projection names itself an assumption", () => {
   const [bg, en] = pair("leftAssume");
   assert.ok(bg.includes("допускане"), "the BG caveat does not name itself an assumption");
   assert.ok(/assumption/i.test(en), "the EN caveat does not name itself an assumption");
-  assert.ok(LIVE_SOURCES.includes("COPY.leftCash"), "the cash-erosion sentence is not rendered");
-  assert.ok(
-    LIVE_SOURCES.includes("COPY.leftAssume"),
-    "the one-year figure is rendered without its assumption"
-  );
 });
 
 test("a hand-made preset says so where its number is read", () => {
@@ -567,7 +567,6 @@ test("a hand-made preset says so where its number is read", () => {
   // (docs/principles.md P3). The "official" basket is real published data and must NOT
   // be labelled as one of our illustrations.
   pair("presetActive");
-  assert.ok(LIVE_SOURCES.includes("COPY.presetActive"), "COPY.presetActive is never rendered");
 
   const map = /PRESET_LABEL_KEY = \{([\s\S]*?)\};/.exec(LIVE_SOURCES);
   assert.ok(map, "PRESET_LABEL_KEY is gone");
@@ -624,7 +623,6 @@ test("a ready-made basket names a basket, never the reader", () => {
     /Eurostat/,
     "the EN line by the chips does not say whose the real basket is"
   );
-  assert.ok(LIVE_SOURCES.includes("COPY.presetsHint"), "the ready-made baskets carry no caveat");
 });
 
 test("the over-budget line describes rather than advises", () => {
@@ -671,10 +669,6 @@ test("the modelled pay band says it is modelled", () => {
   // a measurement.
   const [bg, en] = pair("statMedianSubModelled");
   assert.ok(bg.length > 3 && en.length > 3, "the modelled caveat is empty");
-  assert.ok(
-    LIVE_SOURCES.includes("COPY.statMedianSubModelled"),
-    "the middle-60% band no longer carries its own modelled caveat"
-  );
 });
 
 test("no strip source caption is pinned to English", () => {
@@ -880,7 +874,6 @@ test("the payslip names every row in both languages", () => {
     const [bg, en] = pair(key);
     assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
     assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Bulgarian text`);
-    assert.ok(LIVE_SOURCES.includes(`COPY.${key}`), `COPY.${key} is never rendered`);
   }
   // The ceiling row and the provenance line are substitution strings. A missing
   // placeholder renders the literal; a render site that stopped going through
@@ -940,10 +933,6 @@ test("the percentile caveat admits the survey behind it is national", () => {
   assert.ok(
     /whole country|national/i.test(en),
     `COPY.pctCaveat.en does not say the survey covers the whole country: ${en}`
-  );
-  assert.ok(
-    LIVE_SOURCES.includes("COPY.pctCaveat"),
-    "the percentile row no longer renders its caveat"
   );
 });
 
