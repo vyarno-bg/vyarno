@@ -910,6 +910,43 @@ export function seriesCells(payload) {
     .map((period) => ({ period, value: series[period] }));
 }
 
+/** The four columns a quarterly grid has, in order. */
+export const QUARTERS = Object.freeze(["Q1", "Q2", "Q3", "Q4"]);
+
+/**
+ * A quarterly series as one row per year, four cells wide.
+ *
+ * Layout, not arithmetic: the same cells `seriesCells` returns, placed in the
+ * column their quarter names. A quarterly series long enough to be worth
+ * showing is a column of twenty-five one-number rows, which is a scroll box or
+ * a page nobody reaches the end of; seven rows of four is the whole of it at
+ * once. **Nothing is combined on the way** — the НСИ licence forbids
+ * distributing производни и сборни произведения (docs/legal.md §НСИ, §2.1.1),
+ * so a year row is four published cells side by side and never their average,
+ * however naturally a fifth column would sit there.
+ *
+ * A quarter with no cell is `null` rather than absent, so a year with a
+ * publication still to come renders four columns with a gap in it instead of a
+ * short row that reads as a different year's shape.
+ *
+ * @param {{series_by_period?: Record<string, number>}|null} payload
+ * @returns {Array<{year: string, cells: Array<{period: string, value: number}|null>}>}
+ *   oldest year first
+ */
+export function quarterGrid(payload) {
+  const byYear = new Map();
+  for (const cell of seriesCells(payload)) {
+    const match = /^(\d{4})-(Q[1-4])$/.exec(cell.period);
+    if (!match) continue;
+    const [, year, quarter] = match;
+    if (!byYear.has(year)) byYear.set(year, { year, cells: QUARTERS.map(() => null) });
+    byYear.get(year).cells[QUARTERS.indexOf(quarter)] = cell;
+  }
+  // `seriesCells` sorts, and a Map keeps insertion order, so the years arrive
+  // oldest first without a second comparator to keep in step with the first.
+  return [...byYear.values()];
+}
+
 // ---------------------------------------------------------------------------
 // THE HOUSEHOLD, EARNER BY EARNER
 // ---------------------------------------------------------------------------

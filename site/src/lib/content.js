@@ -1368,7 +1368,10 @@ export const COPY = {
   howColMarginal: { bg: "върху следващото евро", en: "on the next euro" },
   howColRung: { bg: "стъпало", en: "rung" },
   howColBasis: { bg: "измерено или пресметнато", en: "surveyed or modelled" },
-  howColQuarter: { bg: "тримесечие", en: "quarter" },
+  // The wage series is laid out a year to a row and a quarter to a column, so
+  // the row header names the year and the four column headings are "Q1".."Q4",
+  // which need no translation and are generated from `view.js#QUARTERS`.
+  howColYear: { bg: "година", en: "year" },
   howColWage: { bg: "средна брутна заплата", en: "average gross wage" },
   howColCheck: { bg: "проверка", en: "check" },
 

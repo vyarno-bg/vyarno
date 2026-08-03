@@ -46,6 +46,8 @@ import {
   payLadder,
   sofiaHomeAtAverageWage,
   seriesCells,
+  quarterGrid,
+  QUARTERS,
   payslipPanel,
   earnerRanks,
   sofiaGap,
@@ -2037,5 +2039,47 @@ test("seriesCells selects published cells, in order, and computes nothing", () =
   assert.equal(rendered.length, Object.keys(published).length);
   for (const { period, value } of rendered) {
     assert.equal(value, published[period], `${period} was changed on the way to the page`);
+  }
+});
+
+test("quarterGrid lays the same cells out a year to a row, and combines nothing", () => {
+  // Layout, not arithmetic. The row is four published cells side by side; the
+  // fifth column a reader would expect at the end of it — the year's average —
+  // is exactly what НСИ's licence does not allow us to distribute, so there is
+  // no argument here that would produce one and no field on the row to hold it.
+  const grid = quarterGrid({
+    series_by_period: { "2021-Q1": 3, "2020-Q1": 1, "2020-Q3": 2, "2026-M05": 9 },
+  });
+  assert.deepEqual(
+    grid.map((r) => r.year),
+    ["2020", "2021"],
+    "the years are out of order, or a monthly period was let into a quarterly grid"
+  );
+  assert.deepEqual(
+    grid[0].cells.map((c) => c?.value ?? null),
+    [1, null, 2, null],
+    "a cell landed in the wrong quarter's column"
+  );
+  for (const row of grid) {
+    assert.equal(row.cells.length, QUARTERS.length, `${row.year} is not four columns wide`);
+    // No aggregate on the row. A year total or average is a производно
+    // произведение over НСИ's cells (docs/legal.md §НСИ, §2.1.1), and the row
+    // shape is where one would be added without anyone calling it that.
+    assert.deepEqual(Object.keys(row).sort(), ["cells", "year"]);
+  }
+  assert.deepEqual(quarterGrid(null), []);
+
+  // Against the real payload: every cell reaches its column unchanged, and
+  // none is dropped on the way.
+  const wage = read("sofia_salary");
+  if (!wage) return;
+  const flat = quarterGrid(wage).flatMap((r) => r.cells.filter(Boolean));
+  assert.equal(flat.length, seriesCells(wage).length, "the grid lost a published quarter");
+  for (const cell of flat) {
+    assert.equal(
+      cell.value,
+      wage.series_by_period[cell.period],
+      `${cell.period} was changed on the way into the grid`
+    );
   }
 });

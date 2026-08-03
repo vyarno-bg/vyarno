@@ -79,7 +79,7 @@ import {
   householdRaise,
   netsOf,
   payLadder,
-  seriesCells,
+  quarterGrid,
   sofiaGap,
   sofiaHomeAtAverageWage,
   sofiaQuarter as publishedSofiaQuarter,
@@ -484,8 +484,8 @@ export class Calculator {
       m2: HOME.m2Default,
     })
   );
-  /** НСИ's quarterly Sofia wage cells, oldest first — selected, never averaged. */
-  sofiaWageCells = $derived(seriesCells(this.data.sofiaSalary));
+  /** НСИ's quarterly Sofia wage cells, a year to a row — selected, never averaged. */
+  sofiaWageGrid = $derived(quarterGrid(this.data.sofiaSalary));
 
   // ---------------------------------------------------------------------
   // Derived: the pay packet

@@ -32,6 +32,7 @@
   import SiteFooter from "./lib/SiteFooter.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
+  import { QUARTERS } from "./lib/view.js";
   import { number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
 
   /**
@@ -883,29 +884,52 @@
       {/if}
     </div>
 
-    {#if calc.sofiaWageCells.length > 0}
-      <div class="scroll tall">
+    <!-- A year to a row and a quarter to a column, so the whole series is on
+         screen at once. One row per quarter is twenty-five rows of a single
+         number each, which is either a very long column or a scroll box — and
+         a scroll box on a reference page hides the half of the series a reader
+         came for behind an affordance they have to notice first.
+
+         `view.js#quarterGrid` does the placing. Nothing is combined on the way:
+         a year row is four cells НСИ published, side by side, and the column a
+         reader would expect at the end of it — the year's average — is exactly
+         what their licence does not allow us to distribute. -->
+    {#if calc.sofiaWageGrid.length > 0}
+      <div class="scroll">
         <table class="fig-table">
+          <!-- A caption rather than a column heading: with the quarters across
+               the top and the years down the side there is no column left to
+               say what the cells ARE, and a grid of bare euro amounts under a
+               heading about unemployment names nothing. It is also what a
+               screen reader announces on entering the table. -->
+          <caption>
+            <span class="l-bg">{COPY.howColWage.bg}</span>
+            <span class="l-en">{COPY.howColWage.en}</span>
+          </caption>
           <thead>
             <tr>
               <th scope="col">
-                <span class="l-bg">{COPY.howColQuarter.bg}</span>
-                <span class="l-en">{COPY.howColQuarter.en}</span>
+                <span class="l-bg">{COPY.howColYear.bg}</span>
+                <span class="l-en">{COPY.howColYear.en}</span>
               </th>
-              <th scope="col" class="num">
-                <span class="l-bg">{COPY.howColWage.bg}</span>
-                <span class="l-en">{COPY.howColWage.en}</span>
-              </th>
+              {#each QUARTERS as quarter (quarter)}
+                <th scope="col" class="num mono">{quarter}</th>
+              {/each}
             </tr>
           </thead>
           <tbody>
-            {#each calc.sofiaWageCells as cell (cell.period)}
+            {#each calc.sofiaWageGrid as row (row.year)}
               <tr>
-                <th scope="row" class="mono">
-                  <span class="l-bg">{when(cell.period).bg}</span>
-                  <span class="l-en">{when(cell.period).en}</span>
-                </th>
-                <td class="num mono">{fmt0(cell.value)} €</td>
+                <th scope="row" class="mono">{row.year}</th>
+                {#each row.cells as cell, i (QUARTERS[i])}
+                  <td class="num mono">
+                    {#if cell}
+                      {fmt0(cell.value)} €
+                    {:else}
+                      <span class="soft">—</span>
+                    {/if}
+                  </td>
+                {/each}
               </tr>
             {/each}
           </tbody>
@@ -1145,10 +1169,6 @@
     overflow-x: auto;
     margin-top: 16px;
   }
-  .scroll.tall {
-    max-height: 22rem;
-    overflow-y: auto;
-  }
   .fig-table {
     width: 100%;
     border-collapse: collapse;
@@ -1185,6 +1205,14 @@
     margin-right: 6px;
   }
   .fig-table .soft {
+    color: var(--muted);
+  }
+  .fig-table caption {
+    text-align: left;
+    padding-bottom: 8px;
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--muted);
   }
   .fig-table tr.mark {
