@@ -58,7 +58,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
     ├── eslint.config.js · .prettierrc.json · svelte.config.js
     ├── scripts/     verify_*.mjs (`npm run verify:math`) · verify_render.mjs
     │                (`npm run test:render`, the built page in a browser) ·
-    │                copy-data · gen-sitemap · gen-version ·
+    │                prerender · copy-data · gen-sitemap · gen-version ·
     │                strip-sourcemaps · check-identity
     └── src/         App.svelte · Legal.svelte · Support.svelte · NotFound.svelte
         ├── components/  the calculator's parts: SiteHeader · DataBanner ·

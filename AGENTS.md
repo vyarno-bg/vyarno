@@ -202,6 +202,7 @@ anti-slop pass must not strip.
 | Touch a formula or a published number | `docs/math.md` |
 | Work out why a gate tripped | `docs/validation-gates.md` |
 | Touch the SPA | `site/AGENTS.md`, then `docs/site.md` |
+| Touch what a crawler reads — the prerendered shell, `robots.txt`, the head tags | `docs/seo.md` |
 | Touch the pipeline | `pipeline/AGENTS.md` |
 | Write or move a test | `docs/testing-strategy.md` |
 | Write a commit, a PR body, a comment or a doc | `docs/writing-style.md` |

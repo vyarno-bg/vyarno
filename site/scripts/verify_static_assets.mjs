@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { ORIGIN, newestAsOf, sitemapXml } from "./gen-sitemap.mjs";
+import { MOUNT_POINT, injectPrerender } from "./prerender.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const site = (...p) => join(HERE, "..", ...p);
@@ -247,6 +248,54 @@ test("the four build entries exist where vite.config.js expects them", () => {
         "deployed while the build stays green."
     );
   }
+});
+
+// ---------------------------------------------------------------------------
+// the prerendered shell
+//
+// The step itself needs a Vite build and belongs to `verify_render.mjs`, which
+// has one. What is checkable without a build is the contract between the three
+// files that have to agree — `index.html` offers a mount point, the build step
+// writes the shell into it, `main.js` empties it before mounting — and the
+// string surgery in the middle.
+// ---------------------------------------------------------------------------
+
+test("the prerendered shell has a mount point, and one place that empties it", () => {
+  assert.ok(
+    read("index.html").includes(MOUNT_POINT),
+    `index.html no longer carries ${MOUNT_POINT} verbatim, so the prerender ` +
+      "step has nowhere to write the shell. The marker, the injection and " +
+      "main.js's mount target move together."
+  );
+  assert.match(
+    read("src", "main.js"),
+    /replaceChildren\(\)[\s\S]*mount\(/,
+    "main.js mounts without emptying its target first. `mount()` appends, and " +
+      "the built page arrives with the shell already in #app — the reader " +
+      "would get the header, the explainer and the footer twice."
+  );
+});
+
+test("injecting the shell refuses a page it cannot place it in", () => {
+  const page = `<body>${MOUNT_POINT}<noscript>x</noscript></body>`;
+  assert.equal(
+    injectPrerender(page, "<h1>Вярно</h1>"),
+    '<body><div id="app"><h1>Вярно</h1></div><noscript>x</noscript></body>',
+    "the shell has to land inside #app, where main.js empties it again"
+  );
+
+  // Prose, run through `String.replace`. `$&` and `$1` are capture references
+  // there, so a replacement string would have spliced the mount point back
+  // into the middle of the shell.
+  assert.ok(injectPrerender(page, "a $& b $1 c").includes("a $& b $1 c"));
+
+  assert.throws(
+    () => injectPrerender("<body><div id=app></div></body>", "<h1>x</h1>"),
+    /no <div id="app">/,
+    "a build whose mount point moved returned the page unchanged instead of " +
+      "failing. A prerender that quietly did nothing looks exactly like a " +
+      "build that worked."
+  );
 });
 
 test("the 404 page is noindex and routes back to the calculator", () => {

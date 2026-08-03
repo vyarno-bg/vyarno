@@ -135,6 +135,82 @@ const skip = !built
     ? "no Chromium available to Playwright"
     : false;
 
+// ---------------------------------------------------------------------------
+// The prerendered shell — the built HTML as a crawler reads it.
+//
+// `scripts/prerender.mjs` renders `App.svelte` on the server at build time so
+// the page carries its own prose before the bundle runs. Two assertions, in
+// opposite directions, and they need the build rather than a browser: the
+// shell is there, and it carries nothing a published payload decides. The
+// third — that the page still works once the bundle replaces it — is a browser
+// test and sits below.
+//
+// `COPY` is imported rather than quoted, so this checks the rule (the shell
+// carries the page's own copy) instead of pinning sentences that can be
+// rewritten for a good reason tomorrow.
+// ---------------------------------------------------------------------------
+
+const needsBuild = built ? false : "no dist/ — run `npm run build` first";
+const { COPY } = built
+  ? await import(pathToFileURL(join(SITE, "src", "lib", "content.js")).href)
+  : { COPY: null };
+
+test(
+  "the built page carries its prose without running any JavaScript",
+  { skip: needsBuild },
+  async () => {
+    const html = await readFile(join(DIST, "index.html"), "utf8");
+    for (const [what, text] of [
+      ["the headline", COPY.h1.bg],
+      ["the headline in English", COPY.h1.en],
+      ["the privacy line", COPY.privacy.bg],
+      ["the explainer's lead", COPY.explainLead.bg],
+      ["the explainer's lead in English", COPY.explainLead.en],
+      ["the upstream attribution", COPY.footerNote.bg],
+    ]) {
+      assert.ok(
+        html.includes(text),
+        `${what} is not in the served HTML. Bingbot's second pass is slow and ` +
+          "unreliable, so a page whose every word is inside the bundle has no " +
+          "subject for it to index at all — see docs/seo.md."
+      );
+    }
+  }
+);
+
+test("the built page bakes in no figure a payload decides", { skip: needsBuild }, async () => {
+  const html = await readFile(join(DIST, "index.html"), "utf8");
+  assert.ok(
+    !html.includes(COPY.loadingK.bg),
+    "the loading placeholder is in the served HTML. It is what the calculator " +
+      "region renders with no payloads, and a crawler would index it as the " +
+      "page's content."
+  );
+  assert.ok(
+    !html.includes(COPY.explainMath.bg) && !html.includes('class="fx"'),
+    "the explainer's formula block is in the served HTML. Rendered with no " +
+      "payloads it names the wrong deflator and freezes the deposit share at " +
+      "the offline fallback, and nothing refreshes either (P3, P4)."
+  );
+});
+
+test("the built page mounts over the shell rather than beside it", { skip }, async () => {
+  await withApp(async (page, errors) => {
+    // One of each landmark. `mount()` appends, so a build that stopped
+    // emptying #app would draw the header, the explainer and the footer twice
+    // — with the second copy live and the first one frozen at build time.
+    for (const [what, selector] of [
+      ["header", "header.site"],
+      ["h1", "main h1"],
+      ["explainer band", ".explain-band"],
+      ["footer", "footer.site"],
+    ]) {
+      assert.equal(await page.locator(selector).count(), 1, `${what} appears twice`);
+    }
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  });
+});
+
 test("the calculator renders with no console errors", { skip }, async () => {
   await withApp(async (page, errors) => {
     // Every region, so a component that silently rendered nothing is caught.

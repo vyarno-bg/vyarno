@@ -13,6 +13,14 @@
   import { integer, periodLong } from "$lib/format.js";
 
   const {
+    /**
+     * True while the build renders this component with no payloads loaded.
+     * Everything above the formula block is prose that stands on its own; the
+     * block itself quotes the figures, so it is left out of the served HTML
+     * rather than published with the fallbacks in it. See `prerender` in
+     * App.svelte and the `<details class="fx">` comment below.
+     */
+    prerender = false,
     /** "y1" for the rolling 12 months, or a year — the formula names it. */
     anchor = "y1",
     /** Deposit share, quoted inside the annuity formula. */
@@ -317,65 +325,79 @@
              explanation of their own number. Publishing it is the §9.2
              obligation; making the reader step over it is no part of that.
              Nothing may be deleted from this block — an unpublished formula is
-             a figure nobody outside this repo can re-derive. -->
-        <details class="fx">
-          <summary class="disclose">
-            <span class="dc-caret" aria-hidden="true">›</span>
-            <span class="l-bg">{COPY.explainMath.bg}</span>
-            <span class="l-en">{COPY.explainMath.en}</span>
-          </summary>
-          <span class="l-bg"
-            ><b>Твоята инфлация.</b> <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code> - w<sub
-              >i</sub
+             a figure nobody outside this repo can re-derive.
+
+             It is the one part of this component the build does not prerender,
+             and that is not a deletion: a reader gets it, in full, the moment
+             the bundle runs. Rendered with no payloads it would say the rise
+             since 2020 is the 13 groups summed at their official weights, when
+             the page in front of the reader deflates by Eurostat's all-items
+             index — a wrong statement about our own method, in served HTML,
+             with no correction reaching whoever read it. The deposit share two
+             lines further down is the published БНБ limit and would freeze at
+             the offline fallback for the same reason (docs/seo.md). -->
+        {#if !prerender}
+          <details class="fx">
+            <summary class="disclose">
+              <span class="dc-caret" aria-hidden="true">›</span>
+              <span class="l-bg">{COPY.explainMath.bg}</span>
+              <span class="l-en">{COPY.explainMath.en}</span>
+            </summary>
+            <span class="l-bg"
+              ><b>Твоята инфлация.</b> <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code> - w<sub
+                >i</sub
+              >
+              е твоят дял за група i (плъзгачите; делението на Σw ги свежда до 100%). r<sub>i</sub>
+              е официалното поскъпване на групата -
+              {#if anchor === "y1"}
+                годишният темп (Eurostat, prc_hicp_minr, RCH_A).
+              {:else}
+                r<sub>i</sub> = I<sub>i</sub>(сега) ÷ I<sub>i</sub>({anchor}) − 1, където I<sub
+                  >i</sub
+                > е ценовият индекс на групата така, както го публикува Евростат (prc_hicp_minr). Базата
+                на индекса се съкращава при делението, затова не я пипаме.
+              {/if}
+              <br /><b>В джоба.</b> <code>реално = (1 + увеличение) ÷ (1 + π) − 1</code>
+              <br /><b>Спестеното.</b> <code>стойност днес = сума ÷ (1 + поскъпване от 2020)</code>,
+              където поскъпването е {#if cashEroded.basis === "all_items"}<code
+                  >I(сега) ÷ I(2020) − 1</code
+                > по общия индекс на Евростат (prc_hicp_minr, TOTAL), както е публикуван{:else}сборът
+                на 13-те групи с официалните им тегла{/if}
+              <br /><b>Домът.</b> <code>цена = €/м² × квадратура</code> ·
+              <code>години = цена ÷ (12 × заплата)</code>. Вноската е анюитет:
+              <code>P = L × m ÷ (1 − (1 + m)<sup>−n</sup>)</code>, където L = {fmt0(
+                100 - downPayPct
+              )}% от цената ({fmt0(downPayPct)}% самоучастие), m = годишната лихва ÷ 12, n = срокът
+              × 12.</span
             >
-            е твоят дял за група i (плъзгачите; делението на Σw ги свежда до 100%). r<sub>i</sub> е
-            официалното поскъпване на групата -
-            {#if anchor === "y1"}
-              годишният темп (Eurostat, prc_hicp_minr, RCH_A).
-            {:else}
-              r<sub>i</sub> = I<sub>i</sub>(сега) ÷ I<sub>i</sub>({anchor}) − 1, където I<sub>i</sub
-              > е ценовият индекс на групата така, както го публикува Евростат (prc_hicp_minr). Базата
-              на индекса се съкращава при делението, затова не я пипаме.
-            {/if}
-            <br /><b>В джоба.</b> <code>реално = (1 + увеличение) ÷ (1 + π) − 1</code>
-            <br /><b>Спестеното.</b> <code>стойност днес = сума ÷ (1 + поскъпване от 2020)</code>,
-            където поскъпването е {#if cashEroded.basis === "all_items"}<code
-                >I(сега) ÷ I(2020) − 1</code
-              > по общия индекс на Евростат (prc_hicp_minr, TOTAL), както е публикуван{:else}сборът
-              на 13-те групи с официалните им тегла{/if}
-            <br /><b>Домът.</b> <code>цена = €/м² × квадратура</code> ·
-            <code>години = цена ÷ (12 × заплата)</code>. Вноската е анюитет:
-            <code>P = L × m ÷ (1 − (1 + m)<sup>−n</sup>)</code>, където L = {fmt0(
-              100 - downPayPct
-            )}% от цената ({fmt0(downPayPct)}% самоучастие), m = годишната лихва ÷ 12, n = срокът ×
-            12.</span
-          >
-          <span class="l-en"
-            ><b>Your inflation.</b> <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code> - w<sub
-              >i</sub
+            <span class="l-en"
+              ><b>Your inflation.</b> <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code> - w<sub
+                >i</sub
+              >
+              is your share for group i (the sliders; dividing by Σw normalises them to 100%). r<sub
+                >i</sub
+              >
+              is the group's official price rise for the chosen period: for "1 year" - the official annual
+              rate (Eurostat, prc_hicp_minr, RCH_A); for "since year Y" -
+              <code>r<sub>i</sub> = I<sub>i</sub>(now) ÷ I<sub>i</sub>(Y) − 1</code>, where I<sub
+                >i</sub
+              >
+              is the group's price index exactly as Eurostat publishes it (prc_hicp_minr). The index base
+              cancels in the division, so we leave it alone.
+              <br /><b>In your pocket.</b> <code>real = (1 + raise) ÷ (1 + π) − 1</code>
+              <br /><b>Your savings.</b>
+              <code>value today = amount ÷ (1 + the rise since 2020)</code>, where the rise is {#if cashEroded.basis === "all_items"}<code
+                  >I(now) ÷ I(2020) − 1</code
+                > on Eurostat's all-items index (prc_hicp_minr, TOTAL) as published{:else}the 13
+                groups summed at their official weights{/if}
+              <br /><b>A home.</b> <code>price = €/m² × size</code> ·
+              <code>years = price ÷ (12 × pay)</code>. The payment is an annuity:
+              <code>P = L × m ÷ (1 − (1 + m)<sup>−n</sup>)</code>, where L = {fmt0(
+                100 - downPayPct
+              )}% of the price ({fmt0(downPayPct)}% down), m = annual rate ÷ 12, n = term × 12.</span
             >
-            is your share for group i (the sliders; dividing by Σw normalises them to 100%). r<sub
-              >i</sub
-            >
-            is the group's official price rise for the chosen period: for "1 year" - the official annual
-            rate (Eurostat, prc_hicp_minr, RCH_A); for "since year Y" -
-            <code>r<sub>i</sub> = I<sub>i</sub>(now) ÷ I<sub>i</sub>(Y) − 1</code>, where I<sub
-              >i</sub
-            >
-            is the group's price index exactly as Eurostat publishes it (prc_hicp_minr). The index base
-            cancels in the division, so we leave it alone.
-            <br /><b>In your pocket.</b> <code>real = (1 + raise) ÷ (1 + π) − 1</code>
-            <br /><b>Your savings.</b>
-            <code>value today = amount ÷ (1 + the rise since 2020)</code>, where the rise is {#if cashEroded.basis === "all_items"}<code
-                >I(now) ÷ I(2020) − 1</code
-              > on Eurostat's all-items index (prc_hicp_minr, TOTAL) as published{:else}the 13
-              groups summed at their official weights{/if}
-            <br /><b>A home.</b> <code>price = €/m² × size</code> ·
-            <code>years = price ÷ (12 × pay)</code>. The payment is an annuity:
-            <code>P = L × m ÷ (1 − (1 + m)<sup>−n</sup>)</code>, where L = {fmt0(100 - downPayPct)}%
-            of the price ({fmt0(downPayPct)}% down), m = annual rate ÷ 12, n = term × 12.</span
-          >
-        </details>
+          </details>
+        {/if}
       </div>
     </details>
   </div>
