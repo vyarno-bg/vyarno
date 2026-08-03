@@ -1,12 +1,12 @@
 /**
  * The `<details>` patterns, shared by more than one component.
  *
- * Three places in the app open something in place: the method drawer under the
- * results, the explainer band at the foot of the page, and the itemised payslip
- * under the salary input. They are one visual pattern with one set of rules,
- * and Svelte scopes a component's `<style>` to that component — so keeping
- * these here is what lets the markup live wherever it belongs without the
- * rules being copied alongside it.
+ * Four places in the app open something in place: the method drawer under the
+ * results, the explainer band at the foot of the page, the itemised payslip
+ * under the salary input, and the working under each row of the receipt. They
+ * are one visual pattern with one set of rules, and Svelte scopes a component's
+ * `<style>` to that component — so keeping these here is what lets the markup
+ * live wherever it belongs without the rules being copied alongside it.
  *
  * Loaded once per entry point, next to tokens.css.
  */
@@ -214,6 +214,46 @@ summary.disclose:focus-visible {
   outline: 2px solid var(--real);
   outline-offset: 1px;
 }
+/* -------------------------------------------------------------------------
+   IN-ROW DISCLOSURE — the third place this pattern appears, inside a receipt
+   row in the results card.
+
+   Each results row states one figure, one plain sentence about what it means,
+   its caveat, its source caption and its verify link — and underneath that,
+   the working: the per-earner breakdown, the target raise, the reason the
+   curve bends. The working is what a reader checks the figure against, so it
+   stays on the page; it is not what they came for, so it stops arriving
+   uninvited between the figure and the next row.
+
+   **A source caption and a verify link never go behind one of these.** The
+   product's claim is that every number is checkable, and a caption a reader
+   has to find first is a caption that has been quietly downgraded — the trade
+   backwards (docs/principles.md §"Publish the method"). Nor does a caveat that
+   belongs to a claim still on screen: «пред 34%» with its sentence folded away
+   is the exact arrangement `PercentileRow` was written to prevent.
+   `verify_render.mjs` checks both.
+
+   The chip itself is `summary.disclose` above, unrestyled here. It renders on
+   `--surface` in this card and on `--paper-2` in the drawer, which is why that
+   rule takes a transparent fill rather than a surface token.
+
+   No `display` on the `.l-bg`/`.l-en` spans, for the reason the drawer's own
+   block gives: the language toggle in tokens.css hides one of the pair with
+   `display: none`, and a scoped rule here outranks it and shows both. */
+.r-row .rr-more {
+  margin-top: 8px;
+}
+.r-row .rr-more-body {
+  margin-top: 7px;
+  padding-left: 10px;
+  border-left: 1px solid var(--line-2);
+}
+/* The body's own rows keep the row's vertical rhythm rather than the tighter
+   one they would inherit from sitting inside a single block. */
+.r-row .rr-more-body > * + * {
+  margin-top: 5px;
+}
+
 /* The teaser. A label that states what the control DOES is weaker than one
    that shows what is behind it, so the payslip's summary carries the figure
    the reader came for — the total coming out of their pay. */

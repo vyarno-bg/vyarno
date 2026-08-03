@@ -66,28 +66,45 @@
         })}</span
       >
     </div>
-    <div class="rr-t">
-      <span class="l-bg"
-        >{@html t(COPY.leftYear, "bg", { y: fmt0(calc.budget.leftoverPerYear) })}
-        {@html t(COPY.leftCash, "bg", {
-          i: fmt(calc.leftoverCash.ratePct),
-          e: fmt0(calc.leftoverCash.eaten),
-          v: fmt0(calc.leftoverCash.valueToday),
-        })}</span
-      >
-      <span class="l-en"
-        >{@html t(COPY.leftYear, "en", { y: fmt0(calc.budget.leftoverPerYear) })}
-        {@html t(COPY.leftCash, "en", {
-          i: fmt(calc.leftoverCash.ratePct),
-          e: fmt0(calc.leftoverCash.eaten),
-          v: fmt0(calc.leftoverCash.valueToday),
-        })}</span
-      >
-    </div>
-    <div class="rr-note">
-      <span class="l-bg">{COPY.leftAssume.bg}</span>
-      <span class="l-en">{COPY.leftAssume.en}</span>
-    </div>
+    <!-- The year's worth and what prices do to it held as cash are a
+         projection run forward off the amount above, and the reader has to
+         want the question before the answer is worth reading. Its assumption
+         travels INTO the fold with it and not out of it: P5 binds the caveat
+         to the claim it qualifies, and both are behind the same summary, so
+         neither can be met without the other. Folding the assumption while
+         the projection stayed on screen is the arrangement that rule
+         forbids — this is the opposite one. -->
+    <details class="rr-more">
+      <summary class="disclose">
+        <span class="dc-caret" aria-hidden="true">›</span>
+        <span class="l-bg">{COPY.discloseLeftYear.bg}</span>
+        <span class="l-en">{COPY.discloseLeftYear.en}</span>
+      </summary>
+      <div class="rr-more-body">
+        <div class="rr-t">
+          <span class="l-bg"
+            >{@html t(COPY.leftYear, "bg", { y: fmt0(calc.budget.leftoverPerYear) })}
+            {@html t(COPY.leftCash, "bg", {
+              i: fmt(calc.leftoverCash.ratePct),
+              e: fmt0(calc.leftoverCash.eaten),
+              v: fmt0(calc.leftoverCash.valueToday),
+            })}</span
+          >
+          <span class="l-en"
+            >{@html t(COPY.leftYear, "en", { y: fmt0(calc.budget.leftoverPerYear) })}
+            {@html t(COPY.leftCash, "en", {
+              i: fmt(calc.leftoverCash.ratePct),
+              e: fmt0(calc.leftoverCash.eaten),
+              v: fmt0(calc.leftoverCash.valueToday),
+            })}</span
+          >
+        </div>
+        <div class="rr-note">
+          <span class="l-bg">{COPY.leftAssume.bg}</span>
+          <span class="l-en">{COPY.leftAssume.en}</span>
+        </div>
+      </div>
+    </details>
   </div>
 {:else if calc.budget.over > 0}
   <div class="r-row">

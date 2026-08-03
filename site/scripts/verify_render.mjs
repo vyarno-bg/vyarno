@@ -1122,6 +1122,185 @@ test("the ladder row ranks nobody who has not typed a salary", { skip }, async (
   });
 });
 
+test("nothing that makes a figure checkable is folded out of view", { skip }, async () => {
+  // The results card tiers what it shows: the figure, one plain sentence and
+  // its caveat stay put, and the working goes one tap in. Three things may
+  // never take that trip, and they are the three a density pass reaches for
+  // first because they are small and grey — a source caption, a verify link,
+  // and the reference period beside them.
+  //
+  // «Nothing may degrade the explainer, the verify links or the source
+  // captions» (docs/principles.md §"Publish the method"). A caption a reader
+  // has to go looking for has been downgraded as surely as one that was
+  // deleted, and this is the check that says so, because the difference is
+  // invisible in a diff that only adds a `<details>`.
+  //
+  // The explainer band and the method drawer are exempt by name: both are
+  // whole sections behind one disclosure, they carry no figure of their own
+  // that is not repeated on the card, and putting the published method behind
+  // one summary is the §9.2 obligation met rather than dodged.
+  await withApp(async (page, errors) => {
+    // A salary, so every row that waits for one is drawn and can be checked.
+    await page.locator("#inSalary").fill("2400");
+    await page.locator("#inRent").fill("600");
+    await page.waitForTimeout(400);
+
+    const buried = await page.evaluate(() => {
+      const out = [];
+      for (const el of document.querySelectorAll(".rr-note.ss, .ss, .vlink")) {
+        for (let n = el.parentElement; n; n = n.parentElement) {
+          if (n.classList?.contains("explain-band")) break;
+          if (n.tagName === "DETAILS" && !n.open) {
+            out.push(`${el.className} — «${(el.textContent || "").trim().slice(0, 60)}»`);
+            break;
+          }
+        }
+      }
+      return out;
+    });
+    assert.deepEqual(
+      buried,
+      [],
+      "these source captions or verify links sit inside a disclosure that is " +
+        "closed by default, so a reader has to find them before they can " +
+        "check anything:\n  " +
+        buried.join("\n  ")
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the ladder's caveat never travels without the rank it qualifies", { skip }, async () => {
+  // The rule the whole tiering runs on: prose may move down a tier, a caveat
+  // attached to a claim still on screen may not. This is the instance that
+  // matters most, because the ladder's caveat is the longest paragraph on the
+  // card and therefore the most tempting thing on it to fold — and the claim
+  // it qualifies is a second-person ranking of the reader against their
+  // neighbours, read off a national survey re-levelled onto Sofia.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+
+    const row = page.locator(".r-row").filter({ hasText: "къде си по заплата" });
+    const shown = await row.innerText();
+    assert.match(shown, /изпреварваш/i, "the ladder states no rank to qualify");
+    // `innerText` skips a closed `<details>`, which is the whole point: this
+    // fails if the caveat is folded even though the string is still in the DOM.
+    assert.match(
+      shown,
+      /приблизително къде си, а не точно/i,
+      `the rank is on screen and its caveat is not: ${shown.replace(/\s+/g, " ").slice(0, 300)}`
+    );
+
+    // The answer block restates the same rank a screen higher, so it carries
+    // the short form of the same admission rather than the bare figure.
+    const answer = await page.locator(".ans").innerText();
+    assert.match(
+      answer,
+      /приблизително/i,
+      `the answer block ranks the reader with nothing attached: ${answer.replace(/\s+/g, " ")}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the plain answer sits between the headline and the working", { skip }, async () => {
+  // Readers arrive asking three things and the card answers each under its own
+  // derivation, two and three screens down a phone. The answer block says them
+  // once, in front — which is only true while it is drawn after the figure it
+  // is about and before the table that explains it. Asserted as an ordering,
+  // never as a pixel: every number here moves with the next copy edit.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+
+    const y = await page.evaluate(() => {
+      const top = (sel) => document.querySelector(sel)?.getBoundingClientRect().top ?? null;
+      return { big: top(".r-big"), answer: top(".ans"), rank: top(".rank"), pocket: null };
+    });
+    assert.ok(y.big !== null && y.answer !== null && y.rank !== null, "a region is missing");
+    assert.ok(y.answer > y.big, "the plain answer is drawn above the figure it is about");
+    assert.ok(
+      y.rank > y.answer,
+      "the ranked table is drawn above the answer it is the working for"
+    );
+
+    // …and it says what it is for. The pay verdict and the ladder position are
+    // otherwise the pocket row and the ladder row, well below the fold.
+    const answer = await page.locator(".ans").innerText();
+    assert.match(answer, /изпреварва|изостава|наравно|стояла|намаляла|вдигнаха/i, "no pay clause");
+    assert.match(answer, /работещите в София/i, "no ladder clause");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the plain answer waits for a salary before it places the reader", { skip }, async () => {
+  // The same rule as the ladder row itself, one screen higher up. A summary
+  // that outran it would put «изпреварваш 34%» about the €900 placeholder at
+  // the top of the card — the exact defect PercentileRow refuses to print in
+  // its own corner, reintroduced above it.
+  await withApp(async (page, errors) => {
+    const idle = await page.locator(".ans").innerText();
+    assert.doesNotMatch(
+      idle,
+      /изпреварваш \d|пред \d/i,
+      `the answer ranked an untouched placeholder: ${idle.replace(/\s+/g, " ")}`
+    );
+    assert.match(idle, /Въведи своята заплата/i, "the answer neither ranks nor asks");
+
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+    const answered = await page.locator(".ans").innerText();
+    assert.match(
+      answered,
+      /пред \d+% от работещите в София/i,
+      `the answer stayed silent after a salary was typed: ${answered.replace(/\s+/g, " ")}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("every disclosure on the card opens onto both languages", { skip }, async () => {
+  // A missing string renders as a blank line rather than a fallback, and
+  // inside a closed `<details>` it renders as a blank line nobody has looked
+  // at. Opening each one and reading both language subtrees is the only way
+  // this is visible: the copy suite checks that COPY entries ship in pairs,
+  // not that a template rendered both of them.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2400");
+    await page.locator("#inRaise").fill("4");
+    await page.waitForTimeout(400);
+
+    const empty = await page.evaluate(() => {
+      const out = [];
+      for (const details of document.querySelectorAll(".m-results details.rr-more")) {
+        details.open = true;
+        const body = details.querySelector(".rr-more-body, ul, div");
+        const text = (sel) =>
+          [...(body?.querySelectorAll(sel) ?? [])].map((s) => s.textContent.trim()).join("");
+        const label = (details.querySelector("summary")?.textContent || "").trim().slice(0, 40);
+        if (!text(".l-bg")) out.push(`${label} — nothing in Bulgarian`);
+        if (!text(".l-en")) out.push(`${label} — nothing in English`);
+      }
+      return out;
+    });
+    assert.deepEqual(empty, [], empty.join("; "));
+
+    // And the chips are real controls, which the disclosure test above checks
+    // for the first `summary.disclose` on the page — these are the ones inside
+    // the results card, which that test never reaches.
+    const chips = await page.locator(".m-results summary.disclose").count();
+    assert.ok(chips > 0, "the results card folds nothing, or folds it without a disclosure chip");
+    assert.equal(
+      await page.locator(".m-results summary.disclose .dc-caret").count(),
+      chips,
+      "a disclosure in the results card has no caret, so it reads as a badge"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("every verify link is drawn the same, in both cards", { skip }, async () => {
   // `.vlink` is the "↗" that makes a row checkable, and it is drawn in the
   // basket and in the ranked contributions — two components, so a scoped
@@ -1285,8 +1464,11 @@ test("a narrow column folds the ranked table and still adds up", { skip }, async
     );
 
     // …and the rest are reachable. A cap with no way past it is a table that
-    // decided for the reader which of their own groups they may see.
-    await page.locator(".rank .rank-more").click();
+    // decided for the reader which of their own groups they may see. Named
+    // `.rank-all` rather than `.rank-more`, which the show-why control beside
+    // it also wears: a selector matching both clicks whichever the DOM put
+    // first, and the fold would go untested the day that order changes.
+    await page.locator(".rank .rank-all").click();
     await page.waitForTimeout(300);
     assert.ok((await rows()) > narrow, "the show-all control did not unfold the rest of the table");
     assert.deepEqual(errors, [], errors.join(" | "));
@@ -1410,6 +1592,12 @@ test("the ladder ranks each earner, and marks each of them", { skip }, async () 
 
     const row = page.locator(".r-row").filter({ hasText: "къде си по заплата" });
     assert.equal(await row.locator(".pctbar .me").count(), 2, "not one marker per earner");
+    // The per-income lines are the working behind the corner's range and sit
+    // one tap in. Opened here rather than asserted through the closed
+    // disclosure, because what this test is about is that each income is
+    // ranked on its own rung — not where on the card that is said.
+    await row.locator("details.rr-more summary").first().click();
+    await page.waitForTimeout(200);
     const text = await row.innerText();
     assert.match(text, /доход 1/i, "the first income has no line of its own");
     assert.match(text, /доход 2/i, "the second income has no line of its own");

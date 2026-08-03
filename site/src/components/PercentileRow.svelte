@@ -57,35 +57,59 @@
   </div>
   {#if answered}
     {#if calc.hasHousehold}
-      <!-- One line per income, then the median once. The second person is
-           dropped here on purpose: «изпреварваш» addressed to a household is a
-           claim about a person who does not exist. -->
-      {#each calc.ranks as r (r.index)}
-        <div class="rr-t">
-          <span class="l-bg"
-            >{@html t(COPY.pctEarnerLine, "bg", {
-              n: fmt0(r.ordinal),
-              s: fmt0(r.net),
-              r: fmt0(r.ahead),
-            })}</span
-          >
-          <span class="l-en"
-            >{@html t(COPY.pctEarnerLine, "en", {
-              n: fmt0(r.ordinal),
-              s: fmt0(r.net),
-              r: fmt0(r.ahead),
-            })}</span
-          >
-        </div>
-      {/each}
+      <!-- The corner states the range and this states what makes it one: the
+           rungs are individual earnings, so the household has no single
+           position on the ladder. It is the caveat the range cannot stand
+           without, which is why it is here and not behind the disclosure —
+           «пред 34-62%» with the reason folded away is the corner figure with
+           its sentence removed, the arrangement this whole row exists to
+           avoid. -->
       <div class="rr-t">
-        <span class="l-bg">{@html t(COPY.pctMedian, "bg", { m: fmt0(calc.ladder[5] ?? 0) })}</span>
-        <span class="l-en">{@html t(COPY.pctMedian, "en", { m: fmt0(calc.ladder[5] ?? 0) })}</span>
-      </div>
-      <div class="rr-note">
         <span class="l-bg">{COPY.pctHouseholdNote.bg}</span>
         <span class="l-en">{COPY.pctHouseholdNote.en}</span>
       </div>
+      <!-- One line per income, then the median once. The second person is
+           dropped here on purpose: «изпреварваш» addressed to a household is a
+           claim about a person who does not exist.
+           These are the parts of the range above, so they are what the reader
+           opens when the range is not enough — a column of one line per earner
+           between the corner figure and its caveat pushed the caveat off the
+           screen on a phone with three incomes. -->
+      <details class="rr-more">
+        <summary class="disclose">
+          <span class="dc-caret" aria-hidden="true">›</span>
+          <span class="l-bg">{COPY.discloseByEarner.bg}</span>
+          <span class="l-en">{COPY.discloseByEarner.en}</span>
+        </summary>
+        <div class="rr-more-body">
+          {#each calc.ranks as r (r.index)}
+            <div class="rr-t">
+              <span class="l-bg"
+                >{@html t(COPY.pctEarnerLine, "bg", {
+                  n: fmt0(r.ordinal),
+                  s: fmt0(r.net),
+                  r: fmt0(r.ahead),
+                })}</span
+              >
+              <span class="l-en"
+                >{@html t(COPY.pctEarnerLine, "en", {
+                  n: fmt0(r.ordinal),
+                  s: fmt0(r.net),
+                  r: fmt0(r.ahead),
+                })}</span
+              >
+            </div>
+          {/each}
+          <div class="rr-t">
+            <span class="l-bg"
+              >{@html t(COPY.pctMedian, "bg", { m: fmt0(calc.ladder[5] ?? 0) })}</span
+            >
+            <span class="l-en"
+              >{@html t(COPY.pctMedian, "en", { m: fmt0(calc.ladder[5] ?? 0) })}</span
+            >
+          </div>
+        </div>
+      </details>
     {:else}
       <div class="rr-t">
         <span class="l-bg"

@@ -51,6 +51,8 @@ import {
   scheduledMaxInsurable,
   scheduledMaxInsurableFrom,
   rankedSplit,
+  pocketVerdictState,
+  answerLine,
   sofiaQuarter,
   RANK_ROWS_SHOWN,
   sharePayload,
@@ -1264,6 +1266,142 @@ test("rankedSplit survives an empty or missing list", () => {
     assert.deepEqual(shown, []);
     assert.equal(restN, 0);
     assert.equal(restPp, 0);
+  }
+});
+
+// --- the plain answer ------------------------------------------------------
+
+test("pocketVerdictState keeps «точно» to the one case that cancels exactly", () => {
+  // The ±1 pp dead zone has three insides, and one verdict over all three
+  // prints «точно на нула» beside a figure reading «−0,3%». Two surfaces read
+  // these states now — the pocket row and the answer block — so a threshold
+  // that moves here moves in both, which is the whole reason it is one
+  // function.
+  assert.equal(pocketVerdictState(6, 2), "ahead");
+  assert.equal(pocketVerdictState(2, -2), "behind");
+  assert.equal(pocketVerdictState(5, 0), "level");
+  assert.equal(pocketVerdictState(5, 0.4), "nearUp");
+  assert.equal(pocketVerdictState(5, -0.4), "nearDn");
+  // The boundaries belong to the decided verdicts, not to the dead zone.
+  assert.equal(pocketVerdictState(6, 1), "ahead");
+  assert.equal(pocketVerdictState(4, -1), "behind");
+});
+
+test("pocketVerdictState reads a pay cut and a frozen wage as their own states", () => {
+  // «Увеличението е изядено» is the wrong sentence for someone who never got
+  // one, and for someone whose pay fell there was no raise to eat. Both are
+  // reachable: the field takes any number.
+  assert.equal(pocketVerdictState(0, -5), "none");
+  assert.equal(pocketVerdictState(-3, -8), "cut");
+  // …and a cut is a cut even where prices fell faster than the pay did.
+  assert.equal(pocketVerdictState(-3, 2), "cut");
+  for (const [raise, pocket] of [
+    [NaN, NaN],
+    [NaN, 3],
+    [3, NaN],
+  ]) {
+    assert.equal(pocketVerdictState(raise, pocket), "unsaid");
+  }
+});
+
+test("the plain answer ranks nobody who has not typed a salary", () => {
+  // The ladder is a claim about the READER, in the second person. A visitor on
+  // €2,400 told on arrival that they out-earn a third of Sofia has been told
+  // something false about themselves before typing a character, and no caveat
+  // rescues it — the rule `PercentileRow` keeps in its corner. The answer block
+  // sits a screen ABOVE that row, so it has to keep the same rule or the defect
+  // simply moves up the page.
+  const ranks = [{ ahead: 34 }];
+  const untouched = answerLine({ salaryAnswered: false, ranks, ranked: [] });
+  assert.equal(untouched.stand.state, "unsaid");
+  assert.equal(untouched.stand.low, 0);
+
+  const answered = answerLine({ salaryAnswered: true, ranks, ranked: [] });
+  assert.equal(answered.stand.state, "one");
+  assert.equal(answered.stand.low, 34);
+});
+
+test("the plain answer states a household's position as a range", () => {
+  // The rungs are individual full-time earnings, so there is no single
+  // position for a household to occupy and no non-arbitrary way to pick one
+  // earner to speak for it. «Пред 34-62%» is true about where these people
+  // sit; any single figure in that sentence is not.
+  const many = answerLine({
+    salaryAnswered: true,
+    ranks: [{ ahead: 62 }, { ahead: 34 }, { ahead: 51 }],
+    ranked: [],
+  });
+  assert.equal(many.stand.state, "many");
+  assert.equal(many.stand.low, 34);
+  assert.equal(many.stand.high, 62);
+});
+
+test("the plain answer names movers out of the reader's own basket", () => {
+  // A division the reader spends nothing on contributes nothing to their
+  // number, so naming it as what is rising fastest describes somebody else's
+  // life — and the whole card is about theirs.
+  const div = (name) => ({ bg_name: name, en_name: name });
+  const ranked = [
+    { division: div("not mine"), rate: 40, share: 0 },
+    { division: div("transport"), rate: 11, share: 0.2 },
+    { division: div("food"), rate: 4, share: 0.3 },
+    { division: div("phones"), rate: -5, share: 0.1 },
+  ];
+  const answer = answerLine({ salaryAnswered: true, ranked });
+  assert.equal(answer.mover.up.division.bg_name, "transport");
+  assert.equal(answer.mover.up.ratePct, 11);
+  assert.equal(answer.mover.down.division.bg_name, "phones");
+});
+
+test("the plain answer invents no mover where the basket has none", () => {
+  // Both directions are sign-gated. A basket where nothing fell must not be
+  // handed its least-bad row as a saving, and one where nothing rose must not
+  // be told what rose fastest — «поевтинява: транспорт (+4,0%)» is a false
+  // sentence built out of correct arithmetic.
+  const div = (name) => ({ bg_name: name, en_name: name });
+  const allUp = answerLine({
+    ranked: [
+      { division: div("food"), rate: 4, share: 0.5 },
+      { division: div("rent"), rate: 2, share: 0.5 },
+    ],
+  });
+  assert.ok(allUp.mover.up);
+  assert.equal(allUp.mover.down, null);
+
+  const allDown = answerLine({
+    ranked: [
+      { division: div("phones"), rate: -5, share: 0.5 },
+      { division: div("tech"), rate: -7, share: 0.5 },
+    ],
+  });
+  assert.equal(allDown.mover.up, null);
+  assert.equal(allDown.mover.down.division.bg_name, "tech");
+
+  const empty = answerLine({});
+  assert.equal(empty.mover.up, null);
+  assert.equal(empty.mover.down, null);
+  assert.equal(empty.stand.state, "unsaid");
+  assert.equal(empty.pay.state, "unsaid");
+});
+
+test("the plain answer takes its pay verdict from the same states as the row", () => {
+  // Two ladders of thresholds a screen apart drift silently: the summary
+  // calling a raise ahead while the row below calls it level, over a number
+  // neither of them moved. This asserts they are one function rather than two
+  // that happen to agree today.
+  for (const [raise, pocket] of [
+    [6, 2],
+    [2, -2],
+    [5, 0.4],
+    [0, -5],
+    [-3, 1],
+    [NaN, NaN],
+  ]) {
+    assert.equal(
+      answerLine({ raise, pocket }).pay.state,
+      pocketVerdictState(raise, pocket),
+      `the answer block decided ${raise}/${pocket} for itself`
+    );
   }
 });
 

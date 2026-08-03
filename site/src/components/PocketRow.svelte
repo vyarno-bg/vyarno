@@ -7,6 +7,7 @@
   import { lang } from "../lib/stores.js";
   import { number, integer, percentSigned } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
+  import { pocketVerdictState } from "../lib/view.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
@@ -15,15 +16,6 @@
   const fmt0 = (x) => integer(x, $lang);
   const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
-  // Which sentence the row tells, decided in one place because the states
-  // overlap. A pay CUT is its own case whatever prices did — «увеличението е
-  // изядено» is the wrong sentence when there was no raise. And the ±1 pp dead
-  // zone has three insides — dead level, a shade ahead, a shade behind —
-  // because one verdict calling all three «точно» is false precision to the
-  // reader who is a shade behind.
-  //
-  // It lives here rather than in the calculator because it picks a *sentence*,
-  // and the calculator does not import COPY.
   // Which incomes still owe a raise, as one sentence. One name reads better
   // than a list of one, and the plural form takes the numbers joined — the
   // alternative, a sentence per missing income, turns a prompt into a column.
@@ -46,23 +38,35 @@
       .join(" · ");
   }
 
-  const pocketVerdict = $derived(
-    !Number.isFinite(calc.pocket)
-      ? null
-      : calc.raise === 0
-        ? COPY.pocketNone
-        : calc.raise < 0
-          ? COPY.pocketCut
-          : calc.pocket >= 1
-            ? COPY.pocketOk
-            : calc.pocket <= -1
-              ? COPY.pocketBad
-              : calc.pocket === 0
-                ? COPY.pocketZero
-                : calc.pocket > 0
-                  ? COPY.pocketNearUp
-                  : COPY.pocketNearDn
-  );
+  // Which sentence the row tells. The STATE is decided in `view.js`, where a
+  // unit test can reach it and where the answer block at the top of the card
+  // reads the same one — two ladders of thresholds a screen apart drift, and
+  // they drift silently, the summary calling a raise ahead while the row calls
+  // it level over a number that has not moved. Choosing the WORDS stays here,
+  // because the calculator layer does not import COPY.
+  //
+  // All seven states get their own sentence, and the three insides of the ±1 pp
+  // dead zone are three of them: one verdict calling all three «точно» is false
+  // precision beside a signed figure the reader can read.
+  // The table holds the COPY entries themselves rather than their names. A
+  // table of key strings looks equivalent and is not: `verify_copy.mjs` finds
+  // a rendered sentence by looking for `COPY.<key>` in the source, so a
+  // sentence reached only through a string literal reads to it as one nothing
+  // renders — and the check that every one of the seven states still has a
+  // sentence goes green over a row that has lost them all.
+  const VERDICT = {
+    ahead: COPY.pocketOk,
+    behind: COPY.pocketBad,
+    level: COPY.pocketZero,
+    nearUp: COPY.pocketNearUp,
+    nearDn: COPY.pocketNearDn,
+    none: COPY.pocketNone,
+    cut: COPY.pocketCut,
+    // No raise entered. The row prompts for one instead of rendering a
+    // verdict, so there is no eighth sentence — only the absence of one.
+    unsaid: null,
+  };
+  const pocketVerdict = $derived(VERDICT[pocketVerdictState(calc.raise, calc.pocket)]);
 </script>
 
 <!-- POCKET -->
@@ -129,7 +133,8 @@
   <!-- The combined figure is not one of the numbers the reader typed — it is
        weighted by what each earner was paid BEFORE, so it does not equal the
        average of the fields either. Showing the parts is what makes it
-       checkable rather than merely stated. -->
+       checkable rather than merely stated, so it stays where the figure is
+       rather than going behind the disclosure below. -->
   {#if calc.hasHousehold && Number.isFinite(calc.raise)}
     <div class="rr-note">
       <span class="l-bg">{parts("bg")}</span>
@@ -137,31 +142,44 @@
     </div>
   {/if}
   {#if calc.raiseDirty && Number.isFinite(calc.standStillRaise) && Number.isFinite(calc.fivePctRaise)}
-    <!-- π ≤ 0 gets its own sentence. The stand-still target IS π,
-         so a falling basket would otherwise print «трябва да е
-         +−1,2% - точно колкото поскъпнаха твоите цени»: a doubled
-         sign under a claim of a rise that did not happen. -->
-    <div class="rr-t">
-      <span class="l-bg"
-        ><b>{COPY.standStillK.bg}:</b>
-        {@html calc.pi > 0
-          ? t(COPY.standStillTxt, "bg", {
-              r: fmt(calc.standStillRaise),
-              pct: 5,
-              rr: fmt(calc.fivePctRaise),
-            })
-          : t(COPY.standStillFlat, "bg", { pct: 5, rr: signedPct(calc.fivePctRaise) })}</span
-      >
-      <span class="l-en"
-        ><b>{COPY.standStillK.en}:</b>
-        {@html calc.pi > 0
-          ? t(COPY.standStillTxt, "en", {
-              r: fmt(calc.standStillRaise),
-              pct: 5,
-              rr: fmt(calc.fivePctRaise),
-            })
-          : t(COPY.standStillFlat, "en", { pct: 5, rr: signedPct(calc.fivePctRaise) })}</span
-      >
-    </div>
+    <!-- The target raise is a second finding rather than the working behind
+         the first: it answers "what would it have taken", which is a question
+         the reader has to ask before it is worth an answer. Folded, the row
+         states the verdict the reader came for and stops; the summary carries
+         the finding's own name, so the tap is not a leap.
+
+         π ≤ 0 gets its own sentence. The stand-still target IS π, so a falling
+         basket would otherwise print «трябва да е +−1,2% - точно колкото
+         поскъпнаха твоите цени»: a doubled sign under a claim of a rise that
+         did not happen. -->
+    <details class="rr-more">
+      <summary class="disclose">
+        <span class="dc-caret" aria-hidden="true">›</span>
+        <span class="l-bg">{COPY.standStillK.bg}</span>
+        <span class="l-en">{COPY.standStillK.en}</span>
+      </summary>
+      <div class="rr-more-body">
+        <div class="rr-t">
+          <span class="l-bg"
+            >{@html calc.pi > 0
+              ? t(COPY.standStillTxt, "bg", {
+                  r: fmt(calc.standStillRaise),
+                  pct: 5,
+                  rr: fmt(calc.fivePctRaise),
+                })
+              : t(COPY.standStillFlat, "bg", { pct: 5, rr: signedPct(calc.fivePctRaise) })}</span
+          >
+          <span class="l-en"
+            >{@html calc.pi > 0
+              ? t(COPY.standStillTxt, "en", {
+                  r: fmt(calc.standStillRaise),
+                  pct: 5,
+                  rr: fmt(calc.fivePctRaise),
+                })
+              : t(COPY.standStillFlat, "en", { pct: 5, rr: signedPct(calc.fivePctRaise) })}</span
+          >
+        </div>
+      </div>
+    </details>
   {/if}
 </div>

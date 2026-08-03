@@ -57,6 +57,27 @@
   const limit = $derived(
     expanded ? ranked.length : listW > 0 && listW < 480 ? ROWS_NARROW : undefined
   );
+
+  /**
+   * Whether each row shows the working under its bar.
+   *
+   * The row states a name, a verify link and a contribution in points, and the
+   * bar puts that figure beside the other twelve. The line under it —
+   * «даваш ≈ €216/мес · поскъпна с 11,0% · това ти струва ≈ €21 повече» — is
+   * how that figure was arrived at, and it repeats verbatim down the column:
+   * five rows on a phone is five three-clause sentences between the reader and
+   * «в джоба», the row the site is named for.
+   *
+   * ONE control for the whole column rather than a disclosure per row. Five
+   * chips are more furniture than the five sentences they hide, and a reader
+   * comparing rows wants the working on all of them or none — the question is
+   * "how are these computed", asked once, not "how is transport computed".
+   *
+   * It is a link to look at rather than a filled button, matching `rank-more`
+   * beside it: both are ways to read more of a table, neither is the thing to
+   * do next.
+   */
+  let whyOpen = $state(false);
 </script>
 
 <!-- WHAT'S PUSHING YOUR NUMBER UP
@@ -113,42 +134,44 @@
             style="width:{Math.max(2, (100 * Math.abs(r.contributionPp)) / span)}%"
           ></div>
         </div>
-        <div class="rankwhy">
-          {#if householdNet > 0}
-            <span class="l-bg"
-              >{@html t(COPY.rankRow, "bg", {
-                s: fmt0(r.spendEur),
-                r: fmt(r.rate),
-                e: fmt0(Math.abs(r.eurPerMonth)),
-              })}</span
-            >
-            <span class="l-en"
-              >{@html t(COPY.rankRow, "en", {
-                s: fmt0(r.spendEur),
-                r: fmt(r.rate),
-                e: fmt0(Math.abs(r.eurPerMonth)),
-              })}</span
-            >
-          {:else}
-            <span class="l-bg"
-              >{@html t(COPY.rankRowNoPay, "bg", {
-                r: fmt(r.rate),
-                w: fmt0(100 * r.share),
-              })}</span
-            >
-            <span class="l-en"
-              >{@html t(COPY.rankRowNoPay, "en", {
-                r: fmt(r.rate),
-                w: fmt0(100 * r.share),
-              })}</span
-            >
-          {/if}
-          {#if r.rate < 0}
-            · <span class="l-bg">{COPY.rankFalling.bg}</span><span class="l-en"
-              >{COPY.rankFalling.en}</span
-            >
-          {/if}
-        </div>
+        {#if whyOpen}
+          <div class="rankwhy">
+            {#if householdNet > 0}
+              <span class="l-bg"
+                >{@html t(COPY.rankRow, "bg", {
+                  s: fmt0(r.spendEur),
+                  r: fmt(r.rate),
+                  e: fmt0(Math.abs(r.eurPerMonth)),
+                })}</span
+              >
+              <span class="l-en"
+                >{@html t(COPY.rankRow, "en", {
+                  s: fmt0(r.spendEur),
+                  r: fmt(r.rate),
+                  e: fmt0(Math.abs(r.eurPerMonth)),
+                })}</span
+              >
+            {:else}
+              <span class="l-bg"
+                >{@html t(COPY.rankRowNoPay, "bg", {
+                  r: fmt(r.rate),
+                  w: fmt0(100 * r.share),
+                })}</span
+              >
+              <span class="l-en"
+                >{@html t(COPY.rankRowNoPay, "en", {
+                  r: fmt(r.rate),
+                  w: fmt0(100 * r.share),
+                })}</span
+              >
+            {/if}
+            {#if r.rate < 0}
+              · <span class="l-bg">{COPY.rankFalling.bg}</span><span class="l-en"
+                >{COPY.rankFalling.en}</span
+              >
+            {/if}
+          </div>
+        {/if}
       </div>
     {/each}
     {#if restN > 0}
@@ -167,21 +190,41 @@
         >
       </div>
     {/if}
-    <!-- Rendered only where rows are actually folded, so a full list on a wide
-         screen carries no control that would do nothing. It is a link rather
-         than a button to look at, for the same reason the footer's donate ask
-         is: this is a way to read more of a table, not the thing to do next. -->
-    {#if restN > 0 || expanded}
-      <button type="button" class="rank-more" onclick={() => (expanded = !expanded)}>
-        {#if expanded}
-          <span class="l-bg">{COPY.rankShowFewer.bg}</span>
-          <span class="l-en">{COPY.rankShowFewer.en}</span>
+    <div class="rank-controls">
+      <!-- Rendered only where rows are actually folded, so a full list on a
+           wide screen carries no control that would do nothing. It is a link
+           rather than a button to look at, for the same reason the footer's
+           donate ask is: this is a way to read more of a table, not the thing
+           to do next. -->
+      {#if restN > 0 || expanded}
+        <button type="button" class="rank-more rank-all" onclick={() => (expanded = !expanded)}>
+          {#if expanded}
+            <span class="l-bg">{COPY.rankShowFewer.bg}</span>
+            <span class="l-en">{COPY.rankShowFewer.en}</span>
+          {:else}
+            <span class="l-bg">{t(COPY.rankShowAll, "bg", { n: ranked.length })}</span>
+            <span class="l-en">{t(COPY.rankShowAll, "en", { n: ranked.length })}</span>
+          {/if}
+        </button>
+      {/if}
+      <!-- Always drawn, unlike its neighbour: the working exists on every row
+           at every width, so a control that appeared only on a phone would
+           make the same table checkable on one screen and not on another. -->
+      <button
+        type="button"
+        class="rank-more rank-why"
+        aria-expanded={whyOpen}
+        onclick={() => (whyOpen = !whyOpen)}
+      >
+        {#if whyOpen}
+          <span class="l-bg">{COPY.discloseRankWhyHide.bg}</span>
+          <span class="l-en">{COPY.discloseRankWhyHide.en}</span>
         {:else}
-          <span class="l-bg">{t(COPY.rankShowAll, "bg", { n: ranked.length })}</span>
-          <span class="l-en">{t(COPY.rankShowAll, "en", { n: ranked.length })}</span>
+          <span class="l-bg">{COPY.discloseRankWhy.bg}</span>
+          <span class="l-en">{COPY.discloseRankWhy.en}</span>
         {/if}
       </button>
-    {/if}
+    </div>
     {#if householdNet <= 0}
       <p class="leg">
         <span class="l-bg">{COPY.rankNoSalary.bg}</span>
@@ -252,6 +295,18 @@
     margin-top: 8px;
     padding-top: 6px;
     border-top: 1px dashed var(--line);
+  }
+  /* Two ways to read more of the same table, on one line. They wrap rather
+     than stack, so a narrow column — where both are most likely to be
+     needed — does not spend two rows on controls.
+     `.rank-all` and `.rank-why` carry no styling and exist to be named: two
+     buttons under one class is a selector that matches both, and a test that
+     clicks "the control" then clicks whichever the DOM happened to put
+     first. */
+  .rank-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
   }
   .rank-more {
     display: inline;

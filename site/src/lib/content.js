@@ -574,6 +574,100 @@ export const COPY = {
   // close to the average Bulgarian?" — the question the user can answer.
   averageBasket: { bg: "средностатистическата кошница", en: "the average basket" },
 
+  // ---------------------------------------------------------------------
+  // THE PLAIN ANSWER — the three things a reader arrives asking, said once
+  // in ordinary words before the receipt starts.
+  //
+  // Every figure in this block is already computed and already on the page,
+  // in the pocket row, the ladder row and the ranked list. What it buys is
+  // WHERE: on a 390px phone those three rows begin 2,000px, 2,300px and
+  // 1,400px down, so a reader who scrolls two screens has met the headline
+  // percentage and none of the answers it implies.
+  //
+  // Two of the four lines refuse to compute — `answerPayAsk` and
+  // `answerStandAsk` — and the refusals are the point rather than a fallback.
+  // The ladder ranks the READER in the second person, so stating a position
+  // for the €900 placeholder tells a visitor something false about
+  // themselves before they have typed anything (the rule `PercentileRow`
+  // keeps, and this block sits a screen above it).
+  //
+  // `answerStandOne` and `answerStandMany` carry «приблизително, не точно» in
+  // the sentence itself. The full caveat — which survey, which year, who it
+  // leaves out, that Sofia flatters — stays where it is, unfolded, one screen
+  // below. What may not happen is the rank travelling to the top of the card
+  // with nothing attached: this is the same figure that row refuses to print
+  // in its corner without its sentence.
+  answerLead: {
+    bg: "Ето какво значи <b>{pi}</b> за теб:",
+    en: "Here is what <b>{pi}</b> means for you:",
+  },
+  answerPayAhead: {
+    bg: "Увеличението ти изпреварва твоите цени с <b>{p}%</b>.",
+    en: "Your raise is ahead of your prices by <b>{p}%</b>.",
+  },
+  answerPayBehind: {
+    bg: "Увеличението ти изостава от твоите цени с <b>{p}%</b>.",
+    en: "Your raise falls short of your prices by <b>{p}%</b>.",
+  },
+  // One line for all three insides of the ±1 pp dead zone. The row below
+  // separates them, because there it sits beside the signed figure and
+  // «точно» would be false for two of the three; up here there is no figure
+  // beside it to contradict.
+  answerPayLevel: {
+    bg: "Увеличението ти и твоите цени вървят наравно.",
+    en: "Your raise and your prices are running level.",
+  },
+  answerPayNone: {
+    bg: "Заплатата ти е стояла на място.",
+    en: "Your pay has stood still.",
+  },
+  answerPayCut: {
+    bg: "Заплатата ти е намаляла.",
+    en: "Your pay went down.",
+  },
+  answerPayAsk: {
+    bg: "Кажи колко ти вдигнаха заплатата, за да видиш дали изпреварваш цените си.",
+    en: "Say what your raise was, to see whether you are outrunning your prices.",
+  },
+  answerStandOne: {
+    bg: "По чиста заплата си пред <b>{r}%</b> от работещите в София - приблизително, не точно.",
+    en: "By take-home pay you are ahead of <b>{r}%</b> of Sofia earners - roughly, not exactly.",
+  },
+  // The household form states a range and says why it is one: the rungs are
+  // individual earnings, so two wages of €900 are two people at the 34th
+  // percentile rather than one person at the 78th.
+  answerStandMany: {
+    bg: "Заплатите в домакинството са пред <b>{low}%</b> до <b>{high}%</b> от работещите в София - всяка поотделно, приблизително.",
+    en: "The household's wages are ahead of <b>{low}%</b> to <b>{high}%</b> of Sofia earners - each on its own, roughly.",
+  },
+  answerStandAsk: {
+    bg: "Въведи своята заплата, за да видиш къде си спрямо останалите.",
+    en: "Enter your own pay to see where you sit against everyone else.",
+  },
+  // The two movers carry a category name, which is published data rather than
+  // copy — so these render as text and carry no markup of their own. A name
+  // interpolated into an {@html} template is a fetched string reaching the DOM
+  // as markup, which is the one thing verify_template_safety.mjs is for.
+  answerMoverUp: {
+    bg: "Най-бързо поскъпва: {name} ({r}%).",
+    en: "Rising fastest: {name} ({r}%).",
+  },
+  answerMoverDown: {
+    bg: "Поевтинява: {name} ({r}%).",
+    en: "Getting cheaper: {name} ({r}%).",
+  },
+
+  // ---------------------------------------------------------------------
+  // The labels on the "one tap further in" controls inside the receipt rows.
+  // Each names what is behind it rather than the act of opening it: a reader
+  // decides whether to tap on the strength of what they would get.
+  discloseByEarner: { bg: "по доход", en: "income by income" },
+  discloseWedgeWhy: { bg: "защо делът пада", en: "why the share falls" },
+  discloseRankWhy: { bg: "покажи защо", en: "show why" },
+  discloseRankWhyHide: { bg: "скрий защо", en: "hide why" },
+  discloseLeftYear: { bg: "за година, и в брой", en: "over a year, and as cash" },
+  discloseAfford: { bg: "какво можеш да си позволиш", en: "what you could afford" },
+
   // Rows
   pocket: { bg: "в джоба", en: "in your pocket" },
   // The verdict, one line per state the row can actually be in. The old set
@@ -736,7 +830,12 @@ export const COPY = {
   // happens to a person is a RAISE. Same number, same curve, a situation the
   // reader has lived through.
   // ---------------------------------------------------------------------
-  wedgeK: { bg: "плоският данък", en: "the flat tax" },
+  // The label names the reader's question, not the economics. «Плоският
+  // данък» is a concept somebody has to already hold to know why the row is
+  // there; «колко не стига до теб» is what they were wondering. The row's own
+  // sentences still say «плосък» — the finding is that the flat tax is not the
+  // whole story — so nothing is lost by keeping the term out of the label.
+  wedgeK: { bg: "колко не стига до теб", en: "how much never reaches you" },
   // Shown when the user has typed a salary and is BELOW the ceiling.
   // Below the ceiling the effective and the marginal rate are the SAME number
   // — provably, since insurance scales with gross there — so the sentence says

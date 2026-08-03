@@ -10,14 +10,16 @@ everywhere; this file is the front-end side.
 npm install                                  # once after cloning
 npm run dev                                  # :5173, hot reload
 npm run verify:math                          # node:test, no browser
-npm run build && npm run test:render         # 16 tests, the built page in a browser
+npm run build && npm run test:render         # the built page, in a browser
 npm run lint && npm run check                # eslint + prettier, then svelte-check
 node scripts/find-chromium.mjs               # which browser test:render will use
 ```
 
 **`test:render` skips and exits 0 with no browser** — read the count, not the
-exit code, because 14 skipped looks like a pass. It is the only suite that runs
-the app. `find-chromium.mjs` finds Playwright's browser, anything under
+exit code, because a file of skips looks exactly like a file of passes. It is
+the only suite that runs the app, and `scripts/check-test-floors.mjs` holds the
+count it has to clear — the only test counts in the repository, so no number
+here goes stale. `find-chromium.mjs` finds Playwright's browser, anything under
 `PLAYWRIGHT_BROWSERS_PATH` or a system Chromium, and proves it by launching it;
 `VYARNO_CHROMIUM` overrides that search. `make render` from the repo root gates
 on the same resolver and fails where nothing resolves, which is the run to
