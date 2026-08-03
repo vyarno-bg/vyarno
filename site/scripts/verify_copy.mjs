@@ -19,7 +19,7 @@
  *    and it never presents a figure as more official than it is.
  *
  * What is NOT here: anything about where a string appears in the layout. That
- * is `verify_render.mjs`, which loads the page.
+ * is the `verify_render_*.mjs` suites, which load the page.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -114,7 +114,7 @@ const withoutSlots = (text) => text.replace(/\{\{?[^}]*\}\}?/g, " ");
  * The rule is that a Bulgarian string is written in Cyrillic and an English one
  * is not, and it is worth stating as a rule because Latin script reaching a
  * Bulgarian reader is easy to introduce and invisible to every other test:
- * `verify_render.mjs` will happily draw an English dataset name on a Bulgarian
+ * a render suite will happily draw an English dataset name on a Bulgarian
  * page, and every arithmetic assertion behind it stays green.
  *
  * Slots come out before the Bulgarian side is judged, because a string that is

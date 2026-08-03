@@ -76,7 +76,7 @@ const CONTENT_TYPES = {
   ".png": "image/png",
 };
 
-/** Serve `dist/` the way a static host does. Same shape as verify_render.mjs. */
+/** Serve `dist/` the way a static host does. Same shape as render-harness.mjs. */
 function serveDist() {
   const server = createServer(async (req, res) => {
     const path = normalize(decodeURIComponent(req.url.split("?")[0]));

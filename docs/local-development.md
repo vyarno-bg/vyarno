@@ -306,7 +306,8 @@ Fourteen files under Node's built-in test runner, no dependencies. The list is
 - `verify_template_safety.mjs` — the `{@html}` invariants.
 - `verify_wiring.mjs` — which value the markup passes to which function.
 
-`verify_render.mjs` runs separately, under `npm run test:render`, because it
+The `verify_render_*.mjs` suites run separately, under `npm run test:render`,
+because they
 needs a browser.
 
 All of them also run in CI on every push, alongside `pytest -q` and the

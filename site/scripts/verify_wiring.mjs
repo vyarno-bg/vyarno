@@ -6,7 +6,7 @@
  * and not a wrong string: `mirror.js` can be perfect, `content.js` can be
  * perfect, and the page can still print thirteen euro figures the reader never
  * typed because the template handed `spendable` to a function that wanted
- * `spendBase`. `verify_view.mjs` proves the arithmetic; `verify_render.mjs`
+ * `spendBase`. `verify_view.mjs` proves the arithmetic; the `verify_render_*.mjs` suites
  * proves the page draws. Neither can see which argument the template passed.
  *
  * The other kind of invariant here is architectural: the basket iterates the

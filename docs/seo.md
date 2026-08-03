@@ -124,7 +124,7 @@ older figures.
 figure carries its own reference period on screen and a link to the publisher's
 own table, so a page that fell behind is visibly behind — a reader or an agent
 sees «Евростат · юни 2026 г.» beside the number and can tell it is not this
-month's. `verify_render.mjs` asserts the periods and the links are there on
+month's. `verify_render_country.mjs` asserts the periods and the links are there on
 every figure, for exactly this reason. The operator-facing fix is the ordinary
 one: refresh the payloads and rebuild, in that order, which is what
 `npm run build` does in one command.
@@ -211,7 +211,8 @@ each already put their own one link) and the footer carries a line to it on ever
 page. The footer link sits OUTSIDE `nav.legal-links`: that landmark is labelled
 "legal" and holds what discharges ЗЕТ чл. 4, which a page of published figures is
 not. `/how/` does not link to itself, the rule the four document links follow.
-`verify_render.mjs` §"the country page is reachable without opening anything" and
+`verify_render_layout.mjs` §"the country page is reachable without opening
+anything" and
 §"every page carries a route to the country page, except itself" hold all of it.
 One link, because a second to the same page is navigation noise.
 

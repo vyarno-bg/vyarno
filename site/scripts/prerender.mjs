@@ -97,7 +97,7 @@ export const MOUNT_POINT = '<div id="app"></div>';
  * Both are content pages carrying published figures; `/legal/`, `/support/`
  * and the 404 are prose the bundle assembles from constants, so a crawler that
  * runs no JavaScript loses nothing that a build could have given it. Adding a
- * row here is what puts a page in front of a crawler — and `verify_render.mjs`
+ * row here is what puts a page in front of a crawler — and `verify_render_prerender.mjs`
  * reads each written file back, because a post-build step that quietly does
  * nothing looks exactly like a build that worked.
  */

@@ -31,7 +31,8 @@ than styling. Each sits in an `overflow-x: auto` box, because five columns at
 paragraph sideways with it. And each box is a `tabindex="0"` `role="region"`
 with its own name: a scroll container is not focusable on its own, and the wedge
 table holds no link to tab to, so without it two of that table's five columns
-were unreachable by keyboard at a phone width. `verify_render.mjs` holds both,
+were unreachable by keyboard at a phone width. `verify_render_country.mjs`
+holds both,
 and the `.scroll` rule in `How.svelte` carries what was tried for the visual
 affordance and why it is not there.
 
@@ -75,7 +76,17 @@ site/
 │   ├── verify_static_assets.mjs   # robots · security.txt · sitemap · the CSP
 │   ├── verify_suites.mjs          # every suite on disk is named by a runner
 │   ├── verify_docs_map.mjs        # this tree names the files that are there
-│   ├── verify_render.mjs          # the built page, in a browser
+│   ├── render-dist.mjs            # dist/ readers, shared, no browser
+│   ├── render-harness.mjs         # serveDist · openApp · withApp · skip
+│   ├── verify_render_prerender.mjs # the built HTML, as a crawler reads it
+│   ├── verify_render_shell.mjs    # it mounts, it logs nothing, both toggles
+│   ├── verify_render_country.mjs  # /how/, live over its own prerender
+│   ├── verify_render_strip.mjs    # the national strip and the charts
+│   ├── verify_render_basket.mjs   # the thirteen rows, presets, chips
+│   ├── verify_render_results.mjs  # headline · verdict · ladder · working
+│   ├── verify_render_layout.mjs   # phone · tablet · wide, and the routes
+│   ├── verify_render_payroll.mjs  # payroll and more than one income
+│   ├── verify_render_share.mjs    # the share card and the share text
 │   ├── make_og_image.py           # regenerates the static OG preview + the
 │   │                              # two README banners (stdlib only)
 │   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png
@@ -119,8 +130,8 @@ question.
 | **Data** | `data.js` | *Which* published number, and what if it is missing? | `verify_data_contracts.mjs` |
 | **Formula** | `mirror.js` | Given these inputs, what is the arithmetic? | `verify_mirror_math.mjs`, `verify_net_salary.mjs` |
 | **Wiring** | `view.js` | *Which* inputs go into that formula? | `verify_view.mjs` |
-| **State** | `calculator.svelte.js` | What holds the result, and when does it recompute? | `verify_render.mjs` (it is the only layer with no pure function to test) |
-| **Render** | `components/*.svelte` | Where does it go, what colour, which language? | `verify_render.mjs`; template wiring in `verify_wiring.mjs` |
+| **State** | `calculator.svelte.js` | What holds the result, and when does it recompute? | the `verify_render_*.mjs` suites (it is the only layer with no pure function to test) |
+| **Render** | `components/*.svelte` | Where does it go, what colour, which language? | the `verify_render_*.mjs` suite for that region; template wiring in `verify_wiring.mjs` |
 
 **The rule this encodes: where a wrong wiring would be a wrong number, make the
 wrong wiring impossible to express — do not merely test against it.** A formula
@@ -509,7 +520,7 @@ otherwise, one beside the chips and one beside the number, and both lost to the
 arrangement around them. Under the list the same chips are what they are:
 somewhere to start, met after the instrument.
 
-Three things follow, each with a test in `verify_render.mjs`:
+Three things follow, each with a test in `verify_render_basket.mjs`:
 
 - **A chip names a basket, never the reader.** «с кола всеки ден», not «карам
   кола всеки ден». `verify_copy.mjs` holds the first-person markers, in both
@@ -613,7 +624,7 @@ label puts «Housing, water, electricity, gas and other fuels» beneath «Ток
 they did not ask for, thirteen times over, in the column a 360px phone has least
 room for. It belongs on the verify link because that is the row that goes to
 Eurostat, and the label is the claim about what the bucket officially is rather
-than decoration on our translation. `verify_render.mjs` §"a Bulgarian reader's
+than decoration on our translation. `verify_render_basket.mjs` §"a Bulgarian reader's
 basket table is in Bulgarian only" holds both halves — no Latin script in the
 visible name, and the official wording still on the link.
 
@@ -792,7 +803,7 @@ HICP headline · median net pay (Sofia) · average net pay (Sofia) ·
 fastest-rising category · unemployment, then the Sofia €/m² card carrying a
 12-year sparkline. Three layout rules, each of which was a visible defect
 before it was a rule, and all three are held by
-the national-strip tests in `verify_render.mjs`:
+the national-strip tests in `verify_render_strip.mjs`:
 
 - **`.stats` is a wrapping flex row whose items grow, never a fixed-column
   grid.** `auto-fit` columns hold their width, so a card count that does not
@@ -880,7 +891,7 @@ density move and it is the one
 caption a reader has to go looking for has been degraded as surely as one that
 was deleted, and the difference is invisible in a diff that only adds a
 `<details>`. `no source caption or verify link is folded out of view` in
-`verify_render.mjs` is what makes it visible.
+`verify_render_results.mjs` is what makes it visible.
 
 **A caveat may not be folded away from a claim that stays visible**, and the
 converse is fine: `LeftoverRow` puts the one-year projection and its P5
@@ -911,7 +922,8 @@ from the first.
 So `.m-verdict` says what the bars cannot: which rate is bigger, and whether the
 gap is worth calling one — `nearOfficial`'s ±0.8 pp dead zone at the one-year
 anchor, wider at the others. Three sentences, no figure. `the verdict names the
-comparison in words, over bars that keep both figures` in `verify_render.mjs`
+comparison in words, over bars that keep both figures` in
+`verify_render_results.mjs`
 holds both halves, because they pull against each other: it asserts each bar
 still states a rate to one decimal AND that the sentence beneath them carries no
 digit.

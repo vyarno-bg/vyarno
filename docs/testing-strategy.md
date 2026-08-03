@@ -54,7 +54,7 @@ to do to count is §"The standard a test has to meet".
 | `site/scripts/verify_static_assets.mjs` | `node:test` | `robots.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
 | `site/scripts/verify_suites.mjs` | `node:test` | That `package.json` names every suite on disk — an omitted one runs never |
 | `site/scripts/verify_docs_map.mjs` | `node:test` | That `docs/site.md`'s directory tree names the files that are there, both directions |
-| `site/scripts/verify_render.mjs` | `node:test` + Playwright | The built page, in a browser |
+| `site/scripts/verify_render_*.mjs` | `node:test` + Playwright | The built page, in a browser — nine suites over one harness |
 | `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
 
 ## No suite may get smaller
@@ -139,7 +139,7 @@ documentation actually has.
 | A number or date the UI formats | `verify_format.mjs` |
 | A UI string, or a rule about what a string may claim | `verify_copy.mjs` |
 | Which value the template passes to a function | `verify_wiring.mjs` |
-| Anything that has to be visible, positioned or coloured on the page | `verify_render.mjs` |
+| Anything that has to be visible, positioned or coloured on the page | the `verify_render_*.mjs` suite for that region |
 | A legal document, the identity, or the licence claim | `verify_legal.mjs` |
 | Anything persisted to `localStorage` | `verify_stores.mjs` |
 
@@ -172,7 +172,7 @@ from another:
    one that matters: a keyed `{#each}` whose key expression names a field the
    rows do not have evaluates every key to `undefined`, which Svelte rejects at
    runtime — the page renders blank and **no suite that does not run the app
-   can see it**. That is what `verify_render.mjs` is for.
+   can see it**. That is what the `verify_render_*.mjs` suites are for.
 
 Where a module exports the thing under test, the test **imports** it rather
 than regexing it out of a file: `COPY`, `PRESETS`, `BG_CONTRIB_LINES`,
@@ -183,7 +183,7 @@ than regexing it out of a file: `COPY`, `PRESETS`, `BG_CONTRIB_LINES`,
 | Kind | Lives in | How it checks |
 |---|---|---|
 | Copy and prose rules | `verify_copy.mjs` | Over all of `COPY`, including keys added next month |
-| Layout and CSS properties | `verify_render.mjs` | The **effect** in a browser — a computed style, a bounding box — never the CSS declaration meant to cause it |
+| Layout and CSS properties | `verify_render_*.mjs` | The **effect** in a browser — a computed style, a bounding box — never the CSS declaration meant to cause it |
 | Template wiring | `verify_wiring.mjs` | Source checks; there is nothing else to check them against |
 | Licence and legal claims | `verify_legal.mjs` | Against the imported `legal.js` module |
 | The `{@html}` contracts | `verify_template_safety.mjs` | Both directions — the expressions, and the values fed to them |
@@ -229,7 +229,7 @@ Which side a check falls on is decided by what it asserts, not by what it opens:
 
 | The check asserts | Where it goes |
 |---|---|
-| Something a reader can see happen — a position, a computed style, a mounted page, a figure in the DOM | `verify_render.mjs`, in a browser. No exceptions |
+| Something a reader can see happen — a position, a computed style, a mounted page, a figure in the DOM | a `verify_render_*.mjs` suite, in a browser. No exceptions |
 | A fact that exists only in the source — which argument a template passes, which expression feeds `{@html}`, whether a COPY key has a render site, whether a component names the licence paragraph | The suite that owns it, reading the file |
 
 Two conditions make the second column survivable, and a source-reading suite
@@ -247,7 +247,7 @@ A wrong wiring is not a wrong formula and not a wrong string. `mirror.js` can be
 perfect, `content.js` can be perfect, and the page can still print thirteen euro
 figures the reader never typed, because the template handed `spendable` to a
 function that wanted `spendBase`. `verify_view.mjs` proves the arithmetic and
-`verify_render.mjs` proves the page draws; neither can see which argument the
+the render suites prove the page draws; neither can see which argument the
 template passed.
 
 The same goes for the architectural invariants — the basket iterates the
@@ -430,7 +430,7 @@ complete: `view.js`, `mirror.js`, `legal.js` and `support.js` are at or near
 
 | File | Why |
 |---|---|
-| `data.js` | The `fetch` wrappers. `verify_data_contracts.mjs` covers the fallback chains — the part that can pick a wrong number — but not the one-line loaders around them. Covering those means a fetch stub asserting that `fetch` was called, which tests the mock. The real coverage of this file is `verify_render.mjs`, which loads the page and makes it fetch |
+| `data.js` | The `fetch` wrappers. `verify_data_contracts.mjs` covers the fallback chains — the part that can pick a wrong number — but not the one-line loaders around them. Covering those means a fetch stub asserting that `fetch` was called, which tests the mock. The real coverage of this file is the render suites, which load the page and make it fetch |
 | `format.js` | The `httpUrl`/`period` rejection branches, for input shapes the payloads cannot produce. They exist because `{@html}` is downstream of them, and they are guarded structurally by `verify_template_safety.mjs` rather than by example |
 
 **Python.** Everything below the CLI is 89–100%: gates, transforms, connectors,

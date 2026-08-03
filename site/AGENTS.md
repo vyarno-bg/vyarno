@@ -40,7 +40,7 @@ data.js               WHICH published number, and what if it is missing
 | a formula — a rate, a real-terms change, an annuity                    | `mirror.js`           | `verify_mirror_math.mjs` (`verify_net_salary.mjs` for payroll) |
 | which published field feeds that formula, which fallback, which anchor | `view.js`             | `verify_view.mjs`                                              |
 | a fallback chain over the payloads                                     | `data.js`             | `verify_data_contracts.mjs`                                    |
-| markup, colour, or a language choice                                   | `components/*.svelte` | `verify_render.mjs`, wiring in `verify_wiring.mjs`             |
+| markup, colour, or a language choice                                   | `components/*.svelte` | `verify_render_*.mjs`, wiring in `verify_wiring.mjs`           |
 
 **Never in a `$derived`.** Every `$derived` in `calculator.svelte.js` is a call
 into `view.js` or `mirror.js` with named arguments — that layer has no pure
