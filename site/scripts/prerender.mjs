@@ -143,7 +143,15 @@ export async function renderShell() {
 }
 
 // --- The build step itself. Skipped when imported by the test. --------------
-if (import.meta.url === `file://${process.argv[1]}`) {
+//
+// `pathToFileURL`, never `` `file://${process.argv[1]}` ``. Node hands argv[1]
+// an absolute native path, and on Windows that is `D:\a\...` — concatenating
+// it produces `file://D:\a\...` against an `import.meta.url` of
+// `file:///D:/a/...`, so the guard is false and the step silently does nothing
+// while the build reports success. That is the one failure mode a post-build
+// step must not have, and it is invisible to every suite that does not read
+// the artefact afterwards.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const page = join(SITE, "dist", "index.html");
   const body = await renderShell();
   await writeFile(page, injectPrerender(await readFile(page, "utf8"), body), "utf8");
