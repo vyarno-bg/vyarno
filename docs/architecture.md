@@ -57,7 +57,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
     ├── public/      _headers (CSP + cache) · robots.txt ·
     │                .well-known/security.txt · favicon · og-image · fonts
     ├── eslint.config.js · .prettierrc.json · svelte.config.js
-    ├── scripts/     verify_*.mjs (`npm run verify:math`) · verify_render.mjs
+    ├── scripts/     verify_*.mjs (`npm run verify:math`) · verify_render_*.mjs
     │                (`npm run test:render`, the built page in a browser) ·
     │                prerender · copy-data · gen-sitemap · gen-version ·
     │                strip-sourcemaps · check-identity

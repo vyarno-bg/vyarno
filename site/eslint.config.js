@@ -108,15 +108,24 @@ export default [
     rules: { "no-console": "off" },
   },
 
-  // The two files that drive a browser span BOTH environments. They run in
-  // Node, but the callbacks they hand to `page.evaluate()` are serialised and
+  // The files that drive a browser span BOTH environments. They run in Node,
+  // but the callbacks they hand to `page.evaluate()` are serialised and
   // executed inside Chromium, where `document` and `getComputedStyle` are the
   // whole point — reading a computed style is how a layout assertion becomes a
   // fact rather than a grep for a CSS declaration. Node's globals stay in
   // scope too, from the block above, so `no-undef` still catches a genuine
   // typo in either half.
+  //
+  // Matched by pattern rather than named one by one: the render suites are
+  // split by subject, and a new one added to `test:render` would otherwise
+  // lint clean until its first `page.evaluate()` and then fail for a reason
+  // that has nothing to do with what it asserts.
   {
-    files: ["scripts/verify_render.mjs", "scripts/make_screenshot.mjs"],
+    files: [
+      "scripts/verify_render*.mjs",
+      "scripts/render-harness.mjs",
+      "scripts/make_screenshot.mjs",
+    ],
     languageOptions: { globals: { ...globals.browser } },
   },
 

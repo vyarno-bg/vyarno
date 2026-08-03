@@ -15,7 +15,7 @@ assertions are about numbers.
 `.svelte` file is a test that breaks on a formatter run and passes through the
 failure it was written to catch, and each of those checks has a runner that
 owns its language: copy rules go to `verify_copy.mjs` against the imported
-`COPY` object, layout to `verify_render.mjs` in a real browser, template wiring
+`COPY` object, layout to the `verify_render_*.mjs` suites in a real browser, template wiring
 to `verify_wiring.mjs`, licence claims to `verify_legal.mjs`, the `{@html}`
 contracts to `verify_template_safety.mjs`. `docs/testing-strategy.md` says
 which suite a test belongs in and why.

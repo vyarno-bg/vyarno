@@ -19,7 +19,7 @@
  *    and it never presents a figure as more official than it is.
  *
  * What is NOT here: anything about where a string appears in the layout. That
- * is `verify_render.mjs`, which loads the page.
+ * is the `verify_render_*.mjs` suites, which load the page.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -36,14 +36,38 @@ import { published } from "./published-payload.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, "..", "src");
 
-/** Every .svelte and .js source under src/, concatenated. */
-function readAllSources() {
+/**
+ * A source file with its comments blanked.
+ *
+ * A comment describing a bug must never satisfy the test for its fix — the
+ * explainer carries a comment naming the exact literals it must not print,
+ * which is precisely the trap. Markup comments, block comments and whole-line
+ * `//` comments all go; trailing `//` is left alone so a `https://` inside a
+ * string literal survives.
+ */
+function blankComments(src) {
+  return src
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .split("\n")
+    .map((line) => (line.trimStart().startsWith("//") ? "" : line))
+    .join("\n");
+}
+
+/** Every .svelte and .js source under src/, comments blanked, concatenated. */
+function readLiveSources() {
   const parts = [];
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (/\.(svelte|js)$/.test(entry.name)) parts.push(readFileSync(path, "utf8"));
+      // Blanked per FILE, before anything is joined or collapsed. The `//`
+      // pass above works line by line, so it has to see line breaks — hand it
+      // whitespace-normalised text and it gets one line to look at, blanks
+      // nothing, and every `//` comment in src/ counts as live code for the
+      // rest of this file.
+      else if (/\.(svelte|js)$/.test(entry.name))
+        parts.push(blankComments(readFileSync(path, "utf8")));
     }
   };
   walk(SRC);
@@ -52,8 +76,8 @@ function readAllSources() {
   return parts.join("\n").replace(/\s+/g, " ");
 }
 
-/** Read once: nothing here mutates the tree, and two tests scan it. */
-const SOURCES = readAllSources();
+/** Read once: nothing here mutates the tree, and several tests scan it. */
+const LIVE_SOURCES = readLiveSources();
 
 /** The `{ bg, en }` entries of COPY, as [key, value] pairs. */
 function bilingualEntries() {
@@ -79,17 +103,89 @@ test("every COPY entry ships both languages, non-empty", () => {
   );
 });
 
+const CYRILLIC = /[а-яА-Я]/;
+
+/** A string with its `{slot}` and `{{slot}}` placeholders taken out. */
+const withoutSlots = (text) => text.replace(/\{\{?[^}]*\}\}?/g, " ");
+
+/**
+ * The alphabet offences in one bilingual pair, named.
+ *
+ * The rule is that a Bulgarian string is written in Cyrillic and an English one
+ * is not, and it is worth stating as a rule because Latin script reaching a
+ * Bulgarian reader is easy to introduce and invisible to every other test:
+ * a render suite will happily draw an English dataset name on a Bulgarian
+ * page, and every arithmetic assertion behind it stays green.
+ *
+ * Slots come out before the Bulgarian side is judged, because a string that is
+ * nothing but slots — `{s} · {p}` — has no words to write in either alphabet.
+ * That is a property of the string rather than a name on a list, which is what
+ * makes this a rule over every entry instead of over the ones somebody typed
+ * out. Handle a genuine exception the same way if one turns up: state what the
+ * string is that the rule does not reach.
+ *
+ * The English side takes no such carve-out. НСИ and БНБ have settled English
+ * spellings the rest of the copy already uses (NSI, BNB), and a Cyrillic
+ * acronym dropped into an English sentence is how that slips through.
+ */
+function alphabetOffences(label, bg, en) {
+  const out = [];
+  const bgWords = typeof bg === "string" ? withoutSlots(bg) : "";
+  if (/\p{L}/u.test(bgWords) && !CYRILLIC.test(bgWords)) {
+    out.push(`${label}.bg is not in Bulgarian: ${bg}`);
+  }
+  if (typeof en === "string" && CYRILLIC.test(en)) {
+    out.push(`${label}.en carries Cyrillic: ${en}`);
+  }
+  return out;
+}
+
+test("every COPY string is written in its own alphabet", () => {
+  const offenders = bilingualEntries().flatMap(([key, value]) =>
+    alphabetOffences(`COPY.${key}`, value.bg, value.en)
+  );
+  assert.deepEqual(offenders, [], offenders.join("; "));
+});
+
+/**
+ * The keys a component reaches by name rather than by `COPY.key`.
+ *
+ * Two of the three sets are imported as values, so a key added to the share
+ * text or the share card joins this automatically. The third is the Sofia
+ * comparator's direction map in `PayField.svelte`, which is a component-local
+ * const and cannot be imported — those three are written out, and the cost of
+ * forgetting is a key reported dead rather than a key silently unguarded.
+ *
+ * Everything NOT here has to appear as `COPY.key`. Accepting a bare `"key"`
+ * string for every key is what let a name mentioned in passing count as a
+ * render site, and it is why three sections kept their own stricter copy of
+ * this check.
+ */
+const REACHED_BY_NAME = new Set([
+  ...SHARE_COPY_KEYS,
+  ...SHARE_CARD_COPY_KEYS,
+  "statSofiaAbove",
+  "statSofiaBelow",
+  "statSofiaEqual",
+]);
+
 test("no COPY key is dead, and no rendered key is missing", () => {
-  const sources = SOURCES;
+  const sources = LIVE_SOURCES;
   const declared = new Set(Object.keys(COPY));
 
-  // A key with no render site is dead weight that reads as shipped. Both
-  // access forms count: `COPY.key`, and the dynamic `COPY[chosenKey]` the
-  // Sofia comparator uses, where the key name appears as a string literal.
-  const unused = [...declared].filter(
-    (key) => !new RegExp(`COPY\\.${key}\\b|["']${key}["']`).test(sources)
+  // A key with no render site is dead weight that reads as shipped. This is
+  // the only check on that for any key in the file — the sections that carry
+  // editorial rules below assert their own rules and leave this one here.
+  const unused = [...declared].filter((key) =>
+    REACHED_BY_NAME.has(key)
+      ? !new RegExp(`["']${key}["']`).test(sources)
+      : !new RegExp(`COPY\\.${key}\\b`).test(sources)
   );
-  assert.deepEqual(unused, [], `COPY keys nothing renders: ${unused.join(", ")}`);
+  assert.deepEqual(
+    unused,
+    [],
+    `COPY keys nothing renders — wire them or delete them: ${unused.join(", ")}`
+  );
 
   // …and the reverse: a typo'd reference renders "undefined" silently.
   const referenced = new Set([...sources.matchAll(/\bCOPY\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
@@ -103,27 +199,19 @@ test("the payload manifest's reader-facing strings follow the COPY rules too", (
   // purpose — a row's label belongs beside the row's cadence and accessor, not
   // in a separate file keyed by payload — so none of the structural rules above
   // reach them. This applies the same three: both languages, non-empty, and the
-  // right alphabet in each.
+  // right alphabet in each, through the same helper, so the alphabet rule cannot
+  // be tightened for COPY and left behind here.
   const offenders = [];
   for (const entry of PAYLOADS) {
     for (const field of ["name", "feeds"]) {
+      const label = `${entry.file}.${field}`;
       const value = entry[field];
       for (const lang of ["bg", "en"]) {
         const text = value?.[lang];
-        if (typeof text !== "string" || text.trim() === "") {
-          offenders.push(`${entry.file}.${field}.${lang} is empty`);
-          continue;
-        }
-        if (lang === "bg" && !/[а-яА-Я]/.test(text)) {
-          offenders.push(`${entry.file}.${field}.bg is not in Bulgarian`);
-        }
-        // НСИ and БНБ have settled English spellings the rest of the copy
-        // already uses (NSI, BNB) — see COPY.footerData. A Cyrillic acronym
-        // dropped into an English sentence is how this slips through.
-        if (lang === "en" && /[а-яА-Я]/.test(text)) {
-          offenders.push(`${entry.file}.${field}.en carries Cyrillic: ${text}`);
-        }
+        if (typeof text !== "string" || text.trim() === "")
+          offenders.push(`${label}.${lang} is empty`);
       }
+      offenders.push(...alphabetOffences(label, value?.bg, value?.en));
     }
   }
   assert.deepEqual(offenders, [], offenders.join("; "));
@@ -132,7 +220,7 @@ test("the payload manifest's reader-facing strings follow the COPY rules too", (
 test("every placeholder in a COPY string is substituted somewhere", () => {
   // `t(COPY.x, lang, { … })` fills `{name}` placeholders. One left unfilled
   // renders the literal braces to the reader.
-  const sources = SOURCES;
+  const sources = LIVE_SOURCES;
   const offenders = [];
   for (const [key, value] of bilingualEntries()) {
     for (const lang of ["bg", "en"]) {
@@ -357,32 +445,10 @@ test("every euro amount in the carve-out copy carries its unit", () => {
 // imported string. Where it is "this claim must appear", it names the key.
 // ---------------------------------------------------------------------------
 
-/**
- * Every source file under src/, with comments blanked.
- *
- * A comment describing a bug must never satisfy the test for its fix — the
- * explainer carries a comment naming the exact literals it must not print,
- * which is precisely the trap. Markup comments, block comments and whole-line
- * `//` comments all go; trailing `//` is left alone so a `https://` inside a
- * string literal survives.
- */
-function blankComments(src) {
-  return src
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .map((line) => (line.trimStart().startsWith("//") ? "" : line))
-    .join("\n");
-}
-
-const LIVE_SOURCES = blankComments(SOURCES);
-
 /** The explainer band on its own — it is one component, so no slicing. */
 const EXPLAINER = blankComments(
   readFileSync(join(SRC, "components", "ExplainerBand.svelte"), "utf8")
 );
-
-const CYRILLIC = /[а-яА-Я]/;
 
 /** The BG and EN strings of a COPY key, asserting both exist. */
 function pair(key) {
@@ -404,20 +470,6 @@ const WEDGE_KEYS = [
   "wedgeAxisMar",
   "wedgeAxisCap",
 ];
-
-test("every tax-wedge string ships bilingual, in the right alphabet, and is rendered", () => {
-  for (const key of WEDGE_KEYS) {
-    const [bg, en] = pair(key);
-    assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
-    assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Bulgarian text`);
-    assert.ok(
-      LIVE_SOURCES.includes(`COPY.${key}`),
-      `COPY.${key} is never rendered — either wire it or delete it ` +
-        "(docs/testing-strategy.md: a test that outlives its feature is a bug, " +
-        "not furniture)"
-    );
-  }
-});
 
 test("the wedge copy says the rate FALLS at the ceiling", () => {
   // The claim is directional, and inverting it needs no number to change.
@@ -492,23 +544,6 @@ test("the only percentage hardcoded in the wedge copy is the published flat rate
 
 // --- the pocket row and the stand-still target -----------------------------
 
-test("the pocket row has a sentence for every state it can be in", () => {
-  // Seven states, seven sentences. A state with no sentence renders a blank
-  // line exactly where the reader is looking for the verdict.
-  for (const key of [
-    "pocketOk",
-    "pocketBad",
-    "pocketZero",
-    "pocketNearUp",
-    "pocketNearDn",
-    "pocketCut",
-    "pocketNone",
-  ]) {
-    pair(key);
-    assert.ok(LIVE_SOURCES.includes(`COPY.${key}`), `COPY.${key} is never rendered`);
-  }
-});
-
 test("only the exactly-cancelling pocket verdict claims to be exact", () => {
   // «точно» / "exactly" is reserved for `pocket === 0`. The near-miss verdicts
   // are shown for a RANGE of values, so claiming exactness there is false for
@@ -549,11 +584,6 @@ test("the one-year projection names itself an assumption", () => {
   const [bg, en] = pair("leftAssume");
   assert.ok(bg.includes("допускане"), "the BG caveat does not name itself an assumption");
   assert.ok(/assumption/i.test(en), "the EN caveat does not name itself an assumption");
-  assert.ok(LIVE_SOURCES.includes("COPY.leftCash"), "the cash-erosion sentence is not rendered");
-  assert.ok(
-    LIVE_SOURCES.includes("COPY.leftAssume"),
-    "the one-year figure is rendered without its assumption"
-  );
 });
 
 test("a hand-made preset says so where its number is read", () => {
@@ -563,7 +593,6 @@ test("a hand-made preset says so where its number is read", () => {
   // (docs/principles.md P3). The "official" basket is real published data and must NOT
   // be labelled as one of our illustrations.
   pair("presetActive");
-  assert.ok(LIVE_SOURCES.includes("COPY.presetActive"), "COPY.presetActive is never rendered");
 
   const map = /PRESET_LABEL_KEY = \{([\s\S]*?)\};/.exec(LIVE_SOURCES);
   assert.ok(map, "PRESET_LABEL_KEY is gone");
@@ -620,7 +649,6 @@ test("a ready-made basket names a basket, never the reader", () => {
     /Eurostat/,
     "the EN line by the chips does not say whose the real basket is"
   );
-  assert.ok(LIVE_SOURCES.includes("COPY.presetsHint"), "the ready-made baskets carry no caveat");
 });
 
 test("the over-budget line describes rather than advises", () => {
@@ -667,10 +695,6 @@ test("the modelled pay band says it is modelled", () => {
   // a measurement.
   const [bg, en] = pair("statMedianSubModelled");
   assert.ok(bg.length > 3 && en.length > 3, "the modelled caveat is empty");
-  assert.ok(
-    LIVE_SOURCES.includes("COPY.statMedianSubModelled"),
-    "the middle-60% band no longer carries its own modelled caveat"
-  );
 });
 
 test("no strip source caption is pinned to English", () => {
@@ -872,12 +896,7 @@ test("the payslip names every row in both languages", () => {
     "payslipNet",
     "payslipSource",
   ];
-  for (const key of keys) {
-    const [bg, en] = pair(key);
-    assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
-    assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Bulgarian text`);
-    assert.ok(LIVE_SOURCES.includes(`COPY.${key}`), `COPY.${key} is never rendered`);
-  }
+  for (const key of keys) pair(key);
   // The ceiling row and the provenance line are substitution strings. A missing
   // placeholder renders the literal; a render site that stopped going through
   // `t()` would ship the braces verbatim.
@@ -936,10 +955,6 @@ test("the percentile caveat admits the survey behind it is national", () => {
   assert.ok(
     /whole country|national/i.test(en),
     `COPY.pctCaveat.en does not say the survey covers the whole country: ${en}`
-  );
-  assert.ok(
-    LIVE_SOURCES.includes("COPY.pctCaveat"),
-    "the percentile row no longer renders its caveat"
   );
 });
 
@@ -1137,23 +1152,17 @@ const COPY_SRC = blankComments(readFileSync(join(SRC, "lib", "content.js"), "utf
   " "
 );
 
-test("every string the country page owns ships bilingual, in the right alphabet", () => {
+test("the country page still has its copy at all", () => {
+  // The alphabet and both-languages rules reach these through the loops at the
+  // top of the file. What no rule over COPY can see is the page's copy being
+  // deleted WHOLESALE: a key removed together with its render site is not a
+  // dead key and not a missing one, so every structural check stays green while
+  // /how/ renders as headings over nothing.
   assert.ok(
     HOW_KEYS.length > 10,
     `only ${HOW_KEYS.length} how* COPY keys — the page lost its copy`
   );
-  for (const key of HOW_KEYS) {
-    const [bg, en] = pair(key);
-    // The two proper nouns that are Latin in Bulgarian too. Everything else
-    // reaching a Bulgarian reader in Latin script is the defect this checks
-    // for, and it is easy to introduce on a page full of dataset names.
-    if (!["howSrcImot", "howSrc"].includes(key)) {
-      assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
-    }
-    if (!["howSrcImot", "howSrc"].includes(key)) {
-      assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Cyrillic: ${en}`);
-    }
-  }
+  for (const key of HOW_KEYS) pair(key);
 });
 
 test("no page writes a live figure into its prose", () => {
@@ -1274,7 +1283,6 @@ test("the country page discloses that three of its figures are ours", () => {
   // built on it — and two of the three are rendered here. The disclosure and
   // the route to the full wording both have to travel with them.
   const [bg, en] = pair("howOurs");
-  assert.match(bg, CYRILLIC);
   assert.ok(HOW.includes("COPY.howOurs.bg") && HOW.includes("COPY.howOurs.en"));
   assert.ok(
     (HOW.match(/\{@render ours\(\)\}/g) ?? []).length >= 2,

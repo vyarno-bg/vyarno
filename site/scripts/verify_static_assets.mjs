@@ -279,7 +279,7 @@ test("every build entry exists where vite.config.js expects it", () => {
 // ---------------------------------------------------------------------------
 // the prerendered shell
 //
-// The step itself needs a Vite build and belongs to `verify_render.mjs`, which
+// The step itself needs a Vite build and belongs to `verify_render_prerender.mjs`, which
 // has one. What is checkable without a build is the contract between the three
 // files that have to agree — `index.html` offers a mount point, the build step
 // writes the shell into it, `main.js` empties it before mounting — and the
