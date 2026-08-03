@@ -95,8 +95,9 @@ export default defineConfig({
     target: "es2022",
     outDir: "dist",
     emptyOutDir: true,
-    // Four entries, four real URLs on a static host with no rewrite rules:
+    // Five entries, five real URLs on a static host with no rewrite rules:
     //   index.html        → /            the calculator
+    //   how/index.html    → /how/        the country's figures, with their sources
     //   legal/index.html  → /legal/      terms, privacy, ЗЕТ чл. 4 identity, sources
     //   support/index.html → /support/   how the project is paid for
     //   404.html          → /404.html    served by name for any unmatched path,
@@ -104,10 +105,13 @@ export default defineConfig({
     // Each is a separate entry rather than a route inside the SPA so it
     // resolves without a client-side router or a host rewrite, and so someone
     // who came to read the terms — or to find out who pays for this — does not
-    // download the calculator to do it.
+    // download the calculator to do it. `/how/` is also the entry that has to
+    // be separate for a second reason: one page ranks for one cluster of
+    // queries, and the calculator is answering a different one (docs/seo.md).
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
+        how: resolve(__dirname, "how/index.html"),
         legal: resolve(__dirname, "legal/index.html"),
         support: resolve(__dirname, "support/index.html"),
         notFound: resolve(__dirname, "404.html"),

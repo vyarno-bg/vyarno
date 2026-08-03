@@ -42,6 +42,10 @@ import {
   verifyUrl,
   fastestRisingDivision,
   taxWedgePanel,
+  systemWedgeLadder,
+  payLadder,
+  sofiaHomeAtAverageWage,
+  seriesCells,
   payslipPanel,
   earnerRanks,
   sofiaGap,
@@ -1808,4 +1812,230 @@ test("the comparison bars are scaled against one ceiling, with a floor", () => {
   // Never zero: a ceiling of zero divides every bar width into infinity.
   assert.equal(barCeiling({ piPct: NaN, officialPct: NaN, anchor: "y1" }), 8);
   assert.equal(barCeiling({ piPct: 0, officialPct: 0, anchor: 2020 }), 1);
+});
+
+// ---------------------------------------------------------------------------
+// THE COUNTRY, WITH NOBODY IN IT
+//
+// The four values `/how/` renders. What they have in common is the property
+// that page is built on: each takes published payloads and no scalar a reader
+// could have typed, so the wrong wiring — a personal figure on a page with no
+// reader — is not expressible rather than merely untested.
+// ---------------------------------------------------------------------------
+
+test("systemWedgeLadder reads the ceiling and the rates out of the PUBLISHED payload", () => {
+  if (!PAYROLL) return;
+  const ladder = systemWedgeLadder({ payroll: PAYROLL });
+  assert.ok(
+    near(ladder.maxInsurable, PAYROLL.max_insurable_income_eur, 1e-9),
+    "the ladder's ceiling is not payroll.json's"
+  );
+  assert.ok(
+    near(ladder.incomeTaxRatePct, 100 * PAYROLL.income_tax_rate, 1e-9),
+    "the flat tax rate is not payroll.json's"
+  );
+  assert.ok(
+    near(ladder.contributionRatePct, 100 * PAYROLL.employee_contrib_rates.total, 1e-9),
+    "the contribution rate is not payroll.json's"
+  );
+  // And it genuinely follows the payload rather than closing over the offline
+  // default, which carries the same figures today.
+  const raised = systemWedgeLadder({ payroll: { ...PAYROLL, max_insurable_income_eur: 3000 } });
+  assert.ok(near(raised.maxInsurable, 3000, 1e-9), "the ceiling is hardcoded, not read");
+  assert.ok(
+    raised.rungs.some((r) => r.gross === 3000 && r.atCeiling),
+    "a moved ceiling did not move the rung that marks it"
+  );
+});
+
+test("the wedge ladder always has a rung ON the ceiling, and it is the peak", () => {
+  // The curve's only kink is at the ceiling: below it the effective rate is
+  // constant, above it every further euro is taxed at less than the average so
+  // far. A table sampled at round numbers alone steps over that and describes a
+  // straight line — the same reason `mirror.js#bgTaxWedge` forces the cap into
+  // its own sample.
+  if (!PAYROLL) return;
+  const ladder = systemWedgeLadder({ payroll: PAYROLL, grossLevels: [1000, 5000] });
+  const marked = ladder.rungs.filter((r) => r.atCeiling);
+  assert.equal(marked.length, 1, "the ceiling is not a rung of its own");
+  assert.equal(marked[0].gross, ladder.maxInsurable);
+  const peak = Math.max(...ladder.rungs.map((r) => r.effectivePct));
+  assert.ok(
+    near(marked[0].effectivePct, peak, 1e-9),
+    `the rung at the ceiling takes ${marked[0].effectivePct}% where the ` +
+      `steepest rung takes ${peak}% — the peak of the curve is not at the kink`
+  );
+  // Sorted, so the table reads as a curve rather than as a set.
+  const grosses = ladder.rungs.map((r) => r.gross);
+  assert.deepEqual(
+    grosses,
+    [...grosses].sort((a, b) => a - b)
+  );
+});
+
+test("the wedge ladder's share falls above the ceiling and its parts add up", () => {
+  // The finding the section exists to show, and the one a reader checks by
+  // adding two columns: net + taken = gross, on every rung.
+  if (!PAYROLL) return;
+  const ladder = systemWedgeLadder({ payroll: PAYROLL, grossLevels: [1000, 5000] });
+  for (const rung of ladder.rungs) {
+    assert.ok(
+      near(rung.net + rung.deductions, rung.gross, 1e-6),
+      `at €${rung.gross} the table's own columns do not add up`
+    );
+  }
+  const low = ladder.rungs.find((r) => r.gross === 1000);
+  const high = ladder.rungs.find((r) => r.gross === 5000);
+  assert.ok(
+    high.effectivePct < low.effectivePct,
+    `the effective rate at €5,000 (${high.effectivePct}%) is not below the one ` +
+      `at €1,000 (${low.effectivePct}%) — the ceiling has stopped biting`
+  );
+  assert.ok(
+    high.marginalPct < low.marginalPct,
+    "the marginal rate above the ceiling is not below the one under it"
+  );
+});
+
+test("payLadder pairs each rung with its cut, and says which were surveyed", () => {
+  const dist = read("salary_dist");
+  const wage = read("sofia_salary");
+  if (!dist || !wage || !PAYROLL) return;
+  const ladder = payLadder({ salaryDist: dist, sofiaSalary: wage, payroll: PAYROLL });
+
+  assert.equal(ladder.rungs.length, 11, "the ladder no longer has one row per published cut");
+  assert.deepEqual(
+    ladder.rungs.map((r) => r.cut),
+    [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99],
+    "the cuts are out of order or out of step with the published ladder"
+  );
+  // Monotonic in both columns: a table where a higher rung pays less is a
+  // re-levelling that went wrong, and it looks entirely ordinary.
+  for (let i = 1; i < ladder.rungs.length; i += 1) {
+    assert.ok(ladder.rungs[i].gross > ladder.rungs[i - 1].gross, "the gross rungs are not rising");
+    assert.ok(ladder.rungs[i].net > ladder.rungs[i - 1].net, "the net rungs are not rising");
+    assert.ok(ladder.rungs[i].net < ladder.rungs[i].gross, "a net rung is not below its gross");
+  }
+
+  // SES publishes three points for BG. Everything else is interpolated, and
+  // the page has to be able to say so per row — a table that called every rung
+  // surveyed would present eight interpolations as measurements.
+  assert.deepEqual(
+    ladder.rungs.filter((r) => r.surveyed).map((r) => r.cut),
+    [10, 50, 90],
+    "the surveyed rungs are not D1, the median and D9"
+  );
+});
+
+test("payLadder takes each provenance from the publisher that owns it", () => {
+  // The level's URL and period come from the НСИ payload and the shape's from
+  // the Eurostat one. Reading them crosswise would put НСИ's provenance on a
+  // Eurostat figure, which is the page-side version of the defect
+  // `no НСИ payload carries a second publisher's figures` prevents in the data.
+  const dist = read("salary_dist");
+  const wage = read("sofia_salary");
+  if (!dist || !wage || !PAYROLL) return;
+  const ladder = payLadder({ salaryDist: dist, sofiaSalary: wage, payroll: PAYROLL });
+  assert.equal(ladder.anchorUrl, wage.source_url);
+  assert.equal(ladder.anchorPeriod, wage.ref_period);
+  assert.equal(ladder.anchorGross, wage.value);
+  assert.equal(ladder.shapeUrl, dist.shape.source_url);
+  assert.equal(ladder.shapeYear, String(dist.shape.ref_year));
+
+  // Nothing at all rather than a ladder standing on a zero anchor: without the
+  // НСИ level the rungs would be SES's 2022 euro amounts wearing this
+  // quarter's date.
+  const orphaned = payLadder({ salaryDist: dist, sofiaSalary: null, payroll: PAYROLL });
+  assert.equal(orphaned.anchorGross, 0);
+  assert.deepEqual(
+    orphaned.rungs.map((r) => r.gross),
+    new Array(11).fill(0),
+    "the ladder was re-levelled onto nothing and printed numbers anyway"
+  );
+});
+
+test("sofiaHomeAtAverageWage prices a home against a NET wage, not a gross", () => {
+  // Fed the gross, the years-of-salary figure is about a fifth too flattering
+  // — the direction AGENTS.md forbids by name, on the one figure the page
+  // exists to state plainly.
+  const price = read("sofia_price");
+  const wage = read("sofia_salary");
+  if (!price || !wage || !PAYROLL) return;
+  const home = sofiaHomeAtAverageWage({
+    sofiaPrice: price,
+    sofiaSalary: wage,
+    payroll: PAYROLL,
+    m2: 70,
+  });
+  assert.equal(home.eurPerM2, price.eur_per_m2_median);
+  assert.equal(home.grossMonthly, wage.value);
+  assert.equal(home.wagePeriod, wage.ref_period);
+  assert.ok(
+    home.netMonthly < home.grossMonthly,
+    "the wage the home is priced against was not converted to net"
+  );
+  assert.ok(near(home.price, price.eur_per_m2_median * 70, 1e-9));
+  assert.ok(
+    near(home.years, home.price / (12 * home.netMonthly), 1e-9),
+    "the years figure is not the price over a year of that take-home"
+  );
+
+  // The size is the caller's, so the page has to state it — a function that
+  // picked its own would let a price be printed without saying what it prices.
+  const smaller = sofiaHomeAtAverageWage({
+    sofiaPrice: price,
+    sofiaSalary: wage,
+    payroll: PAYROLL,
+    m2: 50,
+  });
+  assert.ok(smaller.price < home.price && smaller.years < home.years);
+});
+
+test("sofiaHomeAtAverageWage prints nothing when either end is missing", () => {
+  const wage = read("sofia_salary");
+  if (!wage || !PAYROLL) return;
+  const noPrice = sofiaHomeAtAverageWage({
+    sofiaPrice: null,
+    sofiaSalary: wage,
+    payroll: PAYROLL,
+    m2: 70,
+  });
+  assert.equal(noPrice.price, 0);
+  assert.equal(noPrice.years, 0);
+  const noWage = sofiaHomeAtAverageWage({
+    sofiaPrice: read("sofia_price"),
+    sofiaSalary: null,
+    payroll: PAYROLL,
+    m2: 70,
+  });
+  assert.equal(noWage.netMonthly, 0);
+  assert.equal(noWage.years, 0, "a home was priced in years of a wage nobody published");
+});
+
+test("seriesCells selects published cells, in order, and computes nothing", () => {
+  // НСИ's licence forbids distributing производни и сборни произведения, so
+  // the quarterly wage series may be shown cell by cell and may not be
+  // averaged, rebased or differenced on the way to the screen. There is no
+  // argument here through which a caller could ask for any of that.
+  const cells = seriesCells({
+    series_by_period: { "2021-Q1": 2, "2020-Q3": 1, "2020-Q1": 0, bad: "x" },
+  });
+  assert.deepEqual(cells, [
+    { period: "2020-Q1", value: 0 },
+    { period: "2020-Q3", value: 1 },
+    { period: "2021-Q1", value: 2 },
+  ]);
+  assert.deepEqual(seriesCells(null), []);
+  assert.deepEqual(seriesCells({}), []);
+
+  // Against the real payload: every cell on the page is one НСИ published,
+  // unchanged.
+  const wage = read("sofia_salary");
+  if (!wage) return;
+  const published = wage.series_by_period;
+  const rendered = seriesCells(wage);
+  assert.equal(rendered.length, Object.keys(published).length);
+  for (const { period, value } of rendered) {
+    assert.equal(value, published[period], `${period} was changed on the way to the page`);
+  }
 });

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Post-build step: render the page's data-independent shell into
- * `dist/index.html`, so there is something on the page before the bundle runs.
+ * Post-build step: render the two content pages into `dist/`, with the
+ * published figures already in them, so there is a page before the bundle runs.
  *
  * ## The failure this fixes
  *
@@ -15,26 +15,35 @@
  *
  * ## What may be prerendered, and what may not
  *
- * **Only what does not depend on a published payload.** The shell renders with
- * `data = {}`, which is the state the calculator is in before `loadAll()`
- * returns, and two subtrees say something false in that state:
+ * **What a published payload decides may be prerendered. What the READER
+ * decides, and what the CLOCK decides, may not.**
  *
- *   - the calculator itself. Before the payloads arrive it is a loading line,
- *     and after they arrive it is figures. Baking either into served HTML puts
- *     a placeholder in a search result or freezes a number that nothing
- *     refreshes (docs/principles.md P3, P4), so `App.svelte` renders that
- *     region empty under `prerender`;
- *   - the explainer's formula block. Its branches are chosen by the anchor and
- *     by which index the savings figure was deflated by, and its deposit share
- *     comes from the published БНБ limits. With no payloads it states the
- *     13-groups-summed method over Eurostat's all-items index, which is not
- *     the method the live page uses — a wrong claim about our own arithmetic,
- *     served to whoever reads the HTML rather than runs it.
+ * The figures are safe because of how the build is assembled, not because
+ * somebody judged them stable: `npm run build` runs `vite build`, then this
+ * step, then `copy-data.mjs`, which copies the same `data/published/*.json`
+ * into `dist/data/published/`. The JSON the bundle fetches at runtime and the
+ * HTML a crawler reads therefore come out of one build from one set of files.
+ * A prerendered figure is exactly as fresh as the payload the bundle fetches
+ * from that deploy, and it carries its own reference period and `as_of` on
+ * screen — so a deploy that ever did fall behind its data is visibly behind
+ * rather than silently wrong (docs/seo.md §"What this costs, and the one way
+ * it can go wrong").
  *
- * What is left is the header, the h1, the privacy line, the whole of the
- * explainer's prose and the footer with its upstream attribution: around 17 kB
- * of real Bulgarian and English text that is otherwise reachable only by
- * executing the bundle.
+ * Two things stay out, and both are things the build cannot know:
+ *
+ *   - **the calculator region.** Its output is a function of what the reader
+ *     typed, and the defaults are not survey figures — the €900 in the pay
+ *     field is a placeholder the copy asks people to replace
+ *     (docs/principles.md P7). Freezing a result computed from it into served
+ *     HTML publishes an answer to a question nobody asked. `App.svelte`
+ *     renders that region empty under `prerender`;
+ *   - **the freshness verdict.** `view.js#dataAge` compares each payload's
+ *     `as_of` against its cadence and the current time, and the build's clock
+ *     is not the reader's. A page stamped "fresh" at build time still says so
+ *     three months later. `Calculator`'s seeded constructor therefore leaves
+ *     `dataRows` empty and the staleness banner down; the bundle computes both
+ *     against the reader's own clock, which is the only one that answers the
+ *     question.
  *
  * ## Why a second build rather than hydration
  *
@@ -44,7 +53,7 @@
  * does on its first frame, which is a hydration mismatch by construction, and
  * `<svelte:head>` would have to be injected too — leaving the page with two
  * `<title>` tags, the trap `App.svelte` already carries a comment about for
- * `<meta name="description">`. Discarding ~17 kB of already-parsed DOM costs a
+ * `<meta name="description">`. Discarding the already-parsed DOM costs a
  * repaint of markup the same stylesheet draws the same way, which is cheaper
  * than a hydration that can be wrong.
  *
@@ -59,8 +68,11 @@ import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve, join } from "node:path";
 
+import { PAYLOADS } from "../src/lib/payloads.js";
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE = resolve(HERE, "..");
+const DATA = resolve(SITE, "..", "data", "published");
 
 /**
  * Where the SSR bundle lands.
@@ -73,11 +85,28 @@ const SITE = resolve(HERE, "..");
 const SSR_OUT = resolve(SITE, "node_modules/.vyarno-prerender");
 
 /**
- * The empty mount point in `index.html`, and the one thing this step needs to
+ * The empty mount point in every entry, and the one thing this step needs to
  * find. A build that renamed or reshaped it would otherwise write a page whose
  * markup is silently unchanged.
  */
 export const MOUNT_POINT = '<div id="app"></div>';
+
+/**
+ * The pages this step renders, and the component behind each.
+ *
+ * Both are content pages carrying published figures; `/legal/`, `/support/`
+ * and the 404 are prose the bundle assembles from constants, so a crawler that
+ * runs no JavaScript loses nothing that a build could have given it. Adding a
+ * row here is what puts a page in front of a crawler — and `verify_render.mjs`
+ * reads each written file back, because a post-build step that quietly does
+ * nothing looks exactly like a build that worked.
+ */
+export const PRERENDERED = Object.freeze(
+  [
+    { name: "app", source: "src/App.svelte", page: ["index.html"] },
+    { name: "how", source: "src/How.svelte", page: ["how", "index.html"] },
+  ].map(Object.freeze)
+);
 
 /**
  * `html` with `body` placed inside the mount point.
@@ -88,8 +117,8 @@ export const MOUNT_POINT = '<div id="app"></div>';
  * unchanged: a prerender that quietly did nothing is the failure this whole
  * step exists to prevent, and it looks exactly like a successful build.
  *
- * @param {string} html  the built `dist/index.html`
- * @param {string} body  the rendered shell
+ * @param {string} html  the built entry
+ * @param {string} body  the rendered page
  * @returns {string}
  */
 export function injectPrerender(html, body) {
@@ -105,41 +134,87 @@ export function injectPrerender(html, body) {
 }
 
 /**
- * Compile `App.svelte` for the server and return its rendered shell.
+ * The `loadAll()` result, read off disk instead of fetched.
  *
- * @returns {Promise<string>}
+ * The manifest, never a directory listing, so this cannot hand a component a
+ * payload the page has no row for — and `data.js` stays the only place a
+ * `fetch` happens, because there is no fetch in a Node build step.
+ *
+ * A payload that will not parse **fails the build**. They are committed files
+ * and the pipeline's own CI job parses every one, so an unreadable payload is a
+ * broken checkout rather than a degraded network — and the alternative is
+ * writing a page with a figure quietly missing from it, which is the failure
+ * every other line of this file is arranged against.
+ *
+ * @param {string} dir  where the published JSONs live
+ * @returns {Promise<Record<string, object>>} keyed by `PAYLOADS[].key`
  */
-export async function renderShell() {
-  await build({
-    configFile: resolve(SITE, "vite.config.js"),
-    root: SITE,
-    logLevel: "warn",
-    // The four HTML entries are the client build's; this one has a single
-    // JavaScript entry, and `publicDir` would copy the fonts a second time.
-    publicDir: false,
-    build: {
-      ssr: resolve(SITE, "src/App.svelte"),
-      outDir: SSR_OUT,
-      emptyOutDir: true,
-      // Neither applies to a bundle nobody ships: the maps would land outside
-      // `dist/` where `strip-sourcemaps.mjs` cannot see them, and minifying
-      // costs build time to shrink a file that is deleted next release.
-      sourcemap: false,
-      minify: false,
-      rollupOptions: {
-        input: resolve(SITE, "src/App.svelte"),
-        output: { entryFileNames: "app.js" },
-      },
-    },
-  });
+export async function readPayloads(dir = DATA) {
+  const entries = await Promise.all(
+    PAYLOADS.map(async (entry) => {
+      const file = join(dir, `${entry.file}.json`);
+      try {
+        return [entry.key, JSON.parse(await readFile(file, "utf8"))];
+      } catch (cause) {
+        throw new Error(
+          `prerender: cannot read ${file}. The published payloads are committed ` +
+            "and the page is rendered from them at build time, so a missing one " +
+            "is a broken checkout — not something to render around.",
+          { cause }
+        );
+      }
+    })
+  );
+  return Object.fromEntries(entries);
+}
 
-  const { default: App } = await import(pathToFileURL(join(SSR_OUT, "app.js")).href);
+/**
+ * Compile each page for the server and return its rendered body.
+ *
+ * @param {Record<string, object>} payloads  the `readPayloads()` result
+ * @returns {Promise<Array<{page: string[], body: string}>>}
+ */
+export async function renderPages(payloads) {
   const { render } = await import("svelte/server");
-  // `head` is deliberately dropped. It carries `App.svelte`'s `<title>`, and
-  // `index.html` already has one; two title tags leave a crawler reading
-  // whichever comes first, which is the same defect the description comment in
-  // `App.svelte` names.
-  return render(App, { props: { prerender: true } }).body;
+  const out = [];
+  for (const { name, source, page } of PRERENDERED) {
+    // One `build()` per page rather than one multi-entry SSR build. Vite's
+    // multi-input SSR mode routes the components' CSS through the asset
+    // pipeline, which then warns about every `url(/fonts/…)` it cannot resolve
+    // — a screen of noise on a bundle whose stylesheet nobody ships, from a
+    // step whose whole job is to be checkable. `build.ssr` pointed at one
+    // entry leaves the CSS alone.
+    await build({
+      configFile: resolve(SITE, "vite.config.js"),
+      root: SITE,
+      logLevel: "warn",
+      // The HTML entries are the client build's; this one is a single
+      // JavaScript entry, and `publicDir` would copy the fonts a second time.
+      publicDir: false,
+      build: {
+        ssr: resolve(SITE, source),
+        outDir: SSR_OUT,
+        emptyOutDir: true,
+        // Neither applies to a bundle nobody ships: the maps would land outside
+        // `dist/` where `strip-sourcemaps.mjs` cannot see them, and minifying
+        // costs build time to shrink a file that is deleted next release.
+        sourcemap: false,
+        minify: false,
+        rollupOptions: {
+          input: resolve(SITE, source),
+          output: { entryFileNames: `${name}.js` },
+        },
+      },
+    });
+
+    const { default: Component } = await import(pathToFileURL(join(SSR_OUT, `${name}.js`)).href);
+    // `head` is deliberately dropped. It carries the component's `<title>`,
+    // and the entry `.html` already has one; two title tags leave a crawler
+    // reading whichever comes first, which is the same defect the description
+    // comment in `App.svelte` names.
+    out.push({ page, body: render(Component, { props: { prerender: true, payloads } }).body });
+  }
+  return out;
 }
 
 // --- The build step itself. Skipped when imported by the test. --------------
@@ -152,8 +227,10 @@ export async function renderShell() {
 // step must not have, and it is invisible to every suite that does not read
 // the artefact afterwards.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const page = join(SITE, "dist", "index.html");
-  const body = await renderShell();
-  await writeFile(page, injectPrerender(await readFile(page, "utf8"), body), "utf8");
-  console.log(`[prerender] wrote the shell into dist/index.html — ${body.length} bytes`);
+  const rendered = await renderPages(await readPayloads());
+  for (const { page, body } of rendered) {
+    const file = join(SITE, "dist", ...page);
+    await writeFile(file, injectPrerender(await readFile(file, "utf8"), body), "utf8");
+    console.log(`[prerender] wrote dist/${page.join("/")} — ${body.length} bytes`);
+  }
 }

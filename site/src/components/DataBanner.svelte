@@ -43,7 +43,6 @@
     panelOpen = $bindable(false),
   } = $props();
 
-  const fmt = (x, d = 1) => number(x, d, $lang);
   const fmtDate = (value) => dateShort(value, $lang);
 </script>
 
@@ -58,16 +57,22 @@
         >
       </span>
       {#if headline}
+        <!-- Each span states its OWN language, never `$lang`. Both are in the
+             DOM at once with the CSS hiding one, so `$lang` in both puts the
+             reader's chosen language into the other's box — invisible to them,
+             and served verbatim to whatever reads the HTML. The build writes
+             this strip into `dist/index.html` (scripts/prerender.mjs), which is
+             read by a crawler that sees no CSS and both spans. -->
         <span class="off-fig">
           <span class="l-bg"
-            >{t(COPY.headlineRate, $lang, {
-              rate: fmt(headline),
+            >{t(COPY.headlineRate, "bg", {
+              rate: number(headline, 1, "bg"),
               ref_period: headlineRefPeriod,
             })}</span
           >
           <span class="l-en"
-            >{t(COPY.headlineRate, $lang, {
-              rate: fmt(headline),
+            >{t(COPY.headlineRate, "en", {
+              rate: number(headline, 1, "en"),
               ref_period: headlineRefPeriod,
             })}</span
           >
@@ -76,10 +81,19 @@
     </div>
     <!-- The panel lives inside the strip because the strip is where the doubt
          starts: a reader who wonders how current one date is wants the other
-         seven, not a different page. -->
-    <div class="wrap">
-      <DataPanel rows={dataRows} bind:open={panelOpen} />
-    </div>
+         seven, not a different page.
+
+         Gated on there being rows, because the build renders this strip with
+         the payloads but WITHOUT a freshness verdict — that one is a function
+         of the clock and the build's clock is not the reader's
+         (calculator.svelte.js, the seeded constructor). Without the gate, the
+         served HTML would carry the panel's four column headings above an
+         empty table: a disclosure that opens onto nothing. -->
+    {#if dataRows.length > 0}
+      <div class="wrap">
+        <DataPanel rows={dataRows} bind:open={panelOpen} />
+      </div>
+    {/if}
   </div>
 {/if}
 

@@ -483,6 +483,9 @@ test("the home block prices m² off the live имот.bg median, and cites imot.
 // ---------------------------------------------------------------------------
 
 /** Every Eurostat dataset id a rendered payload actually sources from. */
+/** A Eurostat dataset id wherever one appears inside a URL on a page. */
+const ID_IN_URL = /(?:databrowser\/view\/|1\.0\/data\/)([a-z0-9_]+)/g;
+
 function datasetsInUse() {
   const PROVENANCE_KEYS = new Set(["dataset", "source_url", "api_url", "api_url_index"]);
   const ID = /\b((?:prc|une|ilc|earn|namq|nama|hbs)_[a-z0-9_]+)\b/g;
@@ -734,5 +737,83 @@ test("the Sofia comparator states the gap once, not twice", () => {
   assert.ok(
     VIEW.includes("magnitudePct: Math.abs(diffPct)"),
     "view.js#sofiaGap no longer publishes an unsigned magnitude"
+  );
+});
+
+// ---------------------------------------------------------------------------
+// `/how/` — the country's figures on a page of their own
+//
+// The same rule as the calculator's source line, from both directions: we show
+// no figure whose source is unnamed, and we cite no source that produced
+// nothing on the page. It is checked separately because `/how/` is a build
+// entry of its own and `calculatorSource()` deliberately does not read it —
+// this page has no calculator in it and none of the assertions above apply.
+// ---------------------------------------------------------------------------
+
+const HOW = live(read("How.svelte"));
+
+test("the country page cites every Eurostat dataset it renders, and no others", () => {
+  // A dataset named here that feeds nothing sends the first reader who follows
+  // the link to a cube with no figure of ours in it. The quieter direction is
+  // omission: `earn_ses_monthly` is the entire shape of the pay ladder, and a
+  // ladder rendered without it reads as ours rather than as a survey's.
+  const cited = new Set([...HOW.matchAll(ID_IN_URL)].map((m) => m[1]));
+  assert.ok(cited.size, "the country page links no Eurostat dataset at all");
+
+  const inUse = datasetsInUse();
+  if (!inUse.size) return; // no refresh in this checkout
+
+  assert.deepEqual(
+    [...cited].filter((d) => !inUse.has(d)).sort(),
+    [],
+    "the country page links Eurostat datasets that feed nothing it renders"
+  );
+  assert.deepEqual(
+    [...inUse].filter((d) => !cited.has(d)).sort(),
+    [],
+    "the country page renders figures from Eurostat datasets it never links. " +
+      "Every number on it is supposed to be checkable from the page itself (P3)."
+  );
+});
+
+test("the country page renders no figure it did not get from view.js", () => {
+  // The rule the whole five-layer split exists for, on the page furthest from
+  // the calculator's own tests. Every figure here comes off one of the four
+  // `Calculator` values that take payloads and no scalar — so an arithmetic
+  // operator in the markup is either a new derived value with no test behind
+  // it, or a reader's figure that has found its way onto a page with no reader.
+  const markup = HOW.slice(HOW.indexOf("</script>"));
+  // A multiplication or a division between two operands, anywhere in the
+  // template. The URL constants live above the slice, so the `/` in an address
+  // is out of range; `<br />` and `</div>` do not match because the character
+  // before the slash is not an operand.
+  const arithmetic = [...markup.matchAll(/[\w)\]]\s*[*/]\s*[\w($]/g)].map((m) => m[0]);
+  assert.deepEqual(
+    arithmetic,
+    [],
+    `the country page computes in its markup: ${arithmetic.join(" | ")}. ` +
+      "Derived values belong in view.js with a test in verify_view.mjs."
+  );
+});
+
+test("the country page has no input, and imports nothing that would give it one", () => {
+  // Prerendering the whole page rests on nothing here being the reader's. An
+  // input would end that quietly — the page would still render and every other
+  // test would stay green, while the served HTML started carrying a default
+  // somebody chose (P7) or a figure derived from one (P2).
+  for (const tag of ["<input", "<textarea", "<select", "contenteditable", "bind:value"]) {
+    assert.ok(
+      !HOW.includes(tag),
+      `How.svelte renders a ${tag}. The page is a reference with no reader in ` +
+        "it, and every figure on it is prerendered on exactly that basis."
+    );
+  }
+  // …and none of the reader's own state reaches it. `m2` is the slider in the
+  // home block; `HOME.m2Default` is the constant the page states on screen.
+  assert.ok(
+    !/\bcalc\.(m2|rent|cash|earners|weights|nets|householdNet|payslip|wedge)\b/.test(
+      read("How.svelte")
+    ),
+    "the country page reads a value the reader types into the calculator"
   );
 });
