@@ -49,6 +49,10 @@ site/
 ├── vite.config.js      # Svelte plugin · /data/published middleware ·
 │                       # the five entries · the __BUILD_ID__ define
 ├── scripts/
+│   ├── check-all.mjs          # lint → test → render, and the counts at the end
+│   ├── check-test-floors.mjs  # no suite got smaller — the only counts there are
+│   ├── find-chromium.mjs      # which browser test:render will use, proved by launching it
+│   ├── release-build.mjs      # build + the release-only guards, one command
 │   ├── prerender.mjs          # post-build: / and /how/, figures and all
 │   ├── copy-data.mjs          # post-build: ../data/published/*.json → dist/
 │   ├── gen-sitemap.mjs        # dist/sitemap.xml, lastmod = newest as_of
@@ -70,6 +74,7 @@ site/
 │   ├── verify_template_safety.mjs # the {@html} invariants, both directions
 │   ├── verify_static_assets.mjs   # robots · security.txt · sitemap · the CSP
 │   ├── verify_suites.mjs          # every suite on disk is named by a runner
+│   ├── verify_docs_map.mjs        # this tree names the files that are there
 │   ├── verify_render.mjs          # the built page, in a browser
 │   ├── make_og_image.py           # regenerates the static OG preview + the
 │   │                              # two README banners (stdlib only)
@@ -78,7 +83,7 @@ site/
 │   ├── _headers · robots.txt · .well-known/security.txt
 │   ├── favicon.svg · og-image.png · fonts/ (self-hosted, vendored unmodified)
 └── src/
-    ├── App.svelte · Legal.svelte · Support.svelte · NotFound.svelte
+    ├── App.svelte · How.svelte · Legal.svelte · Support.svelte · NotFound.svelte
     ├── components/   # the calculator, one file per part
     └── lib/
         ├── payloads.js   # WHICH payloads exist at all (the manifest)
