@@ -212,9 +212,9 @@ const skip = !built
 // ---------------------------------------------------------------------------
 
 const needsBuild = built ? false : "no dist/ — run `npm run build` first";
-const { COPY } = built
+const { COPY, t } = built
   ? await import(pathToFileURL(join(SITE, "src", "lib", "content.js")).href)
-  : { COPY: null };
+  : { COPY: null, t: null };
 
 /** A payload as the deploy serves it, from `dist/`, not from the repo. */
 async function shipped(name) {
@@ -239,6 +239,18 @@ async function servedText(...page) {
     .replaceAll("&amp;", "&");
 }
 
+/**
+ * The attribution line as it is actually served, year filled in.
+ *
+ * `COPY.footerNote` carries a `{year}` slot rather than a literal, so a
+ * prerendered page holds the year the build ran in and a reader's browser holds
+ * theirs. Substituting the same way `SiteFooter` does keeps this checking that
+ * the five publishers reached the HTML, which is what it is for — a test
+ * comparing against the raw template would fail on the slot and say nothing
+ * about the credit.
+ */
+const attribution = (lang) => t(COPY.footerNote, lang, { year: new Date().getFullYear() });
+
 test(
   "the built page carries its prose without running any JavaScript",
   { skip: needsBuild },
@@ -250,7 +262,7 @@ test(
       ["the privacy line", COPY.privacy.bg],
       ["the explainer's lead", COPY.explainLead.bg],
       ["the explainer's lead in English", COPY.explainLead.en],
-      ["the upstream attribution", COPY.footerNote.bg],
+      ["the upstream attribution", attribution("bg")],
     ]) {
       assert.ok(
         html.includes(text),
@@ -388,7 +400,7 @@ test(
 
     for (const [what, text] of [
       ["the page's own title", COPY.howTitle.bg],
-      ["the upstream attribution", COPY.footerNote.bg],
+      ["the upstream attribution", attribution("bg")],
       ["the wedge table's heading", COPY.howColEffective.bg],
       ["the wedge table's heading in English", COPY.howColEffective.en],
       ["the ladder's modelled marker", COPY.howModelled.bg],
@@ -736,12 +748,12 @@ test("the language and theme toggles change the page", { skip }, async () => {
       "bg",
       "the default language is not Bulgarian"
     );
-    await page.locator("header.site .pill").nth(1).click();
+    await page.locator("header.site .controls button").nth(1).click();
     await page.waitForTimeout(200);
     assert.equal(await root.getAttribute("data-lang"), "en");
 
     const before = await root.getAttribute("data-theme");
-    await page.locator("header.site .pill").first().click();
+    await page.locator("header.site .controls button").first().click();
     await page.waitForTimeout(200);
     assert.notEqual(await root.getAttribute("data-theme"), before, "the theme toggle did nothing");
     assert.deepEqual(errors, [], errors.join(" | "));
@@ -1622,7 +1634,7 @@ test(
     await withApp(async (page, errors) => {
       const names = () =>
         page.evaluate(() =>
-          [...document.querySelectorAll("header .pill, .presets")].map(
+          [...document.querySelectorAll("header .controls button, .presets")].map(
             (el) => el.getAttribute("aria-label") ?? ""
           )
         );
@@ -1636,7 +1648,7 @@ test(
         assert.match(name, /[Ѐ-ӿ]/, `"${name}" reaches a Bulgarian reader in English`);
       }
 
-      await page.locator("header .pill").last().click();
+      await page.locator("header .controls button").last().click();
       await page.waitForTimeout(300);
       const en = await names();
       for (const [i, name] of en.entries()) {
@@ -1808,6 +1820,161 @@ test("the explainer causes no horizontal overflow on a 360px viewport", { skip }
 
     assert.deepEqual(errors, [], errors.join(" | "));
   });
+});
+
+test("a Bulgarian reader's basket table is in Bulgarian only", { skip }, async () => {
+  // Every row used to carry `eurostat_label` under the name — Eurostat's own
+  // English wording for the code, rendered whatever language the reader chose.
+  // «Housing, water, electricity, gas and other fuels» under «Ток, вода, парно,
+  // наеми» is four lines of a language they did not ask for, thirteen times
+  // over, in the column a phone has least room for.
+  //
+  // The label is not gone: it is the claim about what the bucket is, so it
+  // travels on the verify link, which is the row that goes to Eurostat and
+  // where `BasketEditor` already carries it.
+  await withApp(
+    async (page, errors) => {
+      await page.locator(".m-results details.how summary").first().click();
+      await page.waitForTimeout(250);
+
+      const rows = await page.evaluate(() =>
+        [...document.querySelectorAll(".m-results details.how tbody tr")].map((tr) => ({
+          name: tr.querySelector("td")?.innerText.trim() ?? "",
+          title: tr.querySelector("td a")?.getAttribute("title") ?? "",
+        }))
+      );
+      assert.ok(rows.length >= 13, `the drawer drew ${rows.length} basket rows`);
+      for (const row of rows) {
+        // A Latin letter in the visible name is the label coming back. The
+        // language toggle hides the `.l-en` span, so `innerText` is what a
+        // Bulgarian reader actually sees.
+        assert.ok(
+          !/[A-Za-z]/.test(row.name),
+          `the basket row «${row.name}» shows Latin script to a Bulgarian reader`
+        );
+        assert.match(
+          row.title,
+          /[A-Za-z]/,
+          "the verify link stopped carrying Eurostat's own wording for the code, " +
+            "so nothing on the row says what the bucket officially is"
+        );
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/",
+    { viewport: { width: 1280, height: 1200 } }
+  );
+});
+
+test("the country page is reachable without opening anything", { skip }, async () => {
+  // `/how/` carries every figure the site runs on, with its publisher and its
+  // period — the answer to "where does this come from", which is the question a
+  // first-time reader has before they trust a number. Its only route in used to
+  // be a link inside the explainer's disclosure at the foot of the calculator:
+  // four thousand pixels down, behind a click, on a page whose reader has
+  // already decided whether to believe it.
+  //
+  // Two routes, and the pair is the assertion. The header belongs to the
+  // calculator alone — `/legal/` and `/support/` write their own — so a reader
+  // who walked into one of those has only the footer, and a reader who never
+  // scrolls has only the header.
+  await withApp(async (page, errors) => {
+    const inHeader = page.locator('header.site .controls a[href="/how/"]');
+    assert.equal(await inHeader.count(), 1, "the calculator's header carries no route to /how/");
+    assert.ok((await inHeader.innerText()).trim(), "the header's route to /how/ has no label");
+
+    const inFooter = page.locator('footer.site a[href="/how/"]');
+    assert.equal(await inFooter.count(), 1, "the calculator's footer carries no route to /how/");
+
+    // Not inside the landmark that discharges ЗЕТ чл. 4 — that nav is labelled
+    // "legal" and holds what the law asks for, which a page of figures is not.
+    assert.equal(
+      await page.locator('footer.site nav.legal-links a[href="/how/"]').count(),
+      0,
+      "the route to /how/ was put inside the legal landmark"
+    );
+
+    // And it actually goes there rather than merely being drawn.
+    await inHeader.click();
+    await page.waitForURL(/\/how\/?$/);
+    assert.ok(await page.locator("main.how").count(), "the header link did not land on /how/");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the header still fits a phone with the route on it", { skip }, async () => {
+  // The bar is a fixed 54px holding a wordmark and three controls, and the
+  // route to `/how/` is the third. At 360px the brand's tagline wrapped to two
+  // lines inside that fixed height — the promise «икономиката, честно»
+  // rendered as a layout fault — so under 400px the tagline is what gives.
+  // Nothing about that is visible from the markup, which is why it is measured.
+  await withApp(
+    async (page, errors) => {
+      const bar = await page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        const brand = document.querySelector("header.site .brand");
+        const controls = [...document.querySelectorAll("header.site .controls > *")];
+        return {
+          vw,
+          barHeight: Math.round(
+            document.querySelector("header.site .bar").getBoundingClientRect().height
+          ),
+          brandHeight: Math.round(brand.getBoundingClientRect().height),
+          taglineShown: Boolean(document.querySelector("header.site .brand small")?.offsetHeight),
+          controls: controls.length,
+          rightmost: Math.round(
+            Math.max(...controls.map((el) => el.getBoundingClientRect().right))
+          ),
+        };
+      });
+      assert.equal(bar.controls, 3, `the header carries ${bar.controls} controls, expected 3`);
+      assert.ok(
+        bar.rightmost <= bar.vw + 1,
+        `a header control reaches ${bar.rightmost}px past the ${bar.vw}px viewport`
+      );
+      assert.ok(
+        bar.brandHeight <= bar.barHeight,
+        `the brand is ${bar.brandHeight}px tall in a ${bar.barHeight}px bar — it has wrapped`
+      );
+      assert.equal(bar.taglineShown, false, "the tagline is still drawn on a 360px bar");
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/",
+    { viewport: { width: 360, height: 800 } }
+  );
+});
+
+test("every page carries a route to the country page, except itself", { skip }, async () => {
+  // The footer is on all five pages, so it is what makes `/how/` reachable from
+  // the two that write their own header. `/how/` is the exception: a page that
+  // links to itself is noise, and the four document links in the same row
+  // already follow that rule.
+  for (const path of ["/legal/", "/support/"]) {
+    await withApp(
+      async (page, errors) => {
+        assert.equal(
+          await page.locator('footer.site a[href="/how/"]').count(),
+          1,
+          `${path} offers no route to /how/`
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      path,
+      {}
+    );
+  }
+  await withApp(
+    async (page, errors) => {
+      assert.equal(
+        await page.locator('footer.site a[href="/how/"]').count(),
+        0,
+        "/how/ links to itself in its own footer"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/how/",
+    {}
+  );
 });
 
 test("the method drawer fits a phone, and its table scrolls inside it", { skip }, async () => {
@@ -2695,7 +2862,7 @@ test("the shared picture follows the reader's theme and language", { skip }, asy
     const png = await page.evaluate(() =>
       document.querySelector("section.share canvas").toDataURL()
     );
-    await page.locator("header.site .pill").first().click();
+    await page.locator("header.site .controls button").first().click();
     await redrawn(png);
     const dark = await corner();
     // Both themes are AA-verified by verify_contrast.mjs, and the card is
@@ -2709,7 +2876,7 @@ test("the shared picture follows the reader's theme and language", { skip }, asy
     const before = await page.evaluate(() =>
       document.querySelector("section.share canvas").toDataURL()
     );
-    await page.locator("header.site .pill").nth(1).click();
+    await page.locator("header.site .controls button").nth(1).click();
     await redrawn(before);
     const after = await page.evaluate(() =>
       document.querySelector("section.share canvas").toDataURL()

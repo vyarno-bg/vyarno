@@ -25,6 +25,16 @@
     openDivisions = new Set(),
     /** Deposit share (%), quoted in the mortgage worked example. */
     downPayPct = 0,
+    /**
+     * How many Sofia districts имот.bg published a price for.
+     *
+     * A prop rather than the literal that was here: имот.bg adds and merges
+     * districts, `sofia_price.json` carries the count, and `/how/` already reads
+     * it from there. A number typed into this paragraph says 143 for as long as
+     * nobody re-reads the sentence, on the one page whose claim is that every
+     * figure comes from the data.
+     */
+    nDistricts = 0,
     /** The reader's within-division split, and helpers over it. */
     splitFor,
     divisionSharePct,
@@ -134,24 +144,25 @@
     </li>
     <li>
       <!-- WHAT THE €/m² ACTUALLY IS. имот.bg publishes one AVERAGE
-           asking price per Sofia district (143 of them); we take the
-           MEDIAN ACROSS THOSE DISTRICTS. "медианата от обявите" /
+           asking price per Sofia district; we take the MEDIAN ACROSS
+           THOSE DISTRICTS, and the count of them comes from the payload
+           rather than from this sentence. "медианата от обявите" /
            "the median of the listings" was wrong twice: it is not a
            median over listings, and the underlying prices are what
            sellers ask, not what buyers paid. Say both — this is the
            first thing anyone who knows the market will check. -->
       <span class="l-bg"
-        ><b>Домът.</b> Цената на квадратен метър е медианата на 143-те софийски квартала, всеки със
-        своята средна <b>оферта</b> от обявите (искана цена, не цена по сделка), умножена по
-        избраната квадратура - или по твоята цена, ако си въвел такава. „<b>Години</b>" значи:
+        ><b>Домът.</b> Цената на квадратен метър е медианата на {fmt0(nDistricts)} софийски квартала,
+        всеки със своята средна <b>оферта</b> от обявите (искана цена, не цена по сделка), умножена
+        по избраната квадратура - или по твоята цена, ако си въвел такава. „<b>Години</b>" значи:
         толкова години цялата ти заплата, до последното евро, би отишла за жилището. Вноската е
         обичайната банкова равна месечна вноска върху кредит от {fmt0(100 - downPayPct)}% от цената
         (останалите {fmt0(downPayPct)}% са самоучастие), с твоята лихва и твоя срок.</span
       >
       <span class="l-en"
-        ><b>A home.</b> The price per square metre is the median across Sofia's 143 districts, each
-        carrying its own average <b>asking</b> price from the listings (what sellers ask, not what
-        buyers paid), times the size you picked - or your own price, if you entered one. "<b
+        ><b>A home.</b> The price per square metre is the median across Sofia's {fmt0(nDistricts)} districts,
+        each carrying its own average <b>asking</b> price from the listings (what sellers ask, not
+        what buyers paid), times the size you picked - or your own price, if you entered one. "<b
           >Years</b
         >" means: that many years of your entire pay, down to the last euro, would go to the home.
         The payment is the ordinary equal monthly bank instalment on a loan of {fmt0(
@@ -210,12 +221,21 @@
       <tbody>
         {#each categories as c, i (c.cp_code)}
           <tr>
+            <!-- The name and nothing under it. Eurostat's own wording for the
+                 code travels on the verify link instead, which is where
+                 `BasketEditor` already carries it and what docs/site.md
+                 §"Every row stays verifiable" describes: our friendly name is a
+                 translation for a reader, the official label is the claim about
+                 what the bucket is, and the row that holds the claim is the one
+                 that goes to Eurostat.
+
+                 Rendering it under the name put «Housing, water, electricity,
+                 gas and other fuels» under «Ток, вода, парно, наеми» for a
+                 reader who asked for Bulgarian — four lines of a language they
+                 did not choose, thirteen times over, in the column the phone
+                 has least room for. -->
             <td>
               <span class="l-bg">{c.bg_name}</span><span class="l-en">{c.en_name}</span>
-              <!-- Eurostat's own wording for the code, verbatim. Our
-                   friendly name is a translation for a reader, not a
-                   claim about what the bucket is; this is the claim. -->
-              <small class="estatlbl">{c.eurostat_label}</small>
             </td>
             <td>{fmt0(divisionSharePct(i))}%</td>
             <td>{c.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
@@ -226,8 +246,9 @@
                 target="_blank"
                 rel="noopener"
                 title={$lang === "bg"
-                  ? "официалните данни на Евростат за точно това число"
-                  : "Eurostat's own data for exactly this figure"}>{c.cp_code} ↗</a
+                  ? `${c.cp_code} · ${c.eurostat_label} - официалните данни на Евростат за точно това число`
+                  : `${c.cp_code} · ${c.eurostat_label} - Eurostat's own data for exactly this figure`}
+                >{c.cp_code} ↗</a
               ></td
             >
           </tr>
@@ -238,7 +259,6 @@
               <tr class="subrow">
                 <td>
                   <span class="l-bg">↳ {g.bg_name}</span><span class="l-en">↳ {g.en_name}</span>
-                  <small class="estatlbl">{g.eurostat_label}</small>
                 </td>
                 <td
                   >{fmt0(
@@ -247,7 +267,14 @@
                 >
                 <td>{g.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
                 <td>{rateFor(g, anchor) < 0 ? "−" : "+"}{fmt(Math.abs(rateFor(g, anchor)))}%</td>
-                <td><a href={estatCatUrl(g)} target="_blank" rel="noopener">{g.cp_code} ↗</a></td>
+                <td
+                  ><a
+                    href={estatCatUrl(g)}
+                    target="_blank"
+                    rel="noopener"
+                    title={`${g.cp_code} · ${g.eurostat_label}`}>{g.cp_code} ↗</a
+                  ></td
+                >
               </tr>
             {/each}
           {/if}
@@ -312,15 +339,6 @@
 </details>
 
 <style>
-  /* Moved here from App.svelte. Svelte scopes a component's <style> to that
-     component's own markup, so this rule stopped applying the moment the
-     drawer became a component and the label rendered unstyled. */
-  .estatlbl {
-    display: block;
-    font-size: var(--fs-micro);
-    color: var(--muted);
-    font-family: var(--mono);
-  }
   .how table tr.subrow td {
     color: var(--muted);
   }

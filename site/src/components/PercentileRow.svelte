@@ -130,8 +130,12 @@
          national survey re-levelled onto Sofia's average, which the copy says
          in as many words. -->
     <div class="rr-note">
-      <span class="l-bg">{COPY.pctCaveat.bg}</span>
-      <span class="l-en">{COPY.pctCaveat.en}</span>
+      <span class="l-bg"
+        >{t(COPY.pctCaveat, "bg", { shapeYear: period(calc.salaryShapeYear) })}</span
+      >
+      <span class="l-en"
+        >{t(COPY.pctCaveat, "en", { shapeYear: period(calc.salaryShapeYear) })}</span
+      >
     </div>
     <!-- Source citation (↗) — Eurostat SES shape + NSI level, the
          same every-figure-carries-a-link contract as the baskets. -->

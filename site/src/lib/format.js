@@ -50,6 +50,31 @@ export function percentSigned(x, digits = 1, lang = "bg") {
 }
 
 /**
+ * A day of the month as an ordinal: 23 → «23-то» in BG, "23rd" in EN.
+ *
+ * Both languages take the ending from the last digit and both make an exception
+ * of the teens, and neither was getting it. The rent row wrote «{day}-о число»
+ * and "{day}th" for all thirty days `rentDays` can return, so «1-о» stood where
+ * a Bulgarian reader expects «1-во», «23-о» where they expect «23-то», and "21th"
+ * where an English one expects "21st". Eight of the thirty days were wrong in
+ * BG and six in EN — on the sentence that only renders when rent is over 30% of
+ * take-home, which is the reader the row is written for.
+ *
+ * BG: първо, второ, трето, четвърто, then -о from пето up. EN: st, nd, rd, then
+ * th. The 11–14 band is -о and -th in both, which is why the check on the last
+ * two digits comes first.
+ */
+export function ordinalDay(day, lang = "bg") {
+  if (day === null || day === undefined || !Number.isFinite(day)) return "—";
+  const n = Math.trunc(day);
+  const teen = n % 100 >= 11 && n % 100 <= 14;
+  const endings =
+    lang === "bg" ? { 1: "-во", 2: "-ро", 3: "-то", 4: "-то" } : { 1: "st", 2: "nd", 3: "rd" };
+  const fallback = lang === "bg" ? "-о" : "th";
+  return `${n}${teen ? fallback : (endings[n % 10] ?? fallback)}`;
+}
+
+/**
  * A reference period as the publisher writes it: "2026-05", "2026-Q1", "2026".
  *
  * Period labels come from the published payloads and several are rendered

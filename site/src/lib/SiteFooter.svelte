@@ -25,7 +25,7 @@
   // and importing the module that carries the documents' full text would put
   // ~30 kB of terms of use on the calculator's critical path. `support.js` is
   // tiny and safe to pull in here for the same reason.
-  import { COPY } from "./content.js";
+  import { COPY, t } from "./content.js";
   import { CONTACT, LEGAL_NAV, REPO_URL } from "./legal-nav.js";
   import { SUPPORT_COPY, footerDonateLink } from "./support.js";
   import { BUILD_ID } from "./build.js";
@@ -48,13 +48,24 @@
    * constant — a channel opens in a commit, never in a session.
    */
   const DONATE = footerDonateLink();
+
+  /**
+   * The year in the attribution line, from the reader's own clock.
+   *
+   * Read at render rather than baked at build: `prerender.mjs` freezes this
+   * component into every page's HTML, so a build-time constant would keep
+   * saying the build's year until somebody happened to deploy — which on a site
+   * that republishes when the DATA moves could be a long time after January.
+   * The client mounts over the prerendered shell and corrects it either way.
+   */
+  const YEAR = new Date().getFullYear();
 </script>
 
 <footer class="site">
   <div class="wrap foot mono">
     <span class="credits">
-      <span class="l-bg">{COPY.footerNote.bg}</span>
-      <span class="l-en">{COPY.footerNote.en}</span>
+      <span class="l-bg">{t(COPY.footerNote, "bg", { year: YEAR })}</span>
+      <span class="l-en">{t(COPY.footerNote, "en", { year: YEAR })}</span>
     </span>
 
     <nav class="legal-links" aria-label="legal">
@@ -73,6 +84,24 @@
         <span class="l-en">{COPY.contactK.en}</span>
       </a>
     </nav>
+
+    <!--
+      `/how/`, and deliberately OUTSIDE the nav above for the reason the repo
+      link below gives: that landmark is labelled "legal" and holds what
+      discharges ЗЕТ чл. 4. A page of published figures is not that.
+
+      It is here as well as in the header because the header belongs to the
+      calculator alone — `/legal/` and `/support/` write their own — and a
+      reader who has walked into one of those had no way back to the numbers.
+      Absent on `/how/` itself: a page that links to itself is noise, which is
+      the rule the four document links above already follow.
+    -->
+    {#if page !== "how"}
+      <a class="how-link" href="/how/">
+        <span class="l-bg">{COPY.howFooterK.bg}</span>
+        <span class="l-en">{COPY.howFooterK.en}</span>
+      </a>
+    {/if}
 
     <!--
       The source, next to the build stamp and not inside the legal nav: those
@@ -166,6 +195,20 @@
     border-bottom: 1px solid var(--line);
   }
   .legal-links a:hover {
+    color: var(--real-ink);
+    border-bottom-color: var(--real);
+  }
+  /* Drawn exactly like the links in the nav beside it: it sits in the same row
+     of small type, and being outside that landmark is a fact about the
+     accessibility tree rather than something a reader should be able to see. */
+  .how-link {
+    color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .how-link:hover {
     color: var(--real-ink);
     border-bottom-color: var(--real);
   }

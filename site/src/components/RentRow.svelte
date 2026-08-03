@@ -1,7 +1,7 @@
 <script>
   /** Rent as a share of take-home, against the conventional 30% line. */
   import { lang } from "../lib/stores.js";
-  import { number, integer } from "../lib/format.js";
+  import { number, integer, ordinalDay } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
@@ -62,7 +62,7 @@
             calc.rentBurdenPct >= 100
               ? t(COPY.rentDramaAll, $lang)
               : calc.rentBurdenPct > 30
-                ? t(COPY.rentDramaOver, $lang, { day: calc.rentDay })
+                ? t(COPY.rentDramaOver, $lang, { day: ordinalDay(calc.rentDay, $lang) })
                 : t(COPY.rentDramaFine, $lang),
         })}</span
       >
@@ -74,7 +74,7 @@
             calc.rentBurdenPct >= 100
               ? t(COPY.rentDramaAll, $lang)
               : calc.rentBurdenPct > 30
-                ? t(COPY.rentDramaOver, $lang, { day: calc.rentDay })
+                ? t(COPY.rentDramaOver, $lang, { day: ordinalDay(calc.rentDay, $lang) })
                 : t(COPY.rentDramaFine, $lang),
         })}</span
       >
