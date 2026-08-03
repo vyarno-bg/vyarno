@@ -1016,33 +1016,55 @@ test("mounting adds no second title or description to the head", { skip }, async
   }
 });
 
-test("the country page's skip link exists and lands clear of the header", { skip }, async () => {
-  // The calculator's equivalent, on the page that needs it more: eleven
-  // controls — the header's four and the contents list's seven — sit between a
-  // keyboard reader's first Tab and the first sentence.
-  await withApp(async (page, errors) => {
-    const skip = page.locator("a.skip");
-    assert.equal(await skip.count(), 1, "/how/ has no skip link");
-    assert.equal(await skip.first().getAttribute("href"), "#main");
-    await page.keyboard.press("Tab");
-    const focused = await page.evaluate(() => document.activeElement?.className ?? "");
-    assert.ok(focused.includes("skip"), `the first tab stop on /how/ is "${focused}"`);
+// The two pages that carry a skip link. `/legal/`, `/support/` and the 404 have
+// the sticky header without one, and that is a design call rather than an
+// omission this suite is hiding — those pages put nothing between the header
+// and the prose, so there is nothing for a keyboard reader to skip past. Where
+// one is added, add its route here and this covers it.
+const SKIP_LINK_PAGES = ["/", "/how/"];
 
-    const clearance = await page.evaluate(() => {
-      const main = document.querySelector("#main");
-      return (
-        (parseFloat(getComputedStyle(main).scrollMarginTop) || 0) -
-        document.querySelector("header.site").getBoundingClientRect().height
-      );
-    });
-    assert.ok(
-      clearance > 0,
-      `#main's scroll offset is ${clearance}px short of the sticky header, so the ` +
-        "skip link lands the reader underneath it"
-    );
-    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
-  }, "/how/");
-});
+for (const path of SKIP_LINK_PAGES) {
+  test(
+    `the skip link on ${path} is the first tab stop and lands clear of the header`,
+    { skip },
+    async () => {
+      // `.skip` had styles and no element wearing them once. It is the first thing
+      // a keyboard user meets, and it has to clear the sticky header when it lands
+      // — otherwise it moves focus to a heading drawn underneath the header, which
+      // is worse than not having it, because the reader is told they arrived.
+      //
+      // The clearance is measured against the header's own rendered height rather
+      // than asserted to be merely positive: a scroll offset of 8px under a 64px
+      // header satisfies `> 0` and lands the reader in exactly the place this is
+      // for. /how/ has the most to lose — eleven controls, the header's four and
+      // the contents list's seven, sit before its first sentence — but the two
+      // pages share the pattern and the failure, so they share the assertion.
+      await withApp(async (page, errors) => {
+        const link = page.locator("a.skip");
+        assert.equal(await link.count(), 1, `${path} has no skip link`);
+        assert.equal(await link.first().getAttribute("href"), "#main");
+
+        await page.keyboard.press("Tab");
+        const focused = await page.evaluate(() => document.activeElement?.className ?? "");
+        assert.ok(focused.includes("skip"), `the first tab stop on ${path} is "${focused}"`);
+
+        const clearance = await page.evaluate(() => {
+          const main = document.querySelector("#main");
+          return (
+            (parseFloat(getComputedStyle(main).scrollMarginTop) || 0) -
+            document.querySelector("header.site").getBoundingClientRect().height
+          );
+        });
+        assert.ok(
+          clearance > 0,
+          `on ${path}, #main's scroll offset is ${clearance}px short of the sticky header, ` +
+            "so the skip link lands the reader underneath it"
+        );
+        assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+      }, path);
+    }
+  );
+}
 
 test("the country page's stat rows leave no orphaned cell", { skip }, async () => {
   // The rule the national strip is already held to, on the page that repeats
@@ -1759,33 +1781,6 @@ test(
         said,
         /\d/,
         `the verdict reprints a figure the bars above it already carry: "${said}"`
-      );
-      assert.deepEqual(errors, [], errors.join(" | "));
-    });
-  }
-);
-
-test(
-  "the skip link exists, is reachable by keyboard, and lands clear of the header",
-  { skip },
-  async () => {
-    // `.skip` had styles and no element wearing them. It is the first thing a
-    // keyboard user meets, and it has to clear the sticky header when it lands.
-    await withApp(async (page, errors) => {
-      const skip = page.locator("a.skip");
-      assert.ok(await skip.count(), "there is no skip link, though .skip styles are defined");
-      assert.equal(await skip.first().getAttribute("href"), "#main");
-
-      await page.keyboard.press("Tab");
-      const focused = await page.evaluate(() => document.activeElement?.className ?? "");
-      assert.ok(focused.includes("skip"), `the first tab stop is "${focused}", not the skip link`);
-
-      const offset = await page
-        .locator("#main")
-        .evaluate((el) => parseFloat(getComputedStyle(el).scrollMarginTop) || 0);
-      assert.ok(
-        offset > 0,
-        "#main has no scroll offset, so the skip link lands under the sticky header"
       );
       assert.deepEqual(errors, [], errors.join(" | "));
     });
