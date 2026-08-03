@@ -55,12 +55,25 @@ jobs:
   # when the work it covers genuinely grows; the number is headroom, not a
   # performance budget, and shaving it to fit today's timing turns an
   # infrastructure hiccup into a red branch.
+  #
+  # Every checkout below carries `persist-credentials: false`, and that
+  # reasoning is shared too. None of the five jobs pushes, so the token has no
+  # reason to outlive the clone. Left at its default the checkout writes it
+  # into `.git/config`, where every later step can read it — and the later
+  # steps run third-party code by the thousand: two dependency trees, a
+  # browser, and whatever a pull request has added to either. With
+  # `contents: read` and no secrets the blast radius is one public
+  # repository's read access, so this is hygiene rather than a fix. It costs
+  # nothing, and it stops being free to add on the day some job does need to
+  # push, which is the day somebody would otherwise reach for the default.
   pipeline:
     name: pipeline · ruff + pytest
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
@@ -111,6 +124,8 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
@@ -213,6 +228,8 @@ jobs:
     # convenience wrapper over it.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
@@ -298,6 +315,7 @@ jobs:
           # The check walks history back to a baseline, so a shallow clone
           # would report every commit as new on the first push of a branch.
           fetch-depth: 0
+          persist-credentials: false
       - name: No commit is authored by a coding agent
         # A commit's author is the record of who is answerable for it, and
         # CONTRIBUTING.md §"Contributions written with a coding agent" puts that
@@ -365,6 +383,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Every payload the SPA loads is present and valid JSON
         # The pipeline gates run against live rows at publish time and are
         # gone by the time anyone reviews a diff. This catches the operational
