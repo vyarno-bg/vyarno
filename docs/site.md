@@ -29,6 +29,7 @@ site/
 ├── vite.config.js      # Svelte plugin · /data/published middleware ·
 │                       # the three entries · the __BUILD_ID__ define
 ├── scripts/
+│   ├── prerender.mjs          # post-build: the shell into dist/index.html
 │   ├── copy-data.mjs          # post-build: ../data/published/*.json → dist/
 │   ├── gen-sitemap.mjs        # dist/sitemap.xml, lastmod = newest as_of
 │   ├── gen-version.mjs        # dist/version.json — commit + build time + as_of

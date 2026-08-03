@@ -12,7 +12,7 @@
   "description": "\u0412\u044f\u0440\u043d\u043e.bg \u2014 the economy, honestly: personal inflation, real wage, salary percentile, tax wedge, rent, savings and path to home for Bulgaria. Static SPA.",
   "scripts": {
     "dev": "vite --host",
-    "build": "vite build && node scripts/copy-data.mjs && node scripts/gen-sitemap.mjs && node scripts/gen-version.mjs && node scripts/strip-sourcemaps.mjs && node scripts/check-identity.mjs",
+    "build": "vite build && node scripts/prerender.mjs && node scripts/copy-data.mjs && node scripts/gen-sitemap.mjs && node scripts/gen-version.mjs && node scripts/strip-sourcemaps.mjs && node scripts/check-identity.mjs",
     "build:release": "node scripts/release-build.mjs",
     "preview": "vite preview",
     "lint": "eslint . && prettier --check .",

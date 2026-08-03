@@ -46,6 +46,7 @@ the code looks. [`math.md`](./math.md) and
 | [`math.md`](./math.md) | You want the provenance contract: where every published number comes from, and the invariants no change may break |
 | [`validation-gates.md`](./validation-gates.md) | You want to know what the gates check and what to do when one trips |
 | [`site.md`](./site.md) | You want the SPA: the five-layer split, what each `src/lib/` module and `src/components/` file owns, the basket interface, hosting headers |
+| [`seo.md`](./seo.md) | You are touching what a crawler reads: the prerendered shell, `robots.txt`, the sitemap, the head tags — or you are about to add a page to make the site findable |
 | [`local-development.md`](./local-development.md) | You are setting up, running the suites, running the pipeline live, or debugging a failed run |
 | [`testing-strategy.md`](./testing-strategy.md) | You are writing a test and want to know which suite it belongs in, and why the answer is what it is |
 | [`principles.md`](./principles.md) | You are proposing a feature, or want to know whether an idea is already ruled out. P1–P11, the closed list, and what the code owes its readers |

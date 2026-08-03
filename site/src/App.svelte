@@ -28,6 +28,20 @@
   import { COPY, t } from "./lib/content.js";
   import { CONTACT } from "./lib/legal-nav.js";
 
+  /**
+   * Set only by `scripts/prerender.mjs`, which renders this component on the
+   * server at build time so the page carries its own prose before the bundle
+   * runs. `main.js` never passes it.
+   *
+   * What it turns off is everything that reads a published payload. The server
+   * renders with `data = {}`, so the calculator region would emit the loading
+   * line — a placeholder in a search result — and the explainer's formula
+   * block would state the fallback method rather than the one the page uses.
+   * Both are served to a reader who never sees the correction, because the
+   * correction arrives with the bundle. `docs/seo.md` is the whole reasoning.
+   */
+  const { prerender = false } = $props();
+
   const calc = new Calculator();
 
   onMount(calc.load);
@@ -93,7 +107,10 @@
       <span class="l-en">{COPY.privacy.en}</span>
     </div>
 
-    {#if !calc.dataReady}
+    {#if prerender}
+      <!-- Nothing. Every branch below needs a payload, and the build has
+           none — see the `prerender` prop above. -->
+    {:else if !calc.dataReady}
       <div class="loading mono">
         <span class="l-bg">{COPY.loadingK.bg}</span>
         <span class="l-en">{COPY.loadingK.en}</span>
@@ -161,6 +178,7 @@
 </main>
 
 <ExplainerBand
+  {prerender}
   anchor={calc.anchor}
   downPayPct={calc.downPayPct}
   cashEroded={calc.cashEroded}

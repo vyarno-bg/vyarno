@@ -131,12 +131,13 @@
     <div id="app"></div>
     <noscript>
       <!--
-        The calculator renders client-side, so with JavaScript off #app stays
-        empty and a reader without it — or a crawler that does not run scripts —
-        gets a blank page. This is the only thing they see, so it says the app
-        needs JavaScript and computes entirely in the browser, and it carries
-        the upstream attribution: a licence condition of several sources that
-        must appear on every page and otherwise renders only from the bundle.
+        `scripts/prerender.mjs` writes the shell and the explainer's prose into
+        #app at build time, so with JavaScript off a reader gets a page and no
+        calculator on it — every figure needs the bundle. These three sentences
+        are what tells them the numbers are computed in their own browser
+        rather than withheld, and they carry the upstream attribution, which is
+        a licence condition of several sources: it has to be here whether the
+        bundle runs or the prerender step ever stops running.
       -->
       <div
         style="
