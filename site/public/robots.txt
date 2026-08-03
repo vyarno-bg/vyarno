@@ -91,6 +91,45 @@ User-agent: *
 Disallow: /data/published/
 Allow: /
 
+# --- AI crawlers that send a person to the source --------------------------
+# Note 3 states a test rather than a category: a consumer that sends a person
+# to the number with its source and its date attached is welcome, and one that
+# absorbs the figure and restates it without provenance is not. These agents
+# are on the first side of it, on their operators' own documentation:
+#
+#   OAI-SearchBot     «used to surface websites in search results in ChatGPT's
+#                     search features» — a search index, not a training crawl
+#   ChatGPT-User      fetches a page because a person asked a question
+#   PerplexityBot     «It is not used to crawl content for AI foundation models»
+#   Perplexity-User   fetches to answer, and «include a link to the page in its
+#                     response»
+#   Claude-SearchBot  «improve search result quality for users»
+#   Claude-User       fetches a page because a person asked a question
+#
+# (All read from the operators' own crawler documentation, 2026-08-03.)
+#
+# This is note 3 applied, not note 3 amended. It also settles a position the
+# file was taking by accident in three directions at once: Googlebot and
+# Bingbot are allowed and have to be — organic search is what a Bulgarian
+# calculator lives on — and AI Overviews and Copilot are built on those same
+# indexes, so the largest AI answer surfaces were already being fed while the
+# smaller ones that cite more visibly were turned away.
+#
+# **Each group repeats the /data/published/ line, and that is not redundancy.**
+# RFC 9309 2.2.1 has a crawler obey the most specific group matching its token
+# and NOT merge it with the catch-all, so a group here carrying only `Allow: /`
+# would hand these six the raw payloads the group above keeps everyone out of.
+# `verify_static_assets.mjs` fails if any of them loses the line.
+
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+Disallow: /data/published/
+Allow: /
+
 # --- Model-training and content-ingestion crawlers ------------------------
 # Declined for the reason in note 3 above. Each of these is documented by its
 # operator as respecting robots.txt; the ones that do not are not addressable
@@ -99,31 +138,25 @@ Allow: /
 User-agent: GPTBot
 Disallow: /
 
-User-agent: OAI-SearchBot
-Disallow: /
-
-User-agent: ChatGPT-User
-Disallow: /
-
 User-agent: ClaudeBot
-Disallow: /
-
-User-agent: Claude-Web
-Disallow: /
-
-User-agent: anthropic-ai
 Disallow: /
 
 User-agent: CCBot
 Disallow: /
 
+# Google-Extended governs training and Gemini grounding and does NOT govern
+# AI Overviews, which are built from Googlebot's index. Declining it therefore
+# costs no search surface — and adding it here to leave AI Overviews would not
+# work either. That control is a Search Console setting, and leaving Overviews
+# means leaving the index that feeds them.
 User-agent: Google-Extended
 Disallow: /
 
+# Applebot-Extended crawls nothing. It decides how what Applebot already
+# fetched may be used, so declining it opts out of Apple Intelligence training
+# while Siri, Spotlight and Safari suggestions keep the page — Applebot itself
+# is allowed by the catch-all above and must stay that way.
 User-agent: Applebot-Extended
-Disallow: /
-
-User-agent: PerplexityBot
 Disallow: /
 
 User-agent: meta-externalagent
