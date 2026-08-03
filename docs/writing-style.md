@@ -175,8 +175,8 @@ An anti-slop pass that flattens the house voice has done damage, not good.
 
 1. Read the subject alone. Does it say what changed?
 2. Does the body say anything `git show --stat` does not?
-3. Did you run what you claim you ran? A render count of 25 skipped is not 25
-   passed, and both exit 0.
+3. Did you run what you claim you ran? A render count of skips is not a count
+   of passes, and both exit 0.
 4. Any sentence you would not say out loud to a colleague? Cut it.
 5. Scan the tells table against your own output.
 

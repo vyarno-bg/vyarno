@@ -335,8 +335,8 @@ browser directory present at a revision Playwright does not expect.
 `VYARNO_CHROMIUM` overrides the search.
 
 Where nothing resolves the suite **skips rather than fails**, so a contributor
-without a browser is not blocked. **Read the count, not the exit code**: 14
-skipped exits 0 and looks exactly like a pass. `make render` gates on the
+without a browser is not blocked. **Read the count, not the exit code**: a file
+of skips exits 0 and looks exactly like a file of passes. `make render` gates on the
 resolver and fails instead, which is why `make check` is the run to trust
 before opening a change.
 
