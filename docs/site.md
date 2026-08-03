@@ -5,15 +5,25 @@ calculator. The user's browser never calls an upstream API.
 
 ## Layout
 
-**Four build entries, four real URLs**, so each resolves on a static host with
+**Five build entries, five real URLs**, so each resolves on a static host with
 no router and no rewrite rules (`vite.config.js#rollupOptions.input`):
 
 | Entry | URL | What it is |
 |---|---|---|
 | `index.html` → `src/main.js` → `App.svelte` | `/` | the calculator |
+| `how/index.html` → `src/how-main.js` → `How.svelte` | `/how/` | the country's figures, with their sources |
 | `legal/index.html` → `src/legal-main.js` → `Legal.svelte` | `/legal/` | terms, privacy, ЗЕТ чл. 4 identity, sources |
 | `support/index.html` → `src/support-main.js` → `Support.svelte` | `/support/` | how the project is paid for |
 | `404.html` → `src/notfound-main.js` → `NotFound.svelte` | `/404.html` | served for any unmatched path by name |
+
+`/how/` is a page rather than a section of the calculator because one page
+ranks for one cluster of queries, and `/` is answering «сметни моята инфлация».
+Nothing on it answers «каква е инфлацията в България» or «колко струва
+квадратът в София» — informational questions with no calculator in them
+([`seo.md`](./seo.md)). It renders no input at all, which is what lets the build
+prerender the whole of it; `verify_wiring.mjs` holds that property from both
+sides, refusing an `<input>` in the template and refusing any read of a value
+the reader types.
 
 `/support/` is a page rather than a section of `/legal/` because it is not a
 legal document: it carries no obligation, it is not versioned with the four,
@@ -27,9 +37,9 @@ holds the import list that keeps the count honest.
 ```
 site/
 ├── vite.config.js      # Svelte plugin · /data/published middleware ·
-│                       # the three entries · the __BUILD_ID__ define
+│                       # the five entries · the __BUILD_ID__ define
 ├── scripts/
-│   ├── prerender.mjs          # post-build: the shell into dist/index.html
+│   ├── prerender.mjs          # post-build: / and /how/, figures and all
 │   ├── copy-data.mjs          # post-build: ../data/published/*.json → dist/
 │   ├── gen-sitemap.mjs        # dist/sitemap.xml, lastmod = newest as_of
 │   ├── gen-version.mjs        # dist/version.json — commit + build time + as_of
@@ -76,10 +86,11 @@ site/
         └── tokens.css · card.css · result-row.css · disclosure.css
 ```
 
-`SiteFooter.svelte` is shared by all four pages on purpose: it carries the
-upstream attribution (a licence condition) and the legal links (ЗЕТ чл. 4 wants
-the provider's identity reachable from every page). A page that declares its own
-`<footer>` fails `all_four_pages_mount_the_shared_footer_and_none_declares_its_own`.
+`SiteFooter.svelte` is shared by every page on purpose: it carries the upstream
+attribution (a licence condition) and the legal links (ЗЕТ чл. 4 wants the
+provider's identity reachable from every page). A page that declares its own
+`<footer>` fails `every_page_mounts_the_shared_footer_and_none_declares_its_own`,
+and a new build entry belongs in that test's list in the commit that adds it.
 
 ## The five-layer split
 

@@ -1,0 +1,1209 @@
+<script>
+  /**
+   * `/how/` — Bulgaria's official figures, on a page of their own.
+   *
+   * **Why this is a page and not a section of the calculator.** One page ranks
+   * for one cluster of queries, and `/` is answering «сметни моята инфлация».
+   * Nothing on it answers «каква е инфлацията в България», «колко взима
+   * данъкът» or «колко струва квадратът в София» — informational questions
+   * with no calculator in them, asked by people who will never type a salary
+   * into anything. `docs/seo.md` costs the entry out; `docs/how-it-works.md` is
+   * the same explanation written for a contributor, and this is it written for
+   * a reader, in both languages, with the figures rendered rather than typed.
+   *
+   * **Every number here is the country's and none is the reader's.** There is
+   * no input on this page and there must never be one: the four values it
+   * reads off `Calculator` — `systemWedge`, `payLadderRows`, `sofiaHome`,
+   * `sofiaWageCells` — are functions of the published payloads alone, and each
+   * takes payloads rather than scalars precisely so a reader's figure cannot be
+   * threaded into one (view.js §"The country, with nobody in it"). The tax
+   * wedge is the case that matters: a PERSONAL effective rate is closed on any
+   * shareable surface because it inverts to the salary (P2), and the system's
+   * own curve is the version the closed list leaves open.
+   *
+   * **`syncWithData` is deliberately not called.** It seeds the basket
+   * sliders, adopts the live mortgage rate into the reader's field and clamps
+   * their term — three pieces of calculator state, none of which exists here.
+   * Running it would be work with no output; more to the point, an `$effect`
+   * on a page that renders no inputs is where an input eventually gets added.
+   */
+  import { onMount } from "svelte";
+  import { lang, theme, toggleLang, toggleTheme } from "./lib/stores.js";
+  import SiteFooter from "./lib/SiteFooter.svelte";
+  import { Calculator } from "./lib/calculator.svelte.js";
+  import { COPY, HOME, t } from "./lib/content.js";
+  import { number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
+
+  /**
+   * The published payloads, read off disk by `scripts/prerender.mjs`.
+   *
+   * `how-main.js` never passes them: in a browser the page fetches, like every
+   * other page here. At build time there is no fetch, so the payloads arrive
+   * as a prop and the served HTML carries the figures a crawler — and an agent
+   * citing them — would otherwise have to run the bundle to see.
+   */
+  const { payloads = null } = $props();
+
+  // svelte-ignore state_referenced_locally
+  // Reading the initial value is the whole intent: `payloads` is set once by
+  // the build and never again, and the Calculator holds what it was given.
+  const calc = new Calculator(payloads);
+  onMount(calc.load);
+
+  const fmt = (x, d = 1) => number(x, d, $lang);
+  const fmt0 = (x) => integer(x, $lang);
+
+  // Dates and periods come out as a `{bg, en}` PAIR, not as one string picked
+  // by `$lang`, and that is the difference between a page a crawler can read
+  // and one it half can. Both languages ship in the DOM at once here (the rule
+  // in `tokens.css` hides one), so a caption assembled from `$lang` puts «юли
+  // 2026 г.» inside the English span — invisible to a reader, who only ever
+  // sees the other one, and served verbatim to whatever indexes the HTML.
+  const when = (p) => ({ bg: periodLong(p, "bg"), en: periodLong(p, "en") });
+  const onDay = (d) => ({ bg: dateShort(d, "bg"), en: dateShort(d, "en") });
+  /** A period that is already language-independent — a year, an ISO effective date. */
+  const asIs = (v) => ({ bg: String(v ?? ""), en: String(v ?? "") });
+
+  // The two Eurostat extracts this page cites for figures that are not
+  // per-category: the all-items headline and unemployment. Same reasoning as
+  // the strip's — they point at the exact dissemination query behind the
+  // number rather than the Data Browser table, which silently defaults to
+  // CP01/Food for the first and to the dataset's default geo for the second.
+  const ESTAT_HEADLINE_URL =
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&coicop18=TOTAL&unit=RCH_A&lastTimePeriod=12";
+  const ESTAT_UNEMPLOYMENT_URL =
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_m?geo=BG&s_adj=SA&sex=T&age=TOTAL&unit=PC_ACT&sinceTimePeriod=2020-01";
+  const ESTAT_WEIGHTS_URL =
+    "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_iw/default/table?lang=en";
+  const ESTAT_SES_URL =
+    "https://ec.europa.eu/eurostat/databrowser/view/earn_ses_monthly/default/table?lang=en";
+  const DV_URL = "https://dv.parliament.bg/";
+  const IMOT_URL = "https://www.imot.bg/sredni-ceni";
+</script>
+
+<svelte:head>
+  <!-- Only the title, for the reason `App.svelte` carries at length: a
+       `<meta name="description">` here does NOT replace the one in
+       how/index.html — Svelte appends it and a crawler reads the first of the
+       two. The description belongs in the entry file. -->
+  <title>{t(COPY.howTitle, $lang)}</title>
+</svelte:head>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="brand" href="/">
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+        <rect x="2" y="6" width="4" height="14" rx="1" fill="var(--muted)" />
+        <rect x="16" y="2" width="4" height="18" rx="1" fill="var(--real)" />
+        <path
+          d="M6 20 L16 20"
+          stroke="var(--real)"
+          stroke-width="1.5"
+          stroke-dasharray="2 2"
+          fill="none"
+        />
+      </svg>
+      <span class="wm">
+        <span class="l-bg">Вярно</span>
+        <span class="l-en">Vyarno</span>
+        <small>
+          <span class="l-bg">числата</span>
+          <span class="l-en">the numbers</span>
+        </small>
+      </span>
+    </a>
+    <div class="controls">
+      <a class="pill back" href="/">
+        <span class="l-bg">← към калкулатора</span>
+        <span class="l-en">← to the calculator</span>
+      </a>
+      <button class="pill" onclick={toggleTheme} aria-label="Toggle theme">
+        {$theme === "dark" ? "☀" : "☾"}
+      </button>
+      <button class="pill" onclick={toggleLang} aria-label="Toggle language">
+        {$lang === "bg" ? "EN" : "BG"}
+      </button>
+    </div>
+  </div>
+</header>
+
+<!--
+  One stat block, used about a dozen times below.
+
+  `label` and `source` arrive as `{bg, en}` pairs and both languages are
+  rendered into the DOM, hidden by the rule in `tokens.css`. That is not a
+  detail here: the served HTML is what a crawler and a citing agent read, and a
+  caption assembled from `$lang` would reach them in one language — the same
+  reason every paragraph on this page is a `.l-bg` / `.l-en` pair rather than a
+  `t(...)` call.
+
+  `when` is the period the figure DESCRIBES, never the day we fetched it. P3
+  and P4 both hang off it, and on a page that may be served for longer than its
+  data is current it is also the mitigation: a figure that fell behind is
+  visibly behind rather than silently wrong.
+-->
+{#snippet stat(value, label, source, href, period)}
+  <div class="stat">
+    <div class="sv mono">{value}</div>
+    <div class="sl">
+      <span class="l-bg">{label.bg}</span>
+      <span class="l-en">{label.en}</span>
+    </div>
+    <div class="ss">
+      <a href={httpUrl(href)} target="_blank" rel="noopener">
+        <span class="l-bg">{t(COPY.howSrc, "bg", { s: source.bg, p: period.bg })}</span>
+        <span class="l-en">{t(COPY.howSrc, "en", { s: source.en, p: period.en })}</span>
+      </a>
+    </div>
+  </div>
+{/snippet}
+
+<!-- The Eurostat disclosure obligation, attached to each of the three figures
+     it applies to rather than stated once at the foot: the modelled ladder,
+     the Sofia €/m² median across имот.bg's districts, and the change since
+     2015 computed from it are OURS, and Eurostat's terms permit derivation on
+     condition that it is disclosed. The link carries the reader to the full
+     wording, including the non-responsibility clause. -->
+{#snippet ours()}
+  <p class="ours">
+    <span class="l-bg"
+      >{COPY.howOurs.bg}
+      <a href="/legal/#sources">{COPY.howOursMoreK.bg} →</a></span
+    >
+    <span class="l-en"
+      >{COPY.howOurs.en}
+      <a href="/legal/#sources">{COPY.howOursMoreK.en} →</a></span
+    >
+  </p>
+{/snippet}
+
+<main id="main" class="wrap how">
+  <h1>
+    <span class="l-bg">Числата за България, обяснени</span>
+    <span class="l-en">Bulgaria's numbers, explained</span>
+  </h1>
+
+  <p class="lead">
+    <span class="l-bg"
+      >Тук са официалните числа, с които калкулаторът смята: инфлацията и 13-те групи на кошницата,
+      данъкът и осигуровките, подредбата на заплатите, лихвата по жилищен кредит, цената на
+      квадратен метър в София и безработицата. До всяко стои институцията, която го публикува,
+      периодът, който описва, и връзка към таблицата, от която е взето. Нищо тук не е измислено от
+      нас и нищо не е закръглено на око.</span
+    >
+    <span class="l-en"
+      >These are the official figures the calculator works from: inflation and the 13 basket groups,
+      tax and contributions, how pay is spread out, the home-loan rate, the price of a square metre
+      in Sofia, and unemployment. Each one carries the body that publishes it, the period it
+      describes, and a link to the table it was taken from. Nothing here is invented and nothing is
+      rounded by eye.</span
+    >
+  </p>
+
+  <nav class="toc" aria-label="contents">
+    <a href="#inflation"><span class="l-bg">инфлацията</span><span class="l-en">inflation</span></a>
+    <a href="#basket"><span class="l-bg">кошницата</span><span class="l-en">the basket</span></a>
+    <a href="#pay"><span class="l-bg">бруто и нето</span><span class="l-en">gross and net</span></a>
+    <a href="#ladder"
+      ><span class="l-bg">подредбата на заплатите</span><span class="l-en">the pay ladder</span></a
+    >
+    <a href="#loan"
+      ><span class="l-bg">жилищният кредит</span><span class="l-en">the home loan</span></a
+    >
+    <a href="#home"
+      ><span class="l-bg">цената на жилището</span><span class="l-en">what a home costs</span></a
+    >
+    <a href="#work"
+      ><span class="l-bg">работа и заплати</span><span class="l-en">work and pay</span></a
+    >
+  </nav>
+
+  <!-- 1 ------------------------------------------------------------------ -->
+  <section id="inflation">
+    <h2>
+      <span class="l-bg">Каква е инфлацията, и защо твоята е различна</span>
+      <span class="l-en">What inflation is, and why yours is different</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Официалната инфлация е едно число за цялата страна: колко са поскъпнали всички стоки и
+        услуги за последните дванадесет месеца, претеглени по това как харчи средният човек. Цените
+        ги събира НСИ всеки месец, Евростат ги сглобява по единните европейски правила и публикува
+        резултата, а Вярно го взима дословно — не го пресмята наново, за да не се разминава с
+        публикуваното.</span
+      >
+      <span class="l-en"
+        >Official inflation is one number for the whole country: how much everything cost over the
+        last twelve months against the twelve before it, weighted by how the average person spends.
+        NSI collects the prices every month, Eurostat assembles them under one common European
+        method and publishes the result, and Vyarno takes it verbatim — never recomputed, so it
+        cannot drift from what is published.</span
+      >
+    </p>
+
+    <div class="stats">
+      {#if calc.data.hicpHeadline}
+        {@render stat(
+          `${fmt(calc.headline)}%`,
+          COPY.howKHeadline,
+          COPY.srcEurostat,
+          ESTAT_HEADLINE_URL,
+          when(calc.headlineRefPeriod)
+        )}
+      {/if}
+      {#if calc.categories.length > 0}
+        {@render stat(
+          `${fmt(calc.off)}%`,
+          COPY.howKBasket,
+          COPY.srcEurostat,
+          ESTAT_WEIGHTS_URL,
+          when(calc.basketRefPeriod)
+        )}
+      {/if}
+    </div>
+
+    <p>
+      <span class="l-bg"
+        >Двете числа горе са и двете официални, и двете идват от Евростат — а не съвпадат точно.
+        Разликата е от метода, не е грешка. Числото за всички стоки и услуги не е сбор на 13-те
+        групи с тазгодишните тегла: <b>всеки януари теглата се сменят</b>, защото хората харчат
+        малко по-различно от миналата година, и новата кошница се свързва със старата в края на
+        декември. Прозорецът от дванадесет месеца минава през тази смяна, а простият сбор — не.
+        Затова показваме и двете, вместо да представим едното за другото.</span
+      >
+      <span class="l-en"
+        >Both figures above are official and both come from Eurostat — and they do not match
+        exactly. The difference is the method rather than a mistake. The all-items number is not the
+        13 groups summed at this year's weights: <b>the weights change every January</b>, because
+        people spend a little differently than last year, and the new basket is linked to the old
+        one at the end of December. A twelve-month window runs through that changeover and a plain
+        weighted sum does not. So both are shown rather than one being passed off as the other.</span
+      >
+    </p>
+    <p>
+      <span class="l-bg"
+        >Твоята инфлация е същата сметка с твоите дялове. Ако храната е една трета от парите ти, а в
+        националната кошница е една пета, поскъпването на храната тежи повече при теб. Кошницата се
+        описва в калкулатора и сметката става изцяло в браузъра ти.</span
+      >
+      <span class="l-en"
+        >Your own inflation is that same sum with your shares in it. If food is a third of your
+        money where the national basket puts a fifth, food's price rise weighs more for you. The
+        basket is described in the calculator and the arithmetic happens entirely in your browser.</span
+      >
+    </p>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------------ -->
+  <section id="basket">
+    <h2>
+      <span class="l-bg">Кошницата: 13 групи, теглата им и колко е поскъпнала всяка</span>
+      <span class="l-en">The basket: 13 groups, their weights, and how far each has risen</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Цените се групират по европейска класификация (ECOICOP), която за България дава тринадесет
+        групи. Теглото е каква част от парите на средния човек отива за групата — Евростат го
+        публикува веднъж годишно. По-старите български таблици имат дванадесет групи, защото
+        последната беше сборна: сега CP12 е застраховки и банкови услуги, а новата CP13 покрива
+        лична хигиена и социални услуги. Затова двете подредби не се наслагват.</span
+      >
+      <span class="l-en"
+        >Prices are grouped by a European classification (ECOICOP), which for Bulgaria gives
+        thirteen groups. The weight is how much of the average person's money goes to that group;
+        Eurostat publishes it once a year. Older Bulgarian tables show twelve groups because the
+        last one was a catch-all: CP12 is now insurance and financial services and a new CP13 covers
+        personal care and social protection. That is why the two do not line up.</span
+      >
+    </p>
+
+    {#if calc.categories.length > 0}
+      <div class="scroll">
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">
+                <span class="l-bg">{COPY.howColGroup.bg}</span>
+                <span class="l-en">{COPY.howColGroup.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColWeight.bg}</span>
+                <span class="l-en">{COPY.howColWeight.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColYoy.bg}</span>
+                <span class="l-en">{COPY.howColYoy.en}</span>
+              </th>
+              <th scope="col">
+                <span class="l-bg">{COPY.howColCheck.bg}</span>
+                <span class="l-en">{COPY.howColCheck.en}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each calc.categories as cat (cat.cp_code)}
+              <tr>
+                <th scope="row">
+                  <span class="code mono">{cat.cp_code}</span>
+                  <span class="l-bg">{cat.bg_name}</span>
+                  <span class="l-en">{cat.en_name}</span>
+                </th>
+                <!-- The weight at the precision Eurostat publishes it, not at
+                     the strip's. This page says in its own lead that nothing on
+                     it is rounded by eye, and a reader following the ↗ link
+                     lands on 22.323 rather than on 22.3. -->
+                <td class="num mono">{fmt(cat.weight_pct, 3)}%</td>
+                <td class="num mono">{fmt(cat.annual_rate_pct)}%</td>
+                <td class="mono">
+                  <a href={httpUrl(calc.estatCatUrl(cat))} target="_blank" rel="noopener">↗</a>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="cap">
+        <span class="l-bg"
+          >{t(COPY.howSrc, "bg", {
+            s: COPY.srcEurostat.bg,
+            p: when(calc.basketRefPeriod).bg,
+          })}</span
+        >
+        <span class="l-en"
+          >{t(COPY.howSrc, "en", {
+            s: COPY.srcEurostat.en,
+            p: when(calc.basketRefPeriod).en,
+          })}</span
+        >
+      </p>
+    {/if}
+  </section>
+
+  <!-- 3 ------------------------------------------------------------------ -->
+  <section id="pay">
+    <h2>
+      <span class="l-bg">От бруто към нето: какво взимат данъкът и осигуровките</span>
+      <span class="l-en">From gross to net: what tax and contributions take</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >От брутната заплата първо се удържат осигуровките за сметка на работника, а данъкът върху
+        дохода се начислява върху остатъка. Ставките са в закона и се сменят с него, не с пазара —
+        затова ги четем от публикуваните параметри, а не ги пишем в кода.</span
+      >
+      <span class="l-en"
+        >Employee social contributions come out of the gross first, and income tax is charged on
+        what is left. The rates are in statute and change with it rather than with the market —
+        which is why they are read from published parameters rather than written into the code.</span
+      >
+    </p>
+
+    <div class="stats">
+      {#if calc.data.payroll}
+        {@render stat(
+          `${fmt(calc.systemWedge.contributionRatePct, 2)}%`,
+          COPY.howKContrib,
+          COPY.howSrcDv,
+          DV_URL,
+          asIs(calc.systemWedge.effectiveYear)
+        )}
+        {@render stat(
+          `${fmt(calc.systemWedge.incomeTaxRatePct, 0)}%`,
+          COPY.howKTax,
+          COPY.howSrcDv,
+          DV_URL,
+          asIs(calc.systemWedge.effectiveYear)
+        )}
+        {@render stat(
+          `${fmt0(calc.systemWedge.maxInsurable)} €`,
+          COPY.howKCeiling,
+          COPY.howSrcDv,
+          DV_URL,
+          asIs(calc.systemWedge.effectiveYear)
+        )}
+        {@render stat(
+          `${fmt(calc.systemWedge.minWageGross, 2)} €`,
+          COPY.howKMinWage,
+          COPY.howSrcDv,
+          DV_URL,
+          asIs(calc.systemWedge.effectiveYear)
+        )}
+      {/if}
+    </div>
+
+    <p>
+      <span class="l-bg"
+        >Ставката е една за всички, но осигуровките се дължат само до таван. Под тавана всяко евро
+        се облага еднакво; над него следващото евро носи само данъка, така че колкото по-висока е
+        заплатата, толкова по-малък дял от нея взима държавата. Таблицата долу е тази крива в четири
+        точки, сметната от ставките и тавана горе. Никоя институция не я публикува: никой не е
+        длъжен да я състави.</span
+      >
+      <span class="l-en"
+        >The rate is the same for everyone, but contributions are only owed up to a ceiling. Below
+        it every euro is charged alike; above it the next euro carries the tax alone, so the higher
+        the pay, the smaller the share of it the state takes. The table below is that curve at four
+        points, worked out from the rates and the ceiling above. No agency publishes it: nobody is
+        obliged to put it together.</span
+      >
+    </p>
+
+    {#if calc.data.payroll}
+      <div class="scroll">
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColGross.bg}</span>
+                <span class="l-en">{COPY.howColGross.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColNet.bg}</span>
+                <span class="l-en">{COPY.howColNet.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColTaken.bg}</span>
+                <span class="l-en">{COPY.howColTaken.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColEffective.bg}</span>
+                <span class="l-en">{COPY.howColEffective.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColMarginal.bg}</span>
+                <span class="l-en">{COPY.howColMarginal.en}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each calc.systemWedge.rungs as rung (rung.gross)}
+              <tr class:mark={rung.atCeiling}>
+                <th scope="row" class="num mono">
+                  {fmt0(rung.gross)} €
+                  {#if rung.atCeiling}
+                    <span class="tag">
+                      <span class="l-bg">{COPY.howAtCeiling.bg}</span>
+                      <span class="l-en">{COPY.howAtCeiling.en}</span>
+                    </span>
+                  {/if}
+                </th>
+                <td class="num mono">{fmt0(rung.net)} €</td>
+                <td class="num mono">{fmt0(rung.deductions)} €</td>
+                <td class="num mono">{fmt(rung.effectivePct)}%</td>
+                <td class="num mono">{fmt(rung.marginalPct)}%</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="cap">
+        <span class="l-bg"
+          >{t(COPY.howSrc, "bg", {
+            s: COPY.howSrcDv.bg,
+            p: asIs(calc.systemWedge.effectiveYear).bg,
+          })}</span
+        >
+        <span class="l-en"
+          >{t(COPY.howSrc, "en", {
+            s: COPY.howSrcDv.en,
+            p: asIs(calc.systemWedge.effectiveYear).en,
+          })}</span
+        >
+      </p>
+    {/if}
+  </section>
+
+  <!-- 4 ------------------------------------------------------------------ -->
+  <section id="ladder">
+    <h2>
+      <span class="l-bg">Къде сяда една заплата в София</span>
+      <span class="l-en">Where a salary sits in Sofia</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >За това трябват две официални числа, защото нито едното не стига само. Първото е
+        <b>формата</b> — кой колко изкарва — от изследването на Евростат за структурата на
+        заплатите. То е в правилната единица (индивидуална брутна заплата), но излиза веднъж на
+        четири години. Второто е <b>нивото</b> — средната брутна заплата в София, която НСИ публикува
+        всяко тримесечие. Формата се преизчислява така, че средната ѝ да съвпадне с днешното ниво, и после
+        всяко стъпало се превръща в нето.</span
+      >
+      <span class="l-en"
+        >This needs two official numbers, because neither is enough on its own. The first is the
+        <b>shape</b> — who earns what — from Eurostat's Structure of Earnings Survey. It is in the
+        right unit (individual gross earnings) but comes out once every four years. The second is
+        the
+        <b>level</b>: the average gross wage in Sofia, which NSI publishes every quarter. The shape
+        is re-levelled so its mean matches today's level, and each rung is then converted to net.</span
+      >
+    </p>
+
+    <div class="stats">
+      {#if calc.data.sofiaSalary}
+        {@render stat(
+          `${fmt0(calc.payLadderRows.anchorGross)} €`,
+          COPY.howKSofiaWage,
+          COPY.srcNsiWages,
+          calc.payLadderRows.anchorUrl,
+          when(calc.payLadderRows.anchorPeriod)
+        )}
+      {/if}
+    </div>
+
+    {#if calc.payLadderRows.anchorGross > 0 && calc.data.salaryDist}
+      <div class="scroll">
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">
+                <span class="l-bg">{COPY.howColRung.bg}</span>
+                <span class="l-en">{COPY.howColRung.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColGross.bg}</span>
+                <span class="l-en">{COPY.howColGross.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColNet.bg}</span>
+                <span class="l-en">{COPY.howColNet.en}</span>
+              </th>
+              <th scope="col">
+                <span class="l-bg">{COPY.howColBasis.bg}</span>
+                <span class="l-en">{COPY.howColBasis.en}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each calc.payLadderRows.rungs as rung (rung.cut)}
+              <tr>
+                <th scope="row" class="mono">P{rung.cut}</th>
+                <td class="num mono">{fmt0(rung.gross)} €</td>
+                <td class="num mono">{fmt0(rung.net)} €</td>
+                <td>
+                  {#if rung.surveyed}
+                    <span class="l-bg">{COPY.howSurveyed.bg}</span>
+                    <span class="l-en">{COPY.howSurveyed.en}</span>
+                  {:else}
+                    <span class="soft">
+                      <span class="l-bg">{COPY.howModelled.bg}</span>
+                      <span class="l-en">{COPY.howModelled.en}</span>
+                    </span>
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="cap">
+        <span class="l-bg"
+          >Форма: <a href={httpUrl(calc.payLadderRows.shapeUrl) || ESTAT_SES_URL}
+            >{t(COPY.howSrc, "bg", {
+              s: COPY.srcEurostat.bg,
+              p: calc.payLadderRows.shapeYear,
+            })}</a
+          >. Ниво:
+          <a href={httpUrl(calc.payLadderRows.anchorUrl)}
+            >{t(COPY.howSrc, "bg", {
+              s: COPY.srcNsiWages.bg,
+              p: when(calc.payLadderRows.anchorPeriod).bg,
+            })}</a
+          >.</span
+        >
+        <span class="l-en"
+          >Shape: <a href={httpUrl(calc.payLadderRows.shapeUrl) || ESTAT_SES_URL}
+            >{t(COPY.howSrc, "en", {
+              s: COPY.srcEurostat.en,
+              p: calc.payLadderRows.shapeYear,
+            })}</a
+          >. Level:
+          <a href={httpUrl(calc.payLadderRows.anchorUrl)}
+            >{t(COPY.howSrc, "en", {
+              s: COPY.srcNsiWages.en,
+              p: when(calc.payLadderRows.anchorPeriod).en,
+            })}</a
+          >.</span
+        >
+      </p>
+      {@render ours()}
+      <p>
+        <span class="l-bg"
+          >Изследването измерва три точки за България — долната десета, средата и горната десета.
+          Всички стъпала между тях са пресметнати, а не преброени, и таблицата казва кое кое е.
+          Затова числото показва приблизително къде сяда една заплата, а не точно: никой не е
+          обиколил всички работещи в София този месец.</span
+        >
+        <span class="l-en"
+          >The survey measures three points for Bulgaria — the bottom tenth, the middle and the top
+          tenth. Every rung between them is worked out rather than counted, and the table says which
+          is which. So the figure shows roughly where a salary sits, not exactly: nobody polled
+          every worker in Sofia this month.</span
+        >
+      </p>
+    {/if}
+  </section>
+
+  <!-- 5 ------------------------------------------------------------------ -->
+  <section id="loan">
+    <h2>
+      <span class="l-bg">Жилищният кредит: коя лихва на какъв въпрос отговаря</span>
+      <span class="l-en">The home loan: which rate answers which question</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Три числа се наричат „лихвата по жилищен кредит" и отговарят на три различни въпроса. <b
+          >Лихвата по нови кредити</b
+        >
+        е средното по договорите, подписани миналия месец — това е числото, с което се смята вноската.
+        <b>ГПР</b> е същите кредити с включени такси: то е за сравняване между оферти и никога не
+        влиза във формулата за вноската, защото анюитетът иска лихва, а не годишен разход.
+        <b>Лихвата по изплащаните кредити</b> е средното по целия портфейл, включително договори отпреди
+        години; то описва какво плащат хората сега, не какво би подписал новият кредитополучател.</span
+      >
+      <span class="l-en"
+        >Three numbers all go by "the mortgage rate" and they answer three different questions. The
+        <b>rate on new loans</b> is the average across contracts signed last month — the one the
+        monthly payment is computed from. The <b>APRC</b> is those same loans with fees folded in:
+        it is for comparing offers and never enters the payment formula, because an annuity takes an
+        interest rate rather than an annual cost. The <b>rate on loans being repaid</b> averages the whole
+        book, vintages included; it describes what people are paying now, not what a new borrower would
+        sign.</span
+      >
+    </p>
+
+    <div class="stats">
+      {#if calc.data.mortgage}
+        {@render stat(
+          `${fmt(calc.mortgageRateData.pct, 2)}%`,
+          COPY.howKAar,
+          COPY.srcEcbMir,
+          calc.data.mortgage.new_business?.source_url,
+          when(calc.mortgageRateData.refPeriod)
+        )}
+        {#if calc.mortgageAprcData}
+          {@render stat(
+            `${fmt(calc.mortgageAprcData.pct, 2)}%`,
+            COPY.howKAprc,
+            COPY.srcEcbMir,
+            calc.mortgageAprcData.url,
+            when(calc.mortgageAprcData.refPeriod)
+          )}
+        {/if}
+        {#if calc.data.mortgage.outstanding_stock}
+          {@render stat(
+            `${fmt(calc.data.mortgage.outstanding_stock.value_pct, 2)}%`,
+            COPY.howKStock,
+            COPY.srcBnb,
+            calc.data.mortgage.outstanding_stock.source_url,
+            when(calc.data.mortgage.outstanding_stock.ref_period)
+          )}
+        {/if}
+      {/if}
+    </div>
+
+    <p>
+      <span class="l-bg"
+        >БНБ поставя три граници на всеки нов жилищен кредит в България, в сила от края на 2024 г.
+        Вярно ги чете от публикуваните лимити, а не ги пише в кода, за да е промяната в наредбата
+        промяна в данните.</span
+      >
+      <span class="l-en"
+        >The BNB places three limits on every new Bulgarian home loan, in force since late 2024.
+        Vyarno reads them from the published limits rather than writing them into the code, so a
+        change in the rules is a change in the data.</span
+      >
+    </p>
+
+    <div class="stats">
+      {#if calc.data.mortgage?.lending_limits}
+        {@render stat(
+          `${fmt(calc.limits.minDownPaymentPct, 0)}%`,
+          COPY.howKLtv,
+          COPY.srcBnb,
+          calc.limits.sourceUrl,
+          onDay(calc.data.mortgage.lending_limits.effective_from)
+        )}
+        {@render stat(
+          `${fmt(calc.limits.dstiMaxPct, 0)}%`,
+          COPY.howKDsti,
+          COPY.srcBnb,
+          calc.limits.sourceUrl,
+          onDay(calc.data.mortgage.lending_limits.effective_from)
+        )}
+        {@render stat(
+          `${fmt(calc.limits.maturityMaxYears, 0)}`,
+          COPY.howKMaturity,
+          COPY.srcBnb,
+          calc.limits.sourceUrl,
+          onDay(calc.data.mortgage.lending_limits.effective_from)
+        )}
+        {#if calc.limits.observedDstiPct !== null}
+          {@render stat(
+            `${fmt(calc.limits.observedDstiPct)}%`,
+            COPY.howKObserved,
+            COPY.srcBnb,
+            calc.data.mortgage.lending_limits.observed_dsti_source_url,
+            onDay(calc.data.mortgage.lending_limits.effective_from)
+          )}
+        {/if}
+      {/if}
+    </div>
+
+    <p>
+      <span class="l-bg"
+        >Калкулаторът чертае своята линия на достъпност при 30% от нетния доход — по-строго от
+        тавана, който БНБ допуска, и по-строго от това, което новите кредитополучатели в България
+        реално носят. Линията стои там нарочно и не се мести: едно жилище не става достъпно, защото
+        калкулаторът е казал, че е.</span
+      >
+      <span class="l-en"
+        >The calculator draws its affordability line at 30% of net income — stricter than the
+        ceiling the BNB permits, and stricter than what new Bulgarian borrowers actually carry. It
+        sits there deliberately and does not move: a home does not become affordable because a
+        calculator said so.</span
+      >
+    </p>
+  </section>
+
+  <!-- 6 ------------------------------------------------------------------ -->
+  <section id="home">
+    <h2>
+      <span class="l-bg">Колко струва квадратният метър, и колко заплати е едно жилище</span>
+      <span class="l-en">What a square metre costs, and how many salaries a home is</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Няма официална машинно четима серия за цена на квадратен метър в България: Евростат
+        публикува индекс на промяната, не самата цена. Затова нивото идва от обявите — имот.bg
+        публикува средна цена на квадратен метър по квартали в София. Това са <b>искани</b> цени, не сключени
+        сделки, и разликата между най-евтиния и най-скъпия квартал е няколкократна.</span
+      >
+      <span class="l-en"
+        >There is no official machine-readable €/m² series for Bulgaria: Eurostat publishes an index
+        of the change, not the price itself. So the level comes from listings — imot.bg publishes an
+        average €/m² per Sofia district. These are <b>asking</b> prices rather than closed sales, and
+        the cheapest district and the dearest are several times apart.</span
+      >
+    </p>
+
+    <div class="stats">
+      {#if calc.sofiaPriceIsLive}
+        {@render stat(
+          `${fmt0(calc.sofiaHome.eurPerM2)} €`,
+          COPY.howKEurM2,
+          COPY.howSrcImot,
+          IMOT_URL,
+          onDay(calc.sofiaPriceAsOf)
+        )}
+        {@render stat(
+          `${fmt0(calc.data.sofiaPrice.eur_per_m2_min)}–${fmt0(calc.data.sofiaPrice.eur_per_m2_max)} €`,
+          {
+            bg: t(COPY.howKEurM2Range, "bg", { n: fmt0(calc.sofiaHome.nDistricts) }),
+            en: t(COPY.howKEurM2Range, "en", { n: fmt0(calc.sofiaHome.nDistricts) }),
+          },
+          COPY.howSrcImot,
+          IMOT_URL,
+          onDay(calc.sofiaPriceAsOf)
+        )}
+        {@render stat(
+          `${fmt0(calc.sofiaHome.price)} €`,
+          {
+            bg: t(COPY.howKHomePrice, "bg", { m2: fmt0(HOME.m2Default) }),
+            en: t(COPY.howKHomePrice, "en", { m2: fmt0(HOME.m2Default) }),
+          },
+          COPY.howSrcImot,
+          IMOT_URL,
+          onDay(calc.sofiaPriceAsOf)
+        )}
+        {#if calc.sofiaHome.netMonthly > 0}
+          {@render stat(
+            fmt(calc.sofiaHome.years),
+            COPY.howKHomeYears,
+            COPY.srcNsiWages,
+            calc.payLadderRows.anchorUrl,
+            when(calc.sofiaHome.wagePeriod)
+          )}
+        {/if}
+      {/if}
+    </div>
+
+    {#if calc.sofiaPriceIsLive}
+      {@render ours()}
+      <p>
+        <span class="l-bg"
+          >имот.bg публикува по едно число на квартал и нито едно за София като цяло. Медианата през
+          {fmt0(calc.sofiaHome.nDistricts)} квартала и сравнението с {calc.sofiaHome.baselineYear} г.
+          са наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. Годините заплата
+          са цената, разделена на дванадесет средни нетни месечни заплати за София: сравнение на едно
+          цяло жилище с една цяла заплата, без спестявания, без лихва и без нищо друго в живота.</span
+        >
+        <span class="l-en"
+          >imot.bg publishes one figure per district and none for Sofia as a whole. The median
+          across
+          {fmt0(calc.sofiaHome.nDistricts)} districts, and the comparison with {calc.sofiaHome
+            .baselineYear}, are our arithmetic over their figures — which is why they are named here
+          rather than attributed to them. The years of pay are the price divided by twelve average
+          net Sofia monthly wages: a whole home against a whole salary, with no savings, no interest
+          and nothing else in a life.</span
+        >
+      </p>
+    {/if}
+  </section>
+
+  <!-- 7 ------------------------------------------------------------------ -->
+  <section id="work">
+    <h2>
+      <span class="l-bg">Работа и заплати</span>
+      <span class="l-en">Work and pay</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Безработицата е сезонно изгладена — месечните ѝ колебания от селското стопанство, туризма и
+        строителството са извадени, за да се вижда посоката, а не сезонът. Заплатите под нея са
+        тримесечните числа на НСИ за София, така както са публикувани: избираме клетка, не смятаме
+        средни от техните числа.</span
+      >
+      <span class="l-en"
+        >Unemployment is seasonally adjusted — the month-to-month swings from farming, tourism and
+        construction are taken out so the direction shows rather than the season. The wages below
+        are NSI's own quarterly figures for Sofia, exactly as published: a cell is selected, never
+        averaged.</span
+      >
+    </p>
+
+    <div class="stats">
+      {#if calc.data.unemployment}
+        {@render stat(
+          `${fmt(calc.data.unemployment.value)}%`,
+          COPY.howKUnemp,
+          COPY.srcEurostat,
+          ESTAT_UNEMPLOYMENT_URL,
+          when(calc.data.unemployment.ref_period)
+        )}
+      {/if}
+    </div>
+
+    {#if calc.sofiaWageCells.length > 0}
+      <div class="scroll tall">
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">
+                <span class="l-bg">{COPY.howColQuarter.bg}</span>
+                <span class="l-en">{COPY.howColQuarter.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.howColWage.bg}</span>
+                <span class="l-en">{COPY.howColWage.en}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each calc.sofiaWageCells as cell (cell.period)}
+              <tr>
+                <th scope="row" class="mono">
+                  <span class="l-bg">{when(cell.period).bg}</span>
+                  <span class="l-en">{when(cell.period).en}</span>
+                </th>
+                <td class="num mono">{fmt0(cell.value)} €</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="cap">
+        <span class="l-bg"
+          ><a href={httpUrl(calc.payLadderRows.anchorUrl)} target="_blank" rel="noopener"
+            >{t(COPY.howSrc, "bg", {
+              s: COPY.srcNsiWages.bg,
+              p: when(calc.payLadderRows.anchorPeriod).bg,
+            })}</a
+          ></span
+        >
+        <span class="l-en"
+          ><a href={httpUrl(calc.payLadderRows.anchorUrl)} target="_blank" rel="noopener"
+            >{t(COPY.howSrc, "en", {
+              s: COPY.srcNsiWages.en,
+              p: when(calc.payLadderRows.anchorPeriod).en,
+            })}</a
+          ></span
+        >
+      </p>
+    {/if}
+  </section>
+
+  <p class="onward">
+    <a href="/">
+      <span class="l-bg">{COPY.howToCalculatorK.bg} →</span>
+      <span class="l-en">{COPY.howToCalculatorK.en} →</span>
+    </a>
+  </p>
+</main>
+
+<SiteFooter />
+
+<style>
+  /* The legal and support pages' chrome, and deliberately the same one: three
+     pages a reader reaches from the same footer row should not each have their
+     own header. */
+  header.site {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--hdr);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 54px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 700;
+    font-size: var(--fs-h3);
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+  .brand .wm {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+  .brand small {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: var(--fs-micro);
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
+  }
+  .controls {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .pill {
+    font-family: var(--mono);
+    font-size: var(--fs-small);
+    padding: 5px 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .pill:hover {
+    border-color: var(--muted);
+    color: var(--ink);
+  }
+
+  main.how {
+    padding: 30px 0 10px;
+    max-width: 760px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(1.5625rem, 4vw, 2rem);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-size: var(--fs-h3);
+    line-height: 1.25;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  section {
+    margin-top: 38px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 64px;
+  }
+  p {
+    margin: 12px 0 0;
+    font-size: var(--fs-lead);
+    line-height: 1.62;
+    color: var(--ink-2);
+  }
+  .lead {
+    margin-top: 12px;
+  }
+  .cap {
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    color: var(--muted);
+  }
+  /* The disclosure that a figure is ours. Marked, not buried: it sits directly
+     under the number it is about, in the erode accent the app already uses for
+     "this one costs you something to believe". */
+  .ours {
+    margin-top: 10px;
+    padding-left: 10px;
+    border-left: 2px solid var(--erode);
+    font-size: var(--fs-meta);
+  }
+
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: var(--fs-small);
+  }
+  .toc a,
+  .cap a,
+  .ours a,
+  .onward a {
+    color: var(--real-ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--real-soft);
+  }
+  .toc a:hover,
+  .cap a:hover,
+  .ours a:hover,
+  .onward a:hover {
+    border-bottom-color: var(--real);
+  }
+  .onward {
+    margin: 34px 0 0;
+    font-family: var(--mono);
+    font-size: var(--fs-small);
+  }
+
+  /* The stat blocks. A wrapping flex row for the same reason the national
+     strip is one: the count per section is 1, 2, 3 or 4 and no fixed column
+     count divides all of them, so a grid leaves a hole on the last row. */
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: stretch;
+    margin-top: 16px;
+  }
+  .stats:empty {
+    display: none;
+  }
+  .stat {
+    flex: 1 1 190px;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 13px 15px;
+    display: flex;
+    flex-direction: column;
+  }
+  .stat .sv {
+    font-size: var(--fs-h2);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .stat .sl {
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+    margin-top: 6px;
+    line-height: 1.35;
+  }
+  /* Pinned to the foot, so the source captions line up across a row whatever
+     the labels above them wrapped to. */
+  .stat .ss {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    color: var(--muted);
+  }
+  .stat .ss a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--muted);
+  }
+  .stat .ss a:hover {
+    color: var(--real-ink);
+    border-bottom-color: var(--real);
+  }
+
+  /* The scroll box sits on the wrapper, so a wide table never makes the page
+     body scroll sideways on a phone. */
+  .scroll {
+    overflow-x: auto;
+    margin-top: 16px;
+  }
+  .scroll.tall {
+    max-height: 22rem;
+    overflow-y: auto;
+  }
+  .fig-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-meta);
+  }
+  .fig-table th,
+  .fig-table td {
+    text-align: left;
+    padding: 7px 10px 7px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: baseline;
+  }
+  .fig-table thead th {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .fig-table tbody th {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .fig-table td {
+    color: var(--ink-2);
+  }
+  .fig-table .num {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .fig-table .code {
+    color: var(--muted);
+    font-size: var(--fs-micro);
+    margin-right: 6px;
+  }
+  .fig-table .soft {
+    color: var(--muted);
+  }
+  .fig-table tr.mark {
+    background: var(--real-soft);
+  }
+  .fig-table .tag {
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    color: var(--real-ink);
+    margin-left: 6px;
+  }
+  .fig-table a {
+    color: var(--real-ink);
+    text-decoration: none;
+  }
+
+  @media (max-width: 560px) {
+    .brand small {
+      display: none;
+    }
+  }
+</style>

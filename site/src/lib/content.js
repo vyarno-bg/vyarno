@@ -1282,6 +1282,122 @@ export const COPY = {
   // comparison to a non-specialist.
   yoyLabel: { bg: "за 1 г.", en: "in 1 yr" },
 
+  // --- /how/ — the country's figures, on a page of their own ---------------
+  //
+  // What is HERE and what is inline in `How.svelte`, and the line between them
+  // is the one `ExplainerBand.svelte` already draws: long bilingual prose is
+  // inlined as `.l-bg` / `.l-en` blocks in the component, because a paragraph
+  // split across a copy file and a template is edited in two places and reads
+  // as neither. Everything below is a LABEL, a column heading or a caption
+  // with a placeholder in it — the things that repeat, that sit next to a
+  // number, and that a reader compares against each other.
+  //
+  // Not one of them states a figure. The page is mostly prose around published
+  // numbers, which makes it the likeliest place in the repository to
+  // accidentally freeze today's headline into a sentence; every figure below
+  // arrives as a substitution or is rendered beside the string, never inside
+  // it (`verify_copy.mjs` §"no page writes a live figure into its prose").
+  howTitle: { bg: "Вярно — числата за България", en: "Vyarno — Bulgaria's numbers" },
+  // The route to the page, from the one paragraph on the calculator that is
+  // already about where the numbers come from.
+  howMoreK: {
+    bg: "Всички числа за България, с източниците им",
+    en: "All of Bulgaria's figures, with their sources",
+  },
+
+  // Stat labels. Each one says what the number IS, so the figure above it can
+  // be a bare number and the caption under it can be a source and a date.
+  howKHeadline: {
+    bg: "официална инфлация за 12 месеца",
+    en: "official inflation over 12 months",
+  },
+  howKBasket: {
+    bg: "13-те групи, сумирани с официалните им тегла",
+    en: "the 13 groups summed at their official weights",
+  },
+  howKContrib: {
+    bg: "осигуровки за сметка на работника",
+    en: "employee social contributions",
+  },
+  howKTax: { bg: "данък върху дохода", en: "income tax" },
+  howKCeiling: { bg: "максимален осигурителен доход", en: "maximum insurable income" },
+  howKMinWage: { bg: "минимална брутна заплата", en: "minimum gross wage" },
+  howKSofiaWage: { bg: "средна брутна заплата в София", en: "average gross wage in Sofia" },
+  howKAar: { bg: "лихва по нови жилищни кредити", en: "rate on new home loans" },
+  howKAprc: { bg: "ГПР по същите кредити", en: "APRC on the same loans" },
+  howKStock: {
+    bg: "средна лихва по всички изплащани кредити",
+    en: "average rate across every loan being repaid",
+  },
+  howKLtv: { bg: "минимално самоучастие (БНБ)", en: "minimum down payment (BNB)" },
+  howKDsti: {
+    bg: "таван на вноската спрямо нетния доход (БНБ)",
+    en: "payment-to-net ceiling (BNB)",
+  },
+  howKMaturity: { bg: "максимален срок (БНБ)", en: "maximum term (BNB)" },
+  howKObserved: {
+    bg: "среднопретеглена вноска спрямо дохода при новите кредити",
+    en: "observed weighted-average payment-to-income on new loans",
+  },
+  howKEurM2: { bg: "медианна цена на кв. м в София", en: "median €/m² in Sofia" },
+  // The spread the prose calls "several times apart", so the claim has its own
+  // figures under it rather than asking to be taken on trust. Both ends are
+  // имот.bg's own per-district cells, picked rather than computed.
+  howKEurM2Range: {
+    bg: "най-евтиният и най-скъпият от {n} квартала",
+    en: "the cheapest and the dearest of {n} districts",
+  },
+  howKHomePrice: {
+    bg: "жилище от {m2} кв. м по тази медиана",
+    en: "a {m2} m² home at that median",
+  },
+  howKHomeYears: {
+    bg: "години от средната нетна заплата за София",
+    en: "years of Sofia's average net pay",
+  },
+  howKUnemp: { bg: "безработица, сезонно изгладена", en: "unemployment, seasonally adjusted" },
+
+  // Table column headings.
+  howColGroup: { bg: "група", en: "group" },
+  howColWeight: { bg: "тегло в кошницата", en: "share of the basket" },
+  howColYoy: { bg: "за 12 месеца", en: "over 12 months" },
+  howColGross: { bg: "бруто", en: "gross" },
+  howColNet: { bg: "нето", en: "net" },
+  howColTaken: { bg: "взето", en: "taken" },
+  howColEffective: { bg: "ефективна ставка", en: "effective rate" },
+  howColMarginal: { bg: "върху следващото евро", en: "on the next euro" },
+  howColRung: { bg: "стъпало", en: "rung" },
+  howColBasis: { bg: "измерено или пресметнато", en: "surveyed or modelled" },
+  howColQuarter: { bg: "тримесечие", en: "quarter" },
+  howColWage: { bg: "средна брутна заплата", en: "average gross wage" },
+  howColCheck: { bg: "проверка", en: "check" },
+
+  // Row markers.
+  howSurveyed: { bg: "измерено", en: "surveyed" },
+  howModelled: { bg: "пресметнато", en: "modelled" },
+  howAtCeiling: { bg: "таванът", en: "the ceiling" },
+
+  // Captions. `{s}` is the publisher, `{p}` the period the figure describes —
+  // never the day we fetched it, which is a different fact and is in the data
+  // panel on the calculator.
+  howSrc: { bg: "{s} · {p}", en: "{s} · {p}" },
+  // The two publishers the strip never names, because no card on it cites
+  // them: имот.bg is Latin in both languages, and ДВ has an English name worth
+  // spelling out for a reader who has never met it.
+  howSrcImot: { bg: "имот.bg", en: "imot.bg" },
+  howSrcDv: { bg: "Държавен вестник", en: "the State Gazette" },
+  // The Eurostat disclosure obligation, on the page that carries the three
+  // figures it applies to (the modelled ladder, the Sofia €/m² median across
+  // имот.bg's districts, and the change since 2015 built on it). The link goes
+  // to the sources document, which carries the full text and the
+  // non-responsibility wording.
+  howOurs: {
+    bg: "Това число е наше, а не на институцията под него — сметнато е от публикуваните ѝ данни.",
+    en: "This figure is ours rather than the publisher's below it — worked out from their published data.",
+  },
+  howOursMoreK: { bg: "Как и защо", en: "How, and why" },
+  howToCalculatorK: { bg: "Сметни своята инфлация", en: "Work out your own inflation" },
+
   // --- Sharing -------------------------------------------------------------
   //
   // EVERY CLAIM BELOW IS IN THE FIRST PERSON, AND THAT IS THE ONE RULE THIS

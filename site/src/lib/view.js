@@ -33,11 +33,15 @@ import {
   bgMarginalRatePct,
   bgNetSalary,
   bgTaxWedge,
+  buildLadder,
+  composeLadder,
+  homeYears,
   householdNetRaisePct,
   cashErosion,
   officialCumulativeSince2020,
   payrollParams,
   percentile,
+  SALARY_LADDER_CUTS,
 } from "./mirror.js";
 // The share sentence is a string, and a string this file assembles has to be
 // formatted here: a caller that ran `number()` itself would be the half of the
@@ -701,6 +705,209 @@ export function taxWedgePanel({ payroll, pay }) {
     // it — docs/site.md §"A correct formula fed the wrong number".
     householdGross: household.gross,
   };
+}
+
+// ---------------------------------------------------------------------------
+// THE COUNTRY, WITH NOBODY IN IT
+//
+// Everything from here to the end of this section answers a question about
+// Bulgaria rather than about the person reading. That is what lets `/how/`
+// render it with no inputs on the page at all — and, because none of it can
+// take a reader's figure as an argument, what keeps that page on the right
+// side of P1 and P2 by construction rather than by review.
+// ---------------------------------------------------------------------------
+
+/**
+ * The gross salaries the wedge table is evaluated at, EUR/month.
+ *
+ * Round numbers on either side of the insurance ceiling, chosen so the shape
+ * of the curve is legible from four rows: flat below the cap, falling above
+ * it. They are not defaults for anything a reader types (P7 is about those) —
+ * nothing on `/how/` takes an input.
+ */
+export const WEDGE_LADDER_LEVELS = Object.freeze([1000, 2000, 3000, 5000]);
+
+/**
+ * What the tax wedge takes at a ladder of gross salaries — the SYSTEM's curve.
+ *
+ * `taxWedgePanel` above answers the same question about the person at the
+ * keyboard, and a PERSONAL wedge rate is closed on any shareable surface
+ * (docs/principles.md P2: below the ceiling the effective rate is a constant
+ * and says nothing about the reader, and above it the rate falls with every
+ * extra euro, so it names the salary). This function carries no personal
+ * figure at all — published parameters evaluated at round numbers nobody typed
+ * — which is the one version of it the closed list leaves open, in as many
+ * words.
+ *
+ * **The ceiling is always a rung**, for the reason `mirror.js#bgTaxWedge`
+ * forces it into its own sample: the curve's only kink is there, and a table
+ * that steps over it describes a straight line.
+ *
+ * It takes the PUBLISHED payroll payload rather than a params object, under
+ * the same constraint as `taxWedgePanel` and `payslipPanel` — a caller who
+ * cannot hand over rates cannot hand over last year's.
+ *
+ * @param {object} args
+ * @param {object|null} args.payroll  data.payroll (payroll.json), unmodified
+ * @param {ReadonlyArray<number>} [args.grossLevels]  EUR/month
+ * @returns {{effectiveYear:number|null, maxInsurable:number,
+ *            contributionRatePct:number, incomeTaxRatePct:number,
+ *            minWageGross:number,
+ *            rungs:Array<{gross:number, net:number, deductions:number,
+ *                         effectivePct:number, marginalPct:number,
+ *                         atCeiling:boolean, overCeiling:boolean}>}}
+ */
+export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }) {
+  const params = payrollParams(payroll);
+  const levels = [...new Set([...grossLevels, params.maxInsurable])].sort((a, b) => a - b);
+  return {
+    effectiveYear: payroll?.effective_year ?? null,
+    maxInsurable: params.maxInsurable,
+    contributionRatePct: 100 * params.totalEmployeeRate,
+    incomeTaxRatePct: 100 * params.incomeTaxRate,
+    minWageGross: params.minWageGross,
+    rungs: levels.map((gross) => {
+      const { net, effectiveRatePct } = bgNetSalary(gross, params);
+      return {
+        gross,
+        net,
+        deductions: gross - net,
+        effectivePct: effectiveRatePct,
+        marginalPct: bgMarginalRatePct(gross, params),
+        atCeiling: gross === params.maxInsurable,
+        overCeiling: gross > params.maxInsurable,
+      };
+    }),
+  };
+}
+
+/**
+ * The earnings ladder as rows, with each rung saying whether it was surveyed.
+ *
+ * `mirror.js#composeLadder` re-levels Eurostat's SES dispersion onto НСИ's
+ * latest Sofia quarter and `buildLadder` converts each rung to net; this pairs
+ * the two with the cut each belongs to, so a template never has to know that
+ * index 5 is the median.
+ *
+ * **`surveyed` is the honest half.** SES publishes three points for Bulgaria —
+ * D1, the median and D9 — and every other rung between them is interpolated
+ * piecewise-lognormal. Rendered in one voice, an interpolation reads as a
+ * measurement, which is the defect `COPY.statMedianSubModelled` exists to
+ * prevent on the strip's own band.
+ *
+ * The anchor's provenance comes from the НСИ payload and the shape's from the
+ * Eurostat one, never the other way round: copying НСИ's url and period into a
+ * Eurostat payload is what `no НСИ payload carries a second publisher's
+ * figures` forbids, and reading them back out crosswise would undo it on the
+ * page.
+ *
+ * @param {object} args
+ * @param {object|null} args.salaryDist  data.salaryDist (salary_dist.json)
+ * @param {object|null} args.sofiaSalary data.sofiaSalary (sofia_salary.json)
+ * @param {object|null} args.payroll     data.payroll (payroll.json)
+ * @returns {{anchorGross:number, anchorPeriod:string, anchorUrl:string,
+ *            shapeYear:string, shapeUrl:string,
+ *            rungs:Array<{cut:number, gross:number, net:number,
+ *                         surveyed:boolean}>}}
+ */
+export function payLadder({ salaryDist, sofiaSalary, payroll }) {
+  const params = payrollParams(payroll);
+  const anchor = sofiaQuarter(sofiaSalary);
+  const gross = composeLadder(salaryDist, anchor.value, params);
+  const net = buildLadder(salaryDist, anchor.value, params);
+  return {
+    anchorGross: anchor.value,
+    anchorPeriod: anchor.refPeriod,
+    anchorUrl: sofiaSalary?.source_url ?? "",
+    shapeYear: String(salaryDist?.shape?.ref_year ?? ""),
+    shapeUrl: salaryDist?.shape?.source_url ?? "",
+    rungs: SALARY_LADDER_CUTS.map((cut, i) => ({
+      cut,
+      gross: gross[`P${cut}`] ?? 0,
+      net: net[i] ?? 0,
+      surveyed: SES_SURVEYED_CUTS.includes(cut),
+    })),
+  };
+}
+
+/** The three cuts SES publishes for BG; every rung between them is modelled. */
+const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
+
+/**
+ * What a median Sofia flat costs, priced against the Sofia average wage.
+ *
+ * The reader's own version of this is the home block on `/`; this is the
+ * country's, so both ends are published figures and there is no argument
+ * through which a typed salary could reach it. That is deliberate: a page with
+ * no inputs must not grow one by accident, and the same sentence built from
+ * `householdNet` would be a claim about somebody.
+ *
+ * The wage goes through `sofiaQuarter` — НСИ's own published quarter, selected
+ * rather than derived (docs/legal.md §НСИ) — and then through `bgNetSalary`,
+ * because `homeYears` is a statement about take-home and a gross would flatter
+ * it by about a fifth.
+ *
+ * `m2` is passed rather than assumed: the size is an assumption the page has to
+ * state next to the number, and a function that picked its own would let the
+ * page print a price without saying what it is a price of.
+ *
+ * @param {object} args
+ * @param {object|null} args.sofiaPrice   data.sofiaPrice (sofia_price.json)
+ * @param {object|null} args.sofiaSalary  data.sofiaSalary (sofia_salary.json)
+ * @param {object|null} args.payroll      data.payroll (payroll.json)
+ * @param {number} args.m2                floor area the price is quoted for
+ * @returns {{eurPerM2:number, m2:number, price:number, grossMonthly:number,
+ *            netMonthly:number, wagePeriod:string, years:number,
+ *            nDistricts:number, sinceBaselinePct:number, baselineYear:number}}
+ */
+export function sofiaHomeAtAverageWage({ sofiaPrice, sofiaSalary, payroll, m2 }) {
+  const eurPerM2 = sofiaPrice?.eur_per_m2_median ?? 0;
+  const anchor = sofiaQuarter(sofiaSalary);
+  const netMonthly = bgNetSalary(anchor.value, payrollParams(payroll)).net;
+  const price = eurPerM2 > 0 && m2 > 0 ? eurPerM2 * m2 : 0;
+  const history = Array.isArray(sofiaPrice?.historical) ? sofiaPrice.historical : [];
+  return {
+    eurPerM2,
+    m2,
+    price,
+    grossMonthly: anchor.value,
+    netMonthly,
+    wagePeriod: anchor.refPeriod,
+    // Zero, not `homeYears`' own `Infinity`. That sentinel is right for the
+    // home block, which is drawn against a salary field a reader may have
+    // emptied; here a missing end means a payload did not load, and every
+    // other field in this object reports that as 0. One sentinel per object,
+    // so a template gates on the figure rather than on which kind of nothing
+    // it got.
+    years: price > 0 && netMonthly > 0 ? homeYears(price, netMonthly) : 0,
+    nDistricts: sofiaPrice?.n_districts ?? 0,
+    sinceBaselinePct: history.at(-1)?.since_2015_median_pct ?? 0,
+    baselineYear: history[0]?.year ?? 0,
+  };
+}
+
+/**
+ * A payload's `series_by_period` as an ordered list of cells.
+ *
+ * Selection and ordering, and deliberately nothing else. `sofia_salary.json`
+ * is НСИ's, whose licence forbids distributing производни и сборни
+ * произведения (docs/legal.md §НСИ, §2.1.1), so the quarterly series may be
+ * shown cell by cell and may not be averaged, rebased or differenced on the
+ * way to the screen — including the innocent-looking "and that is +X% since
+ * 2020". There is no argument here that would let a caller ask for one.
+ *
+ * "YYYY-Qn" and "YYYY-MM" both sort lexicographically as chronologically for
+ * any four-digit year, which is why one comparator serves every payload.
+ *
+ * @param {{series_by_period?: Record<string, number>}|null} payload
+ * @returns {Array<{period: string, value: number}>} oldest first
+ */
+export function seriesCells(payload) {
+  const series = payload?.series_by_period ?? {};
+  return Object.keys(series)
+    .filter((k) => typeof series[k] === "number")
+    .sort()
+    .map((period) => ({ period, value: series[period] }));
 }
 
 // ---------------------------------------------------------------------------

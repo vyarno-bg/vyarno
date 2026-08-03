@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { ORIGIN, newestAsOf, sitemapXml } from "./gen-sitemap.mjs";
-import { MOUNT_POINT, injectPrerender } from "./prerender.mjs";
+import { MOUNT_POINT, PRERENDERED, injectPrerender } from "./prerender.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const site = (...p) => join(HERE, "..", ...p);
@@ -206,6 +206,7 @@ test("the sitemap omits lastmod rather than inventing one", () => {
 test("the sitemap lists the pages that exist and nothing that is disallowed", () => {
   const xml = sitemapXml([
     { loc: "/", lastmod: "2026-06-30" },
+    { loc: "/how/", lastmod: "2026-06-30" },
     { loc: "/legal/", lastmod: "2026-07-26" },
     { loc: "/support/" },
   ]);
@@ -224,27 +225,52 @@ test("the sitemap lists the pages that exist and nothing that is disallowed", ()
   );
 });
 
+test("the generated sitemap carries every indexable page, /how/ included", () => {
+  // The generator's own list, not a sample of it: `/how/` exists to be found
+  // by somebody searching for «каква е инфлацията в България», and a page
+  // missing from the sitemap is a page a crawler reaches only by following a
+  // link from one it already knows. The three-entry array it was added to had
+  // gone unchanged since `/support/` landed, which is how the next page would
+  // have been left out too.
+  const src = read("scripts", "gen-sitemap.mjs");
+  const listed = [...src.matchAll(/\{\s*loc:\s*"([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(
+    listed,
+    ["/", "/how/", "/legal/", "/support/"],
+    `gen-sitemap.mjs writes ${listed.join(", ")}. Every page that is not ` +
+      "noindex belongs in it, and nothing robots.txt disallows does."
+  );
+});
+
 // ---------------------------------------------------------------------------
 // the pages themselves
 // ---------------------------------------------------------------------------
 
-test("the four build entries exist where vite.config.js expects them", () => {
-  for (const p of [
-    ["index.html"],
-    ["legal", "index.html"],
-    ["support", "index.html"],
-    ["404.html"],
-  ]) {
-    assert.ok(
-      existsSync(site(...p)),
-      `${p.join("/")} is missing — the build input list points at it`
-    );
-  }
+/**
+ * The pages that are a build entry, in URL order.
+ *
+ * One list, read by three tests below: the entries exist, `_headers` gives each
+ * one a revalidating cache rule, and every one of them carries a `<noscript>`
+ * with the upstream attribution. Three hardcoded lists is three chances for a
+ * page to be in two of them — and the one it is missing from is the one nobody
+ * looks at, because the tests around it stay green.
+ */
+const ENTRIES = [
+  { file: ["index.html"], url: "/index.html" },
+  { file: ["how", "index.html"], url: "/how/index.html" },
+  { file: ["legal", "index.html"], url: "/legal/index.html" },
+  { file: ["support", "index.html"], url: "/support/index.html" },
+  { file: ["404.html"], url: "/404.html" },
+];
+
+test("every build entry exists where vite.config.js expects it", () => {
   const cfg = read("vite.config.js");
-  for (const entry of ["index.html", "legal/index.html", "support/index.html", "404.html"]) {
+  for (const { file } of ENTRIES) {
+    const name = file.join("/");
+    assert.ok(existsSync(site(...file)), `${name} is missing — the build input list points at it`);
     assert.ok(
-      cfg.includes(`"${entry}"`) || cfg.includes(`'${entry}'`),
-      `vite.config.js no longer builds ${entry}; it would silently stop being ` +
+      cfg.includes(`"${name}"`) || cfg.includes(`'${name}'`),
+      `vite.config.js no longer builds ${name}; it would silently stop being ` +
         "deployed while the build stays green."
     );
   }
@@ -260,20 +286,30 @@ test("the four build entries exist where vite.config.js expects them", () => {
 // string surgery in the middle.
 // ---------------------------------------------------------------------------
 
-test("the prerendered shell has a mount point, and one place that empties it", () => {
-  assert.ok(
-    read("index.html").includes(MOUNT_POINT),
-    `index.html no longer carries ${MOUNT_POINT} verbatim, so the prerender ` +
-      "step has nowhere to write the shell. The marker, the injection and " +
-      "main.js's mount target move together."
-  );
-  assert.match(
-    read("src", "main.js"),
-    /replaceChildren\(\)[\s\S]*mount\(/,
-    "main.js mounts without emptying its target first. `mount()` appends, and " +
-      "the built page arrives with the shell already in #app — the reader " +
-      "would get the header, the explainer and the footer twice."
-  );
+test("every prerendered page has a mount point, and one place that empties it", () => {
+  // Both halves, for every page the build writes into. `PRERENDERED` is the
+  // list, so a page added there without an entry file to write into — or
+  // whose bootstrap forgot the `replaceChildren()` — is a red test rather
+  // than a page rendered twice, once frozen at build time and once live.
+  const MAINS = { app: "main.js", how: "how-main.js" };
+  for (const { name, page } of PRERENDERED) {
+    const entry = read(...page);
+    assert.ok(
+      entry.includes(MOUNT_POINT),
+      `${page.join("/")} no longer carries ${MOUNT_POINT} verbatim, so the ` +
+        "prerender step has nowhere to write the page. The marker, the " +
+        "injection and the mount target move together."
+    );
+    const bootstrap = MAINS[name];
+    assert.ok(bootstrap, `${name} is prerendered and this test does not know its entry point`);
+    assert.match(
+      read("src", bootstrap),
+      /replaceChildren\(\)[\s\S]*mount\(/,
+      `${bootstrap} mounts without emptying its target first. \`mount()\` ` +
+        "appends, and the built page arrives with the prerendered markup " +
+        "already in #app — the reader would get every heading twice."
+    );
+  }
 });
 
 test("injecting the shell refuses a page it cannot place it in", () => {
@@ -450,14 +486,16 @@ test("the two cache lifetimes that ship stale numbers if reversed", () => {
     !/immutable/.test(data),
     "/data/published/* is marked immutable — the numbers change, that is the point."
   );
-  for (const entry of ["/index.html", "/legal/index.html", "/support/index.html", "/404.html"]) {
-    const rule = (blocks[entry] ?? []).join(" ");
+  for (const { url } of ENTRIES) {
+    const rule = (blocks[url] ?? []).join(" ");
     assert.match(
       rule,
       /max-age=0/,
-      `${entry} is not served with max-age=0. A hard-cached entry point keeps ` +
+      `${url} is not served with max-age=0. A hard-cached entry point keeps ` +
         "loading a bundle whose hashed assets no longer exist — a blank page " +
-        "for anyone who visited before the last deploy."
+        "for anyone who visited before the last deploy. Since the prerender " +
+        "started writing published figures into `/` and `/how/`, it also keeps " +
+        "a cached document from outliving the data in it."
     );
   }
   assert.match(
@@ -489,8 +527,7 @@ test("every HTML entry carries a <noscript> with the upstream attribution", () =
   // has to appear on every page and otherwise renders only from the JS bundle.
   // The <noscript> is where both live for a reader (or crawler) without scripts.
   const ATTRIBUTION = "Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg";
-  for (const shell of ["index.html", "404.html", ["legal", "index.html"]]) {
-    const parts = Array.isArray(shell) ? shell : [shell];
+  for (const { file: parts } of ENTRIES) {
     const html = read(...parts);
     const name = parts.join("/");
     assert.match(

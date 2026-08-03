@@ -29,20 +29,28 @@
   import { CONTACT } from "./lib/legal-nav.js";
 
   /**
-   * Set only by `scripts/prerender.mjs`, which renders this component on the
-   * server at build time so the page carries its own prose before the bundle
-   * runs. `main.js` never passes it.
+   * Both are set only by `scripts/prerender.mjs`, which renders this component
+   * on the server at build time so the page carries its prose AND the
+   * country's figures before the bundle runs. `main.js` passes neither.
    *
-   * What it turns off is everything that reads a published payload. The server
-   * renders with `data = {}`, so the calculator region would emit the loading
-   * line — a placeholder in a search result — and the explainer's formula
-   * block would state the fallback method rather than the one the page uses.
-   * Both are served to a reader who never sees the correction, because the
-   * correction arrives with the bundle. `docs/seo.md` is the whole reasoning.
+   * `payloads` is the `loadAll()` result read off disk — the same files
+   * `copy-data.mjs` puts in `dist/data/published/` for the bundle to fetch, so
+   * the HTML a crawler reads and the JSON the reader's tab fetches come out of
+   * one build from one set of files.
+   *
+   * `prerender` turns off the one region that is not the payloads' to decide:
+   * the calculator. Its output follows what the reader typed, and the €900 in
+   * the pay field is a placeholder the copy asks them to replace rather than a
+   * survey figure (docs/principles.md P7) — so a result computed from it is an
+   * answer to a question nobody asked, served to whoever reads the HTML.
+   * `docs/seo.md` §"The rule" is the whole reasoning.
    */
-  const { prerender = false } = $props();
+  const { prerender = false, payloads = null } = $props();
 
-  const calc = new Calculator();
+  // svelte-ignore state_referenced_locally
+  // Reading the initial value is the whole intent: `payloads` is set once by
+  // the build and never again, and the Calculator holds what it was given.
+  const calc = new Calculator(payloads);
 
   onMount(calc.load);
 
@@ -108,8 +116,8 @@
     </div>
 
     {#if prerender}
-      <!-- Nothing. Every branch below needs a payload, and the build has
-           none — see the `prerender` prop above. -->
+      <!-- Nothing. Every branch below is a statement about the reader, and the
+           build has no reader — see the `prerender` prop above. -->
     {:else if !calc.dataReady}
       <div class="loading mono">
         <span class="l-bg">{COPY.loadingK.bg}</span>
@@ -151,7 +159,20 @@
         </div>
         <ResultsCard {calc} {sofiaPriceDated} />
       </div>
+    {/if}
 
+    <!-- The national strip is OUTSIDE the branch above, and that is the whole
+         of what the build serves a crawler. Every prop it takes is decided by
+         a published payload with no reader input anywhere in the chain, so it
+         renders the same at build time as it does in the reader's tab — and
+         each card carries its own source, its reference period and a verify
+         link, which is what makes a stale one visibly stale (P3, P4).
+
+         Gated on the payloads and not on `prerender`, so the strip appears
+         under exactly one condition rather than under two that can disagree —
+         and moving it inside the branch above would tie a country reference to
+         whether the reader's own region is being rendered. -->
+    {#if calc.dataReady && calc.categories.length > 0}
       <NationalStrip
         categories={calc.categories}
         data={calc.data}
@@ -178,7 +199,6 @@
 </main>
 
 <ExplainerBand
-  {prerender}
   anchor={calc.anchor}
   downPayPct={calc.downPayPct}
   cashEroded={calc.cashEroded}

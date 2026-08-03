@@ -136,24 +136,61 @@ const skip = !built
     : false;
 
 // ---------------------------------------------------------------------------
-// The prerendered shell — the built HTML as a crawler reads it.
+// The prerendered pages — the built HTML as a crawler reads it.
 //
-// `scripts/prerender.mjs` renders `App.svelte` on the server at build time so
-// the page carries its own prose before the bundle runs. Two assertions, in
-// opposite directions, and they need the build rather than a browser: the
-// shell is there, and it carries nothing a published payload decides. The
-// third — that the page still works once the bundle replaces it — is a browser
-// test and sits below.
+// `scripts/prerender.mjs` renders `App.svelte` and `How.svelte` on the server
+// at build time, so the two content pages carry their prose AND the country's
+// figures before the bundle runs. The assertions below hold the rule from both
+// sides — what has to be there, and what may never be — and they need the
+// build rather than a browser. That the pages still work once the bundle
+// replaces them is a browser test and sits further down.
 //
-// `COPY` is imported rather than quoted, so this checks the rule (the shell
-// carries the page's own copy) instead of pinning sentences that can be
-// rewritten for a good reason tomorrow.
+// **The rule is that a payload may decide a prerendered figure, and neither
+// the reader nor the clock may.** The wider version — refuse every figure a
+// payload decides, because a number frozen at build time is a second source of
+// truth for one P3 and P4 govern — is the one that suggests itself, and the
+// build's own order is what makes it wrong: `package.json`'s `build` runs
+// `vite build`, then `prerender.mjs`, then `copy-data.mjs`, which copies the
+// same `data/published/*.json` the prerender just read into
+// `dist/data/published/` for the bundle to fetch. One build, one set of files,
+// both ends. What the tests below still refuse is what no payload decides: the
+// calculator's output belongs to the reader (P7 — the €900 is a placeholder,
+// not a survey figure), and the freshness verdict belongs to their clock.
+//
+// `COPY` is imported rather than quoted, so this checks the rule (the page
+// carries its own copy) instead of pinning sentences that can be rewritten for
+// a good reason tomorrow. The FIGURES are read back out of the payloads in
+// `dist/`, for the same reason: the assertion is that the served HTML agrees
+// with the JSON shipped beside it, not that it says 4.1%.
 // ---------------------------------------------------------------------------
 
 const needsBuild = built ? false : "no dist/ — run `npm run build` first";
 const { COPY } = built
   ? await import(pathToFileURL(join(SITE, "src", "lib", "content.js")).href)
   : { COPY: null };
+
+/** A payload as the deploy serves it, from `dist/`, not from the repo. */
+async function shipped(name) {
+  return JSON.parse(await readFile(join(DIST, "data", "published", `${name}.json`), "utf8"));
+}
+
+/**
+ * A built page's HTML with the entity escapes undone.
+ *
+ * `&` in a division's name («Food & soft drinks») is `&amp;` in the served
+ * markup, so a substring check against the payload's own string fails on a
+ * page that is rendering it perfectly. Undoing the escapes is what makes these
+ * assertions about the FIGURE rather than about the encoder.
+ */
+async function servedText(...page) {
+  const html = await readFile(join(DIST, ...page), "utf8");
+  return html
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&amp;", "&");
+}
 
 test(
   "the built page carries its prose without running any JavaScript",
@@ -178,20 +215,185 @@ test(
   }
 );
 
-test("the built page bakes in no figure a payload decides", { skip: needsBuild }, async () => {
+test(
+  "the built page carries the national figures, and each one is dated",
+  { skip: needsBuild },
+  async () => {
+    // The point of the amendment, asserted against the payloads shipped in the
+    // SAME dist/ — so this goes red if the prerender ever stops reading them,
+    // and stays green through every refresh.
+    const html = await servedText("index.html");
+    const [headline, categories, unemployment] = await Promise.all(
+      ["hicp_headline", "hicp_categories", "unemployment"].map(shipped)
+    );
+
+    // The rate as the page prints it: Bulgarian decimal comma, one place. The
+    // prerender renders in the default language, which is BG.
+    const bgDecimal = (x) => x.toFixed(1).replace(".", ",");
+    const fastest = categories.categories.reduce((a, b) =>
+      b.annual_rate_pct > a.annual_rate_pct ? b : a
+    );
+    for (const [what, text] of [
+      ["the headline inflation rate", `${bgDecimal(headline.headline_rate_pct)}%`],
+      ["the month the headline describes", headline.ref_period],
+      ["the unemployment rate", `${bgDecimal(unemployment.value)}%`],
+      ["the month unemployment describes", unemployment.ref_period],
+      ["the fastest-rising division's name", fastest.bg_name],
+      ["the fastest-rising division's name in English", fastest.en_name],
+    ]) {
+      assert.ok(
+        html.includes(text),
+        `${what} is not in the served HTML, though dist/data/published/ carries ` +
+          "it. The strip is the page's answer to a crawler and to an agent " +
+          "citing it — see docs/seo.md §'The rule'."
+      );
+    }
+
+    // Every card is dated and every card links out. A figure without its
+    // reference period on screen is the one thing that could make a page that
+    // outlived its data silently wrong rather than visibly behind (P3, P4).
+    assert.ok(
+      html.includes("eurostat/api/dissemination"),
+      "the prerendered strip carries no Eurostat verify link, so a reader of " +
+        "the HTML has a figure with nothing to check it against (P3)"
+    );
+  }
+);
+
+test("the built page bakes in nothing the reader decides", { skip: needsBuild }, async () => {
   const html = await readFile(join(DIST, "index.html"), "utf8");
   assert.ok(
     !html.includes(COPY.loadingK.bg),
     "the loading placeholder is in the served HTML. It is what the calculator " +
-      "region renders with no payloads, and a crawler would index it as the " +
-      "page's content."
+      "region renders before the payloads arrive, and a crawler would index it " +
+      "as the page's content."
   );
+  // The calculator region itself. Its figures are computed from the €900 in
+  // the pay field, which the copy under it asks the reader to replace — a
+  // worked example, not a survey figure (P7). Serving one is publishing an
+  // answer to a question nobody asked.
+  for (const [what, marker] of [
+    ["the pay field", 'class="m-pay'],
+    ["the inputs card", 'class="m-inputs'],
+    ["the results card", 'class="m-results'],
+    ["the basket sliders", 'id="sliders"'],
+  ]) {
+    assert.ok(
+      !html.includes(marker),
+      `${what} is in the served HTML. Everything in that region is a function ` +
+        "of what the reader typed, and at build time nobody has."
+    );
+  }
+  // The freshness verdict, which is a function of the clock rather than of a
+  // payload. A page stamped "fresh" the day it was built goes on saying so for
+  // as long as it is served, and the reader's own tab is the only place that
+  // question can be answered.
   assert.ok(
-    !html.includes(COPY.explainMath.bg) && !html.includes('class="fx"'),
-    "the explainer's formula block is in the served HTML. Rendered with no " +
-      "payloads it names the wrong deflator and freezes the deposit share at " +
-      "the offline fallback, and nothing refreshes either (P3, P4)."
+    !html.includes(COPY.dataPanelToggle.bg),
+    "the per-payload freshness panel is in the served HTML. Its rows are " +
+      "computed against the build's clock, not the reader's — see the seeded " +
+      "constructor in calculator.svelte.js."
   );
+});
+
+test(
+  "the prerendered formula block names the method the page actually used",
+  { skip: needsBuild },
+  async () => {
+    // The half of the old rule that was genuinely about a false statement
+    // rather than about staleness — and the reason it is now served rather
+    // than withheld. With no payloads the block says the rise since 2020 is
+    // the 13 groups summed at their official weights; the page in front of the
+    // reader deflates by Eurostat's all-items index, which the build now has.
+    const html = await readFile(join(DIST, "index.html"), "utf8");
+    const headline = await shipped("hicp_headline");
+    assert.ok(
+      html.includes(COPY.explainMath.bg) && html.includes('class="fx"'),
+      "the explainer's formula block is missing from the served HTML. " +
+        "Publishing the method is the §9.2 obligation ExplainerBand names, and " +
+        "with the payloads in hand every branch of it is true."
+    );
+    assert.ok(
+      Object.keys(headline.index_by_year ?? {}).length > 0,
+      "hicp_headline.json carries no index, so the assertion below is about " +
+        "a branch the page could not have taken"
+    );
+    assert.ok(
+      html.includes("prc_hicp_minr, TOTAL"),
+      "the served formula block does not name the all-items index. That is " +
+        "the fallback branch — the 13 groups summed — and it describes a " +
+        "method the page did not use."
+    );
+  }
+);
+
+test(
+  "the second page carries the country's figures, without JavaScript",
+  { skip: needsBuild },
+  async () => {
+    // `/how/` exists to answer the informational queries the calculator cannot
+    // rank for, which it can only do if the answers are in the HTML. Read back
+    // against the shipped payloads rather than pinned to today's numbers.
+    const html = await servedText("how", "index.html");
+    const [categories, payroll, price, mortgage] = await Promise.all(
+      ["hicp_categories", "payroll", "sofia_price", "mortgage"].map(shipped)
+    );
+
+    for (const [what, text] of [
+      ["the page's own title", COPY.howTitle.bg],
+      ["the upstream attribution", COPY.footerNote.bg],
+      ["the wedge table's heading", COPY.howColEffective.bg],
+      ["the wedge table's heading in English", COPY.howColEffective.en],
+      ["the ladder's modelled marker", COPY.howModelled.bg],
+      ["the Eurostat derivation disclosure", COPY.howOurs.bg],
+      ["the Eurostat derivation disclosure in English", COPY.howOurs.en],
+    ]) {
+      assert.ok(html.includes(text), `${what} is not in the served HTML of /how/`);
+    }
+
+    // Both languages, in the DOM at once. A missing string renders as a blank
+    // line rather than a fallback, and on this page the blank line would be
+    // half the content — which nobody looking at the rendered page in their own
+    // language would ever see.
+    for (const [what, text] of [
+      ["the lead heading", "Числата за България"],
+      ["the lead heading in English", "Bulgaria's numbers"],
+    ]) {
+      assert.ok(html.includes(text), `${what} is not in the served HTML of /how/`);
+    }
+
+    // The figures, each read out of the payload the same build shipped.
+    const bgInt = (x) => Math.round(x).toLocaleString("bg-BG", { maximumFractionDigits: 0 });
+    for (const [what, text] of [
+      ["a division's official weight", `${categories.categories[0].weight_pct}`.replace(".", ",")],
+      ["the insurance ceiling", bgInt(payroll.max_insurable_income_eur)],
+      ["the Sofia €/m² median", bgInt(price.eur_per_m2_median)],
+      ["the new-business mortgage rate", `${mortgage.new_business.value_pct}`.replace(".", ",")],
+      ["the month the mortgage rate describes", "2026"],
+    ]) {
+      assert.ok(
+        html.includes(text),
+        `${what} is not in the served HTML of /how/, though the payload beside ` +
+          "it carries the figure"
+      );
+    }
+  }
+);
+
+test("the second page has no input on it at all", { skip: needsBuild }, async () => {
+  // The whole basis for prerendering `/how/` in full is that nothing on it is
+  // the reader's. An input would end that quietly: the page would still render,
+  // the tests above would still pass, and the served HTML would start carrying
+  // a default somebody chose (P7) or a figure derived from one (P2).
+  const html = await readFile(join(DIST, "how", "index.html"), "utf8");
+  const body = html.slice(html.indexOf('<div id="app">'));
+  for (const tag of ["<input", "<textarea", "<select", "contenteditable"]) {
+    assert.ok(
+      !body.includes(tag),
+      `/how/ renders a ${tag} — the page is a reference with no reader in it, ` +
+        "and every figure on it is prerendered on exactly that basis"
+    );
+  }
 });
 
 test("every post-build step left the file it exists to write", { skip: needsBuild }, async () => {
@@ -440,6 +642,106 @@ test("the support page resolves as its own URL and carries the whole ask", { ski
     assert.ok(await page.locator("footer").count(), "the support page drops the shared footer");
     assert.deepEqual(errors, [], errors.join(" | "));
   }, "/support/");
+});
+
+test("the country page mounts over its prerender rather than beside it", { skip }, async () => {
+  // The failure `how-main.js`'s `replaceChildren()` prevents, checked on the
+  // page rather than on the file: `mount()` appends, and this entry arrives
+  // with the whole prerendered page already in `#app`. Left in place a reader
+  // gets every heading and every table twice — the second copy live and the
+  // first frozen at build time, which is the version that would be wrong first.
+  await withApp(async (page, errors) => {
+    for (const [what, selector] of [
+      ["header", "header.site"],
+      ["h1", "main h1"],
+      ["footer", "footer.site"],
+    ]) {
+      assert.equal(await page.locator(selector).count(), 1, `${what} appears twice on /how/`);
+    }
+    // Every section the contents list promises, drawn and carrying figures.
+    const sections = await page.locator("main.how section[id]").count();
+    assert.ok(sections >= 7, `/how/ rendered ${sections} sections`);
+    assert.equal(
+      await page.locator("main.how nav.toc a").count(),
+      sections,
+      "the contents list and the sections have parted company — one of them " +
+        "names something that is not there"
+    );
+    assert.ok(
+      (await page.locator("main.how table tbody tr").count()) >= 20,
+      "the tables on /how/ drew almost no rows, so a payload is not reaching them"
+    );
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
+});
+
+test("every figure on the country page names a source and a period", { skip }, async () => {
+  // P3, on the page whose whole claim is that it holds. A stat block with no
+  // caption is a number a reader cannot check; a caption with no period is a
+  // number they cannot date, which is also the only thing that would make a
+  // page outliving its data visibly behind rather than silently wrong (P4).
+  await withApp(async (page, errors) => {
+    const blocks = await page.locator("main.how .stat").evaluateAll((els) =>
+      els.map((el) => ({
+        label: (el.querySelector(".sl")?.textContent ?? "").trim(),
+        caption: (el.querySelector(".ss")?.textContent ?? "").trim(),
+        href: el.querySelector(".ss a")?.getAttribute("href") ?? "",
+      }))
+    );
+    assert.ok(blocks.length >= 12, `/how/ rendered ${blocks.length} figures`);
+    for (const block of blocks) {
+      assert.ok(block.label, "a figure on /how/ carries no label saying what it is");
+      assert.match(
+        block.href,
+        /^https:\/\//,
+        `«${block.label.slice(0, 40)}» links to "${block.href}" rather than out to its publisher`
+      );
+      assert.match(
+        block.caption,
+        /\d{4}/,
+        `«${block.label.slice(0, 40)}» carries no year in its caption, so the ` +
+          "figure is undated (P3, P4)"
+      );
+    }
+
+    // The five publishers, each reachable from the page that names their
+    // figures. The footer's attribution line is a licence condition; these are
+    // the links that make it checkable.
+    const hrefs = await page
+      .locator("main.how a[href^='https://']")
+      .evaluateAll((els) => els.map((el) => el.getAttribute("href")).join(" "));
+    for (const host of ["ec.europa.eu", "nsi.bg", "imot.bg", "ecb.europa.eu", "bnb.bg"]) {
+      assert.ok(
+        hrefs.includes(host),
+        `/how/ renders figures from ${host} and links to none of them`
+      );
+    }
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
+});
+
+test("the country page answers in the reader's language, both ways", { skip }, async () => {
+  // Both languages ship in the DOM at once and one is hidden by CSS, which is
+  // exactly why a missing string is invisible in review: the person editing
+  // only ever sees one of the two. Here the page is read in both.
+  await withApp(async (page, errors) => {
+    const empty = await page.evaluate(() => {
+      const out = [];
+      for (const el of document.querySelectorAll("main.how .l-bg, main.how .l-en")) {
+        if (!el.textContent.trim()) out.push(el.className);
+      }
+      return out;
+    });
+    assert.deepEqual(empty, [], `blank language spans on /how/: ${empty.join(", ")}`);
+
+    const bg = (await page.locator("main.how h1").innerText()).trim();
+    await page.locator("header.site .pill").last().click();
+    await page.waitForTimeout(300);
+    const en = (await page.locator("main.how h1").innerText()).trim();
+    assert.ok(bg && en, "the country page's heading is empty in one language");
+    assert.notEqual(en, bg, "the heading is the same string in both languages");
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
 });
 
 test("the calculator asks in two places and neither interrupts", { skip }, async () => {

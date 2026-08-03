@@ -78,8 +78,12 @@ import {
   headlineRate,
   householdRaise,
   netsOf,
+  payLadder,
+  seriesCells,
   sofiaGap,
+  sofiaHomeAtAverageWage,
   sofiaQuarter as publishedSofiaQuarter,
+  systemWedgeLadder,
   savingsSince2020,
   housingCarveOut,
   basketBudget,
@@ -107,6 +111,27 @@ import {
 export const MAX_EARNERS = 6;
 
 export class Calculator {
+  /**
+   * @param {Record<string, object>|null} [payloads]  the `loadAll()` result,
+   *   already in hand. Only `scripts/prerender.mjs` passes one: it reads the
+   *   published JSONs off disk at build time so the served HTML carries the
+   *   country's figures rather than an empty region.
+   *
+   * **The freshness verdict is deliberately not seeded with them.** `dataAge`
+   * judges each payload against its cadence and the current time, and the
+   * build's clock is not the reader's — a page stamped "fresh" the day it was
+   * built goes on saying so for as long as it is served. `load()` computes it
+   * in the reader's own tab, against the reader's own clock, which is the only
+   * one that answers the question. So `dataRows` stays empty here and the
+   * staleness banner stays down until the bundle runs.
+   */
+  constructor(payloads = null) {
+    if (payloads) {
+      this.data = payloads;
+      this.dataReady = true;
+    }
+  }
+
   // ---------------------------------------------------------------------
   // The published figures
   // ---------------------------------------------------------------------
@@ -428,6 +453,39 @@ export class Calculator {
   // gross↔net math below flows through these, so a BG law change only needs a
   // pipeline re-run, no SPA code change.
   payroll = $derived(payrollParams(this.data.payroll));
+
+  // ---------------------------------------------------------------------
+  // Derived: the country, with nobody in it
+  //
+  // The four below are what `/how/` renders, and every one of them is a
+  // function of the published payloads alone — no field on this object that a
+  // reader can type into appears in any of their arguments. That is what makes
+  // them safe to freeze into served HTML (docs/seo.md) and what keeps a page
+  // with no inputs from acquiring one: `sofiaHome` takes `HOME.m2Default` and
+  // NOT `this.m2`, which is the reader's slider and would put their number
+  // into a sentence about Sofia.
+  // ---------------------------------------------------------------------
+  /** The tax wedge at round gross salaries — the system's curve, not a person's. */
+  systemWedge = $derived(systemWedgeLadder({ payroll: this.data.payroll }));
+  /** The SES ladder as rows, each saying whether SES surveyed it or we modelled it. */
+  payLadderRows = $derived(
+    payLadder({
+      salaryDist: this.data.salaryDist,
+      sofiaSalary: this.data.sofiaSalary,
+      payroll: this.data.payroll,
+    })
+  );
+  /** A median Sofia flat priced against the Sofia average wage, in years of it. */
+  sofiaHome = $derived(
+    sofiaHomeAtAverageWage({
+      sofiaPrice: this.data.sofiaPrice,
+      sofiaSalary: this.data.sofiaSalary,
+      payroll: this.data.payroll,
+      m2: HOME.m2Default,
+    })
+  );
+  /** НСИ's quarterly Sofia wage cells, oldest first — selected, never averaged. */
+  sofiaWageCells = $derived(seriesCells(this.data.sofiaSalary));
 
   // ---------------------------------------------------------------------
   // Derived: the pay packet

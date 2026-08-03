@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="bg" data-lang="bg" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вярно — числата за България</title>
+    <!--
+    The description names the questions this page answers and the calculator
+    does not: what inflation is, what the tax takes, what a square metre costs.
+    Kept under ~160 characters so a search result does not truncate mid-clause.
+  -->
+    <meta
+      name="description"
+      content="Инфлацията по 13-те групи, данъкът и осигуровките, подредбата на заплатите, лихвата по кредит и цената на кв. м в София — с източник и дата до всяко число."
+    />
+    <link rel="canonical" href="https://vyarno.bg/how/" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Вярно · vyarno.bg" />
+    <meta property="og:locale" content="bg_BG" />
+    <!--
+    Same as the calculator's, and for the same reason: one URL serves both
+    languages, so bg_BG is what the page declares and en_US is what it also
+    answers in. It buys an unfurler a language it can read; it is not an
+    hreflang pair, because there is no second URL to point at.
+  -->
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://vyarno.bg/how/" />
+    <meta property="og:title" content="Вярно — числата за България" />
+    <meta
+      property="og:description"
+      content="Официалните числа за България, с институцията, периода и връзката към таблицата до всяко от тях."
+    />
+    <!--
+    No og:image. The calculator's card carries the wordmark and a strapline
+    about working out your own inflation, and reusing it here would unfurl a
+    reference page as the calculator.
+  -->
+
+    <!--
+    Structured data, and the two things it deliberately does not say.
+
+    NOT a Dataset node, for the reason index.html spells out at length: that
+    would describe data/published/ as a dataset this project publishes and
+    offers for reuse, and НСИ's licence forbids distributing производни и
+    сборни произведения outright (docs/legal.md §НСИ).
+
+    NOT a FAQPage either, though the sections below are questions and it would
+    parse. An FAQ node has to carry its answers as TEXT, which would mean
+    writing today's figures into strings that nothing recomputes — the one
+    failure this page is most exposed to (docs/principles.md P3, P4, and
+    `verify_copy.mjs` §"no page writes a live figure into its prose"). Google
+    also stopped showing FAQ rich results for most sites, so the trade is a
+    frozen number against nothing.
+
+    What is left is a WebPage that says what the page is and whose it is. The
+    licence is scoped to the CODE, like every other licence statement here: the
+    figures belong to five publishers and are not ours to license.
+  -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Числата за България, обяснени",
+        "url": "https://vyarno.bg/how/",
+        "inLanguage": ["bg", "en"],
+        "isPartOf": {
+          "@type": "WebApplication",
+          "name": "Вярно",
+          "url": "https://vyarno.bg/"
+        },
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "description": "Официалните числа за България — инфлация по групи, данъци и осигуровки, разпределение на заплатите, лихви по жилищни кредити, цени на жилищата и безработица — всяко със своя източник, период и връзка за проверка."
+      }
+    </script>
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#E8ECEF" />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <!--
+        `scripts/prerender.mjs` writes this page — figures and all — into #app
+        at build time, so a reader with JavaScript off already has the numbers.
+        What they lose is the language toggle and the calculator behind the
+        link, which is what these two sentences say. The upstream attribution
+        is a licence condition that must appear on every page including this
+        one, whether the bundle runs or the prerender step ever stops running.
+      -->
+      <div
+        style="
+          max-width: 40rem;
+          margin: 3rem auto;
+          padding: 0 1.25rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.55;
+        "
+      >
+        <p lang="bg">
+          Числата на тази страница се четат и без JavaScript. Смятането на твоята инфлация става в
+          браузъра ти и има нужда от него — включи го и отвори калкулатора.
+        </p>
+        <p lang="en">
+          The figures on this page read without JavaScript. Working out your own inflation happens
+          in your browser and needs it — turn it on and open the calculator.
+        </p>
+        <p>
+          <small
+            >Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg · Data from Eurostat / ECB / NSI / BNB /
+            imot.bg</small
+          >
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/how-main.js"></script>
+  </body>
+</html>

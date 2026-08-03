@@ -93,10 +93,23 @@
 
 # The entry points must never be cached hard, or a user keeps loading a bundle
 # that points at assets which no longer exist.
+#
+# `/` and `/how/` carry the published figures in their markup
+# (scripts/prerender.mjs), so those two documents age the way the data does and
+# this line has a second job: a hard cache on either serves last month's
+# inflation to a reader whose browser never asks again. 300 s on
+# `/data/published/*` and `max-age=0` here are the pair that keeps the HTML and
+# the JSON a reader holds from drifting apart (docs/seo.md).
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
 
 /
+  Cache-Control: public, max-age=0, must-revalidate
+
+/how/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/how/index.html
   Cache-Control: public, max-age=0, must-revalidate
 
 /legal/

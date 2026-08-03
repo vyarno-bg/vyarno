@@ -1114,3 +1114,188 @@ test("the share note states the boundary rather than advertising it", () => {
     assert.doesNotMatch(note, /100%|напълно|гарантирано|completely|fully guaranteed/i, note);
   }
 });
+
+// --- /how/, the country's figures on a page of their own -------------------
+//
+// The page is mostly prose wrapped around published numbers, which makes it
+// the likeliest surface in the repository to freeze today's headline into a
+// sentence. Everything below is about that risk and about the rules the prose
+// still has to satisfy — both languages, no advice (P6), a derivation
+// disclosed (Eurostat's terms), and nothing said about НСИ's figures that
+// their licence forbids.
+
+/**
+ * The `/how/` page on its own — one component, so no slicing.
+ *
+ * Whitespace-collapsed, because these assertions are about which sentence the
+ * page says and Prettier decides where it breaks. A claim checked against the
+ * source verbatim goes red on a formatter run, which teaches people to edit
+ * the test rather than read it.
+ */
+const HOW = blankComments(readFileSync(join(SRC, "How.svelte"), "utf-8")).replace(/\s+/g, " ");
+
+/** The `{bg, en}` COPY keys the page owns. */
+const HOW_KEYS = Object.keys(COPY).filter((k) => k.startsWith("how"));
+
+test("every string the country page owns ships bilingual, in the right alphabet", () => {
+  assert.ok(
+    HOW_KEYS.length > 10,
+    `only ${HOW_KEYS.length} how* COPY keys — the page lost its copy`
+  );
+  for (const key of HOW_KEYS) {
+    const [bg, en] = pair(key);
+    // The two proper nouns that are Latin in Bulgarian too. Everything else
+    // reaching a Bulgarian reader in Latin script is the defect this checks
+    // for, and it is easy to introduce on a page full of dataset names.
+    if (!["howSrcImot", "howSrc"].includes(key)) {
+      assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
+    }
+    if (!["howSrcImot", "howSrc"].includes(key)) {
+      assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Cyrillic: ${en}`);
+    }
+  }
+});
+
+test("no page writes a live figure into its prose", () => {
+  // The rule the explainer already keeps, applied to the page most exposed to
+  // breaking it. A section headed «инфлацията е 4,1%» is right on the day it
+  // is typed and wrong a month later: the figure beside it moves and the
+  // sentence explaining it does not, and the reader cannot tell which is
+  // stale. Nothing recomputes prose, so this is the check.
+  //
+  // Scoped to the CURRENTLY published values rather than to every percentage,
+  // because a worked example carries no freshness claim and is what makes an
+  // explanation readable.
+  const headline = published("hicp_headline");
+  const price = published("sofia_price");
+  const wage = published("sofia_salary");
+  if (!headline || !price || !wage) return;
+
+  const live = [
+    ["the all-items rate", `${headline.headline_rate_pct}%`],
+    ["the Sofia €/m² median", String(price.eur_per_m2_median)],
+    ["the Sofia average wage", String(wage.value)],
+  ];
+  for (const [what, literal] of live) {
+    for (const form of [literal, literal.replace(".", ",")]) {
+      assert.ok(
+        !HOW.includes(form),
+        `How.svelte writes ${form} into its markup — that is ${what} as ` +
+          "published today, and the copy will keep asserting it after the next " +
+          "refresh moves it. Render the figure beside the prose instead."
+      );
+    }
+  }
+});
+
+test("the country page discloses that three of its figures are ours", () => {
+  // Eurostat permits derivation on condition it is disclosed. Three figures on
+  // this site are ours rather than a publisher's — the modelled pay ladder,
+  // the Sofia €/m² median across имот.bg's districts and the change since 2015
+  // built on it — and two of the three are rendered here. The disclosure and
+  // the route to the full wording both have to travel with them.
+  const [bg, en] = pair("howOurs");
+  assert.match(bg, CYRILLIC);
+  assert.ok(HOW.includes("COPY.howOurs.bg") && HOW.includes("COPY.howOurs.en"));
+  assert.ok(
+    (HOW.match(/\{@render ours\(\)\}/g) ?? []).length >= 2,
+    "the derivation disclosure is rendered fewer than twice — the modelled " +
+      "ladder and the €/m² median each need it beside them, not once at the foot"
+  );
+  assert.ok(
+    HOW.includes('href="/legal/#sources"'),
+    "the disclosure no longer routes to the sources document, which carries " +
+      "the Eurostat non-responsibility wording it is half of"
+  );
+  assert.ok(en.length > 20 && bg.length > 20, "the disclosure has been shortened to a label");
+});
+
+test("the country page says the НСИ series is selected, never averaged", () => {
+  // НСИ's licence forbids distributing производни и сборни произведения, and
+  // the architecture that answers it is: select from published cells, never
+  // compute over them. The quarterly wage table is the one place on the site
+  // that prints a whole НСИ series, so the page says out loud which of the two
+  // it is doing — and `view.js#seriesCells` is what makes the sentence true.
+  for (const claim of [
+    "избираме клетка, не смятаме средни",
+    "a cell is selected, never averaged",
+  ]) {
+    assert.ok(
+      HOW.includes(claim),
+      `the country page no longer states «${claim}» beside НСИ's own series`
+    );
+  }
+});
+
+test("the country page accounts for the headline-versus-basket gap", () => {
+  // Σ(w·r) over the published divisions runs about 0.16 pp above Eurostat's
+  // all-items headline, because HICP re-weights the basket every January and a
+  // 12-month window crosses that link. This page prints both figures side by
+  // side — which is exactly where a reader stops and asks — so it may not
+  // claim the basket is the only difference, and it has to name the cause.
+  const body = HOW.toLowerCase();
+  assert.ok(
+    !body.includes("разликата е само кошницата"),
+    "the country page claims the basket is the ONLY difference between the " +
+      "headline and the sum of the divisions — it is not"
+  );
+  for (const needle of ["януари", "тегл", "january", "weight"]) {
+    assert.ok(
+      body.includes(needle),
+      `the country page never mentions "${needle}", so a reader meeting the two ` +
+        "figures beside each other is left to infer the annual re-weighting"
+    );
+  }
+});
+
+test("the country page describes and never advises", () => {
+  // P6. A reference page is where "you should" arrives most naturally, because
+  // every section ends in a figure somebody could act on.
+  for (const advice of [
+    "трябва да",
+    "препоръчваме",
+    "по-добре е да",
+    "you should",
+    "we recommend",
+    "consider ",
+  ]) {
+    assert.ok(
+      !HOW.toLowerCase().includes(advice),
+      `prescriptive copy on the country page: "${advice}". The strongest ` +
+        "honest form is a comparison plus a number (P6)."
+    );
+  }
+});
+
+test("the country page frames the wedge curve as uncomputed, never as concealed", () => {
+  // P11. The tax wedge is the shipped example of a figure an agency could have
+  // published and did not, and the framing is "this is computable from the
+  // official data and nobody has computed it for you" — never "they do not
+  // want you to see it".
+  for (const conspiracy of ["крие", "скрива", "не иска да", "they don't want", "hidden from"]) {
+    assert.ok(
+      !HOW.toLowerCase().includes(conspiracy),
+      `the wedge section imputes a motive ("${conspiracy}"). P11: where an ` +
+        "agency has a reason, give it; where we cannot tell, say so in one line."
+    );
+  }
+  assert.ok(
+    HOW.includes("никой не е длъжен") && HOW.includes("nobody is obliged"),
+    "the wedge section no longer says why the curve is unpublished, which is " +
+      "the sentence that keeps 'nobody publishes it' from reading as an accusation"
+  );
+});
+
+test("the country page keeps the 30% line where P7 put it", () => {
+  // The affordability line is deliberately stricter than the 50% БНБ permits
+  // and than the ~38.5% BG borrowers carry. A reference page explaining both
+  // ceilings is where somebody reasonably concludes ours should match one of
+  // them, so the paragraph states that it does not move.
+  for (const claim of ["по-строго от", "stricter than"]) {
+    assert.ok(HOW.includes(claim), `the 30% line no longer says it is ${claim} the regulator's`);
+  }
+  assert.ok(
+    HOW.includes("не се мести") && HOW.includes("does not move"),
+    "the paragraph no longer says the affordability line stays where it is"
+  );
+});

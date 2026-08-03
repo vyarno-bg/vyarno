@@ -13,14 +13,6 @@
   import { integer, periodLong } from "$lib/format.js";
 
   const {
-    /**
-     * True while the build renders this component with no payloads loaded.
-     * Everything above the formula block is prose that stands on its own; the
-     * block itself quotes the figures, so it is left out of the served HTML
-     * rather than published with the fallbacks in it. See `prerender` in
-     * App.svelte and the `<details class="fx">` comment below.
-     */
-    prerender = false,
     /** "y1" for the rolling 12 months, or a year — the formula names it. */
     anchor = "y1",
     /** Deposit share, quoted inside the annuity formula. */
@@ -41,6 +33,22 @@
   const monthsSplit = $derived(
     Boolean(headlineMonth) && Boolean(basketMonth) && headlineMonth !== basketMonth
   );
+
+  // Whether the formula block has the figures it quotes.
+  //
+  // `savingsSince2020` returns `basis: "none"` only when NEITHER the headline
+  // payload nor the divisions are in hand, and that is the one state in which
+  // the block would misdescribe the page: the `{:else}` branch below says the
+  // rise since 2020 is the 13 groups summed at their official weights, which
+  // is the fallback method rather than the one the reader's page used. With
+  // either payload loaded the branch follows what was actually computed.
+  //
+  // The gate is the FIGURES, never which build is rendering. A build-time flag
+  // answers a different question and misses the state that matters: the
+  // reader's own first paint, before the fetch resolves, where this block
+  // would describe a method their page has not used. The build has the
+  // payloads (scripts/prerender.mjs), so it is not the case worth guarding.
+  const quotesRealFigures = $derived(cashEroded.basis !== "none");
 </script>
 
 <section class="explain-band">
@@ -81,6 +89,17 @@
             figure carries a link (the ↗ icon) to the exact Eurostat table - so you can check it
             yourself.</span
           >
+        </p>
+
+        <!-- The one route from the calculator to `/how/`, and it belongs in
+             this paragraph rather than in the header or the footer: a reader
+             who has opened «Как работи това?» is already asking where the
+             numbers come from, and that page is the long answer with all of
+             them on it. One place, because a second link to the same page from
+             a page this size is navigation noise rather than a route. -->
+        <p class="onward">
+          <a class="how-more l-bg" href="/how/">{COPY.howMoreK.bg} →</a>
+          <a class="how-more l-en" href="/how/">{COPY.howMoreK.en} →</a>
         </p>
 
         <h4>
@@ -327,16 +346,14 @@
              Nothing may be deleted from this block — an unpublished formula is
              a figure nobody outside this repo can re-derive.
 
-             It is the one part of this component the build does not prerender,
-             and that is not a deletion: a reader gets it, in full, the moment
-             the bundle runs. Rendered with no payloads it would say the rise
-             since 2020 is the 13 groups summed at their official weights, when
-             the page in front of the reader deflates by Eurostat's all-items
-             index — a wrong statement about our own method, in served HTML,
-             with no correction reaching whoever read it. The deposit share two
-             lines further down is the published БНБ limit and would freeze at
-             the offline fallback for the same reason (docs/seo.md). -->
-        {#if !prerender}
+             It waits for the payloads it quotes rather than for the bundle.
+             With none of them in hand it would say the rise since 2020 is the
+             13 groups summed at their official weights, when the page in front
+             of the reader deflates by Eurostat's all-items index — a wrong
+             statement about our own method. With them, every branch here names
+             what the page actually did, which is why the build serves it
+             (docs/seo.md). -->
+        {#if quotesRealFigures}
           <details class="fx">
             <summary class="disclose">
               <span class="dc-caret" aria-hidden="true">›</span>
@@ -455,6 +472,23 @@
     white-space: nowrap;
   }
   .support-more:hover {
+    border-bottom-color: var(--real);
+  }
+  /* The route to `/how/`, drawn exactly like the support link beside it: an
+     underline and the link colour at the size of the prose it ends. No fill
+     and no padding box — a button here would read as a call to action inside
+     a paragraph that is answering a question. */
+  .ex-body .onward {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: var(--fs-small);
+  }
+  .how-more {
+    color: var(--real-ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--real-soft);
+  }
+  .how-more:hover {
     border-bottom-color: var(--real);
   }
 </style>

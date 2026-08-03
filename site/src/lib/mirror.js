@@ -368,7 +368,14 @@ export function personalInflationDetailed(amounts, divisions, splits, anchor, fa
 // Percentile cut points of the salary ladder. MUST stay in lockstep with
 // the pipeline's SALARY_LADDER_CUTS (transform.py) — the published
 // `ladder_gross` has exactly one value per cut, in this order.
-const SALARY_LADDER_CUTS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99];
+//
+// **A bare array literal, and the shape is load-bearing.** The lockstep above
+// is checked from the Python side by `test_ladder_cuts_match_the_frontend`,
+// which reads this file as text and matches `const SALARY_LADDER_CUTS = [ … ]`.
+// Wrapping it in `Object.freeze(…)` — the ordinary thing to do to an exported
+// constant here — makes that regex miss, and a cross-language contract stops
+// being checked while both sides still look right.
+export const SALARY_LADDER_CUTS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99];
 
 /**
  * Where does `monthlySalary` land on the NET monthly salary ladder?
