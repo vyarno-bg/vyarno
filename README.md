@@ -185,11 +185,13 @@ What is verified, and by what:
 |---|---|---|
 | `pytest` in `pipeline/` | offline | Connectors, transforms, the six validation gates, the published payloads |
 | `node:test` in `site/` | no browser | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
-| `node:test` + Playwright | 15 tests | The built page, loaded in a real browser — the only suite that runs the app |
+| `node:test` + Playwright | in a browser | The built page, loaded in a real browser — the only suite that runs the app |
 
-`make check` runs all of it in CI's order. The counts above are stated, not
-measured by a badge: they are what the suites print, and a count that moves
-without someone moving it is a finding.
+`make check` runs all of it in CI's order and reports what each suite counted.
+The counts live in that run and in `site/scripts/check-test-floors.mjs`, which
+fails when a suite comes back smaller than it was — a number written out here
+would be one nothing checks, and a reader cannot tell a stale count from a
+current one.
 [`docs/testing-strategy.md`](./docs/testing-strategy.md) says which suite a test
 belongs in, and what is deliberately left uncovered. There is no coverage
 threshold, on purpose.

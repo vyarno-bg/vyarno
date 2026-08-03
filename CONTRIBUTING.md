@@ -79,8 +79,8 @@ reformat around them or disable a rule without saying why in the same commit.
 
 `npm run test:render` needs a Chromium. `make check` finds one for you —
 Playwright's own, a system install, or whatever `VYARNO_CHROMIUM` names — and
-fails if there is none, because run bare that suite skips and exits 0, and 15
-skipped looks exactly like 15 passed. Where nothing resolves,
+fails if there is none, because run bare that suite skips and exits 0, and a
+file of skips looks exactly like a file of passes. Where nothing resolves,
 `cd site && npx playwright install chromium`. It is the only suite that runs
 the app, so it is the one worth having.
 

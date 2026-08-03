@@ -4,13 +4,14 @@
  *
  * ## Why this exists rather than a number in a doc
  *
- * The expected counts used to be written out in prose, and by the end they were
- * in five places: `AGENTS.md`, the pull-request template, `check-all.mjs`, the
- * Cursor rules and the Copilot instructions. Three of the five were wrong — the
- * Cursor copy said 14 render tests and the Copilot copy said 15, against an
- * actual 25 — because a count changes whenever anybody adds a test and nothing
- * made them change together. A number that is stale more often than not is one
- * a reader learns to skip, which costs the check the only thing it was for.
+ * A count written into prose is a count nothing updates. Spread it across the
+ * agent instructions, the pull-request template and whatever else greets a
+ * contributor, and every copy drifts on its own schedule the moment anybody
+ * adds a test — nothing makes them move together, so most of them end up
+ * disagreeing with the run. A number that is stale more often than not is one a
+ * reader learns to skip past, and that costs the check the only thing it was
+ * for. So the counts live here, and what they are checked against is the report
+ * each suite writes about itself.
  *
  * ## Floors, not exact counts
  *

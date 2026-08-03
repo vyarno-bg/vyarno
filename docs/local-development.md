@@ -42,11 +42,11 @@ Two things follow from this list rather than from taste:
   ([`testing-strategy.md`](./testing-strategy.md) §"Why the wiring tests stay
   source checks").
 
-`checkJs` is currently off in `site/jsconfig.json`. Turning it on surfaces a
-few dozen errors — 76 across 14 files at the time of writing — mostly inference
-noise around `$state({})` payload objects. It is a real follow-up, not a
-decision that has been made against. Re-measure rather than quoting that
-figure back:
+`checkJs` is currently off in `site/jsconfig.json`. Turning it on surfaces
+errors across a good part of `src/`, mostly inference noise around `$state({})`
+payload objects. It is a real follow-up, not a decision that has been made
+against. The count grows with the source, so measure it rather than carrying a
+figure written here:
 
 ```sh
 cd site && sed -i 's/"checkJs": false/"checkJs": true/' jsconfig.json \
@@ -448,9 +448,11 @@ Before pushing a change to `pipeline/`:
 Before pushing a change to `site/`:
 
 - [ ] `npm run verify:math` is green
-- [ ] `npm run test:render` reports **14 passed** — it is the only suite that
-      runs the app, a page that throws on render is invisible to every other
-      one, and 14 skipped also exits 0
+- [ ] `npm run test:render` reports a count and no skips — it is the only suite
+      that runs the app, a page that throws on render is invisible to every
+      other one, and a file of skips exits 0 exactly like a file of passes.
+      `make render` gates on the browser resolver and fails where none is
+      found, which is the run to trust
 - [ ] `npm run build` exits 0
 - [ ] `dist/data/published/*.json` exists for all eight files
 - [ ] `npm run dev` and `npm run preview` both serve `/data/published/*.json`
