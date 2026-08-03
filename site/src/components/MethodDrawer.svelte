@@ -165,78 +165,96 @@
     <span class="l-bg">{COPY.drawerPrecision.bg}</span>
     <span class="l-en">{COPY.drawerPrecision.en}</span>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th><span class="l-bg">група</span><span class="l-en">group</span></th>
-        <!-- «твое тегло» / «официално» named the columns after the
-             statistical term and after nothing at all. They are two
-             shares of the same thing — yours and the average
-             Bulgarian's — and the headers now say so. -->
-        <th><span class="l-bg">твоят дял</span><span class="l-en">your share</span></th>
-        <th
-          ><span class="l-bg">среден за страната</span><span class="l-en">national average</span
-          ></th
-        >
-        <th
-          >{$lang === "bg" ? "поскъпване" : "rise"} ({anchor === "y1"
-            ? $lang === "bg"
-              ? "за 1 г."
-              : "over 1 yr"
-            : $lang === "bg"
-              ? `от ${anchor}`
-              : `since ${anchor}`})</th
-        >
-        <th><span class="l-bg">провери</span><span class="l-en">verify</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each categories as c, i (c.cp_code)}
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+  <!-- The table's own scroll box, the pattern /how/ uses for the same five
+       columns. `.how` scrolls too, and that is not enough on its own: with only
+       the outer box scrolling, reaching the «провери» column drags the prose,
+       the source line and the drawer's whole left edge out of the viewport, so
+       the reader loses the sentences to see the number. Only the table is wider
+       than a phone — the prose above it wraps — so only the table moves.
+
+       `role` and the label are the keyboard half: a scroll container is
+       operable with the arrow keys, which needs a tab stop, and a tab stop
+       that announces nothing is worse than none. -->
+  <div
+    class="scroll"
+    role="region"
+    tabindex="0"
+    aria-label={COPY.howTblBasket[$lang] ?? COPY.howTblBasket.en}
+  >
+    <table>
+      <thead>
         <tr>
-          <td>
-            <span class="l-bg">{c.bg_name}</span><span class="l-en">{c.en_name}</span>
-            <!-- Eurostat's own wording for the code, verbatim. Our
-                 friendly name is a translation for a reader, not a
-                 claim about what the bucket is; this is the claim. -->
-            <small class="estatlbl">{c.eurostat_label}</small>
-          </td>
-          <td>{fmt0(divisionSharePct(i))}%</td>
-          <td>{c.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
-          <td>{rateForDivision(i) < 0 ? "−" : "+"}{fmt(Math.abs(rateForDivision(i)))}%</td>
-          <td
-            ><a
-              href={estatCatUrl(c)}
-              target="_blank"
-              rel="noopener"
-              title={$lang === "bg"
-                ? "официалните данни на Евростат за точно това число"
-                : "Eurostat's own data for exactly this figure"}>{c.cp_code} ↗</a
-            ></td
+          <th><span class="l-bg">група</span><span class="l-en">group</span></th>
+          <!-- «твое тегло» / «официално» named the columns after the
+               statistical term and after nothing at all. They are two
+               shares of the same thing — yours and the average
+               Bulgarian's — and the headers now say so. -->
+          <th><span class="l-bg">твоят дял</span><span class="l-en">your share</span></th>
+          <th
+            ><span class="l-bg">среден за страната</span><span class="l-en">national average</span
+            ></th
           >
+          <th
+            >{$lang === "bg" ? "поскъпване" : "rise"} ({anchor === "y1"
+              ? $lang === "bg"
+                ? "за 1 г."
+                : "over 1 yr"
+              : $lang === "bg"
+                ? `от ${anchor}`
+                : `since ${anchor}`})</th
+          >
+          <th><span class="l-bg">провери</span><span class="l-en">verify</span></th>
         </tr>
-        {#if detailMode && openDivisions.has(i)}
-          {#each c.groups ?? [] as g, gi (g.cp_code)}
-            {@const sp = splitFor(i)}
-            {@const spTotal = sp.reduce((s, x) => s + (x > 0 ? x : 0), 0)}
-            <tr class="subrow">
-              <td>
-                <span class="l-bg">↳ {g.bg_name}</span><span class="l-en">↳ {g.en_name}</span>
-                <small class="estatlbl">{g.eurostat_label}</small>
-              </td>
-              <td
-                >{fmt0(
-                  spTotal > 0 ? (divisionSharePct(i) * Math.max(0, sp[gi])) / spTotal : 0
-                )}%</td
-              >
-              <td>{g.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
-              <td>{rateFor(g, anchor) < 0 ? "−" : "+"}{fmt(Math.abs(rateFor(g, anchor)))}%</td>
-              <td><a href={estatCatUrl(g)} target="_blank" rel="noopener">{g.cp_code} ↗</a></td>
-            </tr>
-          {/each}
-        {/if}
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each categories as c, i (c.cp_code)}
+          <tr>
+            <td>
+              <span class="l-bg">{c.bg_name}</span><span class="l-en">{c.en_name}</span>
+              <!-- Eurostat's own wording for the code, verbatim. Our
+                   friendly name is a translation for a reader, not a
+                   claim about what the bucket is; this is the claim. -->
+              <small class="estatlbl">{c.eurostat_label}</small>
+            </td>
+            <td>{fmt0(divisionSharePct(i))}%</td>
+            <td>{c.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
+            <td>{rateForDivision(i) < 0 ? "−" : "+"}{fmt(Math.abs(rateForDivision(i)))}%</td>
+            <td
+              ><a
+                href={estatCatUrl(c)}
+                target="_blank"
+                rel="noopener"
+                title={$lang === "bg"
+                  ? "официалните данни на Евростат за точно това число"
+                  : "Eurostat's own data for exactly this figure"}>{c.cp_code} ↗</a
+              ></td
+            >
+          </tr>
+          {#if detailMode && openDivisions.has(i)}
+            {#each c.groups ?? [] as g, gi (g.cp_code)}
+              {@const sp = splitFor(i)}
+              {@const spTotal = sp.reduce((s, x) => s + (x > 0 ? x : 0), 0)}
+              <tr class="subrow">
+                <td>
+                  <span class="l-bg">↳ {g.bg_name}</span><span class="l-en">↳ {g.en_name}</span>
+                  <small class="estatlbl">{g.eurostat_label}</small>
+                </td>
+                <td
+                  >{fmt0(
+                    spTotal > 0 ? (divisionSharePct(i) * Math.max(0, sp[gi])) / spTotal : 0
+                  )}%</td
+                >
+                <td>{g.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
+                <td>{rateFor(g, anchor) < 0 ? "−" : "+"}{fmt(Math.abs(rateFor(g, anchor)))}%</td>
+                <td><a href={estatCatUrl(g)} target="_blank" rel="noopener">{g.cp_code} ↗</a></td>
+              </tr>
+            {/each}
+          {/if}
+        {/each}
+      </tbody>
+    </table>
+  </div>
   <!-- Exactly the upstreams that feed a number ON THIS PAGE, and
        nothing else. A dataset that sounds like it belongs — `ilc_di01`,
        `namq_10_lp_ulc`, `prc_hpi_q` — is not in a payload and puts no
@@ -305,5 +323,16 @@
   }
   .how table tr.subrow td {
     color: var(--muted);
+  }
+  /* Five columns do not fit a 360px phone in either language, and what says so
+     is the clipped column at the boundary plus the focus ring — the same
+     affordance /how/ settled on for the same table, and the reasoning against
+     an edge shadow is written out there. */
+  .scroll {
+    overflow-x: auto;
+  }
+  .scroll:focus-visible {
+    outline: 2px solid var(--real);
+    outline-offset: 2px;
   }
 </style>

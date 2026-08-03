@@ -65,8 +65,17 @@
    * the phone stack, which put its salary field 2,465px down a screen with
    * room for both columns side by side. Two columns hold their shape to about
    * 800px; below that the basket sliders and their labels start colliding. */
+  /* `minmax(0, 1fr)` for the same reason the two-column rule above takes it,
+     and it matters more here than there. A bare `1fr` track has an automatic
+     minimum of min-content, so ONE wide descendant anywhere in the stack sizes
+     the track — and the track is the whole page on a phone. The method drawer's
+     five-column table needs 446px to lay out; at 360px that widened every card
+     in the grid to 446, so opening the drawer pushed the salary field and the
+     results off-centre and left the reader scrolling the document sideways to
+     read prose that fits. Capping the minimum at 0 keeps the track at the
+     viewport and leaves overflow to the box that has it. */
   .m-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   /* The column dissolves, so its two cards become grid items in their own
      right and `order` can put the results card between them. Wrapping them in

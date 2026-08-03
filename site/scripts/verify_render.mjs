@@ -1810,6 +1810,84 @@ test("the explainer causes no horizontal overflow on a 360px viewport", { skip }
   });
 });
 
+test("the method drawer fits a phone, and its table scrolls inside it", { skip }, async () => {
+  // The calculator's counterpart to the `/how/` test above, and it fails
+  // differently. Below 820px `.m-grid` is a single track, so a track sized to
+  // its content is sized to the widest thing any card holds — the drawer's
+  // five-column table, which needs about 446px. Every card in the stack then
+  // draws 446px wide inside a 360px viewport: the salary field, the figures and
+  // the header all sit off-centre and the reader drags the whole document
+  // sideways to read prose that fits. `minmax(0, 1fr)` in card.css is what caps
+  // the track at the viewport, and nothing else on the page reveals whether it
+  // is there.
+  //
+  // The three parts go together deliberately. Capping the track without a
+  // scroll box hands the overflow to `.how`, where reaching the «провери»
+  // column drags the prose out of view; a box that is not a tab stop leaves the
+  // last two columns unreachable by keyboard, which is the same defect the
+  // country page's box was written to fix.
+  await withApp(
+    async (page, errors) => {
+      const drawer = page.locator(".m-results details.how").first();
+      assert.ok(await drawer.count(), "the method drawer is missing from the results card");
+      await drawer.locator("summary").first().click();
+      await page.waitForTimeout(250);
+
+      const seen = await page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        const box = document.querySelector(".m-results details.how .scroll");
+        return {
+          docScroll: document.documentElement.scrollWidth,
+          docClient: vw,
+          cards: [...document.querySelectorAll(".m-grid .m-card")].map((el) =>
+            Math.round(el.getBoundingClientRect().right)
+          ),
+          box: box && {
+            over: box.scrollWidth - box.clientWidth,
+            right: Math.round(box.getBoundingClientRect().right),
+            tabIndex: box.tabIndex,
+            role: box.getAttribute("role"),
+            label: (box.getAttribute("aria-label") ?? "").trim(),
+          },
+        };
+      });
+
+      assert.ok(
+        seen.docScroll <= seen.docClient + 1,
+        `the open drawer makes the page ${seen.docScroll}px wide in a ` +
+          `${seen.docClient}px viewport`
+      );
+      assert.ok(seen.cards.length >= 3, `the phone stack rendered ${seen.cards.length} cards`);
+      for (const right of seen.cards) {
+        assert.ok(
+          right <= seen.docClient + 1,
+          `a card reaches ${right}px past the ${seen.docClient}px viewport, so the ` +
+            "single grid track was sized by the drawer's table rather than by the phone"
+        );
+      }
+
+      assert.ok(seen.box, "the drawer's table sits in no scroll box");
+      assert.ok(
+        seen.box.over > 0,
+        "the drawer's table overflows nothing at 360px, so either it shrank out " +
+          "of the shape this protects or the box stopped clipping and the page " +
+          "is about to scroll instead"
+      );
+      assert.ok(
+        seen.box.right <= seen.docClient + 1,
+        `the drawer's scroll box reaches ${seen.box.right}px past the viewport`
+      );
+      assert.equal(seen.box.tabIndex, 0, "the drawer's scroll box is not a tab stop");
+      assert.equal(seen.box.role, "region", "the drawer's focusable scroll box announces no role");
+      assert.ok(seen.box.label, "the drawer's focusable scroll box has no accessible name");
+
+      assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+    },
+    "/",
+    { viewport: { width: 360, height: 800 } }
+  );
+});
+
 test(
   "an untouched salary is named where its figures are, and clears on typing",
   { skip },
