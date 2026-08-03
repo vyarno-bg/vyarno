@@ -112,24 +112,16 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
-          # The node side has been cached since it was written; this is the
-          # same thing for pip, keyed on the lock rather than on a guess. What
-          # is cached is the wheel cache, not the environment: `pip install`
-          # still runs, still resolves, and still checks every hash, so the
-          # `--require-hashes` guarantee the lock exists for is untouched.
-          # Only the downloads are skipped, and the key changes the moment
-          # `requirements-dev.txt` does.
-          #
-          # Measured, and it does not pay off HERE: restoring costs this job
-          # about as long as the download it saves, so setup-python plus
-          # install came out a few seconds worse than with no cache at all.
-          # It stays because the same two lines take the `windows` job from
-          # roughly thirty-six seconds to twenty-four, and that job is the
-          # run's critical path while this one finishes long before it. So the
-          # seconds lost here are not on anybody's clock and the seconds won
-          # there are. Do not "fix" this by measuring only the ubuntu job.
-          cache: pip
-          cache-dependency-path: pipeline/requirements-dev.txt
+          # No `cache: pip` here, and that is a measured decision rather than
+          # an oversight — see the note beside the browser cache in the `site`
+          # job for the one that did earn its place. Caching the wheels was
+          # tried across several runs on both platforms and could not be shown
+          # to help: on ubuntu the restore cost about what the download saved,
+          # and on Windows the warm runs ranged either side of the uncached
+          # baseline, spread wider between themselves than the gap they were
+          # supposed to close. The install here is dominated by resolving and
+          # building, not by fetching. Re-propose it with numbers if the
+          # dependency tree ever grows enough to change that.
       - name: Install
         working-directory: pipeline
         # From the lock, not from the ranges in pyproject.toml: `requirements-dev.txt`
@@ -191,6 +183,16 @@ jobs:
         working-directory: site
         run: npm run build
       - name: Cache the Chromium Playwright downloads
+        # The cache in this workflow that earned its place, and the measurement
+        # is the reason it is here while the pip one is not: across every run
+        # compared, the browser step came down from around nineteen seconds to
+        # eight or ten on Windows and from twenty-one to seventeen here. Both
+        # directions held on every sample rather than on one.
+        #
+        # The ubuntu saving is the smaller of the two because `--with-deps`
+        # still runs apt on a hit — see the step below. Anyone timing this and
+        # finding four seconds should look at the Windows job before removing
+        # it, since that is the one setting the run's wall clock.
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
@@ -277,14 +279,6 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
-          # Same cache as the `pipeline` job, and a separate one in practice:
-          # the key carries the runner OS, so a Windows wheel never restores
-          # onto ubuntu. That separation is what makes this safe here — the
-          # whole reason this job exists is that a lock resolved on Linux is
-          # missing the Windows-only dependencies, and a shared cache would
-          # hand this job a Linux tree and hide exactly that.
-          cache: pip
-          cache-dependency-path: pipeline/requirements-dev.txt
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
