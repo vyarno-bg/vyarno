@@ -316,11 +316,10 @@ Fourteen files under Node's built-in test runner, no dependencies. The list is
 - `verify_wiring.mjs` — which value the markup passes to which function.
 
 The `verify_render_*.mjs` suites run separately, under `npm run test:render`,
-because they
-needs a browser.
+because they need a browser.
 
-All of them also run in CI on every push, alongside `pytest -q` and the
-production build.
+All of them also run in CI on every push and on every pull request, alongside
+`pytest -q` and the production build.
 
 ## Running the pipeline against live upstreams
 
