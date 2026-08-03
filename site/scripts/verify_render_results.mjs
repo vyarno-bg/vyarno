@@ -189,12 +189,12 @@ test("the route from the headline to the salary field lands on it", { skip }, as
   // focus rather than merely scroll: focus is what raises the phone keyboard,
   // so one tap leaves the reader typing instead of hunting.
   //
-  // It used to be the ONLY connection between the two, across 3,100px of
-  // phone. The pay field now sits above the results, so the journey is short
-  // and the button is a convenience rather than a lifeline — which is a reason
-  // to keep testing it and no reason to assert on the distance. The old
-  // version required a gap of 1,500px before it would test anything, so
-  // shortening the page would have quietly turned the test off.
+  // Assert the focus, never the distance. The phone order puts the pay field
+  // above the results, so the journey is short and this button is a
+  // convenience rather than the only connection across 3,100px — but a check
+  // gated on a minimum gap (1,500px was the tempting threshold) turns itself
+  // off the moment the page gets shorter, which is exactly when somebody would
+  // most like to know the link still works.
   await withApp(async (page, errors) => {
     await page.setViewportSize({ width: 390, height: 664 });
     await page.waitForTimeout(200);
