@@ -355,14 +355,14 @@
     <p>
       <span class="l-bg"
         >Цените се групират по европейска класификация (ECOICOP), която за България дава тринадесет
-        групи. Теглото е каква част от парите на средния човек отива за групата — Евростат го
-        публикува веднъж годишно. По-старите български таблици имат дванадесет групи, защото
+        групи. Делът на всяка група е каква част от парите на средния човек отива за нея — Евростат
+        го публикува веднъж годишно. По-старите български таблици имат дванадесет групи, защото
         последната беше сборна: сега CP12 е застраховки и банкови услуги, а новата CP13 покрива
         лична хигиена и социални услуги. Затова двете подредби не се наслагват.</span
       >
       <span class="l-en"
         >Prices are grouped by a European classification (ECOICOP), which for Bulgaria gives
-        thirteen groups. The weight is how much of the average person's money goes to that group;
+        thirteen groups. A group's share is how much of the average person's money goes to it;
         Eurostat publishes it once a year. Older Bulgarian tables show twelve groups because the
         last one was a catch-all: CP12 is now insurance and financial services and a new CP13 covers
         personal care and social protection. That is why the two do not line up.</span
@@ -491,18 +491,18 @@
 
     <p>
       <span class="l-bg"
-        >Ставката е една за всички, но осигуровките се дължат само до таван. Под тавана всяко евро
-        се облага еднакво; над него следващото евро носи само данъка, така че колкото по-висока е
-        заплатата, толкова по-малък дял от нея взима държавата. Таблицата долу е тази крива в четири
-        точки, сметната от ставките и тавана горе. Никоя институция не я публикува: никой не е
-        длъжен да я състави.</span
+        >Данъкът е един за всички, но осигуровки се плащат само до определена заплата. Под тази
+        граница от всяко увеличение се удържа едно и също. Над нея осигуровките спират, така че от
+        увеличението остава само данъкът - и колкото по-висока е заплатата, толкова по-малка част от
+        нея взима държавата. Таблицата долу показва това при четири различни заплати, сметнато от
+        ставките и границата горе. Никоя институция не я публикува: никой не е длъжен да я състави.</span
       >
       <span class="l-en"
-        >The rate is the same for everyone, but contributions are only owed up to a ceiling. Below
-        it every euro is charged alike; above it the next euro carries the tax alone, so the higher
-        the pay, the smaller the share of it the state takes. The table below is that curve at four
-        points, worked out from the rates and the ceiling above. No agency publishes it: nobody is
-        obliged to put it together.</span
+        >The tax is the same for everyone, but contributions are only paid up to a certain salary.
+        Below that line the same share comes out of any raise. Above it contributions stop, so only
+        the tax comes out of a raise - and the higher the pay, the smaller the share of it the state
+        takes. The table below shows this at four different salaries, worked out from the rates and
+        the line above. No agency publishes it: nobody is obliged to put it together.</span
       >
     </p>
 
@@ -585,20 +585,22 @@
     </h2>
     <p>
       <span class="l-bg"
-        >За това трябват две официални числа, защото нито едното не стига само. Първото е
-        <b>формата</b> — кой колко изкарва — от изследването на Евростат за структурата на
-        заплатите. То е в правилната единица (индивидуална брутна заплата), но излиза веднъж на
-        четири години. Второто е <b>нивото</b> — средната брутна заплата в София, която НСИ публикува
-        всяко тримесечие. Формата се преизчислява така, че средната ѝ да съвпадне с днешното ниво, и после
-        всяко стъпало се превръща в нето.</span
+        >За това трябват две официални числа, защото нито едното не стига само. Първото казва
+        <b>колко са разпънати заплатите</b> — с колко човек в горния край изкарва повече от човек в
+        долния. То е от изследването на Евростат за заплатите, брои по един човек и една заплата, но
+        излиза веднъж на четири години, тоест сумите в него са остарели. Второто е
+        <b>днешната средна заплата в София</b>, която НСИ публикува всяко тримесечие. Взимаме
+        разпъването от първото и го прилагаме върху днешната средна от второто, за да са стъпалата с
+        днешни суми. После всяко стъпало се превръща от бруто в нето.</span
       >
       <span class="l-en"
-        >This needs two official numbers, because neither is enough on its own. The first is the
-        <b>shape</b> — who earns what — from Eurostat's Structure of Earnings Survey. It is in the
-        right unit (individual gross earnings) but comes out once every four years. The second is
-        the
-        <b>level</b>: the average gross wage in Sofia, which NSI publishes every quarter. The shape
-        is re-levelled so its mean matches today's level, and each rung is then converted to net.</span
+        >This needs two official numbers, because neither is enough on its own. The first says
+        <b>how far apart wages are</b> — how much more someone near the top earns than someone near
+        the bottom. It comes from Eurostat's earnings survey, counts one person and one wage at a
+        time, but is published once every four years, so its amounts are out of date. The second is
+        <b>today's average wage in Sofia</b>, which NSI publishes every quarter. We take the spread
+        from the first and set it against today's average from the second, so the rungs carry
+        today's amounts. Each rung is then converted from gross to net.</span
       >
     </p>
 
@@ -667,12 +669,12 @@
       </div>
       <p class="cap">
         <span class="l-bg"
-          >Форма: <a href={httpUrl(calc.payLadderRows.shapeUrl) || ESTAT_SES_URL}
+          >Разпъването: <a href={httpUrl(calc.payLadderRows.shapeUrl) || ESTAT_SES_URL}
             >{t(COPY.howSrc, "bg", {
               s: COPY.srcEurostat.bg,
               p: calc.payLadderRows.shapeYear,
             })}</a
-          >. Ниво:
+          >. Днешната средна:
           <a href={httpUrl(calc.payLadderRows.anchorUrl)}
             >{t(COPY.howSrc, "bg", {
               s: COPY.srcNsiWages.bg,
@@ -681,12 +683,12 @@
           >.</span
         >
         <span class="l-en"
-          >Shape: <a href={httpUrl(calc.payLadderRows.shapeUrl) || ESTAT_SES_URL}
+          >The spread: <a href={httpUrl(calc.payLadderRows.shapeUrl) || ESTAT_SES_URL}
             >{t(COPY.howSrc, "en", {
               s: COPY.srcEurostat.en,
               p: calc.payLadderRows.shapeYear,
             })}</a
-          >. Level:
+          >. Today's average:
           <a href={httpUrl(calc.payLadderRows.anchorUrl)}
             >{t(COPY.howSrc, "en", {
               s: COPY.srcNsiWages.en,
@@ -698,16 +700,18 @@
       {@render ours()}
       <p>
         <span class="l-bg"
-          >Изследването измерва три точки за България — долната десета, средата и горната десета.
-          Всички стъпала между тях са пресметнати, а не преброени, и таблицата казва кое кое е.
-          Затова числото показва приблизително къде сяда една заплата, а не точно: никой не е
-          обиколил всички работещи в София този месец.</span
+          >Изследването дава три числа за България: колко изкарват най-ниско платените 10%, колко
+          изкарва човекът точно по средата и колко - най-високо платените 10%. Всички стъпала между
+          тях са пресметнати, а не преброени, и таблицата казва кое кое е. Затова числото показва
+          приблизително къде се нарежда една заплата, а не точно: никой не е обиколил всички
+          работещи в София този месец.</span
         >
         <span class="l-en"
-          >The survey measures three points for Bulgaria — the bottom tenth, the middle and the top
-          tenth. Every rung between them is worked out rather than counted, and the table says which
-          is which. So the figure shows roughly where a salary sits, not exactly: nobody polled
-          every worker in Sofia this month.</span
+          >The survey gives three figures for Bulgaria: what the lowest-paid 10% earn, what the
+          person exactly in the middle earns, and what the highest-paid 10% earn. Every rung between
+          them is worked out rather than counted, and the table says which is which. So the figure
+          shows roughly where a salary sits, not exactly: nobody polled every worker in Sofia this
+          month.</span
         >
       </p>
     {/if}
@@ -725,18 +729,22 @@
           >Лихвата по нови кредити</b
         >
         е средното по договорите, подписани миналия месец — това е числото, с което се смята вноската.
-        <b>ГПР</b> е същите кредити с включени такси: то е за сравняване между оферти и никога не
-        влиза във формулата за вноската, защото анюитетът иска лихва, а не годишен разход.
-        <b>Лихвата по изплащаните кредити</b> е средното по целия портфейл, включително договори отпреди
-        години; то описва какво плащат хората сега, не какво би подписал новият кредитополучател.</span
+        <b>ГПР</b> е същите кредити, но с прибавени такси: то е за сравняване между оферти. С него
+        не се смята вноска — таксите се плащат отделно, а месечната вноска се дължи само на лихвата,
+        така че сметка с ГПР дава вноска, каквато никоя банка не събира.
+        <b>Лихвата по изплащаните кредити</b> е средното по всички кредити, които се изплащат в момента,
+        включително подписани преди години; то описва какво плащат хората сега, не какво би подписал новият
+        кредитополучател.</span
       >
       <span class="l-en"
         >Three numbers all go by "the mortgage rate" and they answer three different questions. The
         <b>rate on new loans</b> is the average across contracts signed last month — the one the
-        monthly payment is computed from. The <b>APRC</b> is those same loans with fees folded in:
-        it is for comparing offers and never enters the payment formula, because an annuity takes an
-        interest rate rather than an annual cost. The <b>rate on loans being repaid</b> averages the whole
-        book, vintages included; it describes what people are paying now, not what a new borrower would
+        monthly payment is computed from. The <b>APRC</b> is those same loans with the fees added
+        in: it is for comparing offers. It is not what a payment is computed from — the fees are
+        paid separately and the monthly payment is owed on the interest alone, so working it out
+        from the APRC gives an instalment no bank collects.
+        <b>The rate on loans being repaid</b> averages every loan currently being paid off, including
+        ones signed years ago; it describes what people are paying now, not what a new borrower would
         sign.</span
       >
     </p>
@@ -843,16 +851,16 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Няма официална машинно четима серия за цена на квадратен метър в България: Евростат
-        публикува индекс на промяната, не самата цена. Затова нивото идва от обявите — имот.bg
-        публикува средна цена на квадратен метър по квартали в София. Това са <b>искани</b> цени, не сключени
-        сделки, и разликата между най-евтиния и най-скъпия квартал е няколкократна.</span
+        >Никоя институция не публикува цената на квадратен метър в България. Евростат казва само с
+        колко се е променила — не и колко струва. Затова самата цена идва от обявите: имот.bg
+        публикува средна цена на квадратен метър по квартали в София. Това са <b>искани</b> цени, не цени
+        по сключени сделки, и между най-евтиния и най-скъпия квартал разликата е няколко пъти.</span
       >
       <span class="l-en"
-        >There is no official machine-readable €/m² series for Bulgaria: Eurostat publishes an index
-        of the change, not the price itself. So the level comes from listings — imot.bg publishes an
-        average €/m² per Sofia district. These are <b>asking</b> prices rather than closed sales, and
-        the cheapest district and the dearest are several times apart.</span
+        >No institution publishes the price of a square metre in Bulgaria. Eurostat says only how
+        much it has changed — not what it costs. So the price itself comes from listings: imot.bg
+        publishes an average €/m² per Sofia district. These are <b>asking</b> prices rather than prices
+        from closed sales, and the cheapest district and the dearest are several times apart.</span
       >
     </p>
 
@@ -903,16 +911,16 @@
         <span class="l-bg"
           >имот.bg публикува по едно число на квартал и нито едно за София като цяло. Медианата през
           {fmt0(calc.sofiaHome.nDistricts)} квартала и сравнението с {calc.sofiaHome.baselineYear} г.
-          са наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. Годините заплата
-          са цената, разделена на дванадесет средни нетни месечни заплати за София: сравнение на едно
-          цяло жилище с една цяла заплата, без спестявания, без лихва и без нищо друго в живота.</span
+          са наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. „Години заплата"
+          значи цената, разделена на дванадесет средни нетни заплати за София: сравнение на едно цяло
+          жилище с една цяла заплата, без спестявания, без лихва и без нищо друго в живота.</span
         >
         <span class="l-en"
           >imot.bg publishes one figure per district and none for Sofia as a whole. The median
           across
           {fmt0(calc.sofiaHome.nDistricts)} districts, and the comparison with {calc.sofiaHome
             .baselineYear}, are our arithmetic over their figures — which is why they are named here
-          rather than attributed to them. The years of pay are the price divided by twelve average
+          rather than attributed to them. "Years of pay" means the price divided by twelve average
           net Sofia monthly wages: a whole home against a whole salary, with no savings, no interest
           and nothing else in a life.</span
         >
