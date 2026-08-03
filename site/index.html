@@ -19,19 +19,29 @@
     <link rel="canonical" href="https://vyarno.bg/" />
 
     <!--
-    Share previews. Until 2026-07-25 there was no og:image, no og:url, no
-    canonical and no twitter:card, so every link posted to Viber, Messenger or
-    X — which is how things actually spread in Bulgaria — previewed as a blank
-    card. The share button has shipped since 2026-07-22, so this was live.
+    Share previews. The results card hands a reader a picture and a sentence
+    to send (share-card.js), so a link posted to Viber, Messenger or X — which
+    is how things spread in Bulgaria — has to unfurl into something. Without
+    og:image, og:url, canonical and twitter:card it unfurls into a blank box,
+    and the share surfaces are live.
 
     og:image is a static 1200×630 PNG baked into /public. It carries the
     wordmark and the strapline only: NO number, deliberately. Preview images
     are cached hard by every platform, and a stale inflation figure in a cached
-    card is our credibility, not theirs (docs/principles.md P4).
+    card is our credibility, not theirs (docs/principles.md P4). The card the
+    READER generates does carry their rate — it is drawn per share and cached
+    by nobody, which is the difference.
   -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Вярно · vyarno.bg" />
     <meta property="og:locale" content="bg_BG" />
+    <!--
+    The page serves both languages off one URL, so bg_BG is what it declares
+    and en_US is what it also answers in. An unfurler picking a locale it can
+    read is the whole of what this buys; it is not an hreflang pair and must
+    not be written up as one, because there is no second URL to point at.
+  -->
+    <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:url" content="https://vyarno.bg/" />
     <meta property="og:title" content="Вярно — сметни своята инфлация" />
     <meta
@@ -52,6 +62,44 @@
       content="Инфлацията ти, реалната ти заплата и пътят до жилище — за 30 секунди, без регистрация, от официални данни, изцяло в твоя браузър."
     />
     <meta name="twitter:image" content="https://vyarno.bg/og-image.png" />
+
+    <!--
+    Structured data, and the two things it deliberately does not say.
+
+    NOT a Dataset node. That would describe data/published/ as a dataset this
+    project publishes and offers for reuse, and two of the five upstreams make
+    that false — НСИ's licence forbids distributing производни и сборни
+    произведения outright. `license` below is scoped to the CODE for the same
+    reason the footer's licence line is: the figures are not ours to license
+    and no shipped document may say otherwise (docs/legal.md §"Our own
+    licence", and a test fails on copy that calls the data open).
+
+    NOT an aggregateRating, a ratingCount or an interactionCount. Nothing here
+    counts users or collects a rating, and a badge nothing measures is the one
+    kind of decoration docs/principles.md rules out by name.
+
+    A ld+json block is inert data rather than script, so `script-src 'self'`
+    in public/_headers does not reach it and no nonce is needed. Check that
+    with a real browser if this block ever grows, because the failure mode is
+    a console error on every page load rather than a red test.
+  -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Вярно",
+        "alternateName": "Vyarno",
+        "url": "https://vyarno.bg/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any browser",
+        "browserRequirements": "Requires JavaScript",
+        "inLanguage": ["bg", "en"],
+        "isAccessibleForFree": true,
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "codeRepository": "https://github.com/vyarno-bg/vyarno",
+        "description": "Личната ти инфлация, реалната ти заплата, данъкът, наемът и пътят до жилище — сметнато в браузъра ти от официални данни."
+      }
+    </script>
 
     <!-- SVG only: 592 bytes, scales to every slot, no rasterised set to keep
        in sync. Same geometry as the in-app wordmark in App.svelte. -->
