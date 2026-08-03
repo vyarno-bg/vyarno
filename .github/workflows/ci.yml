@@ -119,6 +119,15 @@ jobs:
           # `--require-hashes` guarantee the lock exists for is untouched.
           # Only the downloads are skipped, and the key changes the moment
           # `requirements-dev.txt` does.
+          #
+          # Measured, and it does not pay off HERE: restoring costs this job
+          # about as long as the download it saves, so setup-python plus
+          # install came out a few seconds worse than with no cache at all.
+          # It stays because the same two lines take the `windows` job from
+          # roughly thirty-six seconds to twenty-four, and that job is the
+          # run's critical path while this one finishes long before it. So the
+          # seconds lost here are not on anybody's clock and the seconds won
+          # there are. Do not "fix" this by measuring only the ubuntu job.
           cache: pip
           cache-dependency-path: pipeline/requirements-dev.txt
       - name: Install
