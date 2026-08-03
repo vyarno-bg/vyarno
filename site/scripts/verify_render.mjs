@@ -483,6 +483,35 @@ test(
   }
 );
 
+test(
+  "a served page's head carries one title, one description, one canonical",
+  { skip: needsBuild },
+  async () => {
+    // What a crawler that runs nothing reads. The prerender deliberately drops
+    // the component's `<svelte:head>` (`prerender.mjs`), so the head a crawler
+    // gets is the entry file's alone — which makes this the check on the entry
+    // files themselves, where a second description arrives by somebody adding
+    // one next to an og:description they were already editing. The runtime half
+    // of the same rule is a browser test further down, because `<svelte:head>`
+    // reaches the head only once the bundle runs.
+    for (const page of [["index.html"], ["how", "index.html"], ["legal", "index.html"]]) {
+      const html = await readFile(join(DIST, ...page), "utf8");
+      const where = page.join("/");
+      for (const [what, pattern] of [
+        ["<title>", /<title[\s>]/g],
+        ['<meta name="description">', /<meta[^>]+name="description"/g],
+        ['<link rel="canonical">', /<link[^>]+rel="canonical"/g],
+      ]) {
+        assert.equal(
+          (html.match(pattern) ?? []).length,
+          1,
+          `${where} does not carry exactly one ${what}, and a crawler reads the first`
+        );
+      }
+    }
+  }
+);
+
 test("the second page has no input on it at all", { skip: needsBuild }, async () => {
   // The whole basis for prerendering `/how/` in full is that nothing on it is
   // the reader's. An input would end that quietly: the page would still render,
@@ -845,6 +874,40 @@ test("the country page answers in the reader's language, both ways", { skip }, a
     assert.notEqual(en, bg, "the heading is the same string in both languages");
     assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
   }, "/how/");
+});
+
+test("mounting adds no second title or description to the head", { skip }, async () => {
+  // `<svelte:head>` APPENDS to the real head rather than replacing what the
+  // entry file put there, so a component that declares a `<meta
+  // name="description">` leaves the reader's page carrying two — and a crawler
+  // that DOES run the bundle takes the first, which is no longer the one
+  // somebody edited. `App.svelte` and `How.svelte` each carry a comment saying
+  // the description belongs in the entry file; this is the check behind it, and
+  // it needs a browser because the tag never exists until the bundle mounts.
+  for (const path of ["/", "/how/"]) {
+    await withApp(
+      async (page, errors) => {
+        const head = await page.evaluate(() => ({
+          titles: [...document.querySelectorAll("title")].map((el) => el.textContent),
+          descriptions: document.querySelectorAll('meta[name="description"]').length,
+          canonicals: document.querySelectorAll('link[rel="canonical"]').length,
+        }));
+        assert.equal(head.titles.length, 1, `${path} has titles: ${head.titles.join(" | ")}`);
+        assert.ok(head.titles[0]?.trim(), `${path} mounted an empty title`);
+        assert.equal(
+          head.descriptions,
+          1,
+          `${path} carries ${head.descriptions} descriptions once mounted — see ` +
+            "docs/seo.md §'Why not hydration'. The description belongs in the " +
+            "entry file, never in <svelte:head>."
+        );
+        assert.equal(head.canonicals, 1, `${path} carries ${head.canonicals} canonical links`);
+        assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+      },
+      path,
+      {}
+    );
+  }
 });
 
 test("the calculator asks in two places and neither interrupts", { skip }, async () => {

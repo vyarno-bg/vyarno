@@ -876,6 +876,61 @@ test("the app states its licence, scoped to the code, and claims nothing about t
   }
 });
 
+test("no entry's structured data licenses a page of somebody else's figures", () => {
+  // The scope check above, in the form a machine reads. `license` on a
+  // schema.org node states the terms of THAT node's content — so it belongs on
+  // the WebApplication, which is the code Apache-2.0 covers, and nowhere else.
+  // On a WebPage whose content is Eurostat's, the ЕЦБ's, БНБ's, НСИ's and
+  // имот.bg's figures it says those figures are ours to give away, which is the
+  // claim AGENTS.md forbids by name and NOTICE §2 spells out.
+  //
+  // Worse than the prose version rather than a tidier restatement of it: an
+  // agent citing this site parses the JSON-LD and never reads the footer, and
+  // /how/ is the entry written for that reader. A person would at least see
+  // «Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg» under the table.
+  //
+  // Nested nodes are walked, because moving the property one level down is both
+  // the fix and the way to reintroduce the bug while looking like the fix.
+  const CODE_TYPES = ["WebApplication", "SoftwareApplication", "SoftwareSourceCode"];
+  const entries = ["index.html", join("how", "index.html"), join("legal", "index.html")];
+
+  const offences = [];
+  const walk = (node, entry, type = "(root)") => {
+    if (Array.isArray(node)) return node.forEach((n) => walk(n, entry, type));
+    if (node === null || typeof node !== "object") return;
+    const here = typeof node["@type"] === "string" ? node["@type"] : type;
+    if ("license" in node && !CODE_TYPES.includes(here)) {
+      offences.push(`${entry}: "license" on a ${here} node`);
+    }
+    for (const [k, v] of Object.entries(node)) if (k !== "@type") walk(v, entry, here);
+  };
+
+  let blocks = 0;
+  for (const entry of entries) {
+    let html;
+    try {
+      html = read("", entry);
+    } catch {
+      continue; // an entry that does not exist is another test's business
+    }
+    for (const [, body] of html.matchAll(
+      /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g
+    )) {
+      blocks += 1;
+      walk(JSON.parse(body), entry);
+    }
+  }
+
+  assert.ok(blocks >= 2, `only ${blocks} JSON-LD blocks found — the entries lost their nodes`);
+  assert.deepEqual(
+    offences,
+    [],
+    `${offences.join("; ")}. Apache-2.0 covers OUR work. Put the licence on the ` +
+      "WebApplication that describes the code, and leave the page's terms to " +
+      "/legal/#sources, where each publisher's own wording is."
+  );
+});
+
 test("the footer credits every upstream the pipeline pulls from", () => {
   // Both halves are load-bearing and they fail differently:
   //
