@@ -33,17 +33,17 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { PRESETS } from "../src/lib/content.js";
 import { BG_CONTRIB_LINES } from "../src/lib/mirror.js";
 import { PAYLOAD_FILES } from "../src/lib/payloads.js";
+import { published } from "./published-payload.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, "..", "src");
-const DATA_DIR = join(HERE, "..", "..", "data", "published");
 const read = (...p) => readFileSync(join(SRC, ...p), "utf8");
 
 /**
@@ -113,12 +113,6 @@ const MATH_FRAGMENTS = [
   "P = L \u00d7 m \u00f7 (1 \u2212 (1 + m)", // the annuity
 ];
 const MIRROR = read("lib", "mirror.js");
-
-/** A published payload, or null when no refresh has been run in this checkout. */
-function published(name) {
-  const path = join(DATA_DIR, `${name}.json`);
-  return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
-}
 
 // ---------------------------------------------------------------------------
 // The basket follows the classification instead of freezing it

@@ -31,19 +31,10 @@ import { COPY } from "../src/lib/content.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
 import { SHARE_COPY_KEYS, SHARE_DOMAIN, SHARE_ORIGIN } from "../src/lib/view.js";
 import { shareCardText, SHARE_CARD_COPY_KEYS } from "../src/lib/share-card.js";
+import { published } from "./published-payload.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, "..", "src");
-const DATA_DIR = join(HERE, "..", "..", "data", "published");
-
-/** A published payload, or null when no refresh has been run in this checkout. */
-function published(name) {
-  try {
-    return JSON.parse(readFileSync(join(DATA_DIR, `${name}.json`), "utf8"));
-  } catch {
-    return null;
-  }
-}
 
 /** Every .svelte and .js source under src/, concatenated. */
 function readAllSources() {

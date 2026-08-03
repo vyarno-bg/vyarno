@@ -25,7 +25,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -48,17 +49,14 @@ import {
   bgNetSalary,
   BG_PAYROLL_DEFAULT,
 } from "../src/lib/mirror.js";
+import { published, PUBLISHED_DIR as PUBLISHED } from "./published-payload.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const PUBLISHED = join(HERE, "..", "..", "data", "published");
 
 /** The published filename stems, taken FROM the manifest rather than restated. */
 const PAYLOAD_STEMS = PAYLOADS.map((p) => p.file);
 
-const read = (name) => {
-  const p = join(PUBLISHED, `${name}.json`);
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf-8")) : null;
-};
+const read = published;
 
 // ---------------------------------------------------------------------------
 // The mortgage rate fallback chain (data.js#mortgageDefaultRate)
@@ -175,6 +173,33 @@ test("our prudent DSTI line stays stricter than the regulator's ceiling", () => 
 test("every payload the SPA loads exists in data/published", () => {
   for (const name of PAYLOAD_STEMS) {
     assert.ok(existsSync(join(PUBLISHED, `${name}.json`)), `${name}.json is missing`);
+  }
+});
+
+test("an unreadable payload fails the suite instead of emptying it", () => {
+  // Several suites open a payload behind a guard clause — `if (!headline)
+  // return;` — so whatever the reader answers for a file it cannot use decides
+  // whether the assertions below that line run at all. A reader that answers
+  // `null` to both "not there" and "not JSON" turns a corrupt payload into a
+  // green run of a suite that asserted nothing, and the suites that open
+  // payloads are the ones checking that no page has frozen a live figure into
+  // its prose. So the two answers have to stay distinguishable, and this is
+  // what notices when they stop being.
+  const dir = mkdtempSync(join(tmpdir(), "vyarno-payload-"));
+  try {
+    assert.equal(published("absent", dir), null, "a file that is not there is not a failure");
+
+    writeFileSync(join(dir, "corrupt.json"), "{ not json");
+    assert.throws(
+      () => published("corrupt", dir),
+      SyntaxError,
+      "a payload that will not parse must reach the suite as a failure"
+    );
+
+    writeFileSync(join(dir, "fine.json"), JSON.stringify({ as_of: "2026-01-01" }));
+    assert.deepEqual(published("fine", dir), { as_of: "2026-01-01" });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 

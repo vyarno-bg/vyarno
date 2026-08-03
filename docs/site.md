@@ -55,6 +55,7 @@ site/
 │   ├── gen-version.mjs        # dist/version.json — commit + build time + as_of
 │   ├── strip-sourcemaps.mjs   # moves maps OUT of dist/; fails if source survives
 │   ├── check-identity.mjs     # release guard on the ЗЕТ чл. 4 identity
+│   ├── published-payload.mjs  # the suites' reader for data/published/*.json
 │   ├── verify_net_salary.mjs      # gross ↔ net payroll pair
 │   ├── verify_mirror_math.mjs     # every formula in mirror.js
 │   ├── verify_view.mjs            # every derived value in view.js ← the wiring
