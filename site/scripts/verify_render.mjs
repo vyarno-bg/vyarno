@@ -194,6 +194,30 @@ test("the built page bakes in no figure a payload decides", { skip: needsBuild }
   );
 });
 
+test("every post-build step left the file it exists to write", { skip: needsBuild }, async () => {
+  // A post-build step that does nothing exits 0, and `npm run build` reports
+  // success — so the only thing that can catch one is reading `dist/`
+  // afterwards. The shape it takes is a run-directly guard that stops matching:
+  // `` `file://${process.argv[1]}` `` is not a URL on Windows, where Node hands
+  // argv[1] a native `D:\a\...` path, so the step is skipped on one platform
+  // and nowhere else. Both generators use `pathToFileURL` for that reason.
+  //
+  // Named files rather than a count, because the failure is one step going
+  // quiet while the rest still run.
+  for (const [what, file, mustContain] of [
+    ["the sitemap", "sitemap.xml", "<loc>https://vyarno.bg/</loc>"],
+    ["the build stamp", "version.json", '"commit"'],
+    ["the published payloads", join("data", "published", "hicp_headline.json"), '"as_of"'],
+  ]) {
+    const body = await readFile(join(DIST, file), "utf8").catch(() => null);
+    assert.ok(body !== null, `${what} is not in dist/ — the step that writes it did not run`);
+    assert.ok(
+      body.includes(mustContain),
+      `${what} is in dist/ but does not carry ${mustContain}, so the step ran and wrote nothing useful`
+    );
+  }
+});
+
 test("the built page mounts over the shell rather than beside it", { skip }, async () => {
   await withApp(async (page, errors) => {
     // One of each landmark. `mount()` appends, so a build that stopped

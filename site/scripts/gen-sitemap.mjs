@@ -22,7 +22,7 @@
  * `lastmod` costs a crawler nothing next to a false one.
  */
 import { readFile, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve, join } from "node:path";
 
 import { PAYLOAD_FILES } from "../src/lib/payloads.js";
@@ -85,7 +85,15 @@ export function sitemapXml(pages) {
 }
 
 // --- The build step itself. Skipped when imported by the test. --------------
-if (import.meta.url === `file://${process.argv[1]}`) {
+//
+// `pathToFileURL`, never `` `file://${process.argv[1]}` ``. Node hands argv[1]
+// an absolute native path, and on Windows that is `D:\a\...` — concatenating
+// it produces `file://D:\a\...` against an `import.meta.url` of
+// `file:///D:/a/...`, so the guard is false and the step silently does nothing
+// while the build reports success. That is the one failure mode a post-build
+// step must not have, and it is invisible to every suite that does not read
+// the artefact afterwards.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   // The manifest, not a directory listing: `lastmod` follows the payloads the
   // page actually serves, so a published file with no figure on the page cannot
   // date it.
