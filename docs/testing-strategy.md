@@ -206,7 +206,7 @@ dependency and now has a job.
 
 Component tests in isolation are the argument that would change this answer.
 They are not needed today: the state lives in `$lib/calculator.svelte.js` and
-the markup in nineteen components, and a mechanical extraction is provable by
+the markup in the components beside it, and a mechanical extraction is provable by
 capturing the built page across interaction states and diffing the rendered
 markup. If the argument comes back it will be for a new reason, and that reason
 belongs here.
