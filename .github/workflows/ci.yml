@@ -344,8 +344,31 @@ jobs:
             exit 0
           }
           fail=0
-          while IFS='|' read -r sha name email; do
-            [ -n "$sha" ] || continue
+          # NUL-delimited, because an author's name is free text and a
+          # printable separator is a field the name can contain. Splitting on
+          # `|` gave the last variable everything after the second one, so
+          # `|Claude <real.person@example.com>` read as an EMPTY name and an
+          # email of `Claude|real.person@example.com` — a person refused as "a
+          # placeholder identity", shown a name and an address that are not
+          # theirs and no way to work out which. That is the barrier the
+          # denylist below exists to avoid, arriving by a different route.
+          #
+          # It never let an agent through: the email cases match as substrings
+          # and survive the shift, and the names on the list contain no
+          # separator to split on. So this buys a correct diagnostic rather
+          # than a closed hole.
+          #
+          # `git log -z` terminates each commit with NUL instead of a newline,
+          # so with `%x00` between the fields every record is exactly three
+          # NUL-delimited reads and nothing carries a stray newline. The three
+          # reads are chained with `&&`, which also ends the loop cleanly at
+          # end of input; a separate emptiness guard would be answering a
+          # question the chain has already answered.
+          #
+          # A control character is not an alternative here: git preserves
+          # \x01 and \x1f in an ident and strips only what would break the
+          # commit object. NUL is the one byte that cannot appear.
+          while IFS= read -r -d '' sha && IFS= read -r -d '' name && IFS= read -r -d '' email; do
             reason=""
             # Emails match as substrings — an agent's address is distinctive
             # enough that no person shares one.
@@ -365,7 +388,7 @@ jobs:
             [ -n "$reason" ] || continue
             echo "::error::$sha is authored by $reason: $name <$email>"
             fail=1
-          done < <(git log --format='%H|%an|%ae' "$BASELINE..HEAD")
+          done < <(git log -z --format='%H%x00%an%x00%ae' "$BASELINE..HEAD")
           if [ "$fail" -ne 0 ]; then
             echo "::error::Set your own name and email before committing. In a cloud"
             echo "::error::agent session that means GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL,"
