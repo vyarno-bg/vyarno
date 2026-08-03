@@ -27,9 +27,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Every job below carries a `timeout-minutes`, and the reasoning is the same
+  # for all five so it is written once here.
+  #
+  # GitHub's default is 360 minutes. The failure that default is wrong for is
+  # not a slow job, it is a HUNG one — a browser that never reaches its first
+  # paint, a pip resolution sitting on an unresponsive mirror, a prompt waiting
+  # on a tty that will never arrive. None of those fails; they wait. Six hours
+  # later the run reports a timeout that names no step, and the branch has been
+  # unmergeable all day for a reason nobody can read off the log.
+  #
+  # Each limit is several times that job's measured wall clock, so a slow
+  # runner or a cold cache still passes and only a hang trips it. Raise one
+  # when the work it covers genuinely grows; the number is headroom, not a
+  # performance budget, and shaving it to fit today's timing turns an
+  # infrastructure hiccup into a red branch.
   pipeline:
     name: pipeline · ruff + pytest
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -68,6 +84,9 @@ jobs:
   site:
     name: site · lint + types + math + contracts + build
     runs-on: ubuntu-latest
+    # Longer than the others on this platform: it drives a browser, which is
+    # the step here that can wait forever rather than fail.
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -114,6 +133,9 @@ jobs:
   windows:
     name: windows · both toolchains install and both suites run
     runs-on: windows-latest
+    # The longest job in the run, and the one with the most to hang on: it
+    # installs both toolchains and drives a browser, on the slower runner.
+    timeout-minutes: 20
     # Every other job is ubuntu-latest, which is the right default: it is what
     # the site is built and served on. The cost of it being the ONLY platform is
     # that nothing POSIX-shaped is ever contradicted, and six things had
@@ -206,6 +228,9 @@ jobs:
   authorship:
     name: authorship · every commit is signed by a person
     runs-on: ubuntu-latest
+    # A full-history clone and one `git log` walk. The only thing here that
+    # can take minutes is the fetch.
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -275,6 +300,8 @@ jobs:
   data:
     name: data · published JSON is committed and parses
     runs-on: ubuntu-latest
+    # No install step at all — a checkout, then bare node and system python3.
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Every payload the SPA loads is present and valid JSON
