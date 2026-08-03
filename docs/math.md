@@ -174,7 +174,8 @@ correct data; the precise check is gate 2, which catches strictly more.
 
 **The UI shows both numbers and says why.** The results card puts the user's
 basket next to the average basket (Σ(w·r) at official weights); the national
-strip shows Eurostat's headline. Two shapes keep that honest:
+strip shows Eurostat's headline, and `/how/` §инфлацията prints the two side by
+side. Three shapes keep that honest:
 
 - The sliders are seeded with the **exact** published `weight_pct`
   (`view.js#officialBasketWeights`), never rounded — rounding makes the default
@@ -182,6 +183,15 @@ strip shows Eurostat's headline. Two shapes keep that honest:
 - The strip headline comes from `view.js#headlineRate`, which takes only
   `hicp_headline.json`, so it cannot be handed the categories and quietly
   become Σ(w·r).
+- **The prose that explains the gap branches on the two months**
+  (`view.js#monthsSplit`), because the 0.156 pp above is a SAME-MONTH figure.
+  During Eurostat's flash the headline is a month ahead of every division and
+  the two on screen are several times further apart — 1.26 pp at 2026-07
+  against 2026-06 — with almost all of the extra being the fortnight. Copy that
+  names the re-weighting either way is true and is not the reason for what a
+  reader is looking at, in the one paragraph they opened to check. Both surfaces
+  call the same function rather than each comparing the two strings, so a
+  correction cannot land on one and miss the other.
 
 ## Worked example (current `data/published/`)
 

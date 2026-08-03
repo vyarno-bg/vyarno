@@ -32,7 +32,7 @@
   import SiteFooter from "./lib/SiteFooter.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
-  import { QUARTERS } from "./lib/view.js";
+  import { QUARTERS, monthsSplit as monthsAreSplit } from "./lib/view.js";
   import { number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
 
   /**
@@ -53,6 +53,14 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  // Whether Eurostat's flash has the all-items rate a month ahead of the
+  // divisions. §инфлацията prints both figures and then explains the gap
+  // between them, and which explanation is TRUE depends on this — see
+  // `view.js#monthsSplit`, which the calculator's explainer branches on too.
+  const monthsSplit = $derived(
+    monthsAreSplit({ headlineMonth: calc.headlineRefPeriod, basketMonth: calc.basketRefPeriod })
+  );
 
   // Dates and periods come out as a `{bg, en}` PAIR, not as one string picked
   // by `$lang`, and that is the difference between a page a crawler can read
@@ -263,22 +271,44 @@
       {/if}
     </div>
 
+    <!-- The two figures sit side by side, so the paragraph under them has to
+         account for the whole of what a reader can see — and how much of the gap
+         the January re-weighting explains depends on whether the two describe
+         the same month. During Eurostat's flash they do not, and then most of
+         the difference on screen is the fortnight rather than the method: on the
+         payloads as this is written the two are 1.26 pp apart where a same-month
+         pair is ~0.16 pp. So the cause is named before the method that would
+         otherwise be made to carry it, exactly as `ExplainerBand.svelte` does
+         over the same two months. Both cards already state their own period;
+         this is the prose over them catching up. -->
     <p>
       <span class="l-bg"
-        >Двете числа горе са и двете официални, и двете идват от Евростат — а не съвпадат точно.
-        Разликата е от метода, не е грешка. Числото за всички стоки и услуги не е сбор на 13-те
-        групи с тазгодишните тегла: <b>всеки януари теглата се сменят</b>, защото хората харчат
-        малко по-различно от миналата година, и новата кошница се свързва със старата в края на
-        декември. Прозорецът от дванадесет месеца минава през тази смяна, а простият сбор — не.
-        Затова показваме и двете, вместо да представим едното за другото.</span
+        >Двете числа горе са и двете официални, и двете идват от Евростат — а не съвпадат точно, и
+        нито едното не е грешка. {monthsSplit
+          ? t(COPY.explainSplitMonth, "bg", {
+              headline: periodLong(calc.headlineRefPeriod, "bg"),
+              basket: periodLong(calc.basketRefPeriod, "bg"),
+            })
+          : COPY.explainSameMonth.bg} Разликата, която остава, е от метода: числото за всички стоки и
+        услуги не е сбор на 13-те групи с тазгодишните тегла —
+        <b>всеки януари теглата се сменят</b>, защото хората харчат малко по-различно от миналата
+        година, и новата кошница се свързва със старата в края на декември. Прозорецът от дванадесет
+        месеца минава през тази смяна, а простият сбор — не. Затова показваме и двете, вместо да
+        представим едното за другото.</span
       >
       <span class="l-en"
-        >Both figures above are official and both come from Eurostat — and they do not match
-        exactly. The difference is the method rather than a mistake. The all-items number is not the
-        13 groups summed at this year's weights: <b>the weights change every January</b>, because
-        people spend a little differently than last year, and the new basket is linked to the old
-        one at the end of December. A twelve-month window runs through that changeover and a plain
-        weighted sum does not. So both are shown rather than one being passed off as the other.</span
+        >Both figures above are official, both come from Eurostat, and they do not match exactly —
+        neither is a mistake. {monthsSplit
+          ? t(COPY.explainSplitMonth, "en", {
+              headline: periodLong(calc.headlineRefPeriod, "en"),
+              basket: periodLong(calc.basketRefPeriod, "en"),
+            })
+          : COPY.explainSameMonth.en} The difference that is left is the method: the all-items number
+        is not the 13 groups summed at this year's weights —
+        <b>the weights change every January</b>, because people spend a little differently than last
+        year, and the new basket is linked to the old one at the end of December. A twelve-month
+        window runs through that changeover and a plain weighted sum does not. So both are shown
+        rather than one being passed off as the other.</span
       >
     </p>
     <p>

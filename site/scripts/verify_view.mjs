@@ -30,6 +30,7 @@ import {
   payloadStatus,
   STALE_AFTER_DAYS,
   headlineRate,
+  monthsSplit,
   pctAhead,
   savingsSince2020,
   housingCarveOut,
@@ -372,6 +373,37 @@ test("the strip headline is NOT the sum of the divisions — they differ by the 
     return;
   }
   assert.ok(Math.abs(basketSum - official) <= 0.5, "…but it must stay inside the sanity band");
+});
+
+test("monthsSplit answers only when it has both months", () => {
+  assert.equal(monthsSplit({ headlineMonth: "2026-07", basketMonth: "2026-06" }), true);
+  assert.equal(monthsSplit({ headlineMonth: "2026-06", basketMonth: "2026-06" }), false);
+  // A payload that did not load leaves one side empty, and "" !== "2026-06" is
+  // true — which would put the split sentence, naming a month the page cannot
+  // print, in front of a reader whose page is missing half its figures.
+  assert.equal(monthsSplit({ headlineMonth: "", basketMonth: "2026-06" }), false);
+  assert.equal(monthsSplit({ headlineMonth: "2026-07", basketMonth: "" }), false);
+  assert.equal(monthsSplit({ headlineMonth: "", basketMonth: "" }), false);
+});
+
+test("the two surfaces that explain the gap agree about which months they have", () => {
+  // The pages print the same pair of published months and draw the same
+  // conclusion from them, so the comparison lives in one function. Two copies
+  // of `a !== b` is how one of them ends up saying "both are for the same
+  // latest month" during a flash while the other names two.
+  const head = read("hicp_headline");
+  const cats = read("hicp_categories");
+  if (!head || !cats) return;
+  const live = monthsSplit({
+    headlineMonth: String(head.ref_period ?? ""),
+    basketMonth: String(cats.categories?.[0]?.ref_period ?? ""),
+  });
+  assert.equal(
+    live,
+    head.ref_period !== cats.categories[0].ref_period,
+    "monthsSplit disagrees with the published payloads about whether the " +
+      "headline and the divisions describe one month"
+  );
 });
 
 // ---------------------------------------------------------------------------

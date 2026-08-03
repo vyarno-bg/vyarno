@@ -182,6 +182,17 @@ Three properties hold it in place, and each has a test:
   into a string. `verify_copy.mjs` §"no page writes a live figure into its
   prose" checks it against the currently published values.
 
+**A claim ABOUT a prerendered figure has to follow the payload too**, and that
+is the rule's second half rather than a separate one. §инфлацията prints
+Eurostat's headline beside Σ(w·r) over the divisions and explains the gap; which
+explanation is true depends on whether the two payloads describe one month, and
+during Eurostat's flash they do not (`math.md` §"Two reconciliations"). Static
+prose over a payload-decided figure is a figure the build froze in a form no
+refresh can correct — the failure the rule refuses everywhere else, wearing
+sentences instead of digits. So the paragraph branches on `view.js#monthsSplit`,
+which the calculator's explainer already did, and the served HTML is checked
+against the months the same `dist/` shipped.
+
 The one route to it from the calculator is inside the explainer's «Как работи
 това?» — a reader who opened that is already asking where the numbers come from.
 One link, because a second to the same page is navigation noise.
