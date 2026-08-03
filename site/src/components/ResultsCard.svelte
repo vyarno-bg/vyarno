@@ -87,6 +87,7 @@
     divisionSharePct={calc.divisionSharePct}
     rateForDivision={calc.rateForDivision}
     downPayPct={calc.downPayPct}
+    nDistricts={calc.sofiaHome.nDistricts}
     cashEroded={calc.cashEroded}
     estatCatUrl={calc.estatCatUrl}
   />

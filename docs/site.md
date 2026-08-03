@@ -607,6 +607,16 @@ the user to a different number than the one on their screen. Each row's tooltip
 carries `eurostat_label`, Eurostat's own wording for the code, so our
 plain-language name is checkable rather than authoritative.
 
+**The tooltip is where it goes, and not the row.** Rendered under the name, the
+label puts «Housing, water, electricity, gas and other fuels» beneath «Ток,
+вода, парно, наеми» for a reader who chose Bulgarian — four lines of a language
+they did not ask for, thirteen times over, in the column a 360px phone has least
+room for. It belongs on the verify link because that is the row that goes to
+Eurostat, and the label is the claim about what the bucket officially is rather
+than decoration on our translation. `verify_render.mjs` §"a Bulgarian reader's
+basket table is in Bulgarian only" holds both halves — no Latin script in the
+visible name, and the official wording still on the link.
+
 **The pipeline drives all of it.** No count, no name, no rate and no sub-group
 is written into the SPA — the front end renders `hicp_categories.json`. If
 Eurostat reclassifies, the pipeline republishes and the UI follows.

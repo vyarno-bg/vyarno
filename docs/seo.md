@@ -201,8 +201,18 @@ four hold no link to tab to. What says a table scrolls is the column clipped at
 the boundary and the focus ring — the conventional edge shadow is in `How.svelte`
 as a comment saying why it is not in the stylesheet.
 
-The one route to it from the calculator is inside the explainer's «Как работи
-това?» — a reader who opened that is already asking where the numbers come from.
+**Three routes in, and the count is the point.** The one inside the explainer's
+«Как работи това?» reaches a reader who opened a disclosure at the foot of the
+calculator — someone who has already decided the numbers are worth checking, and
+the smallest audience the page has. A page answering "where does this come from"
+is wanted BEFORE that decision, so the header carries a pill to it (`SiteHeader`,
+beside the theme and language buttons, where `/how/`, `/legal/` and `/support/`
+each already put their own one link) and the footer carries a line to it on every
+page. The footer link sits OUTSIDE `nav.legal-links`: that landmark is labelled
+"legal" and holds what discharges ЗЕТ чл. 4, which a page of published figures is
+not. `/how/` does not link to itself, the rule the four document links follow.
+`verify_render.mjs` §"the country page is reachable without opening anything" and
+§"every page carries a route to the country page, except itself" hold all of it.
 One link, because a second to the same page is navigation noise.
 
 ## What is deliberately not done

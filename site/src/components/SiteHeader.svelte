@@ -44,6 +44,19 @@
       </span>
     </a>
     <div class="controls">
+      <!-- The route to `/how/`, and it is a pill in `.controls` because that is
+           where every other page already puts its one navigation link — `/how/`,
+           `/legal/` and `/support/` each carry «← към калкулатора» in this
+           slot. The calculator is the only page that had nothing pointing out
+           of it.
+
+           It is a link among two buttons on purpose: `.pill` is this bar's
+           vocabulary for "a control up here", and giving navigation its own
+           treatment would add a second one for a bar with three items in it. -->
+      <a class="pill nav" href="/how/">
+        <span class="l-bg">{COPY.howNavK.bg}</span>
+        <span class="l-en">{COPY.howNavK.en}</span>
+      </a>
       <button class="pill" onclick={toggleTheme} aria-label={t(COPY.themeToggle, $lang)}>
         {$theme === "dark" ? "☀" : "☾"}
       </button>
@@ -111,6 +124,25 @@
   }
   .pill:hover {
     border-color: var(--muted);
+  }
+  /* The link pill carries text where the other two carry a glyph, so it needs
+     the anchor reset the buttons do not: no underline, and the bar's own ink
+     rather than the link colour, which in this app means «your number is the
+     good one» and says nothing about navigation. */
+  .pill.nav {
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  /* Under 400px the tagline is what has to give. Three controls plus the
+     wordmark plus «икономиката, честно» do not fit a 360px bar: measured, the
+     tagline wraps to two lines inside a bar fixed at 54px, so it is the brand
+     promise rendered as a layout fault. The wordmark still says whose page this
+     is, the `<h1>` under it says what the page does, and a route to where the
+     numbers come from is worth more on a phone than a subtitle is. */
+  @media (max-width: 399px) {
+    .brand small {
+      display: none;
+    }
   }
   /* Skip link for accessibility */
   .skip {

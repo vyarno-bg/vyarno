@@ -1128,6 +1128,15 @@ const HOW = blankComments(readFileSync(join(SRC, "How.svelte"), "utf-8")).replac
 /** The `{bg, en}` COPY keys the page owns. */
 const HOW_KEYS = Object.keys(COPY).filter((k) => k.startsWith("how"));
 
+/** The other two surfaces that carry prose around a published figure. */
+const DRAWER = blankComments(
+  readFileSync(join(SRC, "components", "MethodDrawer.svelte"), "utf-8")
+).replace(/\s+/g, " ");
+const COPY_SRC = blankComments(readFileSync(join(SRC, "lib", "content.js"), "utf-8")).replace(
+  /\s+/g,
+  " "
+);
+
 test("every string the country page owns ships bilingual, in the right alphabet", () => {
   assert.ok(
     HOW_KEYS.length > 10,
@@ -1176,6 +1185,85 @@ test("no page writes a live figure into its prose", () => {
           "refresh moves it. Render the figure beside the prose instead."
       );
     }
+  }
+});
+
+test("the staleness banner has a sentence for the count it is about to print", () => {
+  // One late payload out of eight is the commonest way this banner fires, and
+  // the plural sentence does not survive it in either language: «1 от числата
+  // СА закъснели» needs the participle in the singular, and "1 of the figures
+  // are overdue" needs "is". So the singular is its own string rather than the
+  // plural with a number substituted, and neither may carry the other's verb.
+  const [oneBg, oneEn] = pair("dataStaleOne");
+  const [manyBg, manyEn] = pair("dataStale");
+
+  assert.ok(!oneBg.includes("{n}"), "the singular staleness line still interpolates a count");
+  assert.ok(!oneEn.includes("{n}"), "the English singular staleness line still counts");
+  assert.ok(manyBg.includes("{n}") && manyEn.includes("{n}"), "the plural line lost its count");
+
+  assert.match(oneBg, /закъсняло/, "the Bulgarian singular does not agree with one figure");
+  assert.match(manyBg, /закъснели/, "the Bulgarian plural does not agree with several");
+  assert.match(oneEn, /\bis\b/, "the English singular says «are» about one figure");
+  assert.match(manyEn, /\bare\b/, "the English plural says «is» about several");
+
+  // And the banner has to choose between them, or the pair is decoration.
+  const banner = readFileSync(join(SRC, "components", "DataBanner.svelte"), "utf8");
+  assert.match(
+    banner.replace(/\s+/g, " "),
+    /dataOverdueCount === 1 \? COPY\.dataStaleOne : COPY\.dataStale/,
+    "DataBanner renders one staleness sentence for every count"
+  );
+});
+
+test("no prose freezes a date or a count the payloads already carry", () => {
+  // The sibling of the rule above, and the one that survives longer before
+  // anybody notices. A frozen RATE is caught by the figure beside it moving; a
+  // frozen date or count just keeps being asserted — «медианата на 143-те
+  // софийски квартала» after имот.bg merges two of them, «изследване на
+  // Евростат от 2022 г.» after the four-yearly survey publishes its next round,
+  // «Вярно 2026» for the whole of 2027. Each of the three was true when typed
+  // and each is a claim the payload beside it contradicts.
+  //
+  // Checked against the CURRENTLY published values, like the live-figure rule:
+  // a worked example that happens to contain a year («индексът в края на
+  // 2020 г. е 115») carries no freshness claim and is what makes the
+  // explanation readable.
+  const price = published("sofia_price");
+  const dist = published("salary_dist");
+
+  const frozen = [
+    [
+      "the имот.bg district count",
+      String(price?.n_districts ?? ""),
+      [
+        ["How.svelte", HOW],
+        ["MethodDrawer.svelte", DRAWER],
+      ],
+    ],
+    ["the SES survey year", String(dist?.shape?.ref_year ?? ""), [["content.js", COPY_SRC]]],
+  ];
+  for (const [what, literal, sources] of frozen) {
+    if (!literal) continue;
+    for (const [name, src] of sources) {
+      assert.ok(
+        !src.includes(literal),
+        `${name} writes ${literal} into its markup — that is ${what} as ` +
+          "published today, and the sentence will keep asserting it after the " +
+          "next refresh moves it. Read it off the payload instead."
+      );
+    }
+  }
+
+  // The footer's year is the third case and it has no payload to compare
+  // against — it is the reader's own clock, so the check is that the slot is
+  // there and no year was typed beside it.
+  for (const lang of ["bg", "en"]) {
+    const line = COPY.footerNote[lang];
+    assert.ok(line.includes("{year}"), `the ${lang} attribution line has no {year} slot`);
+    assert.ok(
+      !/\b(19|20)\d{2}\b/.test(line.replace("Apache-2.0", "")),
+      `the ${lang} attribution line writes a year into the copy: ${line}`
+    );
   }
 });
 

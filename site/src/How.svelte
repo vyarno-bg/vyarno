@@ -244,18 +244,18 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Официалната инфлация е едно число за цялата страна: колко са поскъпнали всички стоки и
-        услуги за последните дванадесет месеца, претеглени по това как харчи средният човек. Цените
-        ги събира НСИ всеки месец, Евростат ги сглобява по единните европейски правила и публикува
-        резултата, а Вярно го взима дословно — не го пресмята наново, за да не се разминава с
-        публикуваното.</span
+        >Официалната инфлация е едно число за цялата страна: с колко са по-скъпи нещата днес спрямо
+        преди година. Не всичко тежи еднакво — храната поскъпва по-осезаемо от учебниците, защото за
+        нея отиват повече пари. Цените ги събира НСИ всеки месец, Евростат ги сглобява по единните
+        европейски правила и публикува резултата, а Вярно го взима дословно — не го пресмята наново,
+        за да не се разминава с публикуваното.</span
       >
       <span class="l-en"
-        >Official inflation is one number for the whole country: how much everything cost over the
-        last twelve months against the twelve before it, weighted by how the average person spends.
-        NSI collects the prices every month, Eurostat assembles them under one common European
-        method and publishes the result, and Vyarno takes it verbatim — never recomputed, so it
-        cannot drift from what is published.</span
+        >Official inflation is one number for the whole country: how much dearer things are today
+        than a year ago. Not everything counts the same — food moves the figure more than textbooks
+        do, because more money goes to it. NSI collects the prices every month, Eurostat assembles
+        them under one common European method and publishes the result, and Vyarno takes it verbatim
+        — never recomputed, so it cannot drift from what is published.</span
       >
     </p>
 
@@ -289,42 +289,54 @@
          pair is ~0.16 pp. So the cause is named before the method that would
          otherwise be made to carry it, exactly as `ExplainerBand.svelte` does
          over the same two months. Both cards already state their own period;
-         this is the prose over them catching up. -->
+         this is the prose over them catching up.
+
+         WRITTEN FOR SOMEBODY WHO HAS NEVER MET A PRICE INDEX. The earlier
+         version explained the gap in the vocabulary of the method — «сбор на
+         13-те групи с тазгодишните тегла», «прозорецът от дванадесет месеца
+         минава през тази смяна» — and every one of those phrases needs the
+         answer before it can be read. This is the paragraph a doubting reader
+         opens FIRST, on the page that exists to remove doubt, so it says which
+         number is which, then what changes in January, in the words somebody
+         uses about their own shopping. The two figures are unchanged and so is
+         the reason for the gap; what went is the requirement to already know. -->
     <p>
       <span class="l-bg"
-        >Двете числа горе са и двете официални, и двете идват от Евростат — а не съвпадат точно, и
-        нито едното не е грешка. {monthsSplit
+        >Двете числа горе идват от Евростат и са еднакво официални. Не са едно и също нещо: горното
+        е инфлацията за цялата страна, точно както Евростат я публикува, а долното е нашият сбор от
+        13-те групи — всяка умножена по това каква част от парите отива за нея. {monthsSplit
           ? t(COPY.explainSplitMonth, "bg", {
               headline: periodLong(calc.headlineRefPeriod, "bg"),
               basket: periodLong(calc.basketRefPeriod, "bg"),
             })
-          : COPY.explainSameMonth.bg} Разликата, която остава, е от метода: числото за всички стоки и
-        услуги не е сбор на 13-те групи с тазгодишните тегла —
-        <b>всеки януари теглата се сменят</b>, защото хората харчат малко по-различно от миналата
-        година, и новата кошница се свързва със старата в края на декември. Прозорецът от дванадесет
-        месеца минава през тази смяна, а простият сбор — не. Затова показваме и двете, вместо да
-        представим едното за другото.</span
+          : COPY.explainSameMonth.bg} Остава още една разлика, и тя е от смятането.
+        <b>Всеки януари Евростат обновява кошницата</b>, защото хората харчат малко по-различно от
+        предната година. Числото за последните дванадесет месеца минава през тази смяна и хваща и
+        двете кошници - старата и новата; нашият сбор ползва само днешната. Затова двете се
+        разминават съвсем малко. Показваме и двете, вместо да представим едното за другото.</span
       >
       <span class="l-en"
-        >Both figures above are official, both come from Eurostat, and they do not match exactly —
-        neither is a mistake. {monthsSplit
+        >Both figures above come from Eurostat and both are equally official. They are not the same
+        thing: the first is inflation for the whole country exactly as Eurostat publishes it, and
+        the second is our own sum of the 13 groups — each multiplied by the share of the money that
+        goes to it. {monthsSplit
           ? t(COPY.explainSplitMonth, "en", {
               headline: periodLong(calc.headlineRefPeriod, "en"),
               basket: periodLong(calc.basketRefPeriod, "en"),
             })
-          : COPY.explainSameMonth.en} The difference that is left is the method: the all-items number
-        is not the 13 groups summed at this year's weights —
-        <b>the weights change every January</b>, because people spend a little differently than last
-        year, and the new basket is linked to the old one at the end of December. A twelve-month
-        window runs through that changeover and a plain weighted sum does not. So both are shown
-        rather than one being passed off as the other.</span
+          : COPY.explainSameMonth.en} One difference is still left, and it comes from the arithmetic.
+        <b>Every January Eurostat refreshes the basket</b>, because people spend a little
+        differently than the year before. The figure for the last twelve months runs through that
+        changeover and catches both baskets - the old one and the new; our sum uses only today's.
+        That is why the two come out slightly apart. Both are shown rather than one being passed off
+        as the other.</span
       >
     </p>
     <p>
       <span class="l-bg"
         >Твоята инфлация е същата сметка с твоите дялове. Ако храната е една трета от парите ти, а в
         националната кошница е една пета, поскъпването на храната тежи повече при теб. Кошницата се
-        описва в калкулатора и сметката става изцяло в браузъра ти.</span
+        описва в калкулатора и сметката се случва изцяло в браузъра ти.</span
       >
       <span class="l-en"
         >Your own inflation is that same sum with your shares in it. If food is a third of your
@@ -1027,7 +1039,7 @@
   </p>
 </main>
 
-<SiteFooter />
+<SiteFooter page="how" />
 
 <style>
   /* The legal and support pages' chrome, and deliberately the same one: three

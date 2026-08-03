@@ -44,6 +44,16 @@
   } = $props();
 
   const fmtDate = (value) => dateShort(value, $lang);
+
+  /**
+   * The plural or the singular sentence, chosen by the count.
+   *
+   * One late payload out of eight is the commonest shape of this banner, and
+   * both languages break on it — Bulgarian needs the participle to agree in the
+   * singular, English needs "is". Picked here rather than inside the string
+   * because neither language builds the singular by editing the plural.
+   */
+  const staleCopy = $derived(dataOverdueCount === 1 ? COPY.dataStaleOne : COPY.dataStale);
 </script>
 
 <!-- As-of data banner -->
@@ -102,11 +112,11 @@
     <div class="wrap mono">
       ⚠
       <span class="l-bg"
-        >{t(COPY.dataStale, "bg", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
+        >{t(staleCopy, "bg", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
         {t(COPY.dataStaleHint, "bg")}</span
       >
       <span class="l-en"
-        >{t(COPY.dataStale, "en", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
+        >{t(staleCopy, "en", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
         {t(COPY.dataStaleHint, "en")}</span
       >
     </div>

@@ -208,7 +208,7 @@ export const COPY = {
   // conclude we are wrong — they will get a smaller number, and it will be the
   // wrong one.
   householdSeparate: {
-    bg: "Всяка заплата се осигурява поотделно, до свой таван - затова сборът от брутните заплати не е това, което един човек би получавал за същото нето.",
+    bg: "Всяка заплата се осигурява поотделно, до собствения си таван - затова сборът от брутните заплати не е това, което един човек би получавал за същото нето.",
     en: "Each wage is insured separately, up to its own ceiling - so the sum of the gross salaries is not what a single person would be paid for the same take-home.",
   },
   earnerPayslipHead: { bg: "Доход {n} · {s} € нето", en: "Income {n} · {s} € net" },
@@ -815,9 +815,16 @@ export const COPY = {
   // statistical dispersion, for the same reason «нагласяваме» is out of bounds
   // below: this is the one card whose job is admitting how the number is made,
   // and it fails if the admission needs a statistician to parse.
+  //
+  // **The survey year is a slot, not a literal.** SES runs every four years, and
+  // the sentence beside it — `pctSrc`, two lines down the same card — reads the
+  // year out of `salary_dist.json`. A year typed into the prose is a year that
+  // keeps saying the old round after the payload has moved to the next one, on
+  // the card whose whole claim is that it tells you what the figure is built
+  // from. Nothing on this page may state a date the data does not.
   pctCaveat: {
-    bg: "Сравняваме всяка чиста заплата с това, което изкарват останалите в София. Кой колко изкарва знаем от изследване на Евростат от 2022 г. (само хора на пълен работен ден, без държавната администрация), но то е за цялата страна, а не отделно за София, така че приемаме, че разликата между ниските и високите заплати в София е като в останалата страна. Самите суми преизчисляваме спрямо последната средна заплата за София на НСИ, за да са актуални. Затова числото показва приблизително къде си, а не точно. Извън София същата заплата те нарежда по-нагоре.",
-    en: "We compare each take-home pay with what other people in Sofia earn. Who earns what comes from a 2022 Eurostat survey (full-time employees only, public administration excluded), but that survey covers the whole country rather than Sofia alone, so we assume the gap between low and high pay in Sofia looks like the national one. The amounts themselves are set from the latest NSI average wage for Sofia so they stay current. So the figure shows roughly where you stand, not exactly. Outside Sofia the same pay places you higher.",
+    bg: "Сравняваме всяка чиста заплата с това, което изкарват останалите в София. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), но то е за цялата страна, а не отделно за София, така че приемаме, че разликата между ниските и високите заплати в София е като в останалата страна. Самите суми преизчисляваме спрямо последната средна заплата за София на НСИ, за да са актуални. Затова числото показва приблизително къде си, а не точно. Извън София същата заплата те нарежда по-нагоре.",
+    en: "We compare each take-home pay with what other people in Sofia earn. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), but that survey covers the whole country rather than Sofia alone, so we assume the gap between low and high pay in Sofia looks like the national one. The amounts themselves are set from the latest NSI average wage for Sofia so they stay current. So the figure shows roughly where you stand, not exactly. Outside Sofia the same pay places you higher.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE
@@ -974,9 +981,13 @@ export const COPY = {
   },
   rentDirOver: { bg: "над", en: "above" },
   rentDirUnder: { bg: "под", en: "below" },
+  // `{day}` arrives already carrying its ordinal ending from
+  // `format.js#ordinalDay` — the suffix is not the same for every day in either
+  // language, and a single one written into the string was wrong for eight days
+  // of the thirty in Bulgarian.
   rentDramaOver: {
-    bg: "До <b>{day}-о число</b> работиш само за наема.",
-    en: "Until the <b>{day}th</b> you work just for the rent.",
+    bg: "До <b>{day} число</b> работиш само за наема.",
+    en: "Until the <b>{day}</b> you work just for the rent.",
   },
   rentDramaAll: {
     bg: "Целият месец отива за наема - и не стига.",
@@ -1077,9 +1088,14 @@ export const COPY = {
   // publishers named separately as the attribution they require.
   // `test_the_app_states_its_licence_and_claims_nothing_about_the_data`
   // holds both halves.
+  // `{year}` is the year the reader is in, from their own clock — never a
+  // literal. A footer that says 2026 through the whole of 2027 is the oldest
+  // stale-date bug there is, and on this page it lands next to five publisher
+  // names and a licence, where "last touched years ago" is the one impression
+  // the line exists to prevent.
   footerNote: {
-    bg: "Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg · Вярно 2026 · кодът е отворен (Apache-2.0)",
-    en: "Data from Eurostat / ECB / NSI / BNB / imot.bg · Vyarno 2026 · open source code (Apache-2.0)",
+    bg: "Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg · Вярно {year} · кодът е отворен (Apache-2.0)",
+    en: "Data from Eurostat / ECB / NSI / BNB / imot.bg · Vyarno {year} · open source code (Apache-2.0)",
   },
   // Footer link label for the contact address. The four legal-document
   // labels live in `lib/legal.js` next to the documents themselves, so a
@@ -1212,6 +1228,16 @@ export const COPY = {
     bg: "{n} от числата са закъснели · най-старото е изтеглено на {date}",
     en: "{n} of the figures are overdue · the oldest was fetched on {date}",
   },
+  // One overdue payload out of eight is the commonest way this banner fires, and
+  // the plural sentence does not survive it: «1 от числата са закъснели» is not
+  // a sentence a Bulgarian would write, and "1 of the figures are overdue" is
+  // not one an English speaker would either. Bulgarian also needs the neuter
+  // singular agreement on the participle, so this is a separate string rather
+  // than a suffix stitched on.
+  dataStaleOne: {
+    bg: "Едно от числата е закъсняло · изтеглено е на {date}",
+    en: "One of the figures is overdue · it was fetched on {date}",
+  },
   // What is still true while the banner is up: nothing is invented and nothing
   // is guessed, these remain the last officially published figures. No promise
   // of a next update date — Eurostat's HICP release is mid-month but not fixed
@@ -1244,7 +1270,7 @@ export const COPY = {
   //   {y}     years of monthly net pay
   //   {src}   short source caption (e.g. "имоти.бг · 143 квартала · 16.7.2026")
   homeYears: {
-    bg: "{m} м² в <b>София</b> ≈ €{p} (≈{pm2}€/м², {basis}) = <b>{y} години</b> цялата ти заплата.",
+    bg: "{m} м² в <b>София</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
     en: "{m} m² in <b>Sofia</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
   },
   // What the €/m² in that sentence actually IS. When sofia_price.json is on
@@ -1328,6 +1354,19 @@ export const COPY = {
     bg: "Всички числа за България, с източниците им",
     en: "All of Bulgaria's figures, with their sources",
   },
+  // The page's two standing routes, and they exist because `howMoreK` was the
+  // only one: a link inside a disclosure at the foot of the calculator, which
+  // is open for nobody who has not already decided to read about method. A page
+  // carrying every figure the site runs on, with its publisher and its period,
+  // is the answer to "where does this come from" — the question a first-time
+  // reader has before they trust a single number on the screen, and they ask it
+  // at the top of the page rather than 4,000px down inside a closed drawer.
+  //
+  // Two labels rather than one because the slots differ: the header pill sits
+  // beside two glyph buttons on a 360px bar, and the footer line has room to
+  // say which numbers.
+  howNavK: { bg: "числата", en: "the numbers" },
+  howFooterK: { bg: "Числата за България", en: "Bulgaria's numbers" },
 
   // Stat labels. Each one says what the number IS, so the figure above it can
   // be a bare number and the caption under it can be a source and a date.
@@ -1517,7 +1556,7 @@ export const COPY = {
     en: "This is everything that leaves your device. Salary, rent and savings are not in the picture - a percentage yields no amount.",
   },
   shareWait: {
-    bg: "Картинката се готви, щом числата се заредят.",
+    bg: "Картинката ще е готова, щом числата се заредят.",
     en: "The picture is ready once the figures load.",
   },
   // The button hands the picture to the OS share sheet, whose destinations are

@@ -130,6 +130,20 @@ for keeping them, and it is exempt from the check.
   It is not emphasis seasoning; do not scatter it across every third phrase.
 - New user-facing copy is written in **both** BG and EN in the same commit. A
   missing string renders as a blank line, not a fallback.
+- **A date, a year or a count never goes into a sentence when a payload carries
+  it.** «медианата на 143-те софийски квартала», «изследване на Евростат от
+  2022 г.», «Вярно 2026» — each was true when typed and each is a claim the data
+  beside it goes on to contradict, silently, because nothing recomputes prose.
+  Write the slot and fill it at render. A worked example is the exception and
+  reads as one: «ако индексът в края на 2020 г. е 115» asserts nothing about
+  today. `verify_copy.mjs` §"no prose freezes a date or a count the payloads
+  already carry" checks it against the currently published values.
+- **The Bulgarian is the original, not a translation of the English.** Write it
+  as somebody would say it out loud: «сметката се случва в браузъра ти», not
+  «сметката става». Grammar the copy cannot dodge belongs in a formatter, not in
+  the string — the day of the month takes four different ordinal endings
+  (`format.js#ordinalDay`) and «закъсняло»/«закъснели» is a second sentence
+  rather than a substituted number.
 - No emoji. Not in headings, commits, UI, code or PR bodies. Nothing in the
   tree has one today.
 - No gradient-and-glow decoration in the SPA either, and no badge that nothing

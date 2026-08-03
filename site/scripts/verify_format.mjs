@@ -9,7 +9,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { number, integer, percentSigned, dateShort } from "../src/lib/format.js";
+import { number, integer, percentSigned, dateShort, ordinalDay } from "../src/lib/format.js";
 
 test("a missing or non-finite value formats as an em dash, never NaN", () => {
   // The calculator renders continuously while someone types, so an empty or
@@ -55,4 +55,52 @@ test("the minus is U+2212, matching the tables it sits beside", () => {
 test("dateShort renders a readable day-month-year in both languages", () => {
   assert.match(dateShort("2026-07-17", "en"), /17.*Jul.*2026/);
   assert.match(dateShort("2026-07-17", "bg"), /17.*2026/);
+});
+
+test("a day of the month takes the ordinal ending its own language gives it", () => {
+  // The rent row prints «до {day} число», and `rentDays` can return any day
+  // from 1 to 30. One suffix written into the copy was wrong for eight of the
+  // thirty in Bulgarian and six in English — «1-о число» where a reader expects
+  // «1-во», "21th" where one expects "21st".
+  assert.equal(ordinalDay(1, "bg"), "1-во");
+  assert.equal(ordinalDay(2, "bg"), "2-ро");
+  assert.equal(ordinalDay(3, "bg"), "3-то");
+  assert.equal(ordinalDay(4, "bg"), "4-то");
+  assert.equal(ordinalDay(5, "bg"), "5-о");
+  assert.equal(ordinalDay(21, "bg"), "21-во");
+  assert.equal(ordinalDay(23, "bg"), "23-то");
+  assert.equal(ordinalDay(30, "bg"), "30-о");
+
+  assert.equal(ordinalDay(1, "en"), "1st");
+  assert.equal(ordinalDay(2, "en"), "2nd");
+  assert.equal(ordinalDay(3, "en"), "3rd");
+  assert.equal(ordinalDay(4, "en"), "4th");
+  assert.equal(ordinalDay(21, "en"), "21st");
+  assert.equal(ordinalDay(30, "en"), "30th");
+});
+
+test("the teens keep the plain ending, which the last digit alone gets wrong", () => {
+  // 11 to 14 are единадесето…четиринадесето and eleventh…fourteenth: the ending
+  // the last digit would hand them (-во, -ро, -то / st, nd, rd) is the one
+  // thing that must not happen there.
+  for (const [day, bg] of [
+    [11, "11-о"],
+    [12, "12-о"],
+    [13, "13-о"],
+    [14, "14-о"],
+  ]) {
+    assert.equal(ordinalDay(day, "bg"), bg);
+    assert.equal(ordinalDay(day, "en"), `${day}th`);
+  }
+});
+
+test("every day the rent row can print is an ordinal, in both languages", () => {
+  // `mirror.js#rentDays` clamps to 1..30, so this is the whole domain rather
+  // than a sample of it.
+  for (let day = 1; day <= 30; day += 1) {
+    assert.match(ordinalDay(day, "bg"), /^\d+-(во|ро|то|о)$/, `BG day ${day}`);
+    assert.match(ordinalDay(day, "en"), /^\d+(st|nd|rd|th)$/, `EN day ${day}`);
+  }
+  assert.equal(ordinalDay(null, "bg"), "—");
+  assert.equal(ordinalDay(NaN, "en"), "—");
 });
