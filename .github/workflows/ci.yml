@@ -448,6 +448,24 @@ jobs:
         # gone by the time anyone reviews a diff. This catches the operational
         # half: a refresh that ran but was never committed.
         #
+        # Two other places reconcile the same manifest —
+        # `test_every_published_payload_has_a_publisher_and_a_consumer` in
+        # pipeline/tests, and the two payload cases in
+        # `verify_data_contracts.mjs` — so this job reads as the third copy of
+        # one assertion and as the obvious thing to delete. It is not, and the
+        # reason is not thoroughness: **both of those run only if their
+        # toolchain installed first.** A `npm ci` that fails on ERESOLVE or a
+        # pip resolution that ends in ResolutionImpossible takes its whole job
+        # red before a single assertion executes, and .github/dependabot.yml
+        # documents two such incidents by name. This job has no install step at
+        # all — bare node reads `payloads.js`, system python3 parses — so it is
+        # the one that still answers on exactly the runs where the other two
+        # cannot. `site/scripts/published-payload.mjs` makes the neighbouring
+        # point for the suites' side of it.
+        #
+        # It costs nothing to keep: seconds, in parallel, under a run whose
+        # length is set by the Windows job.
+        #
         # The list comes from `site/src/lib/payloads.js` — the SPA's own
         # manifest — and never from a copy of it kept here. A hardcoded list in
         # this file is a payload set nothing reconciles against the SPA, and it
