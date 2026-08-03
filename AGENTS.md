@@ -152,7 +152,25 @@ with their reasons, and the reason is never effort.
 or deleted. The standard it has to meet: **break the production code on purpose
 and watch the test go red.** Change the constant, invert the comparison, delete
 the guard clause, run the suite, put it back. A test that stays green protects
-nothing, however confidently it is named.
+nothing, however confidently it is named. Read the title back against the
+assertions too — a name claiming more than the body checks retires the question
+for the next reader.
+
+**Not every change earns a test, and assuming one does is how this suite grows
+sideways.** Before writing one, ask whether a rule over the whole collection
+already covers it: a new COPY key, a new payload row, a new preset gets none,
+because the loop over all of them has it. A check that cannot go red while a
+broader one stays green is not a second guard, it is a second thing to update.
+`docs/testing-strategy.md` §"What does NOT get a test" is the four questions and
+the worked examples, including the two places the rule deliberately does not
+apply — `verify_legal.mjs` and `verify_support.mjs` may duplicate anything,
+because a licence condition is evidenced rather than guarded.
+
+**That section permits deleting a test that protects nothing. The never above
+still binds**: what it forbids is deleting an assertion **to make something
+pass**. A red test is never the reason. A test retired because a broader check
+covers it goes in a commit that names what still catches the failure, and
+lowers its floor in the same one if the count drops below it.
 
 Which suite a test belongs in, and what is deliberately uncovered:
 `docs/testing-strategy.md`.
