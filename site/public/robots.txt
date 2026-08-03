@@ -54,6 +54,36 @@
 #    exactly what we give — cite the source — and not for a right of refusal we
 #    do not honour ourselves.
 #
+# 4. THIS FILE IS THE WHOLE POLICY, AND IT HAS TO BE SERVED UNMODIFIED.
+#    A CDN in front of the origin can prepend its own managed robots.txt to
+#    this one — Cloudflare's "block AI training in robots.txt" setting does
+#    exactly that, and the result is a single response with TWO
+#    `User-agent: *` groups. RFC 9309 §2.2.1 asks a crawler to merge groups
+#    with the same token; parsers that take the first one instead read a
+#    catch-all with no `Disallow` and lose the /data/published/ rule in note 2.
+#    That is the reason to decline it, and it is a mechanical one.
+#
+#    The second reason is a claim. The block that arrives with those groups
+#    opens «As a condition of accessing this website, you agree to abide by
+#    the following content signals» and closes by declaring any restriction in
+#    it an express reservation of rights under Article 4 of Directive
+#    2019/790. This project does not make that claim and cannot: note 3 says
+#    in as many words that what it asks for is NOT a licence restriction, the
+#    code is Apache-2.0, and the FIGURES are five publishers' and not ours to
+#    reserve. A browsewrap contract term nobody here wrote, contradicting the
+#    file it is prepended to, on a site whose terms of use are a ЗЕТ чл. 4
+#    document — see docs/legal.md, which is where every claim of right this
+#    project makes has to be argued and dated first.
+#
+#    `Content-Signal:` itself is not in RFC 9309 and no crawler acts on it:
+#    Bing Webmaster Tools reports it as syntax it does not understand, and
+#    Google has said publicly it has no effect. So the setting costs a
+#    warning and buys nothing this file does not already say by name.
+#
+#    Every crawler that block declines is declined below, so turning the
+#    setting off loses no decline. Keep it that way: a name added to a CDN's
+#    managed list is a name to add HERE.
+#
 # robots.txt is a request, not a fence. Everything here is enforceable only
 # through the terms of use; see https://vyarno.bg/legal/#terms.
 
@@ -103,6 +133,15 @@ User-agent: Bytespider
 Disallow: /
 
 User-agent: Amazonbot
+Disallow: /
+
+# Cloudflare's Browser Rendering `/crawl` endpoint, which hardcodes this token.
+# It belongs here on note 3's own test rather than by association: what it
+# returns is page text handed back to a calling program, with no reader at the
+# other end for a source link and a date to reach. It is also the one name
+# Cloudflare's managed block carries that this file otherwise would not, and
+# note 4 depends on that gap staying closed.
+User-agent: CloudflareBrowserRenderingCrawler
 Disallow: /
 
 Sitemap: https://vyarno.bg/sitemap.xml
