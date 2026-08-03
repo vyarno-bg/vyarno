@@ -89,6 +89,50 @@ const site = browser ? await serveDist() : null;
 const origin = site ? `http://127.0.0.1:${site.port}` : "";
 
 /**
+ * What "this page has finished loading" MEANS, per entry.
+ *
+ * **A page is ready when its own state says so, never when a duration is up.**
+ * `networkidle` cannot answer the question here: it fires 500 ms after the last
+ * request settles, and a page whose bundle is still executing has made no
+ * request at all — `onMount(calc.load)` has not run, so `loadAll()` has not been
+ * called, so there is nothing outstanding to hold the wait open. A fixed sleep
+ * after it is a bet on how fast the machine is, and the machine that loses it is
+ * a Windows CI runner. Measured under a 10x CPU throttle the app is still on its
+ * loading placeholder a second after `networkidle`; at 20x it is still there
+ * several seconds later. The tests that type into an input buy themselves that
+ * time by accident, which is why the ones that assert immediately are the only
+ * ones that ever went red.
+ *
+ * Each predicate has to prove two things — the client mounted, and the payloads
+ * arrived — and the entries differ in which elements can prove them:
+ *
+ * - **`/`** — `.m-grid` is never prerendered (`App.svelte` renders the whole
+ *   calculator region empty under `prerender`, because its output belongs to the
+ *   reader), so its presence is both facts at once. `.load-fail` is the other
+ *   terminal state and belongs in the predicate too: without it a genuine load
+ *   failure hangs the wait instead of failing the assertion that was going to
+ *   catch it.
+ * - **`/how/`** — everything on it IS prerendered, so no element proves the
+ *   client ran. `document.readyState === "complete"` does: a module script has
+ *   executed by the time `load` fires, so `how-main.js` has already emptied
+ *   `#app` and mounted over it, and the payload-gated table below is therefore
+ *   the live one rather than the frozen copy it replaced. A bundle that never
+ *   executed at all would leave the prerendered table standing and satisfy this
+ *   — that case is caught by the error list, which every test in this file
+ *   asserts is empty, and by `verify_static_assets.mjs`.
+ * - **everything else** — `/legal/` and `/support/` are not prerendered and read
+ *   no payload, so `#app` having any child is the whole of it.
+ */
+const READY = {
+  "/": () => document.querySelector(".m-grid, .load-fail") !== null,
+  "/how/": () =>
+    document.readyState === "complete" && document.querySelector("#basket table") !== null,
+};
+
+/** The default: the client put something where the entry left an empty mount. */
+const MOUNTED = () => document.querySelector("#app > *") !== null;
+
+/**
  * Open the calculator with console and page errors collected.
  *
  * The error list is the point of the suite: a component that throws during
@@ -101,8 +145,8 @@ async function openApp(path = "/", context = {}) {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("requestfailed", (r) => errors.push(`request failed: ${r.url()}`));
-  await page.goto(`${origin}${path}`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(400);
+  await page.goto(`${origin}${path}`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(READY[path] ?? MOUNTED);
   return { page, errors };
 }
 
@@ -2246,17 +2290,48 @@ test("the share text names both rates and a way back to the site", { skip }, asy
 
 test("the shared picture follows the reader's theme and language", { skip }, async () => {
   await withApp(async (page, errors) => {
-    await page.waitForTimeout(600);
-    const corner = () =>
-      page.evaluate(() => {
+    // Reading the pixel is a second state question, and the canvas answers it
+    // itself: `ShareCard`'s draw is debounced and waits on `document.fonts`, so
+    // an unpainted canvas hands back transparent black — a colour, which every
+    // comparison below would accept. Alpha is what says it has been drawn.
+    const painted = () =>
+      page.waitForFunction(() => {
+        const canvas = document.querySelector("section.share canvas");
+        return Boolean(canvas) && canvas.getContext("2d").getImageData(4, 4, 1, 1).data[3] > 0;
+      });
+    const corner = async () => {
+      await painted();
+      return page.evaluate(() => {
         const canvas = document.querySelector("section.share canvas");
         const { data } = canvas.getContext("2d").getImageData(4, 4, 1, 1);
         return `${data[0]},${data[1]},${data[2]}`;
       });
+    };
+    /**
+     * Wait for the card to be REDRAWN, then let the assertion speak.
+     *
+     * A repaint has no state of its own to poll — the canvas was already
+     * opaque — so the change itself is the signal, and the bound exists only to
+     * cap how long a card that never redraws stalls the suite. It returns the
+     * instant the pixels move, so it is not a duration the runner has to keep
+     * up with; on the failure it is bounding, the assertion below reports what
+     * went wrong rather than a timeout.
+     */
+    const redrawn = (was) =>
+      page
+        .waitForFunction(
+          (prev) => document.querySelector("section.share canvas").toDataURL() !== prev,
+          was,
+          { timeout: 5000 }
+        )
+        .catch(() => {});
 
     const light = await corner();
+    const png = await page.evaluate(() =>
+      document.querySelector("section.share canvas").toDataURL()
+    );
     await page.locator("header.site .pill").first().click();
-    await page.waitForTimeout(700);
+    await redrawn(png);
     const dark = await corner();
     // Both themes are AA-verified by verify_contrast.mjs, and the card is
     // drawn from the same custom properties — so a card that ignored the theme
@@ -2270,7 +2345,7 @@ test("the shared picture follows the reader's theme and language", { skip }, asy
       document.querySelector("section.share canvas").toDataURL()
     );
     await page.locator("header.site .pill").nth(1).click();
-    await page.waitForTimeout(700);
+    await redrawn(before);
     const after = await page.evaluate(() =>
       document.querySelector("section.share canvas").toDataURL()
     );
