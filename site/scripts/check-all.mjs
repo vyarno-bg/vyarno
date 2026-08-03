@@ -41,7 +41,7 @@ import { dirname, join, resolve } from "node:path";
 // why they are floors and why they are not written into any doc. CI calls the
 // same script directly, because it runs the suites itself rather than through
 // this orchestrator.
-import { FLOORS, checkFloors, shortfallMessage } from "./check-test-floors.mjs";
+import { FLOORS, checkFloors, floorsMessage } from "./check-test-floors.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SITE = resolve(__dirname, "..");
@@ -163,7 +163,7 @@ for (const stage of stages) {
 const { summary, problems } = checkFloors(stages.flatMap((stage) => COUNTED_BY_STAGE[stage]));
 if (summary) console.log(`\n${summary}`);
 if (problems.length) {
-  console.error(shortfallMessage(problems));
+  console.error(floorsMessage(problems));
   process.exit(1);
 }
 

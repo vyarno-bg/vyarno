@@ -82,6 +82,15 @@ per job, because its two jobs are separate runners with separate disks.
 Lower a floor only in the same commit as the deletion that made it necessary,
 and say in the commit message which tests went and why.
 
+**A floor that has fallen more than a fifth behind the run fails as well**, and
+is raised to the reported count in the commit that grew the suite. A rule for
+lowering with no rule for raising moves in one direction only: every commit that
+adds a test widens the gap, nothing narrows it, and a floor far enough below the
+suite will pass a deletion of half of it. The band is the price of keeping
+"adding tests needs no bookkeeping" true for the other four fifths of the time —
+`check-test-floors.mjs` §"Floors, not exact counts" argues it against the two
+alternatives.
+
 `make check` runs all of it in CI's order. **The three totals live in
 [`AGENTS.md`](../AGENTS.md) §Commands and nowhere else.** A per-file count in
 this table is a number that goes stale the next time somebody adds a test to

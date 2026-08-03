@@ -43,10 +43,14 @@ that renders the page blank is invisible to every other test in the repository,
 so a green run without it proves less than it looks.
 
 **Do not write a test count into a doc.** The run reports its own, and
-`site/scripts/check-all.mjs` holds the only counts in the repository — floors
-rather than exact totals, so adding tests needs no bookkeeping and a suite that
-SHRANK fails the run. Lower a floor only alongside the deletion that made it
-necessary, and say in the commit message which tests went and why.
+`site/scripts/check-test-floors.mjs` holds the only counts in the repository —
+floors rather than exact totals, so adding tests needs no bookkeeping and a
+suite that SHRANK fails the run. Lower a floor only alongside the deletion that
+made it necessary, and say in the commit message which tests went and why.
+
+A floor more than a fifth below what the run reported **also** fails, and is
+raised to that count in the commit that grew the suite. A floor far enough
+behind guards nothing — it will pass a suite that lost half its tests.
 
 `make help` lists the rest; `docs/local-development.md` is the long form.
 
