@@ -131,8 +131,29 @@ jobs:
       - name: Build
         working-directory: site
         run: npm run build
+      - name: Cache the Chromium Playwright downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          # Keyed on the lock, because the lock is what pins the playwright
+          # version and therefore which browser revision the next step asks
+          # for. A key on the version string alone would need a step to read
+          # it out; the lock is already on disk and changes at most monthly,
+          # when Dependabot regenerates it.
+          #
+          # No `restore-keys`. A partial restore hands the run a browser at a
+          # revision Playwright does not expect, which is the exact failure
+          # `find-chromium.mjs` was written to prove against — and here it
+          # would present as a launch error rather than as a cache miss. A
+          # clean miss just downloads, which is what every run did before this
+          # step existed.
+          key: playwright-${{ runner.os }}-${{ hashFiles('site/package-lock.json') }}
       - name: Install Chromium for the render smoke test
         working-directory: site
+        # Runs on a cache hit too, and has to. The cache carries the browser;
+        # the apt packages it links against live in the runner image, which is
+        # rebuilt for every job, so `--with-deps` is not the part that gets
+        # skipped. On a hit this step is the system packages alone.
         run: npx playwright install --with-deps chromium
       - name: The built page actually renders
         working-directory: site
@@ -241,8 +262,18 @@ jobs:
         # gets published. It fails rather than warns on an untrue identity,
         # which is the same standard `make check` holds a contributor to.
         run: npm run build:release
+      - name: Cache the Chromium Playwright downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Where Playwright puts browsers on Windows. `~` is the runner's
+          # profile directory, which is what `%USERPROFILE%` resolves to.
+          path: ~/AppData/Local/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('site/package-lock.json') }}
       - name: Install Chromium for the render smoke test
         working-directory: site
+        # No `--with-deps` here, unlike the ubuntu job: there are no system
+        # packages to install, so a cache hit skips this step's whole reason
+        # for taking any time at all.
         run: npx playwright install chromium
       - name: The built page actually renders
         working-directory: site
