@@ -100,6 +100,30 @@ export const COPY = {
     en: "Everything is anonymous, we don't collect personal data",
   },
   brandSmall: { bg: "икономиката, честно", en: "the economy, honestly" },
+  // The first tab stop on every page that has a sticky header, and the same
+  // string on each: a reader who has learnt where it goes on the calculator
+  // meets the identical control on `/how/`. One key rather than a literal per
+  // header, because a label that drifts between two pages is a label the second
+  // page's reader has to read again.
+  skipK: { bg: "Към съдържанието", en: "Skip to content" },
+  // The accessible names of `/how/`'s four scroll boxes. Five columns do not
+  // fit a 360px phone, so each table sits in an `overflow-x: auto` box — and a
+  // box like that is not focusable on its own, which leaves a keyboard-only
+  // reader unable to scroll it at all. Two of the four contain no link either,
+  // so there is nothing inside to tab to that would scroll it for them.
+  // `tabindex="0"` fixes the reaching; `role="region"` needs a NAME to be worth
+  // announcing, and «превъртаща се област» four times over is not one.
+  //
+  // A single string rather than a `{bg, en}` pair in the DOM: `aria-label` is
+  // one attribute and ARIA has no bilingual form, so it follows `$lang` the way
+  // the share card's alt text does. The prerender therefore serves the Bulgarian
+  // name, which is the default language a reader arrives in.
+  howTblBasket: { bg: "13-те групи на кошницата", en: "the 13 basket groups" },
+  howTblWedge: {
+    bg: "данък и осигуровки по нива на брутната заплата",
+    en: "tax and contributions by gross pay level",
+  },
+  howTblLadder: { bg: "стъпалата на заплатите в София", en: "the Sofia pay rungs" },
   // The header's two buttons carry a glyph and nothing else, so the accessible
   // name is the only thing that says what they do — and it has to arrive in the
   // language the reader is being served. BG is the primary language here; an

@@ -17,8 +17,8 @@
      user had no signposted way past the header. `scroll-margin-top` on #main
      keeps the sticky header off the target once it lands. -->
 <a class="skip" href="#main">
-  <span class="l-bg">Към съдържанието</span>
-  <span class="l-en">Skip to content</span>
+  <span class="l-bg">{COPY.skipK.bg}</span>
+  <span class="l-en">{COPY.skipK.en}</span>
 </a>
 <header class="site">
   <div class="wrap bar">

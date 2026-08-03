@@ -98,6 +98,15 @@
   <title>{t(COPY.howTitle, $lang)}</title>
 </svelte:head>
 
+<!-- The skip link, and it earns its place here more than on the calculator: the
+     header is four tab stops and the contents list below it is seven more, so a
+     keyboard reader arriving at a reference page passes eleven controls before
+     the first sentence. `#main` carries the same `scroll-margin-top` as the
+     sections, which is what keeps the sticky header off the landing. -->
+<a class="skip" href="#main">
+  <span class="l-bg">{COPY.skipK.bg}</span>
+  <span class="l-en">{COPY.skipK.en}</span>
+</a>
 <header class="site">
   <div class="wrap bar">
     <a class="brand" href="/">
@@ -349,7 +358,13 @@
     </p>
 
     {#if calc.categories.length > 0}
-      <div class="scroll">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <!-- A scroll container IS interactive to a keyboard, and the rule cannot
+           see that: without the attribute the arrow keys reach nothing, which
+           is what WAI asks for on a scrollable region. The `role` and the name
+           are the other half — a tab stop that announces nothing is worse than
+           none. See the .scroll rule below. -->
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.howTblBasket, $lang)}>
         <table class="fig-table">
           <thead>
             <tr>
@@ -480,7 +495,13 @@
     </p>
 
     {#if calc.data.payroll}
-      <div class="scroll">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <!-- A scroll container IS interactive to a keyboard, and the rule cannot
+           see that: without the attribute the arrow keys reach nothing, which
+           is what WAI asks for on a scrollable region. The `role` and the name
+           are the other half — a tab stop that announces nothing is worse than
+           none. See the .scroll rule below. -->
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.howTblWedge, $lang)}>
         <table class="fig-table">
           <thead>
             <tr>
@@ -582,7 +603,13 @@
     </div>
 
     {#if calc.payLadderRows.anchorGross > 0 && calc.data.salaryDist}
-      <div class="scroll">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <!-- A scroll container IS interactive to a keyboard, and the rule cannot
+           see that: without the attribute the arrow keys reach nothing, which
+           is what WAI asks for on a scrollable region. The `role` and the name
+           are the other half — a tab stop that announces nothing is worse than
+           none. See the .scroll rule below. -->
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.howTblLadder, $lang)}>
         <table class="fig-table">
           <thead>
             <tr>
@@ -925,7 +952,13 @@
          reader would expect at the end of it — the year's average — is exactly
          what their licence does not allow us to distribute. -->
     {#if calc.sofiaWageGrid.length > 0}
-      <div class="scroll">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <!-- A scroll container IS interactive to a keyboard, and the rule cannot
+           see that: without the attribute the arrow keys reach nothing, which
+           is what WAI asks for on a scrollable region. The `role` and the name
+           are the other half — a tab stop that announces nothing is worse than
+           none. See the .scroll rule below. -->
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.howColWage, $lang)}>
         <table class="fig-table">
           <!-- A caption rather than a column heading: with the quarters across
                the top and the years down the side there is no column left to
@@ -1064,6 +1097,9 @@
   main.how {
     padding: 30px 0 10px;
     max-width: 760px;
+    /* The skip link's target, offset by the same amount the sections are: a
+       bare `#main` jump parks the h1 under the 54px sticky header. */
+    scroll-margin-top: 64px;
   }
   h1 {
     font-family: var(--serif);
@@ -1194,10 +1230,52 @@
   }
 
   /* The scroll box sits on the wrapper, so a wide table never makes the page
-     body scroll sideways on a phone. */
+     body scroll sideways on a phone.
+
+     IT IS A TAB STOP (`tabindex="0"` in the markup). A scroll container is not
+     focusable on its own and no browser makes it so — so at 360px, where the
+     wedge table runs about 190px past the box and holds no link at all, a
+     keyboard-only reader could not reach two of its five columns by any means.
+     Every box carries the attribute rather than only the ones that overflow,
+     because whether a table overflows is a function of the viewport and of
+     which language is showing, and neither is known where the markup is
+     written.
+
+     WHAT SAYS IT SCROLLS is the clipped column at the boundary, plus the focus
+     ring for the keyboard. The conventional edge shadow — two `local` cover
+     layers over two `scroll` shadow layers — was tried and is not shippable
+     here: the only token faint enough not to fight the ledger palette is
+     invisible against it, and `.mark`'s own row background sits above the box's
+     background anyway, so the shadow shows through at the ceiling row after
+     scrolling to the end. A shadow that is either invisible or wrong on one row
+     is worse than the clipped edge it was meant to strengthen. */
   .scroll {
     overflow-x: auto;
     margin-top: 16px;
+  }
+  /* The focus ring is the keyboard half of the same affordance: the box a
+     reader has just landed on is the one the arrow keys will scroll. */
+  .scroll:focus-visible {
+    outline: 2px solid var(--real);
+    outline-offset: 2px;
+  }
+  /* Skip link — off-screen until focused, the pattern SiteHeader.svelte uses on
+     the calculator. Sharing the class rather than the rule is not possible: a
+     Svelte component's styles are scoped to it. */
+  .skip {
+    position: absolute;
+    left: -999px;
+  }
+  .skip:focus {
+    left: 16px;
+    top: 10px;
+    z-index: 99;
+    background: var(--surface);
+    padding: 8px 12px;
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    color: var(--ink);
+    text-decoration: none;
   }
   .fig-table {
     width: 100%;
