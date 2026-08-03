@@ -10,13 +10,48 @@ name: CI
 
 # `main` is the only long-lived branch; work happens on short-lived branches
 # that merge into it (docs/local-development.md §"Branches, CI and pushing").
-# The trigger is an unfiltered `push`, so
-# every branch is gated before the merge and `main` is re-checked after it.
-# There is deliberately no `pull_request` trigger: the head commit of a PR has
-# already been pushed and checked, and branch protection matches the check by
-# commit SHA, so adding one would double every run to gate nothing.
+# The unfiltered `push` gates every branch before the merge and re-checks
+# `main` after it.
+#
+# `pull_request` is here for the two things `push` structurally cannot do, and
+# both are worth more than the duplicate run costs.
+#
+# **A fork's commits never touch this repository's refs.** No push event fires
+# here, so no check run is ever created against that SHA — and with branch
+# protection requiring these jobs by name, a pull request from a stranger was
+# not merely unchecked, it was unmergeable, because the checks it waits on had
+# no event that would produce them. Nothing in the repository said so: this
+# file claimed the head commit "has already been pushed and checked", which is
+# true of a branch pushed here and false of every fork.
+#
+# **`pull_request` builds `refs/pull/N/merge`, not the head.** That is a
+# different tree from anything a push ever sees: a branch can be green, `main`
+# can be green, and the merge of the two can be broken — a rename on one side
+# against a new caller on the other, two payloads added to `payloads.js` in
+# separate branches. The push run cannot see that commit because it does not
+# exist until the pull request does.
+#
+# So a same-repo pull request now runs twice, and the second run is not a copy
+# of the first. Scoping it with a job-level `if` to skip same-repo pull
+# requests was the obvious way to avoid the duplicate and is a trap: a skipped
+# job still CREATES its check run, GitHub resolves a required check to the
+# latest run bearing that name, and the pull-request event fires after the
+# push — so the skipped checks would land last and quietly become the gate.
+# Paying for a second run is the cheaper of the two.
+#
+# **`pull_request`, never `pull_request_target`.** This trigger runs the base
+# repository's copy of this file against the merge ref with a read-only token
+# and no secrets. `pull_request_target` would run it with a writable token and
+# the repository's secrets in reach of a fork's code, and it is the reason
+# this workflow holds no credential in the first place
+# (docs/architecture.md §CI).
+#
+# The concurrency group is `github.ref`, which is `refs/heads/<branch>` for a
+# push and `refs/pull/N/merge` for a pull request, so the two runs are in
+# separate groups and neither cancels the other.
 on:
   push:
+  pull_request:
   workflow_dispatch:
 
 permissions:

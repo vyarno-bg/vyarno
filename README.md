@@ -204,7 +204,7 @@ threshold, on purpose.
 | `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes eight JSONs to `data/published/` |
 | `data/published/` | Versioned JSONs produced by the pipeline. Committed. The site reads these at runtime and never hits an upstream API. **These figures are not ours to license — see [Licence](#licence)** |
 | `site/` | Vite 8 + Svelte 5. Three pages — the calculator, `/legal/` and a 404. Builds to a static directory |
-| `.github/workflows/ci.yml` | Both test suites and the production build, on every push to every branch. Does not refresh data |
+| `.github/workflows/ci.yml` | Both test suites and the production build, on every push to every branch and on every pull request. Does not refresh data |
 
 For the plain-language version — what Eurostat is and why the numbers are
 trustworthy — see [`docs/how-it-works.md`](./docs/how-it-works.md).

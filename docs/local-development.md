@@ -67,12 +67,21 @@ cd site && sed -i 's/"checkJs": false/"checkJs": true/' jsconfig.json \
 **`main` is the only long-lived branch. It is what gets deployed.** Work happens
 on a short-lived branch, merges into `main`, and is deleted.
 
-**CI runs on every push to every branch** (`.github/workflows/ci.yml`):
-`pytest -q`, `npm run verify:math`, `npm run build`, plus a check that all eight
-published payloads parse. So a working branch is proven before the merge, and
-`main` is re-checked after it. Branch protection is the repository-settings
-half of this: it cannot be committed, so it is configured on the host rather
-than described here.
+**CI runs on every push to every branch, and on every pull request**
+(`.github/workflows/ci.yml`): `pytest -q`, `npm run verify:math`,
+`npm run build`, plus a check that all eight published payloads parse. So a
+working branch is proven before the merge, and `main` is re-checked after it.
+
+The pull-request trigger is not a second copy of the push run. It is the only
+one a **fork** produces at all, since a fork's commits never reach this
+repository's refs, and it checks the merge commit rather than the branch head —
+a branch and `main` can each be green and their merge broken. Expect a
+same-repo pull request to show both runs.
+
+Branch protection is the repository-settings half of this: it cannot be
+committed, so it is configured on the host rather than described here. It
+matches by job **name**, verbatim, so renaming a job in `ci.yml` unhooks its
+required check and the gate disappears behind a green tick.
 
 **Pushing.** Local commits are always fine. A push to `main` is a deploy trigger
 once hosting is wired, so push when the three suites are green — use a working
