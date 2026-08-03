@@ -103,6 +103,50 @@ test("every COPY entry ships both languages, non-empty", () => {
   );
 });
 
+const CYRILLIC = /[а-яА-Я]/;
+
+/** A string with its `{slot}` and `{{slot}}` placeholders taken out. */
+const withoutSlots = (text) => text.replace(/\{\{?[^}]*\}\}?/g, " ");
+
+/**
+ * The alphabet offences in one bilingual pair, named.
+ *
+ * The rule is that a Bulgarian string is written in Cyrillic and an English one
+ * is not, and it is worth stating as a rule because Latin script reaching a
+ * Bulgarian reader is easy to introduce and invisible to every other test:
+ * `verify_render.mjs` will happily draw an English dataset name on a Bulgarian
+ * page, and every arithmetic assertion behind it stays green.
+ *
+ * Slots come out before the Bulgarian side is judged, because a string that is
+ * nothing but slots — `{s} · {p}` — has no words to write in either alphabet.
+ * That is a property of the string rather than a name on a list, which is what
+ * makes this a rule over every entry instead of over the ones somebody typed
+ * out. Handle a genuine exception the same way if one turns up: state what the
+ * string is that the rule does not reach.
+ *
+ * The English side takes no such carve-out. НСИ and БНБ have settled English
+ * spellings the rest of the copy already uses (NSI, BNB), and a Cyrillic
+ * acronym dropped into an English sentence is how that slips through.
+ */
+function alphabetOffences(label, bg, en) {
+  const out = [];
+  const bgWords = typeof bg === "string" ? withoutSlots(bg) : "";
+  if (/\p{L}/u.test(bgWords) && !CYRILLIC.test(bgWords)) {
+    out.push(`${label}.bg is not in Bulgarian: ${bg}`);
+  }
+  if (typeof en === "string" && CYRILLIC.test(en)) {
+    out.push(`${label}.en carries Cyrillic: ${en}`);
+  }
+  return out;
+}
+
+test("every COPY string is written in its own alphabet", () => {
+  const offenders = bilingualEntries().flatMap(([key, value]) =>
+    alphabetOffences(`COPY.${key}`, value.bg, value.en)
+  );
+  assert.deepEqual(offenders, [], offenders.join("; "));
+});
+
 /**
  * The keys a component reaches by name rather than by `COPY.key`.
  *
@@ -155,27 +199,19 @@ test("the payload manifest's reader-facing strings follow the COPY rules too", (
   // purpose — a row's label belongs beside the row's cadence and accessor, not
   // in a separate file keyed by payload — so none of the structural rules above
   // reach them. This applies the same three: both languages, non-empty, and the
-  // right alphabet in each.
+  // right alphabet in each, through the same helper, so the alphabet rule cannot
+  // be tightened for COPY and left behind here.
   const offenders = [];
   for (const entry of PAYLOADS) {
     for (const field of ["name", "feeds"]) {
+      const label = `${entry.file}.${field}`;
       const value = entry[field];
       for (const lang of ["bg", "en"]) {
         const text = value?.[lang];
-        if (typeof text !== "string" || text.trim() === "") {
-          offenders.push(`${entry.file}.${field}.${lang} is empty`);
-          continue;
-        }
-        if (lang === "bg" && !/[а-яА-Я]/.test(text)) {
-          offenders.push(`${entry.file}.${field}.bg is not in Bulgarian`);
-        }
-        // НСИ and БНБ have settled English spellings the rest of the copy
-        // already uses (NSI, BNB) — see COPY.footerData. A Cyrillic acronym
-        // dropped into an English sentence is how this slips through.
-        if (lang === "en" && /[а-яА-Я]/.test(text)) {
-          offenders.push(`${entry.file}.${field}.en carries Cyrillic: ${text}`);
-        }
+        if (typeof text !== "string" || text.trim() === "")
+          offenders.push(`${label}.${lang} is empty`);
       }
+      offenders.push(...alphabetOffences(label, value?.bg, value?.en));
     }
   }
   assert.deepEqual(offenders, [], offenders.join("; "));
@@ -414,8 +450,6 @@ const EXPLAINER = blankComments(
   readFileSync(join(SRC, "components", "ExplainerBand.svelte"), "utf8")
 );
 
-const CYRILLIC = /[а-яА-Я]/;
-
 /** The BG and EN strings of a COPY key, asserting both exist. */
 function pair(key) {
   const entry = COPY[key];
@@ -436,14 +470,6 @@ const WEDGE_KEYS = [
   "wedgeAxisMar",
   "wedgeAxisCap",
 ];
-
-test("every tax-wedge string ships bilingual and in the right alphabet", () => {
-  for (const key of WEDGE_KEYS) {
-    const [bg, en] = pair(key);
-    assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
-    assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Bulgarian text`);
-  }
-});
 
 test("the wedge copy says the rate FALLS at the ceiling", () => {
   // The claim is directional, and inverting it needs no number to change.
@@ -870,11 +896,7 @@ test("the payslip names every row in both languages", () => {
     "payslipNet",
     "payslipSource",
   ];
-  for (const key of keys) {
-    const [bg, en] = pair(key);
-    assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
-    assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Bulgarian text`);
-  }
+  for (const key of keys) pair(key);
   // The ceiling row and the provenance line are substitution strings. A missing
   // placeholder renders the literal; a render site that stopped going through
   // `t()` would ship the braces verbatim.
@@ -1130,23 +1152,17 @@ const COPY_SRC = blankComments(readFileSync(join(SRC, "lib", "content.js"), "utf
   " "
 );
 
-test("every string the country page owns ships bilingual, in the right alphabet", () => {
+test("the country page still has its copy at all", () => {
+  // The alphabet and both-languages rules reach these through the loops at the
+  // top of the file. What no rule over COPY can see is the page's copy being
+  // deleted WHOLESALE: a key removed together with its render site is not a
+  // dead key and not a missing one, so every structural check stays green while
+  // /how/ renders as headings over nothing.
   assert.ok(
     HOW_KEYS.length > 10,
     `only ${HOW_KEYS.length} how* COPY keys — the page lost its copy`
   );
-  for (const key of HOW_KEYS) {
-    const [bg, en] = pair(key);
-    // The two proper nouns that are Latin in Bulgarian too. Everything else
-    // reaching a Bulgarian reader in Latin script is the defect this checks
-    // for, and it is easy to introduce on a page full of dataset names.
-    if (!["howSrcImot", "howSrc"].includes(key)) {
-      assert.match(bg, CYRILLIC, `COPY.${key}.bg is not in Bulgarian`);
-    }
-    if (!["howSrcImot", "howSrc"].includes(key)) {
-      assert.ok(!CYRILLIC.test(en), `COPY.${key}.en carries Cyrillic: ${en}`);
-    }
-  }
+  for (const key of HOW_KEYS) pair(key);
 });
 
 test("no page writes a live figure into its prose", () => {
@@ -1267,7 +1283,6 @@ test("the country page discloses that three of its figures are ours", () => {
   // built on it — and two of the three are rendered here. The disclosure and
   // the route to the full wording both have to travel with them.
   const [bg, en] = pair("howOurs");
-  assert.match(bg, CYRILLIC);
   assert.ok(HOW.includes("COPY.howOurs.bg") && HOW.includes("COPY.howOurs.en"));
   assert.ok(
     (HOW.match(/\{@render ours\(\)\}/g) ?? []).length >= 2,
