@@ -20,7 +20,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -85,13 +85,10 @@ import {
   BG_CONTRIB_LINES,
 } from "../src/lib/mirror.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
+import { published } from "./published-payload.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const PUBLISHED = join(HERE, "..", "..", "data", "published");
-const read = (name) => {
-  const p = join(PUBLISHED, `${name}.json`);
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf-8")) : null;
-};
+const read = published;
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
 
 /** The BNB limits as published — the shape `mortgagePanel` consumes. */
