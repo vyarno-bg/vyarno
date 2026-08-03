@@ -211,11 +211,37 @@ capturing the built page across interaction states and diffing the rendered
 markup. If the argument comes back it will be for a new reason, and that reason
 belongs here.
 
-### Why the wiring tests stay source checks
+### Why source checks are normal here, and where the line actually falls
 
-`verify_wiring.mjs` reads templates as text, which the rule above forbids. It
-is the one exception, for one reason: there is nothing else to check these
-against.
+**Seven suites read templates as text**, and none of them is an exception to
+anything. `verify_wiring.mjs` is the one that does it most, and it is joined by
+`verify_copy.mjs` (How, ExplainerBand, MethodDrawer, LeftoverRow, DataBanner),
+`verify_legal.mjs`, `verify_support.mjs`, `verify_contrast.mjs`,
+`verify_static_assets.mjs` and `verify_template_safety.mjs`.
+
+The rule they are all keeping is the one stated above, and it is narrower than
+"do not read source": **never assert RENDERED BEHAVIOUR by grepping templates.**
+What you may not do is grep for the cause of something a reader sees. What you
+may do is assert a fact about the source, when the source is the only place
+that fact exists.
+
+Which side a check falls on is decided by what it asserts, not by what it opens:
+
+| The check asserts | Where it goes |
+|---|---|
+| Something a reader can see happen — a position, a computed style, a mounted page, a figure in the DOM | `verify_render.mjs`, in a browser. No exceptions |
+| A fact that exists only in the source — which argument a template passes, which expression feeds `{@html}`, whether a COPY key has a render site, whether a component names the licence paragraph | The suite that owns it, reading the file |
+
+Two conditions make the second column survivable, and a source-reading suite
+that breaks either is the failure mode rather than the guard:
+
+1. **Blank comments before scanning.** A comment describing a bug must never
+   satisfy the test for its fix — §"The standard a test has to meet" names the
+   case. This is easy to get subtly wrong: blanking whole-line `//` comments
+   works line by line, so it has to run on the file before any whitespace pass
+   collapses the line breaks.
+2. **Match on token sequence, never on layout.** Whitespace is collapsed first,
+   so a formatter run cannot fail a test that no behaviour change would.
 
 A wrong wiring is not a wrong formula and not a wrong string. `mirror.js` can be
 perfect, `content.js` can be perfect, and the page can still print thirteen euro
@@ -229,9 +255,9 @@ published payload rather than a frozen list. A DOM test would prove it better
 (render two fixtures, assert the output follows) and would cost a fixture
 harness. The loop check is the cheap proxy, and the file says so.
 
-What makes them survivable is that they match on **token sequence, never on
-layout**: `flat()` collapses whitespace, so a formatter run cannot fail a test
-that no behaviour change would.
+`verify_wiring.mjs` keeps the second condition above with `flat()`, which
+collapses the whitespace out of a template before any pattern is matched
+against it.
 
 ## The standard a test has to meet
 
@@ -255,6 +281,116 @@ Related traps, each of which has bitten here:
 - **A check whose selector matches nothing.** A browser assertion that early-
   returns on a missing element is a green test for a deleted feature. Assert the
   element exists before asserting anything about it.
+- **A name that claims more than the assertions check.** The name is what the
+  next reader trusts and what a reviewer reads instead of the body, so a test
+  called "the chip reads as a control, and not as a verdict" that measures only
+  the border and the tap target is worse than one called neither: it retires the
+  question. Read the title back against the assertion list before you commit,
+  and either assert the second half or stop claiming it.
+
+## What does NOT get a test
+
+The section above says what a test has to do. This one says when a change needs
+**none**, because without it every change here grows the suite by default —
+which is how three hand-kept lists of COPY keys came to guard what one loop
+already covered.
+
+Four questions, in order. A "no" at any of them means write no test.
+
+### 1. Is there already a rule over the collection this belongs to?
+
+**A rule over a whole collection beats N assertions over a hand-typed subset of
+it**, and adding a member to the collection then costs nothing.
+
+The worked example is the alphabet rule in `verify_copy.mjs`: a Bulgarian string
+is written in Cyrillic and an English one is not. It was asserted three times
+over three hand-kept key lists — the tax wedge, the payslip rows, the country
+page — each with its own exception list, covering 71 of the 319 bilingual `COPY`
+entries between them. A key added to a section nobody listed was guarded by
+none of them, silently, which is the failure mode of every subset test: it does
+not go red, it goes absent.
+
+Written once over `bilingualEntries()` it covers all 319 and needs **no
+exception list at all** — strip `{placeholders}` first and the one key that was
+exempted by name, a bare `{s} · {p}`, falls out of the rule instead of out of a
+list. A hand list also buys less than it looks: it cannot catch a state added in
+code with no string, because a missing key adds no name to the list either.
+
+So: **a new COPY key, a new payload row, a new preset gets no test.** The loop
+already has it. Reach for a named assertion only where the rule genuinely
+differs for that member, and then write down what differs.
+
+### 2. Would this go red while a broader check stays green?
+
+If not, it is not a second guard — it is a second thing to update, and the pair
+will drift.
+
+`verify_copy.mjs` asserted per section that `COPY.wedgeK` and its fourteen
+payslip siblings each appear in the source, while the global "no COPY key is
+dead" check scanned every key in the tree. There is no edit that fails the
+narrow one and passes the broad one. Strengthening the broad one — requiring the
+`COPY.key` access form, and permitting a bare string only for the keys reached
+by dynamic dispatch, which are exported arrays the test can import — retired all
+three copies and covered more than they did.
+
+**The exception is a claim somebody could be held to.** `verify_legal.mjs` and
+`verify_support.mjs` may duplicate each other and anything else. A licence
+condition, the ЗЕТ чл. 4 identity rows and the безвъзмездност of the service are
+not covered by a guard, they are **evidenced** by one, and evidence is allowed
+to be redundant. Do not thin either suite on the grounds in this section.
+
+### 3. Does a reader lose something measurable if this is wrong?
+
+This is the question for a design assertion — where a component sits relative to
+another, what a chip's border says about its state. That class is the one most
+likely to go red on a competent redesign for no correctness reason, and it is
+also where some of the sharpest tests in the repository live. The two are told
+apart by naming the reader who cannot do something:
+
+| Earns its place | Does not |
+|---|---|
+| A phone-width layout that puts the only input the page is priced off five screens below the figures computed from it | Which of two orderings two visible, reachable blocks appear in |
+| A live region scoped to the whole results card, so a slider tick re-announces eight ranked rows and a formula table | Which defensible colour a resting control is painted |
+| A control measuring 14px, which is under any tap-target guidance | Whether a heading sits above or beside the thing it heads |
+| A loaded state drawn identically to an unloaded one, so nothing says which is on | |
+
+The test to apply: **imagine the redesign done competently, and ask what the
+reader loses.** If the answer is nothing, the assertion is a vote, and a vote
+that fails a build is how a contributor learns to edit tests without reading
+them.
+
+Two of these were checked by mutation rather than by argument. Painting the
+loaded basket chip with the `--ink` fill goes red on the assertion its comment
+names, so that test stays. Painting the resting disclosure chip in the verdict
+colour its comment forbids left the suite green — the title claimed a rule
+nothing asserted, which is the trap listed at the end of §"The standard a test
+has to meet".
+
+### 4. Would the failure message tell you which thing broke?
+
+If yes, leave the test whole however long it is. **Split where a failure would
+be ambiguous, never to raise a count.**
+
+Lines per test is the wrong signal for this. `verify_template_safety.mjs` is
+seven tests over five hundred lines, and most of those lines are the `{@html}`
+scanner and the reasoning behind it — each of the seven reports the offending
+expression by name, so none of them is ambiguous and none should be split.
+`test_published_contracts.py` is the same shape over the published payloads. A
+test earns a split when its failure says the results card is wrong and leaves
+you to read the body to find out which of eight things it meant.
+
+### And these get no test at all
+
+- **A refactor.** Behaviour-preserving means the suites are untouched. If a test
+  had to change it was not a refactor — say so, and say which behaviour moved.
+- **A copy edit that breaks no rule.** §"Is the core logic well covered?" has
+  the line: assert on the rule, never on the sentence. A sentence rewritten for a
+  good reason gets a rewritten sentence, not a test pinning the new one.
+- **Prose in `docs/`.** Ruled out above, with the reason.
+- **A line the coverage report shows uncovered**, where the answer to "why not"
+  is written down. `data.js`'s fetch wrappers and `cli.py`'s six `_refresh_*`
+  arms are the two, and both entries below say what covering them would cost
+  and what it would buy.
 
 ## Is the core logic well covered?
 
