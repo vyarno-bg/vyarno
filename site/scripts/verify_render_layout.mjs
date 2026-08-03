@@ -17,10 +17,10 @@ import { shutdown, skip, withApp } from "./render-harness.mjs";
 test("the country page is reachable without opening anything", { skip }, async () => {
   // `/how/` carries every figure the site runs on, with its publisher and its
   // period — the answer to "where does this come from", which is the question a
-  // first-time reader has before they trust a number. Its only route in used to
-  // be a link inside the explainer's disclosure at the foot of the calculator:
-  // four thousand pixels down, behind a click, on a page whose reader has
-  // already decided whether to believe it.
+  // first-time reader has before they trust a number. A route that answers it
+  // four thousand pixels down and behind a click — the explainer's disclosure
+  // at the foot of the calculator is where one would naturally go — arrives
+  // after the reader has already decided whether to believe the page.
   //
   // Two routes, and the pair is the assertion. The header belongs to the
   // calculator alone — `/legal/` and `/support/` write their own — so a reader
@@ -205,10 +205,10 @@ test("the method drawer fits a phone, and its table scrolls inside it", { skip }
 
 test("a phone is asked before it is told", { skip }, async () => {
   // The order below 820px is ask, answer, refine: the pay field, then the
-  // results, then everything the reader can leave alone. It used to be answer
-  // then everything, which put the one input the whole page is priced off
-  // 2,969px down a 6,670px page — five screens past the figures computed from
-  // it.
+  // results, then everything the reader can leave alone. Answer-then-everything
+  // is the arrangement that suggests itself — the figures are what the page is
+  // for — and on a 6,670px phone page it puts the one input all of them are
+  // priced off 2,969px down, five screens past the numbers computed from it.
   //
   // Asserted as an ordering rather than against pixel numbers, which move with
   // every copy edit. What must hold is the sequence, and that the field is

@@ -320,15 +320,16 @@ test("the basket fits a 360px column, chips and all", { skip }, async () => {
 });
 
 test("a Bulgarian reader's basket table is in Bulgarian only", { skip }, async () => {
-  // Every row used to carry `eurostat_label` under the name — Eurostat's own
-  // English wording for the code, rendered whatever language the reader chose.
-  // «Housing, water, electricity, gas and other fuels» under «Ток, вода, парно,
-  // наеми» is four lines of a language they did not ask for, thirteen times
-  // over, in the column a phone has least room for.
+  // A Bulgarian reader's thirteen rows carry no English. The pull the other
+  // way is real — `eurostat_label` is Eurostat's own wording for the code, and
+  // printing it under the name is the obvious way to make the bucket
+  // checkable. It costs «Housing, water, electricity, gas and other fuels»
+  // under «Ток, вода, парно, наеми»: four lines of a language the reader did
+  // not ask for, thirteen times over, in the column a phone has least room for.
   //
-  // The label is not gone: it is the claim about what the bucket is, so it
-  // travels on the verify link, which is the row that goes to Eurostat and
-  // where `BasketEditor` already carries it.
+  // So the label travels on the verify link instead, which is the row that
+  // goes to Eurostat and where `BasketEditor` already carries it. The claim
+  // stays checkable and the table stays in one language.
   await withApp(
     async (page, errors) => {
       await page.locator(".m-results details.how summary").first().click();
