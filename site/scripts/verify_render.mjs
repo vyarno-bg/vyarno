@@ -27,6 +27,9 @@ import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join, normalize, extname } from "node:path";
 import { launchChromium } from "./find-chromium.mjs";
+// The page dates a figure with this, so an assertion about what a crawler reads
+// has to write the month the same way rather than approximating the format.
+import { periodLong } from "../src/lib/format.js";
 
 const SITE = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = join(SITE, "dist");
@@ -421,6 +424,62 @@ test(
           "it carries the figure"
       );
     }
+  }
+);
+
+test(
+  "the second page blames the right thing for the gap a reader can see",
+  { skip: needsBuild },
+  async () => {
+    // §инфлацията prints Eurostat's all-items headline beside Σ(w·r) over the 13
+    // divisions and then explains why they differ. The January re-weighting and
+    // the December chain link account for ~0.16 pp of it — but only when the two
+    // describe the SAME month. Eurostat's flash publishes the all-items rate
+    // about two weeks ahead of any division, and on a payload pair split that
+    // way the two figures are several times further apart, almost all of it the
+    // fortnight. A paragraph that names the re-weighting either way is true and
+    // is not the reason for what is on screen, in the one place a reader who
+    // spotted the gap went to look.
+    //
+    // Asserted against the payloads shipped in the SAME dist/, so it follows
+    // whichever state Eurostat's calendar is in on the day rather than pinning
+    // today's. Both branches are checked here because both ship: only one of
+    // them is reachable per build, and the unreachable one is the sentence that
+    // would be wrong.
+    const html = await servedText("how", "index.html");
+    const [headline, categories] = await Promise.all(
+      ["hicp_headline", "hicp_categories"].map(shipped)
+    );
+    const headlineMonth = String(headline.ref_period ?? "");
+    const basketMonth = String(categories.categories?.[0]?.ref_period ?? "");
+    assert.ok(headlineMonth && basketMonth, "a payload carries no reference period to compare");
+
+    if (headlineMonth === basketMonth) {
+      assert.ok(
+        html.includes(COPY.explainSameMonth.bg) && html.includes(COPY.explainSameMonth.en),
+        "the two figures describe one month and the page does not say so — the " +
+          "reassurance that they are comparable is the whole of why the " +
+          "re-weighting is then the entire explanation"
+      );
+      return;
+    }
+
+    // The prerender renders in BG, and `periodLong` is what the page dates a
+    // figure with — so these are the exact strings a crawler reads.
+    for (const month of [headlineMonth, basketMonth]) {
+      assert.ok(
+        html.includes(periodLong(month, "bg")),
+        `the served /how/ never names ${periodLong(month, "bg")}. The headline ` +
+          `is at ${headlineMonth} and the divisions at ${basketMonth}, so most ` +
+          "of the gap the page prints is the month rather than the method, and " +
+          "the prose has to say which month each figure is"
+      );
+    }
+    assert.ok(
+      !html.includes(COPY.explainSameMonth.bg),
+      "the page tells the reader both figures are for the same latest month " +
+        `while shipping ${headlineMonth} beside ${basketMonth}`
+    );
   }
 );
 

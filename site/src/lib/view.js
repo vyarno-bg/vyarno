@@ -262,6 +262,38 @@ export function headlineRate(payload) {
   return Number.isFinite(v) ? v : 0;
 }
 
+/**
+ * Whether the all-items headline and the per-division figures are at DIFFERENT
+ * months — the state in which the gap between them is mostly not the method.
+ *
+ * Eurostat's flash publishes the all-items rate about two weeks before any
+ * division, so `hicp_headline.json` can sit at 2026-07 while
+ * `hicp_categories.json` is wholly at 2026-06 (docs/math.md §"Per-field
+ * provenance"). Both figures are theirs at the months they name, and every page
+ * that prints them side by side states each period beside its own number.
+ *
+ * **The PROSE over them is what this exists for.** The gap Σ(w·r) − headline is
+ * ~0.16 pp when the two describe one month, which is the January re-weighting
+ * and the December chain link and nothing else. During the flash it is several
+ * times that and the extra is the month, so a paragraph explaining the whole
+ * difference as the re-weighting is false exactly when a reader is most likely
+ * to stop and check — the same failure `COPY.explainSameMonth` would be. Static
+ * copy cannot be right in both states, so both surfaces branch here rather than
+ * each carrying its own comparison to keep in step.
+ *
+ * Two months or neither: with one payload missing there is nothing to compare,
+ * and false is the safer answer — it claims nothing about a month the page
+ * cannot name.
+ *
+ * @param {object} args
+ * @param {string} args.headlineMonth  hicp_headline.json's ref_period, "YYYY-MM"
+ * @param {string} args.basketMonth    the divisions' ref_period, "YYYY-MM"
+ * @returns {boolean}
+ */
+export function monthsSplit({ headlineMonth, basketMonth }) {
+  return Boolean(headlineMonth) && Boolean(basketMonth) && headlineMonth !== basketMonth;
+}
+
 // ---------------------------------------------------------------------------
 // PERCENTILE — position from the bottom
 // ---------------------------------------------------------------------------

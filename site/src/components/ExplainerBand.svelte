@@ -11,6 +11,7 @@
   import { COPY, t } from "$lib/content.js";
   import { SUPPORT_COPY } from "$lib/support.js";
   import { integer, periodLong } from "$lib/format.js";
+  import { monthsSplit as monthsAreSplit } from "$lib/view.js";
 
   const {
     /** "y1" for the rolling 12 months, or a year — the formula names it. */
@@ -27,12 +28,10 @@
   } = $props();
 
   const fmt0 = (x) => integer(x, $lang);
-  // Both months, or neither: with one payload missing there is nothing to
-  // compare, and the reassuring sentence is the safer of the two to fall back
-  // on — it claims nothing about a month the page cannot name.
-  const monthsSplit = $derived(
-    Boolean(headlineMonth) && Boolean(basketMonth) && headlineMonth !== basketMonth
-  );
+  // `/how/` §инфлацията branches the same claim over the same two months, and a
+  // comparison written out in each place is one that goes stale in one of them.
+  // `view.js#monthsSplit` carries why the fallback is the reassuring sentence.
+  const monthsSplit = $derived(monthsAreSplit({ headlineMonth, basketMonth }));
 
   // Whether the formula block has the figures it quotes.
   //

@@ -1248,6 +1248,35 @@ test("the country page accounts for the headline-versus-basket gap", () => {
   }
 });
 
+test("the country page's gap paragraph branches on the two months", () => {
+  // The same claim the explainer branches, on the page that prints the two
+  // figures side by side rather than one of them. `explainSameMonth` /
+  // `explainSplitMonth` are shared deliberately: one sentence about one pair of
+  // published months, so a correction to it cannot land on one surface and miss
+  // the other.
+  for (const claim of ["explainSameMonth", "explainSplitMonth"]) {
+    assert.ok(HOW.includes(claim), `the country page no longer renders COPY.${claim}`);
+  }
+  assert.ok(
+    (HOW.match(/monthsSplit/g) ?? []).length >= 3,
+    "the months claim must branch in BOTH language spans — a hardcoded sentence " +
+      "in the other renders the wrong reason for every reader of that language"
+  );
+  for (const hardcoded of [
+    "И двете са за един и същ най-нов месец",
+    "Both are for the same latest month",
+    "различни месеци",
+    "different months",
+  ]) {
+    assert.ok(
+      !HOW.includes(hardcoded),
+      `"${hardcoded}" is written into the country page as a literal. Which of the ` +
+        "two is true changes with Eurostat's release calendar, so it belongs behind " +
+        "the branch."
+    );
+  }
+});
+
 test("the country page describes and never advises", () => {
   // P6. A reference page is where "you should" arrives most naturally, because
   // every section ends in a figure somebody could act on.
