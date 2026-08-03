@@ -24,7 +24,20 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseding a run is right on a working branch and wrong on `main`.
+  #
+  # On a branch, a second push means the first commit is no longer what anyone
+  # will merge, so finishing its run answers a question nobody asked and holds
+  # a runner while doing it.
+  #
+  # `main` is the deployed branch, and every commit on it is one somebody may
+  # deploy — including the one a second merge arrives on top of. Cancelling
+  # there leaves a commit on `main` whose CI never completed, and the record of
+  # that is a grey circle beside a SHA that is already live. The gap is not
+  # covered by the later run either: that run checks the tree AFTER both
+  # merges, so if the first merge broke something the second one happens to
+  # mask, nothing ever reported on the broken state.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   # Every job below carries a `timeout-minutes`, and the reasoning is the same
