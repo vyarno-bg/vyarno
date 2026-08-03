@@ -496,8 +496,8 @@ export const COPY = {
     en: "If that repeats every month, it comes to <b>€{y}</b> over a year.",
   },
   leftCash: {
-    bg: "Оставени в брой, при инфлация {i}% те биха купували с <b>€{e}</b> по-малко след година - колкото <b>€{v}</b> днес. Всяка доходност под {i}% годишно също изостава от цените, само по-бавно.",
-    en: "Kept as cash at {i}% inflation, that money would buy <b>€{e}</b> less in a year - as much as <b>€{v}</b> buys today. Any return below {i}% a year still trails prices, just more slowly.",
+    bg: "Оставени в брой, при инфлация {i}% те биха купували с <b>€{e}</b> по-малко след година - колкото <b>€{v}</b> днес. Ако ги вложиш някъде и ти носят по-малко от {i}% на година, пак изостават от цените, само по-бавно.",
+    en: "Kept as cash at {i}% inflation, that money would buy <b>€{e}</b> less in a year - as much as <b>€{v}</b> buys today. Put somewhere that pays less than {i}% a year, it still trails prices, just more slowly.",
   },
   leftAssume: {
     bg: "допускане: цените се движат следващата година както през последната. Това е сметка, не прогноза - Евростат не прогнозира.",
@@ -1375,8 +1375,8 @@ export const COPY = {
     en: "official inflation over 12 months",
   },
   howKBasket: {
-    bg: "13-те групи, сумирани с официалните им тегла",
-    en: "the 13 groups summed at their official weights",
+    bg: "сборът на 13-те групи, всяка според дела си",
+    en: "the 13 groups added up, each by its share",
   },
   howKContrib: {
     bg: "осигуровки за сметка на работника",
@@ -1394,13 +1394,13 @@ export const COPY = {
   },
   howKLtv: { bg: "минимално самоучастие (БНБ)", en: "minimum down payment (BNB)" },
   howKDsti: {
-    bg: "таван на вноската спрямо нетния доход (БНБ)",
-    en: "payment-to-net ceiling (BNB)",
+    bg: "най-много от чистия доход за вноска (БНБ)",
+    en: "most of take-home that may go to the payment (BNB)",
   },
   howKMaturity: { bg: "максимален срок (БНБ)", en: "maximum term (BNB)" },
   howKObserved: {
-    bg: "среднопретеглена вноска спрямо дохода при новите кредити",
-    en: "observed weighted-average payment-to-income on new loans",
+    bg: "колко от дохода отива за вноска при новите кредити",
+    en: "how much of income goes to the payment on new loans",
   },
   howKEurM2: { bg: "медианна цена на кв. м в София", en: "median €/m² in Sofia" },
   // The spread the prose calls "several times apart", so the claim has its own
@@ -1422,13 +1422,24 @@ export const COPY = {
 
   // Table column headings.
   howColGroup: { bg: "група", en: "group" },
-  howColWeight: { bg: "тегло в кошницата", en: "share of the basket" },
+  howColWeight: { bg: "дял в кошницата", en: "share of the basket" },
   howColYoy: { bg: "за 12 месеца", en: "over 12 months" },
   howColGross: { bg: "бруто", en: "gross" },
   howColNet: { bg: "нето", en: "net" },
   howColTaken: { bg: "взето", en: "taken" },
-  howColEffective: { bg: "ефективна ставка", en: "effective rate" },
-  howColMarginal: { bg: "върху следващото евро", en: "on the next euro" },
+  // The two columns that say what is taken, and each is named after what it is
+  // a share OF rather than after the term for it. «Ефективна ставка» and
+  // «маргинална ставка» are the textbook pair, and between them they are the
+  // whole finding of this table — a reader who has to look up both names has
+  // been handed the table and not the finding.
+  //
+  // «Върху следващото евро» was the second one's plain-language attempt and it
+  // is not plainer, it is just shorter: nobody is paid one euro at a time. The
+  // rule the calculator's own wedge copy states — every marginal sentence says
+  // «от увеличението», never «върху следващото евро», because a raise is the
+  // thing that actually happens to a person — applies to a column heading too.
+  howColEffective: { bg: "удържа се от заплатата", en: "taken from the pay" },
+  howColMarginal: { bg: "удържа се от увеличението", en: "taken from a raise" },
   howColRung: { bg: "стъпало", en: "rung" },
   howColBasis: { bg: "измерено или пресметнато", en: "surveyed or modelled" },
   // The wage series is laid out a year to a row and a quarter to a column, so
