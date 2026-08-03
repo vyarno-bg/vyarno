@@ -52,6 +52,7 @@ to do to count is §"The standard a test has to meet".
 | `site/scripts/verify_legal.mjs` | `node:test` | The legal documents, the ЗЕТ чл. 4 identity, the licence claim, upstream attribution |
 | `site/scripts/verify_wiring.mjs` | `node:test` | Template wiring — which value the markup passes to which function |
 | `site/scripts/verify_static_assets.mjs` | `node:test` | `robots.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
+| `site/scripts/verify_suites.mjs` | `node:test` | That `package.json` names every suite on disk — an omitted one runs never |
 | `site/scripts/verify_render.mjs` | `node:test` + Playwright | The built page, in a browser |
 | `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
 

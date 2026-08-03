@@ -69,6 +69,7 @@ site/
 │   ├── verify_support.mjs         # the donation rules (support.js ↔ FUNDING.yml)
 │   ├── verify_template_safety.mjs # the {@html} invariants, both directions
 │   ├── verify_static_assets.mjs   # robots · security.txt · sitemap · the CSP
+│   ├── verify_suites.mjs          # every suite on disk is named by a runner
 │   ├── verify_render.mjs          # the built page, in a browser
 │   ├── make_og_image.py           # regenerates the static OG preview + the
 │   │                              # two README banners (stdlib only)
