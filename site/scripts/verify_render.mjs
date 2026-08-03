@@ -1407,11 +1407,23 @@ test("the disclosure chip reads as a control, and not as a verdict", { skip }, a
         "the control this test describes is gone, not merely restyled"
     );
     const style = await chip.evaluate((el) => {
+      // The verdict tokens resolved through the page's own theme, so this
+      // reads the same in dark mode and does not restate a hex the tokens own.
+      const resolve = (token) => {
+        const probe = document.createElement("div");
+        probe.style.background = `var(${token})`;
+        document.body.append(probe);
+        const value = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return value;
+      };
       const s = getComputedStyle(el);
       return {
         borderWidth: parseFloat(s.borderTopWidth),
         padding: parseFloat(s.paddingTop) + parseFloat(s.paddingBottom),
         height: el.getBoundingClientRect().height,
+        background: s.backgroundColor,
+        verdicts: ["--real", "--real-soft", "--erode", "--erode-soft"].map(resolve),
       };
     });
     assert.ok(style.borderWidth > 0, "the chip lost its border — nothing marks it as a control");
@@ -1419,6 +1431,18 @@ test("the disclosure chip reads as a control, and not as a verdict", { skip }, a
     assert.ok(
       style.height >= 20,
       `the disclosure control is ${style.height}px tall, which is not a tap target`
+    );
+    // The half the title claims and the assertions above do not reach. `--real`
+    // and `--erode` mean the reader's figure beat or lost to the country's;
+    // painting a resting control in either puts two meanings of one colour
+    // beside each other, and the reader has to learn which is which per element.
+    // Hover and focus-visible may use the accent, where it is unambiguously
+    // about the interaction — this measures the chip at rest.
+    assert.ok(
+      !style.verdicts.includes(style.background),
+      `the resting disclosure chip is painted ${style.background}, which is a verdict ` +
+        "fill — the affordance is carried by shape, and the accent is for :hover and " +
+        ":focus-visible"
     );
 
     // Every `.disclose` summary carries the caret glyph; without it the chip
