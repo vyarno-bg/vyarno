@@ -937,6 +937,66 @@ test("the results card announces the headline, not fifty numbers", { skip }, asy
 });
 
 test(
+  "the verdict names the comparison in words, over bars that keep both figures",
+  { skip },
+  async () => {
+    // Two halves of one rule, and they pull against each other — which is why
+    // they are asserted together rather than in two tests that can be satisfied
+    // one at a time.
+    //
+    // The bars own the figures: the reader's rate and the average, labelled, to
+    // one decimal, over the period the caption above them names. Deleting one
+    // to shorten the card takes a published number off the default view, and
+    // `barCeiling` exists so the pair can be compared by length.
+    //
+    // The paragraph under them owns the words. It says which rate is bigger and
+    // whether the gap is worth calling one — the thing two bars cannot say — and
+    // it says it without a figure, because a percentage there is the pair above
+    // reprinted 20px lower, and a reader who meets the same number twice looks
+    // for the difference between the copies.
+    await withApp(async (page, errors) => {
+      const bars = page.locator(".vbars .num");
+      const verdict = page.locator("p.m-verdict");
+
+      // Default load: the reader's weights ARE the official ones, so the two
+      // rates agree and the card's verdict is the near one.
+      const onLoad = (await bars.allInnerTexts()).map((s) => s.trim());
+      assert.equal(onLoad.length, 2, `the comparison lost a bar: ${onLoad.join(" | ")}`);
+      for (const shown of onLoad) {
+        assert.match(shown, /\d+[.,]\d%/, `a bar states no rate to one decimal: "${shown}"`);
+      }
+      assert.match(await verdict.innerText(), /близо до средностатистическата/);
+
+      // A weight moved onto transport, so the basket parts company with the
+      // average one and the verdict has a direction to state.
+      await page.locator('input[type="range"]').nth(6).fill("40");
+      await page.waitForTimeout(400);
+
+      const moved = (await bars.allInnerTexts()).map((s) => s.trim());
+      assert.notEqual(
+        moved[0],
+        onLoad[0],
+        "the reader's bar ignored a weight moved onto transport"
+      );
+      assert.notEqual(
+        moved[0],
+        moved[1],
+        "the two bars state the same rate after the basket moved"
+      );
+
+      const said = (await verdict.innerText()).replace(/\s+/g, " ").trim();
+      assert.match(said, /по-скъпо|по-евтино/, `the verdict states no direction: "${said}"`);
+      assert.doesNotMatch(
+        said,
+        /\d/,
+        `the verdict reprints a figure the bars above it already carry: "${said}"`
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
+test(
   "the skip link exists, is reachable by keyboard, and lands clear of the header",
   { skip },
   async () => {
