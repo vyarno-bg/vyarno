@@ -876,6 +876,100 @@ test("the country page answers in the reader's language, both ways", { skip }, a
   }, "/how/");
 });
 
+test("the country page fits a phone, and its wide tables scroll inside it", { skip }, async () => {
+  // Five columns do not fit 360px, so each table sits in an `overflow-x: auto`
+  // box. The failure that box exists to prevent is the PAGE scrolling sideways
+  // instead — which puts the sticky header, the contents list and every
+  // paragraph on a horizontal ride at the width most Bulgarian readers arrive
+  // at. The two halves are asserted together because dropping the box fixes
+  // neither and passes the second on its own.
+  for (const width of [360, 390]) {
+    await withApp(
+      async (page, errors) => {
+        const seen = await page.evaluate(() => ({
+          docScroll: document.documentElement.scrollWidth,
+          docClient: document.documentElement.clientWidth,
+          boxes: [...document.querySelectorAll("main.how .scroll")].map((el) => ({
+            over: el.scrollWidth - el.clientWidth,
+            inViewport:
+              el.getBoundingClientRect().right <= document.documentElement.clientWidth + 1,
+          })),
+        }));
+        assert.ok(
+          seen.docScroll <= seen.docClient + 1,
+          `/how/ scrolls sideways at ${width}px (${seen.docScroll} against ${seen.docClient})`
+        );
+        assert.ok(seen.boxes.length >= 4, `/how/ rendered ${seen.boxes.length} scroll boxes`);
+        for (const box of seen.boxes) {
+          assert.ok(box.inViewport, `a table box reaches past the ${width}px viewport`);
+        }
+        assert.ok(
+          seen.boxes.some((b) => b.over > 0),
+          `no table on /how/ overflows its box at ${width}px, so either the ` +
+            "tables shrank out of the shape this protects or the box stopped " +
+            "clipping and the page is about to scroll instead"
+        );
+        assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+      },
+      "/how/",
+      { viewport: { width, height: 780 } }
+    );
+  }
+});
+
+test("a keyboard reader can reach every column of every table", { skip }, async () => {
+  // A scroll container is not focusable on its own, and two of the four on
+  // `/how/` contain no link either — so at a phone width the wedge table's last
+  // two columns were unreachable by any keyboard means at all, on a page whose
+  // whole content is tables. The box is a tab stop AND carries a name, because
+  // a tab stop that announces nothing is its own defect.
+  await withApp(
+    async (page, errors) => {
+      const boxes = await page.locator("main.how .scroll").evaluateAll((els) =>
+        els.map((el) => ({
+          tabIndex: el.tabIndex,
+          role: el.getAttribute("role"),
+          label: (el.getAttribute("aria-label") ?? "").trim(),
+        }))
+      );
+      assert.ok(boxes.length >= 4, `/how/ rendered ${boxes.length} scroll boxes`);
+      const names = new Set();
+      for (const box of boxes) {
+        assert.equal(box.tabIndex, 0, "a table's scroll box is not a tab stop");
+        assert.equal(box.role, "region", "a focusable scroll box announces no role");
+        assert.ok(box.label, "a focusable scroll box has no accessible name");
+        names.add(box.label);
+      }
+      assert.equal(
+        names.size,
+        boxes.length,
+        `two scroll boxes share a name (${[...names].join(" / ")}) — a landmark ` +
+          "list that repeats one label tells a reader which tables exist and not " +
+          "which is which"
+      );
+
+      // And it actually scrolls once focused, which is the whole point of the
+      // attribute rather than a property of having it.
+      const moved = await page.evaluate(async () => {
+        const box = [...document.querySelectorAll("main.how .scroll")].find(
+          (el) => el.scrollWidth > el.clientWidth
+        );
+        if (!box) return null;
+        box.focus();
+        const before = box.scrollLeft;
+        box.scrollLeft = before + 40;
+        return { focused: document.activeElement === box, before, after: box.scrollLeft };
+      });
+      assert.ok(moved, "no table overflows at this width, so the box under test is the wrong one");
+      assert.ok(moved.focused, "the scroll box refused focus");
+      assert.ok(moved.after > moved.before, "the focused box did not scroll");
+      assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+    },
+    "/how/",
+    { viewport: { width: 360, height: 780 } }
+  );
+});
+
 test("mounting adds no second title or description to the head", { skip }, async () => {
   // `<svelte:head>` APPENDS to the real head rather than replacing what the
   // entry file put there, so a component that declares a `<meta
@@ -906,6 +1000,77 @@ test("mounting adds no second title or description to the head", { skip }, async
       },
       path,
       {}
+    );
+  }
+});
+
+test("the country page's skip link exists and lands clear of the header", { skip }, async () => {
+  // The calculator's equivalent, on the page that needs it more: eleven
+  // controls — the header's four and the contents list's seven — sit between a
+  // keyboard reader's first Tab and the first sentence.
+  await withApp(async (page, errors) => {
+    const skip = page.locator("a.skip");
+    assert.equal(await skip.count(), 1, "/how/ has no skip link");
+    assert.equal(await skip.first().getAttribute("href"), "#main");
+    await page.keyboard.press("Tab");
+    const focused = await page.evaluate(() => document.activeElement?.className ?? "");
+    assert.ok(focused.includes("skip"), `the first tab stop on /how/ is "${focused}"`);
+
+    const clearance = await page.evaluate(() => {
+      const main = document.querySelector("#main");
+      return (
+        (parseFloat(getComputedStyle(main).scrollMarginTop) || 0) -
+        document.querySelector("header.site").getBoundingClientRect().height
+      );
+    });
+    assert.ok(
+      clearance > 0,
+      `#main's scroll offset is ${clearance}px short of the sticky header, so the ` +
+        "skip link lands the reader underneath it"
+    );
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
+});
+
+test("the country page's stat rows leave no orphaned cell", { skip }, async () => {
+  // The rule the national strip is already held to, on the page that repeats
+  // the shape seven times with one to four cards per row. `flex: 1 1 190px` in
+  // a wrapping row is what makes a lone last card fill its row instead of
+  // sitting at a third of the width beside two empty cells; a fixed column
+  // count would look identical at one width and leave the hole at another.
+  for (const width of [1280, 768, 390]) {
+    await withApp(
+      async (page, errors) => {
+        const groups = await page.locator("main.how .stats").evaluateAll((els) =>
+          els.map((el) =>
+            [...el.children].map((k) => {
+              const r = k.getBoundingClientRect();
+              return { top: Math.round(r.top), right: Math.round(r.right) };
+            })
+          )
+        );
+        assert.ok(groups.length >= 5, `/how/ rendered ${groups.length} stat rows`);
+        for (const [i, cards] of groups.entries()) {
+          const rows = new Map();
+          for (const c of cards) {
+            const key = [...rows.keys()].find((t) => Math.abs(t - c.top) < 4) ?? c.top;
+            rows.set(key, [...(rows.get(key) ?? []), c]);
+          }
+          const full = Math.max(...cards.map((c) => c.right));
+          for (const [top, row] of rows) {
+            const reached = Math.max(...row.map((c) => c.right));
+            assert.ok(
+              full - reached < 8,
+              `at ${width}px, stat group ${i}'s row at y=${top} stops ` +
+                `${full - reached}px short of the others — its last card is ` +
+                "followed by an empty cell"
+            );
+          }
+        }
+        assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+      },
+      "/how/",
+      { viewport: { width, height: 900 } }
     );
   }
 });

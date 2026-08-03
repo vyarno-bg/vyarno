@@ -193,6 +193,14 @@ sentences instead of digits. So the paragraph branches on `view.js#monthsSplit`,
 which the calculator's explainer already did, and the served HTML is checked
 against the months the same `dist/` shipped.
 
+The page is also read by keyboard and at 360px, which is not an SEO property but
+is decided in the same markup: each table sits in an `overflow-x: auto` box so
+the page body never scrolls sideways, and each box is a named `role="region"`
+tab stop, because a scroll container is not focusable on its own and two of the
+four hold no link to tab to. What says a table scrolls is the column clipped at
+the boundary and the focus ring — the conventional edge shadow is in `How.svelte`
+as a comment saying why it is not in the stylesheet.
+
 The one route to it from the calculator is inside the explainer's «Как работи
 това?» — a reader who opened that is already asking where the numbers come from.
 One link, because a second to the same page is navigation noise.

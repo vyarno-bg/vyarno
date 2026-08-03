@@ -25,6 +25,16 @@ prerender the whole of it; `verify_wiring.mjs` holds that property from both
 sides, refusing an `<input>` in the template and refusing any read of a value
 the reader types.
 
+Its content is four wide tables, so two things about them are structural rather
+than styling. Each sits in an `overflow-x: auto` box, because five columns at
+360px would otherwise scroll the page body and take the sticky header and every
+paragraph sideways with it. And each box is a `tabindex="0"` `role="region"`
+with its own name: a scroll container is not focusable on its own, and the wedge
+table holds no link to tab to, so without it two of that table's five columns
+were unreachable by keyboard at a phone width. `verify_render.mjs` holds both,
+and the `.scroll` rule in `How.svelte` carries what was tried for the visual
+affordance and why it is not there.
+
 `/support/` is a page rather than a section of `/legal/` because it is not a
 legal document: it carries no obligation, it is not versioned with the four,
 and reaching it through the legal entry cost a reader the ~30 kB of terms of
