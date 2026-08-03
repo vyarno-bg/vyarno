@@ -36,14 +36,38 @@ import { published } from "./published-payload.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, "..", "src");
 
-/** Every .svelte and .js source under src/, concatenated. */
-function readAllSources() {
+/**
+ * A source file with its comments blanked.
+ *
+ * A comment describing a bug must never satisfy the test for its fix — the
+ * explainer carries a comment naming the exact literals it must not print,
+ * which is precisely the trap. Markup comments, block comments and whole-line
+ * `//` comments all go; trailing `//` is left alone so a `https://` inside a
+ * string literal survives.
+ */
+function blankComments(src) {
+  return src
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .split("\n")
+    .map((line) => (line.trimStart().startsWith("//") ? "" : line))
+    .join("\n");
+}
+
+/** Every .svelte and .js source under src/, comments blanked, concatenated. */
+function readLiveSources() {
   const parts = [];
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (/\.(svelte|js)$/.test(entry.name)) parts.push(readFileSync(path, "utf8"));
+      // Blanked per FILE, before anything is joined or collapsed. The `//`
+      // pass above works line by line, so it has to see line breaks — hand it
+      // whitespace-normalised text and it gets one line to look at, blanks
+      // nothing, and every `//` comment in src/ counts as live code for the
+      // rest of this file.
+      else if (/\.(svelte|js)$/.test(entry.name))
+        parts.push(blankComments(readFileSync(path, "utf8")));
     }
   };
   walk(SRC);
@@ -52,8 +76,8 @@ function readAllSources() {
   return parts.join("\n").replace(/\s+/g, " ");
 }
 
-/** Read once: nothing here mutates the tree, and two tests scan it. */
-const SOURCES = readAllSources();
+/** Read once: nothing here mutates the tree, and several tests scan it. */
+const LIVE_SOURCES = readLiveSources();
 
 /** The `{ bg, en }` entries of COPY, as [key, value] pairs. */
 function bilingualEntries() {
@@ -80,7 +104,7 @@ test("every COPY entry ships both languages, non-empty", () => {
 });
 
 test("no COPY key is dead, and no rendered key is missing", () => {
-  const sources = SOURCES;
+  const sources = LIVE_SOURCES;
   const declared = new Set(Object.keys(COPY));
 
   // A key with no render site is dead weight that reads as shipped. Both
@@ -132,7 +156,7 @@ test("the payload manifest's reader-facing strings follow the COPY rules too", (
 test("every placeholder in a COPY string is substituted somewhere", () => {
   // `t(COPY.x, lang, { … })` fills `{name}` placeholders. One left unfilled
   // renders the literal braces to the reader.
-  const sources = SOURCES;
+  const sources = LIVE_SOURCES;
   const offenders = [];
   for (const [key, value] of bilingualEntries()) {
     for (const lang of ["bg", "en"]) {
@@ -356,26 +380,6 @@ test("every euro amount in the carve-out copy carries its unit", () => {
 // Where a rule is really "this claim must not appear", it is a regex over the
 // imported string. Where it is "this claim must appear", it names the key.
 // ---------------------------------------------------------------------------
-
-/**
- * Every source file under src/, with comments blanked.
- *
- * A comment describing a bug must never satisfy the test for its fix — the
- * explainer carries a comment naming the exact literals it must not print,
- * which is precisely the trap. Markup comments, block comments and whole-line
- * `//` comments all go; trailing `//` is left alone so a `https://` inside a
- * string literal survives.
- */
-function blankComments(src) {
-  return src
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .map((line) => (line.trimStart().startsWith("//") ? "" : line))
-    .join("\n");
-}
-
-const LIVE_SOURCES = blankComments(SOURCES);
 
 /** The explainer band on its own — it is one component, so no slicing. */
 const EXPLAINER = blankComments(
