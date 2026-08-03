@@ -79,6 +79,55 @@ test("robots.txt declines the training crawlers, by the names they use", () => {
   }
 });
 
+test("the AI crawlers that cite are allowed, and still kept out of the payloads", () => {
+  // Two failures, and the second is the one nobody would notice.
+  //
+  // A citing agent silently rejoining the declined list reverses a decision
+  // taken on the operators' own documentation, and the only symptom is that
+  // ChatGPT and Perplexity stop citing a site nobody is watching the citation
+  // rate of.
+  //
+  // The second: RFC 9309 2.2.1 has a crawler obey the most specific group
+  // matching its token WITHOUT merging the catch-all into it. So a group
+  // written as `User-agent: X` + `Allow: /` — which is what anybody
+  // simplifying this file would write — hands that agent the raw payloads,
+  // and the /data/published/ rule three lines above goes on looking like it
+  // covers everyone.
+  const lines = directives(ROBOTS);
+  for (const bot of [
+    "OAI-SearchBot",
+    "ChatGPT-User",
+    "PerplexityBot",
+    "Perplexity-User",
+    "Claude-SearchBot",
+    "Claude-User",
+  ]) {
+    const at = lines.indexOf(`User-agent: ${bot}`);
+    assert.ok(at >= 0, `robots.txt no longer names ${bot}`);
+
+    // A group may open with several User-agent lines; the rules start after
+    // the last of them and run to the next one.
+    let i = at;
+    while (lines[i + 1]?.startsWith("User-agent:")) i += 1;
+    const next = lines.findIndex((l, j) => j > i && l.startsWith("User-agent:"));
+    const group = lines.slice(i + 1, next === -1 ? undefined : next);
+
+    assert.ok(
+      !group.includes("Disallow: /"),
+      `${bot} is declined the whole site. It is documented by its operator as ` +
+        "surfacing a link to the source rather than training on it, which is " +
+        "the side of note 3's test the file puts it on."
+    );
+    assert.ok(
+      group.includes("Disallow: /data/published/"),
+      `the ${bot} group does not repeat Disallow: /data/published/. A named ` +
+        "group replaces the catch-all rather than adding to it (RFC 9309 " +
+        "2.2.1), so without this line that agent is invited into the raw " +
+        "payloads while the group above still reads as though it covers them."
+    );
+  }
+});
+
 test("robots.txt points at the sitemap we actually generate", () => {
   assert.ok(
     directives(ROBOTS).includes(`Sitemap: ${ORIGIN}/sitemap.xml`),
