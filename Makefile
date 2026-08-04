@@ -73,7 +73,7 @@ PYTEST := pipeline/.venv/bin/pytest
 RUFF := pipeline/.venv/bin/ruff
 
 .DEFAULT_GOAL := help
-.PHONY: help setup lock check fmt lint test build render coverage clean
+.PHONY: help setup lock check fmt lint test build render headers coverage clean
 
 help: ## Show this list
 	@echo "Вярно — make targets:"
@@ -125,6 +125,14 @@ build: ## Production build of the site
 
 render: ## Build, then load the built page in a browser and assert it rendered
 	@node site/scripts/check-all.mjs render
+
+headers: ## Ask the live origin whether it serves what site/public/_headers declares
+	@# Deliberately outside `check`: it needs a network and a deployed site.
+	@# `_headers` is the contract, and a host that does not read it natively has
+	@# the same policy hand-written in its own syntax — a block added here and
+	@# not there serves 200 with the rule missing, which nothing offline sees.
+	@# ORIGIN=… to point it at a staging deploy.
+	@node site/scripts/check-live-headers.mjs $(ORIGIN)
 
 lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@# pip-compile reaches into pip's internals, and the current release (7.6.0)

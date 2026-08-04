@@ -88,7 +88,7 @@ exception, and it is a cost rather than a pattern to extend. A rule changes in
 | Change **which number feeds a formula** | [`site.md`](./site.md) §"The five-layer split" → `view.js` → `verify_view.mjs`. **Not** in a `$derived(...)`, and not in `calculator.svelte.js` either — moving the reactive graph into a rune module did not relax that rule |
 | Change UI copy that makes a claim about our own numbers | `site/src/lib/content.js` → `site/scripts/verify_copy.mjs`. A sentence can be false while the arithmetic is right |
 | Change a colour | `site/src/lib/tokens.css` → `verify_contrast.mjs` (WCAG AA is enforced, both themes) |
-| Change a response header | `site/public/_headers` → `verify_static_assets.mjs`. That file is the declaration; applying it is the deployment's job, and this repository does not describe one |
+| Change a response header | `site/public/_headers` → `verify_static_assets.mjs`. That file is the declaration; applying it is the deployment's job, and this repository does not describe one. After the deploy, `make headers` asks the live origin whether it agrees |
 | Touch a HICP connector | [`data-sources.md`](./data-sources.md) §"Cross-cutting rules" → gates 1–2 |
 | Ship a change | `make check` from the repo root, all green — or the long form in [`local-development.md`](./local-development.md). Tests move with the code in the same commit |
 

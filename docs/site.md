@@ -53,6 +53,7 @@ site/
 │   ├── check-all.mjs          # lint → test → render, and the counts at the end
 │   ├── check-test-floors.mjs  # no suite got smaller — the only counts there are
 │   ├── find-chromium.mjs      # which browser test:render will use, proved by launching it
+│   ├── check-live-headers.mjs # the deployed origin against _headers, over HTTP
 │   ├── release-build.mjs      # build + the release-only guards, one command
 │   ├── prerender.mjs          # post-build: every indexable entry, figures and all
 │   ├── copy-data.mjs          # post-build: ../data/published/*.json → dist/
@@ -1277,8 +1278,24 @@ It is the only place in the repo where response headers are declared, and it is
 `_headers` natively applies it as written, and a host that does not needs the
 same policy in its own syntax, made from this file. `verify_static_assets.mjs`
 pins every directive exactly, so the declaration cannot widen silently. What the
-build cannot see is a server whose config has drifted from it — that is checked
-by requesting a page from the live origin and reading the headers back.
+build cannot see is a server whose config has drifted from it — that is
+`make headers` (`npm run check:headers`, an origin argument for a staging
+deploy), which requests every declared path from the live origin and reads the
+headers back.
+
+It sits outside `make check` on purpose: it needs a network and a deployed site,
+and a suite that fails when the wifi drops is one people learn to skip. Run it
+after a deploy that touched `_headers`, and when a bug report has the shape of a
+missing header. Drift there is invisible from inside the repository — the rule
+exists, every test passes, the response carries a 200 — so what a reader loses is
+only whatever that block carried. It is how `/llms.txt` came to serve its
+Cyrillic as `text/plain` with no charset, which a Bulgarian browser decodes as
+windows-1251: «Вярно» reaching the reader as «Р’СЏСЂРЅРѕ», with the bytes on
+disk correct all along.
+
+Every `.txt` the site serves declares `charset=utf-8` for that reason, and
+`verify_static_assets.mjs` holds it as a rule over `public/` rather than a list
+of the files, so the next one added is covered without an edit.
 
 Every directive is what the app already does rather than a wish, and
 `verify_static_assets.mjs` compares each one **exactly** — a substring check

@@ -20,7 +20,8 @@
     "check": "svelte-check --tsconfig ./jsconfig.json",
     "verify:math": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=.report-node.tap scripts/verify_format.mjs scripts/verify_net_salary.mjs scripts/verify_mirror_math.mjs scripts/verify_view.mjs scripts/verify_stores.mjs scripts/verify_contrast.mjs scripts/verify_data_contracts.mjs scripts/verify_legal.mjs scripts/verify_static_assets.mjs scripts/verify_support.mjs scripts/verify_copy.mjs scripts/verify_template_safety.mjs scripts/verify_wiring.mjs scripts/verify_suites.mjs scripts/verify_docs_map.mjs",
     "test:render": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=.report-render.tap scripts/verify_render_prerender.mjs scripts/verify_render_shell.mjs scripts/verify_render_country.mjs scripts/verify_render_strip.mjs scripts/verify_render_basket.mjs scripts/verify_render_results.mjs scripts/verify_render_layout.mjs scripts/verify_render_payroll.mjs scripts/verify_render_share.mjs scripts/verify_render_contrast.mjs",
-    "check:all": "node scripts/check-all.mjs"
+    "check:all": "node scripts/check-all.mjs",
+    "check:headers": "node scripts/check-live-headers.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
