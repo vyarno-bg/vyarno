@@ -148,11 +148,16 @@
     color: var(--stamp);
     font-weight: 700;
   }
+  /* The text is `--erode-ink` rather than `--erode` because it sits on the
+     translucent band: `--erode` on that composite is 4.22:1 light and 4.45:1
+     dark, under AA, and this is the sentence a reader gets on the day a
+     payload stopped refreshing. The 1px rule below it is a border, which 1.4.11
+     asks 3:1 of and `--erode` clears. */
   .stale-banner {
     background: var(--erode-soft);
     border-bottom: 1px solid var(--erode);
     padding: 7px 0;
-    color: var(--erode);
+    color: var(--erode-ink);
     font-size: var(--fs-small);
   }
   .stale-banner .wrap {

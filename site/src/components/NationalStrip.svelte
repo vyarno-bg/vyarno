@@ -475,8 +475,11 @@
     color: var(--real-ink);
     background: var(--real-soft);
   }
+  /* `--erode-ink` on the band, mirroring `.up` above: the soft fill is
+     translucent, so writing `--erode` on it renders at 3.90:1 in the dark
+     theme even though `--erode` on the bare surface is 4.86:1. */
   .stat .sd.down {
-    color: var(--erode);
+    color: var(--erode-ink);
     background: var(--erode-soft);
   }
   .stat .sl {

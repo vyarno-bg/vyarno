@@ -177,6 +177,14 @@
   --real-ink: #145140;
   --erode: #b23a2e;
   --erode-soft: rgba(178, 58, 46, 0.13);
+  /* Text painted ON an --erode-soft band, the way --real-ink is what goes on
+     --real-soft. The band is rgba, so it lifts the surface toward its own hue
+     and takes about 1 off the ratio of anything written over it: --erode
+     itself lands at 4.22:1 on a band over --paper, under AA, while both the
+     token and the surface pass their own checks. The pair that matters most
+     is the stale-data banner, which exists to be read on the day a payload
+     stops refreshing. */
+  --erode-ink: #9c2b21;
   --gain-band: rgba(28, 107, 84, 0.07);
   --rule: rgba(23, 33, 27, 0.05); /* faint ledger rule */
   --stamp: #b23a2e; /* official-mark accent (source refs) */
@@ -248,6 +256,9 @@ html[data-theme="dark"] {
   --real-ink: #7ecaab;
   --erode: #db6a57;
   --erode-soft: rgba(219, 106, 87, 0.17);
+  /* Same role as the light theme's --erode-ink, and the dark band costs more:
+     --erode over it is 3.90:1 on --surface and 4.18:1 on --paper-2. */
+  --erode-ink: #e58873;
   --gain-band: rgba(79, 176, 143, 0.11);
   --rule: rgba(231, 236, 225, 0.055);
   --stamp: #db6a57;
