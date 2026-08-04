@@ -892,7 +892,12 @@ test("no entry's structured data licenses a page of somebody else's figures", ()
   // Nested nodes are walked, because moving the property one level down is both
   // the fix and the way to reintroduce the bug while looking like the fix.
   const CODE_TYPES = ["WebApplication", "SoftwareApplication", "SoftwareSourceCode"];
-  const entries = ["index.html", join("how", "index.html"), join("legal", "index.html")];
+  const entries = [
+    "index.html",
+    join("how", "index.html"),
+    join("legal", "index.html"),
+    join("support", "index.html"),
+  ];
 
   const offences = [];
   const walk = (node, entry, type = "(root)") => {
@@ -921,7 +926,15 @@ test("no entry's structured data licenses a page of somebody else's figures", ()
     }
   }
 
-  assert.ok(blocks >= 2, `only ${blocks} JSON-LD blocks found — the entries lost their nodes`);
+  // One per entry, and the floor is the count rather than a token minimum: a
+  // walker over nothing reports no offence, so a floor far below what is there
+  // passes the two entries that quietly lost their nodes.
+  assert.ok(
+    blocks >= entries.length,
+    `only ${blocks} JSON-LD blocks found across ${entries.length} entries — ` +
+      "one lost its node, and a scope check over a node that is not there " +
+      "passes"
+  );
   assert.deepEqual(
     offences,
     [],
@@ -929,6 +942,67 @@ test("no entry's structured data licenses a page of somebody else's figures", ()
       "WebApplication that describes the code, and leave the page's terms to " +
       "/legal/#sources, where each publisher's own wording is."
   );
+});
+
+test("the structured data names the provider the legal page names", () => {
+  // Attribution decides whether an answer surface names a source at all, and
+  // the node an agent parses is not the ЗЕТ чл. 4 table it renders. So the
+  // name is published twice, and the failure worth catching is the second copy
+  // going stale — a provider who changed their published name would fix
+  // `IDENTITY` and never think of a `<head>`.
+  //
+  // A Person, never an Organization. The `legal_name` row's own note states
+  // there is no company, no partners and that nobody has paid for anything, so
+  // an Organization node here would be an organisational fact nothing supports
+  // — the invention AGENTS.md forbids by name, in the form a machine believes
+  // without checking.
+  const provider = IDENTITY.find((r) => r.id === "legal_name");
+  assert.ok(provider?.value, "IDENTITY publishes no legal_name to check the markup against");
+
+  const people = [];
+  const walk = (node) => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (node === null || typeof node !== "object") return;
+    if (node["@type"] === "Person") people.push(node);
+    assert.notEqual(
+      node["@type"],
+      "Organization",
+      "an entry's structured data declares an Organization. There is none — " +
+        "IDENTITY's legal_name note says so in as many words, and a schema.org " +
+        "node is read by exactly the consumer least able to check it."
+    );
+    for (const [k, v] of Object.entries(node)) if (k !== "@type") walk(v);
+  };
+
+  for (const entry of ["index.html", join("legal", "index.html")]) {
+    for (const [, body] of read("", entry).matchAll(
+      /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g
+    )) {
+      walk(JSON.parse(body));
+    }
+  }
+
+  assert.ok(
+    people.length > 0,
+    "no entry's structured data names a provider at all. An agent deciding " +
+      "whether to cite a source reads this node and not the identity table, " +
+      "and /legal/ is the page ЗЕТ чл. 4 wants that answerable from."
+  );
+  for (const person of people) {
+    assert.equal(
+      person.name,
+      provider.value,
+      `the structured data names ${JSON.stringify(person.name)} where IDENTITY ` +
+        `publishes ${JSON.stringify(provider.value)}. The markup may not be a ` +
+        "second source of truth for who provides this service."
+    );
+    assert.equal(
+      person.url,
+      "https://vyarno.bg/legal/",
+      "the provider node points somewhere other than /legal/, which is where " +
+        "the ЗЕТ чл. 4 identity actually is"
+    );
+  }
 });
 
 test("the footer credits every upstream the pipeline pulls from", () => {

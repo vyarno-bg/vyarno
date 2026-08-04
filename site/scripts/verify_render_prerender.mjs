@@ -57,6 +57,11 @@ import { periodLong } from "../src/lib/format.js";
 // still says any particular sentence.
 import { DOCS } from "../src/lib/legal.js";
 import { SUPPORT_COPY } from "../src/lib/support.js";
+import { PAYLOAD_FILES } from "../src/lib/payloads.js";
+// The date a crawler reads off the JSON-LD is the same value the sitemap's
+// <lastmod> carries, so the assertion computes it the same way rather than
+// restating the rule.
+import { LEGAL_LASTMOD, newestAsOf } from "./gen-sitemap.mjs";
 import { COPY, DIST, attribution, needsBuild, servedText, shipped } from "./render-dist.mjs";
 
 test(
@@ -420,6 +425,87 @@ test("the served pages carry one language, not two", { skip: needsBuild }, async
     );
   }
 });
+
+test(
+  "the served dateModified is the newest as_of shipped beside it",
+  { skip: needsBuild },
+  async () => {
+    // Freshness is what this product claims, and this is the field a crawler
+    // reads it off — Google takes it from the node and the recency-weighted
+    // answer surfaces do too; none of them reads the sitemap for it.
+    //
+    // Asserted against the payloads in the SAME dist/, the way the figures
+    // above are, so it stays green through every refresh and goes red the day
+    // the step stops running. Pinning today's date would be the second copy
+    // the slot exists to avoid.
+    const payloads = await Promise.all(PAYLOAD_FILES.map(shipped));
+    const newest = newestAsOf(payloads);
+    assert.match(String(newest), /^\d{4}-\d{2}-\d{2}$/, "no shipped payload carries an as_of");
+
+    // Parsed, not grepped. Every one of these entries explains its own
+    // `dateModified` in a `<head>` comment, and `/support/` explains why it
+    // has none — a substring check reads the prose and passes on a page whose
+    // node says nothing (`verify_wiring.mjs` §`live` is the same trap).
+    const dated = async (...page) => {
+      const html = await readFile(join(DIST, ...page), "utf8");
+      const found = [];
+      for (const [, body] of html.matchAll(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g
+      )) {
+        found.push(JSON.parse(body).dateModified ?? null);
+      }
+      assert.equal(found.length, 1, `${page.join("/")} carries ${found.length} JSON-LD blocks`);
+      return found[0];
+    };
+
+    for (const page of [["index.html"], ["how", "index.html"]]) {
+      assert.equal(
+        await dated(...page),
+        newest,
+        `${page.join("/")} does not state dateModified ${newest}, which is the ` +
+          "newest as_of across the payloads shipped beside it. A page whose " +
+          "figures moved and whose stated date did not is one a recency-weighted " +
+          "surface reads as older than it is."
+      );
+    }
+
+    assert.equal(
+      await dated("legal", "index.html"),
+      LEGAL_LASTMOD,
+      "/legal/ does not state the documents' effective date. Its content is " +
+        "the four documents and the identity table, and neither moves when a " +
+        "payload refreshes — a data date here would claim the terms changed."
+    );
+
+    // /support/ is left undated on purpose: its content changes when a channel
+    // opens or the copy is edited, and neither is a date this build can read.
+    // The failure is somebody filling the gap with the clock, which would then
+    // report the page as edited on every deploy.
+    assert.equal(
+      await dated("support", "index.html"),
+      null,
+      "/support/ carries a dateModified, and nothing in the build knows when " +
+        "that page last changed — see gen-sitemap.mjs on why it has no lastmod " +
+        "either"
+    );
+
+    // A token reaching a served page states a date of "__DATA_LASTMOD__" to
+    // every parser that reads the node, and `npm run dev` serves exactly that.
+    for (const page of [
+      ["index.html"],
+      ["how", "index.html"],
+      ["legal", "index.html"],
+      ["support", "index.html"],
+    ]) {
+      const html = await readFile(join(DIST, ...page), "utf8");
+      assert.ok(
+        !/__[A-Z_]+__/.test(html),
+        `${page.join("/")} ships an unfilled build token — the step that ` +
+          "substitutes it did not run over this entry"
+      );
+    }
+  }
+);
 
 test("every post-build step left the file it exists to write", { skip: needsBuild }, async () => {
   // A post-build step that does nothing exits 0, and `npm run build` reports
