@@ -20,6 +20,13 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  // Which spend-share sentence is true of this reader. `spendable` is the
+  // household's net pay minus whatever rent or mortgage they entered, so the
+  // variant that names only the net pay is exact at zero housing and overstates
+  // the base by the housing payment above it. Same gate, same reason, as
+  // LeftoverRow.
+  const hasHousing = $derived(calc.housingCost > 0);
 </script>
 
 <!-- BASKET PRESETS + SLIDERS -->
@@ -109,10 +116,31 @@
      into an answerable question. -->
 {#if calc.spendMode !== "eur"}
   <div class="spendshare">
+    <!-- Same two-variant split, and the same ternary form, as LeftoverRow:
+         the base is `spendable`, so naming the net pay alone overstates it by
+         the whole housing payment for a reader who entered one. The ternary
+         sits INSIDE `t(...)` because the template-safety scanner needs two
+         rooted `COPY.<key>.<lang>` leaves — `COPY[key]` fails that check. -->
     <p class="ss-lab">
-      <span class="l-bg">{@html t(COPY.spendShareLead, "bg", { p: fmt0(calc.spendSharePct) })}</span
+      <span class="l-bg"
+        >{@html t(
+          hasHousing ? COPY.spendShareLeadWithHousing : COPY.spendShareLeadNoHousing,
+          "bg",
+          {
+            p: fmt0(calc.spendSharePct),
+            h: fmt0(calc.housingCost),
+          }
+        )}</span
       >
-      <span class="l-en">{@html t(COPY.spendShareLead, "en", { p: fmt0(calc.spendSharePct) })}</span
+      <span class="l-en"
+        >{@html t(
+          hasHousing ? COPY.spendShareLeadWithHousing : COPY.spendShareLeadNoHousing,
+          "en",
+          {
+            p: fmt0(calc.spendSharePct),
+            h: fmt0(calc.housingCost),
+          }
+        )}</span
       >
     </p>
     <input
