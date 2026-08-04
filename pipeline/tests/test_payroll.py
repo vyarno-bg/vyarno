@@ -25,6 +25,27 @@ from vyarno_pipeline.payroll import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MIRROR_JS = PROJECT_ROOT / "site" / "src" / "lib" / "mirror.js"
+PUBLISHED_PAYROLL = PROJECT_ROOT / "data" / "published" / "payroll.json"
+
+
+def _published_payroll() -> dict:
+    """The committed payload. An absent one is a failure, never a skip.
+
+    `data/published/payroll.json` is tracked, so a missing one is not a fresh
+    clone or a machine that has never run a refresh — it is a committed file
+    somebody deleted or moved, and the two tests below are the only things that
+    compare the shipped ceiling against `mirror.js`'s sentinel and against the
+    law in force. Standing them down there exits 0 and reads exactly like
+    having run them.
+    """
+    if not PUBLISHED_PAYROLL.exists():
+        pytest.fail(
+            "data/published/payroll.json is missing. It is committed to the "
+            "repository — its absence is the bug, not a reason to stand the "
+            "parity and staleness checks down. Restore it with "
+            "`git checkout -- data/published/payroll.json`."
+        )
+    return json.loads(PUBLISHED_PAYROLL.read_text(encoding="utf-8"))
 
 
 def _mirror_const(name: str) -> float:
@@ -217,10 +238,7 @@ def test_the_spa_sentinel_matches_the_payroll_json_actually_shipped() -> None:
     forgotten. Both would stay green while first paint computed a net pay the
     page then corrected a moment later.
     """
-    published = PROJECT_ROOT / "data" / "published" / "payroll.json"
-    if not published.exists():
-        pytest.skip("payroll.json not on disk — run a refresh first")
-    p = json.loads(published.read_text(encoding="utf-8"))
+    p = _published_payroll()
     assert p["max_insurable_income_eur"] == pytest.approx(
         _mirror_const("BG_2026_MAX_INSURABLE"), abs=0.01
     ), "data/published/payroll.json and mirror.js's sentinel disagree — bump the sentinel"
@@ -266,10 +284,7 @@ def test_the_published_payroll_is_a_pipeline_output_and_never_behind_the_law() -
     the contract the whole repository rests on — `data/published/` is what the
     pipeline emits, so the diff is the review.
     """
-    published = PROJECT_ROOT / "data" / "published" / "payroll.json"
-    if not published.exists():
-        pytest.skip("payroll.json not on disk — run a refresh first")
-    p = json.loads(published.read_text(encoding="utf-8"))
+    p = _published_payroll()
 
     stamped = date.fromisoformat(p["as_of"])
     assert p == build_payroll_payload(stamped), (
