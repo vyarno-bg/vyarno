@@ -205,7 +205,7 @@
 
   <p class="reach mono">
     <span class="l-bg"
-      >Въпрос по нещо от тази страница: <a href="mailto:{CONTACT.general}">{CONTACT.general}</a
+      >Въпрос за нещо на тази страница: <a href="mailto:{CONTACT.general}">{CONTACT.general}</a
       ></span
     >
     <span class="l-en"

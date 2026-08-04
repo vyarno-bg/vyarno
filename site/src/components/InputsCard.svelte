@@ -47,7 +47,7 @@
       // Only reached if the new-business tier is missing. It answers a
       // different question, so it says so rather than passing for "the rate".
       outstanding_stock: {
-        bg: "БНБ · средно по вече изплащани",
+        bg: "БНБ · средно по изплащаните кредити",
         en: "BNB · loans already being repaid",
       },
       // A reader-facing label, so it says what the number is rather than what
