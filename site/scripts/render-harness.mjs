@@ -155,6 +155,62 @@ export const READY = {
 const MOUNTED = () => document.querySelector("#app > *") !== null;
 
 /**
+ * What the page was doing when its readiness predicate ran out of time.
+ *
+ * A `waitForFunction` timeout reports that the wait expired and nothing else —
+ * its `log` is empty for this call — and the console errors collected since
+ * `newPage` go out of scope with the throw. So the bare failure cannot tell a
+ * bundle that threw from a request that 404'd, from a document that never
+ * finished loading, from a runner that was merely slow, and those want four
+ * different answers. The suite that reports it is whichever one happened to
+ * hold the page, which is a fifth misleading thing: the failure names a test
+ * about the share card when nothing about the share card is involved.
+ *
+ * **Every read here is defensive, and the failure being described is why.**
+ * This runs against a page that has already missed one deadline, so the
+ * evaluate can hang or reject in its turn. A diagnostic that throws replaces
+ * the real error with its own and takes the collected list with it; one that
+ * hangs turns a bounded thirty-second failure into a job only the workflow's
+ * `timeout-minutes` stops, which is the outcome `ci.yml` argues against at
+ * length. Hence the race, and hence a caught rejection becoming part of the
+ * message rather than an escape.
+ */
+async function whyNotReady(page, path, errors) {
+  // The timer is held and cleared rather than left to expire. `unref()` is the
+  // tempting way to keep a pending timer from holding the process open, and it
+  // is wrong here: it lets Node reach an idle loop and exit while this await is
+  // still unsettled, so a browser that died — the very case the bound exists
+  // for — ends the run with an unsettled-top-level-await code instead of the
+  // report. Clearing it on settle bounds the wait AND leaves nothing behind.
+  let timer;
+  const state = await Promise.race([
+    page
+      .evaluate(() => {
+        const app = document.querySelector("#app");
+        return {
+          readyState: document.readyState,
+          title: document.title,
+          mount: app ? `#app has ${app.childElementCount} child element(s)` : "no #app element",
+          html: app ? app.innerHTML.replace(/\s+/g, " ").trim().slice(0, 200) : "",
+        };
+      })
+      .catch((e) => ({ unreadable: String(e) })),
+    new Promise((resolve) => {
+      timer = setTimeout(() => resolve({ unreadable: "the page did not answer in 5s" }), 5000);
+    }),
+  ]).finally(() => clearTimeout(timer));
+
+  return [
+    `${path} never became ready — its predicate stayed false for the whole wait.`,
+    `page: ${JSON.stringify(state)}`,
+    errors.length
+      ? `collected page errors:\n  ${errors.join("\n  ")}`
+      : "collected page errors: none, so the bundle did not throw and no request " +
+        "failed — a page that had not finished rather than one that broke.",
+  ].join("\n");
+}
+
+/**
  * Open the calculator with console and page errors collected.
  *
  * The error list is the point of the suite: a component that throws during
@@ -168,7 +224,15 @@ export async function openApp(path = "/", context = {}) {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("requestfailed", (r) => errors.push(`request failed: ${r.url()}`));
   await page.goto(`${origin}${path}`, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(READY[path] ?? MOUNTED);
+  try {
+    await page.waitForFunction(READY[path] ?? MOUNTED);
+  } catch (cause) {
+    // The wait itself is unchanged: the deadline that fires here is the one
+    // that fired before. Raising it would hide the case this exists to name —
+    // a page that never mounts is a broken page whatever the budget, and a
+    // longer one only postpones the same empty report.
+    throw new Error(await whyNotReady(page, path, errors), { cause });
+  }
   return { page, errors };
 }
 
