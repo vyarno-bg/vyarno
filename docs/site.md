@@ -686,8 +686,15 @@ time.
 
 ## `src/lib/content.js` — copy, presets, offline sentinels
 
-- **`COPY`** — the BG/EN dictionary. Every visible string lives here in both
-  languages; `t(key)` looks up the variant for the current `lang` store.
+- **`COPY`** — the BG/EN dictionary, in both languages, and `t(key)` looks up
+  the variant for the current `lang` store. **Everything JavaScript has to
+  select, interpolate or hand to an attribute belongs here**: a string chosen by
+  a branch, one carrying a `{slot}`, an `aria-label`, a `<title>`. Long
+  bilingual prose does not — it is written inline as paired `.l-bg` / `.l-en`
+  spans in the component that renders it — both variants ship in the DOM and
+  `tokens.css` hides one — because a paragraph split between a copy file and a
+  template is edited in two places and reads as neither. `How.svelte` and
+  `ExplainerBand.svelte` are most of that prose.
 - **`PRESETS`** — five starting baskets, one number per ECOICOP ver.2 division
   in published order. `official` is the real Eurostat BG basket, kept as a
   first-paint fallback — the live weights replace it as soon as

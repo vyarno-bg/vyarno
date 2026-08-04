@@ -264,7 +264,7 @@
          caption, which is what starved it of width. -->
     <!-- Gated on the payload being LIVE, not merely on the number being
          non-zero. The offline fallback is a round constant; this card
-         captions it «медиана за София от публични обяви» and cites
+         captions it «медиана за София от обявите» and cites
          imot.bg/sredni-ceni under it, so rendering it from the sentinel
          attributed a figure имот.bg never published to имот.bg — with «0
          квартала» as the only tell. The strip's own rule is that every card
@@ -361,8 +361,7 @@
         {/if}
         <div class="ss">
           <div title={HOME.eurPerM2_source}>
-            <span class="l-bg">≈{fmt0(sofiaEurPerM2)}€/м² · медиана за София от публични обяви</span
-            >
+            <span class="l-bg">≈{fmt0(sofiaEurPerM2)}€/м² · медиана за София от обявите</span>
             <span class="l-en">≈€{fmt0(sofiaEurPerM2)}/m² · Sofia median from public listings</span>
           </div>
           <div>

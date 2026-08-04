@@ -149,8 +149,8 @@
          the finding's own name, so the tap is not a leap.
 
          π ≤ 0 gets its own sentence. The stand-still target IS π, so a falling
-         basket would otherwise print «трябва да е +−1,2% - точно колкото
-         поскъпнаха твоите цени»: a doubled sign under a claim of a rise that
+         basket would otherwise print «трябва да е +−1,2% - точно колкото се
+         вдигнаха твоите цени»: a doubled sign under a claim of a rise that
          did not happen. -->
     <details class="rr-more">
       <summary class="disclose">

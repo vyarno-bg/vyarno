@@ -208,7 +208,7 @@ export const COPY = {
   // conclude we are wrong — they will get a smaller number, and it will be the
   // wrong one.
   householdSeparate: {
-    bg: "Всяка заплата се осигурява поотделно, до собствения си таван - затова сборът от брутните заплати не е това, което един човек би получавал за същото нето.",
+    bg: "Върху всяка заплата се плащат осигуровки поотделно, до собствения ѝ таван - затова сборът от брутните заплати не е това, което един човек би получавал за същото нето.",
     en: "Each wage is insured separately, up to its own ceiling - so the sum of the gross salaries is not what a single person would be paid for the same take-home.",
   },
   earnerPayslipHead: { bg: "Доход {n} · {s} € нето", en: "Income {n} · {s} € net" },
@@ -455,7 +455,7 @@ export const COPY = {
   // differently: the € tally measures what is left off thirteen typed amounts,
   // the share control states it in one number.
   modeHint: {
-    bg: "Повечето хора знаят по-добре колко харчат в евро, отколкото в проценти. Избери както ти е удобно - сметката е същата. И в двата начина не е нужно да разпределиш цялата заплата.",
+    bg: "Повечето хора знаят по-добре колко харчат в евро, отколкото в проценти. Избери както ти е удобно - сметката е същата. И по двата начина не е нужно да разпределиш цялата заплата.",
     en: "Most people know their euros better than their percentages. Pick whichever suits you - the maths is identical. Neither way asks you to place your whole pay.",
   },
   // ---- How much of the pay is spent at all --------------------------------
@@ -816,7 +816,7 @@ export const COPY = {
     en: "The median net pay in Sofia is <b>€{m}/mo</b>.",
   },
   pctHouseholdNote: {
-    bg: "Класираме всяка заплата поотделно - стълбицата показва какво изкарват отделните хора, а не домакинствата. Две заплати по €900 не са един човек с €1800.",
+    bg: "Класираме всяка заплата поотделно - подредбата показва какво изкарват отделните хора, а не домакинствата. Две заплати по €900 не са един човек с €1800.",
     en: "Each wage is ranked on its own - the ladder is what individual people earn, not what households do. Two wages of €900 are not one person on €1,800.",
   },
   // The comparison is now net-vs-net (individual), so it's a direct rank, not
@@ -980,16 +980,20 @@ export const COPY = {
   // «твоите цени», never «твоите разходи»: the row above already names this
   // quantity «твоите цени», and one thing under two names makes the reader
   // stop and ask whether they are the same number. They are.
+  // A PRICE rises, it does not itself get dearer — «цената се вдигна», while
+  // «поскъпна» takes the thing bought as its subject («храната поскъпна»),
+  // which is how every other sentence here uses it: the ranked row, the basket
+  // legend and the results headline all put a group of goods in front of it.
   // «повече НЕЩА» because "5% more" on its own reads as 5% more money, which
   // is the exact confusion this whole row exists to undo.
   standStillTxt: {
-    bg: "увеличението ти на фиш трябва да е <b>+{r}%</b> - точно колкото поскъпнаха твоите цени.<br>За да си купуваш с <b>{pct}%</b> повече неща - <b>+{rr}%</b>.",
+    bg: "увеличението ти на фиш трябва да е <b>+{r}%</b> - точно колкото се вдигнаха твоите цени.<br>За да си купуваш с <b>{pct}%</b> повече неща - <b>+{rr}%</b>.",
     en: "your raise on paper has to be <b>+{r}%</b> - exactly as much as your own prices rose.<br>To afford <b>{pct}%</b> more stuff - <b>+{rr}%</b>.",
   },
   // π ≤ 0 is reachable today: several published groups have negative annual
   // rates (телефони −5,2%, техника за свободното време −7,0%), so a basket
   // weighted onto them falls. The line above would then read «трябва да е
-  // +−1,2% - точно колкото ПОСКЪПНАХА твоите цени» — a doubled sign under a
+  // +−1,2% - точно колкото СЕ ВДИГНАХА твоите цени» — a doubled sign under a
   // sentence claiming a rise that did not happen.
   standStillFlat: {
     bg: "твоите цени не са се вдигнали, така че всяко увеличение ти е чиста печалба.<br>За да си купуваш с <b>{pct}%</b> повече неща, стига <b>{rr}</b>.",
@@ -1429,7 +1433,7 @@ export const COPY = {
   },
   howKLtv: { bg: "минимално самоучастие (БНБ)", en: "minimum down payment (BNB)" },
   howKDsti: {
-    bg: "най-много от чистия доход за вноска (БНБ)",
+    bg: "максимална вноска от чистия доход (БНБ)",
     en: "most of take-home that may go to the payment (BNB)",
   },
   howKMaturity: { bg: "максимален срок (БНБ)", en: "maximum term (BNB)" },

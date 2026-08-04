@@ -179,8 +179,8 @@
         {#if mortCapGap > 0}
           вноската е с <b style="color:var(--erode)">{fmt0(mortCapGap)} €/мес над</b> границата.
         {:else}
-          вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата - в бюджета
-          е.
+          вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата - побира
+          се в бюджета.
         {/if}
       </span>
       <span class="l-en"
