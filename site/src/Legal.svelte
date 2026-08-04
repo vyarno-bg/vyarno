@@ -73,6 +73,18 @@
 </header>
 
 <main id="main" class="wrap legal">
+  <!-- One `<h1>` for the page, above the four documents rather than on any one
+       of them. The documents are siblings — none is the subject of the page and
+       the other three a part of it — so each carried an `<h1>` of its own, and
+       a page serving four of them tells a crawler it has four subjects and
+       leaves a screen-reader user with no heading that names where they are.
+       The level a document sits at is decided here; `legal.js` decides which
+       documents there are. -->
+  <h1>
+    <span class="l-bg">Правна информация</span>
+    <span class="l-en">Legal information</span>
+  </h1>
+
   <nav class="toc mono" aria-label="contents">
     {#each DOCS as doc (doc.id)}
       <a href="#{doc.id}">
@@ -89,17 +101,17 @@
 
   {#each DOCS as doc (doc.id)}
     <article id={doc.id}>
-      <h1>
+      <h2>
         <span class="l-bg">{doc.title.bg}</span>
         <span class="l-en">{doc.title.en}</span>
-      </h1>
+      </h2>
 
       {#each doc.sections as section (section.id ?? section.h.bg)}
         <section id={section.id ?? undefined}>
-          <h2>
+          <h3>
             <span class="l-bg">{section.h.bg}</span>
             <span class="l-en">{section.h.en}</span>
-          </h2>
+          </h3>
 
           {#each section.p as para, i (i)}
             {#if para.html}
@@ -309,14 +321,25 @@
     scroll-margin-top: 66px;
   }
 
+  /* Three levels, and the sizes are what make the nesting legible: the page,
+     the four documents under it, and the sections inside each. A document title
+     drawn at the section size reads as a section, and a reader scanning for
+     «Поверителност» goes past it. */
   h1 {
     font-family: var(--serif);
     font-size: clamp(1.5625rem, 4vw, 2rem);
     line-height: 1.15;
     letter-spacing: -0.015em;
-    margin: 0 0 4px;
+    margin: 0 0 16px;
   }
   h2 {
+    font-family: var(--serif);
+    font-size: var(--fs-h2);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  h3 {
     font-size: var(--fs-lead);
     line-height: 1.3;
     margin: 26px 0 0;

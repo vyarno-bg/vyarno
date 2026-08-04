@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * Post-build step: render the two content pages into `dist/`, with the
- * published figures already in them, so there is a page before the bundle runs.
+ * Post-build step: render every indexable page into `dist/`, with the published
+ * figures already in them, so there is a page before the bundle runs.
  *
  * ## The failure this fixes
  *
- * `index.html`'s `<body>` is `<div id="app"></div>` and a `<noscript>`. Every
- * word the calculator says — «лична инфлация», «колко години заплата за
- * жилище», «данъчна тежест» — is inside the JavaScript bundle, so a crawler
- * that does not execute scripts sees a page with no subject. Googlebot renders
- * JavaScript on a second pass and gets there eventually; Bingbot's second pass
- * is slower and less reliable, and a Bulgarian-language product that search
- * engines cannot read is invisible to the people it is for.
+ * An entry's `<body>` is `<div id="app"></div>` and a `<noscript>`. Every word
+ * a page says — «лична инфлация» and «данъчна тежест» on the calculator, the
+ * terms of use and the ЗЕТ чл. 4 identity on `/legal/` — is inside the
+ * JavaScript bundle, so a crawler that does not execute scripts sees a page
+ * with no subject. Googlebot renders JavaScript on a second pass and gets there
+ * eventually; Bingbot's second pass is slower and less reliable, and a
+ * Bulgarian-language product that search engines cannot read is invisible to
+ * the people it is for.
  *
  * ## What may be prerendered, and what may not
  *
@@ -47,8 +48,8 @@
  *
  * ## Why a second build rather than hydration
  *
- * `mount()` appends to its target, so `main.js` empties `#app` first and the
- * client renders from scratch. `hydrate()` is the conventional answer and it
+ * `mount()` appends to its target, so each page's bootstrap empties `#app`
+ * first and the client renders from scratch. `hydrate()` is the conventional answer and it
  * is not what this wants: the server deliberately renders LESS than the client
  * does on its first frame, which is a hydration mismatch by construction, and
  * `<svelte:head>` would have to be injected too — leaving the page with two
@@ -94,17 +95,34 @@ export const MOUNT_POINT = '<div id="app"></div>';
 /**
  * The pages this step renders, and the component behind each.
  *
- * Both are content pages carrying published figures; `/legal/`, `/support/`
- * and the 404 are prose the bundle assembles from constants, so a crawler that
- * runs no JavaScript loses nothing that a build could have given it. Adding a
- * row here is what puts a page in front of a crawler — and `verify_render_prerender.mjs`
- * reads each written file back, because a post-build step that quietly does
- * nothing looks exactly like a build that worked.
+ * **Every indexable entry belongs here, whatever its prose is made of.** A page
+ * assembled from in-repo constants rather than from a payload has nothing to go
+ * stale and nothing a build could get wrong — and it is still absent from the
+ * served HTML, because a crawler indexes what it is served rather than what the
+ * bundle would have produced. A page left out of this list ships
+ * `<div id="app"></div>` and a `<noscript>`, so its `<h1>` is a heading Bing
+ * reports as missing and its subject is one no search engine has: `/legal/`
+ * carries the ЗЕТ чл. 4 identity, which the law wants findable, and `/support/`
+ * exists so the funding answer has an address a person can be given.
+ *
+ * The 404 is the one entry that stays out, and it is out on its own grounds:
+ * `404.html` is `noindex` (`verify_static_assets.mjs` pins that), so no crawler
+ * is meant to be holding it in the first place.
+ *
+ * Adding a row here is what puts a page in front of a crawler, and it is half
+ * of a pair — `mount()` appends, so the page's bootstrap has to empty `#app`
+ * first or the reader gets every heading twice.
+ * `verify_static_assets.mjs` §"every prerendered page has a mount point" reads
+ * this list against those bootstraps, and `verify_render_prerender.mjs` reads
+ * each written file back, because a post-build step that quietly does nothing
+ * looks exactly like a build that worked.
  */
 export const PRERENDERED = Object.freeze(
   [
     { name: "app", source: "src/App.svelte", page: ["index.html"] },
     { name: "how", source: "src/How.svelte", page: ["how", "index.html"] },
+    { name: "legal", source: "src/Legal.svelte", page: ["legal", "index.html"] },
+    { name: "support", source: "src/Support.svelte", page: ["support", "index.html"] },
   ].map(Object.freeze)
 );
 
@@ -124,8 +142,9 @@ export const PRERENDERED = Object.freeze(
 export function injectPrerender(html, body) {
   if (!html.includes(MOUNT_POINT)) {
     throw new Error(
-      `prerender: no ${MOUNT_POINT} in the built index.html. The shell has ` +
-        `nowhere to go, and main.js mounts into #app — both have to move together.`
+      `prerender: no ${MOUNT_POINT} in the built entry. The shell has nowhere ` +
+        `to go, and the page's bootstrap mounts into #app — both have to move ` +
+        `together.`
     );
   }
   // A replacer function, not a replacement string: `$&` and `$1` in prose

@@ -54,7 +54,7 @@ site/
 │   ├── check-test-floors.mjs  # no suite got smaller — the only counts there are
 │   ├── find-chromium.mjs      # which browser test:render will use, proved by launching it
 │   ├── release-build.mjs      # build + the release-only guards, one command
-│   ├── prerender.mjs          # post-build: / and /how/, figures and all
+│   ├── prerender.mjs          # post-build: every indexable entry, figures and all
 │   ├── copy-data.mjs          # post-build: ../data/published/*.json → dist/
 │   ├── gen-sitemap.mjs        # dist/sitemap.xml, lastmod = newest as_of
 │   ├── gen-version.mjs        # dist/version.json — commit + build time + as_of

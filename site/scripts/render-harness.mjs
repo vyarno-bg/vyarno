@@ -128,13 +128,27 @@ const origin = site ? `http://127.0.0.1:${site.port}` : "";
  *   executed at all would leave the prerendered table standing and satisfy this
  *   — that case is caught by the error list, which every test in this file
  *   asserts is empty, and by `verify_static_assets.mjs`.
- * - **everything else** — `/legal/` and `/support/` are not prerendered and read
- *   no payload, so `#app` having any child is the whole of it.
+ * - **`/legal/` and `/support/`** — prerendered for the same reason and waited
+ *   for the same way. Their prose is assembled from in-repo constants rather
+ *   than from a payload, which changes nothing about what a predicate has to
+ *   prove: the build already put the documents and the ask inside `#app`, so a
+ *   check for a child of `#app` is satisfied before the bundle has run and the
+ *   suites below would be asserting against markup frozen at build time —
+ *   including the counts that exist to catch a bootstrap that stopped emptying
+ *   it, which is exactly the state that reads as green.
+ * - **everything else** — `#app` having any child. Every entry the build
+ *   prerenders is named above, so a route that falls through to this either has
+ *   no prerender (the `noindex` 404) or has just been added without its
+ *   predicate.
  */
 export const READY = {
   "/": () => document.querySelector(".m-grid, .load-fail") !== null,
   "/how/": () =>
     document.readyState === "complete" && document.querySelector("#basket table") !== null,
+  "/legal/": () =>
+    document.readyState === "complete" && document.querySelector("main.legal article") !== null,
+  "/support/": () =>
+    document.readyState === "complete" && document.querySelector("main.support h1") !== null,
 };
 
 /** The default: the client put something where the entry left an empty mount. */
