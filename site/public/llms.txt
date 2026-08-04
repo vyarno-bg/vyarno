@@ -1,0 +1,61 @@
+# Вярно · vyarno.bg
+
+> «Икономиката, честно» — the economy, honestly. A calculator that measures
+> Bulgaria's official statistics against one household's own numbers: personal
+> inflation, real wage, salary percentile, the tax wedge, rent, savings and the
+> path to a home. Every figure comes from a named publisher and carries the
+> period it describes and a link to the publisher's own table.
+
+Written in English, which is the convention for this format and what an agent
+parses; the service name and the attribution line below stay in Bulgarian. The
+site itself answers in Bulgarian and English on every page.
+
+## Pages
+
+- https://vyarno.bg/ — the calculator. What a household's own basket, pay and
+  housing costs did against the official series. The arithmetic runs in the
+  reader's browser and nothing they type is sent anywhere.
+- https://vyarno.bg/how/ — the country's figures, explained and dated:
+  inflation by the 13 COICOP divisions, tax and social contributions, the pay
+  distribution, mortgage rates, Sofia €/m² and unemployment.
+- https://vyarno.bg/legal/ — terms of use, privacy, the provider's identity
+  under ЗЕТ чл. 4, and each upstream's own licence wording.
+- https://vyarno.bg/support/ — who pays for the project. It is free for
+  everyone, has no paid tier, and donations buy nothing.
+
+## The published figures
+
+Eight JSON payloads, refreshed by a pipeline and committed to the repository.
+Each carries `as_of`, the reference period, and `source_url` to the publisher's
+own table.
+
+- hicp_headline — Eurostat's all-items HICP rate for Bulgaria, and the index
+- hicp_categories — the 13 divisions, their official weights and each rate
+- payroll — the tax and social-contribution table, gross to net
+- sofia_salary — the НСИ quarterly average wage for Sofia
+- salary_dist — the pay distribution, Eurostat SES shape at a recent level
+- sofia_price — €/m² across Sofia's districts
+- mortgage — home-loan rates and the БНБ borrowing caps
+- unemployment — the monthly seasonally adjusted rate
+
+## Getting the data by machine
+
+Take it from the repository: https://github.com/vyarno-bg/vyarno — it is
+versioned, it carries the schema and the refresh history, and it costs a small
+server nothing. Reading the JSON off this site is not the route: robots.txt
+disallows the published-data directory for every crawler group, and the terms
+of use name the repository instead.
+
+## Licence and attribution
+
+Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg
+
+The CODE is Apache-2.0. The FIGURES are not ours to license: they belong to
+five publishers — Eurostat, the European Central Bank, НСИ (the Bulgarian
+National Statistical Institute), БНБ (the Bulgarian National Bank) and imot.bg
+— each under its own terms, and НСИ's forbid redistributing derived and
+composite works. Cite the publisher named beside a figure, not this site, and
+read https://vyarno.bg/legal/#sources for each one's wording.
+
+If you quote a number from here, quote its period with it. A rate without the
+month it describes is the thing this project exists to replace.
