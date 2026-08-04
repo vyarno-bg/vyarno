@@ -158,10 +158,18 @@
   --ink: #17211b;
   --ink-2: #495049;
   /* --muted is the colour of the smallest text on the page: source captions,
-     hints, the 9.5px wordmark tagline. It clears WCAG AA (4.5:1) against all
-     three light surfaces, and verify_contrast.mjs fails the build if a retune
-     drops it below. There is no large-text exemption — see docs/site.md. */
-  --muted: #676e64;
+     hints, the wordmark tagline, and 94 other call sites, all of them at
+     11-13px. It clears WCAG AA (4.5:1) against all three light surfaces with
+     room to spare — 5.47 on --paper, 5.72 on --paper-2, 6.15 on --surface —
+     and verify_contrast.mjs fails the build if a retune drops it below 4.5.
+     There is no large-text exemption; see docs/site.md.
+
+     **The floor is not the target.** A token sitting ON 4.5 passes every check
+     in the repository and still reads thin at 11px, because the ratio a reader
+     receives is the token's minus whatever the page composites on top of it —
+     a translucent band under the text, an `opacity` on an ancestor. The
+     headroom here is what absorbs that. */
+  --muted: #5a6157;
   --line: #d3d8cc;
   --line-2: #e0e4da;
   --real: #1c6b54;
@@ -229,9 +237,10 @@ html[data-theme="dark"] {
   --surface: #1b211a;
   --ink: #e7ece1;
   --ink-2: #a6af9f;
-  /* Same rule as the light theme's --muted: 4.5:1 on all three dark
-     surfaces, enforced by verify_contrast.mjs. */
-  --muted: #7f897b;
+  /* Same rule as the light theme's --muted, and the same headroom above the
+     floor rather than on it: 6.36 on --paper, 5.98 on --paper-2, 5.61 on
+     --surface, enforced by verify_contrast.mjs. */
+  --muted: #909a8b;
   --line: #2a322a;
   --line-2: #212821;
   --real: #4fb08f;

@@ -236,8 +236,8 @@
   /* The build stamp is already the quietest thing in the row — `--muted` at
      12px mono, inherited from `.foot`. It carries no `opacity` for the reason
      `.support` below spells out: a fade on `--muted` is arithmetic on a
-     contrast ratio, and 0.75 here composites to 2.95:1 on `--paper-2` in the
-     light theme and 3.29:1 in the dark one. */
+     contrast ratio, and 0.75 here composites to 3.34:1 on `--paper-2` in the
+     light theme and 3.93:1 in the dark one. */
   .build {
     letter-spacing: 0.03em;
     flex: 0 0 auto;
@@ -246,16 +246,18 @@
      link is the "Подкрепа" item in the nav row. This is a fact about the
      project, printed at the size of a fact.
 
-     **No `opacity` on this rule, and none on anything inside it.** `--muted` is
-     pinned at exactly 4.5:1 against all three surfaces in both themes
-     (`tokens.css`, `verify_contrast.mjs`), which means any fade on top of it
-     lands below WCAG AA — 0.85 computes to 3.53:1 on `--paper-2` in the light
-     theme and 3.82:1 in the dark one. The token check cannot see that, because
-     it reads `tokens.css` and the fade is here; `verify_contrast.mjs` therefore
-     parses this rule and recomputes the ratio it actually renders at. Quiet is
-     a size and a colour, and the colour is already the quietest one that stays
-     readable — going further makes the one line the project has unreadable to
-     the people most likely to be squinting at a footer. */
+     **No `opacity` on this rule, and none on anything inside it.** `--muted`
+     carries about a fifth of headroom over WCAG AA on `--paper-2` (5.72:1
+     light, 5.98:1 dark — `tokens.css`, `verify_contrast.mjs`), and a fade eats
+     it fast: nothing under 0.89 in the light theme or 0.83 in the dark one
+     still clears 4.5:1, so the alphas anyone reaches for are all below the
+     floor — 0.85 computes to 4.12:1 light. The token check cannot see that,
+     because it reads `tokens.css` and the fade would be here;
+     `verify_contrast.mjs` therefore parses this rule and recomputes the ratio
+     it actually renders at. Quiet is a size and a colour, and the colour is
+     already the quietest one that stays readable — going further makes the one
+     line the project has unreadable to the people most likely to be squinting
+     at a footer. */
   .support {
     padding: 0 0 30px;
     font-size: var(--fs-fine);
