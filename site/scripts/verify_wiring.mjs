@@ -6,8 +6,9 @@
  * and not a wrong string: `mirror.js` can be perfect, `content.js` can be
  * perfect, and the page can still print thirteen euro figures the reader never
  * typed because the template handed `spendable` to a function that wanted
- * `spendBase`. `verify_view.mjs` proves the arithmetic; the `verify_render_*.mjs` suites
- * proves the page draws. Neither can see which argument the template passed.
+ * `spendBase`. `verify_view.mjs` proves the arithmetic; the
+ * `verify_render_*.mjs` suites prove the page draws. Neither can see which
+ * argument the template passed.
  *
  * The other kind of invariant here is architectural: the basket iterates the
  * published payload rather than a literal list. A frozen list in the front end
@@ -18,12 +19,14 @@
  * output follows) and would cost a fixture harness; the loop is the cheap
  * proxy, and it is honest about being one.
  *
- * These lived in `the SPA contract file in pipeline/tests/ (now test_published_contracts.py, which keeps only the published-artefact half)` until the
- * migration described in docs/testing-strategy.md. They read the same sources;
- * what changed is that they now run in the runner that owns this language, and
- * that where a module exports the thing under test they IMPORT it rather than
- * regexing it out of a file — `PRESETS`, `BG_CONTRIB_LINES` and the published
- * JSON are all read as values here.
+ * They run in the runner that owns this language rather than in
+ * `pipeline/tests/`, where a Python suite asserting on JavaScript can only ever
+ * read the file as text. **Where a module exports the thing under test they
+ * IMPORT it** rather than regexing it out of a file — `PRESETS`,
+ * `BG_CONTRIB_LINES` and the published JSON are all read as values here, so a
+ * check covers every entry there is rather than the ones somebody remembered to
+ * name in it. `docs/testing-strategy.md` §"Everything about the SPA is Node's"
+ * argues both halves.
  *
  * Assertions match on token sequence, never on layout: `flat()` collapses
  * whitespace so a Prettier run cannot fail a test that no behaviour change

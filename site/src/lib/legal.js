@@ -393,8 +393,8 @@ export const SUPERVISORS = [
  * This list is the public face of a licence condition, not a credits roll:
  * several of these publishers permit reuse only on the condition that they
  * are cited. Adding or removing a connector moves this table in the same
- * commit (docs/data-sources.md), and `test_the_sources_page_covers_every_upstream`
- * fails if it drifts from the footer.
+ * commit (docs/data-sources.md), and `verify_legal.mjs` §"the sources page
+ * covers every upstream the footer credits" fails if it drifts from the footer.
  */
 export const UPSTREAMS = [
   {

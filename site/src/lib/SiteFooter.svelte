@@ -8,11 +8,13 @@
    *
    * 1. **Upstream attribution** (`COPY.footerNote`) — a licence condition of
    *    several publishers and the product's credibility claim. Never shorten
-   *    it. Guarded by `test_footer_credits_every_upstream_we_use`.
+   *    it. Guarded by `verify_legal.mjs` §"the footer credits every upstream
+   *    the pipeline pulls from".
    * 2. **The legal links** — ЗЕТ чл. 4 requires the provider's identifying
    *    information to be permanently and directly accessible, which means a
    *    link from every page rather than a page you have to know about.
-   *    Guarded by `test_the_footer_links_to_every_legal_document`.
+   *    Guarded by `verify_legal.mjs` §"the footer links every legal document,
+   *    and the page renders every one".
    * 3. **The build stamp** — so a support conversation can start with "which
    *    build are you on" instead of guessing. Discreet on purpose.
    * 4. **The support line** — one quiet sentence and one link, because the

@@ -1,6 +1,6 @@
 """`refresh --source <name>` reaches the right arm, and `--source all` reaches every one.
 
-The eight `_refresh_*` functions are network-driven orchestration and are
+The seven `_refresh_*` functions are network-driven orchestration and are
 exercised end to end elsewhere (`test_cli.py` drives the HICP arm through respx
 against real trimmed Eurostat cubes; `test_cli_mortgage.py` does the same for
 the mortgage arm). What no test covered was the dispatcher above them — forty

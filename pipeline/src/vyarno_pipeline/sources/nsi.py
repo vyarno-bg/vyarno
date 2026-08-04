@@ -53,7 +53,7 @@ import httpx
 import openpyxl
 
 # Canonical URL. If НСИ moves it,
-# `tests/test_nsi.py::test_nsi_url_responds_with_xlsx` fails before a
+# `tests/test_nsi.py::test_connector_url_is_nsi_timeseries_xlsx` fails before a
 # mis-extracted number can reach production.
 SOURCE_URL = (
     "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.2_EUR_EN.xlsx"

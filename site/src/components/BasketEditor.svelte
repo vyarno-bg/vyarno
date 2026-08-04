@@ -7,7 +7,8 @@
    * its sub-groups — comes out of `hicp_categories.json`. Nothing about the
    * classification is written down in this file, so an upstream reclassification
    * reaches the page through a pipeline run rather than an edit here. That is
-   * the invariant `test_the_basket_iterates_the_payload` exists to hold.
+   * the invariant `verify_wiring.mjs` §"the basket iterates the published
+   * categories, not a literal list" exists to hold.
    */
   import { lang } from "../lib/stores.js";
   import { number, integer } from "../lib/format.js";

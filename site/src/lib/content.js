@@ -1128,8 +1128,8 @@ export const COPY = {
   // ours to license (NOTICE, §"What it does not cover"), which is why the
   // wording scopes the licence to «кодът» / "the code" and leaves the five
   // publishers named separately as the attribution they require.
-  // `test_the_app_states_its_licence_and_claims_nothing_about_the_data`
-  // holds both halves.
+  // `verify_legal.mjs` §"the app states its licence, scoped to the code, and
+  // claims nothing about the data" holds both halves.
   // `{year}` is the year the reader is in, from their own clock — never a
   // literal. A footer that says 2026 through the whole of 2027 is the oldest
   // stale-date bug there is, and on this page it lands next to five publisher

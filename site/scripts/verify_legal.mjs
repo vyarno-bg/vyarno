@@ -742,9 +742,10 @@ test("the build stamp resolves to something and reaches the footer", () => {
 });
 
 test("no legal copy claims the source is published", () => {
-  // Same claim `test_the_app_makes_no_open_source_or_cc_by_claim` guards in
-  // the calculator's copy, applied to the legal text — which is exactly where
-  // a licence statement is most likely to be written from memory.
+  // Same claim §"the app states its licence, scoped to the code, and claims
+  // nothing about the data" guards over `site/src/`, applied to the legal text
+  // — which is exactly where a licence statement is most likely to be written
+  // from memory.
   const all = JSON.stringify(DOCS);
   for (const claim of ["CC-BY", "CC BY", "open source", "Open Source", "отворен код"]) {
     assert.ok(
@@ -757,8 +758,9 @@ test("no legal copy claims the source is published", () => {
 // ---------------------------------------------------------------------------
 // The licence claim and the upstream attribution
 //
-// Migrated from the SPA contract file in pipeline/tests/ (now test_published_contracts.py, which keeps only the published-artefact half), where they
-// overlapped with the checks above on the same module. The footer string
+// These belong beside the checks above rather than in `pipeline/tests/`,
+// because they read the same module and a Python suite can only ever read a
+// JavaScript module as text. The footer string
 // carries two unrelated things that a careless edit merges: a LICENCE claim
 // (Apache-2.0, scoped to the CODE — the figures are not ours to license) and
 // UPSTREAM ATTRIBUTION (mandatory, a condition of several publishers' terms).

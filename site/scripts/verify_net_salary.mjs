@@ -18,9 +18,12 @@
  *                                  real wage, percentile, annuity, erosion)
  *   - `verify_data_contracts.mjs`  data.js fallback chains + the SPA's math
  *                                  run over the committed published JSON
- * The SPA render/template contracts live in
- * `pipeline/tests/test_published_contracts.py` (they read the source
- * string, not the runtime).
+ *   - `verify_template_safety.mjs`  the `{@html}` invariants, both directions
+ *   - `verify_wiring.mjs`          which value the markup feeds to which
+ *                                  function
+ * The last two read the source string rather than the runtime, because a
+ * wrong argument in a template is invisible to any test of the function it
+ * was passed to.
  *
  * **What the expected values are checked against.** The rates, the flat tax
  * and the insurance ceiling are legislative, and their provenance is the
@@ -385,7 +388,7 @@ test("bgGrossFromNet(2100) takes the at-ceiling branch, not net / 0.77598", () =
 // Rounding each fund line independently does not add up: at a gross of €601
 // the five lines round to €82.81 under a stated total of €82.82, because
 // sickness-maternity's 8.4114 loses its remainder and nothing gives it back.
-// `mirror.js#allocateCents` allocates the last cent by largest remainder
+// `mirror.js#allocateToCents` allocates the last cent by largest remainder
 // instead of dropping it.
 // ---------------------------------------------------------------------------
 
