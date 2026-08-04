@@ -175,10 +175,39 @@ test("the footer's support line renders at the ratio its token promises", () => 
   }
 });
 
+test("--control-line clears the 3:1 WCAG asks of a control's boundary", () => {
+  // WCAG 1.4.11, and 3:1 rather than 4.5 because it is not text. It gets its
+  // own assertion because it is the only token in the palette with a bar of
+  // its own, and because the tempting edit is to point a control's border back
+  // at `--line`: they look interchangeable and one of them is a hairline
+  // ruling a page while the other is the entire visible extent of an input.
+  // A field's `--paper-2` fill differs from the card's `--surface` by 1.08:1,
+  // so nothing else marks where the control begins.
+  //
+  // `verify_render_contrast.mjs` measures the borders the page actually draws,
+  // which is the stronger check and the one that catches a rule pointed at the
+  // wrong token. It needs a browser and skips without one. This does not.
+  for (const [themeName, block] of [
+    ["light", ":root {"],
+    ["dark", 'html[data-theme="dark"] {'],
+  ]) {
+    for (const surface of SURFACES) {
+      const r = ratio(token(block, "control-line"), token(block, surface));
+      assert.ok(
+        r >= 3,
+        `${themeName}: --control-line on --${surface} is ${r.toFixed(2)}:1, under 3:1. ` +
+          `Every field, chip, pill and disclosure edge is this colour, and at ` +
+          `that ratio a reader with reduced contrast sensitivity cannot see ` +
+          `where the control is.`
+      );
+    }
+  }
+});
+
 test("the two themes are both defined, so neither can be silently dropped", () => {
   assert.ok(CSS.includes(":root {"), "light theme block is gone");
   assert.ok(CSS.includes('html[data-theme="dark"] {'), "dark theme block is gone");
-  for (const name of [...INKS, ...SURFACES]) {
+  for (const name of [...INKS, ...SURFACES, "control-line"]) {
     token(":root {", name);
     token('html[data-theme="dark"] {', name);
   }

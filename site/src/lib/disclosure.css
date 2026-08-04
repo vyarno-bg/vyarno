@@ -168,7 +168,7 @@ summary.disclose {
   /* A real hit area. The old inline text was ~14px tall, well under any
      tap-target guidance. */
   padding: 5px 9px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   border-radius: 999px;
   /* Transparent, not a surface token: this chip renders both on the inputs
      card (`--surface`) and inside the drawer (`--paper-2`), so any fill that

@@ -1,5 +1,5 @@
 /**
- * What every piece of text on the page is ACTUALLY painted at.
+ * What every piece of text — and every control's edge — is ACTUALLY painted at.
  *
  * `verify_contrast.mjs` reads `tokens.css` and proves the palette clears WCAG
  * AA. That is a claim about seven colours against three surfaces, and all of it
@@ -43,6 +43,25 @@
  *   retry on the data-failed state is drawn at `opacity: 0.55` on purpose.
  * - **Non-text graphics.** The mortgage bar caps are `--ink` at `opacity: 0.7`
  *   with no text in them; 1.4.11 asks 3:1 of them and they are far above it.
+ *
+ * ## The second test: control boundaries, at 3:1
+ *
+ * WCAG 1.4.11 asks 3:1 of whatever identifies a control, and on this page that
+ * is one hairline: a field's `--paper-2` differs from the card's `--surface` by
+ * 1.08:1, so the 1px border is the entire boundary. The rule asserted is
+ * **where a control draws a border, that border clears 3:1** against the fill
+ * inside it or the surface behind it — not that every control must have one.
+ * `.rank-more` is identified by its text and its underline, and a native
+ * checkbox is drawn by the user agent, which 1.4.11 leaves alone.
+ *
+ * That leaves one way to make this test green wrongly: delete the border. The
+ * affordance assertions are what stop it — `verify_render_basket.mjs` §"the
+ * disclosure chip reads as a control" fails on a chip whose `borderWidth` is 0.
+ *
+ * Sliders are measured by neither: the track's edge is an inset `box-shadow` on
+ * a pseudo-element that `getComputedStyle(el)` cannot reach. What identifies
+ * them is the thumb, `2px solid var(--real)`, and the `--real` fill against
+ * `--track` — both far above 3:1, both argued in `BasketEditor.svelte`.
  *
  * **SVG text IS in scope** — the sparkline's price label and the tax-wedge
  * axis labels are text a reader reads, painted from `--ink-2` and `--muted`,
@@ -108,7 +127,13 @@ const AUDIT = () => {
     return el.tagName.toLowerCase() + (cls ? `.${cls.trim().split(/\s+/).join(".")}` : "");
   };
 
+  // Anything a reader operates. `summary` is here because the drill-downs are
+  // native disclosures, and `a.pill` because the route out of every page is
+  // styled as one of the header's buttons rather than as a link.
+  const CONTROLS = "input, select, textarea, button, summary, a.pill";
+
   const findings = [];
+  let texted = 0;
   for (const el of document.body.querySelectorAll("*")) {
     const text = [...el.childNodes]
       .filter((n) => n.nodeType === Node.TEXT_NODE)
@@ -116,6 +141,7 @@ const AUDIT = () => {
       .join(" ")
       .trim();
     if (!text) continue;
+    texted++;
     if (
       !el.checkVisibility({
         contentVisibilityAuto: true,
@@ -176,22 +202,88 @@ const AUDIT = () => {
       alpha: Number(alpha.toFixed(3)),
     });
   }
-  return findings;
+
+  // The composited surface behind an element, ignoring its own fill — what a
+  // border on it is drawn against on the outside.
+  const behind = (el) => {
+    let acc = { r: 255, g: 255, b: 255, a: 1 };
+    const chain = [];
+    for (let n = el; n; n = n.parentElement) chain.unshift(n);
+    for (const n of chain) {
+      const c = parse(getComputedStyle(n).backgroundColor);
+      if (c && c.a) acc = over(c, acc);
+    }
+    return acc;
+  };
+
+  const edges = [];
+  for (const el of document.querySelectorAll(CONTROLS)) {
+    if (
+      !el.checkVisibility({
+        contentVisibilityAuto: true,
+        opacityProperty: true,
+        visibilityProperty: true,
+      })
+    )
+      continue;
+    if (el.matches(":disabled") || el.closest(":disabled, [aria-disabled='true']")) continue;
+
+    const style = getComputedStyle(el);
+    const side = ["Top", "Right", "Bottom", "Left"].find(
+      (k) => parseFloat(style[`border${k}Width`]) > 0
+    );
+    if (!side) continue; // identified by its text, or drawn by the user agent
+
+    const stroke = parse(style[`border${side}Color`]);
+    if (!stroke) continue;
+    const inside = behind(el);
+    const outside = el.parentElement ? behind(el.parentElement) : inside;
+    // A border sits between two colours and is discernible if it stands off
+    // either one. Both are checked because a control on a card has its own
+    // fill on the inside and the card on the outside, and here they differ by
+    // 1.08:1 — so this is close to one measurement made twice, and would stop
+    // being if a control ever gained a fill of its own.
+    const painted = over(stroke, inside);
+    const r = Math.max(ratio(painted, inside), ratio(over(stroke, outside), outside));
+    if (r + 0.005 >= 3) continue;
+
+    edges.push({ where: name(el), side, ratio: Number(r.toFixed(2)) });
+  }
+
+  return {
+    text: findings,
+    edges,
+    audited: texted,
+    controls: document.querySelectorAll(CONTROLS).length,
+  };
 };
 
 const OPEN_DETAILS = () => {
   for (const d of document.querySelectorAll("details")) d.open = true;
 };
 
-test("no text on the page is painted below its WCAG floor", { skip }, async () => {
+/**
+ * Drive the page through both themes and both languages, calling `collect`
+ * with each pass's probe once the page has stopped moving.
+ *
+ * **The page is walked with motion off, and that is what makes the measurement
+ * deterministic rather than fast.** `.mort-reverse` fades in over 280ms and the
+ * body cross-fades its background on a theme flip, so a walk timed with a sleep
+ * reads real elements at real intermediate values — a Windows runner caught one
+ * at `opacity: 0.097` and reported 1.16:1, a frame no reader is ever shown.
+ * `tokens.css` drops every animation and transition under
+ * `prefers-reduced-motion`, so under it the page is only ever at rest, which is
+ * the state WCAG is about. A longer sleep would be the same bet at a higher
+ * stake, and the machine that loses it is CI.
+ */
+async function sweep(collect) {
   await withApp(
     async (page, errors) => {
       const theme = page.locator("header .controls button").first();
       const language = page.locator("header .controls button").last();
 
-      // Belt to the reduced-motion braces below: `tokens.css` kills CSS
-      // animation, and a Svelte transition is driven from JavaScript, which no
-      // media query reaches. This is what would catch one.
+      // Belt to the reduced-motion braces: that media query cannot reach a
+      // Svelte transition, which is driven from JavaScript. This would.
       const settled = () =>
         page.waitForFunction(() =>
           document
@@ -204,62 +296,76 @@ test("no text on the page is painted below its WCAG floor", { skip }, async () =
       await home.check();
       await settled();
 
-      const failures = [];
       for (const inDark of [false, true]) {
         for (const inEnglish of [false, true]) {
           await page.evaluate(OPEN_DETAILS);
           await settled();
-          const where = `${inDark ? "dark" : "light"}/${inEnglish ? "en" : "bg"}`;
-          // The selector has to match something or this is a green test for a
-          // page that rendered nothing at all.
-          const audited = await page.evaluate(
-            () =>
-              [...document.body.querySelectorAll("*")].filter((el) =>
-                [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim())
-              ).length
+          collect(
+            `${inDark ? "dark" : "light"}/${inEnglish ? "en" : "bg"}`,
+            await page.evaluate(AUDIT)
           );
-          assert.ok(
-            audited > 100,
-            `${where}: only ${audited} elements carry text — did the page render?`
-          );
-
-          for (const f of await page.evaluate(AUDIT)) {
-            failures.push(
-              `${where}  ${f.where}  "${f.text}"  ${f.ratio}:1 (needs ${f.need}:1) ` +
-                `at ${f.size}px/${f.weight}, alpha ${f.alpha}`
-            );
-          }
           await language.click();
           await settled();
         }
         await theme.click();
         await settled();
       }
-
-      assert.deepEqual(
-        failures,
-        [],
-        `text below its contrast floor:\n  ${failures.join("\n  ")}\n\n` +
-          `An alpha under 1 in a row above is a fade, and a fade on text is a ` +
-          `contrast ratio multiplied down. De-emphasis that survives this is a ` +
-          `size and a colour: the type scale has nine steps and --muted is the ` +
-          `quietest ink that stays readable. Do not answer this by raising the ` +
-          `alpha until it just clears — that is a number tuned to one surface, ` +
-          `and the token underneath it is painted on three.`
-      );
       assert.deepEqual(errors, [], errors.join(" | "));
-      // **The page is walked with motion off, and that is what makes the
-      // measurement deterministic rather than fast.** `.mort-reverse` fades in
-      // over 280ms and the body cross-fades its background on a theme flip, so a
-      // walk timed with a sleep reads real elements at real intermediate values
-      // — a Windows runner caught one at `opacity: 0.097` and reported 1.16:1,
-      // a frame no reader is shown. `tokens.css` drops every animation and
-      // transition under `prefers-reduced-motion`, so under it the page is only
-      // ever at rest, which is the state WCAG is about. A longer sleep would be
-      // a bet on how fast the machine is, and the machine that loses it is CI.
     },
     "/",
     { reducedMotion: "reduce" }
+  );
+}
+
+test("no text on the page is painted below its WCAG floor", { skip }, async () => {
+  const failures = [];
+  await sweep((where, probe) => {
+    // A probe that matched nothing is a green test for a page that rendered
+    // nothing, which is the shape every empty assertion in this repo takes.
+    assert.ok(probe.audited > 100, `${where}: only ${probe.audited} elements carry text`);
+    for (const f of probe.text) {
+      failures.push(
+        `${where}  ${f.where}  "${f.text}"  ${f.ratio}:1 (needs ${f.need}:1) ` +
+          `at ${f.size}px/${f.weight}, alpha ${f.alpha}`
+      );
+    }
+  });
+
+  assert.deepEqual(
+    failures,
+    [],
+    `text below its contrast floor:\n  ${failures.join("\n  ")}\n\n` +
+      `An alpha under 1 in a row above is a fade, and a fade on text is a ` +
+      `contrast ratio multiplied down. De-emphasis that survives this is a ` +
+      `size and a colour: the type scale has nine steps and --muted is the ` +
+      `quietest ink that stays readable. Do not answer this by raising the ` +
+      `alpha until it just clears — that is a number tuned to one surface, ` +
+      `and the token underneath it is painted on three.`
+  );
+});
+
+test("every control that draws its own edge draws it at 3:1", { skip }, async () => {
+  const failures = [];
+  await sweep((where, probe) => {
+    assert.ok(probe.controls > 20, `${where}: only ${probe.controls} controls on the page`);
+    for (const f of probe.edges) {
+      failures.push(
+        `${where}  ${f.where}  border-${f.side.toLowerCase()}  ${f.ratio}:1 (needs 3:1)`
+      );
+    }
+  });
+
+  assert.deepEqual(
+    failures,
+    [],
+    `control boundaries below WCAG 1.4.11:\n  ${failures.join("\n  ")}\n\n` +
+      `A field's own fill differs from the card behind it by 1.08:1, so the ` +
+      `border IS the boundary — at these ratios the control has no visible ` +
+      `edge for a reader with reduced contrast sensitivity. --control-line is ` +
+      `the token for this and --line is not: --line rules a page, and nothing ` +
+      `asks 3:1 of a table rule or a card edge. Do not answer this by removing ` +
+      `the border either — the affordance tests in verify_render_basket.mjs ` +
+      `fail on a control whose borderWidth is 0.`
   );
 });
 
