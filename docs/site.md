@@ -87,6 +87,7 @@ site/
 │   ├── verify_render_layout.mjs   # phone · tablet · wide, and the routes
 │   ├── verify_render_payroll.mjs  # payroll and more than one income
 │   ├── verify_render_share.mjs    # the share card and the share text
+│   ├── verify_render_contrast.mjs # what ratio each piece of text is painted at
 │   ├── make_og_image.py           # regenerates the static OG preview + the
 │   │                              # two README banners (stdlib only)
 │   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png
@@ -392,6 +393,7 @@ the tests live beside the code they protect:
 | `verify_view.mjs` | every derived value in `view.js` — which input reaches which formula, and the two boundaries below |
 | `verify_stores.mjs` | the persisted lang/theme keys |
 | `verify_contrast.mjs` | WCAG AA ratios for every ink × surface pair, both themes, computed from `tokens.css` itself |
+| `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down. Both themes, both languages |
 | `verify_data_contracts.mjs` | `data.js`'s fallback chains, and these same functions run over the JSON committed in `data/published/` |
 | `verify_legal.mjs`, `verify_static_assets.mjs` | the legal documents and the identity table; robots, security.txt, sitemap and the exact CSP |
 
@@ -1201,9 +1203,19 @@ of it. It is held at 5.47 / 5.72 / 6.15 in the light theme and 6.36 / 5.98 /
 **`opacity` on text spends that headroom immediately, so it is checked
 separately.** Nothing under 0.89 light or 0.83 dark still clears 4.5:1 on
 `--paper-2` — the alphas anyone reaches for are all below the floor.
-`verify_contrast.mjs` therefore parses `SiteFooter`'s `.support` rule and
-recomputes the ratio that rule actually renders at, because the palette cannot
-see a fade declared in a component.
+`verify_contrast.mjs` parses `SiteFooter`'s `.support` rule and recomputes the
+ratio that rule actually renders at, because the palette cannot see a fade
+declared in a component.
+
+**That covers one rule, and the class is wider than one rule.**
+`verify_render_contrast.mjs` opens the built page and walks it: for every
+element carrying visible text it multiplies the `opacity` of the whole ancestor
+chain into the text's alpha, composites each background layer up that chain —
+the rgba ones included, since `--rule`, `--track`, `--gain-band` and the two
+`-soft` tokens all let their backdrop through — and asserts 4.5:1, or 3:1 where
+the **computed** size is ≥24px or ≥18.66px at weight ≥700. Both themes, both
+languages. It is the guard; the `.support` recompute stays because the render
+suite skips without a browser and `verify_contrast.mjs` never does.
 
 ### The type scale
 
