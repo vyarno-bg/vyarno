@@ -40,8 +40,8 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │                    copilot-instructions.md (points at AGENTS.md)
 ├── docs/            README (engineer entry) · architecture · data-sources ·
 │                    math · validation-gates · local-development · site ·
-│                    how-it-works · legal · principles · testing-strategy ·
-│                    writing-style · img/
+│                    seo · how-it-works · legal · principles ·
+│                    testing-strategy · writing-style · img/
 ├── pipeline/        Python 3.11 + httpx + pydantic + click · AGENTS.md
 │   ├── requirements.txt · requirements-dev.txt   pip-compile locks, hashed
 │   ├── src/vyarno_pipeline/
@@ -54,18 +54,20 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 └── site/            Vite 8 + Svelte 5, five build entries · AGENTS.md
     ├── index.html · how/index.html · legal/index.html ·
     │                support/index.html · 404.html
-    ├── public/      _headers (CSP + cache) · robots.txt ·
+    ├── public/      _headers (CSP + cache) · robots.txt · llms.txt ·
     │                .well-known/security.txt · favicon · og-image · fonts
     ├── eslint.config.js · .prettierrc.json · svelte.config.js
     ├── scripts/     verify_*.mjs (`npm run verify:math`) · verify_render_*.mjs
     │                (`npm run test:render`, the built page in a browser) ·
-    │                prerender · copy-data · gen-sitemap · gen-version ·
-    │                strip-sourcemaps · check-identity
-    └── src/         App.svelte · Legal.svelte · Support.svelte · NotFound.svelte
+    │                prerender · copy-data · gen-sitemap · gen-jsonld ·
+    │                gen-version · strip-sourcemaps · check-identity
+    └── src/         App.svelte · How.svelte · Legal.svelte ·
+                     Support.svelte · NotFound.svelte
         ├── components/  the calculator's parts: SiteHeader · DataBanner ·
         │                DataPanel ·
-        │                InputsCard · BasketEditor · PayslipTable ·
-        │                ResultsCard · ResultsSummary · RankedContributions ·
+        │                InputsCard · PayField · BasketEditor · PayslipTable ·
+        │                ResultsCard · ResultsAnswer · ResultsSummary ·
+        │                RankedContributions ·
         │                PocketRow · PercentileRow · TaxWedgeRow · RentRow ·
         │                HomeRow · LeftoverRow · SavingsRow · MethodDrawer ·
         │                ShareCard · ResultsWordmark · NationalStrip ·

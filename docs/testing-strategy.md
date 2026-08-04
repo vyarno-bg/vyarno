@@ -51,7 +51,7 @@ to do to count is §"The standard a test has to meet".
 | `site/scripts/verify_data_contracts.mjs` | `node:test` | `data.js` fallback chains and the shipped payloads |
 | `site/scripts/verify_legal.mjs` | `node:test` | The legal documents, the ЗЕТ чл. 4 identity, the licence claim, upstream attribution |
 | `site/scripts/verify_wiring.mjs` | `node:test` | Template wiring — which value the markup passes to which function |
-| `site/scripts/verify_static_assets.mjs` | `node:test` | `robots.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
+| `site/scripts/verify_static_assets.mjs` | `node:test` | `robots.txt`, `llms.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
 | `site/scripts/verify_suites.mjs` | `node:test` | That `package.json` names every suite on disk — an omitted one runs never |
 | `site/scripts/verify_docs_map.mjs` | `node:test` | That `docs/site.md`'s directory tree names the files that are there, both directions |
 | `site/scripts/verify_render_*.mjs` | `node:test` + Playwright | The built page, in a browser — ten suites over one harness |
@@ -396,9 +396,9 @@ you to read the body to find out which of eight things it meant.
   good reason gets a rewritten sentence, not a test pinning the new one.
 - **Prose in `docs/`.** Ruled out above, with the reason.
 - **A line the coverage report shows uncovered**, where the answer to "why not"
-  is written down. `data.js`'s fetch wrappers and `cli.py`'s six `_refresh_*`
-  arms are the two, and both entries below say what covering them would cost
-  and what it would buy.
+  is written down. `data.js`'s fetch wrappers and the five `_refresh_*` arms in
+  `cli.py` that no end-to-end test drives are the two, and both entries below
+  say what covering them would cost and what it would buy.
 
 ## Is the core logic well covered?
 
@@ -442,11 +442,13 @@ complete: `view.js`, `mirror.js`, `legal.js` and `support.js` are at or near
 | `format.js` | The `httpUrl`/`period` rejection branches, for input shapes the payloads cannot produce. They exist because `{@html}` is downstream of them, and they are guarded structurally by `verify_template_safety.mjs` rather than by example |
 
 **Python.** Everything below the CLI is 89–100%: gates, transforms, connectors,
-models. What is left is `cli.py`'s eight `_refresh_*` arms — fetch, transform,
+models. What is left is `cli.py`'s seven `_refresh_*` arms — fetch, transform,
 validate, write, print — of which two are driven end to end through `respx`
-against real trimmed cubes and six are not.
+against real trimmed cubes and five are not. Seven arms write eight payloads —
+`_refresh_hicp` publishes the headline and the categories — so the eight in
+`data/published/` counts files and never arms.
 
-That is the honest gap, and it is deliberate. Covering the other six means six
+That is the honest gap, and it is deliberate. Covering the other five means five
 more fixture sets built from live upstream responses, each of which then has to
 be *maintained* against a publisher that restructures its output without
 warning. The failure they would catch — a connector that breaks — is the failure

@@ -32,9 +32,12 @@ to work when one of them fails.
 Two things follow from this list rather than from taste:
 
 - **Do not fight the formatters.** Ruff owns Python layout, Prettier owns
-  JS/Svelte/CSS/JSON/Markdown. Where a hand-aligned table genuinely reads better
-  — the ECB SDMX dimension list, `COICOP_META` — the escape hatch is `# fmt: off`
-  with the reason written above it, not a reformat that CI will undo.
+  JS/Svelte/CSS/JSON/Markdown. `make fmt` applies what the table above only
+  checks — ruff format, Prettier and `eslint --fix` across both toolchains — so
+  a layout failure is a command rather than a hand edit. Where a hand-aligned
+  table genuinely reads better — the ECB SDMX dimension list, `COICOP_META` —
+  the escape hatch is `# fmt: off` with the reason written above it, not a
+  reformat that CI will undo.
 - **A test must not assert on layout.** An assertion pinned to line wrapping or
   quote style goes red on a formatter run that broke nothing. Assert on what the
   code does; helpers exist for whitespace-insensitive matching where a source
@@ -283,7 +286,7 @@ cd site
 npm run verify:math
 ```
 
-Fourteen files under Node's built-in test runner, no dependencies. The list is
+Fifteen files under Node's built-in test runner, no dependencies. The list is
 `package.json`'s `verify:math` script, in its order:
 
 - `verify_format.mjs` — the number and date formatters, including the
@@ -305,8 +308,8 @@ Fourteen files under Node's built-in test runner, no dependencies. The list is
 - `verify_legal.mjs` — the legal documents, the ЗЕТ чл. 4 identity table, the
   licence claim scoped to the code, and the upstream attribution the footer
   owes.
-- `verify_static_assets.mjs` — robots, security.txt, the sitemap and the exact
-  CSP.
+- `verify_static_assets.mjs` — robots, `llms.txt`, security.txt, the sitemap
+  and the exact CSP.
 - `verify_support.mjs` — the donation rules: `FUNDING.yml` and `support.js`
   must agree, so a donate button cannot point at an account that does not
   exist.
@@ -314,6 +317,13 @@ Fourteen files under Node's built-in test runner, no dependencies. The list is
   sentence can be false while the arithmetic is right.
 - `verify_template_safety.mjs` — the `{@html}` invariants.
 - `verify_wiring.mjs` — which value the markup passes to which function.
+- `verify_suites.mjs` — that `package.json` names every suite on disk. A file
+  left out of the runner is a suite that never runs, and it looks exactly like
+  one that passes.
+- `verify_docs_map.mjs` — that `site.md`'s directory tree names the files that
+  are there, both directions. A file missing from the tree is invisible to a
+  contributor reading it; a file in the tree and not on disk sends them looking
+  for something deleted.
 
 The `verify_render_*.mjs` suites run separately, under `npm run test:render`,
 because they need a browser.
@@ -436,6 +446,15 @@ Kill both servers between sessions — they hold ports and battery:
 ```bash
 pkill -f "vite"; pkill -f "npm run dev"; pkill -f "npm run preview"
 ```
+
+**Neither server proves `site/public/_headers`.** It is a declaration the
+deployment applies, so a response header can be missing everywhere it matters
+while every local run is green. `make headers` asks the live origin whether it
+serves what the file declares, `ORIGIN=…` points it at a staging deploy, and it
+sits outside `make check` because it needs a network and a deployed site. Run it
+after a deploy that touched `_headers`, and when a bug report has the shape of a
+missing header — [`site.md`](./site.md) §"Hosting: `public/_headers`" has what
+drift there costs a reader.
 
 ## Pre-commit checklist
 

@@ -75,7 +75,7 @@ site/
 │   ├── verify_legal.mjs           # the legal documents and the identity table
 │   ├── verify_support.mjs         # the donation rules (support.js ↔ FUNDING.yml)
 │   ├── verify_template_safety.mjs # the {@html} invariants, both directions
-│   ├── verify_static_assets.mjs   # robots · security.txt · sitemap · the CSP
+│   ├── verify_static_assets.mjs   # robots · llms · security.txt · sitemap · CSP
 │   ├── verify_suites.mjs          # every suite on disk is named by a runner
 │   ├── verify_docs_map.mjs        # this tree names the files that are there
 │   ├── render-dist.mjs            # dist/ readers, shared, no browser
@@ -397,7 +397,7 @@ the tests live beside the code they protect:
 | `verify_contrast.mjs` | WCAG AA ratios for every ink × surface pair, both themes, computed from `tokens.css` itself |
 | `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down — and every control boundary at the 3:1 WCAG 1.4.11 asks. Both themes, both languages |
 | `verify_data_contracts.mjs` | `data.js`'s fallback chains, and these same functions run over the JSON committed in `data/published/` |
-| `verify_legal.mjs`, `verify_static_assets.mjs` | the legal documents and the identity table; robots, security.txt, sitemap and the exact CSP |
+| `verify_legal.mjs`, `verify_static_assets.mjs` | the legal documents and the identity table; robots, `llms.txt`, security.txt, sitemap and the exact CSP |
 
 All of them run under `npm run verify:math` (Node's built-in test runner, no
 dependencies) and in CI on every push. Source-greps in

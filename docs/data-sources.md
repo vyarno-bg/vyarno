@@ -916,8 +916,10 @@ In one commit, or it does not ship:
 5. **The licence quoted verbatim and dated in [`legal.md`](./legal.md), plus an
    `UPSTREAMS` entry in `site/src/lib/legal.js`** — `principles.md` §"Hard rules" rule 1
 6. A row in this file's tables
-7. The footer attribution, if the publisher is new
-   (`test_footer_credits_every_upstream_we_use`)
+7. The footer attribution, if the publisher is new — `verify_legal.mjs`
+   §"the footer credits every upstream the pipeline pulls from" holds the list
+   in both languages, and several of those publishers require the credit as a
+   licence condition
 
 ## Cross-references
 

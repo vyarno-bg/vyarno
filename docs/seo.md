@@ -13,6 +13,7 @@ point somebody would edit it. Everything else is here.
 | Thing | Where | What it does |
 |---|---|---|
 | `robots.txt` | `site/public/robots.txt` | pages allowed, `/data/published/` disallowed, the sitemap named, and a per-crawler AI policy with its reasoning inline |
+| `llms.txt` | `site/public/llms.txt` | the site in one file for a consumer that reads rather than crawls: every page the sitemap lists, what each published payload carries, and the repository as the route to the figures — `robots.txt` disallows `/data/published/` to every group, so a map sending an agent there would contradict it. `verify_static_assets.mjs` asserts the page list against `gen-sitemap.mjs` and holds the attribution line and the code/figures split, which no `src/` scanner can see in `public/` |
 | `sitemap.xml` | `site/scripts/gen-sitemap.mjs` | generated at build time so `lastmod` is the newest published `as_of` rather than the day somebody typed it |
 | Canonical, OG, Twitter card, JSON-LD | each `.html` entry | one canonical URL per entry, a static 1200×630 preview carrying no figure, and a `WebApplication` / `WebPage` node that describes the code rather than the data — **`license` sits on the `WebApplication` and nowhere else**, because on a `WebPage` full of Eurostat's, БНБ's and НСИ's figures it states that those are Apache-2.0 (`verify_legal.mjs`, `docs/legal.md`) |
 | `noindex` on the error page | `site/404.html` | an indexed 404 is a search result that wastes a reader's click |
@@ -224,11 +225,11 @@ Three properties hold it in place, and each has a test:
 
 - **No input, ever.** The whole page is prerendered on the basis that nothing on
   it is the reader's. The four values it reads off `Calculator` —
-  `systemWedge`, `payLadderRows`, `sofiaHome`, `sofiaWageCells` — take payloads
+  `systemWedge`, `payLadderRows`, `sofiaHome`, `sofiaWageGrid` — take payloads
   and no scalar, so a personal figure is not expressible rather than merely
-  untested (`view.js` §"The country, with nobody in it"). The system wedge curve
-  is open by name in `principles.md`'s closed list; the *personal* rate on it is
-  not, because it inverts to the salary (P2).
+  untested (`calculator.svelte.js` §"Derived: the country, with nobody in it").
+  The system wedge curve is open by name in `principles.md`'s closed list; the
+  *personal* rate on it is not, because it inverts to the salary (P2).
 - **Every figure names its publisher, its period and a link.** Three of them are
   ours rather than a publisher's — the modelled ladder, the €/m² median across
   имот.bg's districts, and the change since 2015 built on it — and the Eurostat
