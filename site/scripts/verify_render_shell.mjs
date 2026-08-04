@@ -179,9 +179,24 @@ test("the language and theme toggles change the page", { skip }, async () => {
 
 test("the legal page renders every published document", { skip }, async () => {
   await withApp(async (page, errors) => {
-    const headings = await page.locator("h1, h2").allInnerTexts();
+    // `h2, h3` because the four documents sit under one page-level heading:
+    // `<h1>` names the page, each document is an `<h2>` and its sections are
+    // `<h3>`. Following the selector down a level is the whole edit — what is
+    // being counted is still that every document reached the page.
+    const headings = await page.locator("h2, h3").allInnerTexts();
     assert.ok(headings.length > 3, `the legal page rendered ${headings.length} headings`);
-    assert.ok(await page.locator("footer").count(), "the legal page drops the shared footer");
+
+    // Exactly one of each, not merely present. `mount()` appends and this page
+    // arrives prerendered, so a bootstrap that stopped emptying `#app` draws
+    // the whole page twice — the frozen build-time copy above the live one —
+    // and every assertion written as "there is at least one" passes on it.
+    for (const [what, selector] of [
+      ["page heading", "main.legal h1"],
+      ["header", "header.site"],
+      ["footer", "footer.site"],
+    ]) {
+      assert.equal(await page.locator(selector).count(), 1, `the legal page draws ${what} twice`);
+    }
     assert.deepEqual(errors, [], errors.join(" | "));
   }, "/legal/");
 });
@@ -193,14 +208,27 @@ test("the support page resolves as its own URL and carries the whole ask", { ski
   // is no router to fall back on. A mistyped Vite entry ships a 404 at the one
   // URL the footer and the explainer both point at, with every other suite
   // green.
+  //
+  // The counts are exact for the same reason the legal page's are: the page is
+  // prerendered, `mount()` appends, and a bootstrap that stopped emptying `#app`
+  // serves the ask twice with every "at least one" assertion still green.
   await withApp(async (page, errors) => {
-    assert.ok(await page.locator("main.support h1").count(), "the support page has no heading");
+    assert.equal(
+      await page.locator("main.support h1").count(),
+      1,
+      "the support page does not carry exactly one heading"
+    );
     assert.ok(
       (await page.locator("main.support a[href^='https://']").count()) > 0,
       "the support page offers no outbound link — a page about how to give " +
         "that gives no route is worse than the footer line it replaced"
     );
-    assert.ok(await page.locator("footer").count(), "the support page drops the shared footer");
+    for (const [what, selector] of [
+      ["header", "header.site"],
+      ["footer", "footer.site"],
+    ]) {
+      assert.equal(await page.locator(selector).count(), 1, `the support page draws ${what} twice`);
+    }
     assert.deepEqual(errors, [], errors.join(" | "));
   }, "/support/");
 });

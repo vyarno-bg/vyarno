@@ -43,10 +43,14 @@
     <div id="app"></div>
     <noscript>
       <!--
-        Client-side render, so with JavaScript off #app is empty. ЗЕТ чл. 4
-        wants the provider's identity permanently accessible, so a no-JS reader
-        is pointed at how to reach it; the upstream attribution is a licence
-        condition that must appear on every page including this one.
+        `scripts/prerender.mjs` writes the four documents into #app at build
+        time, so a reader with JavaScript off already has them — which is what
+        ЗЕТ чл. 4 asks for, the identity being permanently and directly
+        accessible rather than accessible to whoever runs the bundle. What they
+        lose is the language toggle and the calculator behind the link, which is
+        what these two sentences say. The upstream attribution is a licence
+        condition that must appear on every page including this one, whether the
+        bundle runs or the prerender step ever stops running.
       -->
       <div
         style="
@@ -58,12 +62,14 @@
         "
       >
         <p lang="bg">
-          Правната информация на Вярно се показва с JavaScript. Включи го и презареди, или пиши на
-          contact@vyarno.bg.
+          Правната информация на тази страница се чете и без JavaScript — четирите документа са в
+          самата страница. Без него не работят превключвателите за език и за тема, нито калкулаторът
+          зад връзката. Питане по нещо оттук: contact@vyarno.bg.
         </p>
         <p lang="en">
-          Vyarno's legal information renders with JavaScript. Turn it on and reload, or write to
-          contact@vyarno.bg.
+          The legal information on this page reads without JavaScript — the four documents are in
+          the page itself. Without it the language and theme toggles do not work, and neither does
+          the calculator behind the link. A question about anything here: contact@vyarno.bg.
         </p>
         <p>
           <small

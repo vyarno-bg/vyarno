@@ -38,10 +38,12 @@
     <div id="app"></div>
     <noscript>
       <!--
-        Client-side render, so with JavaScript off #app is empty. The one fact
-        this page exists to carry is printed here rather than left to the
-        bundle; the upstream attribution is a licence condition that must
-        appear on every page including this one.
+        `scripts/prerender.mjs` writes the whole ask into #app at build time, so
+        a reader with JavaScript off already has it. The one fact this page
+        exists to carry is repeated here anyway rather than left to that step:
+        it is the answer somebody arrives wanting, and it has to survive the
+        prerender ever stopping. The upstream attribution is a licence condition
+        that must appear on every page including this one.
       -->
       <div
         style="
@@ -54,13 +56,13 @@
       >
         <p lang="bg">
           Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от
-          дарения. Страницата се показва с JavaScript — включи го и презареди, или пиши на
-          contact@vyarno.bg.
+          дарения. Страницата се чете и без JavaScript; без него не работят превключвателите за език
+          и за тема, нито калкулаторът зад връзката.
         </p>
         <p lang="en">
           Vyarno is free for everyone and has no paid version. The domain and the server are paid
-          for by donations. This page renders with JavaScript — turn it on and reload, or write to
-          contact@vyarno.bg.
+          for by donations. This page reads without JavaScript; without it the language and theme
+          toggles do not work, and neither does the calculator behind the link.
         </p>
         <p>
           <small

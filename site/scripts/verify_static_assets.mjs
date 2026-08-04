@@ -27,6 +27,22 @@ const read = (...p) => readFileSync(site(...p), "utf-8");
 const ROBOTS = read("public", "robots.txt");
 const SECURITY = read("public", ".well-known", "security.txt");
 
+/**
+ * A module with its comments blanked, so an assertion lands on what runs.
+ *
+ * Every bootstrap this file reads explains `replaceChildren()` in its own doc
+ * comment, above the line that calls it — which is how a bootstrap that lost
+ * the call still satisfies a regex looking for it. A comment describing a rule
+ * must never be what satisfies the test for the rule (`verify_wiring.mjs`
+ * §`live`).
+ */
+const code = (src) =>
+  src
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .map((line) => (line.trimStart().startsWith("//") ? "" : line))
+    .join("\n");
+
 /** Non-comment, non-blank lines — what a crawler or a parser actually reads. */
 const directives = (src) =>
   src
@@ -291,7 +307,12 @@ test("every prerendered page has a mount point, and one place that empties it", 
   // list, so a page added there without an entry file to write into — or
   // whose bootstrap forgot the `replaceChildren()` — is a red test rather
   // than a page rendered twice, once frozen at build time and once live.
-  const MAINS = { app: "main.js", how: "how-main.js" };
+  const MAINS = {
+    app: "main.js",
+    how: "how-main.js",
+    legal: "legal-main.js",
+    support: "support-main.js",
+  };
   for (const { name, page } of PRERENDERED) {
     const entry = read(...page);
     assert.ok(
@@ -303,7 +324,7 @@ test("every prerendered page has a mount point, and one place that empties it", 
     const bootstrap = MAINS[name];
     assert.ok(bootstrap, `${name} is prerendered and this test does not know its entry point`);
     assert.match(
-      read("src", bootstrap),
+      code(read("src", bootstrap)),
       /replaceChildren\(\)[\s\S]*mount\(/,
       `${bootstrap} mounts without emptying its target first. \`mount()\` ` +
         "appends, and the built page arrives with the prerendered markup " +

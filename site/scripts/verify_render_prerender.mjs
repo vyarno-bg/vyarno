@@ -1,12 +1,13 @@
 /**
  * The prerendered pages — the built HTML as a crawler reads it.
  *
- * `scripts/prerender.mjs` renders `App.svelte` and `How.svelte` on the server
- * at build time, so the two content pages carry their prose AND the country's
- * figures before the bundle runs. The assertions here hold the rule from both
- * sides — what has to be there, and what may never be — and they need the
- * build rather than a browser. That the pages still work once the bundle
- * replaces them is a browser test and lives in the suites beside this one.
+ * `scripts/prerender.mjs` renders every indexable entry on the server at build
+ * time, so each page carries its prose — and, on the two that read payloads,
+ * the country's figures — before the bundle runs. The assertions here hold the
+ * rule from both sides — what has to be there, and what may never be — and they
+ * need the build rather than a browser. That the pages still work once the
+ * bundle replaces them is a browser test and lives in the suites beside this
+ * one.
  *
  * **The rule is that a payload may decide a prerendered figure, and neither
  * the reader nor the clock may.** The wider version — refuse every figure a
@@ -37,6 +38,12 @@ import { join } from "node:path";
 // The page dates a figure with this, so an assertion about what a crawler
 // reads has to write the month the same way rather than approximating it.
 import { periodLong } from "../src/lib/format.js";
+// The two documentary pages assemble their prose from these rather than from a
+// payload, so the assertions below read the same constants the page renders —
+// the rule being checked is that the page carries its own copy, not that it
+// still says any particular sentence.
+import { DOCS } from "../src/lib/legal.js";
+import { SUPPORT_COPY } from "../src/lib/support.js";
 import { COPY, DIST, attribution, needsBuild, servedText, shipped } from "./render-dist.mjs";
 
 test(
@@ -284,6 +291,55 @@ test(
 );
 
 test(
+  "the documentary pages are served with a heading over their own prose",
+  { skip: needsBuild },
+  async () => {
+    // What a crawler is served is the whole of what it indexes, and prose
+    // assembled from in-repo constants is no more present in the HTML than a
+    // figure read from a payload: left out of `PRERENDERED`, these two pages
+    // ship a mount point and a `<noscript>`, and the heading a search engine
+    // reports as missing is sitting in the bundle. `/legal/` is the page ЗЕТ
+    // чл. 4 wants findable and `/support/` is the address the funding answer
+    // has, so neither can be a page whose subject only a JavaScript-executing
+    // crawler can see.
+    //
+    // Exactly one `<h1>`, counted INSIDE the mount point rather than over the
+    // document: `/legal/` publishes four sibling documents, none of which is
+    // the page, and four `<h1>`s is the same defect wearing the opposite
+    // symptom. A count taken over the whole file would also pass on a heading
+    // somebody put in the entry HTML, where `replaceChildren()` deletes it the
+    // moment the bundle runs.
+    for (const [page, texts] of [
+      [["legal", "index.html"], DOCS.flatMap((doc) => [doc.title.bg, doc.title.en])],
+      [
+        ["support", "index.html"],
+        [SUPPORT_COPY.head.bg, SUPPORT_COPY.head.en, SUPPORT_COPY.body.bg, SUPPORT_COPY.body.en],
+      ],
+    ]) {
+      const where = page.join("/");
+      const html = await servedText(...page);
+      const mounted = html.slice(html.indexOf('<div id="app">'));
+      const headings = (mounted.match(/<h1[\s>]/g) ?? []).length;
+      assert.equal(
+        headings,
+        1,
+        `${where} serves ${headings} <h1> elements inside #app, and a page needs ` +
+          "exactly one — see docs/seo.md §'The prerendered pages'"
+      );
+      for (const text of texts) {
+        assert.ok(
+          mounted.includes(text),
+          `${where} does not carry "${text.slice(0, 40)}…" in the served HTML, ` +
+            "though the module it renders from does. Both languages ship in the " +
+            "DOM at once, so a page missing one of them is missing it from the " +
+            "crawler's copy too."
+        );
+      }
+    }
+  }
+);
+
+test(
   "a served page's head carries one title, one description, one canonical",
   { skip: needsBuild },
   async () => {
@@ -294,7 +350,12 @@ test(
     // one next to an og:description they were already editing. The runtime half
     // of the same rule is a browser test further down, because `<svelte:head>`
     // reaches the head only once the bundle runs.
-    for (const page of [["index.html"], ["how", "index.html"], ["legal", "index.html"]]) {
+    for (const page of [
+      ["index.html"],
+      ["how", "index.html"],
+      ["legal", "index.html"],
+      ["support", "index.html"],
+    ]) {
       const html = await readFile(join(DIST, ...page), "utf8");
       const where = page.join("/");
       for (const [what, pattern] of [

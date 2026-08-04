@@ -17,7 +17,7 @@ point somebody would edit it. Everything else is here.
 | Canonical, OG, Twitter card, JSON-LD | each `.html` entry | one canonical URL per entry, a static 1200×630 preview carrying no figure, and a `WebApplication` / `WebPage` node that describes the code rather than the data — **`license` sits on the `WebApplication` and nowhere else**, because on a `WebPage` full of Eurostat's, БНБ's and НСИ's figures it states that those are Apache-2.0 (`verify_legal.mjs`, `docs/legal.md`) |
 | `noindex` on the error page | `site/404.html` | an indexed 404 is a search result that wastes a reader's click |
 | `X-Robots-Tag` on the payloads | `site/public/_headers` | the `robots.txt` rule again, in a header, for anything that reaches a JSON directly |
-| The prerendered pages | `site/scripts/prerender.mjs` | `/` and `/how/` in the served HTML, prose and published figures — below |
+| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all four, the published figures on the two that read payloads — below |
 | A second content page | `site/how/index.html` → `src/How.svelte` | the informational queries the calculator cannot rank for — below |
 
 Core Web Vitals need nothing: a static bundle, no third-party request at all
@@ -33,18 +33,37 @@ measurement of somebody's salary.
 
 ## The prerendered pages
 
-`site/index.html`'s `<body>` is `<div id="app"></div>` and a `<noscript>`.
-Every word the calculator says is inside the JavaScript bundle, so a crawler
-that does not execute scripts sees a page with no subject. Googlebot renders
-JavaScript on a second pass and gets there; Bingbot's second pass is slower and
-much less reliable, and an agent that cites its source generally executes
-nothing at all.
+An entry's `<body>` is `<div id="app"></div>` and a `<noscript>`. Every word the
+page says is inside the JavaScript bundle, so a crawler that does not execute
+scripts sees a page with no subject. Googlebot renders JavaScript on a second
+pass and gets there; Bingbot's second pass is slower and much less reliable, and
+an agent that cites its source generally executes nothing at all.
 
-`scripts/prerender.mjs` runs after `vite build`, compiles `App.svelte` and
-`How.svelte` for the server, and writes each result into the mount point of its
-entry. It adds no dependency: Svelte 5 ships `svelte/server`, and the SSR
-compile reuses `vite.config.js` so the `$lib` alias, the plugin and the
-`__BUILD_ID__` define cannot drift from the client build's.
+**Every indexable entry is prerendered, whatever its prose is assembled from.**
+A page built out of in-repo constants rather than out of a payload has nothing
+to go stale and nothing a build could get wrong — and that is an argument about
+freshness, not about findability. What decides the second question is what the
+crawler is SERVED, and an entry left out of the list is served a mount point:
+its `<h1>` is a heading Bing reports as missing, and its subject is one no
+search engine has. `/legal/` is the page ЗЕТ чл. 4 wants findable, so the cost
+of leaving it out is the obligation the page exists to discharge; `/support/`
+exists so the funding answer has an address a person can be given, which it is
+not if the address serves an empty div. The one entry that stays out is the 404,
+on its own grounds — it is `noindex`, so there is no crawler to serve.
+
+`scripts/prerender.mjs` runs after `vite build`, compiles each page's component
+for the server, and writes each result into the mount point of its entry. It
+adds no dependency: Svelte 5 ships `svelte/server`, and the SSR compile reuses
+`vite.config.js` so the `$lib` alias, the plugin and the `__BUILD_ID__` define
+cannot drift from the client build's.
+
+Prerendering a page is half of a pair. `mount()` appends, so the page's
+bootstrap has to empty `#app` before it mounts or the reader gets the whole page
+twice — the frozen build-time copy above the live one, which passes every
+assertion written as "there is at least one of these".
+`verify_static_assets.mjs` reads `PRERENDERED` against the bootstraps for that
+reason, and the browser suites count the header, the footer and the heading
+exactly rather than merely finding them.
 
 It reads the eight published payloads off disk — `PAYLOADS` from
 `src/lib/payloads.js`, never a directory listing — and hands them to the
@@ -131,7 +150,7 @@ one: refresh the payloads and rebuild, in that order, which is what
 
 ### Why not hydration
 
-`mount()` appends to its target, so `main.js` empties `#app` and the client
+`mount()` appends to its target, so each bootstrap empties `#app` and the client
 renders from scratch. `hydrate()` is the conventional answer and it is the
 wrong one here for two reasons. The server deliberately renders **less** than
 the client's first frame, which is a hydration mismatch by construction. And
