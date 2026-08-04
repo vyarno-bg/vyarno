@@ -1191,12 +1191,19 @@ large-text exemption on purpose: every role checked is small text — source
 captions, hints, the wordmark tagline. If a design change needs a lighter muted,
 the captions have to get bigger first.
 
-**`opacity` on text is the way past all of that, so it is checked separately.**
-`--muted` sits at exactly 4.5:1, so any fade over it renders below AA while the
-token's own check stays green — `opacity: 0.85` on `--paper-2` composites to
-3.53:1 light and 3.82:1 dark. The same suite therefore parses `SiteFooter`'s
-`.support` rule and recomputes the ratio that rule actually renders at, because
-the palette cannot see a fade declared in a component.
+**4.5 is where the suite fails, and it is not where a token should sit.**
+`--muted` is the case that shows why: it paints 94 call sites at 11–13px, and
+a value ON the floor passes the check while the page still reads thin, because
+what a reader receives is the token's ratio minus whatever is composited on top
+of it. It is held at 5.47 / 5.72 / 6.15 in the light theme and 6.36 / 5.98 /
+5.61 in the dark one, against `--paper` / `--paper-2` / `--surface`.
+
+**`opacity` on text spends that headroom immediately, so it is checked
+separately.** Nothing under 0.89 light or 0.83 dark still clears 4.5:1 on
+`--paper-2` — the alphas anyone reaches for are all below the floor.
+`verify_contrast.mjs` therefore parses `SiteFooter`'s `.support` rule and
+recomputes the ratio that rule actually renders at, because the palette cannot
+see a fade declared in a component.
 
 ### The type scale
 

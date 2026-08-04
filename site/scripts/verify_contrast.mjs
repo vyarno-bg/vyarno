@@ -85,7 +85,14 @@ for (const [themeName, block] of [
 test("--muted specifically stays readable — it carries the smallest type", () => {
   // Named on its own because it is the token that failed, and because it is
   // the most tempting one to lighten again: "muted" reads as an instruction
-  // to fade it out. Every provenance caption on the page is this colour.
+  // to fade it out. Every provenance caption on the page is this colour, and
+  // 94 call sites paint from it at 11-13px.
+  //
+  // It is held ABOVE the floor rather than on it, at 5.47:1 at worst in the
+  // light theme and 5.61:1 at worst in the dark one. A token at exactly 4.5
+  // passes this assertion and still reads thin, because the page composites
+  // on top of it: a `--gain-band` or `--real-soft` row behind a caption is a
+  // translucent layer, and it costs about 1.5 of ratio all by itself.
   for (const [themeName, block] of [
     ["light", ":root {"],
     ["dark", 'html[data-theme="dark"] {'],
@@ -104,11 +111,10 @@ test("--muted specifically stays readable — it carries the smallest type", () 
 
 test("the footer's support line renders at the ratio its token promises", () => {
   // Everything above reads `tokens.css`, so a fade applied anywhere else is
-  // invisible to all of it — and `--muted` sits at exactly 4.5:1, which means
-  // ANY fade over it lands below AA while `--muted`'s own check stays green.
-  // `opacity: 0.85` on the footer's support line composites to 3.53:1 in the
-  // light theme and 3.82:1 in the dark one, on the one sentence that says how
-  // the project is paid for.
+  // invisible to all of it — and `--muted`'s headroom over AA is about a
+  // fifth, which a fade spends immediately. Nothing under 0.89 in the light
+  // theme still clears 4.5:1 on `--paper-2`: `opacity: 0.85` composites to
+  // 4.12:1, on the one sentence that says how the project is paid for.
   //
   // `opacity` is what makes this class of defect invisible in review: it looks
   // like a taste dial and it is arithmetic on a contrast ratio. So this
