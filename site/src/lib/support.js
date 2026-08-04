@@ -85,26 +85,6 @@ export const SUPPORT_PLATFORMS = [
     // boundary from the donor's side so it is checkable rather than assumed.
   },
   {
-    id: "opencollective",
-    label: "Open Collective",
-    url: "https://opencollective.com/vyarno",
-    live: false,
-    note: {
-      bg: "с публичен отчет за всеки приход и разход",
-      en: "with a public ledger of every payment in and out",
-    },
-  },
-  {
-    id: "liberapay",
-    label: "Liberapay",
-    url: "https://liberapay.com/vyarno",
-    live: false,
-    note: {
-      bg: "нестопанска платформа, повтарящи се дарения",
-      en: "non-profit platform, recurring donations",
-    },
-  },
-  {
     id: "kofi",
     label: "Ko-fi",
     url: "https://ko-fi.com/vyarno",
@@ -232,7 +212,7 @@ export const SUPPORT_COPY = Object.freeze({
    * It states the fact and stops. What to do instead is the section below,
    * which is on the page whether a channel is open or not — a reader who
    * arrives with no way to give should meet the same answer as one who
-   * arrives with four.
+   * arrives with every channel open.
    */
   pending: {
     bg: "Каналите за дарение още не са отворени.",
