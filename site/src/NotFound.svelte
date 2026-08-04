@@ -135,7 +135,7 @@
     font-family: var(--mono);
     font-size: var(--fs-small);
     padding: 5px 9px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: 999px;
     background: var(--surface);
     color: var(--ink-2);
@@ -190,7 +190,7 @@
   }
   .alt {
     padding: 10px 16px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: var(--radius);
     font-size: var(--fs-lead);
     color: var(--ink-2);

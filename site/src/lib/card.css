@@ -178,7 +178,7 @@
   font-size: var(--fs-lead);
   color: var(--ink);
   background: var(--paper-2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   border-radius: var(--radius);
   padding: 9px 11px;
   font-variant-numeric: tabular-nums;

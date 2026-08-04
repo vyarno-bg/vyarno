@@ -87,7 +87,7 @@ site/
 │   ├── verify_render_layout.mjs   # phone · tablet · wide, and the routes
 │   ├── verify_render_payroll.mjs  # payroll and more than one income
 │   ├── verify_render_share.mjs    # the share card and the share text
-│   ├── verify_render_contrast.mjs # what ratio each piece of text is painted at
+│   ├── verify_render_contrast.mjs # painted text ratios · control boundaries
 │   ├── make_og_image.py           # regenerates the static OG preview + the
 │   │                              # two README banners (stdlib only)
 │   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png
@@ -393,7 +393,7 @@ the tests live beside the code they protect:
 | `verify_view.mjs` | every derived value in `view.js` — which input reaches which formula, and the two boundaries below |
 | `verify_stores.mjs` | the persisted lang/theme keys |
 | `verify_contrast.mjs` | WCAG AA ratios for every ink × surface pair, both themes, computed from `tokens.css` itself |
-| `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down. Both themes, both languages |
+| `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down — and every control boundary at the 3:1 WCAG 1.4.11 asks. Both themes, both languages |
 | `verify_data_contracts.mjs` | `data.js`'s fallback chains, and these same functions run over the JSON committed in `data/published/` |
 | `verify_legal.mjs`, `verify_static_assets.mjs` | the legal documents and the identity table; robots, security.txt, sitemap and the exact CSP |
 
@@ -1216,6 +1216,31 @@ the rgba ones included, since `--rule`, `--track`, `--gain-band` and the two
 the **computed** size is ≥24px or ≥18.66px at weight ≥700. Both themes, both
 languages. It is the guard; the `.support` recompute stays because the render
 suite skips without a browser and `verify_contrast.mjs` never does.
+
+### `--line` rules a page; `--control-line` bounds something you operate
+
+Two tokens because WCAG 1.4.11 asks 3:1 of one of them and nothing of the
+other, and one token cannot be both. A field's `--paper-2` fill differs from
+the card's `--surface` by 1.08:1, so **the 1px border is the control's entire
+visible extent** — at a hairline's ratio the input has no edge at all for a
+reader with reduced contrast sensitivity, on a page whose number boxes carry no
+placeholder to give them away.
+
+`--control-line` is 3.16 / 3.31 / 3.56 light and 3.81 / 3.58 / 3.36 dark
+against `--paper` / `--paper-2` / `--surface`, and it paints the edges of
+fields, selects, pills, chips, segmented buttons, the disclosure summaries and
+the share actions. **Card borders, table rules, the footer separators, the
+`.sh-card` picture frame and the mortgage bar's outline stay on `--line`**:
+they identify no control and carry no state, and darkening them buys nothing
+1.4.11 asked for while making every ledger hairline heavier.
+
+The second test in `verify_render_contrast.mjs` holds the split — **where a
+control draws a border, that border clears 3:1**, measured in the browser
+against the fill inside it and the surface behind it. It does not require a
+control to have one: `.rank-more` is identified by its text and underline, and
+a native checkbox is the user agent's to draw. Sliders are outside both — their
+track edge is an inset `box-shadow` on a pseudo-element no `getComputedStyle`
+call reaches, and what identifies them is the thumb's `2px solid var(--real)`.
 
 ### The type scale
 

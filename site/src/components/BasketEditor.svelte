@@ -434,7 +434,7 @@
   .chip {
     font-family: var(--mono);
     font-size: var(--fs-small);
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     background: var(--paper-2);
     color: var(--ink-2);
     padding: 5px 10px;
@@ -472,7 +472,7 @@
   }
   .seg {
     display: inline-flex;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: var(--radius);
     overflow: hidden;
   }
@@ -486,7 +486,7 @@
     cursor: pointer;
   }
   .segbtn + .segbtn {
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--control-line);
   }
   .segbtn[aria-pressed="true"] {
     background: var(--ink);
@@ -575,7 +575,7 @@
     height: 16px;
     padding: 0;
     margin-right: 5px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: 3px;
     background: var(--surface);
     color: var(--ink-2);
@@ -593,7 +593,7 @@
     font-size: var(--fs-micro);
     margin-left: 5px;
     padding: 1px 5px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: 3px;
     background: var(--surface);
     color: var(--muted);
@@ -628,7 +628,7 @@
     font-size: var(--fs-lead);
     color: var(--ink);
     background: var(--surface);
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: var(--radius);
   }
   .eurin input:focus-visible {

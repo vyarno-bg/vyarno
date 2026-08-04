@@ -172,6 +172,20 @@
   --muted: #5a6157;
   --line: #d3d8cc;
   --line-2: #e0e4da;
+  /* **`--line` rules a page; `--control-line` bounds something you operate.**
+     WCAG 1.4.11 asks 3:1 of the second and nothing of the first, and the two
+     had been one token — which put every field, chip, pill and disclosure edge
+     at 1.40:1 against the card behind it. A field's own `--paper-2` differs
+     from the card's `--surface` by 1.08:1, so the 1px border is the entire
+     boundary: at that ratio the input has no visible edge at all for a reader
+     with reduced contrast sensitivity, and the placeholder-less number boxes
+     on this page are then indistinguishable from the text beside them.
+
+     3.16 / 3.31 / 3.56 against --paper / --paper-2 / --surface. Card borders,
+     table rules, the footer separators and the mortgage bar's outline stay on
+     --line: they carry no state and identify no control, and darkening them
+     would trade the ledger-hairline look for nothing WCAG asked. */
+  --control-line: #83867e;
   --real: #1c6b54;
   --real-soft: rgba(28, 107, 84, 0.12);
   --real-ink: #145140;
@@ -251,6 +265,10 @@ html[data-theme="dark"] {
   --muted: #909a8b;
   --line: #2a322a;
   --line-2: #212821;
+  /* Same split as the light theme, and the dark one was the worse of the two:
+     a control edge sat at 1.24:1. 3.81 / 3.58 / 3.36 against --paper /
+     --paper-2 / --surface. */
+  --control-line: #637663;
   --real: #4fb08f;
   --real-soft: rgba(79, 176, 143, 0.17);
   --real-ink: #7ecaab;

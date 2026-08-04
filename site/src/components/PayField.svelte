@@ -353,7 +353,7 @@
     line-height: 1;
     color: var(--muted);
     background: none;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: var(--radius);
     cursor: pointer;
   }

@@ -184,7 +184,7 @@
     font-family: var(--mono);
     font-size: var(--fs-small);
     padding: 5px 9px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: 999px;
     background: var(--surface);
     color: var(--ink-2);

@@ -115,7 +115,7 @@
   .pill {
     font-family: var(--mono);
     font-size: var(--fs-small);
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     background: var(--surface);
     color: var(--ink-2);
     padding: 6px 9px;

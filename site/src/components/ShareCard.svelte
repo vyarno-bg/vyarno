@@ -257,7 +257,7 @@
     padding: 7px 13px;
     color: var(--ink-2);
     background: var(--surface);
-    border: 1px solid var(--line);
+    border: 1px solid var(--control-line);
     border-radius: var(--radius);
     cursor: pointer;
   }
