@@ -58,8 +58,8 @@
   </h1>
   <p class="lead">
     <span class="l-bg"
-      >Адресът е грешен или страницата е премахната. Числата са си на мястото — калкулаторът е един
-      клик оттук.</span
+      >Адресът е грешен или страницата е премахната. Числата са си на мястото — калкулаторът е на
+      един клик оттук.</span
     >
     <span class="l-en"
       >The address is wrong, or the page was removed. The numbers are all still there — the

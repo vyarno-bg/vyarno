@@ -62,10 +62,18 @@ silently inside an event handler.
 
 ## Copy
 
-**All visible text goes in `content.js`, in both languages.** A missing string
-renders as a **blank line**, not a fallback — BG is the primary language and
-clumsy Bulgarian is a bug. No string literals in components beyond styling and
-data attributes.
+**Every visible string is written in both languages.** A missing one renders as
+a **blank line**, not a fallback — BG is the primary language and clumsy
+Bulgarian is a bug.
+
+Which of the two places it goes in is decided by who reads it. **`content.js`
+holds anything JavaScript has to select, interpolate or pass as an attribute** —
+a string a branch picks between, one carrying a `{slot}`, an `aria-label`, a
+`<title>`. **Long bilingual prose is inlined in its component** as paired
+`.l-bg` / `.l-en` spans, because a paragraph split between a copy file and a
+template is edited in two places and reads as neither; `How.svelte` and
+`ExplainerBand.svelte` are most of it. Moving prose from one to the other is a
+refactor and needs the same argument any other refactor does.
 
 A sentence can be false while every formula behind it is right, which is what
 `verify_copy.mjs` guards: what a claim may say about our own numbers, and the

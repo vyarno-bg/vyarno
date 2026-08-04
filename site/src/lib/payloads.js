@@ -174,7 +174,7 @@ export const PAYLOADS = Object.freeze(
       cadenceDays: 92,
       name: { bg: "Цени на жилищата в София", en: "Sofia home prices" },
       feeds: {
-        bg: "цената на квадратен метър по райони и колко струва жилище",
+        bg: "цената на квадратен метър по квартали и колко струва жилище",
         en: "the €/m² by district and what a home costs",
       },
       // imot.bg's own «обновена на» stamp when the scraper finds one, else the
@@ -206,7 +206,7 @@ export const PAYLOADS = Object.freeze(
       cadenceDays: 31,
       name: { bg: "Безработица", en: "Unemployment" },
       feeds: {
-        bg: "процентът безработни в лентата с националните числа",
+        bg: "процентът на безработните в лентата с националните числа",
         en: "the unemployment rate in the national figures strip",
       },
       refPeriod: (p) => p?.ref_period ?? null,

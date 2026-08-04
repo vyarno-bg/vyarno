@@ -602,14 +602,21 @@ test("only the exactly-cancelling pocket verdict claims to be exact", () => {
 });
 
 test("the stand-still target does not claim a rise that did not happen", () => {
-  // π ≤ 0 needs its own sentence. Reusing the one with «поскъпнаха» in it tells
-  // a reader prices rose in exactly the case where they did not.
+  // π ≤ 0 needs its own sentence. Reusing the one that names the rise —
+  // «колкото се вдигнаха твоите цени» — tells a reader prices rose in exactly
+  // the case where they did not. The aorist «вдигнаха» is what tells the two
+  // apart: the π ≤ 0 line reaches for the same verb to DENY the rise («не са се
+  // вдигнали»), so the participle has to stay outside the needle.
   const [riseBg] = pair("standStillTxt");
   const [flatBg] = pair("standStillFlat");
-  assert.ok(riseBg.includes("поскъпнаха"), "the π > 0 line no longer names the rise");
+  assert.ok(riseBg.includes("вдигнаха"), "the π > 0 line no longer names the rise");
   assert.ok(
-    !flatBg.includes("поскъпнаха"),
+    !flatBg.includes("вдигнаха"),
     "the π ≤ 0 line says prices rose. That is the case where they did not."
+  );
+  assert.ok(
+    flatBg.includes("не са се вдигнали"),
+    "the π ≤ 0 line no longer says the prices did not rise — that denial IS the branch"
   );
 });
 
