@@ -301,20 +301,36 @@ in euro. The **€ figures do** care, and they are carved out of
 `view.js#basketBudget`'s `spendBase`:
 
 ```
-spendBase = spendable                    in share mode  (shares divide all of it)
+spendBase = spendable × s/100            in share mode  (s = the stated share, default 100)
 spendBase = Σa                           in euro mode   (the euros actually typed)
 exposed   = housingCost + spendBase      what extraPerMonth is charged on
 ```
 
-Percentage shares allocate the spendable amount by construction; a list of euros
-does not, and a reader who spends €1,000 of a €1,250 budget must not be shown
-their basket scaled up by 25% to fill it. `exposed` reduces to `salary` exactly
-in share mode — `spendBase` is `salary − housingCost` there — so the headline
-"≈ €X more every month" is unchanged for anyone who filled the basket, and is
-smaller, and truer, only for someone who told us they put money aside. Housing
-stays inside `exposed`: rent and a mortgage payment are spending, carved out of
-the *basket* column so the thirteen divisions describe what is left, not because
-they sit outside the outlay.
+Both modes let a reader say they do not spend everything, and they differ in who
+measures it. A list of euros carries its own size, so the remainder is
+**measured**: `spendable − Σa`, and a reader who spends €1,000 of a €1,250 budget
+must not be shown their basket scaled up by 25% to fill it. Percentage shares
+carry no size at all — they say how a pot divides, never how big it is — so the
+remainder has to be **stated**: `s` is the reader's own claim about how much of
+`spendable` gets spent. Only one of the two is live at a time; the euro mode
+ignores `s`, and the control that sets it is not rendered there, so the page
+never carries two answers to the same question.
+
+`s` defaults to **100** and the parameter is optional, which is the same rule
+twice. Any other default shrinks the reader's headline € figure without their
+having claimed anything, and that is a flattering default rather than merely an
+unsourced one (`docs/principles.md` P7); a national household savings rate would
+be sourced and still wrong, being a different household's answer. At `s = 100`,
+`exposed` reduces to `salary` exactly — `spendBase` is `salary − housingCost`
+there — so the headline "≈ €X more every month" is unchanged for anyone who has
+not said otherwise, and is smaller, and truer, only for someone who has.
+
+`s` moves no percentage. It scales the pot, not the division of it, so `π`,
+every row's share and every contribution in percentage points are identical
+before and after — which is what keeps the toggle and the control both safe to
+touch. Housing stays inside `exposed`: rent and a mortgage payment are spending,
+carved out of the *basket* column so the thirteen divisions describe what is
+left, not because they sit outside the outlay.
 
 ## Mortgage math
 

@@ -448,9 +448,34 @@ export const COPY = {
   // Input mode: percentage shares vs actual euros per month
   modePct: { bg: "дял в %", en: "share in %" },
   modeEur: { bg: "€ на месец", en: "€ per month" },
+  // The third sentence is load-bearing and belongs to both halves of the
+  // toggle. Naming only «€ на месец» made not-placing-everything read as a
+  // property of one entry mode, so a reader in the other one - which is the one
+  // everybody starts in - had no reason to look for it. Each mode reaches it
+  // differently: the € tally measures what is left off thirteen typed amounts,
+  // the share control states it in one number.
   modeHint: {
-    bg: "Повечето хора знаят по-добре колко харчат в евро, отколкото в проценти. Избери както ти е удобно - сметката е същата. В „€ на месец“ не е нужно да разпределиш цялата заплата.",
-    en: 'Most people know their euros better than their percentages. Pick whichever suits you - the maths is identical. In "€ per month" you don\'t have to place your whole pay.',
+    bg: "Повечето хора знаят по-добре колко харчат в евро, отколкото в проценти. Избери както ти е удобно - сметката е същата. И в двата начина не е нужно да разпределиш цялата заплата.",
+    en: "Most people know their euros better than their percentages. Pick whichever suits you - the maths is identical. Neither way asks you to place your whole pay.",
+  },
+  // ---- How much of the pay is spent at all --------------------------------
+  // Share mode carries no size, only a division, so the app has to assume how
+  // big the pot is - and it assumed the whole pay packet, silently, of every
+  // reader who never found the € mode. This control is that assumption written
+  // out as a claim the reader can disagree with, which is why the sentence is
+  // in the first person and states a figure rather than asking for one.
+  //
+  // «което ти остава» / "what's left of your take-home" is `spendable`, i.e.
+  // after any rent or mortgage the reader entered. The two carve-out hints
+  // above the control name those amounts when they are non-zero, so the base is
+  // spelled out on screen without this sentence carrying a housing variant.
+  spendShareLead: {
+    bg: "Харча ≈ <b>{p}%</b> от това, което ми остава",
+    en: "I actually spend ≈ <b>{p}%</b> of what's left of my take-home",
+  },
+  spendShareAria: {
+    bg: "дял от парите, които наистина харчиш",
+    en: "share of your money you actually spend",
   },
   // Shown in € mode: how much of their take-home they have placed so far.
   // **A statement of what they have done, in both languages, never an

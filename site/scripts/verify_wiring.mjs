@@ -227,6 +227,66 @@ test("the euro column shows what was typed, not the whole budget", () => {
   );
 });
 
+test("the reader can say how much of their pay they spend, and it reaches the base", () => {
+  // Share mode carries no size, only a division, so before this control the app
+  // assumed the pot was the whole take-home — of every reader who never found
+  // the euro mode, which is every reader who arrives, because `spendMode`
+  // starts at "pct". The claim has to reach `basketBudget`, which is the one
+  // place that turns it into `spendBase`; wire the control to anything else and
+  // the thirteen € figures, the ranked column and the headline all keep
+  // answering the old assumption while a slider on screen says otherwise.
+  const budget = /budget = \$derived\(([\s\S]*?)\n {2}\);/.exec(LIVE);
+  assert.ok(budget, "the basket budget is gone");
+  assert.ok(
+    /spendSharePct:\s*spendSharePct/.test(budget[1]),
+    "basketBudget is not being told what share of their pay the reader spends"
+  );
+  assert.ok(FLAT.includes("onSpendShareInput"), "the spend-share control has no handler");
+  assert.ok(
+    /onSpendShareInput = \(val\) => \{ spendSharePct = clampSpendShare\(\+val\)/.test(FLAT),
+    "the stated share reaches $state unclamped — the label beside the control renders " +
+      "that number and the € figures are carved out of it, so a value only one of them " +
+      "rejects is a screen where the claim and the arithmetic describe different readers"
+  );
+});
+
+test("only one of the two remainders is ever on screen", () => {
+  // The euro mode MEASURES what is left over off thirteen typed amounts; the
+  // share control STATES it. Both live at once and the page carries two answers
+  // to "how much do you not spend", free to disagree in front of the reader.
+  // `basketBudget` ignores the claim in euro mode (verify_view.mjs pins that);
+  // this is the other half — the control is not drawn there to ask it.
+  const editor = live(read("components", "BasketEditor.svelte"));
+  const control = /\{#if ([^}]*)\}\s*<div class="spendshare">/.exec(editor);
+  assert.ok(control, "the spend-share control is gone, or no longer gated at all");
+  assert.match(
+    control[1],
+    /spendMode !== "eur"/,
+    `the spend-share control renders when \`${control[1].trim()}\` — in euro mode that is a ` +
+      "stated remainder beside a measured one"
+  );
+});
+
+test("the mode toggle converts against the base the € column is drawn from", () => {
+  // Flipping %→€ at a 70% claim and scaling by the whole `spendable` hands back
+  // a basket 43% larger than the one on screen a moment earlier: the app
+  // insisting the whole salary be spent, by a second route, with the reader's
+  // own claim as the thing it overrides. Both directions go through
+  // `budget.spendBase`, which is `spendable × s/100` on the way out and
+  // Σ(typed) on the way back.
+  const setMode = /setSpendMode = \(mode\) => \{([\s\S]*?)\n {2}\};/.exec(LIVE);
+  assert.ok(setMode, "the mode toggle's handler is gone");
+  const body = setMode[1].replace(/\s+/g, " ");
+  assert.ok(
+    body.includes("budget.spendBase * Math.max(0, w)"),
+    "%→€ converts against the whole spendable amount again"
+  );
+  assert.ok(
+    /spendSharePct = clampSpendShare\(/.test(body),
+    "€→% drops the reader's remainder instead of carrying it into the claim"
+  );
+});
+
 test("the price rise is charged only on money that is actually spent", () => {
   // `extraPerMonth(salary, π)` asserts that every euro earned is spent on
   // something whose price moved. For a reader who put money aside it overstates

@@ -294,6 +294,125 @@ test("the basket keeps its affordances for a reader who turned motion off", { sk
   );
 });
 
+test(
+  "the reader can say they do not spend everything, and the euro figures follow",
+  { skip },
+  async () => {
+    // The assumption this control makes visible was being made silently of
+    // every visitor: share mode divides a pot and cannot say how big it is, so
+    // the app used the whole take-home. Only the euro mode could express
+    // anything else, and `spendMode` starts at "pct".
+    //
+    // Driven in a browser rather than read out of the source because the chain
+    // it has to survive is a chain of layers: the range input's value → a
+    // handler → `$state` → `basketBudget` → `spendBase` → thirteen rendered €
+    // figures and the row that names the remainder. `verify_view.mjs` proves
+    // the arithmetic and `verify_wiring.mjs` proves the arguments; neither can
+    // see a control that renders but moves nothing.
+    await withApp(async (page, errors) => {
+      await page.locator("#inSalary").fill("1500");
+      await page.waitForTimeout(400);
+
+      const control = page.locator(".spendshare input[type=range]");
+      assert.equal(await control.count(), 1, "there is no spend-share control in share mode");
+      assert.equal(
+        await control.inputValue(),
+        "100",
+        "the control does not start at 'I spend all of it' — any lower default shrinks " +
+          "the reader's headline € figure without their having claimed anything (P7)"
+      );
+      assert.equal(
+        await page.locator(".r-row", { hasText: /Неразпределени|Not placed/ }).count(),
+        0,
+        "money is reported unplaced before the reader has said any of it is"
+      );
+
+      const euros = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll("#sliders .cat .pc small")].map((el) =>
+            Number(el.textContent.replace(/[^\d]/g, ""))
+          )
+        );
+      const before = await euros();
+      assert.ok(
+        before.filter((x) => x > 0).length >= 10,
+        "the € column is not drawn, so nothing here would notice if it stopped following"
+      );
+
+      // 100 → 60 in five-point steps. Keyboard rather than a synthetic value,
+      // because `oninput` is what carries the claim and setting `.value` in JS
+      // does not fire it.
+      await control.focus();
+      for (let i = 0; i < 8; i++) await page.keyboard.press("ArrowLeft");
+      await page.waitForTimeout(300);
+      assert.equal(await control.inputValue(), "60");
+
+      const after = await euros();
+      before.forEach((was, i) => {
+        if (was < 20) return; // a row of a few euros rounds to the same integer
+        assert.ok(
+          after[i] < was,
+          `row ${i} still reads €${after[i]} after the reader said they spend 60% of their pay`
+        );
+      });
+      // The claim sets the size of the pot, not how it divides: π is normalised
+      // by Σa and must not move (docs/math.md §"What `a_i` is a share of").
+      const shares = await page.evaluate(() =>
+        [...document.querySelectorAll("#sliders .cat .pc > span")].map((el) => el.textContent)
+      );
+      const total = Math.round(before.reduce((s, x) => s + x, 0));
+      const totalAfter = Math.round(after.reduce((s, x) => s + x, 0));
+      assert.ok(
+        Math.abs(totalAfter / total - 0.6) < 0.02,
+        `the € column totals €${totalAfter} against €${total} — a 60% claim did not reach it`
+      );
+      assert.ok(
+        shares.some((s) => s.includes("%")),
+        "the share column stopped rendering"
+      );
+
+      // …and the remainder now has a row to itself, which in share mode never
+      // rendered at all before there was a way to state one.
+      const leftover = page.locator(".r-row", { hasText: /Неразпределени|Not placed/ });
+      assert.equal(await leftover.count(), 1, "the unplaced money is not reported anywhere");
+      assert.match(await leftover.innerText(), /600/, "the unplaced row does not name the €600");
+
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
+test("the euro mode's measured remainder is the only one on screen there", { skip }, async () => {
+  // Two live controls both meaning "I don't spend everything" can disagree in
+  // front of the reader: the euro tally MEASURES the remainder off thirteen
+  // typed amounts, the share control STATES it. The euro mode's tally is
+  // authoritative there, so the control is not drawn — and flipping back must
+  // return it rather than stranding the reader in the mode that has it.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("1500");
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator(".spendshare").count(), 1);
+
+    // Scoped to the basket's own toolbar: `.seg .segbtn` also matches the pay
+    // card's net/gross toggle, and clicking that one changes the salary basis
+    // while every assertion below still passes.
+    const [pct, eur] = [0, 1].map((i) => page.locator(".basketbar .seg .segbtn").nth(i));
+    await eur.click();
+    await page.waitForTimeout(300);
+    assert.equal(
+      await page.locator(".spendshare").count(),
+      0,
+      "the stated share is still on screen in euro mode, beside the measured one"
+    );
+    assert.ok(await page.locator(".budgetbar").count(), "the euro tally is not drawn");
+
+    await pct.click();
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator(".spendshare").count(), 1, "the control did not come back");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the basket fits a 360px column, chips and all", { skip }, async () => {
   // 360px is the phone the reader in the report was holding. The chip row
   // wraps to four lines there, and a chip that overhangs the column is the
@@ -305,7 +424,7 @@ test("the basket fits a 360px column, chips and all", { skip }, async () => {
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
       widest: Math.max(
-        ...[...document.querySelectorAll(".presets .chip, #sliders .cat")].map(
+        ...[...document.querySelectorAll(".presets .chip, #sliders .cat, .spendshare")].map(
           (el) => el.getBoundingClientRect().right
         )
       ),

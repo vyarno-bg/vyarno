@@ -93,6 +93,40 @@
   <span class="l-bg">{COPY.modeHint.bg}</span>
   <span class="l-en">{COPY.modeHint.en}</span>
 </p>
+<!-- HOW MUCH OF THE PAY IS SPENT AT ALL. Share mode only, and that is the
+     decision this control turns on rather than an omission: the two modes
+     answer the same question with different authority. In € mode the
+     remainder is MEASURED — thirteen amounts the reader typed, tallied
+     against their pay — and a stated claim beside a measured one gives the
+     page two answers that can disagree while both are on screen. So the €
+     tally keeps speaking for itself and this appears only where nothing else
+     can supply the size of the pot.
+
+     It renders at 100% too, unmoved, because that is the whole point: the
+     assumption was being made either way, and a reader who never opens this
+     card's other mode had no way to see it, let alone disagree. Stating it as
+     a first-person claim with a handle on it is what turns a hidden default
+     into an answerable question. -->
+{#if calc.spendMode !== "eur"}
+  <div class="spendshare">
+    <p class="ss-lab">
+      <span class="l-bg">{@html t(COPY.spendShareLead, "bg", { p: fmt0(calc.spendSharePct) })}</span
+      >
+      <span class="l-en">{@html t(COPY.spendShareLead, "en", { p: fmt0(calc.spendSharePct) })}</span
+      >
+    </p>
+    <input
+      type="range"
+      min="0"
+      max="100"
+      step="5"
+      value={calc.spendSharePct}
+      oninput={(e) => calc.onSpendShareInput(e.currentTarget.value)}
+      style="--f:{calc.spendSharePct}%"
+      aria-label={t(COPY.spendShareAria, $lang)}
+    />
+  </div>
+{/if}
 {#if calc.detailMode}
   <p class="leg">
     <span class="l-bg">{COPY.detailHint.bg}</span>
@@ -434,6 +468,23 @@
     color: var(--ink-2);
     margin-top: 6px;
   }
+  /* Boxed, unlike the thirteen rows below it, because it is not one of them:
+     it sets the size of the pot they divide. Sharing their rail — see the
+     range rules at the foot of this file — is deliberate and does the
+     opposite work, saying it is the same kind of thing to grab; the panel is
+     what stops it reading as a fourteenth division. */
+  .spendshare {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+    padding: 8px 10px 4px;
+    margin: 0 0 10px;
+  }
+  .ss-lab {
+    margin: 0 0 2px;
+    font-size: var(--fs-small);
+    color: var(--ink-2);
+  }
   /* How much of the spendable amount the basket accounts for. Not a progress
      bar and styled so it cannot be read as one: the unfilled part is the money
      the reader chose not to place, which is a legitimate resting state, so
@@ -703,8 +754,13 @@
          the row; a chart's bar sits on top of it and never carries one.
        - the thumb is a HANDLE, 18px with a grip. A chart has no handle at all,
          and 18px on a 24px input is a tap target rather than a decoration —
-         the 360px phone this has to work on has no hover to fall back on. */
-  .cat input[type="range"] {
+         the 360px phone this has to work on has no hover to fall back on.
+
+     The spend-share control takes the same rail for the same reasons, and one
+     more: it is drawn at 100% by default, where a rail with no groove and no
+     handle is a full green bar reading as a score. */
+  .cat input[type="range"],
+  .spendshare input[type="range"] {
     width: 100%;
     height: 24px;
     margin: 0;
@@ -713,7 +769,8 @@
     background: transparent;
     cursor: pointer;
   }
-  .cat input[type="range"]::-webkit-slider-runnable-track {
+  .cat input[type="range"]::-webkit-slider-runnable-track,
+  .spendshare input[type="range"]::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 3px;
     background: linear-gradient(
@@ -723,7 +780,8 @@
     );
     box-shadow: inset 0 0 0 1px var(--line);
   }
-  .cat input[type="range"]::-webkit-slider-thumb {
+  .cat input[type="range"]::-webkit-slider-thumb,
+  .spendshare input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     box-sizing: border-box;
@@ -737,18 +795,21 @@
       var(--surface);
     border: 2px solid var(--real);
   }
-  .cat input[type="range"]::-moz-range-track {
+  .cat input[type="range"]::-moz-range-track,
+  .spendshare input[type="range"]::-moz-range-track {
     height: 6px;
     border-radius: 3px;
     background: var(--track);
     box-shadow: inset 0 0 0 1px var(--line);
   }
-  .cat input[type="range"]::-moz-range-progress {
+  .cat input[type="range"]::-moz-range-progress,
+  .spendshare input[type="range"]::-moz-range-progress {
     height: 6px;
     border-radius: 3px;
     background: var(--real);
   }
-  .cat input[type="range"]::-moz-range-thumb {
+  .cat input[type="range"]::-moz-range-thumb,
+  .spendshare input[type="range"]::-moz-range-thumb {
     box-sizing: border-box;
     width: 18px;
     height: 18px;
@@ -759,7 +820,8 @@
       var(--surface);
     border: 2px solid var(--real);
   }
-  .cat input[type="range"]:focus-visible {
+  .cat input[type="range"]:focus-visible,
+  .spendshare input[type="range"]:focus-visible {
     outline: 2px solid var(--real);
     outline-offset: 2px;
   }

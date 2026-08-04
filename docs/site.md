@@ -427,7 +427,8 @@ are shaped to make a wrong wiring *unexpressible*:
 | `pctAhead(rank)` | display position, 1–99, from the bottom | "top 63%" for a below-median income |
 | `savingsSince2020(cash, headline, categories)` | `{valueToday, eaten, cumulativePct, basis}` | deflating by the 12-month rate (~5%) instead of the since-2020 cumulative (~40%) — and, since it prefers the published all-items index, showing our ~41.8% reconstruction under a sentence naming Eurostat |
 | `housingCarveOut({…})` | `{housingCost, spendable}` | the per-division € column ignoring rent or the mortgage |
-| `basketBudget({…})` | `{entered, spendBase, leftover, over, …}` | **a partial € basket rescaled up to the whole salary** — thirteen euro figures nobody typed |
+| `basketBudget({…})` | `{entered, spendBase, leftover, over, …}` | **a basket rescaled up to the whole salary** — thirteen euro figures nobody typed, and a headline charged on money nobody spends |
+| `clampSpendShare(pct)` | the stated spend share, 0–100 | an unreadable answer read as "spends nothing", emptying every € figure on the page |
 | `exposedSpend({…})` | €/month the price rise is charged on | "what the same life costs" billed against money that was never spent |
 | `leftoverIfHeldAsCash({…})` | `{ratePct, valueToday, eaten}` | the unplaced money deflated by the reader's own basket rate instead of the general price level |
 | `homePriceFor({…})` | the price the mortgage math runs on | a typed asking price being ignored, or a €0 home in manual mode |
@@ -477,17 +478,32 @@ compares it against the returned object key for key. Adding a figure to a card
 means adding it there first, which is where the argument happens.
 
 **`basketBudget` decides what the € column is a share of, and the two entry
-modes answer differently on purpose.** A basket of *percentage shares* says how
-the spendable amount divides and by construction allocates all of it. A basket
-of *euros per month* is a list of real payments, and a person who is careful
-with money does not spend everything — so `spendBase` is `spendable` in share
-mode and **the euros actually entered** in euro mode. Feeding `spendable` to
-both is the defect this exists to make unexpressible: a €1,000 basket against a
-€1,250 budget came back rescaled by 25%, every row a number the reader had
-never typed, adding to a total they had deliberately not reached. `exposedSpend`
-carries the same correction into the headline € figure and **reduces to
-`salary` exactly** whenever nothing is left over, so it moves no number for a
-reader who did fill the basket.
+modes measure the remainder differently on purpose.** A person who is careful
+with money does not spend everything, and the two modes are not equally placed
+to notice. A basket of *euros per month* is a list of real payments and carries
+its own size, so the remainder is **measured** — `spendBase` is the euros
+actually entered, and feeding `spendable` instead is the defect this exists to
+make unexpressible: a €1,000 basket against a €1,250 budget came back rescaled
+by 25%, every row a number the reader had never typed, adding to a total they
+had deliberately not reached. A basket of *percentage shares* says how a pot
+divides and cannot say how big it is, so there the remainder has to be
+**stated** — `spendBase` is `spendable × spendSharePct/100`, the reader's own
+claim about how much of their pay actually gets spent.
+
+**The claim defaults to 100 and the parameter is optional**, so a reader who
+never touches the control is charged on everything they earn, exactly as before
+they had one. Anything lower would shrink their headline € figure without their
+having claimed anything, which is the flattering default P7 rules out.
+`exposedSpend` carries the correction into that headline and **reduces to
+`salary` exactly** whenever nothing is left over, by either route.
+
+**Only one of the two remainders is ever live.** They can disagree — one is
+derived from thirteen typed amounts, the other is a sentence the reader wrote
+about themselves — and a page carrying both would put two answers to "how much
+do you not spend" in front of the same reader. So `basketBudget` ignores the
+stated claim in euro mode, and `BasketEditor` does not render the control there.
+Neither of those alone is the guarantee; `verify_view.mjs` pins the first and
+`verify_wiring.mjs` the second.
 
 What that money *is* — savings, investment, help sent home, something they
 forgot — is not ours to say. The row that renders it states its size, the year

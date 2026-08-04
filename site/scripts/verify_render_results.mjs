@@ -66,7 +66,11 @@ test(
 
       // A weight moved onto transport, so the basket parts company with the
       // average one and the verdict has a direction to state.
-      await page.locator('input[type="range"]').nth(6).fill("40");
+      // Scoped to the basket's own rows. An unscoped `input[type="range"]` counts
+      // every rail on the page, so the index means "the seventh division" only
+      // for as long as nothing else on the card is a slider — and the
+      // spend-share control above the list is one.
+      await page.locator("#sliders .cat > input[type=range]").nth(6).fill("40");
       await page.waitForTimeout(400);
 
       const moved = (await bars.allInnerTexts()).map((s) => s.trim());

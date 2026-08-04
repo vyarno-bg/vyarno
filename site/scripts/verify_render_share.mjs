@@ -15,7 +15,11 @@ test("the share card draws the reader's own comparison, and no euro figure", { s
     // A weight moved onto transport, so the basket parts company with the
     // official one and the card has a verdict to state.
     await page.locator("#inSalary").fill("2400");
-    await page.locator('input[type="range"]').nth(6).fill("40");
+    // Scoped to the basket's own rows. An unscoped `input[type="range"]` counts
+    // every rail on the page, so the index means "the seventh division" only
+    // for as long as nothing else on the card is a slider — and the
+    // spend-share control above the list is one.
+    await page.locator("#sliders .cat > input[type=range]").nth(6).fill("40");
     await page.waitForTimeout(600);
 
     const block = page.locator("section.share");
@@ -64,7 +68,11 @@ test("the share card draws the reader's own comparison, and no euro figure", { s
 
 test("the share text names both rates and a way back to the site", { skip }, async () => {
   await withApp(async (page, errors) => {
-    await page.locator('input[type="range"]').nth(6).fill("40");
+    // Scoped to the basket's own rows. An unscoped `input[type="range"]` counts
+    // every rail on the page, so the index means "the seventh division" only
+    // for as long as nothing else on the card is a slider — and the
+    // spend-share control above the list is one.
+    await page.locator("#sliders .cat > input[type=range]").nth(6).fill("40");
     await page.waitForTimeout(600);
 
     // Rendered rather than hidden behind the copy button: where the clipboard
