@@ -55,7 +55,7 @@ function ratio(fg, bg) {
 const AA_BODY = 4.5;
 
 /** Every ink token, against every surface it is actually painted on. */
-const INKS = ["ink", "ink-2", "muted", "real", "real-ink", "erode"];
+const INKS = ["ink", "ink-2", "muted", "real", "real-ink", "erode", "erode-ink"];
 const SURFACES = ["paper", "paper-2", "surface"];
 
 for (const [themeName, block] of [
