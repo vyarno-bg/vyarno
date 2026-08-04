@@ -17,7 +17,7 @@ point somebody would edit it. Everything else is here.
 | Canonical, OG, Twitter card, JSON-LD | each `.html` entry | one canonical URL per entry, a static 1200×630 preview carrying no figure, and a `WebApplication` / `WebPage` node that describes the code rather than the data — **`license` sits on the `WebApplication` and nowhere else**, because on a `WebPage` full of Eurostat's, БНБ's and НСИ's figures it states that those are Apache-2.0 (`verify_legal.mjs`, `docs/legal.md`) |
 | `noindex` on the error page | `site/404.html` | an indexed 404 is a search result that wastes a reader's click |
 | `X-Robots-Tag` on the payloads | `site/public/_headers` | the `robots.txt` rule again, in a header, for anything that reaches a JSON directly |
-| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all four, the published figures on the two that read payloads — below |
+| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all four, the published figures on the two that read payloads, in the one language the entry declares — below |
 | A second content page | `site/how/index.html` → `src/How.svelte` | the informational queries the calculator cannot rank for — below |
 
 Core Web Vitals need nothing: a static bundle, no third-party request at all
@@ -70,6 +70,44 @@ It reads the eight published payloads off disk — `PAYLOADS` from
 component as a prop. `data.js` is not imported and must not be: that layer is
 `fetch`, and there is no fetch in a Node build step. A payload that will not
 parse fails the build rather than being rendered around.
+
+### The bilingual DOM, and the copy a crawler gets
+
+**The live DOM carries both languages. The prerendered copy carries one.**
+
+Every string is authored as a pair, `<span class="l-bg">` beside
+`<span class="l-en">`, and the rule at the foot of `tokens.css` hides whichever
+one `html[data-lang]` does not name. A stylesheet is what a browser applies and
+what Googlebot applies. It is not what an agent applies: the six that
+`robots.txt` allows by name fetch the HTML and strip the tags, so the `<h1>` of
+`/` reaches them as «Твоите числа. Твоята реалност. Your numbers. Your
+reality.», and every heading and sentence under it doubles the same way. That is
+the worst input for exactly the consumer note 3 of `robots.txt` was written to
+attract, and on `/legal/` — the page a citing agent has most reason to parse —
+37% of the served bytes are the half it cannot use.
+
+So `prerender.mjs` writes the language its entry declares and drops the other,
+reading `data-lang` off `<html>` rather than assuming `bg`, because that
+attribute is what `tokens.css` hides by and the two have to agree.
+`verify_render_prerender.mjs` §"the served pages carry one language, not two"
+counts the class over the raw file for all four entries, which holds however a
+future pair is written — one of them is an `<a class="how-more l-en">` rather
+than a span today.
+
+**This costs a reader nothing, in either state a reader can be in.** With
+JavaScript, `main.js` and its three siblings call `target.replaceChildren()`
+before `mount()`, so the prerendered markup is discarded wholesale and the
+client renders both languages from scratch — §"Why not hydration" is why the
+build renders a second time rather than hydrating. Without JavaScript,
+`toggleLang()` is a button handler in `stores.js` that never runs, and all four
+entries hardcode `data-lang="bg"`, so the English half is unreachable for as
+long as the page is served. A reader with the stylesheet off and the bundle
+running is unaffected; one with neither gets less doubled text than before.
+
+What is left of the topical-signal cost is paid by the toggle rather than by the
+served page: the document a crawler indexes is now monolingual, and it is the
+live DOM that still holds two. `hreflang` stays impossible for the same reason
+as ever — one URL.
 
 ### The rule: what the payloads decide, and nothing else
 
@@ -250,14 +288,17 @@ measurement that can see what a consumer typed, and a share count, a click
 event or a campaign parameter on an outgoing share. We do not find out whether
 sharing works, and that is the trade rather than an oversight.
 
-**The bilingual DOM stays.** Both languages ship in the served DOM at once, as
+**The bilingual DOM stays.** The live page carries both languages at once, as
 `<span class="l-bg">` / `<span class="l-en">` hidden by the rule in
-`tokens.css`. This genuinely splits the page's topical signal, and it makes
-`hreflang` impossible because there is one URL to point at — which is why
-`index.html`'s comment above `og:locale:alternate` says the alternate locale
-buys an unfurler a language it can read and is not an `hreflang` pair. It is a
-real cost, named here so nobody has to rediscover it, and undoing it is an
-architecture decision rather than an SEO one.
+`tokens.css`, and the toggle switches between them without a navigation. That
+is one URL answering in two languages, so `hreflang` is not expressible — there
+is no second URL to point at, which is why `index.html`'s comment above
+`og:locale:alternate` says the alternate locale buys an unfurler a language it
+can read and is not an `hreflang` pair. It still splits the page's topical
+signal, and undoing it is an architecture decision rather than an SEO one.
+
+What the cost is now paid by is the toggle rather than the served document —
+see the section below.
 
 ## Open questions
 

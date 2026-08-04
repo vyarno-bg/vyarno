@@ -46,6 +46,28 @@
  *     against the reader's own clock, which is the only one that answers the
  *     question.
  *
+ * ## One language in the crawler's copy
+ *
+ * Every string on the site is authored as a pair — `<span class="l-bg">` beside
+ * `<span class="l-en">` — and the rule in `tokens.css` hides whichever one
+ * `html[data-lang]` does not name. That rule is CSS, so it reaches a browser
+ * and Googlebot and nothing else. An agent that fetches the HTML and strips the
+ * tags gets both halves run together: «Твоите числа. Твоята реалност. Your
+ * numbers. Your reality.» is one `<h1>`, and every heading and sentence under
+ * it reads the same way. The six agents `robots.txt` allows by name are exactly
+ * that kind of consumer, and doubled prose is the worst input they could be
+ * handed.
+ *
+ * So the written page keeps the language its entry declares in `data-lang` and
+ * drops the other. **This is the crawler's copy and no reader's**, in either
+ * state a reader can be in: the bundle calls `replaceChildren()` before
+ * `mount()`, so anyone running JavaScript never sees this markup, and with
+ * JavaScript off `toggleLang()` cannot run — every entry hardcodes its
+ * `data-lang`, so the hidden half is unreachable for as long as the page is
+ * served. The live DOM still carries both and the toggle still works; what the
+ * step decides is only what a crawler is handed (docs/seo.md §"The bilingual
+ * DOM, and the copy a crawler gets").
+ *
  * ## Why a second build rather than hydration
  *
  * `mount()` appends to its target, so each page's bootstrap empties `#app`
@@ -153,6 +175,131 @@ export function injectPrerender(html, body) {
 }
 
 /**
+ * The languages the site is written in, and the `l-<lang>` class per language.
+ *
+ * Two, and the pair is the unit: a string authored in one language only renders
+ * as a blank line to half the readers, which is why `verify_copy.mjs` holds
+ * every `COPY` entry to both.
+ */
+export const LANGS = Object.freeze(["bg", "en"]);
+
+/**
+ * The language an entry declares, read off `<html data-lang="…">`.
+ *
+ * Read rather than assumed, so the step keeps telling the truth if an entry
+ * ever declares something other than `bg` — the class it drops and the class
+ * `tokens.css` hides have to be decided by the same attribute, or the served
+ * page is in one language and styled for the other.
+ *
+ * @param {string} html  the built entry
+ * @returns {"bg" | "en"}
+ */
+export function entryLang(html) {
+  const found = /<html[^>]*\sdata-lang="([^"]*)"/.exec(html);
+  if (!found || !LANGS.includes(found[1])) {
+    throw new Error(
+      `prerender: the entry declares data-lang=${JSON.stringify(found?.[1] ?? null)}, ` +
+        `which is not one of ${LANGS.join(", ")}. That attribute is what ` +
+        "`tokens.css` hides a language by and what this step keeps a language " +
+        "by — guessing here serves a page whose markup and stylesheet disagree."
+    );
+  }
+  return found[1];
+}
+
+/**
+ * `body` with every element of a language other than `lang` removed.
+ *
+ * Kept pure and exported so `verify_static_assets.mjs` can test it without a
+ * build — a generator with no test is a file nobody checks
+ * (docs/testing-strategy.md).
+ *
+ * Two properties the naive version does not have, and each is one element away
+ * from being wrong:
+ *
+ *   - **it drops whatever tag it matched, not `<span>`.** The pair is a span on
+ *     all but one element in the tree: `ExplainerBand.svelte` writes the
+ *     "read more" route to `/how/` as `<a class="how-more l-en">`, so a
+ *     `<span`-keyed stripper leaves an English link in the crawler's copy of
+ *     `/` and nothing anywhere reports it;
+ *   - **it counts opens and closes of that tag**, rather than running to the
+ *     first `</span>`. A non-greedy match closes a nested element on the
+ *     child's tag and leaves the parent's closer behind as stray markup, which
+ *     an HTML parser then reads as content escaping the element. `<b>` and
+ *     `<a>` already nest inside these spans — `/legal/` carries
+ *     `<span class="l-en"><b>Terms:</b> Permits reproduction…</span>` — so the
+ *     scan has to reach past the first `</` either way.
+ *
+ * The dropped subtree is skipped rather than rescanned: a `.l-bg` element
+ * inside a `.l-en` one goes with its parent, which is what the CSS does too.
+ *
+ * @param {string} body  the rendered page
+ * @param {"bg" | "en"} lang  the language the entry declares
+ * @returns {string}
+ */
+export function dropOtherLanguages(body, lang) {
+  if (!LANGS.includes(lang)) {
+    throw new Error(
+      `prerender: ${JSON.stringify(lang)} is not a language this site is ` +
+        `written in (${LANGS.join(", ")}), and stripping against it would ` +
+        "leave the page with no prose at all."
+    );
+  }
+  const doomed = LANGS.filter((other) => other !== lang).map((other) => `l-${other}`);
+  // Attribute values are stepped over as quoted runs, so a `>` inside one does
+  // not end the tag early.
+  const START = /<([a-zA-Z][a-zA-Z0-9-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+  const kept = [];
+  let cut = 0;
+  let at = 0;
+  for (;;) {
+    START.lastIndex = at;
+    const open = START.exec(body);
+    if (!open) break;
+    const [tag, name, attrs] = open;
+    at = open.index + tag.length;
+    const classes = (/\sclass="([^"]*)"/.exec(attrs)?.[1] ?? "").split(/\s+/);
+    if (!doomed.some((cls) => classes.includes(cls))) continue;
+    const end = attrs.endsWith("/") ? at : closeOf(body, name, at);
+    kept.push(body.slice(cut, open.index));
+    cut = end;
+    at = end;
+  }
+  kept.push(body.slice(cut));
+  return kept.join("");
+}
+
+/**
+ * Where the element opened at `from` ends, counting its own tag both ways.
+ *
+ * An unclosed element **fails the build**. The rendered body comes from
+ * Svelte's own server compiler, so unbalanced markup is a broken build rather
+ * than input to render around — and the alternative is writing out a page
+ * truncated at the element, which is the failure every other line of this step
+ * is arranged against.
+ *
+ * @param {string} body
+ * @param {string} name  the tag matched, and the only tag counted
+ * @param {number} from  the index just past its opening tag
+ * @returns {number}
+ */
+function closeOf(body, name, from) {
+  const both = new RegExp(`<${name}((?:[^>"']|"[^"]*"|'[^']*')*)>|</${name}\\s*>`, "g");
+  both.lastIndex = from;
+  let depth = 1;
+  for (let step; (step = both.exec(body));) {
+    if (step[0].startsWith("</")) depth -= 1;
+    else if (!step[1].endsWith("/")) depth += 1;
+    if (depth === 0) return both.lastIndex;
+  }
+  throw new Error(
+    `prerender: a <${name}> carrying a language class is never closed. The ` +
+      "rendered body is Svelte's own output, so unbalanced markup here is a " +
+      "broken build rather than a page to serve truncated."
+  );
+}
+
+/**
  * The `loadAll()` result, read off disk instead of fetched.
  *
  * The manifest, never a directory listing, so this cannot hand a component a
@@ -249,7 +396,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const rendered = await renderPages(await readPayloads());
   for (const { page, body } of rendered) {
     const file = join(SITE, "dist", ...page);
-    await writeFile(file, injectPrerender(await readFile(file, "utf8"), body), "utf8");
-    console.log(`[prerender] wrote dist/${page.join("/")} — ${body.length} bytes`);
+    const html = await readFile(file, "utf8");
+    const lang = entryLang(html);
+    const one = dropOtherLanguages(body, lang);
+    await writeFile(file, injectPrerender(html, one), "utf8");
+    console.log(
+      `[prerender] wrote dist/${page.join("/")} — ${one.length} bytes, ` +
+        `${lang} only, from ${body.length} rendered`
+    );
   }
 }

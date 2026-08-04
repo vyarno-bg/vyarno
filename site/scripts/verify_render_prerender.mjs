@@ -22,6 +22,19 @@
  * placeholder, not a survey figure), and the freshness verdict belongs to
  * their clock.
  *
+ * **The served copy is in one language, and the assertions below read the one
+ * each entry declares.** Every string is authored as a `.l-bg` / `.l-en` pair
+ * and `tokens.css` hides one of them, which is a CSS rule and so reaches a
+ * browser and Googlebot and no agent that strips tags. A `COPY` entry that lost
+ * a language is caught by `verify_copy.mjs` §"every COPY entry ships both
+ * languages, non-empty", over the whole collection rather than over the
+ * handful a page happens to print; a language rendering BLANK is caught in a
+ * browser, where both halves are in the DOM — `verify_render_country.mjs`
+ * walks every `.l-bg` and `.l-en` on `/how/` for empty text, and
+ * `verify_render_results.mjs` does the same over the results card. Neither of
+ * those reads `dist/`, so what the crawler's copy carries is decided here and
+ * nowhere else.
+ *
  * `COPY` is imported rather than quoted, so this checks the rule (the page
  * carries its own copy) instead of pinning sentences that can be rewritten for
  * a good reason tomorrow. The FIGURES are read back out of the payloads in
@@ -53,10 +66,8 @@ test(
     const html = await readFile(join(DIST, "index.html"), "utf8");
     for (const [what, text] of [
       ["the headline", COPY.h1.bg],
-      ["the headline in English", COPY.h1.en],
       ["the privacy line", COPY.privacy.bg],
       ["the explainer's lead", COPY.explainLead.bg],
-      ["the explainer's lead in English", COPY.explainLead.en],
       ["the upstream attribution", attribution("bg")],
     ]) {
       assert.ok(
@@ -93,7 +104,6 @@ test(
       ["the unemployment rate", `${bgDecimal(unemployment.value)}%`],
       ["the month unemployment describes", unemployment.ref_period],
       ["the fastest-rising division's name", fastest.bg_name],
-      ["the fastest-rising division's name in English", fastest.en_name],
     ]) {
       assert.ok(
         html.includes(text),
@@ -197,21 +207,9 @@ test(
       ["the page's own title", COPY.howTitle.bg],
       ["the upstream attribution", attribution("bg")],
       ["the wedge table's heading", COPY.howColEffective.bg],
-      ["the wedge table's heading in English", COPY.howColEffective.en],
       ["the ladder's modelled marker", COPY.howModelled.bg],
       ["the Eurostat derivation disclosure", COPY.howOurs.bg],
-      ["the Eurostat derivation disclosure in English", COPY.howOurs.en],
-    ]) {
-      assert.ok(html.includes(text), `${what} is not in the served HTML of /how/`);
-    }
-
-    // Both languages, in the DOM at once. A missing string renders as a blank
-    // line rather than a fallback, and on this page the blank line would be
-    // half the content — which nobody looking at the rendered page in their own
-    // language would ever see.
-    for (const [what, text] of [
       ["the lead heading", "Числата за България"],
-      ["the lead heading in English", "Bulgaria's numbers"],
     ]) {
       assert.ok(html.includes(text), `${what} is not in the served HTML of /how/`);
     }
@@ -263,7 +261,7 @@ test(
 
     if (headlineMonth === basketMonth) {
       assert.ok(
-        html.includes(COPY.explainSameMonth.bg) && html.includes(COPY.explainSameMonth.en),
+        html.includes(COPY.explainSameMonth.bg),
         "the two figures describe one month and the page does not say so — the " +
           "reassurance that they are comparable is the whole of why the " +
           "re-weighting is then the entire explanation"
@@ -310,10 +308,10 @@ test(
     // somebody put in the entry HTML, where `replaceChildren()` deletes it the
     // moment the bundle runs.
     for (const [page, texts] of [
-      [["legal", "index.html"], DOCS.flatMap((doc) => [doc.title.bg, doc.title.en])],
+      [["legal", "index.html"], DOCS.map((doc) => doc.title.bg)],
       [
         ["support", "index.html"],
-        [SUPPORT_COPY.head.bg, SUPPORT_COPY.head.en, SUPPORT_COPY.body.bg, SUPPORT_COPY.body.en],
+        [SUPPORT_COPY.head.bg, SUPPORT_COPY.body.bg],
       ],
     ]) {
       const where = page.join("/");
@@ -330,9 +328,9 @@ test(
         assert.ok(
           mounted.includes(text),
           `${where} does not carry "${text.slice(0, 40)}…" in the served HTML, ` +
-            "though the module it renders from does. Both languages ship in the " +
-            "DOM at once, so a page missing one of them is missing it from the " +
-            "crawler's copy too."
+            "though the module it renders from does — so the page's own subject " +
+            "is sitting in the bundle where only a JavaScript-executing crawler " +
+            "can reach it."
         );
       }
     }
@@ -385,6 +383,40 @@ test("the second page has no input on it at all", { skip: needsBuild }, async ()
       !body.includes(tag),
       `/how/ renders a ${tag} — the page is a reference with no reader in it, ` +
         "and every figure on it is prerendered on exactly that basis"
+    );
+  }
+});
+
+test("the served pages carry one language, not two", { skip: needsBuild }, async () => {
+  // The class, counted over the raw file, on all four entries. A crawler that
+  // strips tags reads a `.l-bg` / `.l-en` pair as one run of text — «Твоите
+  // числа. Твоята реалност. Your numbers. Your reality.» is the `<h1>` of `/`
+  // and every heading under it doubles the same way. The six agents
+  // `robots.txt` allows by name execute nothing and apply no stylesheet, so
+  // they are precisely the consumer that reads it that way.
+  //
+  // Counted on the class rather than on `<span class="l-en">`, which is the
+  // check that would pass while `/` served an English link:
+  // `ExplainerBand.svelte` writes the route to `/how/` as
+  // `<a class="how-more l-en">`, one element in the tree out of several
+  // hundred. The class is what `tokens.css` keys on, so this holds whatever
+  // container a future pair is written in.
+  for (const page of [
+    ["index.html"],
+    ["how", "index.html"],
+    ["legal", "index.html"],
+    ["support", "index.html"],
+  ]) {
+    const html = await readFile(join(DIST, ...page), "utf8");
+    const left = (html.match(/l-en/g) ?? []).length;
+    assert.equal(
+      left,
+      0,
+      `${page.join("/")} serves ${left} English elements. The entry declares ` +
+        'data-lang="bg" and nothing in the served page can change it — ' +
+        "`toggleLang()` needs the bundle, and the bundle empties #app before " +
+        "it mounts. So this copy is the crawler's and its second language " +
+        "reaches no reader in either state."
     );
   }
 });
