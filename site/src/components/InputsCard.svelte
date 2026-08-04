@@ -346,7 +346,7 @@
              from-rate. Shown as a sub-caption so the cheaper
              headline rate is never the only number on screen. -->
           {#if calc.mortgageAprcData}
-            <div class="hint" style="margin-top:2px;opacity:0.8">
+            <div class="hint" style="margin-top:2px">
               <span class="l-bg"
                 >{@html t(COPY.rateAprc, $lang, {
                   pct: fmt(calc.mortgageAprcData.pct, 2),
@@ -421,7 +421,7 @@
               aria-label={t(COPY.termLabel, $lang)}
             />
           </span>
-          <div class="hint" style="margin-top:4px;opacity:0.8">
+          <div class="hint" style="margin-top:4px">
             <span class="l-bg"
               >{@html t(COPY.limitsNote, $lang, {
                 ltv: fmt0(100 - calc.downPayPct),

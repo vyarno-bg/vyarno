@@ -241,7 +241,7 @@
            to DSTI 50% — that is not the same as affordable, and
            showing both keeps "this is a stretch" visible instead
            of letting the looser number imply comfort. -->
-      <div class="rr-note" style="margin-top:6px;opacity:0.75">
+      <div class="rr-note" style="margin-top:6px">
         <span class="l-bg">
           {prudentDstiPct}% е разумната граница, не законовата: БНБ допуска вноски до
           <b>{fmt0(limits.dstiMaxPct)}%</b>

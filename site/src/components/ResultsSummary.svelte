@@ -293,12 +293,19 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
+  /* The size is what subordinates the sign — 0.42em of the figure beside it,
+     raised off the baseline. **No `opacity` on top of that.** The `%` inherits
+     the verdict colour set on `.r-big`, and the branch that fires whenever the
+     reader's basket is dearer than the average is `--erode`: 0.62 composites to
+     2.83:1 light and 2.65:1 dark, and clearing 4.5:1 over that token would take
+     0.87 light and 0.96 dark, which is not a fade. 0.42em of the clamp is
+     16.8px at the narrow end, under both large-text thresholds (18.66px bold,
+     24px), so 4.5:1 is the bar at every viewport width. */
   .r-big .pct {
     font-size: 0.42em;
     font-weight: 600;
     vertical-align: 0.95em;
     margin-left: 0.06em;
-    opacity: 0.62;
     letter-spacing: 0;
   }
   .r-lbl {

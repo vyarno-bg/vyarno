@@ -233,9 +233,13 @@
     color: var(--real-ink);
     border-bottom-color: var(--real);
   }
+  /* The build stamp is already the quietest thing in the row — `--muted` at
+     12px mono, inherited from `.foot`. It carries no `opacity` for the reason
+     `.support` below spells out: a fade on `--muted` is arithmetic on a
+     contrast ratio, and 0.75 here composites to 2.95:1 on `--paper-2` in the
+     light theme and 3.29:1 in the dark one. */
   .build {
     letter-spacing: 0.03em;
-    opacity: 0.75;
     flex: 0 0 auto;
   }
   /* Quieter than the credits above it, and no link styling of its own — the
