@@ -13,7 +13,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -763,6 +763,51 @@ test("the two cache lifetimes that ship stale numbers if reversed", () => {
     /immutable/,
     "/assets/* is no longer immutable, so the hashed bundle is re-fetched on " +
       "every visit for no reason."
+  );
+});
+
+/** Every `.txt` under `public/`, as the URL path it is served at. */
+function servedTextFiles(dir = site("public"), urlPrefix = "") {
+  const found = [];
+  for (const name of readdirSync(dir).sort()) {
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) found.push(...servedTextFiles(full, `${urlPrefix}/${name}`));
+    else if (name.endsWith(".txt")) found.push({ url: `${urlPrefix}/${name}`, full });
+  }
+  return found;
+}
+
+test("every .txt the site serves declares the charset its Cyrillic needs", () => {
+  // A rule over the collection rather than three named files: robots.txt,
+  // llms.txt and security.txt all carry Cyrillic today, and the next one added
+  // will too — the publisher names and the attribution line are a licence
+  // condition and are not translated.
+  //
+  // `text/plain` with no charset is decoded with the browser's own default,
+  // which in Bulgaria is windows-1251, so «Данни от Евростат» arrives as
+  // «Р”Р°РЅРЅРё РѕС‚ Р•РІСЂРѕСЃС‚Р°С‚». The bytes on disk are correct UTF-8
+  // throughout, which is why nothing else here can see it: the file is right
+  // and the RESPONSE is wrong. This checks the declaration;
+  // `check-live-headers.mjs` checks that the origin actually sends it.
+  const blocks = headerBlocks(HEADERS);
+  const files = servedTextFiles();
+  assert.ok(files.length > 0, "no .txt found under public/ — this test just stopped checking");
+  let checked = 0;
+  for (const { url, full } of files) {
+    if (!/[\u0080-\uffff]/.test(readFileSync(full, "utf-8"))) continue;
+    checked += 1;
+    assert.match(
+      (blocks[url] ?? []).join(" "),
+      /Content-Type:\s*text\/plain;\s*charset=utf-8/i,
+      `${url} carries non-ASCII and _headers gives it no charset. Served as ` +
+        "bare text/plain a browser falls back to its own default — " +
+        "windows-1251 here — and every Cyrillic line renders as mojibake."
+    );
+  }
+  assert.ok(
+    checked > 0,
+    "no served .txt carries non-ASCII any more, so this test passed without " +
+      "checking anything. Delete it, or find where the Cyrillic went."
   );
 });
 

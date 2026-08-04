@@ -69,6 +69,15 @@
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
+# The OFL text that ships beside the fonts, named exactly rather than folded
+# into the rule above: `/fonts/*` matches the .woff2 files too, and a
+# `Content-Type: text/plain` on those would be served to the browser as the
+# font's own type. It gets a charset for the same reason every other .txt here
+# does — it carries a © and is meant to be readable, and the licence requires
+# it to travel with the fonts.
+/fonts/ibm-plex/OFL.txt
+  Content-Type: text/plain; charset=utf-8
+
 # The published data. NOT immutable — this is the whole product, and a refresh
 # has to reach people the same day it lands. Short cache, revalidate always;
 # `data.js` also fetches with `cache: "no-cache"` from its side.
@@ -131,8 +140,16 @@
 # any of them takes effect the same day rather than at a crawler's leisure.
 # security.txt in particular has a hard expiry (RFC 9116) and renewing it must
 # not be defeated by a month-long cache.
+#
+# All three of these carry Cyrillic and each states its charset, because a
+# `text/plain` with no charset is decoded with whatever the reader's browser
+# defaults to — windows-1251 in this country, which turns «Вярно» into
+# «Р’СЏСЂРЅРѕ». A crawler is safe either way (RFC 9309 §2.3 makes robots.txt
+# UTF-8 by definition); a person opening the file is not, and the comments in
+# it are addressed to a person.
 /robots.txt
   Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
 
 /sitemap.xml
   Cache-Control: public, max-age=3600
