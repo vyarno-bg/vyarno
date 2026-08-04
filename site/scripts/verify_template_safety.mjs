@@ -402,11 +402,10 @@ test("the {@html} scanner balances nested braces and skips comments", () => {
 // ---------------------------------------------------------------------------
 // The other direction: copy that CARRIES markup must be rendered as markup
 //
-// Migrated from the SPA contract file in pipeline/tests/ (now test_published_contracts.py, which keeps only the published-artefact half). The invariants
-// above prove that nothing dangerous reaches `{@html}`. This proves the
-// converse — that a COPY string containing `<b>` is actually rendered through
-// it. Without that, Svelte escapes the angle brackets and the page shows the
-// literal text `<b>+6.7%</b>`, which reached the live site once.
+// The invariants above prove that nothing dangerous reaches `{@html}`. This
+// proves the converse — that a COPY string containing `<b>` is actually
+// rendered through it. Without that, Svelte escapes the angle brackets and the
+// page shows the literal text `<b>+6.7%</b>`, which reached the live site once.
 //
 // The two belong together: they are the same decision seen from both sides,
 // and separating them is how one of them gets relaxed without the other.

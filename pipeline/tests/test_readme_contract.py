@@ -18,9 +18,10 @@ Apache grant would misrepresent someone else's rights, and it would do it in
 the file most likely to be read and least likely to be tested. NOTICE and
 docs/legal.md are authoritative; this keeps both front doors agreeing with them.
 
-The same rule is held for the app's own copy by
-`test_the_app_states_its_licence_and_claims_nothing_about_the_data` in
-test_published_contracts.py. This is its counterpart for the repository.
+The same rule is held for the app's own copy by `site/scripts/verify_legal.mjs`
+§"the app states its licence, scoped to the code, and claims nothing about the
+data", which reads `COPY.footerNote` and scans the whole of `site/src/`. This is
+its counterpart for the repository.
 
 Scoping: read-only, no network, runs in milliseconds.
 """

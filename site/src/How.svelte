@@ -14,9 +14,10 @@
    * **Every number here is the country's and none is the reader's.** There is
    * no input on this page and there must never be one: the four values it
    * reads off `Calculator` — `systemWedge`, `payLadderRows`, `sofiaHome`,
-   * `sofiaWageCells` — are functions of the published payloads alone, and each
+   * `sofiaWageGrid` — are functions of the published payloads alone, and each
    * takes payloads rather than scalars precisely so a reader's figure cannot be
-   * threaded into one (view.js §"The country, with nobody in it"). The tax
+   * threaded into one (calculator.svelte.js §"Derived: the country, with nobody
+   * in it"). The tax
    * wedge is the case that matters: a PERSONAL effective rate is closed on any
    * shareable surface because it inverts to the salary (P2), and the system's
    * own curve is the version the closed list leaves open.
