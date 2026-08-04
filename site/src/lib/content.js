@@ -168,7 +168,7 @@ export const COPY = {
   // the "median NET pay · Sofia" card. Calling it "typical" or "the median"
   // would be false twice over. docs/principles.md P7: no unsourced defaults.
   medianDefault: {
-    bg: "числото е просто начална стойност — смени го с твоята заплата",
+    bg: "числото е просто начална стойност — смени го със своята заплата",
     en: "that's just a starting value - replace it with your own pay",
   },
 
@@ -1285,7 +1285,7 @@ export const COPY = {
   // of a next update date — Eurostat's HICP release is mid-month but not fixed
   // to a date, and the eight payloads run on three different cadences.
   dataStaleHint: {
-    bg: "Показаните числа са последните официално публикувани, които имаме — нищо тук не е предположение. Обновява се ръчно.",
+    bg: "Показаните числа са последните официално публикувани, които имаме — нищо тук не е предположение. Обновяваме ги ръчно.",
     en: "The figures shown are the last officially published ones we hold — nothing here is estimated. Refreshed by hand.",
   },
 
@@ -1301,7 +1301,7 @@ export const COPY = {
   },
   errRetry: { bg: "Опитай пак", en: "Try again" },
   errContact: {
-    bg: "Ако се повтаря, пиши на {email} — това е проблем на нашата страна.",
+    bg: "Ако се повтаря, пиши на {email} — проблемът е при нас.",
     en: "If it keeps happening, write to {email} — that's a problem on our side.",
   },
 

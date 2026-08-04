@@ -177,18 +177,18 @@
         >граница {prudentDstiPct}% от нетния доход =
         <b>{fmt0(mortCapEur)} €/мес</b>.
         {#if mortCapGap > 0}
-          вноската е с <b style="color:var(--erode)">{fmt0(mortCapGap)} €/мес над</b> границата.
+          Вноската е с <b style="color:var(--erode)">{fmt0(mortCapGap)} €/мес над</b> границата.
         {:else}
-          вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата — побира
+          Вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата — побира
           се в бюджета.
         {/if}
       </span>
       <span class="l-en"
         >the {prudentDstiPct}%-of-net cap = <b>{fmt0(mortCapEur)}/mo</b>.
         {#if mortCapGap > 0}
-          the payment is <b style="color:var(--erode)">{fmt0(mortCapGap)}/mo over</b> the line.
+          The payment is <b style="color:var(--erode)">{fmt0(mortCapGap)}/mo over</b> the line.
         {:else}
-          the payment is <b style="color:var(--real)">{fmt0(-mortCapGap)}/mo under</b> the line - within
+          The payment is <b style="color:var(--real)">{fmt0(-mortCapGap)}/mo under</b> the line - within
           budget.
         {/if}
       </span>
