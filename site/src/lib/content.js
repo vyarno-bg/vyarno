@@ -266,7 +266,10 @@ export const COPY = {
     bg: "таван - осигуровките спират на {cap} €",
     en: "ceiling - contributions stop at {cap} €",
   },
-  payslipPension: { bg: "Фонд «Пенсии» (ДОО)", en: "State pension fund (1st pillar)" },
+  // The fund's own name, spelled the way the statute that names it spells it:
+  // КСО чл. 18 sets out фонд „Пенсии“, and a payslip row is where a reader is
+  // most likely to be holding the two side by side.
+  payslipPension: { bg: "Фонд „Пенсии“ (ДОО)", en: "State pension fund (1st pillar)" },
   payslipPension2: {
     bg: "Допълнително задължително пенсионно осигуряване (ДЗПО)",
     en: "Supplementary mandatory pension (2nd pillar)",
@@ -1246,7 +1249,7 @@ export const COPY = {
   dataPanelTitle: { bg: "Данните на тази страница", en: "The data on this page" },
   // Why the panel has two date columns, said once, in the reader's words.
   dataPanelNote: {
-    bg: "«Период» е това, което числото описва. «Изтеглено» е денят, в който сме го взели от източника. Различни са, и когато цитираш число, важният е периодът.",
+    bg: "„Период“ е това, което числото описва. „Изтеглено“ е денят, в който сме го взели от източника. Различни са, и когато цитираш число, важният е периодът.",
     en: "“Period” is what the figure describes. “Fetched” is the day we took it from the source. They are not the same, and when you quote a figure the period is the one that matters.",
   },
   dataPanelHeadWhat: { bg: "какво захранва", en: "what it feeds" },

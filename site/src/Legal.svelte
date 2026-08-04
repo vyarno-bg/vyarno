@@ -28,7 +28,7 @@
 
   // Only the ЗЕТ чл. 4 rows the legal form we actually are owes today. Rows
   // that become due when Вярно starts taking payment are declared in legal.js
-  // and deliberately not rendered — a row that reads „предстои" for years is
+  // and deliberately not rendered — a row that reads «предстои» for years is
   // indistinguishable from an oversight. `legal.js#identityRows` decides;
   // this page renders.
   const IDENTITY_ROWS = identityRows(LEGAL_FORM);
