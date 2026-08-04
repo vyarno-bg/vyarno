@@ -465,13 +465,23 @@ export const COPY = {
   // out as a claim the reader can disagree with, which is why the sentence is
   // in the first person and states a figure rather than asking for one.
   //
-  // «което ти остава» / "what's left of your take-home" is `spendable`, i.e.
-  // after any rent or mortgage the reader entered. The two carve-out hints
-  // above the control name those amounts when they are non-zero, so the base is
-  // spelled out on screen without this sentence carrying a housing variant.
-  spendShareLead: {
-    bg: "Харча ≈ <b>{p}%</b> от това, което ми остава",
-    en: "I actually spend ≈ <b>{p}%</b> of what's left of my take-home",
+  // Two variants, on `housingCost > 0`, for the reason `leftLead*` below has
+  // them: the base is `spendable`, which is the household's net pay MINUS any
+  // rent or mortgage the reader entered. Naming the net pay alone is exact for
+  // the reader who entered no housing and overstates the base by the whole
+  // housing payment for the one who did — «100% от чистия си доход» over a
+  // €1,500 net with €450 of rent claims €1,500 where the arithmetic uses
+  // €1,050. Naming neither leaves «това, което ми остава»: true in both cases
+  // and concrete in neither, which is the wording this replaced. So the
+  // sentence states the net pay and adds the carve-out only where there is one
+  // to add, and `verify_copy.mjs` pins both halves of that rule.
+  spendShareLeadNoHousing: {
+    bg: "Харча ≈ <b>{p}%</b> от чистия си доход",
+    en: "I actually spend ≈ <b>{p}%</b> of my take-home pay",
+  },
+  spendShareLeadWithHousing: {
+    bg: "Харча ≈ <b>{p}%</b> от чистия си доход след <b>€{h}</b> за жилище",
+    en: "I actually spend ≈ <b>{p}%</b> of my take-home pay after the <b>€{h}</b> for housing",
   },
   spendShareAria: {
     bg: "дял от парите, които наистина харчиш",

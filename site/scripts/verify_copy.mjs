@@ -282,7 +282,8 @@ test("the unplaced-money copy describes and never advises", () => {
     "leftOverNoHousing",
     "leftOverWithHousing",
     "leftCash",
-    "spendShareLead",
+    "spendShareLeadNoHousing",
+    "spendShareLeadWithHousing",
     "spendShareAria",
   ]) {
     const entry = COPY[key];
@@ -309,7 +310,7 @@ test("the no-housing unplaced-money copy never mentions housing by name", () => 
   // JavaScript's `\b` is ASCII-only — `\bжилищ` doesn't fire against
   // « за жилище».
   const cyrHousing = /(?<![а-яё])жилищ[а-яё]*/i;
-  for (const key of ["leftLeadNoHousing", "leftOverNoHousing"]) {
+  for (const key of ["leftLeadNoHousing", "leftOverNoHousing", "spendShareLeadNoHousing"]) {
     const entry = COPY[key];
     assert.ok(entry, `COPY.${key} is gone — the unplaced-money row lost a line`);
     assert.ok(!cyrHousing.test(entry.bg), `COPY.${key}.bg mentions housing: ${entry.bg}`);
@@ -324,7 +325,7 @@ test("the with-housing unplaced-money copy names the housing amount", () => {
   // and they must mention housing in both languages — the no-housing rule
   // above is silent about them on purpose.
   const cyrHousing = /(?<![а-яё])жилищ[а-яё]*/i;
-  for (const key of ["leftLeadWithHousing", "leftOverWithHousing"]) {
+  for (const key of ["leftLeadWithHousing", "leftOverWithHousing", "spendShareLeadWithHousing"]) {
     const entry = COPY[key];
     assert.ok(entry, `COPY.${key} is gone — the unplaced-money row lost a line`);
     assert.ok(
@@ -376,6 +377,35 @@ test("LeftoverRow picks the housing variant by `calc.housingCost`", () => {
   assert.ok(
     /housingCost\s*>\s*0/.test(componentSrc),
     "LeftoverRow does not gate the variant on calc.housingCost > 0"
+  );
+});
+
+test("BasketEditor picks the spend-share variant by `calc.housingCost`", () => {
+  // The same rule as the row above, one card earlier and one number wider: the
+  // control's label is the reader's own claim about a base the app chose, and
+  // `spendable` is their net pay MINUS any rent or mortgage. Show the
+  // no-housing wording to someone paying €450 of rent and the sentence claims
+  // they spend a share of €1,500 while every figure under it is carved out of
+  // €1,050 — a false sentence over correct arithmetic, which no other suite in
+  // this repository can see. Read off the component rather than SOURCES, which
+  // would match this test's own regex and pass on nothing.
+  const src = readFileSync(join(SRC, "components", "BasketEditor.svelte"), "utf8");
+  const lines = src.split("\n").filter((line) => line.includes("spendShareLead"));
+  assert.equal(
+    lines.length,
+    2,
+    `BasketEditor must pick the spend-share variant on exactly 2 lines (BG and EN), found ${lines.length}`
+  );
+  for (const line of lines) {
+    assert.match(
+      line,
+      /\?\s*COPY\.spendShareLeadWithHousing\s*:\s*COPY\.spendShareLeadNoHousing/,
+      `the spend-share label must use the template-safety-approved ternary form: ${line.trim()}`
+    );
+  }
+  assert.ok(
+    /hasHousing = \$derived\(calc\.housingCost > 0\)/.test(src),
+    "BasketEditor does not gate the spend-share variant on calc.housingCost > 0"
   );
 });
 

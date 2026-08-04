@@ -315,6 +315,10 @@ test(
 
       const control = page.locator(".spendshare input[type=range]");
       assert.equal(await control.count(), 1, "there is no spend-share control in share mode");
+      // The base is `spendable`, so with no housing entered it IS the net pay
+      // and the label may say so plainly. The housing branch is asserted at the
+      // end, after a rent has been typed.
+      assert.match(await page.locator(".ss-lab").innerText(), /чистия си доход/);
       assert.equal(
         await control.inputValue(),
         "100",
@@ -376,6 +380,19 @@ test(
       const leftover = page.locator(".r-row", { hasText: /Неразпределени|Not placed/ });
       assert.equal(await leftover.count(), 1, "the unplaced money is not reported anywhere");
       assert.match(await leftover.innerText(), /600/, "the unplaced row does not name the €600");
+
+      // Housing changes what the claim is a claim ABOUT. €450 of rent puts the
+      // base at €1,050, and a label still naming the net pay alone would say
+      // the reader spends 60% of €1,500 over figures carved out of €1,050.
+      await page.locator("#inRent").fill("450");
+      await page.waitForTimeout(400);
+      const labelled = await page.locator(".ss-lab").innerText();
+      assert.match(
+        labelled,
+        /след\s*€?\s*450\s*за жилище/,
+        `the label reads "${labelled}" with €450 of rent entered — it names a base ` +
+          "€450 larger than the one every figure under it is carved out of"
+      );
 
       assert.deepEqual(errors, [], errors.join(" | "));
     });
