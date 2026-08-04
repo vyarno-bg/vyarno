@@ -9,6 +9,20 @@
       content="Условия за ползване, поверителност, идентификация на доставчика и източниците на данните на vyarno.bg."
     />
     <link rel="canonical" href="https://vyarno.bg/legal/" />
+    <!--
+      EU snippet opt-in. Google truncates snippets and image previews in the EU
+      for publishers who have not asked otherwise, and that limit governs how
+      much of a page can appear in a result AND in an AI Overview. Both
+      directives are the maximum: this is a public good whose whole purpose is
+      that the number reaches the person with its source attached, so a longer
+      quotation of it is the outcome we want.
+
+      Consistent with robots.txt rather than in tension with it — the note on
+      the allowed agents already records that Googlebot and Bingbot are allowed
+      and that AI Overviews are built on those same indexes. 404.html keeps its
+      bare noindex and must never gain these.
+    -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
 
     <!--
     Indexable on purpose. ЗЕТ чл. 4 wants the provider's identifying
@@ -28,6 +42,51 @@
       property="og:description"
       content="Условия за ползване, поверителност, идентификация на доставчика и източниците на данните."
     />
+
+    <!--
+    The identity page, in the form a machine parses. An agent citing this site
+    reads the JSON-LD and never reaches the ЗЕТ чл. 4 table below it, so this
+    is where "who is behind this" has to be answerable without rendering
+    anything — which is the whole obligation the page exists to discharge.
+
+    THE PROVIDER IS A PERSON and the node says nothing IDENTITY does not: an
+    Organization would invent an organisational fact, and the `legal_name`
+    row's own note states there is no company and no partners. The name is
+    read back off IDENTITY by verify_legal.mjs so the two cannot drift.
+
+    THE LICENCE SITS ON THE APPLICATION, NEVER ON THE PAGE. `license` on a
+    schema.org node states the terms of THAT node's content, and this page
+    quotes five publishers' own terms verbatim (docs/legal.md). Apache-2.0 on
+    the WebPage would tell a citing agent that Eurostat's and НСИ's wording is
+    ours to give away, on the one page whose subject is that it is not.
+
+    `dateModified` is a SLOT filled by scripts/gen-jsonld.mjs from
+    LEGAL_LASTMOD, which tracks the documents' effective date in
+    src/lib/legal.js. A date that says the terms changed when they did not is
+    worse than none, and a literal here is one nothing moves.
+  -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Правна информация",
+        "url": "https://vyarno.bg/legal/",
+        "inLanguage": ["bg", "en"],
+        "dateModified": "__LEGAL_LASTMOD__",
+        "publisher": {
+          "@type": "Person",
+          "name": "Кирил Аламуров",
+          "url": "https://vyarno.bg/legal/"
+        },
+        "isPartOf": {
+          "@type": "WebApplication",
+          "name": "Вярно",
+          "url": "https://vyarno.bg/",
+          "license": "https://www.apache.org/licenses/LICENSE-2.0"
+        },
+        "description": "Условия за ползване, поверителност, идентификация на доставчика и източниците на данните на vyarno.bg."
+      }
+    </script>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#E8ECEF" />

@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { ORIGIN, newestAsOf, sitemapXml } from "./gen-sitemap.mjs";
+import { fillDate } from "./gen-jsonld.mjs";
 import {
   LANGS,
   MOUNT_POINT,
@@ -455,6 +456,77 @@ test("every entry declares a language the strip can be run against", () => {
       LANGS.includes(entryLang(read(...file))),
       `${name} declares no language on <html>, and the prerender reads that ` +
         "attribute to decide which half of every string a crawler is served"
+    );
+  }
+});
+
+test("every indexable entry opts into a full snippet, and the 404 into none", () => {
+  // Bulgaria is in the EU, where Google truncates snippets and image previews
+  // for publishers who have not asked otherwise — and that limit governs how
+  // much of a page can appear in a result AND in an AI Overview. This site's
+  // whole purpose is that a figure reaches a person with its source attached,
+  // so a longer quotation of it is the outcome wanted rather than a leak.
+  //
+  // One loop over `ENTRIES`, not four assertions: a page added to the build
+  // and left out of the opt-in is the one nobody notices, because everything
+  // around it stays green.
+  for (const { file, url } of ENTRIES) {
+    const html = read(...file);
+    const meta = /<meta name="robots" content="([^"]*)"/.exec(html)?.[1];
+    if (url === "/404.html") {
+      // The one entry that stays out, and it stays out both ways: `noindex`
+      // and nothing else. A max-snippet directive on an error page asks for a
+      // fuller preview of a result that should not exist.
+      assert.equal(
+        meta,
+        "noindex",
+        "404.html no longer carries a bare noindex — an indexed error page is " +
+          "a search result that wastes a reader's click"
+      );
+      continue;
+    }
+    assert.ok(meta, `${file.join("/")} carries no robots meta, so the EU default truncates it`);
+    for (const directive of ["index", "follow", "max-snippet:-1", "max-image-preview:large"]) {
+      assert.ok(
+        meta.includes(directive),
+        `${file.join("/")}'s robots meta is "${meta}" and does not ask for ` +
+          `${directive}. Without it the EU default decides how much of this ` +
+          "page a result or an AI Overview may quote."
+      );
+    }
+    assert.ok(
+      !/\bnoindex\b/.test(meta),
+      `${file.join("/")} is noindex. Every page in the sitemap is meant to be ` +
+        "found, and /legal/ is the one ЗЕТ чл. 4 wants findable."
+    );
+  }
+});
+
+test("the dateModified slot is filled from a payload, never left in the page", () => {
+  // The entries are static HTML with no templating, so the date a crawler
+  // reads this site's freshness off is a token the build substitutes. The
+  // failure the throw catches is the step running against an entry that lost
+  // its slot: `replaceAll` on a string that is not there returns the page
+  // unchanged and exits 0, which is a build that shipped no dateModified while
+  // reporting success.
+  assert.equal(
+    fillDate('{"dateModified": "__DATA_LASTMOD__"}', "__DATA_LASTMOD__", "2026-08-02"),
+    '{"dateModified": "2026-08-02"}'
+  );
+  assert.throws(
+    () => fillDate('{"name": "Вярно"}', "__DATA_LASTMOD__", "2026-08-02"),
+    /no __DATA_LASTMOD__ in the built entry/,
+    "an entry with no slot was rewritten unchanged, so the page ships without " +
+      "the field and the build reports success"
+  );
+  // And a date nothing decided is refused rather than invented. `newestAsOf`
+  // returns null when no payload carries a readable `as_of`, and a page
+  // stating it changed on "null" is worse than one stating nothing.
+  for (const bad of [null, "", "soon", "2026-08"]) {
+    assert.throws(
+      () => fillDate('{"dateModified": "__DATA_LASTMOD__"}', "__DATA_LASTMOD__", bad),
+      /is not an ISO day/,
+      `${JSON.stringify(bad)} reached the served page as this site's freshness`
     );
   }
 });

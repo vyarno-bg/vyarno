@@ -57,6 +57,7 @@ site/
 │   ├── prerender.mjs          # post-build: every indexable entry, figures and all
 │   ├── copy-data.mjs          # post-build: ../data/published/*.json → dist/
 │   ├── gen-sitemap.mjs        # dist/sitemap.xml, lastmod = newest as_of
+│   ├── gen-jsonld.mjs         # post-build: the dateModified slot in each entry
 │   ├── gen-version.mjs        # dist/version.json — commit + build time + as_of
 │   ├── strip-sourcemaps.mjs   # moves maps OUT of dist/; fails if source survives
 │   ├── check-identity.mjs     # release guard on the ЗЕТ чл. 4 identity

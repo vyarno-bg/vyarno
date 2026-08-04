@@ -14,6 +14,20 @@
       content="Инфлацията по 13-те групи, данъкът и осигуровките, подредбата на заплатите, лихвата по кредит и цената на кв. м в София — с източник и дата до всяко число."
     />
     <link rel="canonical" href="https://vyarno.bg/how/" />
+    <!--
+      EU snippet opt-in. Google truncates snippets and image previews in the EU
+      for publishers who have not asked otherwise, and that limit governs how
+      much of a page can appear in a result AND in an AI Overview. Both
+      directives are the maximum: this is a public good whose whole purpose is
+      that the number reaches the person with its source attached, so a longer
+      quotation of it is the outcome we want.
+
+      Consistent with robots.txt rather than in tension with it — the note on
+      the allowed agents already records that Googlebot and Bingbot are allowed
+      and that AI Overviews are built on those same indexes. 404.html keeps its
+      bare noindex and must never gain these.
+    -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
 
     <!--
     `website`, the same as the calculator's, and NOT `article`. OGP's article
@@ -64,6 +78,12 @@
 
     What is left is a WebPage that says what the page is and whose it is.
 
+    `dateModified` is a SLOT filled by scripts/gen-jsonld.mjs, and it takes the
+    SAME value as the calculator's: both pages are prerendered from the
+    published payloads in one build, so a refreshed payload genuinely changes
+    what a visitor sees on either. A literal date here is one that stops being
+    true at the next refresh, in the field a crawler reads freshness off.
+
     THE LICENCE SITS ON THE APPLICATION, NEVER ON THE PAGE, and the distinction
     is the same one the footer's licence clause is scope-checked for — in the
     form a machine actually parses. `license` on a schema.org node states the
@@ -83,6 +103,7 @@
         "name": "Числата за България, обяснени",
         "url": "https://vyarno.bg/how/",
         "inLanguage": ["bg", "en"],
+        "dateModified": "__DATA_LASTMOD__",
         "isPartOf": {
           "@type": "WebApplication",
           "name": "Вярно",

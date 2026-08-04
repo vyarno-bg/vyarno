@@ -9,6 +9,20 @@
       content="Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от дарения, които не купуват нищо."
     />
     <link rel="canonical" href="https://vyarno.bg/support/" />
+    <!--
+      EU snippet opt-in. Google truncates snippets and image previews in the EU
+      for publishers who have not asked otherwise, and that limit governs how
+      much of a page can appear in a result AND in an AI Overview. Both
+      directives are the maximum: this is a public good whose whole purpose is
+      that the number reaches the person with its source attached, so a longer
+      quotation of it is the outcome we want.
+
+      Consistent with robots.txt rather than in tension with it — the note on
+      the allowed agents already records that Googlebot and Bingbot are allowed
+      and that AI Overviews are built on those same indexes. 404.html keeps its
+      bare noindex and must never gain these.
+    -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
 
     <!--
     Indexable, and this is the page where that matters most: it exists so the
@@ -23,6 +37,38 @@
     <meta property="og:url" content="https://vyarno.bg/support/" />
     <meta property="og:title" content="Вярно — кой плаща за проекта" />
     <meta property="og:description" content="Какво покриват даренията и какво не купуват." />
+
+    <!--
+    A WebPage, so the page a person is given as the funding answer is one a
+    machine can also place. Prerendered, indexable and in the sitemap like the
+    other three; without a node it was the only one an agent had to infer from
+    prose.
+
+    NO dateModified. Its content changes when a channel opens or the copy is
+    edited, and neither is a date anything in this build can read — the same
+    reasoning gen-sitemap.mjs gives for leaving <lastmod> off this page. An
+    omitted field costs a crawler nothing next to a false one.
+
+    THE LICENCE SITS ON THE APPLICATION, NEVER ON THE PAGE — the rule
+    verify_legal.mjs walks every node for. Nothing on this page is a published
+    figure, which is exactly why it would be the easy place to relax it.
+  -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Кой плаща за проекта",
+        "url": "https://vyarno.bg/support/",
+        "inLanguage": ["bg", "en"],
+        "isPartOf": {
+          "@type": "WebApplication",
+          "name": "Вярно",
+          "url": "https://vyarno.bg/",
+          "license": "https://www.apache.org/licenses/LICENSE-2.0"
+        },
+        "description": "Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от дарения, които не купуват нищо."
+      }
+    </script>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#E8ECEF" />

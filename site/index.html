@@ -17,6 +17,20 @@
       content="Личната ти инфлация, реалната ти заплата, данъкът, наемът и пътят до жилище — сметнато в браузъра ти от официални данни. Нищо не се изпраща."
     />
     <link rel="canonical" href="https://vyarno.bg/" />
+    <!--
+      EU snippet opt-in. Google truncates snippets and image previews in the EU
+      for publishers who have not asked otherwise, and that limit governs how
+      much of a page can appear in a result AND in an AI Overview. Both
+      directives are the maximum: this is a public good whose whole purpose is
+      that the number reaches the person with its source attached, so a longer
+      quotation of it is the outcome we want.
+
+      Consistent with robots.txt rather than in tension with it — the note on
+      the allowed agents already records that Googlebot and Bingbot are allowed
+      and that AI Overviews are built on those same indexes. 404.html keeps its
+      bare noindex and must never gain these.
+    -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
 
     <!--
     Share previews. The results card hands a reader a picture and a sentence
@@ -82,6 +96,23 @@
     in public/_headers does not reach it and no nonce is needed. Check that
     with a real browser if this block ever grows, because the failure mode is
     a console error on every page load rather than a red test.
+
+    `dateModified` is a SLOT, filled by scripts/gen-jsonld.mjs from the newest
+    `as_of` across the published payloads — the same value the sitemap's
+    <lastmod> carries. A literal here would be a second copy of a date that
+    moves on every refresh, in the one field a crawler treats as this page's
+    freshness. `npm run dev` serves the token unfilled; the step's header says
+    why that is the cheap side of the trade.
+
+    THE PROVIDER IS A PERSON, and the node may say nothing the ЗЕТ чл. 4 table
+    does not. `IDENTITY`'s `legal_name` row publishes «Кирил Аламуров» as a
+    natural person and its note says in as many words that there is no company,
+    no partners and nobody has paid for anything — so an Organization here
+    would be inventing an organisational fact, which AGENTS.md forbids by name.
+    A name and a route to /legal/ is the whole node: every field added is one
+    check-identity.mjs and that table have to stay true to.
+    verify_legal.mjs §"the structured data names the provider the legal page
+    names" reads the name back off IDENTITY so the two cannot drift.
   -->
     <script type="application/ld+json">
       {
@@ -97,6 +128,17 @@
         "isAccessibleForFree": true,
         "license": "https://www.apache.org/licenses/LICENSE-2.0",
         "codeRepository": "https://github.com/vyarno-bg/vyarno",
+        "dateModified": "__DATA_LASTMOD__",
+        "author": {
+          "@type": "Person",
+          "name": "Кирил Аламуров",
+          "url": "https://vyarno.bg/legal/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Кирил Аламуров",
+          "url": "https://vyarno.bg/legal/"
+        },
         "description": "Личната ти инфлация, реалната ти заплата, данъкът, наемът и пътят до жилище — сметнато в браузъра ти от официални данни."
       }
     </script>
