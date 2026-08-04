@@ -639,7 +639,7 @@ change the payout route without re-reading this section**, because the change
 that looks like a payments preference is the one that moves who receives what
 from whom.
 
-**GitHub Sponsors carries one hazard the other channels do not**, and it is a
+**GitHub Sponsors carries one hazard Ko-fi does not**, and it is a
 rule 4 hazard rather than a payments one: GitHub lists sponsors on the
 recipient's own profile unless the sponsor marks themselves private. That page
 is GitHub's, that default is GitHub's and that setting is the sponsor's, so
@@ -648,10 +648,6 @@ vyarno.bg, ordering it, or making the appearance conditional on an amount would
 be a name in lights given in return for money**, which flips
 `LEGAL_FORM.takesPayment`. The privacy notice states the boundary from the
 donor's side, in the version that opened the channel.
-
-The remaining two stay `live: false`. Open Collective waits on a fiscal host,
-and that is a legal choice before it is an operational one — see the last
-paragraph of this section. Liberapay waits on nothing but a decision.
 
 A sponsors account also has to belong to `REPO_OWNER`, which `verify_legal.mjs`
 enforces: a Sponsor button under any other name sends money to an account this
@@ -713,17 +709,24 @@ after.
 
 Two facts follow from the mechanics rather than from any judgement about them:
 the clock is two months from each acquisition, and a foreign intermediary
-changes who pays whom — Open Collective's fiscal host receives the funds before
-the recipient does.
+changes who pays whom — a platform that holds the balance and pays out on a
+schedule receives the funds before the recipient does.
 
 The first is live, because Ko-fi is. **It is an obligation on the recipient that
 nothing in this repository can check**: every acquisition starts its own
 two-month clock under чл. 49, ал. 3, and where the обичаен подарък line of
 чл. 48, ал. 1, т. 5 falls is undefined in the statute — a question for a tax
 adviser, not one to settle by reading. Ko-fi's own payout record is what the
-declaration is made from, and it lives on Ko-fi rather than here. The second
-fact stays hypothetical while Open Collective is `live: false`, and it is the
-reason opening that channel is a legal decision and not a config change.
+declaration is made from, and it lives on Ko-fi rather than here.
+
+The second turns on a setting inside the live channel. Ko-fi passing the payment
+straight through to Stripe in the recipient's own name keeps it hypothetical;
+switching Ko-fi to hold the balance and pay out on a schedule makes it the
+arrangement in force, and then the funds are acquired from a foreign
+intermediary on the intermediary's calendar rather than from the donor on the
+donor's. That is why the payout route is a legal decision rather than a
+payments preference, and why the paragraph above says not to change it without
+re-reading this section.
 
 ## The regulatory perimeter
 

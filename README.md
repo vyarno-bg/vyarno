@@ -335,12 +335,12 @@ its own URL rather than a fragment of the legal page, so it can be linked to.
 
 **[Ko-fi](https://ko-fi.com/vyarno)** — one-off, no account needed.
 **[GitHub Sponsors](https://github.com/sponsors/vyarno-bg)** — one-off or
-monthly. Open Collective and Liberapay are declared in
-[`.github/FUNDING.yml`](./.github/FUNDING.yml) and
-[`site/src/lib/support.js`](./site/src/lib/support.js) and stay switched off
-until an account actually exists — a donate button pointing at a 404 is worse
-than no button. `site/scripts/verify_support.mjs` fails the build if the two
-ever disagree, and again if a live channel is missing from the privacy notice.
+monthly. Both are declared in [`.github/FUNDING.yml`](./.github/FUNDING.yml) and
+[`site/src/lib/support.js`](./site/src/lib/support.js), where a `live` flag per
+channel keeps a link off the page until the account behind it exists — a donate
+button pointing at a 404 is worse than no button.
+`site/scripts/verify_support.mjs` fails the build if the two ever disagree, and
+again if a live channel is missing from the privacy notice.
 
 Money is not the most useful support, though: report a wrong number, fix
 something ([Contributing](#contributing) is ordered by usefulness), or just tell
