@@ -18,7 +18,14 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { ORIGIN, newestAsOf, sitemapXml } from "./gen-sitemap.mjs";
-import { MOUNT_POINT, PRERENDERED, injectPrerender } from "./prerender.mjs";
+import {
+  LANGS,
+  MOUNT_POINT,
+  PRERENDERED,
+  dropOtherLanguages,
+  entryLang,
+  injectPrerender,
+} from "./prerender.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const site = (...p) => join(HERE, "..", ...p);
@@ -353,6 +360,103 @@ test("injecting the shell refuses a page it cannot place it in", () => {
       "failing. A prerender that quietly did nothing looks exactly like a " +
       "build that worked."
   );
+});
+
+test("the crawler's copy is served in the language its entry declares", () => {
+  // The pair is `<span class="l-bg">` beside `<span class="l-en">`, hidden one
+  // way or the other by a rule in `tokens.css`. CSS reaches a browser and
+  // Googlebot; an agent that fetches the HTML and strips the tags reads both
+  // halves run together, and the six agents `robots.txt` allows by name are
+  // that kind of consumer.
+  const pair =
+    '<p><span class="l-bg">Твоите числа.</span> <span class="l-en">Your numbers.</span></p>';
+  assert.equal(
+    dropOtherLanguages(pair, "bg"),
+    '<p><span class="l-bg">Твоите числа.</span> </p>',
+    "the served page carries the language its entry does not declare"
+  );
+  // Symmetric, because the class to drop is decided by the entry rather than
+  // written into the step: an entry declaring `en` keeps the English.
+  assert.equal(
+    dropOtherLanguages(pair, "en"),
+    '<p> <span class="l-en">Your numbers.</span></p>',
+    "the step drops a fixed language instead of the one the entry does not declare"
+  );
+  // Untouched markup stays byte-identical. A stripper that reassembled the
+  // whole page would be a second thing that can corrupt it.
+  const plain = '<main class="how"><h1>Числата</h1></main>';
+  assert.equal(dropOtherLanguages(plain, "bg"), plain);
+
+  assert.throws(
+    () => dropOtherLanguages(pair, "de"),
+    /not a language this site is written in/,
+    "stripping against a language nothing is authored in would empty the page"
+  );
+});
+
+test("the language strip drops the tag it matched, at the depth it matched", () => {
+  // Two elements away from being wrong, and neither reports itself.
+  //
+  // The container is a `<span>` in every case but one: `ExplainerBand.svelte`
+  // writes the route to `/how/` as `<a class="how-more l-en" href="/how/">`, so
+  // a `<span`-keyed stripper serves an English link on `/` and every other
+  // assertion stays green.
+  assert.equal(
+    dropOtherLanguages('<p><a class="how-more l-en" href="/how/">More →</a></p>', "bg"),
+    "<p></p>",
+    "a language class on any tag but <span> survives the strip"
+  );
+  // And the scan counts opens and closes of that tag rather than running to
+  // the first `</span>`. A non-greedy match closes on the CHILD's tag and
+  // leaves the parent's closer behind, which a parser reads as content
+  // escaping the element.
+  assert.equal(
+    dropOtherLanguages('<p><span class="l-en">a <span>b</span> c</span>!</p>', "bg"),
+    "<p>!</p>",
+    "a nested element of the same tag ends the scan early, leaving stray markup"
+  );
+  // `<b>` and `<a>` genuinely nest inside these spans — /legal/ carries
+  // `<span class="l-en"><b>Terms:</b> Permits reproduction…</span>` — so the
+  // scan must not stop at the first `</` either.
+  assert.equal(
+    dropOtherLanguages('<span class="l-en"><b>Terms:</b> Permits…</span><i>x</i>', "bg"),
+    "<i>x</i>",
+    "the scan stops at the first closing tag of any kind"
+  );
+  // A `.l-bg` inside a `.l-en` goes with its parent, which is what the CSS
+  // does: `display: none` takes the subtree.
+  assert.equal(
+    dropOtherLanguages('<span class="l-en">x <span class="l-bg">y</span></span>z', "bg"),
+    "z",
+    "the dropped subtree is rescanned, so its own children are put back"
+  );
+});
+
+test("the entry decides which language it is served in", () => {
+  assert.equal(
+    entryLang('<!doctype html>\n<html lang="bg" data-lang="bg" data-theme="light">'),
+    "bg"
+  );
+  assert.equal(entryLang('<html data-lang="en">'), "en");
+  // The attribute is what `tokens.css` hides a language by. An entry with none
+  // leaves the step guessing, and a guess serves markup the stylesheet
+  // disagrees with — half a page of `display: none`.
+  assert.throws(() => entryLang('<html lang="bg">'), /data-lang=null/);
+  assert.throws(() => entryLang('<html data-lang="">'), /data-lang=""/);
+});
+
+test("every entry declares a language the strip can be run against", () => {
+  // The step reads this attribute off each built entry. An entry that lost it
+  // fails the build rather than shipping a page in both languages again, and
+  // this is the same fact checked without one.
+  for (const { file } of ENTRIES) {
+    const name = file.join("/");
+    assert.ok(
+      LANGS.includes(entryLang(read(...file))),
+      `${name} declares no language on <html>, and the prerender reads that ` +
+        "attribute to decide which half of every string a crawler is served"
+    );
+  }
 });
 
 test("the 404 page is noindex and routes back to the calculator", () => {
