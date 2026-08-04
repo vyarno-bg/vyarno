@@ -23,12 +23,20 @@
 </script>
 
 <!-- NOT PLACED — the money the basket was never told about.
-     A € basket that rescales a partial basket up to the full budget
-     cannot represent unplaced money at all: it asserts, silently,
-     that every euro of take-home belongs to one of thirteen
-     divisions. This row is what keeps that assertion out of the
-     calculator — it says what the unplaced money is (a size, a
-     year's worth) and what prices do to it if it is held as cash.
+     A basket that rescales up to the full budget cannot represent
+     unplaced money at all: it asserts, silently, that every euro of
+     take-home belongs to one of thirteen divisions. This row is what
+     keeps that assertion out of the calculator — it says what the
+     unplaced money is (a size, a year's worth) and what prices do to
+     it if it is held as cash.
+
+     It renders off `budget.leftover` and asks nothing about where
+     that came from, which is why «Неразпределени» still reads right
+     when the remainder is one number the reader stated rather than
+     thirteen amounts that fell short. Both mean the same thing to
+     this row: money the basket has not been told about. A second
+     wording per source would be two sentences drifting apart over
+     one figure that has not moved.
 
      It stops there. "Save it" or "invest it" is advice, and
      docs/principles.md P6 and the closed list shut that door — the

@@ -381,22 +381,54 @@ export function housingCarveOut({ salary, homeOn, monthlyMortgage, rent }) {
 // ---------------------------------------------------------------------------
 
 /**
+ * The share of take-home a reader may claim they actually spend, 0–100.
+ *
+ * Exported because the control's handler clamps with it before the number
+ * reaches `$state`: the label beside the slider renders that state directly, so
+ * a value the arithmetic would reject but the label would print is a screen
+ * saying 130% over a base of 100%. Clamping in one place is what stops the
+ * claim and the figures carved out of it from describing different readers.
+ *
+ * **Anything unusable becomes 100, never 0.** A `NaN` out of a parsed field is
+ * the app failing to read an answer, and answering it on the reader's behalf
+ * with "you spend nothing" would empty every € figure on the page; 100 is the
+ * same thing the app says to someone who never touched the control.
+ *
+ * @param {number} pct
+ * @returns {number} 0–100
+ */
+export function clampSpendShare(pct) {
+  if (!Number.isFinite(pct)) return 100;
+  return Math.min(100, Math.max(0, pct));
+}
+
+/**
  * What the € column is measured against, and what the reader has left over.
  *
- * **The two modes disagree about whether "left over" can exist, and that is
- * the point.** A basket of *percentage shares* says how the spendable amount
- * divides; by construction it allocates all of it, and there is no remainder
- * to name. A basket of *euros per month* is a list of real payments, and the
- * one thing a person who is careful with money does is not spend all of it.
+ * **The two modes measure the remainder differently, and that is the point.**
+ * A basket of *percentage shares* says how a pot divides; it cannot say how big
+ * the pot is, so the size of anything left outside it has to be STATED —
+ * `spendSharePct` is the reader's claim about how much of their take-home
+ * actually gets spent. A basket of *euros per month* is a list of real
+ * payments, so the remainder is MEASURED off what they typed and needs no
+ * claim; the euro mode ignores `spendSharePct` for that reason, and the two
+ * cannot contradict each other on screen because only one of them is ever live.
  *
  * So `spendBase` — the amount the per-division € figures and
- * `mirror.js#contributions` are carved out of — is `spendable` in share mode
- * and **the euros actually entered** in euro mode. Feeding `spendable` to both
- * is the bug this function exists to make unexpressible: it silently rescaled a
- * €1,000 basket up to a €1,250 budget, so someone who typed their real
- * spending was shown thirteen numbers they had never typed, all of them 25%
- * too big, adding to a total they had deliberately not reached. The app was
+ * `mirror.js#contributions` are carved out of — is `spendable × s/100` in share
+ * mode and **the euros actually entered** in euro mode. Feeding `spendable` to
+ * both is the bug this function exists to make unexpressible: it silently
+ * rescaled a €1,000 basket up to a €1,250 budget, so someone who typed their
+ * real spending was shown thirteen numbers they had never typed, all of them
+ * 25% too big, adding to a total they had deliberately not reached. The app was
  * insisting they spend everything.
+ *
+ * **`spendSharePct` defaults to 100 and every caller that omits it gets the
+ * whole spendable amount**, which is both the honest default — a share the
+ * reader has not claimed is not a share we may assume, and any other value
+ * shrinks their headline € figure in the flattering direction
+ * (docs/principles.md P7) — and what keeps this a no-op for a reader who never
+ * touches the control.
  *
  * `leftover` is deliberately NOT called savings. Money not placed in a basket
  * is money this calculator has not been told about; it may be saved, invested,
@@ -408,22 +440,29 @@ export function housingCarveOut({ salary, homeOn, monthlyMortgage, rent }) {
  * @param {'pct'|'eur'} args.spendMode
  * @param {number[]} args.amounts   the basket, in whichever unit the mode uses
  * @param {number} args.spendable   take-home minus committed housing
+ * @param {number} [args.spendSharePct]  share mode only: how much of `spendable`
+ *   the reader says they actually spend, 0–100. Anything unusable is 100.
  * @returns {{entered:number, spendBase:number, leftover:number, over:number,
  *            leftoverPct:number, leftoverPerYear:number, hasLeftover:boolean}}
  */
-export function basketBudget({ spendMode, amounts, spendable }) {
+export function basketBudget({ spendMode, amounts, spendable, spendSharePct }) {
   const entered = (amounts ?? []).reduce((s, x) => s + (x > 0 ? x : 0), 0);
   const budget = Math.max(0, spendable || 0);
 
   if (spendMode !== "eur") {
+    const share = clampSpendShare(spendSharePct);
+    const spendBase = (budget * share) / 100;
+    const leftover = budget - spendBase;
     return {
       entered,
-      spendBase: budget,
-      leftover: 0,
+      spendBase,
+      leftover,
+      // A share cannot exceed the money it is a share of. Over-allocation is a
+      // euro-mode state: it takes thirteen typed amounts to reach it.
       over: 0,
-      leftoverPct: 0,
-      leftoverPerYear: 0,
-      hasLeftover: false,
+      leftoverPct: budget > 0 ? (100 * leftover) / budget : 0,
+      leftoverPerYear: leftover * 12,
+      hasLeftover: budget > 0 && leftover >= 1,
     };
   }
 
@@ -455,10 +494,12 @@ export function basketBudget({ spendMode, amounts, spendable }) {
  * carved out of the *basket* column so the thirteen divisions describe what is
  * left, not because they are outside the reader's outlay.
  *
- * **This reduces to `salary` exactly in share mode** (`spendBase` is
- * `salary − housingCost` there), so the headline € figure is unchanged for
- * everyone who has not deliberately left money unplaced. Only a reader who
- * told us they spend less than they earn gets a different — smaller, truer —
+ * **This reduces to `salary` exactly whenever nothing is left unplaced** — in
+ * share mode at the default 100% claim, `spendBase` is `salary − housingCost`
+ * and the sum is the salary again — so the headline € figure is unchanged for
+ * everyone who has not deliberately left money out. Only a reader who told us
+ * they spend less than they earn, by dragging the share control or by typing a
+ * euro basket smaller than their pay, gets a different — smaller, truer —
  * number.
  *
  * @param {{housingCost:number, spendBase:number}} args

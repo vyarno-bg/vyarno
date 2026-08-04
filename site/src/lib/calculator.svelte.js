@@ -87,6 +87,7 @@ import {
   savingsSince2020,
   housingCarveOut,
   basketBudget,
+  clampSpendShare,
   exposedSpend,
   leftoverIfHeldAsCash,
   homePriceFor,
@@ -239,6 +240,24 @@ export class Calculator {
   activePreset = $state("official");
   /** "pct" = share sliders · "eur" = actual euros per month. */
   spendMode = $state("pct");
+  /**
+   * Share mode only: how much of what is left after housing the reader says
+   * they actually spend, 0–100.
+   *
+   * **100 is the only defensible starting value.** Percentage shares describe
+   * how a pot divides and say nothing about its size, so before the reader
+   * answers, the app has to assume some size for it — and every value below 100
+   * shrinks their headline "≈ €X more every month" without their having claimed
+   * anything, which is a flattering default over an unsourced one
+   * (docs/principles.md P7). A national household savings rate would be a
+   * source, and it would still be the wrong one: it is a different household's
+   * answer to a question this reader is standing in front of.
+   *
+   * In euro mode this is ignored — `view.js#basketBudget` measures the
+   * remainder off the thirteen typed amounts instead, so the stated claim and
+   * the measured one are never both live.
+   */
+  spendSharePct = $state(100);
   /** Master switch for the ECOICOP level-2 drill-down. */
   detailMode = $state(false);
   /** Which divisions are currently expanded (by index). */
@@ -588,14 +607,16 @@ export class Calculator {
   spendable = $derived(this.carveOut.spendable);
 
   // What the € column is measured against, and what is left unplaced. In share
-  // mode `spendBase` IS `spendable` and there is no leftover; in € mode it is
-  // the euros the user actually typed, so nothing on screen rescales their
-  // basket up to fill their pay. See view.js#basketBudget.
+  // mode `spendBase` is the share of `spendable` the reader claims they spend —
+  // all of it until they say otherwise; in € mode it is the euros they actually
+  // typed, so nothing on screen rescales their basket up to fill their pay.
+  // See view.js#basketBudget.
   budget = $derived(
     basketBudget({
       spendMode: this.spendMode,
       amounts: this.weights,
       spendable: this.spendable,
+      spendSharePct: this.spendSharePct,
     })
   );
   /** Σ of what the user has entered — the slider/€ denominator. */
@@ -1000,12 +1021,35 @@ export class Calculator {
   };
 
   /**
+   * How much of what is left after housing the reader says they actually spend.
+   *
+   * Clamped through `view.js#clampSpendShare` on the way into state rather than
+   * on the way out, because the label beside the control renders this number
+   * and the € figures are carved out of it — a value only one of them rejects
+   * is a screen where the claim and the arithmetic describe different people.
+   */
+  onSpendShareInput = (val) => {
+    this.spendSharePct = clampSpendShare(+val);
+  };
+
+  /**
    * Switch between percentage shares and euros per month.
    *
-   * The conversion preserves the basket exactly: shares → euros multiplies by
-   * the spendable amount, euros → shares divides by the total entered. So the
-   * personal-inflation number does not move when the user flips the toggle,
-   * which is the only behaviour that makes the toggle trustworthy.
+   * The conversion preserves the basket exactly, and "exactly" means the
+   * thirteen € figures on screen do not move either — not merely that π holds,
+   * which it would anyway because both modes normalise by Σ. So each direction
+   * converts against the base the € column is actually drawn from
+   * (`budget.spendBase`), never against the whole spendable amount: at a 70%
+   * claim the latter would hand the reader a euro basket 43% larger than the
+   * one they were just looking at, which is the app insisting they spend
+   * everything by a different route.
+   *
+   * Coming back the other way, the euros the reader typed BECOME the claim —
+   * a €1,085 basket against €1,550 spendable is a 70% share — so the remainder
+   * survives the round trip instead of being silently absorbed. It clamps at
+   * 100: a share cannot exceed the money it is a share of, so an over-allocated
+   * euro basket lands at "I spend all of it" and the over-allocation is the one
+   * thing the flip cannot carry across.
    */
   setSpendMode = (mode) => {
     if (mode === this.spendMode) return;
@@ -1013,8 +1057,13 @@ export class Calculator {
     if (total > 0) {
       const next =
         mode === "eur"
-          ? this.weights.map((w) => Math.round((this.spendable * Math.max(0, w)) / total))
+          ? this.weights.map((w) => Math.round((this.budget.spendBase * Math.max(0, w)) / total))
           : this.weights.map((w) => Math.round((100 * Math.max(0, w)) / total));
+      if (mode === "pct") {
+        this.spendSharePct = clampSpendShare(
+          this.spendable > 0 ? (100 * this.budget.spendBase) / this.spendable : 100
+        );
+      }
       // Carry each division's group split across in the same proportion, so a
       // user who has already drilled in doesn't lose their work.
       this.splits = this.splits.map((sp, i) => {

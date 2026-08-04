@@ -256,10 +256,16 @@ test("every placeholder in a COPY string is substituted somewhere", () => {
 // ---------------------------------------------------------------------------
 
 test("the unplaced-money copy describes and never advises", () => {
-  // The row names what is left over, so that the € basket is not asserting
-  // that every euro of take-home belongs to one of thirteen groups. It does
-  // not tell anyone what to do with the remainder: this is a calculator, not
-  // financial advice, and the line between the two is the imperative mood.
+  // The row names what is left over, so that the basket is not asserting that
+  // every euro of take-home belongs to one of thirteen groups. It does not tell
+  // anyone what to do with the remainder: this is a calculator, not financial
+  // advice, and the line between the two is the imperative mood.
+  //
+  // The control that states the share covers the same ground from the other
+  // end — «харча ≈ 70%» and «30% остават извън кошницата» are one sentence cut
+  // in half — so it is held to the same rule. A slider is where the pull is
+  // strongest: an interface that watches a reader set money aside is one
+  // sentence away from having an opinion about it.
   const ADVICE = [
     /\bспести\b/i,
     /\bинвестирай\b/i,
@@ -276,6 +282,8 @@ test("the unplaced-money copy describes and never advises", () => {
     "leftOverNoHousing",
     "leftOverWithHousing",
     "leftCash",
+    "spendShareLead",
+    "spendShareAria",
   ]) {
     const entry = COPY[key];
     assert.ok(entry, `COPY.${key} is gone — the unplaced-money row lost a line`);
