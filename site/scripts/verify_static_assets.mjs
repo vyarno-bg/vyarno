@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Verification for the static files a commercial site is expected to serve:
- * `robots.txt`, `.well-known/security.txt`, the generated `sitemap.xml`, and
- * the 404 page.
+ * `robots.txt`, `llms.txt`, `.well-known/security.txt`, the generated
+ * `sitemap.xml`, and the 404 page.
  *
  * These are the files nobody looks at again after the day they are written,
  * which is exactly why they need a test. Two failures in particular are
@@ -34,6 +34,7 @@ const read = (...p) => readFileSync(site(...p), "utf-8");
 
 const ROBOTS = read("public", "robots.txt");
 const SECURITY = read("public", ".well-known", "security.txt");
+const LLMS = read("public", "llms.txt");
 
 /**
  * A module with its comments blanked, so an assertion lands on what runs.
@@ -158,6 +159,68 @@ test("robots.txt points at the sitemap we actually generate", () => {
     directives(ROBOTS).includes(`Sitemap: ${ORIGIN}/sitemap.xml`),
     `robots.txt's Sitemap line does not match ${ORIGIN}/sitemap.xml, which is ` +
       "where gen-sitemap.mjs writes it."
+  );
+});
+
+// ---------------------------------------------------------------------------
+// llms.txt
+// ---------------------------------------------------------------------------
+
+test("llms.txt names every page the sitemap does, and the route to the data", () => {
+  // Read out of the generator rather than retyped, the way the sitemap test
+  // above does: a page added to the site and left out of this file is the one
+  // an agent never learns exists, and nothing else would report it.
+  const listed = [...read("scripts", "gen-sitemap.mjs").matchAll(/\{\s*loc:\s*"([^"]+)"/g)].map(
+    (m) => m[1]
+  );
+  assert.ok(listed.length >= 4, "gen-sitemap.mjs lists no pages to check llms.txt against");
+  for (const loc of listed) {
+    assert.ok(
+      LLMS.includes(`${ORIGIN}${loc}`),
+      `llms.txt does not name ${ORIGIN}${loc}. The file is a map of the site ` +
+        "for a consumer that will not crawl it, so a page missing from it is a " +
+        "page that consumer has no route to."
+    );
+  }
+  assert.ok(
+    LLMS.includes("github.com/vyarno-bg/vyarno"),
+    "llms.txt does not point a machine at the repository. robots.txt " +
+      "disallows /data/published/ for every group and the terms of use name " +
+      "the repository as the route, so without it the answer to 'where is the " +
+      "data' is nowhere."
+  );
+  assert.ok(
+    !LLMS.includes("/data/published/"),
+    "llms.txt points at /data/published/, which every crawler group is " +
+      "disallowed from. A map that sends an agent somewhere robots.txt refuses " +
+      "it is a contradiction it reports back."
+  );
+});
+
+test("llms.txt carries the attribution and claims nothing about the data", () => {
+  // `verify_legal.mjs` scans src/ for these overclaims and cannot see a file in
+  // public/, so the same check lives here rather than on review. THE FIGURES
+  // ARE NOT OURS TO LICENSE — they belong to five publishers under five sets of
+  // terms, and НСИ's forbid redistributing производни и сборни произведения
+  // outright (NOTICE §2, docs/legal.md). This is the file written for the
+  // consumer least able to check the claim.
+  for (const overclaim of ["отворени данни", "open data", "данните са свободни"]) {
+    assert.ok(
+      !LLMS.toLowerCase().includes(overclaim.toLowerCase()),
+      `llms.txt claims the DATA is open ("${overclaim}"). Describe the code as ` +
+        "open, never the figures."
+    );
+  }
+  assert.ok(
+    LLMS.includes("Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg"),
+    "llms.txt drops the upstream attribution. It is a licence condition of " +
+      "several of those publishers rather than decoration, and it is not " +
+      "translated — see docs/legal.md."
+  );
+  assert.ok(
+    /Apache-2\.0/.test(LLMS),
+    "llms.txt does not name the licence the code is under, so a reader has " +
+      "the disclaimer about the figures with nothing to contrast it against"
   );
 });
 

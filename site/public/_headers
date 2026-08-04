@@ -137,6 +137,15 @@
 /sitemap.xml
   Cache-Control: public, max-age=3600
 
+# The plain-text map of the site for an agent. `Content-Type` is stated rather
+# than sniffed: a `.txt` served as `application/octet-stream` is a download
+# prompt, and the charset matters because the file carries Cyrillic — the
+# attribution line and the publisher names are a licence condition and are not
+# translated.
+/llms.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+
 /.well-known/security.txt
   Cache-Control: public, max-age=3600
   Content-Type: text/plain; charset=utf-8

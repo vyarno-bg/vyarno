@@ -93,7 +93,7 @@ site/
 │   │                              # two README banners (stdlib only)
 │   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png
 ├── public/             # copied verbatim into dist/ — no build step
-│   ├── _headers · robots.txt · .well-known/security.txt
+│   ├── _headers · robots.txt · llms.txt · .well-known/security.txt
 │   ├── favicon.svg · og-image.png · fonts/ (self-hosted, vendored unmodified)
 └── src/
     ├── App.svelte · How.svelte · Legal.svelte · Support.svelte · NotFound.svelte
