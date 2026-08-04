@@ -139,8 +139,10 @@ for keeping them, and it is exempt from the check.
   today. `verify_copy.mjs` §"no prose freezes a date or a count the payloads
   already carry" checks it against the currently published values.
 - **The Bulgarian is the original, not a translation of the English.** Write it
-  as somebody would say it out loud: «сметката се случва в браузъра ти», not
-  «сметката става». Grammar the copy cannot dodge belongs in a formatter, not in
+  as somebody would say it out loud: «сметката се прави в браузъра ти», not
+  «сметката се случва в браузъра ти» — «се случва» is "happens" carried across
+  word for word, and a calque reads as translated even when every word in it is
+  already Bulgarian. Grammar the copy cannot dodge belongs in a formatter, not in
   the string — the day of the month takes four different ordinal endings
   (`format.js#ordinalDay`) and «закъсняло»/«закъснели» is a second sentence
   rather than a substituted number.

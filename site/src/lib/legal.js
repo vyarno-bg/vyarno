@@ -409,7 +409,7 @@ export const UPSTREAMS = [
       en: "Bulgaria's Harmonised Index of Consumer Prices (HICP) — the official inflation figure, the 13 basket divisions with their weights, the price index by year and the unemployment rate. The shape of the pay distribution comes from the Structure of Earnings Survey.",
     },
     requires: {
-      bg: "Позволява възпроизвеждане и разпространение, включително с търговска цел, при посочване на Евростат като източник. Когато данните са адаптирани или преизчислени, това трябва да е заявено ясно на крайния потребител и да е придружено от уговорка, че Евростат не носи отговорност — затова показваме числата им непроменени, където може, описваме преработката до самото число, където не може, а уговорката стои по-долу.",
+      bg: "Позволява възпроизвеждане и разпространение, включително с търговска цел, при посочване на Евростат като източник. Когато данните са адаптирани или преизчислени, това трябва ясно да е казано на крайния потребител и да е придружено от уговорка, че Евростат не носи отговорност — затова показваме числата им непроменени, където може, описваме преработката до самото число, където не може, а уговорката стои по-долу.",
       en: "Permits reproduction and dissemination, commercial included, provided Eurostat is acknowledged as the source. Where data are adapted or modified this must be stated clearly to the end user and accompanied by a disclaimer of Eurostat's responsibility — so we show their figures untouched where we can, describe the rework next to the figure where we cannot, and the disclaimer stands below.",
     },
     url: "https://ec.europa.eu/eurostat/data/database",
@@ -433,7 +433,7 @@ export const UPSTREAMS = [
     id: "bnb",
     name: { bg: "Българска народна банка (БНБ)", en: "Bulgarian National Bank (БНБ)" },
     provides: {
-      bg: "Средната лихва по действащия жилищен кредитен портфейл — редът данни, с който проверяваме числото на ЕЦБ — и надзорните ограничения за жилищните кредити: до 85% от цената на имота, до 50% от дохода за обслужване на дълга и до 30 години срок.",
+      bg: "Средната лихва по действащия жилищен кредитен портфейл — независимото измерване, с което проверяваме числото на ЕЦБ — и надзорните ограничения за жилищните кредити: до 85% от цената на имота, до 50% от дохода за обслужване на дълга и до 30 години срок.",
       en: "The average rate on the outstanding housing-loan book — the independent series we cross-check the ECB figure against — and the borrower-based limits on mortgages: up to 85% of the property price, up to 50% of income for debt service, and a 30-year maximum term.",
     },
     requires: {
@@ -465,11 +465,11 @@ export const UPSTREAMS = [
     id: "imot",
     name: { bg: "имот.bg", en: "imot.bg" },
     provides: {
-      bg: "Средните обявени цени на квадратен метър по квартали в София, които самият сайт изчислява и публикува, плюс по един годишен архив назад до 2015 г. Това са цени по обяви, не по сделки — разликата е важна и е написана до числото.",
+      bg: "Средните обявени цени на квадратен метър по квартали в София, които самият сайт изчислява и публикува, плюс по едно архивно четене за всяка година назад до 2015 г. Това са цени по обяви, не по сделки — разликата е важна и е написана до числото.",
       en: "The average asking price per square metre by Sofia district, which the site itself computes and publishes, plus one archived snapshot per year back to 2015. These are asking prices, not transaction prices — a distinction that matters and is stated next to the figure.",
     },
     requires: {
-      bg: "Общите условия на сайта не съдържат клауза за ползване на съдържанието. Взимаме само публикуваните средни стойности по квартали — не обяви, не снимки, не адреси, не цени на конкретни имоти — ръчно, с малък брой заявки, с ясно представящ се потребителски агент и без да заобикаляме никаква защита. Посочваме източника с връзка.",
+      bg: "Общите условия на сайта не съдържат клауза за ползване на съдържанието. Взимаме само публикуваните средни стойности по квартали — не обяви, не снимки, не адреси, не цени на конкретни имоти — ръчно, с малък брой заявки, с потребителски агент, който казва кои сме, и без да заобикаляме никаква защита. Посочваме източника с връзка.",
       en: "The site's terms of use contain no clause governing reuse of content. We take only the published district averages — no listings, no photographs, no addresses, no individual property prices — manually, in a handful of requests, with a self-identifying user agent, and without circumventing any protection. We name the source and link to it.",
     },
     url: "https://www.imot.bg/sredni-ceni",
@@ -534,7 +534,7 @@ const DOC_BODIES = [
         h: { bg: "Какво може да правиш", en: "What you may do" },
         p: [
           {
-            bg: "Можеш да заредиш и да ползваш сайта в браузър, колкото пъти искаш, без регистрация и безплатно — за каквото ти е нужно, лично или работно, включително с търговска цел. Няма платена версия, няма заключени функции и няма нищо, което да се отваря срещу пари: това, което виждаш, е всичко, което съществува. Можеш да цитираш отделно число в статия, презентация или разговор, ако посочиш и източника, от който то идва, и датата, за която се отнася. Това е насърчено, а не търпяно: цитирането с източник е точно ползването, за което сайтът е направен.",
+            bg: "Можеш да заредиш и да ползваш сайта в браузър, колкото пъти искаш, без регистрация и безплатно — за каквото ти е нужно, лично или работно, включително с търговска цел. Няма платена версия, няма заключени функции и няма нищо, което да се отваря срещу пари: това, което виждаш, е всичко, което съществува. Можеш да цитираш отделно число в статия, презентация или разговор, ако посочиш и източника, от който то идва, и датата, за която се отнася. Не просто го допускаме — точно за това е направен сайтът: цитат с посочен източник е ползването, което искаме.",
             en: "You may load and use the site in a browser as often as you like, with no account and at no cost — for whatever you need it for, personal or professional, commercial use included. There is no paid version, no locked features and nothing that money would unlock: what you see is all there is. You may quote an individual figure in an article, a presentation or a conversation, provided you also name the source it comes from and the date it refers to. This is encouraged rather than tolerated: sourced quotation is exactly the use the site was built for.",
           },
         ],
@@ -543,7 +543,7 @@ const DOC_BODIES = [
         h: { bg: "Какво не може", en: "What you may not do" },
         p: [
           {
-            bg: "Да натоварваш сайта по начин, различен от нормално ползване от човек с браузър: обхождане с бот, скриптово изтегляне в цикъл, повтарящо се теглене на файловете с данни. Вярно работи на един малък сървър и това е молба за възпитание, не защита на нещо тайно — виж следващия абзац за по-добрия начин.",
+            bg: "Да натоварваш сайта по начин, различен от нормално ползване от човек с браузър: обхождане с бот, скриптово изтегляне в цикъл, повтарящо се теглене на файловете с данни. Вярно работи на един малък сървър и това е молба да го щадиш, а не защита на нещо тайно — виж следващия абзац за по-добрия начин.",
             en: "Loading the site in any way other than ordinary use by a person with a browser: crawling with a bot, scripted downloading in a loop, repeatedly pulling the data files. Vyarno runs on one small server, and this is a request for courtesy rather than protection of anything secret — the next paragraph has the better route.",
           },
           {
@@ -551,7 +551,7 @@ const DOC_BODIES = [
             en: "Presenting our figures as someone else's or someone else's as ours, embedding that removes the source attribution, and using the name “Вярно”, the domain or the mark in a way that suggests a connection or an endorsement. You may say your work is based on Вярно — that is accurate and welcome; you may not call your own version “Вярно”.",
           },
           {
-            bg: `Ако ти трябва достъп до данните по машинен път, не го извличай от сайта — вземи го от хранилището. Кодът е отворен (Apache-2.0), а публикуваните файлове с данни са в git с история, схема и дата на обновяване: ${REPO_SLUG}. Така получаваш повече, отколкото би изстъргал, и никой сървър не страда.`,
+            bg: `Ако ти трябва достъп до данните по машинен път, не го извличай от сайта — вземи го от хранилището. Кодът е отворен (Apache-2.0), а публикуваните файлове с данни са в git с история, схема и дата на обновяване: ${REPO_SLUG}. Така получаваш повече, отколкото би извлякъл, и никой сървър не страда.`,
             en: `If you need machine access to the data, do not scrape it from the site — take it from the repository. The code is open (Apache-2.0) and the published data files are in git with their history, schema and refresh date: ${REPO_SLUG}. You get more than scraping would give you, and no server suffers for it.`,
             html: false,
           },
@@ -565,7 +565,7 @@ const DOC_BODIES = [
         h: { bg: "Числата не са наши", en: "The figures are not ours" },
         p: [
           {
-            bg: "Статистиката, която Вярно показва, е произведена от Евростат, ЕЦБ, БНБ, НСИ и имот.bg и остава подчинена на условията на всеки от тях. Ние не сме в позиция да ти дадем права върху нея и не претендираме, че ти предоставяме такива. Какво предоставя всеки източник и какво изисква е описано в раздел „Източници“ по-долу.",
+            bg: "Статистиката, която Вярно показва, е произведена от Евростат, ЕЦБ, БНБ, НСИ и имот.bg и остава подчинена на условията на всеки от тях. Не можем да ти дадем права върху нея и не твърдим, че ти даваме такива. Какво предоставя всеки източник и какво изисква е описано в раздел „Източници“ по-долу.",
             en: "The statistics Vyarno shows are produced by Eurostat, the ECB, БНБ, НСИ and imot.bg and remain subject to each publisher's own terms. We are not in a position to grant you rights in them and do not purport to. What each source provides and what it requires is set out in the “Sources” section below.",
           },
           {
@@ -632,7 +632,7 @@ const DOC_BODIES = [
             en: "The salary, rent, savings and basket you enter are computed entirely in your browser and are never sent anywhere. There is no server to receive them. We ask for no name, no e-mail address, there is no registration and there is no account. The only thing that takes you off the site is the donation link — what happens if you use it is set out below.",
           },
           {
-            bg: "Останалото описва сайта такъв, какъвто е в тази версия на документа. Днес на страницата не работят инструменти за анализ на посещаемостта, следящи скриптове, пиксели, реклама, скриптове на трети страни и бисквитки. Ако някога добавим нещо, което се изпълнява в твоя браузър или оставя следа в него, то получава свой раздел тук и версията на този документ се сменя — в същото издание, преди промяната да стигне до теб, а не след нея.",
+            bg: "Останалото описва сайта такъв, какъвто е в тази версия на документа. Днес на страницата няма инструменти за анализ на посещаемостта, следящи скриптове, пиксели, реклама, скриптове на трети страни и бисквитки. Ако някога добавим нещо, което се изпълнява в твоя браузър или оставя следа в него, то получава свой раздел тук и версията на този документ се сменя — в същото издание, преди промяната да стигне до теб, а не след нея.",
             en: "The rest describes the site as it stands in this version of the document. Today the page runs no audience-measurement tool, no tracking script, no pixel, no advertising, no third-party script and no cookie. If we ever add something that runs in your browser or leaves anything in it, it gets its own section here and this document's version changes — in the same release, before the change reaches you, not after it.",
           },
           {
@@ -645,7 +645,7 @@ const DOC_BODIES = [
         h: { bg: "Какво се пази — на твоето устройство", en: "What is stored — on your device" },
         p: [
           {
-            bg: "Две настройки, и то само ако ги смениш: езикът и светлата или тъмната тема. Ако не пипнеш нищо, не записваме нищо — първото зареждане не оставя следа в браузъра ти. Смениш ли едното, то се пази в localStorage под ключа vyarno_lang или vyarno_theme. Това не са бисквитки, но правилото за съхраняване на данни в устройството ти важи и за тях (чл. 4а от Закона за електронната търговия); пазим ги, защото ти си поискал точно тази настройка, и затова не те питаме отново. Не се изпращат при заявка и не съдържат нищо лично. Изчистваш ги от настройките на браузъра си, когато поискаш.",
+            bg: "Две настройки, и то само ако ги смениш: езикът и светлата или тъмната тема. Ако не пипнеш нищо, не записваме нищо — първото зареждане не оставя следа в браузъра ти. Смениш ли някоя от тях, тя се пази в localStorage под ключа vyarno_lang или vyarno_theme. Това не са бисквитки, но правилото за съхраняване на данни в устройството ти важи и за тях (чл. 4а от Закона за електронната търговия); пазим ги, защото ти си поискал точно тази настройка, и затова не те питаме отново. Не се изпращат при заявка и не съдържат нищо лично. Изчистваш ги от настройките на браузъра си, когато поискаш.",
             en: "Two preferences, and only if you change them: the language and the light or dark theme. Touch nothing and nothing is written — a first load leaves no trace in your browser. Change one and it is kept in localStorage under the key vyarno_lang or vyarno_theme. These are not cookies, but the rule about storing data on your device covers them anyway (art. 4a of the Bulgarian E-Commerce Act); we keep them because you asked for that specific setting, which is why we do not ask you again. They are never sent with a request and contain nothing personal. You can clear them from your browser's settings whenever you like.",
           },
         ],
@@ -654,7 +654,7 @@ const DOC_BODIES = [
         h: { bg: "Какво вижда хостът", en: "What the host sees" },
         p: [
           {
-            bg: "Тук сме точни, защото „не събираме нищо“ лесно става неточно. Като всеки уеб сървър, машината, която доставя страницата, записва обичайния ред в журнала си: IP адрес, момент, поискан адрес и вид браузър. Това е необходимо, за да стигне страницата до теб и да се защитим от злоупотреба, и е единственото, което съществува за твоето посещение.",
+            bg: "Тук сме точни, защото „не събираме нищо“ лесно става неточно. Като всеки уеб сървър, машината, която доставя страницата, записва обичайния ред в журнала си: IP адрес, час, поискан адрес и вид браузър. Това е необходимо, за да стигне страницата до теб и да се защитим от злоупотреба, и е единственото, което съществува за твоето посещение.",
             en: "We are precise here, because “we collect nothing” slips easily into being untrue. Like every web server, the machine that delivers the page records the ordinary log line: IP address, timestamp, requested URL and browser type. That is what it takes to get the page to you and to defend against abuse, and it is the only thing that exists about your visit.",
           },
           {
@@ -701,16 +701,16 @@ const DOC_BODIES = [
       },
       {
         h: {
-          bg: "Защо това е техническо, а не обещание",
+          bg: "Защо това не е само обещание",
           en: "Why this is enforced, not promised",
         },
         p: [
           {
-            bg: "Обещанието не е достатъчно, затова е заковано в самата страница. Политиката за сигурност на съдържанието (Content-Security-Policy), с която сайтът се доставя, позволява на браузъра да се свързва само с vyarno.bg и никъде другаде, и да изпълнява само наш код. Ако някой добави следящ скрипт, той няма да проработи скришом — той ще се счупи.",
+            bg: "Обещанието не е достатъчно, затова е заложено в самата страница. Политиката за сигурност на съдържанието (Content-Security-Policy), с която сайтът се доставя, позволява на браузъра да се свързва само с vyarno.bg и никъде другаде, и да изпълнява само наш код. Ако някой добави следящ скрипт, той няма да проработи скришом — просто ще се счупи.",
             en: "A promise is not enough, so it is nailed down in the page itself. The Content-Security-Policy the site is served with allows the browser to connect only to vyarno.bg and nowhere else, and to execute only our own code. If someone added a tracking script it would not quietly work — it would break.",
           },
           {
-            bg: "Шрифтовете също са наши и се доставят от нашия адрес, а не от чужда мрежа за доставка. Към тази версия браузърът ти не праща нито една заявка към трето лице. Ако някога се наложи, политиката трябва да бъде разхлабена явно и видимо — и този раздел се сменя заедно с нея, в същото издание.",
+            bg: "Шрифтовете също са наши и се доставят от нашия адрес, а не от чужда мрежа за доставка. В тази версия браузърът ти не праща нито една заявка към трето лице. Ако някога се наложи, политиката трябва да бъде разхлабена явно и видимо — и този раздел се сменя заедно с нея, в същото издание.",
             en: "The fonts are ours too and are served from our own address rather than a third-party network. As of this version your browser makes not one request to a third party. If that ever has to change, the policy must be relaxed explicitly and visibly — and this section changes with it, in the same release.",
           },
         ],
@@ -745,7 +745,7 @@ const DOC_BODIES = [
         h: { bg: "Ако това някога се промени", en: "If this ever changes" },
         p: [
           {
-            bg: "Изречението на първата страница — „Всичко е анонимно, не събираме лични данни“ — е обещание, което трябва да остане вярно. Ако някога построим нещо, което го променя, изречението се променя в същото издание, а не по-късно. Обещанието не бива да оцелява след истината.",
+            bg: "Изречението на първата страница — „Всичко е анонимно, не събираме лични данни“ — е обещание, което трябва да остане вярно. Ако някога построим нещо, което го променя, изречението се променя в същото издание, а не по-късно. Обещанието не бива да надживява истината.",
             en: "The sentence on the front page — “everything is anonymous, we don't collect personal data” — is a promise that has to stay true. If we ever build something that changes it, the sentence changes in the same release, not later. A promise must not outlive the truth.",
           },
         ],
@@ -759,7 +759,7 @@ const DOC_BODIES = [
             en: "If you have found a security problem, write to contact@vyarno.bg. Describe what you saw and how to reproduce it; if it helps we will agree a way to exchange encrypted messages. We acknowledge receipt within three working days.",
           },
           {
-            bg: "Молим за разумно поведение: без изтегляне на данни в обем, без промяна или изтриване на нещо, без изпробвания, които влошават достъпа на други хора, и без разгласяване, преди да сме имали възможност да поправим. Ако се държиш така, няма да предприемаме действия срещу теб. Не плащаме награди — сайтът не държи чужди лични данни, така че наградата би била в непропорционален размер спрямо риска.",
+            bg: "Молим за разумно поведение: без масово изтегляне на данни, без промяна или изтриване на нещо, без опити, които влошават достъпа на други хора, и без разгласяване, преди да сме имали възможност да го поправим. Ако се държиш така, няма да предприемаме действия срещу теб. Не плащаме награди — сайтът не държи чужди лични данни, така че наградата би била несъразмерна на риска.",
             en: "We ask for reasonable behaviour: no bulk data extraction, no modifying or deleting anything, no testing that degrades access for other people, and no disclosure before we have had a chance to fix it. Behave that way and we will take no action against you. We do not pay bounties — the site holds no one else's personal data, so a bounty would be out of proportion to the risk.",
           },
         ],
@@ -776,7 +776,7 @@ const DOC_BODIES = [
         h: { bg: "Кой предоставя услугата", en: "Who provides the service" },
         p: [
           {
-            bg: "Вярно е личен проект на едно физическо лице, предоставя се безплатно и не продава нищо. Няколко от точките на чл. 4 от Закона за електронната търговия се дължат само при вписване в регистър, при лицензионен режим или при регистрация по ЗДДС — нито едно от които не е налице тук, а и не зависи от това дали услугата е платена. Останалите се дължат от всеки доставчик и стоят по-долу: име, дейност, два работещи пътя за връзка и адрес за кореспонденция при поискване.",
+            bg: "Вярно е личен проект на едно физическо лице, предоставя се безплатно и не продава нищо. Няколко от точките на чл. 4 от Закона за електронната търговия се дължат само при вписване в регистър, при лицензионен режим или при регистрация по ЗДДС — нито едно от тези условия не е налице тук и нито едно от тях не зависи от това дали услугата е платена. Останалите се дължат от всеки доставчик и стоят по-долу: име, дейност, два работещи пътя за връзка и адрес за кореспонденция при поискване.",
             en: "Vyarno is one natural person's side project, provided free of charge, and it sells nothing. Several points of art. 4 of the Bulgarian E-Commerce Act are owed only on entry in a register, under a licensing regime, or on VAT registration — none of which applies here, and none of which turns on whether the service is paid for. The rest are owed by every provider and stand below: a name, an activity, two working contact routes and a correspondence address on request.",
           },
           {
@@ -784,7 +784,7 @@ const DOC_BODIES = [
             en: "The address is given on request rather than printed here, because the provider is a natural person and their permanent address is a home address. The route to it is published and it is answered; if that ever stops being true, the right answer is to print the address, not to soften the sentence.",
           },
           {
-            bg: "Няма редове, отбелязани като „предстои“, и това е нарочно: ред, който стои „предстои“ с години, не се различава от пропуск. Ако някой ден Вярно започне да получава плащания, законът иска повече — вписване в регистър, при случай и регистрация по ЗДДС — и тогава те се появяват тук в същото издание, в което се появи и първото плащане.",
+            bg: "Няма редове, отбелязани като „предстои“, и това е нарочно: ред, който стои „предстои“ с години, не се различава от пропуск. Ако някой ден Вярно започне да получава плащания, законът иска повече — вписване в регистър, а при нужда и регистрация по ЗДДС — и тогава те се появяват тук в същото издание, в което се появи и първото плащане.",
             en: "No row here is marked “pending”, and that is deliberate: a row that reads “pending” for years is indistinguishable from an oversight. If Vyarno ever starts taking payment the law asks for more — a register entry, and VAT registration where it applies — and those appear here in the same release as the first payment, not later.",
           },
         ],
@@ -864,7 +864,7 @@ const DOC_BODIES = [
         h: { bg: "Уговорка за преизчислените числа", en: "Disclaimer on the figures we recompute" },
         p: [
           {
-            bg: "Ценовият индекс на Евростат стои тук такъв, какъвто е публикуван — не го пребазираме и не го преизчисляваме. Наш е само изборът кои четения показваме: за всяка година вземаме декемврийското, а годините без декември изпадат. Едно число обаче е наистина преизчислено — подредбата на заплатите е моделирана от трите публикувани децила на изследването за структурата на заплатите, защото Евростат публикува само тях, а между тях няма междинни. Обозначено е до самото число. Тежестите на групите в кошницата са на Евростат, но в проценти, а не в промили, както ги публикуват. Евростат не носи отговорност за тези наши преработки, нито за изводите, които някой прави от тях — отговорността е наша. Числата на НСИ, БНБ и ЕЦБ се показват така, както са публикувани. Кварталните цени на имот.bg — също, но имот.bg не публикува обща стойност за София. Числото за града на тази страница е медианата на техните квартални цени, а промяната спрямо 2015 г. сравнява същата медиана с медианата за онази година. Двете числа са наши.",
+            bg: "Ценовият индекс на Евростат стои тук такъв, какъвто е публикуван — не го пребазираме и не го преизчисляваме. Наш е само изборът кои четения показваме: за всяка година вземаме декемврийското, а годините без декември изпадат. Едно число обаче е наистина преизчислено — подредбата на заплатите е моделирана от трите публикувани децила на изследването за структурата на заплатите, защото Евростат публикува само тях, а между тях няма междинни. Обозначено е до самото число. Тежестите на групите в кошницата са на Евростат, но в проценти, а не в промилите, в които ги публикуват. Евростат не носи отговорност за тези наши преработки, нито за изводите, които някой прави от тях — отговорността е наша. Числата на НСИ, БНБ и ЕЦБ се показват така, както са публикувани. Кварталните цени на имот.bg — също, но имот.bg не публикува обща стойност за София. Числото за града на тази страница е медианата на техните квартални цени, а промяната спрямо 2015 г. сравнява същата медиана с медианата за онази година. Двете числа са наши.",
             en: "Eurostat's price index stands here as published — we do not rebase it and we do not recompute it. What is ours is only the choice of which readings to show: for each year we take the December one, and a year without a December drops out. One figure is genuinely recomputed: the pay ladder is modelled from the three published deciles of the Structure of Earnings Survey, because those three are all Eurostat publishes and there is nothing in between them. It is marked as such next to the figure. The basket weights are Eurostat's, shown in percent rather than the per-thousand they publish. Eurostat bears no responsibility for that work of ours, nor for any conclusion drawn from it — the responsibility is ours. The figures from НСИ, БНБ and the ECB are shown as published. So are имот.bg's per-district prices, but имот.bg publishes no city-wide figure for Sofia. The €/m² for the city on this page is the median across their districts, and the change since 2015 compares that same median against the one for that year. Both of those figures are ours.",
           },
         ],

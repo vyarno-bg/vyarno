@@ -1296,7 +1296,7 @@ export const COPY = {
   loadingK: { bg: "Зареждане на официалните данни…", en: "Loading the official data…" },
   errHead: { bg: "Данните не се заредиха.", en: "The data didn't load." },
   errBody: {
-    bg: "Няма връзка или файловете с данни не отговарят в момента. Нищо от твоите числа не е изгубено и нищо не е изпращано никъде — сметката се случва в браузъра ти. Опитай пак след малко.",
+    bg: "Няма връзка или файловете с данни не отговарят в момента. Нищо от твоите числа не е изгубено и нищо не е изпращано никъде — сметката се прави в браузъра ти. Опитай пак след малко.",
     en: "There's no connection, or the data files aren't responding right now. None of your figures were lost and nothing was sent anywhere — the calculation happens in your browser. Try again in a moment.",
   },
   errRetry: { bg: "Опитай пак", en: "Try again" },
