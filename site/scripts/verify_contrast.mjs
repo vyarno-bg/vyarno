@@ -16,6 +16,13 @@
  * Reading the numbers: WCAG 2.1 AA wants **4.5:1** for body text and **3:1**
  * for large text (>=18.66px bold, or >=24px). Everything below is small text,
  * so 4.5 is the bar, with no exceptions carved out.
+ *
+ * **This file knows what a token is worth against a flat surface, and that is
+ * all it knows.** It cannot see a fade declared in a component, a translucent
+ * band painted under the text, or two of those multiplying.
+ * `verify_render_contrast.mjs` walks the built page and measures what the
+ * reader is actually given. It is the broader guard; the `.support` test at
+ * the bottom of this file overlaps it deliberately and says why.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -120,6 +127,14 @@ test("the footer's support line renders at the ratio its token promises", () => 
   // like a taste dial and it is arithmetic on a contrast ratio. So this
   // recomputes the ratio the rule actually renders at, reading the component
   // rather than the palette, and the lever cannot be pulled quietly.
+  //
+  // **This is not a duplicate of `verify_render_contrast.mjs`, which measures
+  // every fade on the page and this one rule among them.** That suite needs a
+  // browser and SKIPS without one; this file always runs. Between a
+  // contributor with no Chromium and a re-faded footer there is nothing else,
+  // which is the test docs/testing-strategy.md §"Would this go red while a
+  // broader check stays green?" asks — it goes red on a run where the broader
+  // one asserted nothing at all. Do not retire it as redundant.
   const FOOTER = readFileSync(join(HERE, "..", "src", "lib", "SiteFooter.svelte"), "utf-8");
   const rule = FOOTER.match(/\.support\s*\{([^}]*)\}/);
   assert.ok(rule, ".support is gone from SiteFooter.svelte — the support line with it?");
