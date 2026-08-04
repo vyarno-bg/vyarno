@@ -164,10 +164,10 @@
 
 <div class="bars-cap mono">
   {#if calc.anchor === "y1"}
-    <span class="l-bg">с колко поскъпна кошницата - за 1 година</span>
+    <span class="l-bg">с колко поскъпна кошницата — за 1 година</span>
     <span class="l-en">how much your basket rose - over 1 year</span>
   {:else}
-    <span class="l-bg">с колко поскъпна кошницата - от {calc.anchor} насам</span>
+    <span class="l-bg">с колко поскъпна кошницата — от {calc.anchor} насам</span>
     <span class="l-en">how much your basket rose - since {calc.anchor}</span>
   {/if}
 </div>

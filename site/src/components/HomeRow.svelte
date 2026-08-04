@@ -179,7 +179,7 @@
         {#if mortCapGap > 0}
           вноската е с <b style="color:var(--erode)">{fmt0(mortCapGap)} €/мес над</b> границата.
         {:else}
-          вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата - побира
+          вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата — побира
           се в бюджета.
         {/if}
       </span>
@@ -226,7 +226,7 @@
             <span class="l-bg"
               >можеш да си позволиш дом до <b>{fmt0(maxAffordPrice)} €</b> ·
               <b>{fmt(maxAffordM2, 0)} м²</b>
-              - избраният ({fmt0(homePrice)} €) е под границата.</span
+              — избраният ({fmt0(homePrice)} €) е под границата.</span
             >
             <span class="l-en"
               >you can afford up to <b>{fmt0(maxAffordPrice)} €</b> ·

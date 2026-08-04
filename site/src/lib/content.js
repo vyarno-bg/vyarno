@@ -93,7 +93,7 @@ export const HOME = {
 
 export const COPY = {
   // Page-level
-  title: { bg: "Вярно - сметни своята инфлация", en: "Vyarno - work out your inflation" },
+  title: { bg: "Вярно — сметни своята инфлация", en: "Vyarno - work out your inflation" },
   h1: { bg: "Твоите числа. Твоята реалност.", en: "Your numbers. Your reality." },
   privacy: {
     bg: "Всичко е анонимно, не събираме лични данни",
@@ -139,7 +139,7 @@ export const COPY = {
   // repeating «Твоите числа» — two identical headings in one column read as a
   // rendering fault. It also sets the expectation the card is built on: none of
   // it has to be filled in for the page to answer.
-  restOfNumbers: { bg: "Ако искаш - още за теб", en: "If you like - more about you" },
+  restOfNumbers: { bg: "Ако искаш — още за теб", en: "If you like - more about you" },
   netPay: { bg: "Нетна заплата", en: "Net pay" },
   // ONE person's take-home, and the hint has to keep saying so. It used to
   // offer «твоята или общо за домакинството» — enter yours, or the household's
@@ -168,7 +168,7 @@ export const COPY = {
   // the "median NET pay · Sofia" card. Calling it "typical" or "the median"
   // would be false twice over. docs/principles.md P7: no unsourced defaults.
   medianDefault: {
-    bg: "числото е просто начална стойност - смени го с твоята заплата",
+    bg: "числото е просто начална стойност — смени го с твоята заплата",
     en: "that's just a starting value - replace it with your own pay",
   },
 
@@ -195,11 +195,11 @@ export const COPY = {
   // The one-line answer under the pay field. Unchanged wording for a single
   // earner — it is the sentence that was already there.
   payGross: {
-    bg: "по договор (бруто) това е ≈ {g} € - от тях {i} € осигуровки и {t} € данък, или {r}% удръжки",
+    bg: "по договор (бруто) това е ≈ {g} € — от тях {i} € осигуровки и {t} € данък, или {r}% удръжки",
     en: "on the contract (gross) that's ≈ {g} € - of which {i} € contributions and {t} € tax, i.e. {r}% deducted",
   },
   payGrossHousehold: {
-    bg: "по договорите (бруто) заедно ≈ {g} € - от тях {i} € осигуровки и {t} € данък, или {r}% удръжки общо",
+    bg: "по договорите (бруто) заедно ≈ {g} € — от тях {i} € осигуровки и {t} € данък, или {r}% удръжки общо",
     en: "on the contracts (gross) together ≈ {g} € - of which {i} € contributions and {t} € tax, i.e. {r}% deducted overall",
   },
   // Why the household gross is not what one person on the same take-home would
@@ -208,7 +208,7 @@ export const COPY = {
   // conclude we are wrong — they will get a smaller number, and it will be the
   // wrong one.
   householdSeparate: {
-    bg: "Върху всяка заплата се плащат осигуровки поотделно, до собствения ѝ таван - затова сборът от брутните заплати не е това, което един човек би получавал за същото нето.",
+    bg: "Върху всяка заплата се плащат осигуровки поотделно, до собствения ѝ таван — затова сборът от брутните заплати не е това, което един човек би получавал за същото нето.",
     en: "Each wage is insured separately, up to its own ceiling - so the sum of the gross salaries is not what a single person would be paid for the same take-home.",
   },
   earnerPayslipHead: { bg: "Доход {n} · {s} € нето", en: "Income {n} · {s} € net" },
@@ -224,7 +224,7 @@ export const COPY = {
   basisGross: { bg: "бруто", en: "gross" },
   basisGroup: { bg: "Каква заплата въвеждаш", en: "Which figure you are entering" },
   basisHint: {
-    bg: "Въведи каквото знаеш - чистото, което ти влиза, или брутното от договора. Сметките отдолу са едни и същи.",
+    bg: "Въведи каквото знаеш — чистото, което ти влиза, или брутното от договора. Сметките отдолу са едни и същи.",
     en: "Enter whichever you know - what actually reaches you, or the gross on your contract. The figures below are the same either way.",
   },
   // Both readings, always, so the toggle never leaves the reader wondering
@@ -234,11 +234,11 @@ export const COPY = {
   // In gross mode the answer runs the other way: they typed the contract, so
   // the sentence reports what reaches them.
   payNetFromGross: {
-    bg: "на ръка (нето) това е ≈ {n} € - удържат се {i} € осигуровки и {t} € данък, или {r}%",
+    bg: "на ръка (нето) това е ≈ {n} € — удържат се {i} € осигуровки и {t} € данък, или {r}%",
     en: "in hand (net) that's ≈ {n} € - {i} € contributions and {t} € tax are withheld, i.e. {r}%",
   },
   payNetFromGrossHousehold: {
-    bg: "на ръка (нето) заедно ≈ {n} € - удържат се {i} € осигуровки и {t} € данък, или {r}% общо",
+    bg: "на ръка (нето) заедно ≈ {n} € — удържат се {i} € осигуровки и {t} € данък, или {r}% общо",
     en: "in hand (net) together ≈ {n} € - {i} € contributions and {t} € tax withheld, i.e. {r}% overall",
   },
   // The itemised payslip behind the back-computed gross. The one-line summary
@@ -263,7 +263,7 @@ export const COPY = {
   // most net→gross calculators get wrong. Naming the figure is what lets a
   // reader see WHY the contributions stopped growing with the salary.
   payslipCap: {
-    bg: "таван - осигуровките спират на {cap} €",
+    bg: "таван — осигуровките спират на {cap} €",
     en: "ceiling - contributions stop at {cap} €",
   },
   // The fund's own name, spelled the way the statute that names it spells it:
@@ -285,7 +285,7 @@ export const COPY = {
   // The provenance line. The rates are not ours and the reader should not have
   // to take our word for which year they are — docs/principles.md §"Identity", no bluff.
   payslipSource: {
-    bg: "Ставки за {year} г., трета категория труд, родени след 1959 г. Осигуровките се смятат до осигурителния таван, данъкът - върху целия облагаем доход.",
+    bg: "Ставки за {year} г., трета категория труд, родени след 1959 г. Осигуровките се смятат до осигурителния таван, данъкът — върху целия облагаем доход.",
     en: "{year} rates, third labour category, born after 1959. Contributions are charged up to the insurance ceiling; the tax is charged on the whole taxable income.",
   },
   raiseLabel: { bg: "Увеличение за 1 година", en: "Raise over 1 year" },
@@ -297,16 +297,16 @@ export const COPY = {
   // before it can be stated at all: a blank read as 0% is an invented number
   // that drags the household's figure down (P7).
   raiseLabelEarner: {
-    bg: "Увеличение за 1 година - доход {n}",
+    bg: "Увеличение за 1 година — доход {n}",
     en: "Raise over 1 year - income {n}",
   },
-  raiseSinceEarner: { bg: "Увеличение от {y} - доход {n}", en: "Raise since {y} - income {n}" },
+  raiseSinceEarner: { bg: "Увеличение от {y} — доход {n}", en: "Raise since {y} - income {n}" },
   pocketMissingOne: {
-    bg: "Въведи увеличението и за доход {n} - иначе не знаем какво стана с дохода на домакинството.",
+    bg: "Въведи увеличението и за доход {n} — иначе не знаем какво стана с дохода на домакинството.",
     en: "Enter the raise for income {n} too - without it we cannot tell what happened to the household's pay.",
   },
   pocketMissingMany: {
-    bg: "Въведи увеличението и за останалите доходи ({n}) - иначе не знаем какво стана с дохода на домакинството.",
+    bg: "Въведи увеличението и за останалите доходи ({n}) — иначе не знаем какво стана с дохода на домакинството.",
     en: "Enter the raise for the other incomes ({n}) too - without them we cannot tell what happened to the household's pay.",
   },
   // The combined figure is not one of the numbers the reader typed, so the row
@@ -350,7 +350,7 @@ export const COPY = {
   homeHeading: { bg: "Домът", en: "A home" },
   homeToggle: { bg: "гледам жилище за покупка", en: "I'm eyeing a home to buy" },
   homeHint: {
-    bg: "включи, ако гледаш - ако вече имаш дом или не търсиш, остави изключено",
+    bg: "включи, ако гледаш — ако вече имаш дом или не търсиш, остави изключено",
     en: "turn on if you're looking - leave off if you already own or aren't shopping",
   },
   // Price source radio, for someone who has already found a home. The
@@ -393,7 +393,7 @@ export const COPY = {
   // one too. A legend that opens by explaining the columns confirms it: it is
   // the app teaching them to read a table one line before they decide it is one.
   basketLegend: {
-    bg: "Тринайсетте групи са на Евростат, но числата до тях са твои - всеки ред се мести. До името е поскъпването за избрания период, вдясно - твоят дял и ≈ €/месец.",
+    bg: "Тринайсетте групи са на Евростат, но числата до тях са твои — всеки ред се мести. До името е поскъпването за избрания период, вдясно — твоят дял и ≈ €/месец.",
     en: "The thirteen groups are Eurostat's, but the numbers beside them are yours - every row moves. By the name, how much it rose over the chosen period; on the right, your share and ≈ €/month.",
   },
   // Shown when home is on. Tells the user why the € column drops after
@@ -403,13 +403,13 @@ export const COPY = {
   // thing a reader has to guess at, and the two languages may not disagree
   // about whether it is there.
   basketCarved: {
-    bg: "Имаш активна вноска {mort} €/мес - сумите вдясно вече са от остатъка след нея. Процентите не се променят.",
+    bg: "Имаш активна вноска {mort} €/мес — сумите вдясно вече са от остатъка след нея. Процентите не се променят.",
     en: "You have a €{mort}/mo mortgage active - the € per group is now carved out of what's left after it. Percentages stay the same.",
   },
   // The rent case mirrors basketCarved, so the €/group tracks the leftover
   // after rent exactly as it does after a mortgage payment.
   rentCarved: {
-    bg: "Плащаш наем {rent} €/мес - сумите вдясно вече са от остатъка след него. Процентите не се променят.",
+    bg: "Плащаш наем {rent} €/мес — сумите вдясно вече са от остатъка след него. Процентите не се променят.",
     en: "You pay €{rent}/mo rent - the € per group is now carved out of what's left after it. Percentages stay the same.",
   },
   // **The chips name a basket, never a person.** In the first person - «карам
@@ -444,7 +444,7 @@ export const COPY = {
   // figure inherits the obligation to say where it came from (docs/principles.md P3), so
   // the caveat travels with it.
   presetActive: {
-    bg: "Числото е сметнато по готовата кошница „{p}“ - тя е измислена от нас за пример, не е измерена. Дръпни плъзгачите към своите разходи, за да стане твое.",
+    bg: "Числото е сметнато по готовата кошница „{p}“ — тя е измислена от нас за пример, не е измерена. Дръпни плъзгачите към своите разходи, за да стане твое.",
     en: 'This is computed from the ready-made "{p}" basket - our illustration, not a measured one. Drag the sliders to your own spending to make it yours.',
   },
 
@@ -458,7 +458,7 @@ export const COPY = {
   // differently: the € tally measures what is left off thirteen typed amounts,
   // the share control states it in one number.
   modeHint: {
-    bg: "Повечето хора знаят по-добре колко харчат в евро, отколкото в проценти. Избери както ти е удобно - сметката е същата. И по двата начина не е нужно да разпределиш цялата заплата.",
+    bg: "Повечето хора знаят по-добре колко харчат в евро, отколкото в проценти. Избери както ти е удобно — сметката е същата. И по двата начина не е нужно да разпределиш цялата заплата.",
     en: "Most people know their euros better than their percentages. Pick whichever suits you - the maths is identical. Neither way asks you to place your whole pay.",
   },
   // ---- How much of the pay is spent at all --------------------------------
@@ -522,11 +522,11 @@ export const COPY = {
   // older "after housing" phrasing read as a lie to anyone who never
   // entered any housing (verify_copy pins both rules).
   leftLeadNoHousing: {
-    bg: "<b>€{m}</b> на месец остават извън кошницата ти - <b>{p}%</b> от парите, които ти остават. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
+    bg: "<b>€{m}</b> на месец остават извън кошницата ти — <b>{p}%</b> от парите, които ти остават. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
     en: "<b>€{m}</b> a month stays outside your basket - <b>{p}%</b> of what's left of your take-home. You don't have to place all of it: your number is worked out on what you actually spend.",
   },
   leftLeadWithHousing: {
-    bg: "<b>€{m}</b> на месец остават извън кошницата ти - <b>{p}%</b> от парите, които ти остават след <b>€{h}</b> за жилище. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
+    bg: "<b>€{m}</b> на месец остават извън кошницата ти — <b>{p}%</b> от парите, които ти остават след <b>€{h}</b> за жилище. Не е нужно да разпределиш всичко: числото ти е сметнато върху това, което наистина харчиш.",
     en: "<b>€{m}</b> a month stays outside your basket - <b>{p}%</b> of what's left of your take-home after the <b>€{h}</b> you said goes to housing. You don't have to place all of it: your number is worked out on what you actually spend.",
   },
   leftYear: {
@@ -534,29 +534,29 @@ export const COPY = {
     en: "If that repeats every month, it comes to <b>€{y}</b> over a year.",
   },
   leftCash: {
-    bg: "Оставени в брой, при инфлация {i}% те биха купували с <b>€{e}</b> по-малко след година - колкото <b>€{v}</b> днес. Ако ги вложиш някъде и ти носят по-малко от {i}% на година, пак изостават от цените, само по-бавно.",
+    bg: "Оставени в брой, при инфлация {i}% те биха купували с <b>€{e}</b> по-малко след година — колкото <b>€{v}</b> днес. Ако ги вложиш някъде и ти носят по-малко от {i}% на година, пак изостават от цените, само по-бавно.",
     en: "Kept as cash at {i}% inflation, that money would buy <b>€{e}</b> less in a year - as much as <b>€{v}</b> buys today. Put somewhere that pays less than {i}% a year, it still trails prices, just more slowly.",
   },
   leftAssume: {
-    bg: "допускане: цените се движат следващата година както през последната. Това е сметка, не прогноза - Евростат не прогнозира.",
+    bg: "допускане: цените се движат следващата година както през последната. Това е сметка, не прогноза — Евростат не прогнозира.",
     en: "assumption: prices move over the next year as they did over the last. This is arithmetic, not a forecast - Eurostat does not publish one.",
   },
   // Same two-variant pattern as `leftLead*`: the over-budget branch fires
   // regardless of whether the home block is on, and the wording must hold in
   // both cases.
   leftOverNoHousing: {
-    bg: "Разпределил си <b>€{m}</b> повече от парите, които ти остават. Числото ти е сметнато точно върху въведеното - провери дали някъде не си сложил повече, отколкото даваш.",
+    bg: "Разпределил си <b>€{m}</b> повече от парите, които ти остават. Числото ти е сметнато точно върху въведеното — провери дали някъде не си сложил повече, отколкото даваш.",
     en: "You've placed <b>€{m}</b> more than you have left. Your number is worked out on exactly what you entered - worth checking whether one of the rows is bigger than what you really pay.",
   },
   leftOverWithHousing: {
-    bg: "Разпределил си <b>€{m}</b> повече от парите, които ти остават след <b>€{h}</b> за жилище. Числото ти е сметнато точно върху въведеното - провери дали някъде не си сложил повече, отколкото даваш.",
+    bg: "Разпределил си <b>€{m}</b> повече от парите, които ти остават след <b>€{h}</b> за жилище. Числото ти е сметнато точно върху въведеното — провери дали някъде не си сложил повече, отколкото даваш.",
     en: "You've placed <b>€{m}</b> more than you have left after the <b>€{h}</b> you said goes to housing. Your number is worked out on exactly what you entered - worth checking whether one of the rows is bigger than what you really pay.",
   },
 
   // Drill-down into ECOICOP groups
   detailToggle: { bg: "покажи по-подробно", en: "show more detail" },
   detailHint: {
-    bg: "Всяка група се разпъва на подгрупи - например транспортът се дели на кола, гориво и билети. Отвориш ли я, числото не се променя; променя се само ако преместиш нещо вътре.",
+    bg: "Всяка група се разпъва на подгрупи — например транспортът се дели на кола, гориво и билети. Отвориш ли я, числото не се променя; променя се само ако преместиш нещо вътре.",
     en: "Each group opens into sub-groups - transport splits into buying a car, running it, and tickets. Opening one changes nothing; only moving something inside does.",
   },
   detailOpen: { bg: "разпъни", en: "expand" },
@@ -581,7 +581,7 @@ export const COPY = {
     en: "it rose <b>{r}%</b> · your share of it is <b>{w}%</b>",
   },
   rankFalling: {
-    bg: "поевтиня - тегли числото ти надолу",
+    bg: "поевтиня — тегли числото ти надолу",
     en: "got cheaper - pulling your number down",
   },
   // The tail of the list. Only the eight biggest rows are drawn, but
@@ -620,7 +620,7 @@ export const COPY = {
   // wrong would teach the reader to distrust figures that are about to become
   // theirs. Naming whose money it is does the whole job.
   startingSalary: {
-    bg: "Сметнато е с начална заплата €{s} на месец - не с твоята.",
+    bg: "Сметнато е с начална заплата €{s} на месец — не с твоята.",
     en: "Computed with a starting pay of €{s} a month - not yours.",
   },
   // The button beside it. This is the only route from the results to the
@@ -692,14 +692,14 @@ export const COPY = {
     en: "Say what your raise was, to see whether you are outrunning your prices.",
   },
   answerStandOne: {
-    bg: "По чиста заплата си пред <b>{r}%</b> от работещите в София - приблизително, не точно.",
+    bg: "По чиста заплата си пред <b>{r}%</b> от работещите в София — приблизително, не точно.",
     en: "By take-home pay you are ahead of <b>{r}%</b> of Sofia earners - roughly, not exactly.",
   },
   // The household form states a range and says why it is one: the rungs are
   // individual earnings, so two wages of €900 are two people at the 34th
   // percentile rather than one person at the 78th.
   answerStandMany: {
-    bg: "Заплатите в домакинството са пред <b>{low}%</b> до <b>{high}%</b> от работещите в София - всяка поотделно, приблизително.",
+    bg: "Заплатите в домакинството са пред <b>{low}%</b> до <b>{high}%</b> от работещите в София — всяка поотделно, приблизително.",
     en: "The household's wages are ahead of <b>{low}%</b> to <b>{high}%</b> of Sofia earners - each on its own, roughly.",
   },
   answerStandAsk: {
@@ -741,7 +741,7 @@ export const COPY = {
   // near-zero band says which side of the line it is on.
   pocketOk: { bg: "Изпреварваш собствените си цени.", en: "You are outrunning your own prices." },
   pocketBad: {
-    bg: "Увеличението е изядено - твоите цени тичат по-бързо.",
+    bg: "Увеличението е изядено — твоите цени тичат по-бързо.",
     en: "The raise has been eaten - your prices run faster.",
   },
   pocketZero: {
@@ -749,11 +749,11 @@ export const COPY = {
     en: "Exactly level: your raise covers your prices.",
   },
   pocketNearUp: {
-    bg: "Почти на нула - увеличението ти изпреварва твоите цени с мъничко.",
+    bg: "Почти на нула — увеличението ти изпреварва твоите цени с мъничко.",
     en: "Practically level - your raise is a touch ahead of your prices.",
   },
   pocketNearDn: {
-    bg: "Почти на нула - увеличението ти изостава мъничко от твоите цени.",
+    bg: "Почти на нула — увеличението ти изостава мъничко от твоите цени.",
     en: "Practically level - your raise falls a touch short of your prices.",
   },
   // NO raise is the most common state of all — and «увеличението е изядено»
@@ -811,7 +811,7 @@ export const COPY = {
   // once put every Sofia salary in the 99th percentile. So each income gets its
   // own line and the median is stated once underneath.
   pctEarnerLine: {
-    bg: "Доход {n} - <b>€{s}</b> - изпреварва <b>{r}%</b> от работещите в София.",
+    bg: "Доход {n} — <b>€{s}</b> — изпреварва <b>{r}%</b> от работещите в София.",
     en: "Income {n} - <b>€{s}</b> - is ahead of <b>{r}%</b> of Sofia earners.",
   },
   pctMedian: {
@@ -819,7 +819,7 @@ export const COPY = {
     en: "The median net pay in Sofia is <b>€{m}/mo</b>.",
   },
   pctHouseholdNote: {
-    bg: "Класираме всяка заплата поотделно - подредбата показва какво изкарват отделните хора, а не домакинствата. Две заплати по €900 не са един човек с €1800.",
+    bg: "Класираме всяка заплата поотделно — подредбата показва какво изкарват отделните хора, а не домакинствата. Две заплати по €900 не са един човек с €1800.",
     en: "Each wage is ranked on its own - the ladder is what individual people earn, not what households do. Two wages of €900 are not one person on €1,800.",
   },
   // The comparison is now net-vs-net (individual), so it's a direct rank, not
@@ -919,7 +919,7 @@ export const COPY = {
   },
   // Shown when the user is ABOVE the ceiling.
   wedgeOver: {
-    bg: "Заплатата ти преди удръжките (бруто) е ≈ <b>€{gross}</b> - над границата, до която се плащат осигуровки (<b>€{cap}</b> на месец). Затова от увеличение на заплатата ти ще удържат само <b>10%</b> данък, а не <b>{peak}%</b>, колкото удържат на човек под границата. Общо от заплатата ти отиват <b>{eff}%</b> - и този дял намалява с всяко следващо увеличение.",
+    bg: "Заплатата ти преди удръжките (бруто) е ≈ <b>€{gross}</b> — над границата, до която се плащат осигуровки (<b>€{cap}</b> на месец). Затова от увеличение на заплатата ти ще удържат само <b>10%</b> данък, а не <b>{peak}%</b>, колкото удържат на човек под границата. Общо от заплатата ти отиват <b>{eff}%</b> — и този дял намалява с всяко следващо увеличение.",
     en: "Your pay before deductions (gross) is ≈ <b>€{gross}</b> - above the line up to which contributions are paid (<b>€{cap}</b> a month). So a raise loses only <b>10%</b> to tax, not the <b>{peak}%</b> taken from someone below the line. In total <b>{eff}%</b> of your pay is taken, and that share shrinks with every further raise.",
   },
   // Shown when the household has more than one income. The lead states the
@@ -929,11 +929,11 @@ export const COPY = {
   // row. A single figure over two earners would hide the one thing the chart is
   // drawn to show.
   wedgeHouseholdLead: {
-    bg: "Заплатите в домакинството преди удръжките (бруто) са ≈ <b>€{gross}</b> общо. От тях <b>{eff}%</b> отиват за осигуровки и данък. Осигуровките спират на <b>€{cap}</b> бруто на месец - но поотделно за всяка заплата, не за сбора:",
+    bg: "Заплатите в домакинството преди удръжките (бруто) са ≈ <b>€{gross}</b> общо. От тях <b>{eff}%</b> отиват за осигуровки и данък. Осигуровките спират на <b>€{cap}</b> бруто на месец — но поотделно за всяка заплата, не за сбора:",
     en: "The household's pay before deductions (gross) is ≈ <b>€{gross}</b> in total. Of it, <b>{eff}%</b> goes to contributions and tax. Contributions stop at <b>€{cap}</b> gross a month - but for each wage on its own, not for the sum:",
   },
   wedgeEarnerLine: {
-    bg: "доход {n}: ≈ <b>€{gross}</b> бруто - удържат се <b>{eff}%</b>{cap}",
+    bg: "доход {n}: ≈ <b>€{gross}</b> бруто — удържат се <b>{eff}%</b>{cap}",
     en: "income {n}: ≈ <b>€{gross}</b> gross - <b>{eff}%</b> deducted{cap}",
   },
   wedgeEarnerOverCap: { bg: " (над границата)", en: " (over the line)" },
@@ -955,7 +955,7 @@ export const COPY = {
   // every salary, which is why the chart must not be allowed to read as though
   // the line lands there.
   wedgeWhy: {
-    bg: "Данъкът е плосък - <b>10%</b> за всички. Удръжките не са: осигуровки се плащат само до определена заплата, а данък - върху всичко. Затова при по-висока заплата делът, който се удържа от увеличението, <b>пада</b> от <b>{peak}%</b> на <b>10%</b>. Средното за цялата заплата също пада, но по-бавно - и никога до <b>10%</b>, защото осигуровките до <b>€{cap}</b> вече са платени.",
+    bg: "Данъкът е плосък — <b>10%</b> за всички. Удръжките не са: осигуровки се плащат само до определена заплата, а данък — върху всичко. Затова при по-висока заплата делът, който се удържа от увеличението, <b>пада</b> от <b>{peak}%</b> на <b>10%</b>. Средното за цялата заплата също пада, но по-бавно — и никога до <b>10%</b>, защото осигуровките до <b>€{cap}</b> вече са платени.",
     en: "The tax is flat - <b>10%</b> for everyone. The deductions are not: contributions are paid only up to a certain salary, while tax applies to all of it. So on a higher salary the share taken out of a raise <b>falls</b> from <b>{peak}%</b> to <b>10%</b>. The average over the whole salary falls too, but more slowly - and never to <b>10%</b>, because the contributions up to <b>€{cap}</b> have still been paid.",
   },
   // The chart key. The two curves are the effective and the marginal rate;
@@ -990,7 +990,7 @@ export const COPY = {
   // «повече НЕЩА» because "5% more" on its own reads as 5% more money, which
   // is the exact confusion this whole row exists to undo.
   standStillTxt: {
-    bg: "увеличението ти на фиш трябва да е <b>+{r}%</b> - точно колкото се вдигнаха твоите цени.<br>За да си купуваш с <b>{pct}%</b> повече неща - <b>+{rr}%</b>.",
+    bg: "увеличението ти на фиш трябва да е <b>+{r}%</b> — точно колкото се вдигнаха твоите цени.<br>За да си купуваш с <b>{pct}%</b> повече неща — <b>+{rr}%</b>.",
     en: "your raise on paper has to be <b>+{r}%</b> - exactly as much as your own prices rose.<br>To afford <b>{pct}%</b> more stuff - <b>+{rr}%</b>.",
   },
   // π ≤ 0 is reachable today: several published groups have negative annual
@@ -1005,20 +1005,20 @@ export const COPY = {
   rentK: { bg: "наемът", en: "the rent" },
   // The rent row's "what you entered" reminder, mirroring the mortgage row.
   rentEntered: {
-    bg: "Ти въведе <b>€{r}/мес</b> наем - това е <b>{p}%</b> от <b>€{s}</b> нетно.",
+    bg: "Ти въведе <b>€{r}/мес</b> наем — това е <b>{p}%</b> от <b>€{s}</b> нетно.",
     en: "You entered <b>€{r}/mo</b> rent - that's <b>{p}%</b> of <b>€{s}</b> net.",
   },
   // The household variant names whose €{s} it is. Rent is one payment out of
   // the money that arrives, whoever earned it — charging it to one earner would
   // report a couple splitting €600 on €1,800 together as carrying 67% each.
   rentEnteredHousehold: {
-    bg: "Ти въведе <b>€{r}/мес</b> наем - това е <b>{p}%</b> от <b>€{s}</b> нетно за домакинството.",
+    bg: "Ти въведе <b>€{r}/мес</b> наем — това е <b>{p}%</b> от <b>€{s}</b> нетно за домакинството.",
     en: "You entered <b>€{r}/mo</b> rent - that's <b>{p}%</b> of the household's <b>€{s}</b> net.",
   },
   // The markup is owned by the copy, not the template: a tag spliced into a
   // template literal renders as literal text.
   rentBurdenTxt: {
-    bg: "<b>{p}%</b> от дохода ти - {dir} границата от 30%.<br>{drama}",
+    bg: "<b>{p}%</b> от дохода ти — {dir} границата от 30%.<br>{drama}",
     en: "<b>{p}%</b> of your income - {dir} the 30% line.<br>{drama}",
   },
   rentDirOver: { bg: "над", en: "above" },
@@ -1032,7 +1032,7 @@ export const COPY = {
     en: "Until the <b>{day}</b> you work just for the rent.",
   },
   rentDramaAll: {
-    bg: "Целият месец отива за наема - и не стига.",
+    bg: "Целият месец отива за наема — и не стига.",
     en: "The whole month goes to the rent - and it still is not enough.",
   },
   rentDramaFine: {
@@ -1042,7 +1042,7 @@ export const COPY = {
   homeK: { bg: "домът", en: "a home" },
   cashK: { bg: "спестеното", en: "your savings" },
   cashTxt: {
-    bg: "Същите <b>€{c}</b> от 2020 г. купуват днес стока за <b>€{t}</b> - инфлацията изяде €{e}.",
+    bg: "Същите <b>€{c}</b> от 2020 г. купуват днес стока за <b>€{t}</b> — инфлацията изяде €{e}.",
     en: "The same <b>€{c}</b> since 2020 buy <b>€{t}</b> worth today - inflation ate €{e}.",
   },
 
@@ -1079,7 +1079,7 @@ export const COPY = {
   // has to strip one, and stripping it would be reaching into a formatter to fix
   // a sentence. English gets its own full stop because "June 2026" has none.
   explainSplitMonth: {
-    bg: "Този път двете са за различни месеци - Евростат публикува общата инфлация около две седмици преди разбивката по групи, а ние показваме всяко число с неговия месец, вместо да задържим по-новото. Общото е за {headline}, а числата по групи - за {basket}",
+    bg: "Този път двете са за различни месеци — Евростат публикува общата инфлация около две седмици преди разбивката по групи, а ние показваме всяко число с неговия месец, вместо да задържим по-новото. Общото е за {headline}, а числата по групи — за {basket}",
     en: "This time the two are for different months - Eurostat publishes the overall rate about two weeks before the group breakdown, and we show each figure with its own month rather than hold the newer one back. The overall figure is for {headline}, the per-group figures for {basket}.",
   },
   // The algebra behind all four figures, in ONE closed block at the very end
@@ -1104,7 +1104,7 @@ export const COPY = {
     en: "How is it worked out? In plain words, with the table and sources",
   },
   drawerPrecision: {
-    bg: "Сметките се правят с пълна точност. Закръгляме само това, което показваме - процентите до един знак след запетаята, евровите суми до цяло число. Затова понякога сборът на показаните числа излиза с една стотинка разлика.",
+    bg: "Сметките се правят с пълна точност. Закръгляме само това, което показваме — процентите до един знак след запетаята, евровите суми до цяло число. Затова понякога сборът на показаните числа излиза с една стотинка разлика.",
     en: "The maths runs at full precision. Only what we display is rounded - percentages to one decimal, euro amounts to whole euros. That is why the figures on screen can add up a cent apart.",
   },
 
@@ -1225,7 +1225,7 @@ export const COPY = {
     bg: "НСИ · средна брутна заплата в София-град ≈ {{net}} нето · {{as_of}}",
     en: "NSI · Sofia-city average GROSS ≈ NET {{net}} · {{as_of}}",
   },
-  statFastK: { bg: "- най-бързо поскъпващата група", en: "- the fastest-rising group" },
+  statFastK: { bg: "— най-бързо поскъпващата група", en: "- the fastest-rising group" },
   // The housing card's label, and it needs one: every card in the strip has
   // the same anatomy — value, label, chart, source. Folding the place name
   // into the value slot as "София · €175 070" and pushing the rest into the
@@ -1589,6 +1589,14 @@ export const COPY = {
   // {pp} of {p} points, never a euro amount and never a sum the reader is
   // invited to add up: this is one row's share of the total, which is exactly
   // what the ranked list beneath the results already says.
+  //
+  // **No string drawn onto the card may contain an em dash**, which is why this
+  // one is punctuated unlike every other Bulgarian sentence in the file. «—» is
+  // what `format.js` returns for a value it cannot render, and the card is the
+  // one surface that leaves the device: a reader finds out the period was
+  // unparseable when the picture is already in somebody else's chat. So the
+  // dash the card cannot use is the dash the check looks for
+  // (`verify_copy.mjs` §"every line on the share card is filled in").
   shareCardTop: {
     bg: "Най-тежко удря: {c} - {pp} от {p} пункта",
     en: "The biggest bite: {c} - {pp} of {p} points",
@@ -1605,7 +1613,7 @@ export const COPY = {
   // why: a product whose claim is that a reader's figures stay on their device
   // should show the whole of what leaves it, not put it behind a button.
   shareNote: {
-    bg: "Това е всичко, което напуска устройството ти. Заплата, наем и спестявания не влизат в картинката - от процент не се вади сума.",
+    bg: "Това е всичко, което напуска устройството ти. Заплата, наем и спестявания не влизат в картинката — от процент не се вади сума.",
     en: "This is everything that leaves your device. Salary, rent and savings are not in the picture - a percentage yields no amount.",
   },
   shareWait: {
