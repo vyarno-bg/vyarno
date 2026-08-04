@@ -184,59 +184,83 @@ const OPEN_DETAILS = () => {
 };
 
 test("no text on the page is painted below its WCAG floor", { skip }, async () => {
-  await withApp(async (page, errors) => {
-    const theme = page.locator("header .controls button").first();
-    const language = page.locator("header .controls button").last();
+  await withApp(
+    async (page, errors) => {
+      const theme = page.locator("header .controls button").first();
+      const language = page.locator("header .controls button").last();
 
-    const home = page.locator(".homeTog input[type=checkbox]").first();
-    assert.ok(await home.count(), "the home block's toggle is gone — half the card is unaudited");
-    await home.check();
-    await page.waitForTimeout(300);
-
-    const failures = [];
-    for (const inDark of [false, true]) {
-      for (const inEnglish of [false, true]) {
-        await page.evaluate(OPEN_DETAILS);
-        const where = `${inDark ? "dark" : "light"}/${inEnglish ? "en" : "bg"}`;
-        // The selector has to match something or this is a green test for a
-        // page that rendered nothing at all.
-        const audited = await page.evaluate(
-          () =>
-            [...document.body.querySelectorAll("*")].filter((el) =>
-              [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim())
-            ).length
-        );
-        assert.ok(
-          audited > 100,
-          `${where}: only ${audited} elements carry text — did the page render?`
+      // Belt to the reduced-motion braces below: `tokens.css` kills CSS
+      // animation, and a Svelte transition is driven from JavaScript, which no
+      // media query reaches. This is what would catch one.
+      const settled = () =>
+        page.waitForFunction(() =>
+          document
+            .getAnimations()
+            .every((a) => a.playState === "finished" || a.playState === "idle")
         );
 
-        for (const f of await page.evaluate(AUDIT)) {
-          failures.push(
-            `${where}  ${f.where}  "${f.text}"  ${f.ratio}:1 (needs ${f.need}:1) ` +
-              `at ${f.size}px/${f.weight}, alpha ${f.alpha}`
+      const home = page.locator(".homeTog input[type=checkbox]").first();
+      assert.ok(await home.count(), "the home block's toggle is gone — half the card is unaudited");
+      await home.check();
+      await settled();
+
+      const failures = [];
+      for (const inDark of [false, true]) {
+        for (const inEnglish of [false, true]) {
+          await page.evaluate(OPEN_DETAILS);
+          await settled();
+          const where = `${inDark ? "dark" : "light"}/${inEnglish ? "en" : "bg"}`;
+          // The selector has to match something or this is a green test for a
+          // page that rendered nothing at all.
+          const audited = await page.evaluate(
+            () =>
+              [...document.body.querySelectorAll("*")].filter((el) =>
+                [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.nodeValue.trim())
+              ).length
           );
-        }
-        await language.click();
-        await page.waitForTimeout(200);
-      }
-      await theme.click();
-      await page.waitForTimeout(300);
-    }
+          assert.ok(
+            audited > 100,
+            `${where}: only ${audited} elements carry text — did the page render?`
+          );
 
-    assert.deepEqual(
-      failures,
-      [],
-      `text below its contrast floor:\n  ${failures.join("\n  ")}\n\n` +
-        `An alpha under 1 in a row above is a fade, and a fade on text is a ` +
-        `contrast ratio multiplied down. De-emphasis that survives this is a ` +
-        `size and a colour: the type scale has nine steps and --muted is the ` +
-        `quietest ink that stays readable. Do not answer this by raising the ` +
-        `alpha until it just clears — that is a number tuned to one surface, ` +
-        `and the token underneath it is painted on three.`
-    );
-    assert.deepEqual(errors, [], errors.join(" | "));
-  });
+          for (const f of await page.evaluate(AUDIT)) {
+            failures.push(
+              `${where}  ${f.where}  "${f.text}"  ${f.ratio}:1 (needs ${f.need}:1) ` +
+                `at ${f.size}px/${f.weight}, alpha ${f.alpha}`
+            );
+          }
+          await language.click();
+          await settled();
+        }
+        await theme.click();
+        await settled();
+      }
+
+      assert.deepEqual(
+        failures,
+        [],
+        `text below its contrast floor:\n  ${failures.join("\n  ")}\n\n` +
+          `An alpha under 1 in a row above is a fade, and a fade on text is a ` +
+          `contrast ratio multiplied down. De-emphasis that survives this is a ` +
+          `size and a colour: the type scale has nine steps and --muted is the ` +
+          `quietest ink that stays readable. Do not answer this by raising the ` +
+          `alpha until it just clears — that is a number tuned to one surface, ` +
+          `and the token underneath it is painted on three.`
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+      // **The page is walked with motion off, and that is what makes the
+      // measurement deterministic rather than fast.** `.mort-reverse` fades in
+      // over 280ms and the body cross-fades its background on a theme flip, so a
+      // walk timed with a sleep reads real elements at real intermediate values
+      // — a Windows runner caught one at `opacity: 0.097` and reported 1.16:1,
+      // a frame no reader is shown. `tokens.css` drops every animation and
+      // transition under `prefers-reduced-motion`, so under it the page is only
+      // ever at rest, which is the state WCAG is about. A longer sleep would be
+      // a bet on how fast the machine is, and the machine that loses it is CI.
+    },
+    "/",
+    { reducedMotion: "reduce" }
+  );
 });
 
 test.after(shutdown);
