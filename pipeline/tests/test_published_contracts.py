@@ -49,10 +49,24 @@ PUBLISH = Path(__file__).resolve().parents[1] / "src" / "vyarno_pipeline" / "pub
 manifest_src = MANIFEST.read_text(encoding="utf-8")
 
 
-def _published(name: str) -> dict | None:
+def _published(name: str) -> dict:
+    """The committed payload. An absent one is a failure, never a skip.
+
+    All eight files under `data/published/` are tracked, so a missing one is
+    not a fresh clone, a CI checkout or a machine that has never run a refresh
+    — it is a committed file somebody deleted, moved or emptied, which is
+    precisely the moment every contract below has something to say. Skipping
+    there hands back the one result nobody reads: pytest exits 0, the run is
+    green, and the only offline check on what actually ships asserted nothing.
+    """
     path = DATA_DIR / f"{name}.json"
     if not path.exists():
-        return None
+        pytest.fail(
+            f"data/published/{name}.json is missing. It is committed to the "
+            f"repository — its absence is the bug, not a reason to stand these "
+            f"contracts down. Restore it with "
+            f"`git checkout -- data/published/{name}.json`."
+        )
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -135,33 +149,50 @@ def test_write_payload_writes_lf_on_every_platform() -> None:
         written.parent.rmdir()
 
 
-def test_published_hicp_categories_does_not_contain_partial_year_keys():
-    """No `index_by_year` key for a year whose December is unpublished.
+def test_published_hicp_categories_year_keys_are_exactly_the_completed_years():
+    """An `index_by_year` key for a year exists exactly when its December does.
 
     Falling back to the latest available month when December is missing would
     store e.g. June 2026 under the key "2026". Consumers treat that key as
     end-of-2026, so every year-anchor number and label built on it would be
-    wrong.
+    wrong. Dropping a year whose December HAS published is the same error
+    running the other way: the newest anchor silently becomes the year before,
+    and the dropdown offers a stale one as its freshest.
+
+    **What decides whether `as_of`'s own year is finished is the payload, not
+    the calendar.** Eurostat publishes a month's index about six weeks after
+    that month ends, so December's reading lands the following January and an
+    `as_of` anywhere inside December still describes an unfinished year — but
+    a refresh run once the reading exists legitimately carries the key, and
+    `latest_index.time` is the field that says which of the two this payload
+    is. Both come out of one `index_fields` call over one set of rows
+    (`transform.py`), so the equivalence below is the year-end rule of
+    `docs/math.md` invariant #4 read off the artefact.
     """
     payload = _published("hicp_categories")
-    if payload is None:
-        pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
     as_of = payload.get("as_of", "")
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of), f"malformed as_of: {as_of!r}"
-    as_of_year, as_of_month = int(as_of[:4]), int(as_of[5:7])
-    if as_of_month == 12:
-        pytest.skip(f"as_of={as_of} is December — the partial-year rule can't fire")
+    as_of_year = int(as_of[:4])
 
     for cat in payload["categories"]:
         keys = [int(k) for k in cat["index_by_year"]]
-        assert as_of_year not in keys, (
-            f"{cat['cp_code']} carries index_by_year[{as_of_year}] but "
-            f"{as_of_year} is incomplete at as_of={as_of}."
+        latest_month = str(cat["latest_index"]["time"])
+        assert max(keys) <= as_of_year, (
+            f"{cat['cp_code']} carries a future year key {max(keys)} at as_of={as_of}."
         )
-        assert max(keys) <= as_of_year - 1, (
-            f"{cat['cp_code']} carries a future year key {max(keys)}."
-        )
+        if latest_month >= f"{as_of_year}-12":
+            assert as_of_year in keys, (
+                f"{cat['cp_code']} has published {latest_month} but carries no "
+                f"index_by_year[{as_of_year}] — a completed year was dropped, so "
+                f"the freshest anchor on offer is {max(keys)}."
+            )
+        else:
+            assert as_of_year not in keys, (
+                f"{cat['cp_code']} carries index_by_year[{as_of_year}] while its "
+                f"freshest index is {latest_month}, so {as_of_year} has no "
+                f"year-end reading at as_of={as_of}."
+            )
 
 
 def test_published_hicp_categories_latest_index_is_fresh_and_linked():
@@ -174,8 +205,6 @@ def test_published_hicp_categories_latest_index_is_fresh_and_linked():
     the series the published values ARE, so opening it returns those digits.
     """
     payload = _published("hicp_categories")
-    if payload is None:
-        pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
     for cat in payload["categories"]:
         cp = cat["cp_code"]
@@ -223,8 +252,6 @@ def test_published_hicp_index_is_eurostat_s_own_values_on_the_linked_base():
     names as 2015.
     """
     payload = _published("hicp_categories")
-    if payload is None:
-        pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
     unit_base = {"I15": 2015, "I25": 2025}
     for cat in payload["categories"]:
@@ -286,8 +313,6 @@ def test_published_hicp_reconciles_within_tolerance():
     from vyarno_pipeline.validate import BASKET_SUM_TOLERANCE_PP, CHAIN_TOLERANCE_PP
 
     cats_payload, head_payload = _published("hicp_categories"), _published("hicp_headline")
-    if cats_payload is None or head_payload is None:
-        pytest.skip("published HICP JSON not on disk — run a refresh first")
 
     cats = cats_payload["categories"]
     headline = head_payload["headline_rate_pct"]
@@ -349,8 +374,6 @@ def test_published_hicp_is_all_on_ecoicop_ver2():
     where nothing looks at it.
     """
     payload = _published("hicp_categories")
-    if payload is None:
-        pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
     c = payload["classification"]
     assert c["version"] == "ECOICOP ver.2"
@@ -375,8 +398,6 @@ def test_published_hicp_rows_describe_one_bucket_each():
     `eurostat_label` is the upstream name of that same code.
     """
     payload = _published("hicp_categories")
-    if payload is None:
-        pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
     def check(row, code):
         assert row["eurostat_label"], f"{code}: no upstream label published"
@@ -398,8 +419,6 @@ def test_published_cp12_is_insurance_and_cp13_is_present():
     second fastest-rising division in BG — gets no card at all.
     """
     payload = _published("hicp_categories")
-    if payload is None:
-        pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
     cats = {c["cp_code"]: c for c in payload["categories"]}
     assert cats["CP12"]["eurostat_label"] == "Insurance and financial services"
@@ -412,8 +431,6 @@ def test_published_groups_sum_to_their_division():
     """The detailed mode re-splits a division across its groups. If they did
     not add up, drilling in would silently resize the division."""
     payload = _published("hicp_categories")
-    if payload is None:
-        pytest.skip("hicp_categories.json not on disk — run a refresh first")
 
     for cat in payload["categories"]:
         assert cat["groups"], f"{cat['cp_code']} has no groups to drill into"
@@ -451,8 +468,6 @@ def test_published_headline_and_categories_are_the_same_vintage():
     and in the SPA's savings card.
     """
     cats_payload, head_payload = _published("hicp_categories"), _published("hicp_headline")
-    if cats_payload is None or head_payload is None:
-        pytest.skip("published HICP JSON not on disk — run a refresh first")
 
     ref = head_payload["ref_period"]
     index_month = (head_payload.get("latest_index") or {}).get("time", ref)
@@ -564,8 +579,6 @@ def test_published_headline_carries_the_all_items_index_unscaled() -> None:
     scaled: this payload's index is Eurostat's, as the categories' is.
     """
     payload = _published("hicp_headline")
-    if payload is None:
-        pytest.skip("hicp_headline.json not on disk — run a refresh first")
 
     idx = payload.get("index_by_year")
     latest = payload.get("latest_index")
@@ -573,11 +586,10 @@ def test_published_headline_carries_the_all_items_index_unscaled() -> None:
     assert latest and "value" in latest and "time" in latest
 
     cats = _published("hicp_categories")
-    if cats is not None:
-        assert payload["index_base_year"] == cats["categories"][0]["index_base_year"], (
-            "the headline and the divisions are on different bases — the savings card "
-            "and the basket chart would answer the same question differently"
-        )
+    assert payload["index_base_year"] == cats["categories"][0]["index_base_year"], (
+        "the headline and the divisions are on different bases — the savings card "
+        "and the basket chart would answer the same question differently"
+    )
     assert payload["unit"] == f"index_{payload['index_base_year']}=100"
     # No partial-year key: a year appears only once its December is published.
     assert str(clock.today().year) not in idx, (
@@ -619,8 +631,6 @@ def test_the_all_items_index_and_the_divisions_disagree_as_expected() -> None:
     """
     head = _published("hicp_headline")
     cats = _published("hicp_categories")
-    if head is None or cats is None or not head.get("index_by_year"):
-        pytest.skip("payloads not on disk — run a refresh first")
 
     official = 100 * (head["latest_index"]["value"] / head["index_by_year"]["2020"] - 1)
     rows = cats["categories"]
@@ -655,8 +665,6 @@ def test_published_unemployment_is_monthly_and_seasonally_adjusted() -> None:
     «безработица» on a page selling freshness cannot carry a stale annual mean.
     """
     payload = _published("unemployment")
-    if payload is None:
-        pytest.skip("unemployment.json not on disk — run a refresh first")
 
     assert "une_rt_m" in payload["dataset"], payload["dataset"]
     assert "s_adj=SA" in payload["dataset"]

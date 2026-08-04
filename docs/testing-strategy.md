@@ -77,6 +77,13 @@ number is the runner's own. **A missing report fails too**, and that is not the
 same as a count of zero: `npm run test:render` exits 0 having asserted nothing
 when it finds no browser, which is exactly the run that must not pass.
 
+**A skip does not count towards a floor**, in any of the three. Turning a test
+into a skip deletes the assertion exactly as removing the test does, and it is
+the version of that deletion nothing notices — so what each floor is checked
+against is what the suite asserted, never how many tests it started. TAP's
+`# pass` line is already that; junit-xml's `tests` attribute is the size of the
+run, and `check-test-floors.mjs` takes the skips back off it.
+
 `make check` reports the counts at the end; CI runs the same script directly,
 per job, because its two jobs are separate runners with separate disks.
 
