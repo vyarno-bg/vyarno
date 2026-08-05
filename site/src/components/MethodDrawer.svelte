@@ -69,21 +69,28 @@
        block at the end of the explainer band, `COPY.explainMath`. -->
   <ol>
     <li>
+      <!-- «2 пункта» / "2 points" is the statistician's unit for exactly this
+           quantity and it is the wrong word here. A percentage point is a
+           difference between two percentages, which is a second idea a reader
+           has to hold on the first line of the first explanation they open —
+           and the sentence needs none of it: the contribution is said, and the
+           arithmetic that produced it is said beside it, so «една четвърт от
+           8» carries what the unit was there to disambiguate. -->
       <span class="l-bg"
         ><b>Твоята инфлация.</b> Всяка от 13-те групи си има поскъпване и то идва наготово от
         Евростат. Ние само го претегляме според това колко от парите си даваш за групата.
         <i>Пример:</i>
-        храната е поскъпнала с 8% и ти яде една четвърт от парите — значи добавя
-        <b>2 пункта</b> към твоето число. Същото за другите 12 групи; сборът е твоята инфлация. Плъзгачите
+        храната е поскъпнала с 8% и ти яде една четвърт от парите — значи в твоето число храната слага
+        <b>2%</b> (една четвърт от 8). Същото за другите 12 групи; сборът е твоята инфлация. Плъзгачите
         променят само дяловете — поскъпванията са на Евростат и не ги пипаме.</span
       >
       <span class="l-en"
         ><b>Your inflation.</b> Each of the 13 groups has its own price rise, taken as published
         from Eurostat. All we do is weigh it by how much of your money goes to that group.
         <i>Example:</i>
-        food is up 8% and takes a quarter of your money - so it adds <b>2 points</b> to your number. Same
-        for the other 12 groups; the total is your inflation. The sliders change only the shares - the
-        price rises are Eurostat's and we never touch them.</span
+        food is up 8% and takes a quarter of your money - so food puts <b>2%</b> into your number (a quarter
+        of 8). Same for the other 12 groups; the total is your inflation. The sliders change only the
+        shares - the price rises are Eurostat's and we never touch them.</span
       >
     </li>
     <li>
@@ -152,23 +159,23 @@
            sellers ask, not what buyers paid. Say both — this is the
            first thing anyone who knows the market will check. -->
       <span class="l-bg"
-        ><b>Домът.</b> Цената на квадратен метър е медианата на {fmt0(nDistricts)} софийски квартала,
-        всеки със своята средна <b>оферта</b> от обявите (искана цена, не цена по сделка), умножена
-        по избраната квадратура — или по твоята цена, ако си въвел такава. „<b>Години</b>“ значи:
-        толкова години цялата ти заплата, до последното евро, би отишла за жилището. Вноската е
-        обичайната за банките равна месечна вноска по кредит за {fmt0(100 - downPayPct)}% от цената
-        (останалите {fmt0(downPayPct)}% са самоучастие), с твоята лихва и твоя срок.</span
+        ><b>Домът.</b> Всеки от {fmt0(nDistricts)} софийски квартала си има средна <b>оферта</b> на
+        квадратен метър (искана цена, не цена по сделка). Подреждаме ги от евтин към скъп и взимаме
+        средния — това е медианата — по избраната квадратура, или по твоята цена, ако си въвел
+        такава. „<b>Години</b>“ значи: толкова години цялата ти заплата, до последното евро, би
+        отишла за жилището. Вноската е обичайната за банките равна месечна вноска по кредит за {fmt0(
+          100 - downPayPct
+        )}% от цената (останалите {fmt0(downPayPct)}% са самоучастие), с твоята лихва и твоя срок.</span
       >
       <span class="l-en"
-        ><b>A home.</b> The price per square metre is the median across Sofia's {fmt0(nDistricts)} districts,
-        each carrying its own average <b>asking</b> price from the listings (what sellers ask, not
-        what buyers paid), times the size you picked - or your own price, if you entered one. "<b
-          >Years</b
-        >" means: that many years of your entire pay, down to the last euro, would go to the home.
-        The payment is the ordinary equal monthly bank instalment on a loan of {fmt0(
-          100 - downPayPct
-        )}% of the price (the other {fmt0(downPayPct)}% being your own money), at your rate and your
-        term.</span
+        ><b>A home.</b> Each of Sofia's {fmt0(nDistricts)} districts has its own average
+        <b>asking</b> price per square metre (what sellers ask, not what buyers paid). We line them
+        up cheapest to dearest and take the middle one - that is the median - times the size you
+        picked, or your own price if you entered one. "<b>Years</b>" means: that many years of your
+        entire pay, down to the last euro, would go to the home. The payment is the ordinary equal
+        monthly bank instalment on a loan of {fmt0(100 - downPayPct)}% of the price (the other {fmt0(
+          downPayPct
+        )}% being your own money), at your rate and your term.</span
       >
     </li>
   </ol>

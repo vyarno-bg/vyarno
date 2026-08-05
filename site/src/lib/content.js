@@ -1090,9 +1090,17 @@ export const COPY = {
   // number. Being right is our job, not theirs.
   // docs/principles.md §"Publish the method" is satisfied by the method being
   // PUBLISHED, not by it being in the way.
+  //
+  // The label has to say what OPENING it is for, and that opening it is
+  // nobody's homework. A summary that names the formulas and vouches for their
+  // exactness is addressed to a reader who already wanted algebra; everyone
+  // else reads it as the part of the page they are failing to understand, on a
+  // page whose whole claim is that the numbers are checkable by ordinary
+  // people. Naming the reason — you can work a figure out yourself — invites
+  // the one reader in a hundred without conscripting the other ninety-nine.
   explainMath: {
-    bg: "формулите, точно както ги смятаме",
-    en: "the formulas, exactly as we compute them",
+    bg: "формулите, ако искаш да пресметнеш някое число на ръка",
+    en: "the formulas, if you want to work a figure out by hand",
   },
 
   // Drawer. Prose and worked examples in round numbers — no algebra. This is
