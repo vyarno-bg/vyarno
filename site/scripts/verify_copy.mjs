@@ -873,6 +873,67 @@ test("the explainer's 'same month' reassurance follows the months it is about", 
   }
 });
 
+/**
+ * The published-method block, per language, from `</summary>` onwards.
+ *
+ * The summary carries an `.l-bg`/`.l-en` pair of its own, so the split has to
+ * start after it or the Bulgarian half is the label and nothing else. Nothing
+ * inside either span is a `<span>`, which is what makes splitting on the class
+ * enough.
+ */
+function methodSpans() {
+  const at = EXPLAINER.indexOf('<details class="fx">');
+  assert.ok(at > 0, "the published-method block is gone from the explainer");
+  const body = EXPLAINER.slice(at);
+  const fx = body.slice(body.indexOf("</summary>"), body.indexOf("</details>"));
+  const bg = fx.indexOf('class="l-bg"');
+  const en = fx.indexOf('class="l-en"');
+  assert.ok(bg > 0 && en > bg, "the method block no longer ships both languages");
+  return { bg: fx.slice(bg, en), en: fx.slice(en) };
+}
+
+test("every formula in the published method is read out loud first, in both languages", () => {
+  // docs/principles.md §"Publish the method" is met by publishing the algebra;
+  // it is not met by publishing algebra a reader cannot enter. The block is
+  // for whoever wants to re-derive a figure by hand, and that is a wider set of
+  // people than those who read Σ notation fluently — dropped straight into
+  // `π = Σ (wᵢ ÷ Σw) × rᵢ`, someone who could have followed "each group's rise,
+  // weighted by your share, added up" leaves instead, and the method is
+  // published at them rather than to them.
+  //
+  // So: every `<b>` label in either language span is followed by prose before
+  // its first `<code>`. Counted per span, because a gloss written in one
+  // language is a blank promise in the other — `.l-bg`/`.l-en` are both in the
+  // DOM and one of them is what the reader sees.
+  const spans = methodSpans();
+  for (const [lang, span] of Object.entries(spans)) {
+    // `<b\s*>` rather than `<b>`: Prettier breaks a long line between the tag
+    // name and its `>`, and a test that goes red on a formatter run teaches
+    // contributors to edit the test.
+    const labels = [...span.matchAll(/<b\s*>([\s\S]*?)<\/b\s*>([\s\S]*?)(?=<code|<b\s*>|$)/g)];
+    assert.equal(
+      labels.length,
+      4,
+      `the ${lang} method block labels ${labels.length} figures, expected 4 — ` +
+        "one per figure on the results card"
+    );
+    for (const [, label, gloss] of labels) {
+      const prose = gloss
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\{[^}]*\}/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      assert.ok(
+        prose.length >= 40,
+        `"${label.trim()}" in the ${lang} method block carries ${prose.length} ` +
+          "characters between its heading and its formula. A figure whose algebra " +
+          "is the first thing under its name is published to the readers who " +
+          "needed it least; say what the formula does, then show it."
+      );
+    }
+  }
+});
+
 test("the savings copy does not call our reconstruction the official figure", () => {
   // The savings card deflates by Σw·(Iᵢ(now)/Iᵢ(2020) − 1) at Eurostat's current
   // weights — about 41.8% today. Eurostat's own chain-linked all-items index

@@ -1156,6 +1156,18 @@ contradicts the strip the moment the data refreshes.
 `the_method_stays_published_once_at_the_end_of_the_explainer` and
 `the_explainer_writes_no_live_figure_into_its_prose` hold the three halves.
 
+**Published means enterable.** Every formula in that block is preceded, in both
+language spans, by a sentence that reads it out loud — what the symbols do, not
+a second worked example, which is the drawer's job. The set of people who want
+to re-derive a figure by hand is wider than the set who read Σ notation
+fluently, and a block that opens on bare algebra is published at the second set
+rather than to the first. Both spans also branch on `anchor` for the same
+reason a formula is glossed at all: describing the 12-month rate and the index
+division unconditionally shows a reader on «1 година» the formula the other
+setting uses.
+`every_formula_in_the_published_method_is_read_out_loud_first_in_both_languages`
+holds it.
+
 State is `$state()` runes. The component imports formulas from `$lib/mirror`,
 derived values from `$lib/view` and copy from `$lib/content`; it holds no domain
 logic, and its `$derived(...)` expressions are one-line calls into those
