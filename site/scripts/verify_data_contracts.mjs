@@ -398,7 +398,7 @@ test("no НСИ payload carries a second publisher's figures", () => {
   // НСИ do. §2.1.1 of their licence closes with «Нямате право да
   // разпространявате производни и сборни произведения», so a file mixing their
   // figures with anyone else's is the one composition that is contractually
-  // barred. The loop below states the general rule that holds for all eight:
+  // barred. The loop below states the general rule that holds for all nine:
   // whatever a payload declares as its source is what it may carry.
   for (const name of PAYLOAD_STEMS) {
     const p = read(name);

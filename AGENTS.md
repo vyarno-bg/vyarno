@@ -60,7 +60,7 @@ behind guards nothing — it will pass a suite that lost half its tests.
 
 - `pipeline/` — Python 3.11 ingest: `sources/*.py` → `transform.py` →
   `validate.py` → `publish.py`, driven by `cli.py`. Has its own `AGENTS.md`.
-- `data/published/` — eight JSON envelopes, **committed**. These are what the
+- `data/published/` — nine JSON envelopes, **committed**. These are what the
   site fetches; the diff is the review.
 - `site/` — Vite 8 + Svelte 5 SPA, five layers. Has its own `AGENTS.md`.
 - `docs/` — everything else; `docs/README.md` is the index.

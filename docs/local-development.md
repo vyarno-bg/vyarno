@@ -72,7 +72,7 @@ on a short-lived branch, merges into `main`, and is deleted.
 
 **CI runs on every push to every branch, and on every pull request**
 (`.github/workflows/ci.yml`): `pytest -q`, `npm run verify:math`,
-`npm run build`, plus a check that all eight published payloads parse. So a
+`npm run build`, plus a check that all nine published payloads parse. So a
 working branch is proven before the merge, and `main` is re-checked after it.
 
 The pull-request trigger is not a second copy of the push run. It is the only
@@ -192,7 +192,7 @@ rather than tidy:
   which turns the UTF-8 Eurostat cubes into a `UnicodeDecodeError` on read and
   the Cyrillic labels into mojibake on write — and it translates `"\n"` to
   `os.linesep`, so `publish.write_payload` without `newline="\n"` rewrites all
-  eight payloads CRLF. That last one hides: `.gitattributes` normalises them
+  nine payloads CRLF. That last one hides: `.gitattributes` normalises them
   back on commit, so the repository stays clean while the working tree does
   not, and what reads the working tree before git does — `copy-data.mjs`
   filling `dist/`, any byte comparison against the previous publish — sees a
@@ -368,7 +368,7 @@ jq '.categories[] | {code, name_bg, weight_pct, annual_rate_pct}' \
   ../data/published/hicp_categories.json
 ```
 
-Two things to check by eye after a refresh: **`as_of` is today** (all eight should
+Two things to check by eye after a refresh: **`as_of` is today** (all nine should
 match — one pipeline run), and **`latest_index` and `index_by_year` are on the
 same base**, because the SPA divides one by the other and a 12-month rate looks
 correct even when the base is wrong. Both carry Eurostat's own values, so the
@@ -482,7 +482,7 @@ Before pushing a change to `site/`:
       `make render` gates on the browser resolver and fails where none is
       found, which is the run to trust
 - [ ] `npm run build` exits 0
-- [ ] `dist/data/published/*.json` exists for all eight files
+- [ ] `dist/data/published/*.json` exists for all nine files
 - [ ] `npm run dev` and `npm run preview` both serve `/data/published/*.json`
       with 200
 

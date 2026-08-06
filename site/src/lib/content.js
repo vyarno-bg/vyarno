@@ -1346,14 +1346,14 @@ export const COPY = {
   dataRowOverdue: { bg: "закъсняло с {n} дни", en: "{n} days overdue" },
   dataRowAbsent: { bg: "не се зареди", en: "did not load" },
   // The staleness banner. `n` is the COUNT OF OVERDUE PAYLOADS, not a day count:
-  // one late payload out of eight is a different situation from all eight, and a
+  // one late payload out of nine is a different situation from all nine, and a
   // sentence about "the data" not being refreshed claims the latter. The date is
   // the oldest fetch, so a reader can see how far back the laggard goes.
   dataStale: {
     bg: "{n} от числата са закъснели · най-старото е изтеглено на {date}",
     en: "{n} of the figures are overdue · the oldest was fetched on {date}",
   },
-  // One overdue payload out of eight is the commonest way this banner fires, and
+  // One overdue payload out of nine is the commonest way this banner fires, and
   // the plural sentence does not survive it: «1 от числата са закъснели» is not
   // a sentence a Bulgarian would write, and "1 of the figures are overdue" is
   // not one an English speaker would either. Bulgarian also needs the neuter
@@ -1366,7 +1366,7 @@ export const COPY = {
   // What is still true while the banner is up: nothing is invented and nothing
   // is guessed, these remain the last officially published figures. No promise
   // of a next update date — Eurostat's HICP release is mid-month but not fixed
-  // to a date, and the eight payloads run on three different cadences.
+  // to a date, and the nine payloads run on three different cadences.
   dataStaleHint: {
     bg: "Показаните числа са последните официално публикувани, които имаме — нищо тук не е предположение. Обновяваме ги ръчно.",
     en: "The figures shown are the last officially published ones we hold — nothing here is estimated. Refreshed by hand.",
