@@ -589,15 +589,31 @@ a position in a distribution.
 are right-skewed, so an average sits well above the middle. Read off the
 published SES shape in `salary_dist.json`:
 
-| | gross |
-|---|---|
-| SES mean | 949 |
-| SES median (P50) | 705 |
-| median ÷ mean | **0.7429** |
-| the mean's own rung | **P66** |
+| | gross | standing |
+|---|---|---|
+| SES mean | 949 | published |
+| SES median (P50) | 705 | published |
+| median ÷ mean | **0.7429** | **measured** — both figures are Eurostat's |
+| the mean's own rung | **P66** | **modelled** — see below |
 
 So someone €500 below their sector's average may still be paid more than most
 people in it, and a card reporting only the gap would tell them the opposite.
+
+**The two figures are not equally solid, and the copy must not say them in one
+voice.** Eurostat publish D1, the median and D9 for BG and nothing between, so
+`SES_SURVEYED_CUTS` is `[10, 50, 90]`. The mean (949) falls between P60
+(838.99) and P70 (1010.66) — **both interpolated**, piecewise-lognormal in the
+normal quantile. So "the median earner takes 74% of the average" is two
+published numbers divided, and "the average sits near the 66th rung" is read off
+modelled ones. `COPY.sectorAverageFlatters` states which is which and dates the
+survey, and `the calibration marks its modelled figure and dates its measured
+one` in `verify_copy.mjs` fails if that distinction is flattened.
+
+What the modelling can and cannot move: a different interpolation between the
+published median and D9 shifts the rung by a few points, and cannot put the mean
+below the median — that ordering follows from the two published figures alone.
+The claim the card rests on is "an average is above the middle", which is
+measured; the exact rung is the illustration.
 
 **`mirror.js#meanRungPosition` publishes that correction, and it is exactly
 scale-invariant.** Re-levelling multiplies every rung and the mean by one

@@ -1542,7 +1542,7 @@ test("the sector copy says plainly that no distribution by sector is published",
   // somebody publishes the spread, and that this is a position in it.
   for (const text of pair("sectorNoRank")) {
     assert.ok(
-      /(разпределение|distribution)/i.test(text),
+      /(разпредел|distribut|spread)/i.test(text),
       `sectorNoRank does not say a distribution is what is missing: ${text}`
     );
     assert.ok(
@@ -1603,6 +1603,30 @@ test("the sector coverage line says who the series leaves out", () => {
     assert.ok(
       /(свободна практика|собствена фирма|freelanc|own company)/i.test(text),
       `sectorCoverage does not say who is outside the series: ${text}`
+    );
+  }
+});
+
+test("the calibration marks its modelled figure and dates its measured one", () => {
+  // The sentence carries two figures of different standing and must not say
+  // them in one voice. Eurostat publish BG's median and mean, so the ratio is
+  // measured; they publish only D1, the median and D9, and the mean falls
+  // between P60 and P70 — rungs mirror.js interpolates — so the percentile is
+  // modelled. P3: a figure derived from published figures inherits the
+  // obligation to name its inputs and its vintage.
+  for (const text of pair("sectorAverageFlatters")) {
+    assert.ok(
+      /\{shapeYear\}/.test(text),
+      `sectorAverageFlatters states a percentile without dating the survey behind it: ${text}`
+    );
+    assert.ok(
+      /(сметнато|изчислено|не е измерено|worked out|not measured)/i.test(text),
+      `sectorAverageFlatters states a modelled percentile as if it were measured: ${text}\n` +
+        "Eurostat publish D1, the median and D9 for BG — every rung between them is interpolated."
+    );
+    assert.ok(
+      /(Евростат|Eurostat)/.test(text),
+      `sectorAverageFlatters does not name whose figures these are: ${text}`
     );
   }
 });

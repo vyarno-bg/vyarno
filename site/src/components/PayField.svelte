@@ -44,7 +44,7 @@
    * total take-home).
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, label } from "../lib/format.js";
+  import { number, integer, label, period } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import PayslipTable from "./PayslipTable.svelte";
 
@@ -398,12 +398,14 @@
               >{t(COPY.sectorAverageFlatters, "bg", {
                 cut: fmt0(calc.averageFlatters.cut),
                 medianPct: fmt0(calc.averageFlatters.medianPct),
+                shapeYear: period(calc.averageFlatters.shapeYear),
               })}</span
             >
             <span class="l-en"
               >{t(COPY.sectorAverageFlatters, "en", {
                 cut: fmt0(calc.averageFlatters.cut),
                 medianPct: fmt0(calc.averageFlatters.medianPct),
+                shapeYear: period(calc.averageFlatters.shapeYear),
               })}</span
             >
           </p>
