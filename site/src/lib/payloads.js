@@ -115,6 +115,19 @@ export const PAYLOADS = Object.freeze(
       refPeriod: (p) => p?.ref_period ?? null,
     },
     {
+      key: "sectorSalary",
+      file: "sector_salary",
+      // The same НСИ quarterly release as `sofiaSalary` — one publisher, two
+      // cuts of the same labour statistic, so they go stale together.
+      cadenceDays: 92,
+      name: { bg: "Средна заплата по дейности", en: "Average wage by activity" },
+      feeds: {
+        bg: "сравнението на заплатата ти със средната за твоя сектор",
+        en: "the comparison of your pay with the average for your sector",
+      },
+      refPeriod: (p) => p?.ref_period ?? null,
+    },
+    {
       key: "salaryDist",
       file: "salary_dist",
       // The SES cycle, four years and a day, and nothing shorter is honest.

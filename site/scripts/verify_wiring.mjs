@@ -791,9 +791,17 @@ test("the Sofia comparator states the gap once, not twice", () => {
     "the comparator no longer takes the magnitude unsigned"
   );
   // And the magnitude is unsigned where it is COMPUTED, not fixed up here.
+  // `mirror.js#wageGap` is that place for both comparisons on this card — the
+  // Sofia average and the reader's sector — so one rounding and one dead band
+  // serve both, and neither can drift into emitting a signed magnitude on its
+  // own.
   assert.ok(
-    VIEW.includes("magnitudePct: Math.abs(diffPct)"),
-    "view.js#sofiaGap no longer publishes an unsigned magnitude"
+    MIRROR.includes("magnitudePct: Math.abs(diffPct)"),
+    "mirror.js#wageGap no longer publishes an unsigned magnitude"
+  );
+  assert.ok(
+    !VIEW.includes("Math.abs(diffPct)"),
+    "view.js computes a gap magnitude again — there is one implementation, in mirror.js"
   );
 });
 
@@ -872,5 +880,59 @@ test("the country page has no input, and imports nothing that would give it one"
       read("How.svelte")
     ),
     "the country page reads a value the reader types into the calculator"
+  );
+});
+
+// ---------------------------------------------------------------------------
+// The sector comparison
+// ---------------------------------------------------------------------------
+
+test("the sector card cannot turn an average into a rank", () => {
+  const src = calculatorSource();
+
+  // **`meanRungPosition` reads the Eurostat shape and never the sector.** It is
+  // the national correction for reading an average as a middle; fed a sector
+  // average it would emit a sector percentile, and there is no published
+  // distribution by activity for BG behind such a figure. The call site is the
+  // last place that can be got wrong, since the function itself takes no
+  // anchor.
+  const call = /meanRungPosition\(([^)]*)\)/.exec(src);
+  assert.ok(call, "the sector card no longer computes how much an average flatters");
+  assert.ok(
+    /^\s*this\.data\.salaryDist\s*$/.test(call[1]),
+    `meanRungPosition is called with "${call[1]}" — it takes the Eurostat shape and nothing else`
+  );
+  assert.ok(
+    !/meanRungPosition\([^)]*sector/i.test(src),
+    "meanRungPosition is being handed a sector figure, which would invent a sector rank"
+  );
+});
+
+test("the sector figure never travels without the sentence that qualifies it", () => {
+  const src = calculatorSource();
+
+  // НСИ publish an average by activity and nobody publishes a distribution by
+  // one. A gap shown without saying so reads as a rank, so the two are wired
+  // together here: render the number and this holds you to the sentence.
+  assert.ok(/COPY\.sectorDiff\b/.test(src), "the sector gap is no longer rendered");
+  assert.ok(
+    /COPY\.sectorNoRank\b/.test(src),
+    "the sector gap renders without the line saying no pay distribution by sector is published"
+  );
+  assert.ok(
+    /COPY\.sectorAverageFlatters\b/.test(src),
+    "the sector gap renders without the correction for how much an average flatters"
+  );
+  assert.ok(
+    /COPY\.sectorCoverage\b/.test(src),
+    "the sector gap renders without saying who the series counts"
+  );
+
+  // The section label reaches markup through a formatter, like every other
+  // fetched string on the page — `format.js#label`, and template safety holds
+  // the wider rule.
+  assert.ok(
+    !/sector:\s*calc\.sector\.(bg|en)Name/.test(src),
+    "an НСИ section name reaches the template unformatted"
   );
 });

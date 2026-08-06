@@ -52,6 +52,9 @@ import {
   QUARTERS,
   payslipPanel,
   earnerRanks,
+  sectorComparison,
+  sectorOptions,
+  SECTOR_TOTAL_KEY,
   sofiaGap,
   netsOf,
   convertPay,
@@ -2245,4 +2248,97 @@ test("quarterGrid lays the same cells out a year to a row, and combines nothing"
       `${cell.period} was changed on the way into the grid`
     );
   }
+});
+
+// ---------------------------------------------------------------------------
+// The sector comparison — selection over НСИ's published cells
+// ---------------------------------------------------------------------------
+
+test("sectorComparison reads НСИ's published cell and computes no rank", () => {
+  const payload = read("sector_salary");
+  if (!payload) return;
+  const payroll = read("payroll");
+
+  const row = payload.sectors.find((s) => s.en_name === "Information and communication");
+  const out = sectorComparison({
+    sectorSalary: payload,
+    key: "Information and communication",
+    nets: [2100],
+    payroll,
+  });
+
+  // The gross is НСИ's cell, selected — not an average of their months, not a
+  // re-levelled figure. docs/legal.md §НСИ turns on this staying true.
+  assert.equal(out.gross, row.value_eur, "the sector gross is no longer НСИ's published cell");
+  assert.equal(out.gross, row.series_by_period[payload.ref_period]);
+  assert.equal(out.refPeriod, payload.ref_period);
+  // Both labels are НСИ's own, one per language, never one translated.
+  assert.equal(out.bgName, row.bg_name);
+  assert.equal(out.enName, row.en_name);
+
+  // **There is no rank here and there must never be one.** Nobody publishes a
+  // pay distribution by activity for Bulgaria, so a percentile against a sector
+  // could only be invented. The shape is the guard: a field added to carry one
+  // fails this line before it reaches a reader.
+  assert.deepEqual(
+    Object.keys(out).sort(),
+    ["bgName", "enName", "gaps", "gross", "isPreliminary", "net", "refPeriod", "sourceUrl"],
+    "sectorComparison's shape changed — if a rank or percentile was added, there is no published distribution behind it"
+  );
+  for (const gap of out.gaps) {
+    assert.deepEqual(Object.keys(gap).sort(), [
+      "diffPct",
+      "direction",
+      "index",
+      "magnitudePct",
+      "net",
+      "ordinal",
+    ]);
+  }
+});
+
+test("the sector gap is measured net against net, per earner", () => {
+  const payload = read("sector_salary");
+  if (!payload) return;
+  const payroll = read("payroll");
+  const out = sectorComparison({
+    sectorSalary: payload,
+    key: "Information and communication",
+    nets: [2100, 900],
+    payroll,
+  });
+
+  // A gross compared with a net would flatter the reference by about a fifth
+  // and report the reader as further behind than they are.
+  assert.ok(out.net < out.gross, "the sector reference is no longer converted to net");
+  assert.equal(out.gaps.length, 2, "the gap is per earner — НСИ publish a wage, not a household");
+  assert.equal(out.gaps[0].direction, "below");
+  assert.equal(out.gaps[0].magnitudePct, 18);
+  assert.equal(out.gaps[1].direction, "below");
+
+  // An unpicked sector states nothing about anybody.
+  assert.equal(sectorComparison({ sectorSalary: payload, key: "", nets: [2100], payroll }), null);
+  assert.equal(sectorComparison({ sectorSalary: null, key: "X", nets: [2100], payroll }), null);
+});
+
+test("the picker offers every published activity, in НСИ's order", () => {
+  const payload = read("sector_salary");
+  if (!payload) return;
+  const options = sectorOptions(payload);
+
+  assert.equal(options.length, payload.sectors.length);
+  // НСИ's classification order, not a league table: re-sorting by wage would
+  // make the ordering itself a claim the data does not carry.
+  assert.deepEqual(
+    options.map((o) => o.key),
+    payload.sectors.map((s) => s.en_name),
+    "the picker re-orders НСИ's sections"
+  );
+  // Both languages on every row — a missing one renders as a blank option.
+  for (const o of options) {
+    assert.ok(o.bg && o.en, `${o.key} is missing a label in one language`);
+  }
+  assert.equal(options.filter((o) => o.isTotal).length, 1);
+  assert.equal(options.find((o) => o.isTotal).key, SECTOR_TOTAL_KEY);
+  assert.deepEqual(sectorOptions(null), []);
 });

@@ -51,6 +51,7 @@ Every entry carries a provenance tag:
 | НСИ city-level housing €/m² | WRONG | PDF press releases only; not structurally machine-readable. |
 | `earn_ses_pub1e` / `earn_ses_pub1t` for BG | WRONG | The SES *publication* tables 404 for BG. The main cubes `earn_ses_monthly` / `_hourly` do carry BG — use those. |
 | `prc_hicp_ctr` / `prc_hicp_ctrb` as a BG cross-check | WRONG | Euro-area aggregate cubes: `geo=BG` and `geo=DE` both return an empty `value` map with HTTP 200, while `geo=EA` returns tens of thousands of observations. They cannot cross-check a Bulgarian figure. |
+| A pay **distribution** by sector for BG (any publisher) | WRONG | Probed 2026-08-06. `earn_ses_monthly` with `nace_r2=J&geo=BG` returns HTTP 200, `"value": {}`, `nace_r2` size 0. Unfiltered, BG has five `nace_r2` categories and only `B-S_X_O` (whole economy) carries values — `B-N`, `B-F`, `G-N` and `P-S` are empty across every `isco08`/`worktime`/`age`/`sex` slice. **No sector median, decile or spread exists.** НСИ's `Labour_1.1.2.1` publishes a sector **average** and nothing else, which is why the sector card compares against an average and says so. |
 | Per-decile HBS weights | WRONG | Eurostat publishes BG household budget structure by **quintile** (`hbs_str_t223`), not decile, in ECOICOP ver.1, latest vintage 2020. |
 | An offered-rate ("best offer") mortgage tier | WRONG | Rate-comparison sites and per-bank pages publish advertised promotional "from" rates: conditional on terms they do not state, editorially curated, with no methodology and no revision policy. Nothing in that class can carry the five properties in [`README.md`](../README.md) §"Who this is for", so the class is excluded rather than any particular site being judged. ЕЦБ MIR **APRC** answers the same question officially — and comes out higher. `test_mortgage.py` asserts the `indicative_offer` key is absent from the published JSON. |
 | `prc_hpi_q` as the home block's source | VERIFIED, unusable for a level | A transaction-based **index** with no absolute €/m². Kept as an availability hedge only. |
@@ -523,6 +524,52 @@ than deriving one. `no НСИ payload carries a second publisher's figures` in
 series beside it, and `test_no_figure_is_computed_only_selected` fails if the
 connector starts averaging again — a change that would move no number a reader
 could check, so nothing else would notice it.
+
+### `Labour_1.1.2.1_EUR_EN.xlsx` + `_EUR.xlsx` — gross wage by economic activity
+
+The sibling table, same directory and same terms: 19 NACE Rev 2 sections plus
+`Total`, quarterly. **Both language editions are read** — `_EUR_EN.xlsx` carries
+English section names, `_EUR.xlsx` (no language suffix) the Bulgarian ones, with
+identical figures. 2026-Q1: all activities **1407 EUR**, Information and
+communication **3176 EUR**, as published.
+
+**Why both files.** The section names are half of what this payload is for, and
+translating НСИ's English ourselves is the whole hazard of the feature in one
+step. Their Bulgarian name for section J is «Създаване и разпространение на
+информация и творчески продукти; далекосъобщения» — nobody reads that as «ИТ»,
+where a translation of "Information and communication" invites exactly that.
+The two editions also pin each other: rows are paired by position and every
+paired cell must match, so a reordered row raises instead of shipping one
+section's wage under another's name.
+
+Each per-year sheet — `{year}NaceRev2` / `{year}КИД2008` — stacks **four**
+blocks: monthly by activity, monthly by ownership, quarterly by activity,
+quarterly by ownership. Two further rows carry `Total` in column 0 with no data
+at all, so a label-only lookup finds a blank row before either real one. Every
+block is bounded from the header row it was found by and terminated by the first
+blank label. The `IV incl.annual bonuses` / «IV вкл.годишни премии» column is
+refused in both spellings, the quarter headers mix alphabets, and the quarter is
+taken rather than a month for the same reason as `1.1.2.2` — March is the annual
+bonus peak, and for section J it reads 3617 against a published 3176.
+
+**There is no distribution behind these averages, and there is none to find.**
+Probed 2026-08-06: `earn_ses_monthly` filtered to `nace_r2=J&geo=BG` returns
+HTTP 200 with `"value": {}` and a `nace_r2` dimension of size 0. Unfiltered, BG
+carries five `nace_r2` categories — `B-S_X_O`, `B-N`, `B-F`, `G-N`, `P-S` — and
+**only `B-S_X_O`, the whole-economy aggregate, has any value**; the four sector
+aggregates are empty for BG across every `isco08` / `worktime` / `age` / `sex`
+slice. So no sector median, no sector deciles, no sector spread exists from any
+publisher, and the site says so on screen rather than implying a rank
+(`COPY.sectorNoRank`, and `docs/principles.md`'s closed list). Anyone
+revisiting this should re-run those two probes before assuming otherwise.
+
+The payload `sector_salary.json` carries per activity: `en_name`, `bg_name`
+(both НСИ's own), `value_eur` and `series_by_period`. Nothing in it is computed
+— the gap a reader sees is `mirror.js` arithmetic in their own tab. `sector
+wages` (gate 7 in `validate.py`) fails the publish if a headline stops being the
+published cell, and `sector_salary.json carries no rank, because nobody
+publishes one` in `verify_data_contracts.mjs` fails if a percentile-shaped field
+appears in a row.
 
 ---
 

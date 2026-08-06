@@ -37,6 +37,8 @@ import {
   contributions,
   personalInflationDetailed,
   buildLadder,
+  meanRungPosition,
+  wageGap,
   rentBurden,
   rentDays,
   annuityPayment,
@@ -998,4 +1000,91 @@ test("a household payslip can be read from the gross side without a round trip",
     h.earners.map((e) => e.gross),
     [2000, 1350]
   );
+});
+
+// ---------------------------------------------------------------------------
+// wageGap and meanRungPosition — the two the sector card is built on
+// ---------------------------------------------------------------------------
+
+test("wageGap reports an unsigned magnitude beside a direction", () => {
+  // The direction word carries the sign. Emitting both produced «-39% под»,
+  // which reads as 39% LESS FAR below — one implementation so the Sofia
+  // comparator and the sector line cannot drift apart on this.
+  assert.deepEqual(wageGap(1400, 1000), { diffPct: 40, magnitudePct: 40, direction: "above" });
+  assert.deepEqual(wageGap(600, 1000), { diffPct: -40, magnitudePct: 40, direction: "below" });
+
+  // The dead band is ±1 point, so a euro either way is "about the same".
+  assert.equal(wageGap(1005, 1000).direction, "equal");
+  assert.equal(wageGap(995, 1000).direction, "equal");
+  assert.equal(wageGap(1020, 1000).direction, "above");
+
+  for (const bad of [
+    [0, 1000],
+    [1000, 0],
+    [NaN, 1000],
+    [1000, NaN],
+    [-5, 1000],
+  ]) {
+    assert.equal(wageGap(bad[0], bad[1]), null, `wageGap(${bad}) should be unusable`);
+  }
+});
+
+test("meanRungPosition says where an average sits, and takes no anchor", () => {
+  // **The number that stops the sector card reading as a rank.** НСИ publish an
+  // average by activity and nobody publishes a distribution by one, so a reader
+  // told "18% below your sector's average" needs to know an average is not a
+  // middle. On a right-skewed wage distribution it is about two-thirds up.
+  const dist = distOf(
+    {
+      P1: 225,
+      P10: 376,
+      P20: 466,
+      P30: 545,
+      P40: 622,
+      P50: 705,
+      P60: 839,
+      P70: 1010,
+      P80: 1256,
+      P90: 1700,
+      P99: 3484,
+    },
+    949
+  );
+  const at = meanRungPosition(dist);
+  assert.equal(at.cut, 66, "the mean no longer lands where the published shape puts it");
+  assert.equal(at.medianPct, 74);
+
+  // **Exactly scale-invariant**, which is what makes it a statement about the
+  // shape of Bulgarian earnings rather than about whichever average is on
+  // screen. Re-levelling multiplies every rung and the mean by one factor.
+  for (const f of [0.5, 1.7, 3.35]) {
+    const scaled = distOf(
+      Object.fromEntries(Object.entries(dist.shape.ladder_ses).map(([k, v]) => [k, v * f])),
+      949 * f
+    );
+    assert.equal(
+      meanRungPosition(scaled).cut,
+      at.cut,
+      `the position moved when re-levelled by ${f}`
+    );
+    assert.equal(meanRungPosition(scaled).medianPct, at.medianPct);
+  }
+
+  // **It accepts no anchor, and that is the guard.** Handed a sector average it
+  // would return a sector percentile — the one figure this feature exists to
+  // say nobody publishes for Bulgaria. There is no parameter to try it through.
+  assert.equal(
+    meanRungPosition.length,
+    1,
+    "meanRungPosition grew a second required parameter — if it is a level, this returns a sector percentile"
+  );
+  // Its optional argument is a caption and can move no figure, so handing it a
+  // sector average — the obvious way to reach for a sector rank — changes
+  // nothing. `cut` and `medianPct` come from the distribution or from nowhere.
+  const withSectorAvg = meanRungPosition(dist, 3176);
+  assert.equal(withSectorAvg.cut, at.cut, "a second argument moved the rung position");
+  assert.equal(withSectorAvg.medianPct, at.medianPct);
+
+  assert.equal(meanRungPosition(distOf({ P50: 1 }, 949)), null);
+  assert.equal(meanRungPosition(null), null);
 });

@@ -571,10 +571,54 @@ is transport (+11.0% vs +16.8%), a genuine methodological difference. The
 the in-app explainer says in plain language why НСИ's number can differ. We do
 not fetch or publish the national CPI.
 
+## A sector average, and why the card says what an average is
+
+`mirror.js#sectorComparison` feeds `wageGap(net, sectorNet)` — the reader's
+take-home against НСИ's published average for the NACE Rev 2 section they
+picked, both net, `(net − ref) / ref` rounded to whole percent. Nothing else.
+
+**A rank is not available at that granularity and never will be from the current
+upstreams.** Probed 2026-08-06: `earn_ses_monthly` carries BG at the
+whole-economy aggregate only; `nace_r2=J` returns an empty `value` map, and the
+four broad sector aggregates are empty for BG across every slice
+([`data-sources.md`](./data-sources.md) §"gross wage by economic activity" has
+the probes). So the site can report a distance from an average and cannot report
+a position in a distribution.
+
+**The two are not close, and the difference runs against the reader.** Earnings
+are right-skewed, so an average sits well above the middle. Read off the
+published SES shape in `salary_dist.json`:
+
+| | gross |
+|---|---|
+| SES mean | 949 |
+| SES median (P50) | 705 |
+| median ÷ mean | **0.7429** |
+| the mean's own rung | **P66** |
+
+So someone €500 below their sector's average may still be paid more than most
+people in it, and a card reporting only the gap would tell them the opposite.
+
+**`mirror.js#meanRungPosition` publishes that correction, and it is exactly
+scale-invariant.** Re-levelling multiplies every rung and the mean by one
+factor, so the mean's rung is a property of the shape rather than of any
+particular average — P66 at anchors from €1,407 to €5,000, checked in
+`verify_mirror_math.mjs`. It reads Eurostat's ladder alone, so no НСИ figure and
+no payroll parameter enters it.
+
+**It takes no anchor, and that is deliberate.** Handed a sector average it would
+return a sector percentile — the figure the paragraph above says nobody
+publishes. There is no parameter to attempt it through, which is the same device
+`headlineRate` uses to stay unable to become Σ(w·r). Do not add one, and do not
+multiply a sector average by 0.7429 to produce a sector median: sector
+dispersions differ from the national one and nothing published says by how much.
+
 ## What we deliberately do not do
 
 | Idea | Why not |
 |---|---|
+| A salary percentile within a sector | Nobody publishes a pay distribution by economic activity for BG — the figure would be invented, not derived |
+| A sector median from the national median-to-mean ratio | 0.7429 is the country's shape; applying it to a section asserts that section's dispersion, which nothing measures |
 | Derive `annual_rate_pct` from the index | 0.1–0.3 pp gap from the headline; users notice |
 | Pre-compute cumulative rates per anchor year | Bloats the JSON; the site computes it in O(1) |
 | Cache weights at a fixed year | Eurostat rebalances annually |

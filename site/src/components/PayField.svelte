@@ -44,7 +44,7 @@
    * total take-home).
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer } from "../lib/format.js";
+  import { number, integer, label } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import PayslipTable from "./PayslipTable.svelte";
 
@@ -319,6 +319,101 @@
         </div>
       {/each}
     {/if}
+
+    <!-- The sector comparison, under the Sofia one because it answers the
+       same question against a narrower reference. It is a picker rather
+       than a default: the card would otherwise assert an industry about
+       somebody who never named one (P7, no unsourced defaults).
+
+       Two sentences travel with the number and neither is optional.
+       НСИ publish an average by activity and NOBODY publishes a
+       distribution by one — not Eurostat either, whose earn_ses_monthly
+       carries BG at the whole-economy aggregate with every NACE
+       breakdown empty — so a gap here is a distance from an average and
+       never a rank. Said plainly by `sectorNoRank`; corrected for by
+       `sectorAverageFlatters`, whose figures are the COUNTRY's shape and
+       come nowhere near the sector average (mirror.js#meanRungPosition). -->
+    {#if calc.sectorOptions.length > 0}
+      <div class="sector">
+        <label class="sector-l" for="sector-pick">
+          <span class="l-bg">{COPY.sectorLabel.bg}</span>
+          <span class="l-en">{COPY.sectorLabel.en}</span>
+        </label>
+        <select
+          id="sector-pick"
+          value={calc.sectorKey}
+          onchange={(e) => calc.setSector(e.currentTarget.value)}
+        >
+          <option value="">{t(COPY.sectorNone, $lang)}</option>
+          {#each calc.sectorOptions as opt (opt.key)}
+            <option value={opt.key}>{$lang === "bg" ? opt.bg : opt.en}</option>
+          {/each}
+        </select>
+      </div>
+
+      {#if calc.sector}
+        {#if calc.earnersDirty}
+          {#each calc.sector.gaps as gap (gap.index)}
+            <div class="hint" style="margin-top:4px; color:{DIR_COLOR[gap.direction]}">
+              <span class="l-bg"
+                >{@html t(calc.hasHousehold ? COPY.sectorDiffEarner : COPY.sectorDiff, "bg", {
+                  n: fmt0(gap.ordinal),
+                  delta: deltaPhrase(gap, "bg"),
+                  sector: label(calc.sector.bgName),
+                })}</span
+              >
+              <span class="l-en"
+                >{@html t(calc.hasHousehold ? COPY.sectorDiffEarner : COPY.sectorDiff, "en", {
+                  n: fmt0(gap.ordinal),
+                  delta: deltaPhrase(gap, "en"),
+                  sector: label(calc.sector.enName),
+                })}</span
+              >
+            </div>
+          {/each}
+        {/if}
+        <div class="hint src">
+          <a href={calc.sector.sourceUrl} target="_blank" rel="noopener">
+            <span class="l-bg"
+              >{t(COPY.sectorSrc, "bg", {
+                net: fmt0(calc.sector.net),
+                period: calc.sector.refPeriod,
+              })}</span
+            >
+            <span class="l-en"
+              >{t(COPY.sectorSrc, "en", {
+                net: fmt0(calc.sector.net),
+                period: calc.sector.refPeriod,
+              })}</span
+            >
+          </a>
+        </div>
+        <p class="hint caveat">
+          <span class="l-bg">{COPY.sectorNoRank.bg}</span>
+          <span class="l-en">{COPY.sectorNoRank.en}</span>
+        </p>
+        {#if calc.averageFlatters}
+          <p class="hint caveat">
+            <span class="l-bg"
+              >{t(COPY.sectorAverageFlatters, "bg", {
+                cut: fmt0(calc.averageFlatters.cut),
+                medianPct: fmt0(calc.averageFlatters.medianPct),
+              })}</span
+            >
+            <span class="l-en"
+              >{t(COPY.sectorAverageFlatters, "en", {
+                cut: fmt0(calc.averageFlatters.cut),
+                medianPct: fmt0(calc.averageFlatters.medianPct),
+              })}</span
+            >
+          </p>
+        {/if}
+        <p class="hint caveat">
+          <span class="l-bg">{COPY.sectorCoverage.bg}</span>
+          <span class="l-en">{COPY.sectorCoverage.en}</span>
+        </p>
+      {/if}
+    {/if}
   </div>
 </div>
 
@@ -329,6 +424,31 @@
      column of them. */
   .earner {
     margin-top: 10px;
+  }
+  /* The picker sits apart from the income rows: it describes the reader's
+     work rather than their pay, and running it into the stack of amounts
+     reads as a third field of the same kind. */
+  .sector {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .sector select {
+    flex: 1;
+    min-width: 0;
+  }
+  .sector-l {
+    white-space: nowrap;
+  }
+  /* The two caveats are the sentence the number cannot be read without, so
+     they are quiet but not fine print — same size as every other hint here,
+     only dimmed. A caveat set smaller than the claim it qualifies is a
+     caveat designed not to be read. */
+  .caveat {
+    margin: 6px 0 0;
+    color: var(--ink-2);
   }
   .earner-in {
     display: flex;

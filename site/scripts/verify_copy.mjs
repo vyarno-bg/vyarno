@@ -1521,3 +1521,88 @@ test("the country page keeps the 30% line where P7 put it", () => {
     "the paragraph no longer says the affordability line stays where it is"
   );
 });
+
+// ---------------------------------------------------------------------------
+// The sector card — a comparison to an average, said out loud
+// ---------------------------------------------------------------------------
+
+const SECTOR_KEYS = [
+  "sectorNoRank",
+  "sectorAverageFlatters",
+  "sectorCoverage",
+  "sectorDiff",
+  "sectorDiffEarner",
+];
+
+test("the sector copy says plainly that no distribution by sector is published", () => {
+  // The load-bearing sentence. НСИ publish an average by economic activity and
+  // nobody publishes a distribution by one, so a reader shown a gap will read a
+  // rank into it unless told otherwise. Both languages have to carry it, and
+  // both have to name the two things a reader would otherwise assume: that
+  // somebody publishes the spread, and that this is a position in it.
+  for (const text of pair("sectorNoRank")) {
+    assert.ok(
+      /(разпределение|distribution)/i.test(text),
+      `sectorNoRank does not say a distribution is what is missing: ${text}`
+    );
+    assert.ok(
+      /(класиране|rank)/i.test(text),
+      `sectorNoRank does not say this is not a rank: ${text}`
+    );
+  }
+});
+
+test("the sector copy frames the missing figure as unpublished, never as withheld", () => {
+  // docs/principles.md P11. Nobody publishes a pay distribution by activity for
+  // BG, and we cannot source a reason — so the copy says it does not exist,
+  // and does not impute a motive to anyone for its absence.
+  const banned =
+    /(скрива|укрива|не искат да|нарочно не|deliberately (?:hides?|omits?)|do(?:es)? not want you to|intentionally (?:hides?|does not show))/i;
+  for (const key of SECTOR_KEYS) {
+    for (const text of pair(key)) {
+      assert.ok(
+        !banned.test(text),
+        `COPY.${key} frames an unpublished figure as suppression: ${text}\n` +
+          "docs/principles.md P11 — say it is unpublished, not hidden."
+      );
+    }
+  }
+});
+
+test("the sector comparison never calls itself a middle, a median or a rank", () => {
+  // The whole failure this card is designed against: an average described in
+  // the vocabulary of a distribution. "Средната" is the figure itself and is
+  // allowed; "медиана"/"median" and "процентил"/"percentile" are claims about a
+  // spread nobody publishes by sector.
+  //
+  // `sectorAverageFlatters` is the exception and states the rule: it carries
+  // both words about the COUNTRY's distribution, which is published, in order
+  // to say the sector's is not.
+  const banned = /(медиан|median|процентил|percentile|класира|ranked?|top \d)/i;
+  for (const key of ["sectorDiff", "sectorDiffEarner", "sectorSrc", "sectorLabel"]) {
+    for (const text of pair(key)) {
+      assert.ok(
+        !banned.test(text),
+        `COPY.${key} describes an average in the vocabulary of a distribution: ${text}`
+      );
+    }
+  }
+});
+
+test("the sector coverage line says who the series leaves out", () => {
+  // НСИ count employees under a labour contract. The ЕООД and freelance
+  // contractors who make up a large share of the best-paid work in several of
+  // these sections are outside the series by construction, and they skew high —
+  // so the published average understates what those markets pay. A reader
+  // comparing themselves against it is owed that.
+  for (const text of pair("sectorCoverage")) {
+    assert.ok(
+      /(трудово|labour contract)/i.test(text),
+      `sectorCoverage does not say the series counts employees under a labour contract: ${text}`
+    );
+    assert.ok(
+      /(свободна практика|собствена фирма|freelanc|own company)/i.test(text),
+      `sectorCoverage does not say who is outside the series: ${text}`
+    );
+  }
+});

@@ -43,6 +43,7 @@ from vyarno_pipeline.publish import (
     MORTGAGE_FILE,
     PAYROLL_FILE,
     SALARY_DIST_FILE,
+    SECTOR_SALARY_FILE,
     SOFIA_PRICE_FILE,
     SOFIA_SALARY_FILE,
     UNEMPLOYMENT_FILE,
@@ -80,14 +81,18 @@ from vyarno_pipeline.sources.imot import (
     fetch_sofia_avg_prices_for_year,
 )
 from vyarno_pipeline.sources.nsi import (
-    SOURCE_URL as NSI_SOFIA_SALARY_URL,
+    SECTOR_SOURCE_URL_BG,
+    SECTOR_SOURCE_URL_EN,
+    fetch_sector_salary_eu,
+    fetch_sofia_salary_eu,
 )
 from vyarno_pipeline.sources.nsi import (
-    fetch_sofia_salary_eu,
+    SOURCE_URL as NSI_SOFIA_SALARY_URL,
 )
 from vyarno_pipeline.transform import (
     COICOP_META,
     MissingSeriesError,
+    build_sector_salary_payload,
     build_ses_shape_ladder,
     index_fields,
     rows_to_category_observations,
@@ -105,6 +110,7 @@ from vyarno_pipeline.validate import (
     validate_link_status,
     validate_meta_labels_cover,
     validate_reconciliation,
+    validate_sector_salary,
 )
 
 
@@ -156,6 +162,7 @@ def _month_before(period: str) -> str:
             "mortgage",
             "sofia-price",
             "sofia-salary",
+            "sector-salary",
             "salary-dist",
             "payroll",
             "all",
@@ -169,6 +176,9 @@ def _month_before(period: str) -> str:
         "for the per-district €/m² averages in Sofia (exit 4 on network error). "
         "'sofia-salary' fetches the NSI regional wage XLSX for the latest "
         "Sofia-city average gross wage reading (exit 4 on network error). "
+        "'sector-salary' fetches NSI's by-economic-activity wage table in both "
+        "language editions for the latest published quarter per NACE Rev 2 "
+        "section (exit 4 on network error). "
         "'salary-dist' builds the fresh individual gross-earnings percentile "
         "ladder (Eurostat SES shape re-leveled to the live NSI Sofia wage)."
     ),
@@ -211,19 +221,21 @@ def refresh(
         _refresh_sofia_price(out, as_of)
     elif source == "sofia-salary":
         _refresh_sofia_salary(out, as_of)
+    elif source == "sector-salary":
+        _refresh_sector_salary(out, as_of)
     elif source == "salary-dist":
         _refresh_salary_dist(out, as_of)
     elif source == "payroll":
         _refresh_payroll(out, as_of)
     elif source == "all":
-        # **`all` is seven publishes, not one transaction.** Each arm writes its
+        # **`all` is eight publishes, not one transaction.** Each arm writes its
         # own file the moment it has passed its own gates, so an arm that fails
         # leaves the arms before it already rewritten on disk and the arms after
         # it untouched — a directory holding two refresh dates at once.
         #
         # That is the right behaviour and not a shortcoming to engineer away: an
         # arm's output is only ever as good as the gates it just cleared, and
-        # holding six good payloads hostage to a seventh upstream's outage would
+        # holding seven good payloads hostage to an eighth upstream's outage would
         # buy atomicity by discarding work that is correct. `data/published/` is
         # reviewed as a diff before it is committed, which is where a mixed set
         # gets caught.
@@ -233,7 +245,7 @@ def refresh(
         # without this the run dies on the failing arm's message alone and the
         # operator is left to read `git status` to find out what changed. Naming
         # the completed arms is the difference between re-running one and
-        # re-running seven.
+        # re-running eight.
         done: list[str] = []
         arms: list[tuple[str, Callable[[], None]]] = [
             ("hicp", lambda: _refresh_hicp(out, geo, since_year, skip_link_check, as_of)),
@@ -241,6 +253,7 @@ def refresh(
             ("mortgage", lambda: _refresh_mortgage(out, as_of)),
             ("sofia-price", lambda: _refresh_sofia_price(out, as_of)),
             ("sofia-salary", lambda: _refresh_sofia_salary(out, as_of)),
+            ("sector-salary", lambda: _refresh_sector_salary(out, as_of)),
             ("salary-dist", lambda: _refresh_salary_dist(out, as_of)),
             ("payroll", lambda: _refresh_payroll(out, as_of)),
         ]
@@ -764,6 +777,53 @@ def _refresh_sofia_salary(out: Path, as_of: date) -> None:
         ),
     )
     click.echo(f"OK: wrote {SOFIA_SALARY_FILE} (latest {obs.value:.0f} EUR at {obs.ref_period})")
+
+
+def _refresh_sector_salary(out: Path, as_of: date) -> None:
+    """Fetch НСИ's by-activity wage table (both editions) and publish it.
+
+    Failure modes match `_refresh_sofia_salary`: exit 4 on network, exit 2 on a
+    changed sheet structure or a tripped connector guard, exit 3 on the payload
+    gate. The two editions are fetched together because the section names are
+    half the payload, and a run that got only one of them would have to invent
+    the other language — which is the one thing this feature must not do.
+
+    There is no fallback. The picker is absent rather than wrong if the file is
+    missing, the same posture the Sofia comparator takes.
+    """
+    try:
+        click.echo("→ fetching NSI by-activity wage XLSX (EN + BG editions)...")
+        scrape = fetch_sector_salary_eu()
+        click.echo(
+            f"  got {len(scrape['sectors'])} activities at {scrape['ref_period']}"
+            f"{' (preliminary)' if scrape['is_preliminary'] else ''}"
+        )
+    except httpx.HTTPError as e:
+        click.echo(f"ERROR: NSI by-activity XLSX fetch failed: {e}", err=True)
+        sys.exit(4)
+    except ValueError as e:
+        click.echo(f"ERROR: NSI by-activity XLSX parse failed: {e}", err=True)
+        sys.exit(2)
+
+    try:
+        validate_sector_salary(scrape["sectors"], scrape["ref_period"])
+    except ValidationError as e:
+        click.echo(f"ERROR: sector wage gate failed: {e}", err=True)
+        sys.exit(3)
+
+    payload = build_sector_salary_payload(
+        scrape,
+        as_of=as_of,
+        source_url=SECTOR_SOURCE_URL_EN,
+        source_url_bg=SECTOR_SOURCE_URL_BG,
+    )
+    write_payload(payload, target_dir=out, filename=SECTOR_SALARY_FILE)
+    top = max(scrape["sectors"][1:], key=lambda s: s["value_eur"])
+    click.echo(
+        f"OK: wrote {SECTOR_SALARY_FILE} "
+        f"({len(scrape['sectors'])} activities at {scrape['ref_period']}; "
+        f"highest {top['en_name']} {top['value_eur']:.0f} EUR)"
+    )
 
 
 def _refresh_salary_dist(out: Path, as_of: date) -> None:

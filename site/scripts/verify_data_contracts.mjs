@@ -447,6 +447,45 @@ test("no НСИ payload carries a second publisher's figures", () => {
     "sofia_salary.json's headline is not one of the months НСИ published — it " +
       "has become a derived figure again"
   );
+
+  // The same property, activity by activity. Twenty rows means twenty places a
+  // derived headline could hide, and none of them would look wrong on screen.
+  const sectors = read("sector_salary");
+  if (!sectors) return;
+  for (const s of sectors.sectors ?? []) {
+    assert.equal(
+      s.value_eur,
+      s.series_by_period?.[sectors.ref_period],
+      `sector_salary.json's headline for ${s.en_name} is not the quarter НСИ published`
+    );
+  }
+});
+
+test("sector_salary.json carries no rank, because nobody publishes one", () => {
+  // Nobody publishes a pay distribution by economic activity for Bulgaria —
+  // Eurostat's earn_ses_monthly carries BG at the whole-economy aggregate only,
+  // with every NACE breakdown empty (probed 2026-08-06, docs/data-sources.md).
+  // So a percentile, decile or median in this payload could only have been
+  // invented, and it would read exactly like a sourced figure.
+  const sectors = read("sector_salary");
+  if (!sectors) return;
+
+  const banned = /(percentile|decile|median|p\d{1,2}|rank|spread|quartile)/i;
+  for (const s of sectors.sectors ?? []) {
+    const offending = Object.keys(s).filter((k) => banned.test(k));
+    assert.deepEqual(
+      offending,
+      [],
+      `sector_salary.json's ${s.en_name} row carries ${offending} — there is no ` +
+        `published distribution by activity for BG behind any such field`
+    );
+  }
+  // And every row states both of НСИ's own labels: a missing one renders the
+  // picker option as a blank line rather than falling back to the other
+  // language, which would put an English section name in a Bulgarian list.
+  for (const s of sectors.sectors ?? []) {
+    assert.ok(s.bg_name && s.en_name, `${s.en_name || s.bg_name} is missing a label`);
+  }
 });
 
 test("the offline sentinels in content.js still match what the pipeline publishes", () => {

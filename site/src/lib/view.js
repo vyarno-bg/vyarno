@@ -41,6 +41,7 @@ import {
   officialCumulativeSince2020,
   payrollParams,
   percentile,
+  wageGap,
   SALARY_LADDER_CUTS,
 } from "./mirror.js";
 // The share sentence is a string, and a string this file assembles has to be
@@ -1185,7 +1186,8 @@ export function sofiaGap({ nets, sofiaNet }) {
   (nets ?? []).forEach((n, index) => {
     const net = Number(n);
     if (!Number.isFinite(net) || net <= 0) return;
-    const diffPct = Math.round((100 * (net - ref)) / ref);
+    const gap = wageGap(net, ref);
+    if (!gap) return;
     out.push({
       index,
       // Which income the sentence is about, as the reader counts them. Decided
@@ -1194,13 +1196,91 @@ export function sofiaGap({ nets, sofiaNet }) {
       // `verify_template_safety` refuses to see it interpolated into markup.
       ordinal: index + 1,
       net,
-      diffPct,
-      magnitudePct: Math.abs(diffPct),
-      direction: diffPct > 1 ? "above" : diffPct < -1 ? "below" : "equal",
+      ...gap,
     });
   });
   return out;
 }
+
+/**
+ * The chosen sector's published average, and how the reader sits against it.
+ *
+ * Selection, not arithmetic: the value and the period are НСИ's own published
+ * cells, picked by `key` out of `sector_salary.json`. The one computation is
+ * the gross-to-net conversion and the gap, both handed to `mirror.js`, both in
+ * the reader's own tab.
+ *
+ * **This returns no rank, and there is none to return.** Nobody publishes a pay
+ * distribution by economic activity for Bulgaria — Eurostat's `earn_ses_monthly`
+ * carries BG at the whole-economy aggregate only, every NACE breakdown empty —
+ * so `gap` is a distance from an average and the copy beside it has to say so.
+ * `mirror.js#meanRungPosition` is what lets a reader correct for it, and it is
+ * deliberately not reachable from here with a sector figure.
+ *
+ * @param {object} args
+ * @param {object|null} args.sectorSalary  data.sectorSalary (sector_salary.json)
+ * @param {string} args.key  the chosen sector's English name, as НСИ print it
+ * @param {Array<number|null|undefined>} args.nets  monthly NET per earner
+ * @param {object|null} args.payroll  data.payroll
+ * @returns {{bgName:string, enName:string, gross:number, net:number,
+ *            refPeriod:string, isPreliminary:boolean, sourceUrl:string,
+ *            gaps:Array<object>} | null} null when nothing is selected
+ */
+export function sectorComparison({ sectorSalary, key, nets, payroll }) {
+  const rows = Array.isArray(sectorSalary?.sectors) ? sectorSalary.sectors : [];
+  const row = rows.find((s) => s?.en_name === key);
+  const gross = Number(row?.value_eur);
+  if (!row || !Number.isFinite(gross) || gross <= 0) return null;
+
+  const params = payrollParams(payroll);
+  const net = bgNetSalary(gross, params).net;
+  const gaps = [];
+  (nets ?? []).forEach((n, index) => {
+    const own = Number(n);
+    if (!Number.isFinite(own) || own <= 0) return;
+    const gap = wageGap(own, net);
+    if (gap) gaps.push({ index, ordinal: index + 1, net: own, ...gap });
+  });
+
+  return {
+    bgName: String(row.bg_name ?? ""),
+    enName: String(row.en_name ?? ""),
+    gross,
+    net,
+    refPeriod: String(sectorSalary?.ref_period ?? ""),
+    isPreliminary: Boolean(sectorSalary?.is_preliminary),
+    sourceUrl: String(sectorSalary?.source_url ?? ""),
+    gaps,
+  };
+}
+
+/**
+ * The picker's options, in НСИ's own row order with their own labels.
+ *
+ * Their order is the classification's, not a ranking, and it is kept because
+ * re-sorting by wage would turn a list of sections into a league table — a
+ * different claim, made by the ordering rather than by any number on it.
+ *
+ * The all-activities row is separated out rather than dropped: it is the one
+ * every other row is read against, and it is not an economic activity.
+ *
+ * @param {object|null} sectorSalary  data.sectorSalary
+ * @returns {Array<{key:string, bg:string, en:string, isTotal:boolean}>}
+ */
+export function sectorOptions(sectorSalary) {
+  const rows = Array.isArray(sectorSalary?.sectors) ? sectorSalary.sectors : [];
+  return rows
+    .filter((s) => s?.en_name && s?.bg_name)
+    .map((s) => ({
+      key: String(s.en_name),
+      bg: String(s.bg_name),
+      en: String(s.en_name),
+      isTotal: String(s.en_name) === SECTOR_TOTAL_KEY,
+    }));
+}
+
+/** НСИ's own label for the all-activities row, which is not a sector. */
+export const SECTOR_TOTAL_KEY = "Total";
 
 /**
  * The `scheduled_changes` row describing the insurance ceiling, or undefined.
@@ -1503,6 +1583,14 @@ export const SHARE_FIELDS = Object.freeze([
  *     thirteen-number spending profile identifies a household to anyone who
  *     knows them. One category name carries the same story and is one of
  *     thirteen possibilities.
+ *   - **The sector gap inverts EXACTLY, and is the strongest of these.** The
+ *     ladder position above is bounded by a rung's width — €1,997 at P80
+ *     against €2,802 at P90 — so it names a range. A sector gap divides by one
+ *     of twenty figures published in `sector_salary.json`, so "18% below
+ *     Information and communication" is a single net wage to the euro, and the
+ *     sector name narrows the sender to one of twenty groups before the
+ *     percentage is read at all. It reaches no share surface, and the
+ *     parameter list below is what stops it: `sharePayload` takes no sector.
  *
  * What is left is a rate over a basket (thirteen unknowns collapsed into one
  * scalar, and `mirror.js#personalInflation` never sees the pay at all), a

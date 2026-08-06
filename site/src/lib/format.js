@@ -111,6 +111,27 @@ export function periodLong(value, lang = "bg") {
 }
 
 /**
+ * A publisher's own category label, constrained to the shape a label has.
+ *
+ * НСИ's NACE Rev 2 section names arrive in `sector_salary.json` — read out of
+ * their workbook, in two languages — and the sector sentence renders them
+ * inside `{@html …}` because the copy around them carries markup. Every one of
+ * them is letters, digits, spaces and a little punctuation, so pinning that
+ * shape costs nothing and keeps the third invariant in `site/AGENTS.md` true:
+ * no fetched string reaches the DOM as markup. Anything else returns an em
+ * dash, which renders as a visibly missing label rather than as itself.
+ *
+ * Deliberately NOT an escape function. Escaping would let any string through
+ * in a mangled form; this admits only what a label looks like, so a payload
+ * carrying something else fails visibly instead of rendering oddly.
+ */
+export function label(value) {
+  const text = String(value ?? "").trim();
+  if (!text || text.length > 120) return "—";
+  return /^[\p{L}\p{N} .,;:'’()\-/&]+$/u.test(text) ? text : "—";
+}
+
+/**
  * A URL that is safe to put in an `href`, or "" if it is not one.
  *
  * Every source link on the page comes out of a published payload's

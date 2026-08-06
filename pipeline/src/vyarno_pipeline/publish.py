@@ -29,6 +29,7 @@ UNEMPLOYMENT_FILE: str = "unemployment.json"
 MORTGAGE_FILE: str = "mortgage.json"
 SOFIA_PRICE_FILE: str = "sofia_price.json"
 SOFIA_SALARY_FILE: str = "sofia_salary.json"
+SECTOR_SALARY_FILE: str = "sector_salary.json"
 SALARY_DIST_FILE: str = "salary_dist.json"
 PAYROLL_FILE: str = "payroll.json"
 

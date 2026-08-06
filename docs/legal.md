@@ -292,8 +292,10 @@ The workbook НСИ publish carries both a monthly sheet and one sheet per year 
 their own quarterly averages, `2020trimes` … `2026trimes`. `sofia_salary.json`
 carries the quarterly series, `value` and `ref_period` are НСИ's latest
 published quarter, and `view.js#sofiaQuarter` selects that headline rather than
-computing one. Every НСИ figure this project ships — payload, offline sentinel,
-screen — is a cell НСИ published.
+computing one. `sector_salary.json` is the same arrangement over their sibling
+by-activity table `Labour_1.1.2.1`: twenty rows, each carrying the quarters НСИ
+printed and a headline that IS one of them. Every НСИ figure this project ships
+— payload, offline sentinel, screen — is a cell НСИ published.
 
 - The Sofia level the site quotes is 1915 EUR at 2026-Q1 because that is what
   НСИ print. It is also more accurate than the alternative: the mean of their
@@ -306,8 +308,15 @@ screen — is a cell НСИ published.
   side and the pipeline side.
 - No **file** this repository publishes is a composite of НСИ with anyone else.
   `no НСИ payload carries a second publisher's figures` in
-  `verify_data_contracts.mjs` asserts that across all eight payloads, and
-  separately that the headline is one of the quarters in the series beside it.
+  `verify_data_contracts.mjs` asserts that across every published payload, and
+  separately that each headline is one of the quarters in the series beside it —
+  for `sofia_salary.json` and for all twenty rows of `sector_salary.json`.
+- **The by-activity table is read in both of НСИ's own language editions**, so
+  the Bulgarian section names are theirs and not our translation of their
+  English. That is an accuracy choice before it is a licence one — §2.3.3 binds
+  a user «да не нарушава първоначалното им значение», and rendering section J as
+  «ИТ» would do exactly that, since НСИ's own name for it is «Създаване и
+  разпространение на информация и творчески продукти; далекосъобщения».
 - The attribution condition is met at every use: the footer on every page, the
   shipped sources document, and the payload's own `source`, `source_url` and
   `dataset`. The footer guard fails if any of that stops.
@@ -326,10 +335,24 @@ any claim is contractual, and the remedy would be "stop". What would change the
 assessment is a paid product built on the same composition — see the ЗЗК
 paragraph in §имот.bg, which is written against a service that sells nothing.
 
-**The rule that leaves behind:** the pipeline may select from НСИ's published
-cells and must not compute over them, and neither may the browser. The moment
-either does, this section is back to arguing about a derived figure instead of
-pointing at a published one.
+**The rule that leaves behind, stated at the grain the code actually works
+at.** No FILE this repository publishes may carry a figure computed over НСИ's
+cells: the pipeline selects, and every НСИ payload is a straight reproduction of
+cells they printed. What the browser does with those cells once they are on the
+reader's screen is the paragraph above — a comparison the reader asked for,
+against a figure that is still НСИ's, computed nowhere we could distribute it
+from. `view.js#sofiaGap` and `view.js#sectorComparison` are both that: a
+percentage between the reader's own pay and a published average, existing only
+in their tab.
+
+The line matters because the two halves have different answers. A derived
+figure written into `data/published/` is distributed by us, to everyone, as a
+file — squarely what §2.1.1 forbids. A percentage the reader's browser works out
+about their own salary is the composition question in the paragraph above, which
+is answered there rather than by pretending it does not happen. **Do not
+"correct" this section by moving a comparison into a payload to make the
+sentence simpler.** The simpler sentence would be the one that breaches the
+licence.
 
 That is also why `salary_dist.json` carries the Eurostat ladder at Eurostat's
 own level: **one publisher per published file**, so each artefact travels under

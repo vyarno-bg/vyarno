@@ -350,3 +350,343 @@ def test_transform_wraps_into_observation() -> None:
     # Disclaimer names the human-readable landing page so a reader can click
     # through.
     assert "statistical-data/179/569" in (obs.disclaimer or "")
+
+
+# ---------------------------------------------------------------------------
+# The by-sector table — Labour_1.1.2.1, both language editions
+# ---------------------------------------------------------------------------
+
+# The Bulgarian edition heads its bonus column differently, which is why the
+# connector carries both markers. Copied from the live file, not translated.
+BONUS_HEADER_BG = "IV вкл.годишни премии"
+
+# Nineteen NACE Rev 2 sections in НСИ's own order, plus the all-activities row
+# that heads them. Trimmed to the shape that matters — the two `Total` title
+# rows, the ownership block and the quarterly/monthly split — with НСИ's own
+# missing spaces after commas preserved, because the row labels are matched
+# exactly and tidying them is how the lookup stops matching.
+_SECTOR_NAMES_EN = [
+    "Total",
+    "Agriculture,forestry and fishing",
+    "Mining and quarrying",
+    "Manufacturing",
+    "Electricity,gas,steam and air conditioning supply",
+    "Water supply,sewerage,waste management and remediation activities",
+    "Construction",
+    "Wholesale and retail trade;repair of motor vehicles and motorcycles",
+    "Transportation and storage",
+    "Accommodation and food service activities",
+    "Information and communication",
+    "Financial and insurance activities",
+    "Real estate activities",
+    "Professional,scientific and technical activities",
+    "Administrative and support service activities",
+    "Public administration and defence;compulsory social security",
+    "Education",
+    "Human health and social work activities",
+    "Arts,entertainment and recreation",
+    "Other service activities",
+]
+_SECTOR_NAMES_BG = [
+    "Общо",
+    "Селско, горско и рибно стопанство",
+    "Добивна промишленост",
+    "Преработваща промишленост",
+    "Производство и разпределение на електрическа и топлинна енергия",
+    "Доставяне на води;канализационни услуги,управление на отпадъци",
+    "Строителство",
+    "Търговия; ремонт на автомобили и мотоциклети",
+    "Транспорт, складиране и съобщения",
+    "Хотелиерство и ресторантьорство",
+    "Създаване и разпространение на информация и творчески продукти; далекосъобщения",
+    "Финансови и застрахователни дейности",
+    "Операции с недвижими имоти",
+    "Професионални дейности и научни изследвания",
+    "Административни и спомагателни дейности",
+    "Държавно управление",
+    "Образование",
+    "Хуманно здравеопазване и социална работа",
+    "Култура,спорт и развлечения",
+    "Други дейности",
+]
+
+# The quarterly figures the fixture publishes for 2026-Q1. `Total` sits inside
+# the range of the sections, which is the connector's regression guard.
+_Q1_2026 = [
+    1407.0,
+    981.0,
+    1713.0,
+    1201.0,
+    2060.0,
+    1048.0,
+    1110.0,
+    1220.0,
+    1214.0,
+    870.0,
+    3176.0,
+    2226.0,
+    1259.0,
+    1923.0,
+    1209.0,
+    1591.0,
+    1437.0,
+    1382.0,
+    1260.0,
+    1014.0,
+]
+
+# March is the annual bonus peak, so the MONTHLY block carries visibly
+# different figures. If the parser ever reads the monthly table instead, the
+# assertions below land on these rather than on the published quarter.
+_MARCH_2026 = [v * 1.14 for v in _Q1_2026]
+
+
+def _build_sector_year_sheet(
+    wb: openpyxl.Workbook,
+    year: int,
+    *,
+    names: list[str],
+    quarterly: list[float],
+    sheet_suffix: str,
+    activity_label: str,
+    ownership_label: str,
+    months_label: str,
+    quarters_label: str,
+    total_title: str,
+    bonus_header: str,
+    is_preliminary: bool = True,
+    quarter_headers: list[str] | None = None,
+) -> None:
+    """Append one per-year sheet with all FOUR blocks the live file stacks.
+
+    Monthly by activity, monthly by ownership, quarterly by activity, quarterly
+    by ownership — plus the two rows that carry the word `Total` in column 0 and
+    no data at all. Those two are the reason a label-only lookup cannot work,
+    so a fixture without them would test a sheet НСИ do not publish.
+    """
+    ws = wb.create_sheet(f"{year}{sheet_suffix}")
+    headers = quarter_headers if quarter_headers is not None else LIVE_QUARTER_HEADERS
+    star = "*" if is_preliminary else ""
+
+    ws.append([None])
+    ws.append([f"AVERAGE GROSS MONTHLY WAGES AND SALARIES ... {year}{star}"])
+    ws.append([total_title])  # a TITLE row carrying `Total` and no figures
+    ws.append(["(EUR) "])
+
+    # Block 1 — monthly by activity. Twelve month columns; only March is filled,
+    # and with the bonus-inflated figure.
+    ws.append([activity_label, months_label])
+    ws.append([None, *["I", "II", "III", "IV", "V", "VI"]])
+    for name, march in zip(names, _MARCH_2026, strict=True):
+        ws.append([name, None, None, march])
+    ws.append([None])
+    ws.append([None])
+
+    # Block 2 — monthly by ownership.
+    ws.append(["(EUR) "])
+    ws.append([ownership_label, months_label])
+    ws.append([None, *["I", "II", "III"]])
+    ws.append(["Public sector", None, None, 1412.0])
+    ws.append(["Private sector", None, None, 1497.0])
+    ws.append([None])
+    ws.append([None])
+
+    # Block 3 — quarterly by activity. The one the connector must read.
+    ws.append([total_title])  # the SECOND `Total` title row
+    ws.append(["(EUR) "])
+    ws.append([activity_label, f"{quarters_label} {year}"])
+    ws.append([None, *headers, bonus_header])
+    for name, q1 in zip(names, quarterly, strict=True):
+        # Q4 and the bonus column are filled for the earlier year only; for the
+        # current one Q1 is all НСИ have published.
+        ws.append([name, q1, None, None, None, None])
+    ws.append([None])
+    ws.append([None])
+
+    # Block 4 — quarterly by ownership. Immediately after the block above, so a
+    # read that does not stop at the blank label runs straight into it.
+    ws.append(["(EUR) "])
+    ws.append([ownership_label, f"{quarters_label} {year}"])
+    ws.append([None, *headers, bonus_header])
+    ws.append(["Public sector", 1398.0])
+    ws.append(["Private sector", 1410.0])
+    ws.append(["*Preliminary data"])
+
+
+def _build_sector_xlsx(
+    *,
+    bulgarian: bool = False,
+    quarterly: list[float] | None = None,
+    names: list[str] | None = None,
+    **kwargs,
+) -> bytes:
+    """One language edition of the by-sector workbook, both years."""
+    wb = openpyxl.Workbook()
+    # The combined sheet both editions carry. Its name must NOT match the
+    # per-year pattern; if it ever does, the parser reads a sheet whose columns
+    # are years rather than quarters.
+    wb.active.title = "2019-2026Кид2008 " if bulgarian else "2019-2026NaceRev2"
+    wb.active.append(["Икономически дейности" if bulgarian else "Economic activity"])
+
+    spec = dict(
+        names=names or (_SECTOR_NAMES_BG if bulgarian else _SECTOR_NAMES_EN),
+        sheet_suffix="КИД2008" if bulgarian else "NaceRev2",
+        activity_label="Икономически дейности" if bulgarian else "Economic activity",
+        ownership_label="Форма на собственост" if bulgarian else "Type of ownership",
+        months_label="Месеци" if bulgarian else "Months",
+        quarters_label="Тримесечия на" if bulgarian else "Quarters",
+        total_title="\xa0Общо" if bulgarian else "Total",
+        bonus_header=BONUS_HEADER_BG if bulgarian else BONUS_HEADER,
+        **kwargs,
+    )
+    _build_sector_year_sheet(wb, 2025, quarterly=[v * 0.92 for v in _Q1_2026], **spec)
+    _build_sector_year_sheet(wb, 2026, quarterly=quarterly or _Q1_2026, **spec)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+def _serve_sector_fixtures(
+    monkeypatch: pytest.MonkeyPatch,
+    en: bytes | None = None,
+    bg: bytes | None = None,
+) -> None:
+    """Serve each language edition from the URL the connector asks for."""
+    en_bytes = en if en is not None else _build_sector_xlsx()
+    bg_bytes = bg if bg is not None else _build_sector_xlsx(bulgarian=True)
+
+    def _fake(url: str, timeout: float = 30.0) -> bytes:
+        return bg_bytes if url == nsi.SECTOR_SOURCE_URL_BG else en_bytes
+
+    monkeypatch.setattr(nsi, "_get_xlsx", _fake)
+
+
+def test_sector_connector_reads_the_published_quarter_not_the_month(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The quarterly block, chosen past two `Total` title rows and a monthly one.
+
+    Four blocks share the sheet and two rows carry `Total` with no figures, so a
+    label-only lookup finds a row of blanks first and the monthly table second.
+    March is the annual bonus peak — 14% above the quarter in this fixture — so
+    reading the wrong block overstates every sector without looking wrong.
+    """
+    _serve_sector_fixtures(monkeypatch)
+    result = nsi.fetch_sector_salary_eu()
+
+    assert result["ref_period"] == "2026-Q1"
+    assert len(result["sectors"]) == 20
+    by_name = {s["en_name"]: s["value_eur"] for s in result["sectors"]}
+    assert by_name["Total"] == pytest.approx(1407.0)
+    assert by_name["Information and communication"] == pytest.approx(3176.0)
+    # And nothing from the monthly block reached the payload.
+    assert all(v not in _MARCH_2026 for v in by_name.values())
+
+
+def test_the_ownership_block_is_never_read_as_an_activity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The block ends at the first blank label, not at the end of the sheet.
+
+    `Public sector` and `Private sector` sit two rows below the last activity
+    and carry wages of the same magnitude, so a read that runs on accepts them
+    as sections and reports 22 activities where НСИ publish 19 plus a total.
+    """
+    _serve_sector_fixtures(monkeypatch)
+    names = {s["en_name"] for s in nsi.fetch_sector_salary_eu()["sectors"]}
+
+    assert "Public sector" not in names
+    assert "Private sector" not in names
+
+
+def test_the_annual_bonus_column_is_never_read_as_a_sector_quarter() -> None:
+    """`IV incl.annual bonuses` is a different quantity wearing Q4's name.
+
+    Checked in BOTH spellings, because the by-sector table is read in both
+    editions and the Bulgarian one heads that column «IV вкл.годишни премии».
+    A guard that fires in one language leaves the other file undefended.
+    """
+    assert _roman_quarter(BONUS_HEADER) is None
+    assert _roman_quarter(BONUS_HEADER_BG) is None
+    assert _roman_quarter("IV") == 4
+
+    header = [None, *LIVE_QUARTER_HEADERS, BONUS_HEADER_BG]
+    assert _quarter_columns(header) == {1: 1, 2: 2, 3: 3, 4: 4}
+
+
+def test_the_two_language_editions_must_agree_cell_for_cell(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Positional pairing is only safe while the two editions are in step.
+
+    НСИ publish the same figures in both files, so an inserted or reordered row
+    shows up as a value mismatch. Without this the connector would ship section
+    J's wage under section K's Bulgarian name — plausible on screen, and wrong
+    in exactly the way nobody would query.
+    """
+    shuffled = list(_Q1_2026)
+    shuffled[10], shuffled[11] = shuffled[11], shuffled[10]
+    _serve_sector_fixtures(monkeypatch, bg=_build_sector_xlsx(bulgarian=True, quarterly=shuffled))
+
+    with pytest.raises(ValueError, match="no longer in the same order"):
+        nsi.fetch_sector_salary_eu()
+
+
+def test_the_all_activities_row_must_sit_inside_the_sections(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An average over the sections cannot be above all of them.
+
+    The by-sector counterpart of the Sofia-city/province guard: if the block
+    selector drifts onto a title row or the ownership table, the relationship
+    between the total and the sections it averages is what breaks first.
+    """
+    impossible = [9999.0, *_Q1_2026[1:]]
+    _serve_sector_fixtures(
+        monkeypatch,
+        en=_build_sector_xlsx(quarterly=impossible),
+        bg=_build_sector_xlsx(bulgarian=True, quarterly=impossible),
+    )
+
+    with pytest.raises(ValueError, match="Regression guard"):
+        nsi.fetch_sector_salary_eu()
+
+
+def test_no_sector_figure_is_computed_only_selected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every figure returned is a cell НСИ published.
+
+    The same property `test_no_figure_is_computed_only_selected` holds for the
+    regional table, and it is invisible on screen for the same reason: an
+    averaging step here would move no number a reader could check against the
+    workbook. The mean of a sector's two published quarters appears nowhere.
+    """
+    _serve_sector_fixtures(monkeypatch)
+    result = nsi.fetch_sector_salary_eu()
+
+    published = set(_Q1_2026) | {v * 0.92 for v in _Q1_2026}
+    for sector in result["sectors"]:
+        assert set(sector["series_by_period"].values()) <= published
+        assert sector["value_eur"] == sector["series_by_period"][result["ref_period"]]
+
+
+def test_sector_labels_are_нси_own_strings_in_both_languages(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The Bulgarian label is НСИ's, never a translation of their English.
+
+    Section J is the case the feature turns on: НСИ call it «Създаване и
+    разпространение на информация и творчески продукти; далекосъобщения», which
+    no reader mistakes for «ИТ». A translated "Information and communication"
+    would invite exactly that reading, so the label has to come from their own
+    Bulgarian edition.
+    """
+    _serve_sector_fixtures(monkeypatch)
+    sectors = nsi.fetch_sector_salary_eu()["sectors"]
+    j = next(s for s in sectors if s["en_name"] == "Information and communication")
+
+    assert j["bg_name"] == _SECTOR_NAMES_BG[10]
+    assert "далекосъобщения" in j["bg_name"]
+    assert all(s["bg_name"] and s["en_name"] for s in sectors)
