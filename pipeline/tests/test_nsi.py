@@ -690,3 +690,27 @@ def test_sector_labels_are_нси_own_strings_in_both_languages(
     assert j["bg_name"] == _SECTOR_NAMES_BG[10]
     assert "далекосъобщения" in j["bg_name"]
     assert all(s["bg_name"] and s["en_name"] for s in sectors)
+
+
+def test_the_sector_preliminary_marker_comes_from_the_year_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """НСИ star a whole year on the sheet title until they finalise it.
+
+    The counterpart of `test_the_preliminary_marker_comes_from_the_year_title`
+    for the by-sector table, and the flag is load-bearing rather than
+    decorative: it is what puts «(предварителни данни)» on the source line
+    under the reader's own gap. A parse that stops finding the star fails
+    SILENTLY to `False`, and the card then shows a figure НСИ will revise as a
+    settled one — more certainty than exists (P4), with no other assertion in
+    this file disturbed.
+    """
+    _serve_sector_fixtures(monkeypatch)
+    assert nsi.fetch_sector_salary_eu()["is_preliminary"] is True
+
+    _serve_sector_fixtures(
+        monkeypatch,
+        en=_build_sector_xlsx(is_preliminary=False),
+        bg=_build_sector_xlsx(bulgarian=True, is_preliminary=False),
+    )
+    assert nsi.fetch_sector_salary_eu()["is_preliminary"] is False

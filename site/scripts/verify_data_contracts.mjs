@@ -463,8 +463,9 @@ test("no НСИ payload carries a second publisher's figures", () => {
 
 test("sector_salary.json carries no rank, because nobody publishes one", () => {
   // Nobody publishes a pay distribution by economic activity for Bulgaria —
-  // Eurostat's earn_ses_monthly carries BG at the whole-economy aggregate only,
-  // with every NACE breakdown empty (probed 2026-08-06, docs/data-sources.md).
+  // Eurostat's earn_ses_monthly carries no NACE section for BG at all — only
+  // broad groupings, the finest lumping section J with seven others (probed
+  // 2026-08-06, docs/data-sources.md).
   // So a percentile, decile or median in this payload could only have been
   // invented, and it would read exactly like a sourced figure.
   const sectors = read("sector_salary");

@@ -1245,9 +1245,15 @@ export const COPY = {
     bg: "доход {n} е <b>{delta}</b> средната за „{sector}“",
     en: 'income {n} is <b>{delta}</b> the average for "{sector}"',
   },
+  // НСИ publish a GROSS average, and it is the only figure on this line that is
+  // theirs. The net beside it is our payroll conversion of it, so both are named
+  // and the step between them is attributed — the same standard the calibration
+  // sentence below meets for Eurostat's mean and median. Showing the net alone
+  // under an «НСИ ·» credit puts their name over our arithmetic and leaves the
+  // reader who opens the workbook with no figure to match the row against.
   sectorSrc: {
-    bg: "НСИ · средна брутна заплата за дейността ≈ {net} нето · {period}{prelim}",
-    en: "NSI · average GROSS for the activity ≈ NET {net} · {period}{prelim}",
+    bg: "НСИ · средна брутна заплата за дейността {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
+    en: "NSI · average GROSS for the activity {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
   },
   // НСИ mark a whole year preliminary until they finalise it, and 2026 is. A
   // figure they will revise, shown as though it were settled, is the reader
@@ -1281,13 +1287,22 @@ export const COPY = {
   // so both published figures are named and the division is attributed to us.
   // A «(Евростат)» credit spanning a number they never printed is the quiet
   // way this card would stop being checkable.
+  // Both figures are GROSS, and the line above this one now ends in a net. Two
+  // adjacent sentences pairing a €949 with a €2,573 on different bases invite a
+  // reader to compare them, so each names its own — the ratio is what carries
+  // over between them, not the levels.
   sectorAverageFlatters: {
-    bg: "Средната заплата не е средата. За България Евростат публикуват средна {mean} € и медиана {median} € ({shapeYear} г.); съотношението между тях е наша сметка — половината работещи вземат под {medianPct}% от средната. Самата средна изпреварва около {cut}% от заетите, сметнато между публикуваните децили, а не измерено. Затова под средната за сектора не означава под средата.",
-    en: "An average is not a middle. For Bulgaria Eurostat publish a mean of €{mean} and a median of €{median} ({shapeYear}); the ratio between them is ours — half the country earns less than {medianPct}% of the average. The average itself is ahead of about {cut}% of employees, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
+    bg: "Средната заплата не е средата. За България Евростат публикуват средна брутна заплата {mean} € и медиана {median} € ({shapeYear} г.); съотношението между тях е наша сметка — половината работещи вземат под {medianPct}% от средната. Самата средна изпреварва около {cut}% от заетите, сметнато между публикуваните децили, а не измерено. Затова под средната за сектора не означава под средата.",
+    en: "An average is not a middle. For Bulgaria Eurostat publish a mean GROSS wage of €{mean} and a median of €{median} ({shapeYear}); the ratio between them is ours — half the country earns less than {medianPct}% of the average. The average itself is ahead of about {cut}% of employees, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
   },
+  // The English has to name «служебно правоотношение» too. НСИ count both
+  // employment relationships, and «Държавно управление» is one of the sections
+  // in the picker — an English reader who picks it and is told the series
+  // covers only labour contracts has been told their own section is excluded
+  // from the figure they are being compared against.
   sectorCoverage: {
     bg: "Числата обхващат само наетите по трудово и служебно правоотношение — хората на свободна практика и през собствена фирма не са включени. Дейностите са широки раздели по КИД-2008, а не професии.",
-    en: "The figures cover only employees under a labour contract — people who are self-employed or work through their own company are not included. Activities are broad NACE Rev 2 sections, not occupations.",
+    en: "The figures cover only people on a labour contract or in the civil service — those who are self-employed or work through their own company are not included. Activities are broad NACE Rev 2 sections, not occupations.",
   },
   statSofiaSrc: {
     bg: "НСИ · средна брутна заплата в София-град ≈ {{net}} нето · {{as_of}}",

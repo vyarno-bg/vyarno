@@ -1054,6 +1054,26 @@ test("meanRungPosition says where an average sits, and takes no anchor", () => {
   assert.equal(at.cut, 66, "the mean no longer lands where the published shape puts it");
   assert.equal(at.medianPct, 74);
 
+  // **The two figures the ratio divides come back unchanged, and which is which
+  // matters.** Eurostat print a mean and a median for BG; the division between
+  // them is ours, so the card names both published inputs and attributes the
+  // step. Transposed, it renders «Евростат публикуват средна 705 € и медиана
+  // 949 €» — a mean below the median, asserted in Eurostat's name, while every
+  // other assertion here stays green because `cut` and `medianPct` do not move.
+  assert.equal(at.mean, 949, "the published mean is not the one the card credits to Eurostat");
+  assert.equal(at.median, 705, "the published median is not the one the card credits to Eurostat");
+  assert.ok(at.mean > at.median, "a mean below the median inverts the claim the card rests on");
+  assert.equal(
+    at.medianPct,
+    Math.round((100 * at.median) / at.mean),
+    "the ratio on screen is not the division of the two figures shown beside it"
+  );
+
+  // The survey vintage is echoed from the payload, never chosen here. A
+  // percentile dated to a year Eurostat did not survey cannot be checked
+  // against anything, and P3 makes the as_of part of the derived figure.
+  assert.equal(meanRungPosition({ shape: { ...dist.shape, ref_year: "2022" } }).shapeYear, "2022");
+
   // **Exactly scale-invariant**, which is what makes it a statement about the
   // shape of Bulgarian earnings rather than about whichever average is on
   // screen. Re-levelling multiplies every rung and the mean by one factor.

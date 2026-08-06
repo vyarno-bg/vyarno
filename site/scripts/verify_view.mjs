@@ -2343,20 +2343,51 @@ test("the picker offers every published activity, in НСИ's order", () => {
   const payload = read("sector_salary");
   if (!payload) return;
   const options = sectorOptions(payload);
+  const sections = payload.sectors.filter((s) => s.en_name !== SECTOR_TOTAL_KEY);
 
-  assert.equal(options.length, payload.sectors.length);
+  assert.equal(options.length, sections.length);
   // НСИ's classification order, not a league table: re-sorting by wage would
   // make the ordering itself a claim the data does not carry.
   assert.deepEqual(
     options.map((o) => o.key),
-    payload.sectors.map((s) => s.en_name),
+    sections.map((s) => s.en_name),
     "the picker re-orders НСИ's sections"
   );
   // Both languages on every row — a missing one renders as a blank option.
   for (const o of options) {
     assert.ok(o.bg && o.en, `${o.key} is missing a label in one language`);
   }
-  assert.equal(options.filter((o) => o.isTotal).length, 1);
-  assert.equal(options.find((o) => o.isTotal).key, SECTOR_TOTAL_KEY);
   assert.deepEqual(sectorOptions(null), []);
+});
+
+test("the all-activities row is not offered as somebody's sector", () => {
+  // НСИ head the table with `Total` / «Общо», the figure the sections are read
+  // against. Offered in a list labelled «Твоят сектор» it collects the reader
+  // who cannot find their own line and answers «твоята нетна заплата е 83% над
+  // средната за „Общо“» — a comparison against the whole economy, under a
+  // caveat that calls the options broad КИД-2008 sections. It is not one.
+  const payload = read("sector_salary");
+  if (!payload) return;
+
+  assert.ok(
+    payload.sectors.some((s) => s.en_name === SECTOR_TOTAL_KEY),
+    "the payload no longer carries the all-activities row this test is about"
+  );
+  assert.deepEqual(
+    sectorOptions(payload).filter((o) => o.key === SECTOR_TOTAL_KEY),
+    [],
+    "the all-activities row is offered as an economic activity"
+  );
+  // And it resolves to nothing at the lookup too, so leaving it out of one
+  // list is not the whole guarantee.
+  assert.equal(
+    sectorComparison({
+      sectorSalary: payload,
+      key: SECTOR_TOTAL_KEY,
+      nets: [2000],
+      payroll: read("payroll"),
+    }),
+    null,
+    "the all-activities row still resolves to a sector comparison"
+  );
 });
