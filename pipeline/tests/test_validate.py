@@ -29,6 +29,7 @@ from vyarno_pipeline.validate import (
     validate_link_status,
     validate_meta_labels_cover,
     validate_reconciliation,
+    validate_sector_salary,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -527,3 +528,90 @@ def test_link_status_fails_on_non_json_body():
 
     with pytest.raises(ValidationError, match="JSON"):
         validate_link_status([url], predicate, timeout=5)
+
+
+# ---------------------------------------------------------------------------
+# Gate 7 — the by-sector wage payload (НСИ, Labour_1.1.2.1)
+# ---------------------------------------------------------------------------
+
+
+def _sector_rows() -> list[dict]:
+    """Two activities, each carrying two published quarters."""
+    return [
+        {
+            "en_name": "Total",
+            "bg_name": "Общо",
+            "value_eur": 1407.0,
+            "series_by_period": {"2025-Q4": 1294.0, "2026-Q1": 1407.0},
+        },
+        {
+            "en_name": "Information and communication",
+            "bg_name": "Създаване и разпространение на информация",
+            "value_eur": 3176.0,
+            "series_by_period": {"2025-Q4": 2934.0, "2026-Q1": 3176.0},
+        },
+    ]
+
+
+def test_sector_gate_accepts_a_payload_of_published_cells():
+    validate_sector_salary(_sector_rows(), "2026-Q1")
+
+
+def test_sector_gate_rejects_a_headline_it_computed():
+    """The check the gate exists for, and the only one nothing on screen shows.
+
+    §2.1.1 of НСИ's terms forbids distributing производни произведения, so a
+    headline this pipeline calculated rather than read is a licence breach that
+    looks exactly like a correct number. The mean of the two published quarters
+    is 3055 — a plausible wage, inside the sanity band, and not a cell НСИ ever
+    printed.
+    """
+    rows = _sector_rows()
+    series = rows[1]["series_by_period"]
+    rows[1]["value_eur"] = sum(series.values()) / len(series)
+
+    with pytest.raises(ValidationError, match="must BE the published cell"):
+        validate_sector_salary(rows, "2026-Q1")
+
+
+def test_sector_gate_rejects_a_missing_label_in_either_language():
+    """A blank label renders the picker option as a blank line, not a fallback."""
+    for field in ("en_name", "bg_name"):
+        rows = _sector_rows()
+        rows[1][field] = ""
+        with pytest.raises(ValidationError, match="missing a name"):
+            validate_sector_salary(rows, "2026-Q1")
+
+
+def test_sector_gate_rejects_two_rows_resolving_to_one_activity():
+    rows = _sector_rows()
+    rows[1]["en_name"] = rows[0]["en_name"]
+    with pytest.raises(ValidationError, match="duplicate activity"):
+        validate_sector_salary(rows, "2026-Q1")
+
+
+def test_sector_gate_rejects_an_activity_missing_the_reference_quarter():
+    """`ref_period` has to be true of the whole table, not part of it."""
+    rows = _sector_rows()
+    del rows[1]["series_by_period"]["2026-Q1"]
+    with pytest.raises(ValidationError, match="no value at the payload"):
+        validate_sector_salary(rows, "2026-Q1")
+
+
+def test_sector_gate_rejects_a_figure_that_is_not_a_monthly_wage():
+    """The band catches a column index landing on an index number or a headcount.
+
+    Widening it is never the fix — every failure it is written for puts the
+    parse on a column that is not a wage, and none of those look wrong on
+    screen.
+    """
+    rows = _sector_rows()
+    rows[1]["series_by_period"]["2025-Q4"] = 104.3
+    rows[1]["value_eur"] = rows[1]["series_by_period"]["2026-Q1"]
+    with pytest.raises(ValidationError, match="not a monthly wage"):
+        validate_sector_salary(rows, "2026-Q1")
+
+
+def test_sector_gate_rejects_an_empty_table():
+    with pytest.raises(ValidationError, match="no activities parsed"):
+        validate_sector_salary([], "2026-Q1")

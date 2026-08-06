@@ -579,8 +579,10 @@ picked, both net, `(net − ref) / ref` rounded to whole percent. Nothing else.
 
 **A rank is not available at that granularity and never will be from the current
 upstreams.** Probed 2026-08-06: `earn_ses_monthly` carries BG at the
-whole-economy aggregate only; `nace_r2=J` returns an empty `value` map, and the
-four broad sector aggregates are empty for BG across every slice
+no NACE section at all; `nace_r2=J` returns an empty `value` map over a
+`nace_r2` dimension of size 0, and the five categories the cube does carry for
+BG are broad groupings, of which only the whole-economy one is populated at the
+2022 vintage
 ([`data-sources.md`](./data-sources.md) §"gross wage by economic activity" has
 the probes). So the site can report a distance from an average and cannot report
 a position in a distribution.

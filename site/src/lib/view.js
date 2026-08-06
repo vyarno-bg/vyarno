@@ -1212,7 +1212,8 @@ export function sofiaGap({ nets, sofiaNet }) {
  *
  * **This returns no rank, and there is none to return.** Nobody publishes a pay
  * distribution by economic activity for Bulgaria — Eurostat's `earn_ses_monthly`
- * carries BG at the whole-economy aggregate only, every NACE breakdown empty —
+ * carries no NACE section for BG at all, only broad groupings, of which just
+ * the whole-economy one is populated at the vintage the site reads —
  * so `gap` is a distance from an average and the copy beside it has to say so.
  * `mirror.js#meanRungPosition` is what lets a reader correct for it, and it is
  * deliberately not reachable from here with a sector figure.
@@ -1228,7 +1229,13 @@ export function sofiaGap({ nets, sofiaNet }) {
  */
 export function sectorComparison({ sectorSalary, key, nets, payroll }) {
   const rows = Array.isArray(sectorSalary?.sectors) ? sectorSalary.sectors : [];
-  const row = rows.find((s) => s?.en_name === key);
+  // The all-activities row resolves to nothing here, not just to nothing in the
+  // picker. `sectorOptions` leaves it out because it is not an economic
+  // activity; refusing it again at the lookup is what makes that structural
+  // rather than a property of one list — a key reaching this function from
+  // anywhere else still cannot produce «средната за „Общо“» under a sentence
+  // about the reader's own sector.
+  const row = rows.find((s) => s?.en_name === key && s?.en_name !== SECTOR_TOTAL_KEY);
   const gross = Number(row?.value_eur);
   if (!row || !Number.isFinite(gross) || gross <= 0) return null;
 
@@ -1266,21 +1273,26 @@ export function sectorComparison({ sectorSalary, key, nets, payroll }) {
  * re-sorting by wage would turn a list of sections into a league table — a
  * different claim, made by the ordering rather than by any number on it.
  *
- * The all-activities row is separated out rather than dropped: it is the one
- * every other row is read against, and it is not an economic activity.
+ * **The all-activities row is not one of them.** НСИ head the table with
+ * `Total` / «Общо», which is the figure the sections are read against rather
+ * than an economic activity anybody works in. In a picker labelled «Твоят
+ * сектор» it collects the reader who cannot find their own line, and answers
+ * them with a distance from the whole economy under a caveat that calls it a
+ * broad КИД-2008 section. It stays in the payload — the connector's regression
+ * guard is that it sits inside the range of the sections — and is dropped
+ * here, where its label would be a claim about somebody's industry.
  *
  * @param {object|null} sectorSalary  data.sectorSalary
- * @returns {Array<{key:string, bg:string, en:string, isTotal:boolean}>}
+ * @returns {Array<{key:string, bg:string, en:string}>}
  */
 export function sectorOptions(sectorSalary) {
   const rows = Array.isArray(sectorSalary?.sectors) ? sectorSalary.sectors : [];
   return rows
-    .filter((s) => s?.en_name && s?.bg_name)
+    .filter((s) => s?.en_name && s?.bg_name && String(s.en_name) !== SECTOR_TOTAL_KEY)
     .map((s) => ({
       key: String(s.en_name),
       bg: String(s.bg_name),
       en: String(s.en_name),
-      isTotal: String(s.en_name) === SECTOR_TOTAL_KEY,
     }));
 }
 

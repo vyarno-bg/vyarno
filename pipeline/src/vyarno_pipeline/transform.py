@@ -677,8 +677,10 @@ def build_sector_salary_payload(
 
     **There is no rank in this payload and there cannot be one.** Nobody
     publishes a pay distribution by sector for Bulgaria: Eurostat's
-    `earn_ses_monthly` carries BG at the whole-economy aggregate only, with
-    every NACE breakdown empty. An average is the finest thing that exists, so
+    `earn_ses_monthly` carries no NACE section for BG at all — its five
+    `nace_r2` categories are broad groupings, the finest of which lumps section
+    J with seven others, and only the whole-economy one is populated at the
+    2022 vintage. An average is the finest thing that exists, so
     a contributor looking for a sector median to add here will not find one
     upstream — `docs/data-sources.md` §"НСИ — average wage by economic activity"
     has the probe and the date.

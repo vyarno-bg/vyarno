@@ -1641,6 +1641,34 @@ test("the calibration marks its modelled figure and dates its measured one", () 
       /(наша сметка|ratio between them is ours)/i.test(text),
       `sectorAverageFlatters credits our own division to Eurostat: ${text}`
     );
+    // Eurostat's mean and median are GROSS, and the source line directly above
+    // ends in a net. Unlabelled, the two sit a line apart on different bases
+    // and read as comparable levels — only the ratio carries between them.
+    assert.ok(
+      /(брутна|GROSS)/.test(text),
+      `sectorAverageFlatters states a mean and a median without naming their basis: ${text}\n` +
+        "The line above it ends in a net figure, so an unlabelled level invites the comparison."
+    );
+  }
+});
+
+test("the sector source line shows НСИ's own figure, not only our conversion", () => {
+  // НСИ publish a GROSS average by activity. The net beside it is our payroll
+  // conversion, so the line has to carry both and say which step is ours —
+  // otherwise the «НСИ ·» credit spans a number they never printed, and the
+  // reader who opens the workbook has no figure to match their row against.
+  // The same standard `sectorAverageFlatters` meets for Eurostat's mean and
+  // median, which is what makes this the rule here rather than one card's habit.
+  for (const text of pair("sectorSrc")) {
+    assert.ok(
+      /\{gross\}/.test(text),
+      `sectorSrc shows a net without НСИ's published gross beside it: ${text}`
+    );
+    assert.ok(/\{net\}/.test(text), `sectorSrc no longer shows the net: ${text}`);
+    assert.ok(
+      /(по наша сметка|our conversion)/i.test(text),
+      `sectorSrc credits our gross-to-net conversion to НСИ: ${text}`
+    );
   }
 });
 

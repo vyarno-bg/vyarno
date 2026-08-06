@@ -379,12 +379,18 @@ test(
 
       const picker = page.locator("#sector-pick");
       assert.ok(await picker.count(), "the sector picker is not on the page");
-      // The options are НСИ's twenty rows, and the placeholder is not one of them.
+      // НСИ's nineteen sections and the placeholder. Their all-activities row is
+      // the twentieth in the payload and is not an activity anybody works in, so
+      // a list labelled «Твоят сектор» must not carry it.
       const options = await picker.locator("option").allInnerTexts();
       assert.equal(
         options.length,
-        21,
-        `the picker offers ${options.length} rows, expected 20 + the placeholder`
+        20,
+        `the picker offers ${options.length} rows, expected 19 sections + the placeholder`
+      );
+      assert.ok(
+        !options.some((o) => ["Total", "Общо"].includes(o.trim())),
+        "the all-activities row is offered as somebody's sector"
       );
       assert.ok(
         options.every((o) => o.trim().length > 0),
@@ -405,6 +411,26 @@ test(
         "the sector line does not carry НСИ's own section name"
       );
       assert.match(card, /18%/, "the sector gap against €2,100 net is not the published 18%");
+      // **НСИ's own figure, on screen, beside the one we derived from it.** The
+      // 3176 is the cell in their workbook; the net is our payroll conversion.
+      // Showing only the net under an «НСИ ·» credit puts their name over our
+      // arithmetic and leaves a reader who opens the file with nothing to match
+      // the row against.
+      assert.match(
+        card,
+        /3\s?176/,
+        "НСИ's published gross for the section is not on the card — only our net conversion is"
+      );
+      assert.match(
+        card,
+        /(по наша сметка|our conversion)/,
+        "the gross-to-net step is not attributed to us"
+      );
+      assert.match(
+        card,
+        /(предварителни данни|preliminary)/,
+        "2026 is preliminary at НСИ and the card shows the figure as settled"
+      );
 
       // **The number never renders alone.** A gap shown without these reads as a
       // rank, and no pay distribution by sector is published for BG to rank against.

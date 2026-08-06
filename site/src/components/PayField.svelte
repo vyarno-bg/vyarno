@@ -328,8 +328,8 @@
        Two sentences travel with the number and neither is optional.
        НСИ publish an average by activity and NOBODY publishes a
        distribution by one — not Eurostat either, whose earn_ses_monthly
-       carries BG at the whole-economy aggregate with every NACE
-       breakdown empty — so a gap here is a distance from an average and
+       carries no NACE section for BG at all, only broad groupings that
+       lump section J with seven others — so a gap here is a distance from an average and
        never a rank. Said plainly by `sectorNoRank`; corrected for by
        `sectorAverageFlatters`, whose figures are the COUNTRY's shape and
        come nowhere near the sector average (mirror.js#meanRungPosition). -->
@@ -375,6 +375,7 @@
         <div class="hint src">
           <a class="l-bg" href={httpUrl(calc.sector.sourceUrlBg)} target="_blank" rel="noopener"
             >{t(COPY.sectorSrc, "bg", {
+              gross: fmt0(calc.sector.gross),
               net: fmt0(calc.sector.net),
               period: period(calc.sector.refPeriod),
               prelim: calc.sector.isPreliminary ? t(COPY.sectorPrelim, "bg") : "",
@@ -382,6 +383,7 @@
           >
           <a class="l-en" href={httpUrl(calc.sector.sourceUrl)} target="_blank" rel="noopener"
             >{t(COPY.sectorSrc, "en", {
+              gross: fmt0(calc.sector.gross),
               net: fmt0(calc.sector.net),
               period: period(calc.sector.refPeriod),
               prelim: calc.sector.isPreliminary ? t(COPY.sectorPrelim, "en") : "",
