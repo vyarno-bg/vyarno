@@ -135,7 +135,7 @@ those sit the suites named after an output rather than a module
 
 ## What `data/published/` carries
 
-Eight envelopes, ~103 KB raw / 22 KB gzipped, all committed.
+Nine envelopes, ~115 KB raw / 23 KB gzipped, all committed.
 
 **Five fields are on every one of them**: `schema_version`, `as_of`, `source`,
 `source_url`, `notes`. That is the provenance floor — where the figure came

@@ -469,10 +469,16 @@ def sofia_salary_observation(
             f"and is the highest-wage region in BG. All values in EUR (fixed "
             f"1.95583 BGN/EUR)."
         ),
+        # The regional workbook carries the same two titles as the by-activity
+        # one — «ПО ТРУДОВО И СЛУЖЕБНО ПРАВООТНОШЕНИЕ» in Bulgarian against
+        # "under labour contract" in English — and the Bulgarian is what the
+        # series covers. Sofia-city is where the civil service concentrates, so
+        # the shorter reading understates what this figure is an average over.
         disclaimer=(
             "Sofia-city is a single statistical region (BG411). "
             "The number is the average GROSS wage across all "
-            "employees under labour contract in the region (not "
+            "employees on a labour contract or in the civil service "
+            "in the region (not "
             "net; not specific to any industry or occupation), "
             "reported for НСИ's own quarter. The Q4 figure excludes "
             "annual bonuses, which НСИ publish as a separate column. "
@@ -711,7 +717,7 @@ def build_sector_salary_payload(
             f"single-month readings; the Q4 column taken is `IV`, not `IV "
             f"incl.annual bonuses`. Section names are НСИ's own in each language, "
             f"from the English and Bulgarian editions of the same table. Covers "
-            f"employees under a labour contract only. NO pay DISTRIBUTION by "
+            f"people on a labour contract AND in the civil service. NO pay DISTRIBUTION by "
             f"sector is published for Bulgaria by anyone, so these are averages "
             f"and support no percentile. All values in EUR (fixed 1.95583 "
             f"BGN/EUR)."
@@ -735,9 +741,16 @@ def build_sector_salary_payload(
             }
             for s in sectors
         ],
+        # НСИ's Bulgarian edition titles the table «НАЕТИТЕ ЛИЦА ПО ТРУДОВО И
+        # СЛУЖЕБНО ПРАВООТНОШЕНИЕ» and the English one shortens that to "under
+        # labour contract", dropping the civil service. The shorter reading tells
+        # anyone who picks «Държавно управление» — one of the nineteen sections
+        # here — that their own section is outside the figure they are compared
+        # against, so the payload states what the Bulgarian title states.
         "disclaimer": (
-            "Average GROSS wage across all employees under a labour contract in "
-            "the activity (not net; not a median and not a rank). НСИ publish no "
+            "Average GROSS wage across all employees on a labour contract or in "
+            "the civil service in the activity (not net; not a median and not a "
+            "rank). НСИ publish no "
             "distribution by activity, and neither does anyone else, so there is "
             "no percentile to read off this. Self-employed people and those "
             "working through their own company are outside the series by "

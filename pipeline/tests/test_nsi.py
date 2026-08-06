@@ -32,7 +32,7 @@ from vyarno_pipeline.sources.nsi import (
     _roman_quarter,
     fetch_sofia_salary_eu,
 )
-from vyarno_pipeline.transform import sofia_salary_observation
+from vyarno_pipeline.transform import build_sector_salary_payload, sofia_salary_observation
 
 # The live headers, byte for byte: Q1/Q2 are Cyrillic І (U+0406), Q3/Q4 are
 # Latin. Copied rather than generated, because a generated header would test
@@ -438,7 +438,8 @@ _Q1_2026 = [
 # March is the annual bonus peak, so the MONTHLY block carries visibly
 # different figures. If the parser ever reads the monthly table instead, the
 # assertions below land on these rather than on the published quarter.
-_MARCH_2026 = [v * 1.14 for v in _Q1_2026]
+_MARCH_BONUS_MULTIPLE = 1.14
+_MARCH_2026 = [v * _MARCH_BONUS_MULTIPLE for v in _Q1_2026]
 
 
 def _build_sector_year_sheet(
@@ -477,8 +478,12 @@ def _build_sector_year_sheet(
     # and with the bonus-inflated figure.
     ws.append([activity_label, months_label])
     ws.append([None, *["I", "II", "III", "IV", "V", "VI"]])
-    for name, march in zip(names, _MARCH_2026, strict=True):
-        ws.append([name, None, None, march])
+    # Derived from this sheet's own quarterly figures rather than from the
+    # module constant, so the monthly block has one row per activity whatever
+    # list of activities the sheet carries. The bonus multiple is what matters:
+    # a parser that reads the monthly table lands on a visibly different number.
+    for name, q in zip(names, quarterly, strict=True):
+        ws.append([name, None, None, q * _MARCH_BONUS_MULTIPLE])
     ws.append([None])
     ws.append([None])
 
@@ -513,6 +518,44 @@ def _build_sector_year_sheet(
     ws.append(["*Preliminary data"])
 
 
+def _sector_edition_spec(bulgarian: bool, names: list[str] | None = None) -> dict:
+    """Every label that differs between the two language editions, in one place.
+
+    The tests that give the two YEARS different activity lists or different
+    lengths build their sheets one at a time, and they need the same labels this
+    does. Writing the pairs out twice is how one copy ends up with «Тримесечия»
+    against `Quarters` and a fixture that tests the wrong edition.
+    """
+    return {
+        "names": names or (_SECTOR_NAMES_BG if bulgarian else _SECTOR_NAMES_EN),
+        "sheet_suffix": "КИД2008" if bulgarian else "NaceRev2",
+        "activity_label": "Икономически дейности" if bulgarian else "Economic activity",
+        "ownership_label": "Форма на собственост" if bulgarian else "Type of ownership",
+        "months_label": "Месеци" if bulgarian else "Months",
+        "quarters_label": "Тримесечия на" if bulgarian else "Quarters",
+        "total_title": "\xa0Общо" if bulgarian else "Total",
+        "bonus_header": BONUS_HEADER_BG if bulgarian else BONUS_HEADER,
+    }
+
+
+def _sector_workbook(bulgarian: bool) -> openpyxl.Workbook:
+    """A workbook with the combined sheet both editions carry, and nothing else.
+
+    That sheet's name must NOT match the per-year pattern; if it ever does, the
+    parser reads a sheet whose columns are years rather than quarters.
+    """
+    wb = openpyxl.Workbook()
+    wb.active.title = "2019-2026Кид2008 " if bulgarian else "2019-2026NaceRev2"
+    wb.active.append(["Икономически дейности" if bulgarian else "Economic activity"])
+    return wb
+
+
+def _saved(wb: openpyxl.Workbook) -> bytes:
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
 def _build_sector_xlsx(
     *,
     bulgarian: bool = False,
@@ -521,30 +564,11 @@ def _build_sector_xlsx(
     **kwargs,
 ) -> bytes:
     """One language edition of the by-sector workbook, both years."""
-    wb = openpyxl.Workbook()
-    # The combined sheet both editions carry. Its name must NOT match the
-    # per-year pattern; if it ever does, the parser reads a sheet whose columns
-    # are years rather than quarters.
-    wb.active.title = "2019-2026Кид2008 " if bulgarian else "2019-2026NaceRev2"
-    wb.active.append(["Икономически дейности" if bulgarian else "Economic activity"])
-
-    spec = dict(
-        names=names or (_SECTOR_NAMES_BG if bulgarian else _SECTOR_NAMES_EN),
-        sheet_suffix="КИД2008" if bulgarian else "NaceRev2",
-        activity_label="Икономически дейности" if bulgarian else "Economic activity",
-        ownership_label="Форма на собственост" if bulgarian else "Type of ownership",
-        months_label="Месеци" if bulgarian else "Months",
-        quarters_label="Тримесечия на" if bulgarian else "Quarters",
-        total_title="\xa0Общо" if bulgarian else "Total",
-        bonus_header=BONUS_HEADER_BG if bulgarian else BONUS_HEADER,
-        **kwargs,
-    )
+    wb = _sector_workbook(bulgarian)
+    spec = {**_sector_edition_spec(bulgarian, names), **kwargs}
     _build_sector_year_sheet(wb, 2025, quarterly=[v * 0.92 for v in _Q1_2026], **spec)
     _build_sector_year_sheet(wb, 2026, quarterly=quarterly or _Q1_2026, **spec)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    return buf.getvalue()
+    return _saved(wb)
 
 
 def _serve_sector_fixtures(
@@ -633,6 +657,126 @@ def test_the_two_language_editions_must_agree_cell_for_cell(
         nsi.fetch_sector_salary_eu()
 
 
+def test_a_year_sheet_that_reorders_the_activities_is_an_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One edition's own sheets must list the activities in one order.
+
+    The series a sector carries is accumulated ACROSS the per-year sheets by
+    POSITION, so a year that reorders its rows welds one section's earlier
+    quarters onto another section's later ones — and the headline `value_eur`,
+    read at the newest quarter, becomes the wrong section's wage under the right
+    section's name.
+
+    The cross-edition check cannot see this. It compares English against
+    Bulgarian, and НСИ reorder both files together, so both sides move and every
+    paired cell still matches. This is the only guard between a re-cut
+    classification and a picker that quietly answers «Строителство» with
+    Information and communication's 3176.
+    """
+    swapped = list(_SECTOR_NAMES_EN)
+    swapped[10], swapped[11] = swapped[11], swapped[10]
+
+    def _mixed_edition(bulgarian: bool = False) -> bytes:
+        """2025 in НСИ's order, 2026 with two sections transposed."""
+        wb = _sector_workbook(bulgarian)
+        ordered = _SECTOR_NAMES_BG if bulgarian else _SECTOR_NAMES_EN
+        spec = _sector_edition_spec(bulgarian)
+        _build_sector_year_sheet(
+            wb, 2025, **{**spec, "names": ordered}, quarterly=[v * 0.92 for v in _Q1_2026]
+        )
+        _build_sector_year_sheet(
+            wb, 2026, **{**spec, "names": ordered if bulgarian else swapped}, quarterly=_Q1_2026
+        )
+        return _saved(wb)
+
+    _serve_sector_fixtures(monkeypatch, en=_mixed_edition(), bg=_mixed_edition(bulgarian=True))
+
+    with pytest.raises(ValueError, match="different order or under"):
+        nsi.fetch_sector_salary_eu()
+
+
+def test_an_activity_count_that_is_not_nineteen_plus_the_total_is_an_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """НСИ publish 19 NACE Rev 2 sections and one all-activities row.
+
+    The block is bounded by a blank label, which is layout rather than meaning:
+    a stray blank inside the table truncates it, and a filled row where НСИ left
+    a gap extends it into whatever sits below. Either way the picker silently
+    offers a different list of sections than the classification has, and every
+    figure on it still looks like a wage. The count is the only thing that
+    notices a section went missing.
+    """
+    short_values = list(_Q1_2026)[:-1]
+
+    def _short_edition(bulgarian: bool = False) -> bytes:
+        """Both years one section short — «Други дейности» never published."""
+        wb = _sector_workbook(bulgarian)
+        spec = _sector_edition_spec(
+            bulgarian, list(_SECTOR_NAMES_BG if bulgarian else _SECTOR_NAMES_EN)[:-1]
+        )
+        _build_sector_year_sheet(wb, 2025, quarterly=[v * 0.92 for v in short_values], **spec)
+        _build_sector_year_sheet(wb, 2026, quarterly=short_values, **spec)
+        return _saved(wb)
+
+    _serve_sector_fixtures(monkeypatch, en=_short_edition(), bg=_short_edition(bulgarian=True))
+
+    with pytest.raises(ValueError, match="activity rows, expected 20"):
+        nsi.fetch_sector_salary_eu()
+
+
+def test_the_headline_quarter_is_one_every_activity_carries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`ref_period` is the latest quarter published for ALL of them, not for any.
+
+    НСИ fill the quarterly block column by column, and a release caught mid-way
+    has a newer quarter for some sections and not others. Taking the latest
+    quarter ANY section carries gives the payload a `ref_period` that is true of
+    part of itself: the sections that have it render, and the rest are a picker
+    entry that answers with nothing.
+
+    Here 2026-Q2 exists for exactly one section, so a connector reading the union
+    would headline Q2 while eighteen sections stop at Q1.
+    """
+    _serve_sector_fixtures(monkeypatch)
+    ragged = nsi.fetch_sector_salary_eu()
+    assert ragged["ref_period"] == "2026-Q1"
+
+    # Give ONE section a further quarter, in both editions so the cell-for-cell
+    # check still passes and this guard is the only thing left to trip.
+    def _with_extra_quarter(bulgarian: bool = False) -> bytes:
+        raw = _build_sector_xlsx(bulgarian=bulgarian)
+        wb = openpyxl.load_workbook(io.BytesIO(raw))
+        ws = wb["2026КИД2008" if bulgarian else "2026NaceRev2"]
+        rows = [list(r) for r in ws.iter_rows(values_only=True)]
+        header = nsi._activity_block_header(
+            rows,
+            "Икономически дейности" if bulgarian else "Economic activity",
+            "тримесечия" if bulgarian else "quarters",
+        )
+        # Column C is Q2 in the quarterly block; the row two below the header
+        # opens the data and is the all-activities row's first section.
+        ws.cell(row=header + 3, column=3, value=1000.0)
+        buf = io.BytesIO()
+        wb.save(buf)
+        return buf.getvalue()
+
+    _serve_sector_fixtures(
+        monkeypatch, en=_with_extra_quarter(), bg=_with_extra_quarter(bulgarian=True)
+    )
+    result = nsi.fetch_sector_salary_eu()
+
+    assert result["ref_period"] == "2026-Q1", (
+        "the headline moved to a quarter only one activity carries, so the "
+        "payload's ref_period is true of part of itself"
+    )
+    assert all(result["ref_period"] in s["series_by_period"] for s in result["sectors"]), (
+        "an activity has no value at the payload's own ref_period"
+    )
+
+
 def test_the_all_activities_row_must_sit_inside_the_sections(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -714,3 +858,45 @@ def test_the_sector_preliminary_marker_comes_from_the_year_title(
         bg=_build_sector_xlsx(bulgarian=True, is_preliminary=False),
     )
     assert nsi.fetch_sector_salary_eu()["is_preliminary"] is False
+
+
+def test_the_transform_carries_the_preliminary_flag_into_the_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The connector reads the star; this is what puts it in the file.
+
+    `test_the_sector_preliminary_marker_comes_from_the_year_title` above stops
+    at the scrape. Between it and the reader is `build_sector_salary_payload`,
+    and the flag has to survive that step: hardwiring it to `False` there
+    publishes a preliminary quarter as settled with every connector assertion
+    in this file still passing, because none of them looks at the payload.
+
+    The site suites cannot cover the gap either. They read the COMMITTED
+    `sector_salary.json`, so a transform that dropped the flag would look
+    correct until a refresh regenerated the file — and then go red in a data
+    commit, a long way from the line that caused it.
+    """
+    _serve_sector_fixtures(monkeypatch)
+    scrape = nsi.fetch_sector_salary_eu()
+    assert scrape["is_preliminary"] is True
+
+    def _payload(flag: bool) -> dict:
+        return build_sector_salary_payload(
+            {**scrape, "is_preliminary": flag},
+            as_of=date(2026, 8, 6),
+            source_url=nsi.SECTOR_SOURCE_URL_EN,
+            source_url_bg=nsi.SECTOR_SOURCE_URL_BG,
+        )
+
+    # Both ways, so a hardwired constant fails whichever one it was hardwired
+    # to. Asserting only the True case passes a payload stuck at True, which
+    # marks every finalised quarter provisional.
+    assert _payload(True)["is_preliminary"] is True
+    assert _payload(False)["is_preliminary"] is False
+
+    # And the figures reach the payload as the cells they were. The gate holds
+    # the same identity from the payload's own side; this holds it across the
+    # step that builds it, where a rounding or a unit conversion would go.
+    built = _payload(True)
+    assert [s["value_eur"] for s in built["sectors"]] == [s["value_eur"] for s in scrape["sectors"]]
+    assert built["ref_period"] == scrape["ref_period"]

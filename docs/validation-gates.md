@@ -239,7 +239,7 @@ detail.
 
 | `--source` | Gates | Notes |
 |---|---|---|
-| `hicp` (full release) | all six (gate 6 unless `--skip-link-check`) | The full set; writes both payloads |
+| `hicp` (full release) | 1-6 (gate 6 unless `--skip-link-check`) | The full set; writes both payloads |
 | `hicp` (flash) | 1, 5 and 6 — 2, 3 and 4 have no inputs at the flash month | Writes `hicp_headline.json` only, exit 0 |
 | `mortgage` | the five mortgage gates + freshness on both tiers | No best-effort tier |
 | `sofia-price` | bounds [100, 10000] €/m²; <20 districts = exit 2 | WARNs when имот.bg publishes no «обновена на» date, so a frozen page is visible |

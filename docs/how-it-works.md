@@ -187,7 +187,7 @@ Full provenance for each is in [`data-sources.md`](./data-sources.md).
 ## 8. How a number gets from Eurostat to the screen
 
 The pipeline runs on demand, on a laptop: it copies the official data, runs the
-gates, and writes eight small JSON files, each stamped with its date. Those files are committed to the repository and shipped
+gates, and writes nine small JSON files, each stamped with its date. Those files are committed to the repository and shipped
 alongside the site.
 
 **Your browser downloads those files and never calls Eurostat.** Everything

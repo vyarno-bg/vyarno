@@ -9,7 +9,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, HOME, t } from "$lib/content.js";
-  import { number, integer, percentSigned } from "$lib/format.js";
+  import { number, integer, percentSigned, period } from "$lib/format.js";
   import { fastestRisingDivision } from "$lib/view.js";
 
   const {
@@ -23,13 +23,16 @@
     ladder = [],
     /** Sofia's median NET wage, for the comparator card. */
     sofiaNet = 0,
+    /** НСИ's own published gross for the same quarter, which `sofiaNet` is our
+        conversion of. Both go on the card: the credit beside them is theirs. */
+    sofiaMeanGross = 0,
     salaryShapeUrl = "",
     salaryShapeYear = "",
     salaryAnchorPeriod = "",
     /** Sofia €/m² median and its provenance. */
     sofiaEurPerM2 = 0,
     sofiaMeanGrossUrl = "",
-    sofiaSalaryAsOf = "",
+    sofiaWagePeriod = "",
     sofiaNDistricts = 0,
     /** True when the €/m² came from sofia_price.json, not the offline constant. */
     sofiaPriceIsLive = false,
@@ -47,6 +50,17 @@
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
   const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
+
+  // Both figures on the Sofia card's source line, built once so the two
+  // language spans cannot be handed different numbers. The gross is НСИ's own
+  // published cell and the net is our conversion of it; the em dash is what a
+  // missing payload renders as, because a caption reading «0 €» under their
+  // name is a figure nobody published.
+  const sofiaSrcArgs = $derived({
+    gross: sofiaMeanGross > 0 ? fmt0(sofiaMeanGross) : "—",
+    net: sofiaNet > 0 ? fmt0(sofiaNet) : "—",
+    period: period(sofiaWagePeriod),
+  });
 
   // The sparkline is drawn in user units scaled to the card's measured width,
   // so it has no intrinsic size to lay out against until the card exists.
@@ -200,16 +214,8 @@
         </div>
         <div class="ss">
           <a href={sofiaMeanGrossUrl} target="_blank" rel="noopener">
-            <span class="l-bg"
-              >{COPY.statSofiaSrc.bg
-                .replace("{{as_of}}", sofiaSalaryAsOf || "—")
-                .replace("{{net}}", sofiaNet > 0 ? fmt0(sofiaNet) : "—")}</span
-            >
-            <span class="l-en"
-              >{COPY.statSofiaSrc.en
-                .replace("{{as_of}}", sofiaSalaryAsOf || "—")
-                .replace("{{net}}", sofiaNet > 0 ? fmt0(sofiaNet) : "—")}</span
-            >
+            <span class="l-bg">{t(COPY.statSofiaSrc, "bg", sofiaSrcArgs)}</span>
+            <span class="l-en">{t(COPY.statSofiaSrc, "en", sofiaSrcArgs)}</span>
           </a>
         </div>
       </div>

@@ -296,6 +296,27 @@ async function sweep(collect) {
       await home.check();
       await settled();
 
+      // Everything the page says ABOUT THE READER is gated on them answering,
+      // and the audit has to answer too or it measures the visitor's page and
+      // reports on the reader's. Two regions hang off this: the Sofia and
+      // sector comparison lines, which are the only text on the card painted
+      // from `--real` and `--erode` rather than from an ink token, and the
+      // colour that carries a direction is the colour a contrast floor is for.
+      const salary = page.locator("#inSalary");
+      assert.ok(await salary.count(), "the pay field is gone — every gated verdict is unaudited");
+      await salary.fill("2100");
+      await settled();
+
+      // The sector block renders nothing until an activity is chosen, so its
+      // source line and its two caveats are reachable from no default state.
+      // The caveats are the sentence the figure cannot be read without
+      // (`PayField.svelte` §.caveat), which makes them the text on the card
+      // least able to afford being dimmed below the floor.
+      const sector = page.locator("#sector-pick");
+      assert.ok(await sector.count(), "the sector picker is gone — its caveats are unaudited");
+      await sector.selectOption({ index: 1 });
+      await settled();
+
       for (const inDark of [false, true]) {
         for (const inEnglish of [false, true]) {
           await page.evaluate(OPEN_DETAILS);
