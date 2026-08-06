@@ -44,7 +44,7 @@
    * total take-home).
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, label, period } from "../lib/format.js";
+  import { number, integer, label, period, httpUrl } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import PayslipTable from "./PayslipTable.svelte";
 
@@ -373,20 +373,20 @@
           {/each}
         {/if}
         <div class="hint src">
-          <a href={calc.sector.sourceUrl} target="_blank" rel="noopener">
-            <span class="l-bg"
-              >{t(COPY.sectorSrc, "bg", {
-                net: fmt0(calc.sector.net),
-                period: calc.sector.refPeriod,
-              })}</span
-            >
-            <span class="l-en"
-              >{t(COPY.sectorSrc, "en", {
-                net: fmt0(calc.sector.net),
-                period: calc.sector.refPeriod,
-              })}</span
-            >
-          </a>
+          <a class="l-bg" href={httpUrl(calc.sector.sourceUrlBg)} target="_blank" rel="noopener"
+            >{t(COPY.sectorSrc, "bg", {
+              net: fmt0(calc.sector.net),
+              period: period(calc.sector.refPeriod),
+              prelim: calc.sector.isPreliminary ? t(COPY.sectorPrelim, "bg") : "",
+            })}</a
+          >
+          <a class="l-en" href={httpUrl(calc.sector.sourceUrl)} target="_blank" rel="noopener"
+            >{t(COPY.sectorSrc, "en", {
+              net: fmt0(calc.sector.net),
+              period: period(calc.sector.refPeriod),
+              prelim: calc.sector.isPreliminary ? t(COPY.sectorPrelim, "en") : "",
+            })}</a
+          >
         </div>
         <p class="hint caveat">
           <span class="l-bg">{COPY.sectorNoRank.bg}</span>
@@ -398,6 +398,8 @@
               >{t(COPY.sectorAverageFlatters, "bg", {
                 cut: fmt0(calc.averageFlatters.cut),
                 medianPct: fmt0(calc.averageFlatters.medianPct),
+                mean: fmt0(calc.averageFlatters.mean),
+                median: fmt0(calc.averageFlatters.median),
                 shapeYear: period(calc.averageFlatters.shapeYear),
               })}</span
             >
@@ -405,6 +407,8 @@
               >{t(COPY.sectorAverageFlatters, "en", {
                 cut: fmt0(calc.averageFlatters.cut),
                 medianPct: fmt0(calc.averageFlatters.medianPct),
+                mean: fmt0(calc.averageFlatters.mean),
+                median: fmt0(calc.averageFlatters.median),
                 shapeYear: period(calc.averageFlatters.shapeYear),
               })}</span
             >

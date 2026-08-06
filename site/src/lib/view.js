@@ -1224,7 +1224,7 @@ export function sofiaGap({ nets, sofiaNet }) {
  * @param {object|null} args.payroll  data.payroll
  * @returns {{bgName:string, enName:string, gross:number, net:number,
  *            refPeriod:string, isPreliminary:boolean, sourceUrl:string,
- *            gaps:Array<object>} | null} null when nothing is selected
+ *            sourceUrlBg:string, gaps:Array<object>} | null} null when unselected
  */
 export function sectorComparison({ sectorSalary, key, nets, payroll }) {
   const rows = Array.isArray(sectorSalary?.sectors) ? sectorSalary.sectors : [];
@@ -1249,7 +1249,12 @@ export function sectorComparison({ sectorSalary, key, nets, payroll }) {
     net,
     refPeriod: String(sectorSalary?.ref_period ?? ""),
     isPreliminary: Boolean(sectorSalary?.is_preliminary),
+    // One URL per language, because the labels differ between the two editions.
+    // A Bulgarian reader sent to the English workbook cannot find the row they
+    // just read — the verify link has to land on the file the label came from,
+    // or it demonstrates nothing (P3, P9).
     sourceUrl: String(sectorSalary?.source_url ?? ""),
+    sourceUrlBg: String(sectorSalary?.source_url_bg ?? sectorSalary?.source_url ?? ""),
     gaps,
   };
 }

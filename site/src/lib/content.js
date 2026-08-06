@@ -1246,9 +1246,13 @@ export const COPY = {
     en: 'income {n} is <b>{delta}</b> the average for "{sector}"',
   },
   sectorSrc: {
-    bg: "НСИ · средна брутна заплата за дейността ≈ {net} нето · {period}",
-    en: "NSI · average GROSS for the activity ≈ NET {net} · {period}",
+    bg: "НСИ · средна брутна заплата за дейността ≈ {net} нето · {period}{prelim}",
+    en: "NSI · average GROSS for the activity ≈ NET {net} · {period}{prelim}",
   },
+  // НСИ mark a whole year preliminary until they finalise it, and 2026 is. A
+  // figure they will revise, shown as though it were settled, is the reader
+  // being told more certainty than exists (P4). Empty for a final quarter.
+  sectorPrelim: { bg: " (предварителни данни)", en: " (preliminary)" },
   // **The sentence the whole feature turns on.** НСИ publish an average by
   // activity and nobody publishes a distribution by one, so the card can say
   // how far the reader is from an average and cannot say where they rank.
@@ -1273,9 +1277,13 @@ export const COPY = {
   // the median as a share of the mean, said the way it is said in Bulgarian.
   // And a percentile is «изпреварва X% от заетите», not «стои на X-ия процентил»:
   // the reader is being handed a correction, so it has to land the first time.
+  // Eurostat publish the mean and the median; the RATIO between them is ours,
+  // so both published figures are named and the division is attributed to us.
+  // A «(Евростат)» credit spanning a number they never printed is the quiet
+  // way this card would stop being checkable.
   sectorAverageFlatters: {
-    bg: "Средната заплата не е средата: половината работещи в страната вземат под {medianPct}% от нея (Евростат, {shapeYear} г.). Самата средна изпреварва около {cut}% от заетите — това число е сметнато между публикуваните децили, не е измерено. Затова под средната за сектора не означава под средата.",
-    en: "An average is not a middle: half the country earns less than {medianPct}% of it (Eurostat, {shapeYear}). The average itself is ahead of about {cut}% of employees — that figure is worked out between the published deciles, not measured. So below your sector's average is not below the middle.",
+    bg: "Средната заплата не е средата. За България Евростат публикуват средна {mean} € и медиана {median} € ({shapeYear} г.); съотношението между тях е наша сметка — половината работещи вземат под {medianPct}% от средната. Самата средна изпреварва около {cut}% от заетите, сметнато между публикуваните децили, а не измерено. Затова под средната за сектора не означава под средата.",
+    en: "An average is not a middle. For Bulgaria Eurostat publish a mean of €{mean} and a median of €{median} ({shapeYear}); the ratio between them is ours — half the country earns less than {medianPct}% of the average. The average itself is ahead of about {cut}% of employees, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
   },
   sectorCoverage: {
     bg: "Числата обхващат само наетите по трудово и служебно правоотношение — хората на свободна практика и през собствена фирма не са включени. Дейностите са широки раздели по КИД-2008, а не професии.",

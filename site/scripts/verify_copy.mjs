@@ -1628,5 +1628,34 @@ test("the calibration marks its modelled figure and dates its measured one", () 
       /(Евростат|Eurostat)/.test(text),
       `sectorAverageFlatters does not name whose figures these are: ${text}`
     );
+    // Eurostat print a mean and a median for BG; the RATIO is ours. Both
+    // published figures have to be on screen and the division attributed to
+    // us, or the Eurostat credit spans a number they never published.
+    for (const slot of ["{mean}", "{median}"]) {
+      assert.ok(
+        text.includes(slot),
+        `sectorAverageFlatters states a ratio without showing ${slot}, the published figure it divides: ${text}`
+      );
+    }
+    assert.ok(
+      /(наша сметка|ratio between them is ours)/i.test(text),
+      `sectorAverageFlatters credits our own division to Eurostat: ${text}`
+    );
+  }
+});
+
+test("the sector source line marks a preliminary quarter as preliminary", () => {
+  // НСИ mark a whole year preliminary until they finalise it, and 2026 is one.
+  // A figure they will revise, shown as settled, tells the reader more
+  // certainty than exists (P4). The slot is empty for a final quarter, so this
+  // holds the slot rather than the word.
+  for (const text of pair("sectorSrc")) {
+    assert.ok(/\{prelim\}/.test(text), `sectorSrc has no slot for the preliminary marker: ${text}`);
+  }
+  for (const text of pair("sectorPrelim")) {
+    assert.ok(
+      /(предварител|preliminary)/i.test(text),
+      `sectorPrelim does not say the figure is preliminary: ${text}`
+    );
   }
 });
