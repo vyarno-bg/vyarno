@@ -651,3 +651,97 @@ def rows_to_unemployment_observation(
 # the BNB lending limits, which the flat single-value model cannot express.
 # See `mortgage.py` for the gates and `publish.write_mortgage_payload` for the
 # shape.
+
+
+def build_sector_salary_payload(
+    scrape: dict,
+    as_of: date,
+    source_url: str,
+    source_url_bg: str,
+) -> dict:
+    """Shape НСИ's by-sector wage scrape into the published payload.
+
+    Beside `sofia_salary_observation` because it is the same publisher's
+    sibling table — `Labour_1.1.2.1` by economic activity against `1.1.2.2` by
+    region — read the same way, for НСИ's own published quarter. It builds a
+    plain dict rather than a `TimeSeriesObservation` because that model carries
+    one series and this payload carries twenty.
+
+    **Nothing here computes, and that is the design rather than an economy.**
+    Every figure a reader will find interesting — the gap to their own pay, the
+    ratio between two sectors, the distance from the all-activities average — is
+    arithmetic over these cells, and §2.1.1 of НСИ's licence forbids
+    distributing производни произведения. So the file carries the cells НСИ
+    published and the browser does the comparing (`mirror.js`), which is where
+    P8 puts a consumer's own figures in any case.
+
+    **There is no rank in this payload and there cannot be one.** Nobody
+    publishes a pay distribution by sector for Bulgaria: Eurostat's
+    `earn_ses_monthly` carries BG at the whole-economy aggregate only, with
+    every NACE breakdown empty. An average is the finest thing that exists, so
+    a contributor looking for a sector median to add here will not find one
+    upstream — `docs/data-sources.md` §"НСИ — average wage by economic activity"
+    has the probe and the date.
+
+    Both URLs are НСИ's: one table, two language editions, read together
+    because the section NAMES are half of what this payload is for.
+    """
+    sectors = scrape["sectors"]
+    ref_period = str(scrape["ref_period"])
+    is_preliminary = bool(scrape.get("is_preliminary", False))
+    prelim_marker = " (preliminary)" if is_preliminary else ""
+    total = next((s for s in sectors if s["en_name"] == "Total"), None)
+    total_note = f"All activities at {ref_period}: {total['value_eur']:.0f} EUR. " if total else ""
+
+    return {
+        "schema_version": "1.0",
+        "as_of": as_of.isoformat(),
+        "source": "nsi",
+        "source_url": source_url,
+        "notes": (
+            f"Average GROSS monthly wage by economic activity (NACE Rev 2 "
+            f"sections), as published by НСИ and unmodified. Each activity's "
+            f"`value_eur` is НСИ's latest published QUARTERLY average at "
+            f"{ref_period}{prelim_marker}; `series_by_period` is their full "
+            f"quarterly series. {total_note}Nothing in this file is computed by "
+            f"us — no gap, no ratio, no rank. The quarter is НСИ's own reporting "
+            f"period and avoids the March bonus spike that dominates their "
+            f"single-month readings; the Q4 column taken is `IV`, not `IV "
+            f"incl.annual bonuses`. Section names are НСИ's own in each language, "
+            f"from the English and Bulgarian editions of the same table. Covers "
+            f"employees under a labour contract only. NO pay DISTRIBUTION by "
+            f"sector is published for Bulgaria by anyone, so these are averages "
+            f"and support no percentile. All values in EUR (fixed 1.95583 "
+            f"BGN/EUR)."
+        ),
+        "payload_name": "sector_salary",
+        "source_url_bg": source_url_bg,
+        "dataset": (
+            "Labour_1.1.2.1_EUR_EN.xlsx + Labour_1.1.2.1_EUR.xlsx:"
+            "sheet={year}NaceRev2|{year}КИД2008:quarterly by-activity block"
+        ),
+        "ref_period": ref_period,
+        "published_at": as_of.isoformat(),
+        "unit": "eur_per_month",
+        "is_preliminary": is_preliminary,
+        "sectors": [
+            {
+                "en_name": s["en_name"],
+                "bg_name": s["bg_name"],
+                "value_eur": s["value_eur"],
+                "series_by_period": s["series_by_period"],
+            }
+            for s in sectors
+        ],
+        "disclaimer": (
+            "Average GROSS wage across all employees under a labour contract in "
+            "the activity (not net; not a median and not a rank). НСИ publish no "
+            "distribution by activity, and neither does anyone else, so there is "
+            "no percentile to read off this. Self-employed people and those "
+            "working through their own company are outside the series by "
+            "construction. NACE Rev 2 sections are broad: 'Information and "
+            "communication' is publishing, film, broadcasting and "
+            "telecommunications alongside software. The Q4 figure excludes "
+            "annual bonuses, which НСИ publish as a separate column."
+        ),
+    }

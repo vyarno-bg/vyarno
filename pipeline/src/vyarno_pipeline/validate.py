@@ -18,6 +18,13 @@ Six gates guard the HICP publish:
    an actual Eurostat response (NOT just the status code — Eurostat returns
    200 with an error payload on rate-limit / invalid params, and a naive
    200-check would silently pass that).
+
+One more guards the НСИ by-sector wage publish, and it is listed apart because
+it gates a different payload rather than a seventh property of the same one:
+
+7. **Sector wages** — every activity carries both language names and a value at
+   the payload's own reference period, no two rows resolve to one activity, and
+   the headline IS the published cell rather than anything computed from it.
 """
 
 from __future__ import annotations
@@ -409,4 +416,74 @@ def validate_link_status(
                 raise ValidationError(
                     f"link: {url} body failed validation predicate "
                     f"(looks like an error payload, not a real Eurostat response)"
+                )
+
+
+# ---------------------------------------------------------------------------
+# The by-sector wage gate — НСИ, Labour_1.1.2.1
+# ---------------------------------------------------------------------------
+
+# A monthly gross wage outside this band is not a sector average, it is a
+# mis-parse. The floor sits below the 2019 low (Accommodation and food service
+# activities, 365 EUR) with room to spare, and the ceiling far above the 2026
+# high (Information and communication, 3176) so a real sector outgrowing the
+# band is a decade away. Widening it is not how a tripped gate gets fixed: the
+# failure it exists for is a column index landing on an index number, a count of
+# employees, or a percentage — all of which fall outside it by orders of
+# magnitude, and none of which look wrong on the screen.
+SECTOR_WAGE_MIN_EUR: float = 200.0
+SECTOR_WAGE_MAX_EUR: float = 20000.0
+
+
+def validate_sector_salary(sectors: list[dict], ref_period: str) -> None:
+    """Gate the by-sector wage payload before it is written.
+
+    The connector's own guards cover the sheet: block bounds, row count, the
+    two editions agreeing cell for cell. This gate covers the PAYLOAD, and the
+    property it exists for is the one nothing on screen would reveal —
+    **`value_eur` is selected from the series, never computed.** §2.1.1 of НСИ's
+    licence forbids distributing производни произведения, so a headline this
+    pipeline calculated rather than read would be a licence breach that looks
+    exactly like a correct number (docs/legal.md §НСИ).
+    """
+    if not sectors:
+        raise ValidationError("sector wages: no activities parsed")
+
+    seen_en: set[str] = set()
+    seen_bg: set[str] = set()
+    for s in sectors:
+        en, bg = s.get("en_name", ""), s.get("bg_name", "")
+        if not en or not bg:
+            raise ValidationError(
+                f"sector wages: an activity is missing a name in one language "
+                f"({en!r} / {bg!r}). Both editions are published by НСИ and the "
+                f"picker renders a blank line for a missing string, not a fallback."
+            )
+        if en in seen_en or bg in seen_bg:
+            raise ValidationError(
+                f"sector wages: duplicate activity name ({en!r} / {bg!r}). Two "
+                f"rows resolved to one activity, so one section's wage is missing."
+            )
+        seen_en.add(en)
+        seen_bg.add(bg)
+
+        series = s.get("series_by_period", {})
+        if ref_period not in series:
+            raise ValidationError(
+                f"sector wages: {en!r} has no value at the payload's own ref_period {ref_period}."
+            )
+        # Selected, not computed. Identity rather than a tolerance, because
+        # there is no arithmetic here that could legitimately round.
+        if s.get("value_eur") != series[ref_period]:
+            raise ValidationError(
+                f"sector wages: {en!r} publishes {s.get('value_eur')} at "
+                f"{ref_period} but its series carries {series[ref_period]}. The "
+                f"headline must BE the published cell, not a figure derived from it."
+            )
+        for period, value in series.items():
+            if not SECTOR_WAGE_MIN_EUR <= value <= SECTOR_WAGE_MAX_EUR:
+                raise ValidationError(
+                    f"sector wages: {en!r} at {period} is {value} EUR, outside "
+                    f"{SECTOR_WAGE_MIN_EUR}-{SECTOR_WAGE_MAX_EUR}. That is not a "
+                    f"monthly wage — the parse landed on the wrong column."
                 )

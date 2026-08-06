@@ -482,6 +482,82 @@ export function buildLadder(dist, anchorGrossMean, params = BG_PAYROLL_DEFAULT) 
   });
 }
 
+/**
+ * How far one monthly net sits from a reference monthly net, as whole percent.
+ *
+ * One implementation, because there are now two comparisons on the pay card —
+ * against the Sofia average and against the reader's chosen sector — and two
+ * roundings of the same formula would eventually disagree on screen by a point
+ * while both looked right in their own test.
+ *
+ * `direction` and not a word: this file picks numbers, and the component that
+ * renders them picks the language. The dead band is ±1 point, so a reader one
+ * euro off the reference reads "about the same" rather than "above".
+ *
+ * @param {number} net  monthly NET take-home, EUR
+ * @param {number} referenceNet  the figure being compared against, monthly NET
+ * @returns {{diffPct:number, magnitudePct:number,
+ *            direction:'above'|'below'|'equal'} | null} null when unusable
+ */
+export function wageGap(net, referenceNet) {
+  const n = Number(net);
+  const ref = Number(referenceNet);
+  if (!Number.isFinite(n) || n <= 0 || !Number.isFinite(ref) || ref <= 0) return null;
+  const diffPct = Math.round((100 * (n - ref)) / ref);
+  return {
+    diffPct,
+    magnitudePct: Math.abs(diffPct),
+    direction: diffPct > 1 ? "above" : diffPct < -1 ? "below" : "equal",
+  };
+}
+
+/**
+ * Where an average wage sits on the distribution it is the average of.
+ *
+ * **This is the number that stops the sector card lying.** НСИ publish an
+ * average by economic activity and nobody publishes a distribution by one, so
+ * the sector comparison can only say "18% below the average for your sector".
+ * A reader hears that as "below the middle", and it is not: earnings are
+ * right-skewed, so the mean sits around the 66th rung and the median earner
+ * takes about 74% of it. Someone can be well below their sector's average and
+ * still be paid more than most people in it.
+ *
+ * **It takes the distribution and nothing else, and that is deliberate.**
+ * Handed a sector average as an anchor, this would return a sector percentile —
+ * the exact figure the feature exists to say nobody publishes. There is no
+ * parameter through which that can be attempted. `site/AGENTS.md`: where a
+ * wrong wiring would be a wrong number, make the wrong wiring impossible to
+ * express.
+ *
+ * Read off Eurostat's shape at Eurostat's own level, so no НСИ figure enters
+ * it and no payroll parameter can move it. It is also exactly scale-invariant —
+ * re-levelling multiplies every rung and the mean by the same factor — which is
+ * why it is a statement about the shape of Bulgarian earnings rather than about
+ * whichever average happens to be on screen.
+ *
+ * `medianPct` is rounded here rather than in the template, because a rounding
+ * done in the render layer is arithmetic no unit test can reach.
+ *
+ * @param {object} dist  salary_dist.json payload
+ * @param {string} [shapeYear]  the survey vintage, echoed back for the caption
+ * @returns {{cut:number, medianPct:number, shapeYear:string} | null}
+ */
+export function meanRungPosition(dist, shapeYear = "") {
+  const shape = dist?.shape;
+  const mean = shape?.ses_mean;
+  const rungs = shape?.ladder_ses;
+  if (!rungs || !(mean > 0)) return null;
+  const ladder = SALARY_LADDER_CUTS.map((p) => rungs[`P${p}`]);
+  if (ladder.some((v) => !(v > 0))) return null;
+  const median = rungs.P50;
+  if (!(median > 0)) return null;
+  return {
+    cut: percentile(mean, ladder),
+    medianPct: Math.round((100 * median) / mean),
+    shapeYear: String(shapeYear || shape?.ref_year || ""),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // RENT
 // ---------------------------------------------------------------------------

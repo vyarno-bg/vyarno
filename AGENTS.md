@@ -98,7 +98,7 @@ behind guards nothing — it will pass a suite that lost half its tests.
 
 - **never widen a validation tolerance, delete an assertion or skip a test to
   make something pass.** If a gate trips on real data the cause is upstream —
-  `docs/validation-gates.md` says what each of the six catches;
+  `docs/validation-gates.md` says what each of the seven catches;
 - **never describe the figures in `data/published/` as openly licensed.** The
   code is Apache-2.0; the data belongs to five publishers under their own terms
   and is not ours to license (`docs/legal.md`);

@@ -1229,6 +1229,46 @@ export const COPY = {
   statSofiaAbove: { bg: "над", en: "above" },
   statSofiaBelow: { bg: "под", en: "below" },
   statSofiaEqual: { bg: "≈ на", en: "≈" },
+  // The sector comparison. Same clause shape as the Sofia pair above and for
+  // the same reason: {delta} carries the whole "+28% над" phrase so the
+  // Bulgarian stays grammatical, and {sector} is НСИ's own section name in the
+  // reader's language — never our translation of the other edition's.
+  sectorLabel: { bg: "Твоят сектор", en: "Your sector" },
+  sectorNone: { bg: "— избери дейност —", en: "— choose an activity —" },
+  sectorDiff: {
+    bg: "твоята нетна заплата е <b>{delta}</b> средната нетна заплата в „{sector}“",
+    en: 'your net pay is <b>{delta}</b> the net average in "{sector}"',
+  },
+  sectorDiffEarner: {
+    bg: "доход {n} е <b>{delta}</b> средната нетна заплата в „{sector}“",
+    en: 'income {n} is <b>{delta}</b> the net average in "{sector}"',
+  },
+  sectorSrc: {
+    bg: "НСИ · средна брутна заплата в дейността ≈ {net} нето · {period}",
+    en: "NSI · average GROSS in the activity ≈ NET {net} · {period}",
+  },
+  // **The sentence the whole feature turns on.** НСИ publish an average by
+  // activity and nobody publishes a distribution by one, so the card can say
+  // how far the reader is from an average and cannot say where they rank.
+  // Stating that is P11's shape — the figure is unpublished, not withheld —
+  // and leaving it out would let a reader read a rank into a gap.
+  sectorNoRank: {
+    bg: "Никой не публикува разпределение на заплатите по сектори за България, затова това е сравнение със средна заплата, а не класиране.",
+    en: "Nobody publishes a pay distribution by sector for Bulgaria, so this compares you with an average, not a rank.",
+  },
+  // The correction that keeps the line above from being read as bad news.
+  // Earnings are right-skewed, so an average is roughly a two-thirds-of-the-
+  // way-up figure. Both numbers come from mirror.js#meanRungPosition, which
+  // reads Eurostat's shape for the COUNTRY — there is no sector distribution
+  // to read them off, which is the point of the sentence before this one.
+  sectorAverageFlatters: {
+    bg: "Средната заплата не е средата: за страната тя стои около {cut}-ия процентил, а медианният работещ взима около {medianPct}% от нея. Под средната за сектора не значи под средата.",
+    en: "An average is not a middle: nationally it sits around the {cut}th percentile, and the median earner takes about {medianPct}% of it. Below your sector's average is not below the middle.",
+  },
+  sectorCoverage: {
+    bg: "Числата обхващат наетите по трудово и служебно правоотношение — работещите на свободна практика и през собствена фирма не влизат. Дейностите са широките раздели на КИД-2008, не професии.",
+    en: "The figures cover employees under a labour contract — freelancers and people working through their own company are outside them. Activities are broad NACE Rev 2 sections, not occupations.",
+  },
   statSofiaSrc: {
     bg: "НСИ · средна брутна заплата в София-град ≈ {{net}} нето · {{as_of}}",
     en: "NSI · Sofia-city average GROSS ≈ NET {{net}} · {{as_of}}",

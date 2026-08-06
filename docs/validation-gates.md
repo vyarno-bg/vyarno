@@ -1,9 +1,9 @@
 # Validation gates
 
-Six gates block the HICP publish, plus five on the mortgage panel. They run in
-order, short-circuit on the first failure, and never pass silently. On any
-failure the CLI exits **before** publish, so the on-disk JSON never represents a
-failed run.
+Six gates block the HICP publish, plus five on the mortgage panel and one on the
+by-sector wage payload. They run in order, short-circuit on the first failure,
+and never pass silently. On any failure the CLI exits **before** publish, so the
+on-disk JSON never represents a failed run.
 
 | # | Gate | Catches |
 |---|---|---|
@@ -13,6 +13,7 @@ failed run.
 | 4 | Group consistency | A division's sub-groups not adding up to it |
 | 5 | Coverage | A missing year, at either level |
 | 6 | Link status | A published verify link that does not resolve to real data |
+| 7 | Sector wages | An НСИ by-activity headline that was computed rather than selected |
 
 ## Gate 1 — classification agreement
 
@@ -169,6 +170,34 @@ and that link is what the reader clicks to verify a number.
 rate-limiting, wait and re-run. If the URL shape changed, fix `api_url` in
 `transform.py`.
 
+## Gate 7 — sector wages (`--source sector-salary`)
+
+`validate.py#validate_sector_salary`. Guards the **payload**; the connector
+guards the sheet, and the two catch different things.
+
+The connector raises (exit 2) when: a per-year sheet's quarterly by-activity
+block does not hold exactly 20 rows; the English and Bulgarian editions
+disagree on any paired cell, which is what makes pairing rows by position safe;
+or the all-activities row does not sit strictly between the lowest and highest
+section, which is how a read that drifted onto a title row, the ownership block
+or the monthly table shows up.
+
+The gate then raises (exit 3) when: an activity is missing a name in either
+language, two rows resolve to one activity, an activity has no value at the
+payload's own `ref_period`, a figure falls outside 200–20000 EUR, or —
+**the one it exists for** — a `value_eur` is not identical to
+`series_by_period[ref_period]`.
+
+That last check is the licence, not a sanity band. §2.1.1 of НСИ's terms forbids
+distributing производни произведения, so a headline this pipeline calculated
+rather than read would breach it while looking exactly like a correct number
+(`docs/legal.md` §НСИ). It is an identity rather than a tolerance because
+nothing here rounds.
+
+**What to do when it trips:** open the workbook at the sheet and row the error
+names. Do not widen the band — every failure it is written for puts the parse on
+a column that is not a wage.
+
 ## Mortgage gates (`--source mortgage`)
 
 All five are hard-required; none degrades. The arm writes a complete
@@ -215,6 +244,7 @@ detail.
 | `mortgage` | the five mortgage gates + freshness on both tiers | No best-effort tier |
 | `sofia-price` | bounds [100, 10000] €/m²; <20 districts = exit 2 | WARNs when имот.bg publishes no «обновена на» date, so a frozen page is visible |
 | `sofia-salary` | Sofia city must exceed Sofia province, else exit 2 | Regression guard on the row selector |
+| `sector-salary` | gate 7 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
 | `salary-dist` | P1 floored at the statutory minimum wage | — |
 | `payroll` | no network; parity-checked against the SPA sentinel | `test_payroll.py` reads `mirror.js` |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |

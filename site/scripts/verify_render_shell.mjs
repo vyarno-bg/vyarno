@@ -368,3 +368,59 @@ test(
 );
 
 test.after(shutdown);
+
+test(
+  "picking a sector shows НСИ's average with the sentence that qualifies it",
+  { skip },
+  async () => {
+    await withApp(async (page, errors) => {
+      await page.locator("input[type=number]").first().fill("2100");
+      await page.waitForTimeout(300);
+
+      const picker = page.locator("#sector-pick");
+      assert.ok(await picker.count(), "the sector picker is not on the page");
+      // The options are НСИ's twenty rows, and the placeholder is not one of them.
+      const options = await picker.locator("option").allInnerTexts();
+      assert.equal(
+        options.length,
+        21,
+        `the picker offers ${options.length} rows, expected 20 + the placeholder`
+      );
+      assert.ok(
+        options.every((o) => o.trim().length > 0),
+        "an option renders blank — a missing label is a blank line, not a fallback"
+      );
+
+      // Nothing is asserted about anybody's industry until they name one.
+      assert.equal(await page.locator(".m-pay .caveat").count(), 0);
+
+      await picker.selectOption("Information and communication");
+      await page.waitForTimeout(300);
+
+      const card = await page.locator(".m-pay").innerText();
+      // НСИ's own Bulgarian name for section J, which no reader takes for «ИТ».
+      assert.match(
+        card,
+        /далекосъобщения/,
+        "the sector line does not carry НСИ's own section name"
+      );
+      assert.match(card, /18%/, "the sector gap against €2,100 net is not the published 18%");
+
+      // **The number never renders alone.** A gap shown without these reads as a
+      // rank, and no pay distribution by sector is published for BG to rank against.
+      assert.match(
+        card,
+        /разпределение на заплатите по сектори/,
+        "the missing-distribution line is absent"
+      );
+      assert.match(
+        card,
+        /не значи под средата/,
+        "the correction for how much an average flatters is absent"
+      );
+      assert.match(card, /трудово и служебно правоотношение/, "the coverage line is absent");
+
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);

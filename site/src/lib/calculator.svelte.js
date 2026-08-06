@@ -60,6 +60,7 @@ import {
   homeYears,
   targetRaise,
   bgNetSalary,
+  meanRungPosition,
   payrollParams,
   divisionRate,
   officialSplit,
@@ -80,6 +81,8 @@ import {
   netsOf,
   payLadder,
   quarterGrid,
+  sectorComparison,
+  sectorOptions as publishedSectorOptions,
   sofiaGap,
   sofiaHomeAtAverageWage,
   sofiaQuarter as publishedSofiaQuarter,
@@ -561,6 +564,40 @@ export class Calculator {
   // How each earner compares with the Sofia average wage — per earner, because
   // НСИ publish a wage rather than a household income. See view.js#sofiaGap.
   sofiaGaps = $derived(sofiaGap({ nets: this.nets, sofiaNet: this.sofiaNet }));
+
+  /** The reader's chosen NACE Rev 2 section, by НСИ's own English row name. */
+  sectorKey = $state("");
+  /** The picker's rows, in НСИ's classification order rather than by wage. */
+  sectorOptions = $derived(publishedSectorOptions(this.data.sectorSalary));
+  // The chosen sector's published average and the reader's distance from it.
+  // Null until they pick one: the card states a figure about somebody's
+  // industry, and there is no honest default industry to assume (P7).
+  sector = $derived(
+    this.sectorKey
+      ? sectorComparison({
+          sectorSalary: this.data.sectorSalary,
+          key: this.sectorKey,
+          nets: this.nets,
+          payroll: this.data.payroll,
+        })
+      : null
+  );
+  // **What stops the sector card reading as a rank.** Nobody publishes a pay
+  // distribution by activity for Bulgaria, so `sector.gaps` is a distance from
+  // an average and nothing more. This is the national correction for that: an
+  // average sits around the 66th rung and the median earner takes about 74% of
+  // it, so "below your sector's average" is not "below the middle".
+  //
+  // It reads the Eurostat shape alone and never `sector` — a sector average
+  // fed into this would produce the sector percentile the feature exists to
+  // say nobody publishes. `mirror.js#meanRungPosition` takes no anchor at all,
+  // so that cannot be wired here even by accident.
+  averageFlatters = $derived(meanRungPosition(this.data.salaryDist));
+
+  /** @param {string} key */
+  setSector = (key) => {
+    this.sectorKey = key;
+  };
 
   // ---------------------------------------------------------------------
   // Derived: inflation

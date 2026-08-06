@@ -237,7 +237,7 @@ test("every {@html} expression is rooted in an in-repo constant", () => {
 // produced «-39% под средната». Add a name here only when the function's whole
 // body is COPY plus formatter output.
 const SAFE_VALUE_SOURCES =
-  /^(fmt0?|fmtDate|signedPct|period|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|deltaPhrase|String)\b/;
+  /^(fmt0?|fmtDate|signedPct|period|label|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|deltaPhrase|String)\b/;
 
 /**
  * The `{@const NAME = …}` bindings a component declares, as name → expression.
