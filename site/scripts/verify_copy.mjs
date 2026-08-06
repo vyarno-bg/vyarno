@@ -1652,23 +1652,47 @@ test("the calibration marks its modelled figure and dates its measured one", () 
   }
 });
 
-test("the sector source line shows НСИ's own figure, not only our conversion", () => {
-  // НСИ publish a GROSS average by activity. The net beside it is our payroll
-  // conversion, so the line has to carry both and say which step is ours —
-  // otherwise the «НСИ ·» credit spans a number they never printed, and the
-  // reader who opens the workbook has no figure to match their row against.
-  // The same standard `sectorAverageFlatters` meets for Eurostat's mean and
-  // median, which is what makes this the rule here rather than one card's habit.
-  for (const text of pair("sectorSrc")) {
-    assert.ok(
-      /\{gross\}/.test(text),
-      `sectorSrc shows a net without НСИ's published gross beside it: ${text}`
-    );
-    assert.ok(/\{net\}/.test(text), `sectorSrc no longer shows the net: ${text}`);
-    assert.ok(
-      /(по наша сметка|our conversion)/i.test(text),
-      `sectorSrc credits our gross-to-net conversion to НСИ: ${text}`
-    );
+test("an НСИ credit never spans a net figure they did not publish", () => {
+  // НСИ publish GROSS wages and nothing else — by activity, by region, every
+  // table. Every net beside their name on this site is our payroll conversion,
+  // so a source line carrying one has to carry their own cell too and say which
+  // step is ours. Otherwise the «НСИ ·» credit spans a number they never
+  // printed, and the reader who follows the link has no figure to match against
+  // — which is the whole point of the link.
+  //
+  // **Written over every credit rather than over one key.** Two cards make this
+  // claim from the same two payloads, and a check naming one of them leaves the
+  // other free to carry a net-only line under the same credit with the suite
+  // green — the failure a rule over the collection catches and a named key
+  // never does. A third card inherits it without anyone remembering to.
+  const credited = bilingualEntries().filter(([, v]) =>
+    [v.bg, v.en].some((s) => /(^|[\s·])(НСИ|NSI)[\s·]/.test(s ?? ""))
+  );
+  assert.ok(
+    credited.length >= 2,
+    `only ${credited.length} COPY entries carry an НСИ credit — the scan stopped matching`
+  );
+
+  for (const [key, entry] of credited) {
+    for (const text of [entry.bg, entry.en]) {
+      if (!/\{net\}/.test(text)) continue;
+      assert.ok(
+        /\{gross\}/.test(text),
+        `COPY.${key} shows a net under an НСИ credit without their published gross: ${text}`
+      );
+      assert.ok(
+        /(по наша сметка|our conversion)/i.test(text),
+        `COPY.${key} credits our gross-to-net conversion to НСИ: ${text}`
+      );
+    }
+  }
+
+  // Both known carriers name a net, so neither can satisfy the loop above by
+  // dropping the slot the rule is about.
+  for (const key of ["sectorSrc", "statSofiaSrc"]) {
+    for (const text of pair(key)) {
+      assert.ok(/\{net\}/.test(text), `COPY.${key} no longer shows the net: ${text}`);
+    }
   }
 });
 

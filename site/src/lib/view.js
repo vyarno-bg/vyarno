@@ -1603,10 +1603,10 @@ export const SHARE_FIELDS = Object.freeze([
  *   - **The sector gap inverts EXACTLY, and is the strongest of these.** The
  *     ladder position above is bounded by a rung's width — €1,997 at P80
  *     against €2,802 at P90 — so it names a range. A sector gap divides by one
- *     of twenty figures published in `sector_salary.json`, so "18% below
+ *     of the section averages published in `sector_salary.json`, so "18% below
  *     Information and communication" is a single net wage to the euro, and the
- *     sector name narrows the sender to one of twenty groups before the
- *     percentage is read at all. It reaches no share surface, and the
+ *     sector name narrows the sender to one of the nineteen groups `sectorOptions`
+ *     offers before the percentage is read at all. It reaches no share surface, and the
  *     parameter list below is what stops it: `sharePayload` takes no sector.
  *
  * What is left is a rate over a basket (thirteen unknowns collapsed into one

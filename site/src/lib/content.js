@@ -1281,8 +1281,13 @@ export const COPY = {
   // obligation to name its inputs and its vintage.
   // «половината вземат под X% от нея» rather than «медианният работещ взима» —
   // the median as a share of the mean, said the way it is said in Bulgarian.
-  // And a percentile is «изпреварва X% от заетите», not «стои на X-ия процентил»:
-  // the reader is being handed a correction, so it has to land the first time.
+  // The percentile is said the same way, and for the same reason: «около X% от
+  // заетите изкарват под нея» puts the people in the subject and the wage in
+  // the comparison, where each belongs. «Стои на X-ия процентил» is jargon a
+  // reader is entitled not to know, and «средната изпреварва X% от заетите»
+  // hands a wage a verb that wants a person — it overtakes nobody. Both halves
+  // of the sentence run person-first, which is what makes it one voice rather
+  // than a statistic appended to a sentence.
   // Eurostat publish the mean and the median; the RATIO between them is ours,
   // so both published figures are named and the division is attributed to us.
   // A «(Евростат)» credit spanning a number they never printed is the quiet
@@ -1292,8 +1297,8 @@ export const COPY = {
   // reader to compare them, so each names its own — the ratio is what carries
   // over between them, not the levels.
   sectorAverageFlatters: {
-    bg: "Средната заплата не е средата. За България Евростат публикуват средна брутна заплата {mean} € и медиана {median} € ({shapeYear} г.); съотношението между тях е наша сметка — половината работещи вземат под {medianPct}% от средната. Самата средна изпреварва около {cut}% от заетите, сметнато между публикуваните децили, а не измерено. Затова под средната за сектора не означава под средата.",
-    en: "An average is not a middle. For Bulgaria Eurostat publish a mean GROSS wage of €{mean} and a median of €{median} ({shapeYear}); the ratio between them is ours — half the country earns less than {medianPct}% of the average. The average itself is ahead of about {cut}% of employees, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
+    bg: "Средната заплата не е средата. За България Евростат публикуват средна брутна заплата {mean} € и медиана {median} € ({shapeYear} г.); съотношението между тях е наша сметка — половината работещи вземат под {medianPct}% от средната. Около {cut}% от заетите изкарват под нея, сметнато между публикуваните децили, а не измерено. Затова под средната за сектора не означава под средата.",
+    en: "An average is not a middle. For Bulgaria Eurostat publish a mean GROSS wage of €{mean} and a median of €{median} ({shapeYear}); the ratio between them is ours — half the country earns less than {medianPct}% of the average. About {cut}% of employees earn less than it, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
   },
   // The English has to name «служебно правоотношение» too. НСИ count both
   // employment relationships, and «Държавно управление» is one of the sections
@@ -1304,9 +1309,15 @@ export const COPY = {
     bg: "Числата обхващат само наетите по трудово и служебно правоотношение — хората на свободна практика и през собствена фирма не са включени. Дейностите са широки раздели по КИД-2008, а не професии.",
     en: "The figures cover only people on a labour contract or in the civil service — those who are self-employed or work through their own company are not included. Activities are broad NACE Rev 2 sections, not occupations.",
   },
+  // The sector card's rule, on the card it is the twin of. НСИ publish 1915
+  // gross for Sofia-city at 2026-Q1; the value this card leads with is our
+  // payroll conversion of it, so the line carries НСИ's own cell as well and
+  // says which step is ours. Their name over a figure only we computed leaves
+  // a reader who opens the linked workbook nothing to match against — the
+  // whole point of the link.
   statSofiaSrc: {
-    bg: "НСИ · средна брутна заплата в София-град ≈ {{net}} нето · {{as_of}}",
-    en: "NSI · Sofia-city average GROSS ≈ NET {{net}} · {{as_of}}",
+    bg: "НСИ · средна брутна заплата в София-град {gross} € · ≈ {net} € нето по наша сметка · {period}",
+    en: "NSI · Sofia-city average GROSS {gross} € · ≈ {net} € net, our conversion · {period}",
   },
   statFastK: { bg: "— най-бързо поскъпващата група", en: "- the fastest-rising group" },
   // The housing card's label, and it needs one: every card in the strip has

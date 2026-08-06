@@ -179,12 +179,13 @@
         headline={calc.headline}
         ladder={calc.ladder}
         sofiaNet={calc.sofiaNet}
+        sofiaMeanGross={calc.sofiaMeanGrossEur}
         salaryShapeUrl={calc.salaryShapeUrl}
         salaryShapeYear={calc.salaryShapeYear}
         salaryAnchorPeriod={calc.salaryAnchorPeriod}
         sofiaEurPerM2={calc.sofiaEurPerM2}
         sofiaMeanGrossUrl={calc.sofiaMeanGrossUrl}
-        sofiaSalaryAsOf={calc.sofiaSalaryAsOf}
+        sofiaWagePeriod={calc.sofiaWagePeriod}
         sofiaNDistricts={calc.sofiaNDistricts}
         sofiaPriceIsLive={calc.sofiaPriceIsLive}
         {sofiaPriceDated}

@@ -9,6 +9,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
+import { published } from "./published-payload.mjs";
 
 test("the national strip leaves no orphaned cell on its last row", { skip }, async () => {
   // The strip renders five one-number tiles plus one card carrying a chart. A
@@ -94,6 +95,51 @@ test("the strip shows the same cards whatever the reader typed", { skip }, async
         "was typed. It is a country reference: every card is gated on its own " +
         "payload having loaded, never on what the reader entered."
     );
+  });
+});
+
+test("the Sofia card carries НСИ's own gross, not only our net", { skip }, async () => {
+  // The card leads with a net, and НСИ publish no net for anything. That figure
+  // is our payroll conversion of their published Sofia-city gross, so their cell
+  // has to be on the card beside it and the conversion has to be ours in words.
+  //
+  // **Read out of the payload rather than written here**, so the assertion is
+  // the identity — the number on the card IS the one in `sofia_salary.json` —
+  // and not a constant that goes stale at the next quarterly refresh and gets
+  // "fixed" by copying whatever the card now shows.
+  //
+  // `verify_copy.mjs` holds the same rule over the STRING, and it cannot hold
+  // this: a template feeding the gross slot the net it already had satisfies
+  // every check on the copy while the card says 1486 twice under НСИ's name.
+  // The slot is asserted there; the value behind it is asserted here.
+  const wage = published("sofia_salary");
+  const gross = Math.round(wage.value);
+  assert.ok(gross > 0, "sofia_salary.json carries no value to render");
+
+  await withApp(async (page, errors) => {
+    // The Sofia AVERAGE card, by its own label. Matching on the «НСИ» credit
+    // alone lands on the median card next to it, which cites the same publisher
+    // as one of two inputs to a figure it says in as many words is worked out —
+    // a dataset-and-vintage credit rather than a claim about what НСИ printed.
+    const card = await page
+      .locator(".strip .stat", { hasText: /средна нетна заплата в София|Sofia average NET pay/ })
+      .first()
+      .innerText();
+    // Both thousands separators, because `integer()` groups per locale and the
+    // BG and EN renderings of 1915 differ by the character between 1 and 915.
+    const grouped = new RegExp(String(gross).replace(/^(\d)(\d{3})$/, "$1\\s?$2"));
+    assert.match(
+      card,
+      grouped,
+      `НСИ publish ${gross} gross for Sofia and it is nowhere on the card that ` +
+        `credits them — only a figure we derived from it:\n${card}`
+    );
+    assert.match(
+      card,
+      /(по наша сметка|our conversion)/,
+      `the gross-to-net step on the Sofia card is not attributed to us:\n${card}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
 

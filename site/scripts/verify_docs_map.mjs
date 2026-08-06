@@ -40,10 +40,30 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { PAYLOADS } from "../src/lib/payloads.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE = join(HERE, "..");
-const SITE_MD = join(SITE, "..", "docs", "site.md");
+const REPO = join(SITE, "..");
+const SITE_MD = join(REPO, "docs", "site.md");
+
+/**
+ * The gate count is deliberately NOT checked here, and the reason is the rule.
+ *
+ * There is no single number to check it against. `docs/validation-gates.md`
+ * numbers seven; six of those block an HICP publish and the seventh runs only
+ * under `--source sector-salary`; five more gate the mortgage panel from
+ * another module; `validate.py` defines eight functions because one of them is
+ * a helper the table never numbers. So "six gate lines is the pass condition",
+ * "the five mortgage gates" and "the seven gates in validation-gates.md" are
+ * three different true sentences, and a scan matching a numeral against the
+ * word `gate` calls two of them wrong.
+ *
+ * That is the failure `docs/testing-strategy.md` §"`docs/` is outside its
+ * roots" describes — a guard that fires on legitimate text is one somebody
+ * silences — and it is what separates this from the payload count below, where
+ * there is one directory, one manifest and one right answer.
+ */
 
 /** Extensions the tree spells out. A directory entry carries none of them. */
 const NAMED = /[A-Za-z0-9_.-]+\.(?:mjs|js|py|svelte|css|json|txt|svg|png|xml|yml)/g;
@@ -103,5 +123,140 @@ test("the docs/site.md tree names no file that is not there", () => {
     [],
     `the tree in docs/site.md names ${ghosts.join(", ")}, which is not under site/ — ` +
       "a map pointing at something deleted reads as authoritative and sends a reader looking"
+  );
+});
+
+// ---------------------------------------------------------------------------
+// COUNTS WRITTEN INTO PROSE
+// ---------------------------------------------------------------------------
+//
+// `AGENTS.md` bars writing a TEST count into a doc, and gives the reason: the
+// number goes stale in the one direction nobody notices, because nothing reads
+// it. The reason is not about tests. Add a payload and every sentence in the
+// tree that counts them is wrong, in a dozen places at once, and none of it
+// reaches a reader — the data panel counts at runtime — so the only person
+// misled is the next contributor, who has no way to tell which number to trust.
+//
+// This is the same admission `treeBody` above rests on. A count of files is not
+// prose: `data/published/` holds nine JSONs or it does not, the sentence says
+// nine or it does not, and there is no reading of either that makes a mismatch
+// correct. The sentences AROUND the number are still nobody's business but a
+// reviewer's — the scan matches a numeral word immediately against the thing it
+// counts, and never a bare "eight" anywhere in a paragraph.
+
+/** Numeral words either language spells out, in the forms these docs use. */
+const NUMERALS = new Map([
+  ["five", 5],
+  ["six", 6],
+  ["seven", 7],
+  ["eight", 8],
+  ["nine", 9],
+  ["ten", 10],
+  ["пет", 5],
+  ["петте", 5],
+  ["шест", 6],
+  ["шестте", 6],
+  ["седем", 7],
+  ["седемте", 7],
+  ["осем", 8],
+  ["осемте", 8],
+  ["девет", 9],
+  ["деветте", 9],
+  ["десет", 10],
+  ["десетте", 10],
+]);
+
+const WORD = [...NUMERALS.keys()].join("|");
+
+/**
+ * A numeral naming what it counts, with NOTHING between the two.
+ *
+ * Adjacency is what keeps this off ordinary prose. "Eight arms write nine
+ * payloads" is a true sentence in `docs/testing-strategy.md` and a window of a
+ * few words would read the eight as the payload count; requiring the noun to
+ * follow the numeral immediately (optionally through one qualifier the docs
+ * actually use) leaves that sentence alone and still catches every form these
+ * files write — "nine JSONs", "nine published payloads", "nine small JSON
+ * files", "nine envelopes", «девет JSON файла», «деветте JSON файла».
+ */
+const PAYLOAD_COUNT = new RegExp(
+  `\\b(${WORD})\\s+(?:small\\s+|published\\s+|committed\\s+)?` +
+    `(?:JSONs?|payloads?|envelopes?|JSON\\s+файла)\\b`,
+  "giu"
+);
+
+/**
+ * A sentence naming a SUBSET, which the pattern above cannot tell from a total.
+ *
+ * "eight payloads are current and the ninth is months old" counts the same nine
+ * files correctly, and so would "eight of the nine". The tell is an ordinal or
+ * a partitive in the same sentence; without one, a numeral against `payloads`
+ * is the whole set. Skipping these is what keeps the check off prose it has no
+ * business judging — a guard that fires on a true sentence is one somebody
+ * turns off, and then the stale totals come back with it.
+ */
+const NAMES_A_SUBSET = /\b(?:eighth|ninth|tenth|of the|осмият|деветият|от деветте)\b/iu;
+
+/**
+ * `docs/writing-style.md` quotes example sentences to argue about how they are
+ * written, including one about a list of payload stems going stale. Quoted
+ * prose is not a claim about today's repository, and rewriting somebody's
+ * example to keep a counter happy would be editing the illustration rather
+ * than the thing illustrated.
+ */
+const NOT_A_CLAIM = new Set(["writing-style.md"]);
+
+/** Every markdown file in the repository, outside build output and vendor dirs. */
+function markdownFiles(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    if (SKIP.has(entry) || entry === ".git" || entry === ".venv") continue;
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) markdownFiles(path, out);
+    else if (entry.endsWith(".md") && !NOT_A_CLAIM.has(entry)) out.push(path);
+  }
+  return out;
+}
+
+test("no doc counts the published payloads wrong", () => {
+  const files = markdownFiles(REPO);
+  assert.ok(
+    files.length > 10,
+    `only ${files.length} markdown files found — the scan lost its root`
+  );
+  const actual = PAYLOADS.length;
+  assert.ok(actual > 0, "the payload manifest is empty, so there is nothing to count against");
+
+  const wrong = [];
+  let matched = 0;
+  for (const file of files) {
+    // Scanned by SENTENCE, not by line. These docs wrap at 80 columns, so the
+    // numeral and the ordinal that qualifies it routinely land on different
+    // lines — "eight payloads are current and the / ninth is months old" reads
+    // as a wrong total to anything that looks at one line at a time.
+    const prose = readFileSync(file, "utf8").replace(/\s*\n\s*/g, " ");
+    for (const sentence of prose.split(/(?<=[.!?])\s+/)) {
+      if (NAMES_A_SUBSET.test(sentence)) continue;
+      for (const m of sentence.matchAll(PAYLOAD_COUNT)) {
+        matched += 1;
+        const said = NUMERALS.get(m[1].toLowerCase());
+        if (said === actual) continue;
+        wrong.push(
+          `${file.slice(REPO.length + 1)}: says ${said}, there are ${actual} — ` +
+            `"${sentence.trim().slice(0, 110)}"`
+        );
+      }
+    }
+  }
+
+  // A pattern that stopped matching is a green test for every stale count in
+  // the tree, which is the shape every empty assertion in this repo takes.
+  assert.ok(matched >= 6, `the payload-count scan matched only ${matched} sentences`);
+  assert.deepEqual(
+    wrong,
+    [],
+    `a doc counts the published payloads wrong:\n  ${wrong.join("\n  ")}\n\n` +
+      "Fix the sentence, not this test. `AGENTS.md` bars writing a test count " +
+      "into a doc for this reason and the reason is not about tests: a number " +
+      "nothing reads only ever goes stale, and it goes stale silently."
   );
 });

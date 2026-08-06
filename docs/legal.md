@@ -772,7 +772,7 @@ something changes.
 | **AI Act** (Reg. 2024/1689) | **No** | Every figure is deterministic arithmetic over published data; nothing infers, and there is no AI system to classify. |
 | **ЗЕС** | **No** | Not an electronic communications network or service. The storage rule people expect to find here is in ЗЕТ чл. 4а. |
 | **ЗЗК чл. 29** (unfair competition) | **No** | Needs conduct «при осъществяване на стопанска дейност» damaging «интересите на конкурентите». See §имот.bg. |
-| **ЗЗД чл. 45** (delict) | **Always available** | A person who relies on a wrong figure and suffers loss can plead it. Nothing disclaims it away — ЗЗП and ЗЗД limits on excluding liability are why the terms say the disclaimer does not touch rights consumer law gives. What answers it is the practice: every figure sourced, dated, and checked at publish time by the six gates in [`validation-gates.md`](./validation-gates.md). |
+| **ЗЗД чл. 45** (delict) | **Always available** | A person who relies on a wrong figure and suffers loss can plead it. Nothing disclaims it away — ЗЗП and ЗЗД limits on excluding liability are why the terms say the disclaimer does not touch rights consumer law gives. What answers it is the practice: every figure sourced, dated, and checked at publish time by the seven gates in [`validation-gates.md`](./validation-gates.md). |
 | **`.bg` domain** | **Yes** | register.bg's Общи условия govern the name. They are revised, so this page links to them rather than restating clause numbers. |
 
 ## Standing commitments

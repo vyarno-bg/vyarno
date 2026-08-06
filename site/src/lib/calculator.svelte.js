@@ -433,13 +433,20 @@ export class Calculator {
   sofiaHistorical = $derived(
     Array.isArray(this.data.sofiaPrice?.historical) ? this.data.sofiaPrice.historical : []
   );
-  // The current-year row's since_2015_median_pct. The pipeline guarantees this
-  // matches the formula current/baseline - 1 by construction (see
-  // build_sofia_price_payload#consistency_invariant).
-  sofiaSince2015Pct = $derived(this.sofiaHistorical.at(-1)?.since_2015_median_pct ?? 0);
-  // The baseline (2015) median — surfaced in the provenance caption when the
-  // historical ladder is present.
-  sofiaBaselineYear = $derived(this.sofiaHistorical[0]?.year ?? 0);
+  // The current-year row's since_2015_median_pct, and the year the ladder
+  // starts from. The pipeline guarantees the delta matches current/baseline - 1
+  // by construction (see build_sofia_price_payload#consistency_invariant).
+  //
+  // **Both come off `sofiaHome`, which is `view.js#sofiaHomeAtAverageWage`.**
+  // That function picks these two cells out of the same array and is the layer
+  // a test can reach; picking them again here would be a second implementation
+  // of one selection, and only one of the two is ever rendered, so the other is
+  // free to drift. Which END of the array each figure comes from is the wiring
+  // `docs/site.md` §"A correct formula fed the wrong number" keeps out of the
+  // reactive graph: `.at(-1)` against `[0]` is a one-character difference
+  // between the rise since 2015 and the 2015 level itself.
+  sofiaSince2015Pct = $derived(this.sofiaHome.sinceBaselinePct);
+  sofiaBaselineYear = $derived(this.sofiaHome.baselineYear);
   sofiaBaselineMedian = $derived(this.sofiaHistorical[0]?.eur_per_m2_median ?? 0);
 
   // Sofia-city average monthly GROSS pay — the comparator on the
@@ -468,7 +475,12 @@ export class Calculator {
   sofiaMeanGrossUrl = $derived(this.data.sofiaSalary?.source_url || HOME.sofiaMeanGrossSourceUrl);
   // The quarter the figure describes ("2026-Q1"), not НСИ's latest single
   // month — the caption has to date the number actually shown.
-  sofiaSalaryAsOf = $derived(this.sofiaQuarter?.refPeriod ?? "");
+  //
+  // Named for the reference period rather than for `as_of`, which every
+  // payload also carries and which means the day we fetched the file. The two
+  // are weeks apart, and a caption reading «≈ 1486 нето · 2026-07-30» dates
+  // Q1's average to a day in July.
+  sofiaWagePeriod = $derived(this.sofiaQuarter?.refPeriod ?? "");
 
   // Payroll parameters — live from the pipeline-published payroll.json when
   // loaded, else the frozen offline sentinel (BG_PAYROLL_DEFAULT). All

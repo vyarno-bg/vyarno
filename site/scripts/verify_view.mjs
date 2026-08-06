@@ -2157,6 +2157,41 @@ test("sofiaHomeAtAverageWage prices a home against a NET wage, not a gross", () 
     m2: 50,
   });
   assert.ok(smaller.price < home.price && smaller.years < home.years);
+
+  // The two ends of the price ladder, and which end each figure comes from.
+  // The strip renders the rise BESIDE the sparkline drawn from the same array,
+  // so a swap prints the 2015 level as this year's rise and neither figure
+  // looks wrong on its own. `.at(-1)` against `[0]` is the whole difference,
+  // which is why the selection is here rather than in a `$derived` no test
+  // reaches — `calculator.svelte.js#sofiaSince2015Pct` reads both from this.
+  const history = price.historical ?? [];
+  if (history.length > 1) {
+    assert.equal(
+      home.sinceBaselinePct,
+      history.at(-1).since_2015_median_pct,
+      "the since-baseline rise came off the wrong end of the price history"
+    );
+    assert.equal(
+      home.baselineYear,
+      history[0].year,
+      "the baseline year came off the wrong end of the price history"
+    );
+    assert.ok(
+      home.baselineYear < history.at(-1).year,
+      "the baseline is not the oldest year in the ladder"
+    );
+  }
+
+  // A payload with no historical block must report nothing rather than a zero
+  // rise, which would render as «+0% от 2015 г.» over a year nobody published.
+  const flat = sofiaHomeAtAverageWage({
+    sofiaPrice: { ...price, historical: [] },
+    sofiaSalary: wage,
+    payroll: PAYROLL,
+    m2: 70,
+  });
+  assert.equal(flat.sinceBaselinePct, 0);
+  assert.equal(flat.baselineYear, 0);
 });
 
 test("sofiaHomeAtAverageWage prints nothing when either end is missing", () => {

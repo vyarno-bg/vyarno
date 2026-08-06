@@ -183,7 +183,7 @@ What is verified, and by what:
 
 | Suite | Runs | What it protects |
 |---|---|---|
-| `pytest` in `pipeline/` | offline | Connectors, transforms, the six validation gates, the published payloads |
+| `pytest` in `pipeline/` | offline | Connectors, transforms, the seven validation gates, the published payloads |
 | `node:test` in `site/` | no browser | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
 | `node:test` + Playwright | in a browser | The built page, loaded in a real browser — the only suite that runs the app |
 
@@ -201,7 +201,7 @@ threshold, on purpose.
 | Path | What |
 |---|---|
 | `docs/` | **[Start here](./docs/README.md)** — the engineer entry point: architecture, data sources, math, validation gates, local dev, site structure, and which suite a test belongs in |
-| `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes eight JSONs to `data/published/` |
+| `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes nine JSONs to `data/published/` |
 | `data/published/` | Versioned JSONs produced by the pipeline. Committed. The site reads these at runtime and never hits an upstream API. **These figures are not ours to license — see [Licence](#licence)** |
 | `site/` | Vite 8 + Svelte 5. Three pages — the calculator, `/legal/` and a 404. Builds to a static directory |
 | `.github/workflows/ci.yml` | Both test suites and the production build, on every push to every branch and on every pull request. Does not refresh data |
@@ -225,7 +225,7 @@ cd pipeline && source .venv/bin/activate
 vyarno-pipeline refresh --source all --out ../data/published
 ```
 
-That writes the eight JSONs and commits nothing — the diff is the review, and a
+That writes the nine JSONs and commits nothing — the diff is the review, and a
 payload nobody looked at is a number nobody checked. Each `--source` can be run
 alone; `vyarno-pipeline refresh --help` lists them.
 
@@ -239,7 +239,7 @@ no single site-wide threshold, because one number cannot serve four release
 rhythms: 45 days is late for a monthly series, perfectly normal for a quarterly
 one, and meaningless against a survey that runs every four years.
 
-The strip header opens a panel listing all eight, each with the period its
+The strip header opens a panel listing all nine, each with the period its
 figures describe, the day we fetched it, and a link to the publisher. Those two
 dates are different — June's HICP figures fetched on 27 July — and the panel is
 where that stops being collapsed into one.
