@@ -1251,9 +1251,29 @@ export const COPY = {
   // sentence below meets for Eurostat's mean and median. Showing the net alone
   // under an «НСИ ·» credit puts their name over our arithmetic and leaves the
   // reader who opens the workbook with no figure to match the row against.
+  // «в страната» / "nationwide" is load-bearing, not decoration. The line above
+  // this one on the card compares the reader with Sofia, and this table is
+  // НСИ's country-wide one, so the scope has to be attached to the figure
+  // itself — a reader who takes in only the number and its credit must not
+  // carry away a Sofia reading of a national average.
   sectorSrc: {
-    bg: "НСИ · средна брутна заплата за дейността {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
-    en: "NSI · average GROSS for the activity {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
+    bg: "НСИ · средна брутна заплата за дейността в страната {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
+    en: "NSI · average GROSS for the activity, nationwide {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
+  },
+  // **The scope mismatch, said out loud.** НСИ's by-activity table covers the
+  // whole country; the Sofia comparison sits three lines above it on the same
+  // card, and Sofia pay is structurally higher. Stacked without this, the two
+  // read as one scale and the gap to a sector average gets charged entirely to
+  // the reader's industry — «144% над средната за „Строителство“» for a Sofia
+  // builder is mostly the city. It flatters in nearly every section, which is
+  // the direction docs/principles.md P7 says to distrust hardest.
+  //
+  // {country} is НСИ's own all-activities cell, shown rather than divided into
+  // the sector figure: the ratio would be our arithmetic under their name, and
+  // this card was already fixed once for exactly that.
+  sectorNationwide: {
+    bg: "Числото за дейността е за цялата страна — НСИ публикуват {country} € бруто средно за всички дейности. Редът по-горе сравнява със София, където заплатите са по-високи, така че част от разликата ти спрямо сектора е градът, а не работата.",
+    en: "The activity figure covers the whole country — NSI publish {country} € gross as the average across all activities. The line above compares with Sofia, where pay is higher, so part of your distance from the sector is the city, not the job.",
   },
   // НСИ mark a whole year preliminary until they finalise it, and 2026 is. A
   // figure they will revise, shown as though it were settled, is the reader

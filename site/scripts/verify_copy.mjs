@@ -1530,6 +1530,7 @@ const SECTOR_KEYS = [
   "sectorNoRank",
   "sectorAverageFlatters",
   "sectorCoverage",
+  "sectorNationwide",
   "sectorDiff",
   "sectorDiffEarner",
 ];
@@ -1693,6 +1694,41 @@ test("an НСИ credit never spans a net figure they did not publish", () => {
     for (const text of pair(key)) {
       assert.ok(/\{net\}/.test(text), `COPY.${key} no longer shows the net: ${text}`);
     }
+  }
+});
+
+test("the sector figure says which geography it covers", () => {
+  // НСИ's by-activity table is the COUNTRY's, and the card compares the reader
+  // with Sofia three lines above it. Sofia pay is structurally higher, so two
+  // gaps stacked with no scope on either read as one scale — and the sector one
+  // absorbs the city. A Sofia builder is shown «144% над средната за
+  // „Строителство“» when most of that distance is where they work, not what
+  // they do, and it flatters in nearly every section (docs/principles.md P7).
+  //
+  // Two places carry it and both are required: the scope belongs ON the figure,
+  // for a reader who takes in the number and its credit and nothing else, and
+  // the consequence needs a sentence of its own.
+  for (const text of pair("sectorSrc")) {
+    assert.ok(
+      /(в страната|nationwide)/i.test(text),
+      `sectorSrc gives no geography for a country-wide figure sitting under a Sofia comparison: ${text}`
+    );
+  }
+  for (const text of pair("sectorNationwide")) {
+    assert.ok(
+      /(цялата страна|whole country)/i.test(text),
+      `sectorNationwide does not say the activity figure is national: ${text}`
+    );
+    assert.ok(
+      /(София|Sofia)/.test(text),
+      `sectorNationwide does not name the comparison whose scope differs: ${text}`
+    );
+    // НСИ's own all-activities cell, shown rather than divided into the sector
+    // figure — a ratio here would be our arithmetic under their credit.
+    assert.ok(
+      /\{country\}/.test(text),
+      `sectorNationwide claims a national level without showing НСИ's published figure: ${text}`
+    );
   }
 });
 
