@@ -186,13 +186,14 @@ jobs:
         # The cache in this workflow that earned its place, and the measurement
         # is the reason it is here while the pip one is not: across every run
         # compared, the browser step came down from around nineteen seconds to
-        # eight or ten on Windows and from twenty-one to seventeen here. Both
-        # directions held on every sample rather than on one.
+        # eight or ten on Windows, and came down here too. Both directions held
+        # on every sample rather than on one.
         #
-        # The ubuntu saving is the smaller of the two because `--with-deps`
-        # still runs apt on a hit — see the step below. Anyone timing this and
-        # finding four seconds should look at the Windows job before removing
-        # it, since that is the one setting the run's wall clock.
+        # The step below installs the browser and nothing else, on this platform
+        # and on Windows, so a hit skips a download rather than trimming one.
+        # Anyone timing this and finding a few seconds should look at the
+        # Windows job before removing it, since that is the one setting the
+        # run's wall clock.
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
@@ -211,11 +212,32 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('site/package-lock.json') }}
       - name: Install Chromium for the render smoke test
         working-directory: site
-        # Runs on a cache hit too, and has to. The cache carries the browser;
-        # the apt packages it links against live in the runner image, which is
-        # rebuilt for every job, so `--with-deps` is not the part that gets
-        # skipped. On a hit this step is the system packages alone.
-        run: npx playwright install --with-deps chromium
+        # The only step in this job that talks to a network nobody here
+        # controls, so it is the only one with a limit of its own. Both things
+        # it can reach — an Ubuntu mirror and the Playwright CDN — stall rather
+        # than fail, and a stall long enough to exhaust the job's own budget
+        # reports a cancelled job with no failing step, which is the one shape
+        # of red that tells a reader nothing. Several times the step's measured
+        # seventeen seconds, so only a stall trips it.
+        timeout-minutes: 5
+        # No `--with-deps`, and the runner image is why: every library Chromium
+        # links against is already in it — xvfb, libfontconfig1, libfreetype6,
+        # libxrandr2 and the rest all resolve to "already the newest version".
+        # What the flag adds on top is nine font packages for CJK, Thai and
+        # X11-bitmap Cyrillic, none of which this page needs; its Bulgarian
+        # renders in DejaVu and Liberation, both in the image, and the render
+        # suite asserts on the DOM rather than on glyphs.
+        #
+        # It fetches them from the Ubuntu archive on every run, cache hit or
+        # miss, at whatever rate the mirror is giving that morning — 21.1 MB at
+        # 31 kB/s on one, which is 11 minutes 21 seconds of a 12-minute job
+        # spent downloading fonts while the render suite never started.
+        #
+        # A library going missing from the image fails loudly rather than
+        # silently: `find-chromium.mjs` proves a candidate by launching it, one
+        # that cannot launch is not a browser, `test:render` then skips to a
+        # report of zero, and the floor check two steps below refuses that.
+        run: npx playwright install chromium
       - name: The built page actually renders
         working-directory: site
         # The only suite that runs the app. Everything above it tests a module
@@ -326,9 +348,13 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('site/package-lock.json') }}
       - name: Install Chromium for the render smoke test
         working-directory: site
-        # No `--with-deps` here, unlike the ubuntu job: there are no system
-        # packages to install, so a cache hit skips this step's whole reason
-        # for taking any time at all.
+        # Bounded for the reason the `site` job's copy of this step is: the
+        # Playwright CDN stalls rather than fails, and a stall that eats the
+        # job's budget reports a cancelled job naming no step. Wider than the
+        # ubuntu limit because this runner is the slower of the two.
+        timeout-minutes: 8
+        # No system packages to install, so a cache hit skips this step's whole
+        # reason for taking any time at all.
         run: npx playwright install chromium
       - name: The built page actually renders
         working-directory: site
