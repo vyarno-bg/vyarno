@@ -394,6 +394,22 @@
           <span class="l-bg">{COPY.sectorNoRank.bg}</span>
           <span class="l-en">{COPY.sectorNoRank.en}</span>
         </p>
+        <!-- Directly under the rank caveat and above the flattery one, because
+             it answers the same question they do: what this gap is NOT. The
+             sector table is НСИ's country-wide one and the Sofia line sits a
+             few rows up, so without this the two read as one scale. Gated on
+             the all-activities cell being there — the sentence names it, and a
+             caveat reading «0 € бруто средно» is a figure nobody published. -->
+        {#if calc.sector.countryGross > 0}
+          <p class="hint caveat">
+            <span class="l-bg"
+              >{t(COPY.sectorNationwide, "bg", { country: fmt0(calc.sector.countryGross) })}</span
+            >
+            <span class="l-en"
+              >{t(COPY.sectorNationwide, "en", { country: fmt0(calc.sector.countryGross) })}</span
+            >
+          </p>
+        {/if}
         {#if calc.averageFlatters}
           <p class="hint caveat">
             <span class="l-bg"

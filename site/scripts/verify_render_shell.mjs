@@ -439,6 +439,20 @@ test(
         /как са разпределени заплатите по сектори/,
         "the missing-distribution line is absent"
       );
+      // The scope of the figure, on the card, in the reader's language. The
+      // Sofia comparison renders a few lines above this one and Sofia pay is
+      // structurally higher, so a gap to a national sector average that does
+      // not say it is national charges the city to the reader's industry.
+      assert.match(
+        card,
+        /за цялата страна/,
+        "the card does not say the activity figure covers the whole country"
+      );
+      assert.match(
+        card,
+        /1\s?407/,
+        "НСИ's own all-activities figure is not on the card, so the national level is asserted rather than shown"
+      );
       assert.match(
         card,
         /не означава под средата/,

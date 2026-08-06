@@ -1239,6 +1239,22 @@ export function sectorComparison({ sectorSalary, key, nets, payroll }) {
   const gross = Number(row?.value_eur);
   if (!row || !Number.isFinite(gross) || gross <= 0) return null;
 
+  // НСИ's all-activities row, which the picker refuses and the card needs.
+  //
+  // **`Labour_1.1.2.1` is a COUNTRY table**, and the line directly above this
+  // one on the card compares the reader with Sofia — 1915 € gross against 1407 €
+  // for the whole economy at 2026-Q1, both НСИ's own cells. Stacking the two
+  // without saying so charges the difference between the city and the country to
+  // the reader's industry: a Sofia builder reads «144% над средната за
+  // „Строителство“» and most of that gap is the city. It flatters in nearly
+  // every section, which is the direction docs/principles.md P7 says to distrust.
+  //
+  // Selected, never divided. The ratio between the two figures would be our
+  // arithmetic under НСИ's name — the defect this card was already fixed for —
+  // so both cells go on screen and the reader does the comparing.
+  const countryRow = rows.find((s) => s?.en_name === SECTOR_TOTAL_KEY);
+  const countryGross = Number(countryRow?.value_eur);
+
   const params = payrollParams(payroll);
   const net = bgNetSalary(gross, params).net;
   const gaps = [];
@@ -1254,6 +1270,7 @@ export function sectorComparison({ sectorSalary, key, nets, payroll }) {
     enName: String(row.en_name ?? ""),
     gross,
     net,
+    countryGross: Number.isFinite(countryGross) && countryGross > 0 ? countryGross : 0,
     refPeriod: String(sectorSalary?.ref_period ?? ""),
     isPreliminary: Boolean(sectorSalary?.is_preliminary),
     // One URL per language, because the labels differ between the two editions.
