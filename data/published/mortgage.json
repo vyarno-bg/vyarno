@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0",
-  "as_of": "2026-07-24",
+  "as_of": "2026-08-06",
   "source": "ecb+bnb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
   "notes": "BG mortgage panel. Two tiers: new_business (ECB MIR — what a home loan costs if you sign one now; AAR plus APRC with fees) and outstanding_stock (BNB — what everyone already repaying a home loan averages). Both official and monthly. No scraped offered-rate tier by design.",
@@ -10,8 +10,8 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2C.A.R.A.2250.BGN.N (to 2025-12) spliced with M.BG.B.A2C.A.R.A.2250.EUR.N (from 2026-01)",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-05",
-    "value_pct": 2.43,
+    "ref_period": "2026-06",
+    "value_pct": 2.41,
     "series_by_period": {
       "2020-01": 2.97,
       "2020-02": 2.97,
@@ -89,15 +89,16 @@
       "2026-02": 2.47,
       "2026-03": 2.45,
       "2026-04": 2.45,
-      "2026-05": 2.43
+      "2026-05": 2.43,
+      "2026-06": 2.41
     },
     "rate_basis": "annualised agreed rate (AAR), new business, households and NPISH, lending for house purchase, all initial rate-fixation periods — this is the interest rate the monthly payment is computed from",
     "aprc": {
       "_role": "the same loans' all-in annual cost with fees included (ГПР in Bulgarian) — what the loan really costs",
       "dataset": "MIR M.BG.B.A2C.A.C.A.2250.BGN.N spliced with M.BG.B.A2C.A.C.A.2250.EUR.N",
       "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.C.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-      "ref_period": "2026-05",
-      "value_pct": 2.77,
+      "ref_period": "2026-06",
+      "value_pct": 2.75,
       "series_by_period": {
         "2020-01": 3.26,
         "2020-02": 3.25,
@@ -175,7 +176,8 @@
         "2026-02": 2.78,
         "2026-03": 2.77,
         "2026-04": 2.78,
-        "2026-05": 2.77
+        "2026-05": 2.77,
+        "2026-06": 2.75
       },
       "rate_basis": "annual percentage rate of charge (APRC), new business, households, lending for house purchase"
     },
@@ -184,8 +186,8 @@
       "dataset": "MIR M.BG.B.A2C.A.B.A.2250.EUR.N",
       "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.B.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
       "unit": "millions, currency of the period",
-      "ref_period": "2026-05",
-      "value": 599.12,
+      "ref_period": "2026-06",
+      "value": 768.56,
       "series_by_period": {
         "2020-01": 279.0,
         "2020-02": 322.0,
@@ -263,7 +265,8 @@
         "2026-02": 545.06,
         "2026-03": 630.89,
         "2026-04": 640.25,
-        "2026-05": 599.12
+        "2026-05": 599.12,
+        "2026-06": 768.56
       }
     },
     "currency": "EUR",
@@ -275,8 +278,8 @@
     "source": "bnb",
     "dataset": "s_ir_loan_oa_hh_bg.xlsx, sheet LOAN_OA_HH, Жилищни кредити (housing loans) × в евро (EUR) × maturity total",
     "source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx",
-    "ref_period": "2026-05",
-    "value_pct": 2.6717,
+    "ref_period": "2026-06",
+    "value_pct": 2.6609,
     "series_by_period": {
       "2007-01": 8.3836,
       "2007-02": 8.365,
@@ -510,17 +513,18 @@
       "2026-02": 2.6977,
       "2026-03": 2.6887,
       "2026-04": 2.6798,
-      "2026-05": 2.6717
+      "2026-05": 2.6717,
+      "2026-06": 2.6609
     },
-    "book_volume_eur_m": 18162.993,
+    "book_volume_eur_m": 18580.075,
     "currency": "EUR",
     "rate_basis": "effective annual rate on the outstanding stock of EUR housing loans to households — includes older vintages still being amortised, so it moves slowly and lags new-business rates",
     "methodology_change": "Bulgaria adopted the euro on 2026-01-01. Per the BNB methodological note (st_m_instr_irs_new_2026_bg.pdf, published 19 Feb 2026), OLP and LEONIA Plus (BG's old base rates) were retired, the BGN column was dropped from interest tables, and pre-2026 EUR series were reconstructed by BNB from BGN+EUR aggregates. So the EUR outstanding-stock figures before 2026-01 are a BNB reconstruction, not a contemporaneous observation. See https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/st_m_instr_irs_new_2026_bg.pdf"
   },
   "cross_check": {
-    "bnb_outstanding_pct": 2.6717,
-    "ecb_mir_outstanding_pct": 2.67,
-    "delta_pp": 0.0017,
+    "bnb_outstanding_pct": 2.6609,
+    "ecb_mir_outstanding_pct": 2.66,
+    "delta_pp": 0.0009,
     "tolerance_pp": 0.3,
     "status": "ok",
     "why": "BNB reports MFI Interest Rate Statistics to the ECB, so the two describe the same outstanding housing-loan book. Agreement here is evidence both cells are being read correctly."
