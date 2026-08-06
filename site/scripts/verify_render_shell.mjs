@@ -410,12 +410,12 @@ test(
       // rank, and no pay distribution by sector is published for BG to rank against.
       assert.match(
         card,
-        /разпределение на заплатите по сектори/,
+        /как са разпределени заплатите по сектори/,
         "the missing-distribution line is absent"
       );
       assert.match(
         card,
-        /не значи под средата/,
+        /не означава под средата/,
         "the correction for how much an average flatters is absent"
       );
       assert.match(card, /трудово и служебно правоотношение/, "the coverage line is absent");
