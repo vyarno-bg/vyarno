@@ -1,7 +1,7 @@
 # pipeline/ — agent instructions
 
 Python 3.11 ingest. Pulls official figures from five upstreams, gates them, and
-writes the eight JSON envelopes in `data/published/`. The root `AGENTS.md` has
+writes the nine JSON envelopes in `data/published/`. The root `AGENTS.md` has
 the boundaries that apply everywhere; this file is the Python side.
 
 ## Commands

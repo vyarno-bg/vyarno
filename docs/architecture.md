@@ -233,7 +233,7 @@ it to the one thing it needs, and assume anything ever committed is permanent.
 
 `.github/workflows/ci.yml` runs on every push to every branch, on every pull
 request, and on demand: the pipeline suite (`pytest -q`, offline), the SPA
-suite (`npm run verify:math`), the production build, and a check that all eight
+suite (`npm run verify:math`), the production build, and a check that all nine
 published payloads are committed and parse.
 
 The two triggers cover different things. A push gates a branch before the merge

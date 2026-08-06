@@ -313,8 +313,8 @@ on `sofia_salary`'s own quarterly row.
 **`cadenceDays` is here rather than in the envelope**, and that is a deliberate
 trade. It is a property of the upstream, so the connector is the natural owner;
 but nothing in the pipeline consumes it, and publishing it would put a second
-copy in eight JSON files that only a full refresh can correct. One table that
-cannot drift from itself beats eight that can drift from each other.
+copy in nine JSON files that only a full refresh can correct. One table that
+cannot drift from itself beats nine that can drift from each other.
 
 **A row is not a consumer.** The panel renders every payload, so "is it used?"
 is trivially true for anything in the manifest. `verify_data_contracts.mjs`
@@ -744,7 +744,7 @@ Staleness is **not** driven by a hardcoded date, and not by a single
 threshold either. `Calculator#load` calls `view.js#dataAge(data, PAYLOADS)`,
 which judges each payload against the cadence its own manifest row declares:
 past it the row is *due*, past 1.5× it is *overdue*, and the banner fires when
-something is overdue — naming how many rather than implying all eight are. One
+something is overdue — naming how many rather than implying all nine are. One
 flat threshold could not serve four release rhythms; 45 days is late for the
 monthly HICP release, perfectly normal for the quarterly НСИ wage series, and
 meaningless against a survey Eurostat runs every four years.

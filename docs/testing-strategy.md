@@ -442,13 +442,13 @@ complete: `view.js`, `mirror.js`, `legal.js` and `support.js` are at or near
 | `format.js` | The `httpUrl`/`period` rejection branches, for input shapes the payloads cannot produce. They exist because `{@html}` is downstream of them, and they are guarded structurally by `verify_template_safety.mjs` rather than by example |
 
 **Python.** Everything below the CLI is 89–100%: gates, transforms, connectors,
-models. What is left is `cli.py`'s seven `_refresh_*` arms — fetch, transform,
+models. What is left is `cli.py`'s eight `_refresh_*` arms — fetch, transform,
 validate, write, print — of which two are driven end to end through `respx`
-against real trimmed cubes and five are not. Seven arms write eight payloads —
-`_refresh_hicp` publishes the headline and the categories — so the eight in
+against real trimmed cubes and six are not. Eight arms write nine payloads —
+`_refresh_hicp` publishes the headline and the categories — so the nine in
 `data/published/` counts files and never arms.
 
-That is the honest gap, and it is deliberate. Covering the other five means five
+That is the honest gap, and it is deliberate. Covering the other six means six
 more fixture sets built from live upstream responses, each of which then has to
 be *maintained* against a publisher that restructures its output without
 warning. The failure they would catch — a connector that breaks — is the failure
