@@ -2275,6 +2275,14 @@ test("sectorComparison reads НСИ's published cell and computes no rank", () =
   // Both labels are НСИ's own, one per language, never one translated.
   assert.equal(out.bgName, row.bg_name);
   assert.equal(out.enName, row.en_name);
+  // One verify URL per edition: the labels differ between the two files, so a
+  // reader sent to the wrong one cannot find the row they just read.
+  assert.equal(out.sourceUrl, payload.source_url);
+  assert.equal(out.sourceUrlBg, payload.source_url_bg);
+  assert.notEqual(out.sourceUrl, out.sourceUrlBg, "both languages verify against one edition");
+  // НСИ mark a whole year preliminary until they finalise it; the card has to
+  // be able to say so rather than presenting a figure they will revise.
+  assert.equal(out.isPreliminary, payload.is_preliminary);
 
   // **There is no rank here and there must never be one.** Nobody publishes a
   // pay distribution by activity for Bulgaria, so a percentile against a sector
@@ -2282,7 +2290,17 @@ test("sectorComparison reads НСИ's published cell and computes no rank", () =
   // fails this line before it reaches a reader.
   assert.deepEqual(
     Object.keys(out).sort(),
-    ["bgName", "enName", "gaps", "gross", "isPreliminary", "net", "refPeriod", "sourceUrl"],
+    [
+      "bgName",
+      "enName",
+      "gaps",
+      "gross",
+      "isPreliminary",
+      "net",
+      "refPeriod",
+      "sourceUrl",
+      "sourceUrlBg",
+    ],
     "sectorComparison's shape changed — if a rank or percentile was added, there is no published distribution behind it"
   );
   for (const gap of out.gaps) {

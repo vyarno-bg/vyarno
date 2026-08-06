@@ -554,6 +554,12 @@ export function meanRungPosition(dist, shapeYear = "") {
   return {
     cut: percentile(mean, ladder),
     medianPct: Math.round((100 * median) / mean),
+    // The two PUBLISHED figures the ratio above divides, returned so the card
+    // can show them. Eurostat print a mean and a median for BG; the ratio
+    // between them is ours, and a card that stated only the ratio under a
+    // Eurostat credit would be crediting them with our arithmetic.
+    mean,
+    median,
     shapeYear: String(shapeYear || shape?.ref_year || ""),
   };
 }

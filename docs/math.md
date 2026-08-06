@@ -593,7 +593,7 @@ published SES shape in `salary_dist.json`:
 |---|---|---|
 | SES mean | 949 | published |
 | SES median (P50) | 705 | published |
-| median ÷ mean | **0.7429** | **measured** — both figures are Eurostat's |
+| median ÷ mean | **0.7429** | inputs are Eurostat's, **the division is ours** — the card shows both published figures and attributes the ratio to us |
 | the mean's own rung | **P66** | **modelled** — see below |
 
 So someone €500 below their sector's average may still be paid more than most

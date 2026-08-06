@@ -935,4 +935,17 @@ test("the sector figure never travels without the sentence that qualifies it", (
     !/sector:\s*calc\.sector\.(bg|en)Name/.test(src),
     "an НСИ section name reaches the template unformatted"
   );
+
+  // **One verify link per language.** НСИ publish this table twice and the
+  // section names differ between the editions, so a Bulgarian reader sent to
+  // the English workbook cannot find the row they just read — the link would
+  // demonstrate nothing, which is the whole point of having it (P3, P9).
+  assert.ok(
+    src.includes("httpUrl(calc.sector.sourceUrlBg)"),
+    "the Bulgarian verify link does not point at НСИ's Bulgarian edition"
+  );
+  assert.ok(
+    src.includes("httpUrl(calc.sector.sourceUrl)"),
+    "the English verify link does not point at НСИ's English edition"
+  );
 });
