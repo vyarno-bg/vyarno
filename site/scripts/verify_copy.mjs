@@ -1356,6 +1356,21 @@ test("no prose freezes a date or a count the payloads already carry", () => {
       ],
     ],
     ["the SES survey year", String(dist?.shape?.ref_year ?? ""), [["content.js", COPY_SRC]]],
+    // The two levels the sector calibration prints. They are the case the rule
+    // above is weakest against: the paragraph reads as prose, so a euro figure
+    // typed into it looks like part of the sentence rather than like a stale
+    // payload cell, and Eurostat re-level the whole SES shape on their own
+    // schedule. Both are already slots — this is what keeps them slots.
+    [
+      "Eurostat's SES mean",
+      String(dist?.shape?.ses_gross_eur?.mean ?? ""),
+      [["content.js", COPY_SRC]],
+    ],
+    [
+      "Eurostat's SES median",
+      String(dist?.shape?.ses_gross_eur?.median ?? ""),
+      [["content.js", COPY_SRC]],
+    ],
   ];
   for (const [what, literal, sources] of frozen) {
     if (!literal) continue;
