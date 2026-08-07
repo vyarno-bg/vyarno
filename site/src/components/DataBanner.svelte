@@ -60,12 +60,25 @@
 {#if dataReady}
   <div class="data-strip">
     <div class="wrap data-strip-inner mono">
-      <span>
-        <span class="l-bg">{t(COPY.dataAsOf, "bg", { period: periodLong(asOfDisplay, "bg") })}</span
-        >
-        <span class="l-en">{t(COPY.dataAsOf, "en", { period: periodLong(asOfDisplay, "en") })}</span
-        >
-      </span>
+      <!-- Only when there is a month to name. `dataReady` flips even when every
+           fetch failed — `loadAll` returns nulls rather than throwing, and the
+           calculator is replaced by its failure card — so this line was drawn
+           over an empty period and read «ЧИСЛАТА СА КЪМ —»: a half-written
+           sentence at the top of a page that had just told the reader, properly,
+           what went wrong. `periodLong("")` returns the em dash it returns for
+           anything it cannot render, which is right for a table cell and is not
+           a date. The loading state omits the whole strip and this now matches
+           it. -->
+      {#if asOfDisplay}
+        <span>
+          <span class="l-bg"
+            >{t(COPY.dataAsOf, "bg", { period: periodLong(asOfDisplay, "bg") })}</span
+          >
+          <span class="l-en"
+            >{t(COPY.dataAsOf, "en", { period: periodLong(asOfDisplay, "en") })}</span
+          >
+        </span>
+      {/if}
       {#if headline}
         <!-- Each span states its OWN language, never `$lang`. Both are in the
              DOM at once with the CSS hiding one, so `$lang` in both puts the

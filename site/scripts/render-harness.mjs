@@ -217,12 +217,18 @@ async function whyNotReady(page, path, errors) {
  * render leaves the surrounding markup in place, so asserting on elements
  * alone would pass on a page the visitor sees as half-drawn.
  */
-export async function openApp(path = "/", context = {}) {
+export async function openApp(path = "/", context = {}, before = null) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 1200 }, ...context });
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("requestfailed", (r) => errors.push(`request failed: ${r.url()}`));
+  // The one hook that has to run BEFORE the navigation: a `page.route` set
+  // afterwards misses the fetches `onMount` has already issued. It exists for
+  // the load-failure state, which is a state readers reach and which no suite
+  // could open without it — `READY["/"]` has waited on `.load-fail` all along
+  // and nothing was able to produce one.
+  if (before) await before(page);
   await page.goto(`${origin}${path}`, { waitUntil: "domcontentloaded" });
   try {
     await page.waitForFunction(READY[path] ?? MOUNTED);
@@ -250,8 +256,8 @@ export async function openApp(path = "/", context = {}) {
  * affordance built out of motion is invisible to that reader while passing
  * every other test in this file.
  */
-export async function withApp(fn, path = "/", context = {}) {
-  const { page, errors } = await openApp(path, context);
+export async function withApp(fn, path = "/", context = {}, before = null) {
+  const { page, errors } = await openApp(path, context, before);
   try {
     await fn(page, errors);
   } finally {

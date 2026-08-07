@@ -84,6 +84,49 @@ test("the as-of strip writes both its dates the same way", { skip }, async () =>
   });
 });
 
+test("the page that could not load says so and states no date", { skip }, async () => {
+  // The third state a reader actually reaches, and the one nothing opened
+  // before: `loadAll` turns a failed fetch into a null payload rather than
+  // throwing, so `dataReady` flips either way and the calculator is replaced by
+  // its failure card.
+  //
+  // The as-of line was drawn over that with no month to name and read «ЧИСЛАТА
+  // СА КЪМ —» — a half-written sentence above a card that had just explained
+  // the failure properly. `periodLong("")` returns the em dash it returns for
+  // any value it cannot render, which is right in a table cell and is not a
+  // date.
+  //
+  // What the card itself must keep saying is the other half: a reader who has
+  // typed a salary into a page that then failed needs to know nothing of theirs
+  // was lost or sent anywhere. That is a privacy claim (P1) and it is asserted
+  // here rather than assumed.
+  await withApp(
+    async (page) => {
+      assert.ok(await page.locator(".load-fail").count(), "the failure card was never reached");
+      assert.doesNotMatch(
+        await page
+          .locator(".data-strip")
+          .innerText()
+          .catch(() => ""),
+        /Числата са към/i,
+        "the as-of line is drawn over a page with no figures on it"
+      );
+      const card = await page.locator(".load-fail").innerText();
+      assert.match(card, /Данните не се заредиха/i, `the failure card lost its heading: ${card}`);
+      assert.match(
+        card,
+        /нищо не е изпращано никъде/i,
+        `the failure card stopped saying nothing was sent: ${card}`
+      );
+    },
+    "/",
+    {},
+    // Aborted rather than 404'd: a reader with no connection is the case, and a
+    // 404 would exercise the server's fallback instead of the fetch's failure.
+    (page) => page.route("**/data/published/*.json", (r) => r.abort())
+  );
+});
+
 test("the footer's route to donating is a link, on every page", { skip }, async () => {
   // The footer is shared, so this is the ask as a reader meets it on the
   // calculator — not on `/legal/`, where they already went looking for it.
