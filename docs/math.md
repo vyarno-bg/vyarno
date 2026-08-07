@@ -573,12 +573,12 @@ not fetch or publish the national CPI.
 
 ## A sector average, and why the card says what an average is
 
-`mirror.js#sectorComparison` feeds `wageGap(net, sectorNet)` — the reader's
+`view.js#sectorComparison` feeds `mirror.js#wageGap(net, sectorNet)` — the reader's
 take-home against НСИ's published average for the NACE Rev 2 section they
 picked, both net, `(net − ref) / ref` rounded to whole percent. Nothing else.
 
 **A rank is not available at that granularity and never will be from the current
-upstreams.** Probed 2026-08-06: `earn_ses_monthly` carries BG at the
+upstreams.** Probed 2026-08-06: `earn_ses_monthly` carries BG at
 no NACE section at all; `nace_r2=J` returns an empty `value` map over a
 `nace_r2` dimension of size 0, and the five categories the cube does carry for
 BG are broad groupings, of which only the whole-economy one is populated at the
@@ -667,6 +667,8 @@ dispersions differ from the national one and nothing published says by how much.
 | a household's raise is weighted by the earlier pay | `mirror.js#householdNetRaisePct`; a blank raise returns NaN rather than reading as 0% |
 | the earnings ladder ranks people, not households | `view.js#earnerRanks` returns one row per earner; there is no total to pass it |
 | the Sofia comparator measures a wage against a wage | `view.js#sofiaGap` compares earner by earner |
+| both wage comparators round and dead-band alike | `mirror.js#wageGap` is the only place either computes a distance; `verify_wiring.mjs` asserts `view.js` computes none |
+| the sector card can never become a sector rank | `mirror.js#meanRungPosition` takes no anchor, so there is no parameter to hand it a sector average through |
 
 ## Cross-references
 

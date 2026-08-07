@@ -65,13 +65,14 @@ figure it produces is a recommendation.
 
 ## What it works out
 
-Seven questions, from one net salary and one basket:
+Eight questions, from one net salary and one basket:
 
 | Question | How it is answered |
 |---|---|
 | **What did prices do to _me_?** | Your own basket re-weighted against the official one — the 13 ECOICOP divisions, with a drill-down into the ~46 groups underneath. Each row links to the Eurostat series it came from |
 | **Did my raise beat prices?** | Real wage: the raise you got against the inflation your own basket actually saw, as a ratio and in euro per month |
 | **Where does my pay sit?** | An 11-rung gross salary ladder for Sofia, P1 to P99 — distribution shape from a Eurostat survey, level re-set to the latest НСИ average wage |
+| **How does my pay compare in my line of work?** | The distance from НСИ's published average for the NACE Rev 2 section you pick, net against net. **An average, not a rank** — nobody publishes how pay is spread inside a Bulgarian sector, so the card says so and shows how far above the middle an average sits |
 | **What does the "flat" tax really take?** | The tax wedge, effective and marginal, from the dated payroll table. The tax is flat; the deductions are not, because contributions stop at a ceiling and tax does not. Both figures come from the published rates and the published ceiling |
 | **What does rent cost me?** | Rent as a share of net pay, and the day of the month up to which you are working for the landlord |
 | **What is cash losing?** | Savings erosion at *your* inflation rate, not the headline one |
@@ -103,7 +104,7 @@ Not because we say so — because you can verify it:
 |---|---|
 | **Eurostat** | HICP — inflation across 13 divisions and ~46 groups, the official basket weights, the yearly indices, and the salary-distribution shape |
 | **ЕЦБ / БНБ** | Interest rates on new home loans, APRC, and the БНБ lending limits for mortgages (LTV, DSTI, maximum term) |
-| **НСИ** | The average wage for Sofia, and the level the salary ladder is anchored to |
+| **НСИ** | The average wage for Sofia — the level the salary ladder is anchored to — and the average wage by economic activity, 19 NACE Rev 2 sections, named in their own Bulgarian and their own English |
 | **имот.bg** | Average €/m² by district in Sofia |
 
 Alongside these sit two dated tables maintained in the repository rather than
@@ -126,10 +127,10 @@ flowchart LR
   end
 
   subgraph pipe["pipeline/ · Python, run by hand"]
-    C["connectors"] --> T["transform"] --> G{"6 validation<br/>gates"}
+    C["connectors"] --> T["transform"] --> G{"7 validation<br/>gates"}
   end
 
-  J["data/published/*.json<br/>8 payloads, committed"]
+  J["data/published/*.json<br/>9 payloads, committed"]
   S["site/ · Vite + Svelte 5<br/>static build"]
   U["the reader's browser<br/>all personal figures stay here"]
 

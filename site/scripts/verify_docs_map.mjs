@@ -144,8 +144,25 @@ test("the docs/site.md tree names no file that is not there", () => {
 // reviewer's — the scan matches a numeral word immediately against the thing it
 // counts, and never a bare "eight" anywhere in a paragraph.
 
-/** Numeral words either language spells out, in the forms these docs use. */
+/**
+ * Numerals in the forms these docs write them — spelled out in either language,
+ * and as digits.
+ *
+ * The digits are here because prose is not the only place a payload gets
+ * counted. A repo map draws its tree in a fenced block and a README draws its
+ * flowchart in mermaid, and neither spells a number out: `← 8 files, committed`
+ * and `data/published/*.json<br/>8 payloads` both sat two payloads behind the
+ * directory while every spelled-out sentence in the same files was corrected.
+ * A diagram is the first thing a contributor reads and the last thing anybody
+ * re-reads, so it is exactly where a stale count survives longest.
+ */
 const NUMERALS = new Map([
+  ["5", 5],
+  ["6", 6],
+  ["7", 7],
+  ["8", 8],
+  ["9", 9],
+  ["10", 10],
   ["five", 5],
   ["six", 6],
   ["seven", 7],
@@ -177,7 +194,14 @@ const WORD = [...NUMERALS.keys()].join("|");
  * follow the numeral immediately (optionally through one qualifier the docs
  * actually use) leaves that sentence alone and still catches every form these
  * files write — "nine JSONs", "nine published payloads", "nine small JSON
- * files", "nine envelopes", «девет JSON файла», «деветте JSON файла».
+ * files", "nine envelopes", «девет JSON файла», «деветте JSON файла», and the
+ * digit forms a tree or a flowchart node uses: "9 payloads, committed",
+ * «9 JSON файла».
+ *
+ * The noun is what keeps the digits safe to read. A bare "8" in a diagram is
+ * a build entry, a breakpoint or a version — `Vite 8` sits four lines from the
+ * payload count in `architecture.md`'s own tree — and none of those is followed
+ * by the word `payloads`.
  */
 const PAYLOAD_COUNT = new RegExp(
   `\\b(${WORD})\\s+(?:small\\s+|published\\s+|committed\\s+)?` +

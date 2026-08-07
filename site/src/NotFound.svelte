@@ -8,7 +8,7 @@
    * happened, and offers the two routes that are actually useful: the
    * calculator and the legal page.
    *
-   * No data fetch, no calculator bundle: a 404 should not cost eight JSON
+   * No data fetch, no calculator bundle: a 404 should not cost nine JSON
    * requests.
    */
   import { lang, theme, toggleLang, toggleTheme } from "./lib/stores.js";

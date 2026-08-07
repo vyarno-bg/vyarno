@@ -19,6 +19,7 @@ import { dirname, join } from "node:path";
 
 import { ORIGIN, newestAsOf, sitemapXml } from "./gen-sitemap.mjs";
 import { fillDate } from "./gen-jsonld.mjs";
+import { PAYLOADS } from "../src/lib/payloads.js";
 import {
   LANGS,
   MOUNT_POINT,
@@ -74,7 +75,7 @@ test("robots.txt keeps crawlers out of the published data and lets them at the p
 
   assert.ok(
     group.includes("Disallow: /data/published/"),
-    "robots.txt no longer disallows /data/published/. Those eight files are the " +
+    "robots.txt no longer disallows /data/published/. Those nine files are the " +
       "product; indexing raw JSON helps no reader and invites bulk copying. " +
       "If the data path is renamed, this line moves with it in the same commit."
   );
@@ -194,6 +195,38 @@ test("llms.txt names every page the sitemap does, and the route to the data", ()
     "llms.txt points at /data/published/, which every crawler group is " +
       "disallowed from. A map that sends an agent somewhere robots.txt refuses " +
       "it is a contradiction it reports back."
+  );
+});
+
+test("llms.txt lists every published payload, and counts them right", () => {
+  // The page list above is read out of `gen-sitemap.mjs` for the reason this
+  // one is read out of `PAYLOADS`: a hand-kept list goes stale by omission, and
+  // this one did. `sector_salary` shipped and the file kept saying "Eight JSON
+  // payloads" over eight stems, so the consumer this file is written for — one
+  // that reads a map instead of crawling — was told the ninth does not exist.
+  //
+  // Nothing else could have caught it. `verify_docs_map.mjs` scans the counts
+  // written into `.md` files and `public/` is not markdown; the render suites
+  // load pages and this file is not one. The check has to be here or nowhere.
+  for (const { file } of PAYLOADS) {
+    assert.ok(
+      new RegExp(`^\\s*[-*]\\s+${file}\\b`, "m").test(LLMS),
+      `llms.txt does not list ${file}. Every payload the page depends on is ` +
+        "named here, because robots.txt disallows /data/published/ and this " +
+        "file is the only place an agent learns what the data covers."
+    );
+  }
+
+  // The total is spelled out a paragraph above the list, so the two can
+  // disagree — and a number nobody reads back only ever goes stale.
+  const said = /\b(five|six|seven|eight|nine|ten|\d+)\s+JSON payloads\b/i.exec(LLMS);
+  assert.ok(said, "llms.txt no longer states how many payloads there are, above the list");
+  const WORDS = { five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+  const n = WORDS[said[1].toLowerCase()] ?? Number(said[1]);
+  assert.equal(
+    n,
+    PAYLOADS.length,
+    `llms.txt says ${said[1]} JSON payloads and the manifest holds ${PAYLOADS.length}`
   );
 });
 
