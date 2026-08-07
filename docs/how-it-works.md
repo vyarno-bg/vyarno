@@ -168,6 +168,17 @@ linked:
 
 - **Sofia average wage** — НСИ's Sofia-city gross wage, converted to net for a
   fair net-vs-net comparison with the user's take-home pay.
+- **Average wage in your line of work** — the same НСИ quarterly release, cut by
+  economic activity instead of by region: 19 sections, each carrying НСИ's own
+  Bulgarian and English name. It is an **average**, and the card says so in as
+  many words, because nobody publishes how pay is spread inside a Bulgarian
+  sector. That matters more than it sounds. Pay is lopsided — a few large
+  salaries pull the average up — so the average sits above the middle, and being
+  below your sector's average is not the same as being paid less than most
+  people in it. The card prints how far above the middle an average sits, so
+  the reader can place their own number rather than take a percentage on faith.
+  This table also covers the whole country while the Sofia line above it covers
+  the city, and both figures are shown rather than one divided by the other.
 - **Mortgage rate** — the ЕЦБ's sector average for home loans actually signed
   last month. The all-in cost including fees (the APRC/ГПР) is shown as a
   sub-caption, so the cheaper headline is never the only number on screen.

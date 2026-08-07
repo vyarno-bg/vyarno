@@ -18,7 +18,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │              sources/*.py → transform.py → validate.py → publish.py   │
 │                              │             (driven by cli.py)         │
 │                              ▼                                        │
-│                     data/published/*.json   ← 8 files, committed      │
+│                     data/published/*.json   ← 9 payloads, committed   │
 └──────────────────────────────┼────────────────────────────────────────┘
                                │  dev middleware, or copied into dist/
                                ▼
@@ -50,7 +50,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │   │   ├── payroll.py    # dated BG payroll-law table (no network)
 │   │   └── sources/      # eurostat · bnb · ecb · imot · nsi
 │   └── tests/       `pytest -q` offline; `-m live` hits real upstreams
-├── data/published/  8 JSON envelopes, committed — these ARE served to the site
+├── data/published/  9 payloads, committed — these ARE served to the site
 └── site/            Vite 8 + Svelte 5, five build entries · AGENTS.md
     ├── index.html · how/index.html · legal/index.html ·
     │                support/index.html · 404.html
@@ -115,7 +115,7 @@ Every layer has one job, and they do not overlap.
 |---|---|---|
 | Source | `sources/{eurostat,bnb,ecb,imot,nsi}.py` | Call one upstream, prove the response is what was asked for, return flat rows. **No math.** |
 | Transform | `transform.py` | Reshape rows into published shapes: year-end selection, the salary ladder. **No network, no validation.** |
-| Validate | `validate.py`, `mortgage.py` | Gates that block the publish. A gate raises; it never repairs. |
+| Validate | `validate.py`, `mortgage.py` | Gates that block the publish. A gate raises; it never repairs. Which gates run depends on the `--source` — [`validation-gates.md`](./validation-gates.md) §"Which gates run for which `--source`" is the table. |
 | Publish | `publish.py` | Write the envelopes, including the provenance frame every payload carries. |
 | CLI | `cli.py` | One arm per `--source`, and the exit codes. **No domain logic.** |
 
@@ -142,13 +142,20 @@ Nine envelopes, ~115 KB raw / 23 KB gzipped, all committed.
 from, when, and what was done to it.
 
 The rest of the frame is carried where it means something rather than
-everywhere. `dataset` names an upstream cube or file and appears on the two
-payloads that have exactly one (`sofia_salary`, `unemployment`);
-`hicp_categories`, `mortgage` and `salary_dist` draw on several, and record
+everywhere. `dataset` names the upstream file and the coordinates read out of
+it, and appears on the three payloads with a fixed set to name (`sofia_salary`,
+`sector_salary`, `unemployment` — the sector one names two files, because both
+language editions are read and each pins the other); `hicp_categories`,
+`mortgage` and `salary_dist` draw on several, and record
 provenance per row, per tier or per block instead. `payload_name`, `ref_period`, `published_at`,
-`unit` and `value` follow the same rule, and `methodology_change` /
-`disclaimer` appear only where they apply. A single-figure payload carries
-most of the frame; a composite one carries it one level down.
+`unit` and `value` follow the same rule, and `methodology_change`,
+`is_preliminary` / `disclaimer` appear only where they apply. A single-figure
+payload carries most of the frame; a composite one carries it one level down.
+
+`is_preliminary` is the newest of these and the one to copy from: it is `null`
+where a publisher draws no such distinction, which is a different claim from
+`false`. Only НСИ mark a release provisional, so only their two payloads carry
+it as a boolean today.
 
 | File | Carries |
 |---|---|
@@ -157,6 +164,7 @@ most of the frame; a composite one carries it one level down.
 | `salary_dist.json` | An 11-point gross ladder P1…P99 inside a `shape` block carrying Eurostat SES's own provenance. The НСИ level the ladder is re-set to is **not** copied in here — the SPA reads it from `sofia_salary.json`, so no payload carries a second publisher's figures |
 | `payroll.json` | The dated BG payroll-law table + `scheduled_changes` |
 | `sofia_salary.json` | НСИ's published quarterly Sofia-city gross wage series; headline = their latest quarter |
+| `sector_salary.json` (19 KB) | НСИ's published quarterly gross wage by economic activity — 19 NACE Rev 2 sections plus the all-activities total, each with `en_name`, `bg_name` (both НСИ's own, from their two language editions), `value_eur` and the full quarterly series. **An average, and the country's**, where `sofia_salary` is a region's: nobody publishes a distribution by activity for BG, so there is no median and no rank in here to read |
 | `sofia_price.json` | 143 district €/m² averages + 12 annual snapshots back to 2015 |
 | `mortgage.json` (17 KB) | Two rate tiers (`new_business` with nested `aprc`, `outstanding_stock`), the БНБ↔ЕЦБ `cross_check`, and `lending_limits` |
 | `unemployment.json` | BG unemployment — **monthly**, seasonally adjusted, 2020-01 onward (`une_rt_m`, not the annual `une_rt_a`) |
@@ -196,7 +204,7 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 |---|---|
 | `sources/*.py` | Talking to one upstream, and proving the response is the one requested |
 | `transform.py` | Reshaping upstream rows into published shapes |
-| `validate.py` | The six HICP gates |
+| `validate.py` | The six HICP gates, and the sector-wage gate that runs under `--source sector-salary` |
 | `mortgage.py` / `payroll.py` | The dated legislative tables and the mortgage gates |
 | `publish.py` | The envelopes and the provenance frame |
 | `cli.py` | One arm per `--source`; exit codes **2** transform, **3** gate, **4** network |

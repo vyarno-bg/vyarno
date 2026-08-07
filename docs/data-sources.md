@@ -582,8 +582,13 @@ than implying a rank (`COPY.sectorNoRank`, and `docs/principles.md`'s closed
 list). Anyone revisiting this should re-run both probes before assuming
 otherwise — and read the `nace_r2` category list, not only the value count.
 
-The payload `sector_salary.json` carries per activity: `en_name`, `bg_name`
-(both НСИ's own), `value_eur` and `series_by_period`. Nothing in it is computed
+The payload `sector_salary.json` carries the envelope, `dataset` (both
+workbooks and the block inside them), `source_url_bg` beside `source_url` so a
+verify link can land on the edition the label came from, `ref_period`, `unit`
+`eur_per_month`, `is_preliminary` — the same star on the same sheet titles as
+`1.1.2.2` above, and it has to move with that one — and per activity:
+`en_name`, `bg_name` (both НСИ's own), `value_eur` and
+`series_by_period`. Nothing in it is computed
 — the gap a reader sees is `mirror.js` arithmetic in their own tab. `sector
 wages` (gate 7 in `validate.py`) fails the publish if a headline stops being the
 published cell, and `sector_salary.json carries no rank, because nobody

@@ -25,7 +25,7 @@ site itself answers in Bulgarian and English on every page.
 
 ## The published figures
 
-Eight JSON payloads, refreshed by a pipeline and committed to the repository.
+Nine JSON payloads, refreshed by a pipeline and committed to the repository.
 Each carries `as_of`, the reference period, and `source_url` to the publisher's
 own table.
 
@@ -33,6 +33,10 @@ own table.
 - hicp_categories — the 13 divisions, their official weights and each rate
 - payroll — the tax and social-contribution table, gross to net
 - sofia_salary — the НСИ quarterly average wage for Sofia
+- sector_salary — the НСИ quarterly average wage by economic activity, 19 NACE
+  Rev 2 sections and the all-activities total. An average, not a median: nobody
+  publishes how pay is spread within a Bulgarian sector, so there is no rank
+  here to read
 - salary_dist — the pay distribution, Eurostat SES shape at a recent level
 - sofia_price — €/m² across Sofia's districts
 - mortgage — home-loan rates and the БНБ borrowing caps

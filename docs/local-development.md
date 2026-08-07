@@ -336,7 +336,7 @@ All of them also run in CI on every push and on every pull request, alongside
 ```bash
 cd pipeline && source .venv/bin/activate
 
-# Full refresh — every connector, every gate, all 8 JSONs. ~10 s.
+# Full refresh — every connector, every gate, all 9 JSONs. ~10 s.
 vyarno-pipeline refresh --source all --out ../data/published
 
 # Or one at a time.
@@ -344,7 +344,8 @@ vyarno-pipeline refresh --source <name> --out ../data/published
 ```
 
 **`--source` values:** `hicp`, `unemployment`, `mortgage`,
-`sofia-price`, `sofia-salary`, `salary-dist`, `payroll`, `all`.
+`sofia-price`, `sofia-salary`, `sector-salary`, `salary-dist`, `payroll`,
+`all`. Eight arms and nine files — `hicp` writes both HICP payloads.
 
 `--skip-link-check` skips **gate 6** (the published-URL body inspection — 52
 calls). Use it only where outbound HTTP is genuinely blocked, and **never for

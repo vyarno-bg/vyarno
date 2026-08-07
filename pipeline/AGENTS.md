@@ -40,8 +40,9 @@ vyarno-pipeline refresh --source hicp --out ../data/published
 ```
 
 `--source`: `hicp`, `unemployment`, `mortgage`, `sofia-price`,
-`sofia-salary`, `salary-dist`, `payroll`, `all`. Output is **committed** — the
-diff is the review.
+`sofia-salary`, `sector-salary`, `salary-dist`, `payroll`, `all`. Eight arms
+write nine files — `hicp` publishes the headline and the categories. Output is
+**committed** — the diff is the review.
 
 **`--skip-link-check` is for a sandbox with no outbound HTTP, and never for a
 production refresh.** It skips gate 6, the only check that the URLs we publish
@@ -67,9 +68,13 @@ that publishes with fewer has skipped one.
 6. **link status** — every published `source_url` fetched and its **body**
    inspected. A 200 with `value: {}` is a failure, not a pass.
 
-`--source mortgage` runs its own five plus freshness on both tiers.
-`docs/validation-gates.md` has what each catches, what to do when one trips,
-and the transcript of a good run.
+`--source mortgage` runs its own five plus freshness on both tiers, and
+`--source sector-salary` runs a seventh gate of its own: `value_eur` must BE
+the published cell at the payload's `ref_period`, an identity rather than a
+band. НСИ's §2.1.1 forbids distributing производни произведения, so a headline
+this pipeline calculated rather than read is a licence breach that looks exactly
+like a correct number. `docs/validation-gates.md` has what each catches, what to
+do when one trips, and the transcript of a good run.
 
 **Never widen a tolerance to make a gate pass.** A tolerance that fails on
 correct data is a wrong formula, not a tight number.

@@ -355,8 +355,20 @@ What is in it:
   makes the input-mode toggle a display choice rather than a second calculator.
 - **Income ladder + home:** `percentile` (returns position **from the bottom** —
   copy must be "you earn more than {n}%" / «изпреварваш {n}%», never "top
-  {n}%"), `buildLadder`, `rentBurden`, `rentDays`, `annuityPayment`,
-  `annuityReverse`, `homeYears`.
+  {n}%"), `composeLadder`, `buildLadder`, `rentBurden`, `rentDays`,
+  `annuityPayment`, `annuityReverse`, `homeYears`.
+- **Wage comparators:** `wageGap(net, ref)` — one signed distance with one
+  rounding and one dead band, used by the Sofia comparison and the sector one
+  alike. It lives here rather than in `view.js` because two callers computing
+  their own `(a − b) / b` is two dead bands that drift apart, and the drift
+  shows up as one card saying "the same" while the other says "1% below".
+  `meanRungPosition(shape)` is the sector card's correction: which rung of
+  Eurostat's published ladder the mean itself sits on. **It takes no anchor**,
+  which is what stops it — handed a sector average it would return the sector
+  percentile nobody publishes, and there is no parameter to attempt that
+  through. Same device as `headlineRate`'s refusal to accept `categories`.
+  [`math.md`](./math.md) §"A sector average" has the figures and what is
+  modelled in them.
 - **BG payroll:** `bgNetSalary(gross, params)`, `bgGrossFromNet(net, params)`,
   `payrollParams(data.payroll)`, `bgTaxWedge`, `bgMarginalRatePct`. The
   published `payroll.json` is the source of truth; the `BG_2026_*` constants
@@ -426,7 +438,7 @@ are shaped to make a wrong wiring *unexpressible*:
 | Function | Returns | The wrong number it prevents |
 |---|---|---|
 | `officialBasketWeights(categories)` | the slider seed, **unrounded** | rounding makes the default basket sum to 97 and puts a third figure on screen |
-| `dataAge(parts, now)` | `{oldestAsOf, newestAsOf, daysOld, stale}` | measuring from the *newest* payload lets one fresh file hide eight stale ones |
+| `dataAge(parts, manifest, now)` | `{rows, oldestAsOf, newestAsOf, daysOld, stale, overdue, missing}` | measuring from the *newest* payload lets one fresh file hide eight stale ones |
 | `headlineRate(payload)` | Eurostat's all-items rate, verbatim | the strip rendering our Σ(w·r) reconstruction instead of the official figure |
 | `pctAhead(rank)` | display position, 1–99, from the bottom | "top 63%" for a below-median income |
 | `savingsSince2020(cash, headline, categories)` | `{valueToday, eaten, cumulativePct, basis}` | deflating by the 12-month rate (~5%) instead of the since-2020 cumulative (~40%) — and, since it prefers the published all-items index, showing our ~41.8% reconstruction under a sentence naming Eurostat |
@@ -440,6 +452,8 @@ are shaped to make a wrong wiring *unexpressible*:
 | `mortgagePanel({…})` | the whole home row | **the APRC amortised as if it were the interest rate** |
 | `taxWedgePanel({…})` | the effective/marginal rate curve and the cap marker | a marginal rate drawn flat across the insurance ceiling |
 | `scheduledMaxInsurable(payroll)` | the legislated next cap, from `scheduled_changes` | a future cap presented as if it were in force |
+| `sectorComparison({…})` | the chosen activity's published average, its gross and net, and one gap per earner | the country's by-activity average being drawn as if it were Sofia's, or a gap computed against a gross while the reader's figure is net |
+| `sectorOptions(payload)` | the picker's rows, in НСИ's classification order, each carrying both of НСИ's own labels | «Общо» offered as somebody's industry — the all-activities row is what the sections are read *against*, and in a list headed «Твоят сектор» it collects every reader who cannot find their own line. Sorting by wage is the second one: a league table is a claim the ordering makes on its own |
 | `verifyUrl(row, anchor)` | the "↗" target for one row | linking to the index cube while showing a rate |
 | `fastestRisingDivision(categories)` | the highest-rate division | advertising the *slowest*-rising division as the fastest |
 | `rankedSplit(ranked, limit)` | the rows the ranked list draws **plus the folded remainder** | a capped list under a sentence promising the column adds up — 5.1 points on screen against a stated 5.4 |
@@ -1050,6 +1064,56 @@ The render tests that hold all of this are
 `the_ladder_row_ranks_nobody_who_has_not_typed_a_salary`,
 `the_placeholders_payslip_and_comparator_wait_for_a_salary` and
 `every_verify_link_is_drawn_the_same_in_both_cards`.
+
+### The sector card compares against an average, and has to say so
+
+Under the Sofia comparator sits a picker of НСИ's 19 NACE Rev 2 sections and,
+once one is chosen, the reader's distance from that section's published average
+— net against net, `view.js#sectorComparison` over `mirror.js#wageGap`. The
+figures are small; the copy around them is most of the work, and every line of
+it is answering something the number would otherwise imply on its own.
+
+**"Below your sector's average" is not "below the middle", and a disclaimer
+does not fix it.** Earnings are right-skewed, so an average sits above the
+median — on the shipped SES shape the mean lands at the 66th rung and the median
+earner takes 74% of it. Someone told they are 18% below their sector's average
+hears that they are paid less than most people in it, and may be paid more.
+A negation in small type does not land, so the correction is carried as a figure
+the reader can use instead: `COPY.sectorAverageFlatters` prints both published
+SES figures and the rung, marking which of them is modelled.
+**`COPY.sectorNoRank` says the plain thing separately** — nobody publishes how
+pay is spread inside a Bulgarian sector — because the absence is the reason the
+card is shaped this way and a reader is owed it whether or not they read the
+calibration.
+
+**The sector table is the country's; the line three rows above it is Sofia's.**
+`Labour_1.1.2.1` covers all of Bulgaria, so stacking the two comparisons
+silently charges the gap between the city and the country to the reader's
+industry — a Sofia builder reads «144% над средната за „Строителство“» and most
+of that is the city. So `COPY.sectorNationwide` puts НСИ's all-activities cell
+(1407 € gross at 2026-Q1) on screen beside the section's, and the reader does
+the comparing. **Neither figure is divided by the other**: the ratio would be
+our arithmetic under НСИ's name, which is the thing `docs/legal.md` §НСИ and
+gate 7 both exist to prevent.
+
+**Both labels are НСИ's own, and the verify link follows the label.** The two
+language editions of the workbook are read precisely so the section names are
+never ours — «Създаване и разпространение на информация и творчески продукти;
+далекосъобщения» is section J, and nobody reads that as «ИТ», where our
+translation of "Information and communication" invites exactly that. So
+`sourceUrl` and `sourceUrlBg` are separate: a Bulgarian reader sent to the
+English workbook cannot find the row they just read, and a verify link that
+demonstrates nothing is worse than none (P3, P9).
+
+**The gap reaches no share surface.** It inverts harder than the ladder position
+already on `principles.md`'s closed list — that one is bounded by a rung's
+width, this divides by one of the averages published in `sector_salary.json`,
+so "18% below Information and communication" is one net wage to the euro, and
+naming the sector has already narrowed the sender to one of the nineteen
+sections the picker offers.
+`sharePayload` takes no sector, and `sharePayload_cannot_be_handed_a_salary`
+in `verify_view.mjs` pins its whole parameter list, so it cannot acquire one
+without a red test.
 
 ### More than one income, and which figures know it
 
