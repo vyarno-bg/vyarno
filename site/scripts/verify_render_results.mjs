@@ -224,6 +224,65 @@ test("the route from the headline to the salary field lands on it", { skip }, as
   });
 });
 
+test("the two official rates have a route between them, on one screen", { skip }, async () => {
+  // The banner's official rate and the average-basket bar are visible together
+  // on a 1100x1000 screen and differ for two compounding reasons — a flash
+  // month against the divisions' month, and Σ(w·r) against the chain-linked
+  // all-items. The explainer reconciles them well, three screens down inside a
+  // closed disclosure that a reader who has already decided one figure is
+  // wrong will not open. A route is what closes that, and it has to be a route
+  // rather than a repeat: a third rate beside the bars is the second headline
+  // number docs/principles.md closes.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 1100, height: 1000 });
+    await page.waitForTimeout(300);
+
+    const route = page.locator(".m-gap-route button");
+    assert.equal(await route.count(), 1, "the two rates share a screen with nothing between them");
+
+    // On screen WITH the figures it is about — a route below the fold answers
+    // a question the reader has already stopped asking.
+    const banner = await page.locator(".data-strip-inner .off-fig").boundingBox();
+    const box = await route.boundingBox();
+    assert.ok(banner && box, "the banner or the route did not render a box");
+    assert.ok(
+      box.y + box.height <= 1000,
+      `the route sits at y=${Math.round(box.y)} on a 1000px screen showing the ` +
+        `banner at y=${Math.round(banner.y)} — the reader has to scroll to find it`
+    );
+
+    // It states no rate. Restating the reconciliation beside the bars is the
+    // arrangement this replaces, and the verdict a few lines up is figure-free
+    // for the same reason.
+    const text = await route.innerText();
+    assert.doesNotMatch(
+      text,
+      /\d/,
+      `the route carries a figure — «${text}» — which is a third rate next to the two bars`
+    );
+
+    // And it arrives. Two steps, because the destination is inside a closed
+    // `<details>`: a bare fragment link scrolls some browsers to a collapsed
+    // block with nothing in it.
+    const band = page.locator(".explain-band details.explain");
+    assert.equal(await band.evaluate((el) => el.open), false, "the band starts open");
+    await route.click();
+    await page.waitForTimeout(400);
+    assert.equal(
+      await band.evaluate((el) => el.open),
+      true,
+      "the route left the explainer closed, so it scrolled to a folded block"
+    );
+    const heading = await page.locator("#two-official").boundingBox();
+    assert.ok(heading, "the reconciliation heading is not on the page — the route lands nowhere");
+    assert.ok(
+      heading.y >= 0 && heading.y <= 1000,
+      `the route opened the band but left the answer at y=${Math.round(heading.y)}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the ladder row ranks nobody who has not typed a salary", { skip }, async () => {
   // «Изпреварваш 34% от работещите в София» is a claim about the READER, in
   // the second person, and on first paint it is a claim about whoever earns

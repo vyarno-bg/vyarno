@@ -212,7 +212,15 @@
              (docs/principles.md P3). It names the two places on the page
              instead — the reader reads the current values off the strip and
              the results card, which is where they already are. -->
-        <h4>
+        <!-- The id is a destination, not decoration. The two rates it
+             reconciles share a screen on the calculator — the banner at the
+             top and the second results bar — and this paragraph sits some
+             3,000px below them inside a closed disclosure, so a reader who has
+             already decided one of the two is wrong never reaches it.
+             `ResultsSummary` opens this band and scrolls here. Renaming the id
+             breaks that route silently: the button would open the band onto
+             whatever the browser scrolled to. -->
+        <h4 id="two-official">
           <span class="l-bg">Защо и двете официални числа не съвпадат точно?</span><span
             class="l-en">Why don't the two official numbers match exactly?</span
           >

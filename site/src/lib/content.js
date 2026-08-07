@@ -657,6 +657,26 @@ export const COPY = {
   // able to type instead of hunting for a field a screen and a half back up.
   startingSalaryCta: { bg: "Въведи своята заплата", en: "Enter your own pay" },
   yourBasket: { bg: "твоята кошница", en: "your basket" },
+  // **The route from the two rates to where they are reconciled, and it states
+  // no figure of its own.** The banner's official rate and the average-basket
+  // bar are visible together on a 1100×1000 screen, they differ for two
+  // compounding reasons — July against June, and Σ(w·r) against the
+  // chain-linked all-items — and the explainer answers it well about 3,000px
+  // down, inside a closed disclosure. A reader who has already concluded one
+  // of the two is wrong does not open that.
+  //
+  // A question rather than a claim, because the alternative is restating the
+  // reconciliation beside the bars, and that puts a third rate on the card —
+  // `docs/principles.md` closes a second headline number, and the verdict
+  // under the bars is deliberately figure-free for the same reason.
+  //
+  // **No size in it.** «малко различно» is true of a tenth or two and false
+  // during Eurostat's flash, when the two are a month apart and the gap is
+  // several times that — which is exactly when a reader stops to ask.
+  explainGapRoute: {
+    bg: "защо официалното число горе не е същото",
+    en: "why the official figure up top isn't the same",
+  },
   // The basket-weighted number using official weights was once called
   // "официалната кошница" (the official basket), which users misread as the
   // all-items headline. Renamed to "средностатистическата кошница" (the
