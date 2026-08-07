@@ -1252,6 +1252,39 @@ test("the copy that leaves the device speaks in the first person", () => {
   }
 });
 
+test("the share surfaces call the comparison figure a basket", () => {
+  // The second number on every share surface is `view.js#officialInflation` —
+  // Σ(weight × rate) over the thirteen published divisions — and it is NOT the
+  // all-items rate Eurostat publishes. The two differ by the December chain
+  // link, and by a whole month while the flash is ahead of the divisions: 5,4%
+  // against 4,1% when this was written.
+  //
+  // «Средната за България» / "the national average" named the second thing and
+  // carried the first, to a stranger, on the only surface with no link to check
+  // it against. The results card has already been through this: the same figure
+  // used to be «официалната кошница» and was renamed «средностатистическата
+  // кошница» because readers took it for the headline — and the share strings
+  // then reached for a name that reads as the headline harder than the one that
+  // was rejected.
+  //
+  // So the rule is the noun rather than a particular phrase, which leaves the
+  // wording free and pins what it has to say. Bulgarian «кошница» inflects, so
+  // the stem is what is matched.
+  const basket = { bg: /кошниц/i, en: /basket/i };
+  const offenders = [];
+  for (const key of ["shareLineDearer", "shareLineCheaper", "shareLineClose", "shareCardAverage"]) {
+    for (const lang of ["bg", "en"]) {
+      if (!basket[lang].test(COPY[key][lang])) offenders.push(`COPY.${key}.${lang}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a share surface names the comparison figure without saying it is a basket, ` +
+      `so it reads as Eurostat's published all-items rate: ${offenders.join(", ")}`
+  );
+});
+
 test("the share note states the boundary rather than advertising it", () => {
   // The line under the preview is the one place the app claims something about
   // its own privacy, so it has to be a description of what is on the picture —

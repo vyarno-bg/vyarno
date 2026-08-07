@@ -1701,17 +1701,35 @@ export const COPY = {
   // happened.
   shareWindowY1: { bg: "за последната година", en: "over the past year" },
   shareWindowSince: { bg: "от {y} насам", en: "since {y}" },
+  // THE SECOND FIGURE IS A BASKET, AND EVERY SURFACE HAS TO CALL IT ONE.
+  //
+  // It is `officialInflation` — the thirteen published divisions under
+  // Eurostat's own weights, Σ(w·r) — and it is NOT the all-items rate Eurostat
+  // publishes. The two differ, because a 12-month window straddles the December
+  // chain link and because the divisions and the headline can be a month apart
+  // during the flash: 5,4% against 4,1% at the time of writing.
+  //
+  // «Средната за България» said the second thing while carrying the first. The
+  // results card has already been through this once — the same number used to be
+  // «официалната кошница» and was renamed «средностатистическата кошница»
+  // precisely because readers took it for the headline — and the share strings
+  // then reached for a name that reads as the headline harder than the one that
+  // was rejected. On the surface that carries no link to check.
+  //
+  // So the noun travels with the number. A stranger reading this in a chat is
+  // told what the 5,4% is a rate OVER, and «средният българин» in the card's own
+  // verdict lines is the same person.
   shareLineDearer: {
-    bg: "Моята кошница {w}: {p}%. Средната за България: {o}%. При мен е по-скъпо от средното.",
-    en: "My basket {w}: {p}%. The national average: {o}%. Mine is dearer than average.",
+    bg: "Моята кошница {w}: {p}%. Средната кошница за България: {o}%. При мен е по-скъпо от средното.",
+    en: "My basket {w}: {p}%. The average Bulgarian's basket: {o}%. Mine is dearer than average.",
   },
   shareLineCheaper: {
-    bg: "Моята кошница {w}: {p}%. Средната за България: {o}%. При мен е по-евтино от средното.",
-    en: "My basket {w}: {p}%. The national average: {o}%. Mine is cheaper than average.",
+    bg: "Моята кошница {w}: {p}%. Средната кошница за България: {o}%. При мен е по-евтино от средното.",
+    en: "My basket {w}: {p}%. The average Bulgarian's basket: {o}%. Mine is cheaper than average.",
   },
   shareLineClose: {
-    bg: "Моята кошница {w}: {p}%. Средната за България: {o}%. Горе-долу колкото средното.",
-    en: "My basket {w}: {p}%. The national average: {o}%. Much the same as average.",
+    bg: "Моята кошница {w}: {p}%. Средната кошница за България: {o}%. Горе-долу колкото средното.",
+    en: "My basket {w}: {p}%. The average Bulgarian's basket: {o}%. Much the same as average.",
   },
   // The full address, not the bare domain: this is the one surface that CAN
   // carry a link, and P9 asks a format to scale verifiability down only where
@@ -1725,7 +1743,9 @@ export const COPY = {
   // name, the period and the domain are on the picture itself (P9).
   shareCardKicker: { bg: "моята кошница · {w}", en: "my basket · {w}" },
   shareCardMine: { bg: "моята кошница", en: "my basket" },
-  shareCardAverage: { bg: "средната за България", en: "the national average" },
+  // The bar label, under the same rule as the sentences above: it names a
+  // basket because that is what the figure beside it is.
+  shareCardAverage: { bg: "средната кошница за България", en: "the average Bulgarian's basket" },
   // The same three verdicts the results card states in the second person. They
   // are written out again rather than shared with `m-verdict` because the
   // person changes; keeping the wording otherwise identical is what stops the
@@ -1785,9 +1805,12 @@ export const COPY = {
   shareCopy: { bg: "Копирай текста", en: "Copy the text" },
   shareCopied: { bg: "Копирано", en: "Copied" },
   shareDownload: { bg: "Свали картинката", en: "Download the image" },
+  // The alt text describes the picture, so it names the second figure the way
+  // the picture does. A screen-reader user is the one reader who gets this
+  // sentence INSTEAD of the bars, not alongside them.
   shareCardAlt: {
-    bg: "Картинка за споделяне: моята кошница {p}% срещу средната за България {o}%.",
-    en: "Share image: my basket {p}% against the national average {o}%.",
+    bg: "Картинка за споделяне: моята кошница {p}% срещу средната кошница за България {o}%.",
+    en: "Share image: my basket {p}% against the average Bulgarian's basket {o}%.",
   },
 };
 
