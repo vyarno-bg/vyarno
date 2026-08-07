@@ -45,15 +45,14 @@
 
   // The one link from the results back to the inputs. It reaches across a
   // component boundary by id, the same way the header's skip link reaches
-  // `#main`, because on a phone there is no shorter route: the two cards are
-  // 3,100px apart and Svelte gives a sibling component no handle on the
-  // other's field.
+  // `#main`: the field is in a sibling component and Svelte gives this one no
+  // handle on it, and on a phone it is a screen and a half back up the page.
   //
   // Focus first with the scroll suppressed, then scroll deliberately. The
   // other order scrolls twice — focus() brings the element into view on its
   // own terms and undoes the framing chosen here. `block: "center"` and not
   // "start", so the field does not land under the sticky header. The jump is
-  // instant on purpose: a smooth flight over four screens is a long time to
+  // instant on purpose: a smooth flight across that distance is a long time to
   // watch, and this is a control the reader asked to be taken to.
   //
   // Focusing rather than merely scrolling is the point on a phone — it raises

@@ -193,14 +193,18 @@ export class Calculator {
    */
   payBasis = $state("net");
   // Whether the reader has typed over that placeholder. The figures derived
-  // from it are second-person claims — what the same life costs *you*, where
-  // *you* sit on the Sofia ladder — and every one of them is about a person
-  // earning €900 until this flips. The hint that says so is attached to the
-  // input, which on a phone is 3,100px below the first of those claims: the
-  // results card is ordered first there (card.css), so a reader meets the
-  // sentences four screens before the caveat. The rule this restores is the
-  // one `presetActive` already keeps for the hand-made baskets — a caveat
-  // travels with its number, not with the control that produced it.
+  // from it are second-person claims — what the same life costs *you*, what
+  // *your* gross is before deductions, where *you* sit on the Sofia ladder —
+  // and every one of them is about a person earning €900 until this flips.
+  //
+  // The hint that says so is attached to the input, and on a 360px phone that
+  // input sits at y=481 with the first of those claims a screen and a half
+  // below it (`card.css` orders the pay card, then the results, then the rest
+  // of the inputs). A caveat and its number that far apart are two separate
+  // things a reader has to connect for themselves. So this flag exists to make
+  // the claims wait instead — the rule `presetActive` already keeps for the
+  // hand-made baskets, that a caveat travels with its number rather than with
+  // the control that produced it.
   //
   // Adding an income does NOT set it. An empty second field is a question the
   // reader has started answering, not an answer, and the €900 in the first one

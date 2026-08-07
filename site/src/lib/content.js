@@ -611,14 +611,15 @@ export const COPY = {
   yourReal: { bg: "Твоето реално", en: "Your real picture" },
   // What the card says while the salary is still the €900 placeholder.
   //
-  // Two jobs, and it exists because of where the results card sits. On a
-  // phone it is rendered FIRST (card.css) and the salary field lands 3,100px
-  // below it, so «числото е просто начална стойност» — the hint attached to
-  // the input — reaches the reader four screens after «≈ €46 повече всеки
-  // месец ти струва същият живот». A caveat that far from its number is not a
-  // caveat. So the note is repeated here, where the figure is, and it names
-  // the amount rather than describing it: a reader who has scrolled past
-  // «€900» in the field can match the two.
+  // Two jobs, and it exists because of the distance between the field and the
+  // figures priced off it. On a 360px phone the pay card is first, the results
+  // card second and the rest of the inputs third (`card.css`, `.m-pay` /
+  // `.m-results` / `.m-inputs`), which puts the salary input at y=481 and this
+  // note at y=1053 — a screen and a half apart, with «числото е просто начална
+  // стойност» left behind at the field. A caveat that far from its number is
+  // not a caveat. So it is repeated here, where the figure is, and it names the
+  // amount rather than describing it: a reader who scrolled past «€900» in the
+  // field can match the two.
   //
   // It says «не с твоята» and stops. The card is not wrong — it is a worked
   // example, which is the point of having a default at all — and calling it
@@ -628,9 +629,9 @@ export const COPY = {
     bg: "Сметнато е с начална заплата €{s} на месец — не с твоята.",
     en: "Computed with a starting pay of €{s} a month - not yours.",
   },
-  // The button beside it. This is the only route from the results to the
-  // inputs on a phone, where the two are four screens apart and nothing else
-  // on the page links them.
+  // The button beside it. It focuses `#inSalary` rather than merely scrolling,
+  // which on a phone raises the keyboard — so the one tap leaves the reader
+  // able to type instead of hunting for a field a screen and a half back up.
   startingSalaryCta: { bg: "Въведи своята заплата", en: "Enter your own pay" },
   yourBasket: { bg: "твоята кошница", en: "your basket" },
   // The basket-weighted number using official weights was once called
@@ -789,11 +790,13 @@ export const COPY = {
   // The row's empty state, and it now covers the untouched placeholder as well
   // as an empty field — see PercentileRow.
   //
-  // «Въведи заплата ГОРЕ» is what it used to say, and the direction was wrong
-  // on every phone: the results card is ordered first there, so the field is
-  // below. A prompt that points the wrong way is worse than one that points
-  // nowhere, and this row has no need to say where — the button under the
-  // headline figure is what carries the reader to the field.
+  // It names no direction, and that is the point rather than an omission. This
+  // row sits well down the results card, and where the field is relative to it
+  // depends on the layout: beside it in the left column on a desktop, a long
+  // way back up on a phone. A prompt that points the wrong way is worse than
+  // one that points nowhere, and nothing here needs to point at all — the
+  // button under the headline figure is what carries the reader to the field,
+  // and it focuses it rather than merely scrolling to it.
   pctNoSalary: {
     bg: "Въведи своята заплата, за да видиш къде си.",
     en: "Enter your own pay to see where you sit.",
