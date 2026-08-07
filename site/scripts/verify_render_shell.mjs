@@ -605,12 +605,15 @@ test(
         "2026 is preliminary at НСИ and the card shows the figure as settled"
       );
 
-      // **The number never renders alone.** A gap shown without these reads as a
-      // rank, and no pay distribution by sector is published for BG to rank against.
+      // **The number never renders alone, and these two never fold.** A gap
+      // shown without them reads as a rank, and no pay distribution by sector
+      // is published for BG to rank against. `innerText` returns what a reader
+      // sees, so a sentence moved inside a closed `<details>` fails here —
+      // which is the point: these say what the figure IS.
       assert.match(
         card,
         /как са разпределени заплатите/,
-        "the missing-distribution line is absent"
+        "the missing-distribution line is absent, or has been folded behind the chip"
       );
       // The scope of the figure, on the card, in the reader's language. The
       // Sofia comparison renders a few lines above this one and Sofia pay is
@@ -621,17 +624,40 @@ test(
         /за цялата страна/,
         "the card does not say the activity figure covers the whole country"
       );
-      assert.match(
+
+      // **The other two are one tap down, and the tap is on the page.** Four
+      // caveats under one number is past the length a reader finishes, so the
+      // two qualifying how to READ the gap sit behind the chip — but behind it
+      // and gone are different things, and only one of them is a shorter card.
+      const more = page.locator(".m-pay details.caveat-more");
+      assert.ok(await more.count(), "the folded caveats have no control to open them");
+      assert.doesNotMatch(
         card,
-        /1\s?407/,
-        "НСИ's own all-activities figure is not on the card, so the national level is asserted rather than shown"
+        /под средата|трудово и служебно правоотношение/,
+        "a folded caveat is rendering in the open — the block is four sentences again"
       );
+      // The chip's own words carry the claim, so a reader who never opens it
+      // has still been told the average has more to it than its level.
       assert.match(
-        card,
+        await more.locator("summary").innerText(),
+        /(средна|average)/i,
+        "the chip does not say what is behind it, only that something is"
+      );
+      await more.locator("summary").click();
+      const opened = await more.innerText();
+      assert.match(
+        opened,
         /под средната за сектора.{0,20}под средата/,
         "the correction for how much an average flatters is absent"
       );
-      assert.match(card, /трудово и служебно правоотношение/, "the coverage line is absent");
+      assert.match(opened, /трудово и служебно правоотношение/, "the coverage line is absent");
+      // Both languages inside the disclosure too. A missing string renders as a
+      // blank line rather than a fallback, and a folded one is a blank line
+      // nobody meets in review.
+      const blank = await more.evaluate(
+        (el) => [...el.querySelectorAll(".l-bg, .l-en")].filter((n) => !n.textContent.trim()).length
+      );
+      assert.equal(blank, 0, "a language span inside the sector disclosure is empty");
 
       // **And the colour agrees with the two sentences above.** The card says
       // the figure is a comparison rather than a rank, and that «под средната

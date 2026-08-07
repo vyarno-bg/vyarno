@@ -1288,23 +1288,28 @@ export const COPY = {
   // builder is mostly the city. It flatters in nearly every section, which is
   // the direction docs/principles.md P7 says to distrust hardest.
   //
-  // {country} is НСИ's own all-activities cell, shown rather than divided into
-  // the sector figure: the ratio would be our arithmetic under their name, and
-  // this card was already fixed once for exactly that.
+  // **No euro level in it, and that is what keeps the sentence readable.** The
+  // claim is that two scopes are being stacked, and the sentence makes it in
+  // words; НСИ's all-activities cell beside it is evidence for a comparison
+  // this sentence does not ask the reader to make. What it does instead is put
+  // a third euro figure on a card that already carries the sector gross, our
+  // net conversion of it and the reader's own pay — and a reader weighing 3176
+  // against 1407 has started answering "is my industry well paid", which is a
+  // different question and one this line cannot settle for them.
   //
-  // **The Sofia line is named by what it says, never by where it sits.** Four
-  // lines separate the two on screen — the sector picker, the sector gap, the
-  // НСИ credit and the no-rank caveat — and the nearest line above this one is
-  // the sector gap, which is the very comparison being qualified. A reader
-  // pointed at «the row above» reads it as that one and the sentence inverts:
-  // it then says the sector figure is Sofia's. Naming the comparison also
-  // survives the card being reordered, which a positional phrase does not.
+  // **The Sofia line is named by what it says, never by where it sits.** Three
+  // lines separate the two on screen — the sector picker, the sector gap and
+  // the НСИ credit — and the nearest line above this one is the no-rank
+  // caveat, which qualifies the very comparison being qualified again here. A
+  // reader pointed at «the row above» reads it as that one and the sentence
+  // inverts: it then says the sector figure is Sofia's. Naming the comparison
+  // also survives the card being reordered, which a positional phrase does not.
   //
   // «разликата ти спрямо сектора» for the same reason. Two gaps are on screen
   // by the time this renders and only one of them is the city's.
   sectorNationwide: {
-    bg: "Дейността е за цялата страна (НСИ: {country} € бруто за всички дейности), а сравнението със средната заплата в София по-горе е само за столицата, където се плаща повече. Затова част от разликата ти спрямо сектора идва от града, а не от работата.",
-    en: "The activity is for the whole country (NSI: {country} € gross across all activities), while the comparison with the Sofia average above covers the capital alone, where pay is higher. So part of your gap against the sector comes from the city, not the job.",
+    bg: "Дейността е за цялата страна, а сравнението със средната заплата в София по-горе е само за столицата, където се плаща повече. Затова част от разликата ти спрямо сектора идва от града, а не от работата.",
+    en: "The activity is for the whole country, while the comparison with the Sofia average above covers the capital alone, where pay is higher. So part of your gap against the sector comes from the city, not the job.",
   },
   // НСИ mark a whole year preliminary until they finalise it, and 2026 is. A
   // figure they will revise, shown as though it were settled, is the reader
@@ -1398,6 +1403,26 @@ export const COPY = {
   sectorCoverage: {
     bg: "Броят се само наетите по трудово и служебно правоотношение — не и работещите на свободна практика или през собствена фирма. Дейностите са широки раздели по КИД-2008, а не професии.",
     en: "Only people on a labour contract or in the civil service are counted — not the self-employed or anyone working through their own company. Activities are broad NACE Rev 2 sections, not occupations.",
+  },
+  // **The chip that holds the two sentences above.** Four caveats under one
+  // number is past the length anybody finishes, and a caveat nobody finishes
+  // protects nobody — so the two that say what the FIGURE is stay in the open
+  // (a comparison with an average rather than a rank, and an average for the
+  // country rather than for Sofia) and the two that say how to READ a gap the
+  // reader has already been told is a gap from an average go one tap down.
+  //
+  // Which is the split the pattern was built for: the receipt rows keep the
+  // claim, its caveat, its source and its verify link on the page and put the
+  // working behind the chip. Nothing here is a source caption or a verify link,
+  // and nothing behind it contradicts a sentence still on screen — «средната
+  // не е средата» elaborates «сравнение със средна заплата, а не класиране»,
+  // which does not fold.
+  //
+  // «Още» / "more" alone is a label that states what the control does. This
+  // one says what is behind it, which is what a reader decides on.
+  discloseSectorMore: {
+    bg: "какво още казва тази средна",
+    en: "what else that average says",
   },
   // The sector card's rule, on the card it is the twin of. НСИ publish 1915
   // gross for Sofia-city at 2026-Q1; the value this card leads with is our
