@@ -217,7 +217,23 @@ export class Calculator {
   raiseDirty = $state(false);
   anchor = $state("y1");
   rent = $state(0);
-  cash = $state(1000);
+  // Both start at nothing, and the savings field is the one that has to argue
+  // for it. The card's other placeholder — the €900 pay — earns its keep
+  // because every figure on the results card is priced off a salary, so
+  // without one the page demonstrates nothing; it pays for that with a caveat
+  // naming the amount (`startingSalary`, gated on `earnersDirty`).
+  //
+  // Savings buy no such thing. The row renders only when there is a figure, so
+  // a reader who has said nothing gets no row rather than a wrong one — and
+  // with a number here they get «СПЕСТЕНОТО −€285 · Същите €1000 от 2020 г.
+  // купуват днес стока за €715», a loss stated to the euro about somebody
+  // who has not told us they have any. That is the raise field's case exactly
+  // (P7, no unsourced defaults), and the raise field stays blank.
+  //
+  // It is also what makes this field behave like the rent above it. Two money
+  // questions in one card, one seeded and one not, is a difference a reader
+  // reads as meaning something.
+  cash = $state(0);
 
   // The home block.
   homeOn = $state(false);

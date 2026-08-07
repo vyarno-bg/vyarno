@@ -464,6 +464,41 @@ test("the ladder's caveat never travels without the rank it qualifies", { skip }
   });
 });
 
+test("the savings row states nothing about somebody who entered nothing", { skip }, async () => {
+  // P7, and Pass 4's "does the page ask before it tells". A seeded €1000 made
+  // the card announce «СПЕСТЕНОТО −€285 · Същите €1000 от 2020 г. купуват днес
+  // стока за €715» — a loss to the euro about money nobody said they had.
+  //
+  // The row's two neighbours solve the same problem differently and this one
+  // follows the raise field, not the pay placeholder: the €900 pay is what
+  // every figure on the card is priced off, so the page cannot demonstrate
+  // itself without it and pays for that with a caveat naming the amount.
+  // Savings buy no such thing — the row simply is not there until asked for,
+  // which is what a blank raise field does too.
+  await withApp(async (page, errors) => {
+    const savings = page.locator(".r-row", { hasText: /СПЕСТЕНОТО|YOUR SAVINGS/i });
+    assert.equal(
+      await savings.count(),
+      0,
+      "the card reports a savings loss before the reader has said they have savings"
+    );
+    // Not merely absent: the field it comes from is on the page, empty, and
+    // answering it brings the row back. A row deleted outright would pass the
+    // assertion above.
+    const field = page.locator("#inCash");
+    assert.equal(await field.inputValue(), "0", "the savings field arrives pre-filled");
+    await field.fill("1000");
+    await page.waitForTimeout(400);
+    assert.equal(await savings.count(), 1, "answering the savings field brought back no row");
+    assert.match(
+      await savings.innerText(),
+      /1\s?000/,
+      "the savings row does not name the figure the reader just entered"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the plain answer sits between the headline and the working", { skip }, async () => {
   // Readers arrive asking three things and the card answers each under its own
   // derivation, two and three screens down a phone. The answer block says them
