@@ -575,7 +575,32 @@ export class Calculator {
   // per earner, because it recovers each gross itself and every earner stands
   // at their own point on the curve. Both are §3.3 constraints, not style: the
   // wrong wiring here is a 12.4 pp error that no sanity band would catch.
-  wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, pay: this.pay }));
+  /**
+   * The wedge, with the reader on it only once they have put themselves there.
+   *
+   * Every personal branch of this row is a second-person claim — «Заплатата ти
+   * преди удръжките (бруто) е ≈ €1160. От нея 22,4% отиват за осигуровки и
+   * данък» — and until `earnersDirty` flips, that is a claim about a person
+   * earning the €900 placeholder. The pocket row and the ladder row both
+   * decline to answer in that state; this one answered, in the second person,
+   * about somebody who had typed nothing (P7).
+   *
+   * Withholding the AMOUNTS rather than gating the branches is what keeps the
+   * row whole: `taxWedgePanel` builds `points`, `capGross` and
+   * `peakEffectivePct` from `payroll.json` alone, so the system curve, the
+   * ceiling and the chart all still draw. What goes is `earners`, which is the
+   * only part of the panel the reader is in — and with it empty the component
+   * already renders `wedgeNone` («Удръжките стигат до 22,4% … Въведи заплата
+   * горе, за да видиш къде си»), drops the markers and lets the right-edge
+   * label back. That branch was written for exactly this state and was
+   * unreachable while the placeholder sat in the box.
+   */
+  wedge = $derived(
+    taxWedgePanel({
+      payroll: this.data.payroll,
+      pay: this.earnersDirty ? this.pay : { basis: this.payBasis, amounts: [] },
+    })
+  );
 
   // How each earner compares with the Sofia average wage — per earner, because
   // НСИ publish a wage rather than a household income. See view.js#sofiaGap.
