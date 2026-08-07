@@ -489,6 +489,29 @@ test("the anchor dropdown names the window its maths actually uses", () => {
   assert.ok(hint.includes('anchor === "y1"'), "the hint no longer switches on the selected anchor");
 });
 
+test("the share card is dated by the month its two figures describe", () => {
+  // Both percentages on the card are Σ(w·r) over `hicp_categories.json`, so the
+  // date drawn beneath them — «Данни: Евростат (HICP), юни 2026 г.» — has to be
+  // the divisions' month. Eurostat's flash publishes the all-items rate about
+  // two weeks ahead of them, and for that fortnight `headlineRefPeriod` names a
+  // month the basket figures do not cover: the card then read «юли 2026 г.»
+  // over June's numbers, with the anchor selector on the same page saying
+  // «2025.06 → 2026.06».
+  //
+  // Pinned here rather than in `verify_view.mjs`, which proves `sharePayload`
+  // returns whatever period it was handed and structurally cannot see which one
+  // the caller chose. And the card is a canvas, so no render test can read the
+  // string back off the DOM either — this wiring is the only place it is
+  // visible.
+  const call = /sharePayload\(\{[\s\S]*?\}\)/.exec(LIVE);
+  assert.ok(call, "the calculator no longer builds its share payload through sharePayload");
+  assert.match(
+    call[0],
+    /refPeriod:\s*basketRefPeriod/,
+    `the share card is dated by something other than the basket's own month: ${call[0]}`
+  );
+});
+
 test("the Sofia comparator reads the live НСИ wage and links to it", () => {
   // The card compares the reader's net pay with Sofia's average wage. It must
   // read the live `sofia_salary.json` rather than a hardcoded number, and link

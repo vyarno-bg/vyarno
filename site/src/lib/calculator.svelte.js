@@ -755,6 +755,15 @@ export class Calculator {
    * nothing to invert (docs/principles.md P2). `nearOfficial` is passed rather
    * than recomputed so the picture and the verdict above it cannot disagree
    * about the same basket.
+   *
+   * `basketRefPeriod`, because both percentages on the card are Σ(w·r) over
+   * `hicp_categories.json` and the date drawn under them says which month they
+   * describe. The headline's own period runs up to a month ahead during
+   * Eurostat's flash — the rule `headlineRefPeriod` states below is that it
+   * dates the strip and the panel and NOTHING in the basket — so taking it here
+   * stamps July over a picture built from June. The card is the one surface
+   * that leaves the device, so a wrong month on it is in somebody else's chat
+   * before it can be corrected (P4).
    */
   share = $derived(
     this.dataReady
@@ -764,7 +773,7 @@ export class Calculator {
           near: this.nearOfficial,
           anchor: this.anchor,
           ranked: this.ranked,
-          refPeriod: this.headlineRefPeriod,
+          refPeriod: this.basketRefPeriod,
         })
       : null
   );
