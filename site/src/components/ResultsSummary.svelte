@@ -141,8 +141,13 @@
           ? calc.bite.category.bg_name.toLowerCase()
           : calc.bite.category.en_name.toLowerCase()}</span
       >
-      ≈ <span class="b">€{fmt0(calc.bite.eurPerMonth)}/</span>
-      <span class="l-bg">мес</span><span class="l-en">mo</span>
+      <!-- The slash and the unit share a source line because the newline
+           between them was rendering as a space: «≈ €13/ мес», against «€/мес»
+           closed up in every other rate on the page. Splitting the amount from
+           its unit across two lines is what puts whitespace inside a unit. -->
+      ≈ <span class="b">€{fmt0(calc.bite.eurPerMonth)}/</span><span class="l-bg">мес</span><span
+        class="l-en">mo</span
+      >
     </div>
   {/if}
 </div>
