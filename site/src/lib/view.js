@@ -50,7 +50,7 @@ import {
 // reader sends. `t` is the substitution helper, not the copy — every word
 // still arrives as an argument.
 import { number } from "./format.js";
-import { t } from "./content.js";
+import { SECTOR_HINTS, t } from "./content.js";
 
 // ---------------------------------------------------------------------------
 // THE BASKET THE SLIDERS START FROM
@@ -1310,18 +1310,38 @@ export function sectorComparison({ sectorSalary, key, nets, payroll }) {
  * guard is that it sits inside the range of the sections — and is dropped
  * here, where its label would be a claim about somebody's industry.
  *
+ * **Each option leads with the everyday words for the work and ends with НСИ's
+ * name in full** (`content.js#SECTOR_HINTS`, which is where the reasoning
+ * lives). The order is that way round because a phone shows the front of the
+ * closed control and truncates the rest, and the front is the part a reader
+ * uses to find their line — «Създаване и разпространение на информация и
+ * творчески продукти; далекосъобщения» is 78 characters that do not contain
+ * the word for anybody's job.
+ *
+ * **The hint can only ever be added to НСИ's label, never substituted for it.**
+ * The template below composes in one direction and there is no branch that
+ * returns a hint alone, so an option cannot end up naming a section something
+ * НСИ did not call it. A section with no hint — or one they rename tomorrow —
+ * falls back to their label by itself, which is the degraded state that is
+ * still correct rather than the one that is still readable.
+ *
  * @param {object|null} sectorSalary  data.sectorSalary
+ * @param {Record<string, {bg:string, en:string}>} [hints]  injectable for tests
  * @returns {Array<{key:string, bg:string, en:string}>}
  */
-export function sectorOptions(sectorSalary) {
+export function sectorOptions(sectorSalary, hints = SECTOR_HINTS) {
   const rows = Array.isArray(sectorSalary?.sectors) ? sectorSalary.sectors : [];
+  const lead = (hint, name) => (hint ? `${hint} — ${name}` : name);
   return rows
     .filter((s) => s?.en_name && s?.bg_name && String(s.en_name) !== SECTOR_TOTAL_KEY)
-    .map((s) => ({
-      key: String(s.en_name),
-      bg: String(s.bg_name),
-      en: String(s.en_name),
-    }));
+    .map((s) => {
+      const hint = hints?.[String(s.en_name)];
+      return {
+        key: String(s.en_name),
+        bg: lead(hint?.bg, String(s.bg_name)),
+        en: lead(hint?.en, String(s.en_name)),
+      };
+    });
 }
 
 /** НСИ's own label for the all-activities row, which is not a sector. */

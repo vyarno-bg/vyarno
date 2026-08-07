@@ -453,7 +453,7 @@ are shaped to make a wrong wiring *unexpressible*:
 | `taxWedgePanel({…})` | the effective/marginal rate curve and the cap marker | a marginal rate drawn flat across the insurance ceiling |
 | `scheduledMaxInsurable(payroll)` | the legislated next cap, from `scheduled_changes` | a future cap presented as if it were in force |
 | `sectorComparison({…})` | the chosen activity's published average, its gross and net, and one gap per earner | the country's by-activity average being drawn as if it were Sofia's, or a gap computed against a gross while the reader's figure is net |
-| `sectorOptions(payload)` | the picker's rows, in НСИ's classification order, each carrying both of НСИ's own labels | «Общо» offered as somebody's industry — the all-activities row is what the sections are read *against*, and in a list headed «Твоят сектор» it collects every reader who cannot find their own line. Sorting by wage is the second one: a league table is a claim the ordering makes on its own |
+| `sectorOptions(payload, hints)` | the picker's rows, in НСИ's classification order, each leading with the everyday words for the work and ending with НСИ's own label | «Общо» offered as somebody's industry — the all-activities row is what the sections are read *against*, and in a list headed «Твоят сектор» it collects every reader who cannot find their own line. Sorting by wage is the second one: a league table is a claim the ordering makes on its own. The third is our words *replacing* НСИ's rather than preceding them |
 | `verifyUrl(row, anchor)` | the "↗" target for one row | linking to the index cube while showing a rate |
 | `fastestRisingDivision(categories)` | the highest-rate division | advertising the *slowest*-rising division as the fastest |
 | `rankedSplit(ranked, limit)` | the rows the ranked list draws **plus the folded remainder** | a capped list under a sentence promising the column adds up — 5.1 points on screen against a stated 5.4 |
@@ -1095,6 +1095,31 @@ of that is the city. So `COPY.sectorNationwide` puts НСИ's all-activities cel
 the comparing. **Neither figure is divided by the other**: the ratio would be
 our arithmetic under НСИ's name, which is the thing `docs/legal.md` §НСИ and
 gate 7 both exist to prevent.
+
+**The picker leads with the words for the work; every claim keeps НСИ's name.**
+A classification title is written for the classifier, not for the person being
+classified: «Създаване и разпространение на информация и творчески продукти;
+далекосъобщения» is 78 characters that do not contain the word for anybody's
+job, and a developer scanning nineteen of those does not stop on it. The word
+they are looking for sits two levels down in division 62, which the picker never
+shows. So each option reads «ИТ и софтуер, телекоми, издателства, кино и ТВ —
+Създаване и разпространение…», hint first because a phone truncates the tail of
+a closed select and the front is the part used to find a line.
+
+`content.js#SECTOR_HINTS` holds them, keyed by the payload's own `en_name`, and
+**every item in a hint is a division inside that section** off НСИ's КИД-2008
+structure — «кол центрове» is 82, «зъболекари» is 86, «кино и ТВ» is 59 and 60.
+That is what keeps a hint from becoming a claim. «ИТ» alone for J would be one:
+the section is also publishing, film, radio and telecoms, and its average is
+diluted across all of them, so naming the breadth tells a reader what the figure
+is an average *of*. An empty hint is a decision — `Строителство` and
+`Образование` say what they are — and a section with no entry at all is a red
+test, so an НСИ rename surfaces instead of quietly rendering a bare title.
+
+`sectorOptions` composes in one direction and has no branch returning a hint
+alone, so an option cannot name a section something НСИ did not call it; the
+test asserts every option still *ends with* their string, character for
+character, in both languages.
 
 **Both labels are НСИ's own, and the verify link follows the label.** The two
 language editions of the workbook are read precisely so the section names are

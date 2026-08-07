@@ -74,7 +74,7 @@ import {
   SHARE_ORIGIN,
   SHARE_DOMAIN,
 } from "../src/lib/view.js";
-import { COPY } from "../src/lib/content.js";
+import { COPY, SECTOR_HINTS } from "../src/lib/content.js";
 import { ORIGIN as SITEMAP_ORIGIN } from "./gen-sitemap.mjs";
 import {
   officialInflation,
@@ -2452,6 +2452,80 @@ test("the picker offers every published activity, in НСИ's order", () => {
     assert.ok(o.bg && o.en, `${o.key} is missing a label in one language`);
   }
   assert.deepEqual(sectorOptions(null), []);
+});
+
+test("an option leads with the everyday words and still ends with НСИ's own name", () => {
+  // The hint exists because НСИ's register is not the reader's: nobody scanning
+  // for their job stops on «Създаване и разпространение на информация и
+  // творчески продукти; далекосъобщения», and the word they are looking for is
+  // in division 62, which the picker never shows.
+  //
+  // The risk it introduces is the one the whole feature was built to avoid —
+  // our words standing in for a publisher's label. So the check is that the
+  // label is ADDED TO and never replaced: every option still ends with НСИ's
+  // string, character for character, in both languages. Break it by returning
+  // the hint alone and this goes red on nineteen rows at once.
+  const payload = read("sector_salary");
+  if (!payload) return;
+  const options = sectorOptions(payload);
+  const byKey = new Map(payload.sectors.map((s) => [s.en_name, s]));
+
+  let led = 0;
+  for (const o of options) {
+    const nsi = byKey.get(o.key);
+    assert.ok(o.bg.endsWith(nsi.bg_name), `${o.key}: НСИ's Bulgarian name is not intact: ${o.bg}`);
+    assert.ok(o.en.endsWith(nsi.en_name), `${o.key}: НСИ's English name is not intact: ${o.en}`);
+    if (o.bg !== nsi.bg_name) led += 1;
+  }
+  // A hint map that stopped being applied would leave every assertion above
+  // true and the picker exactly as unreadable as before.
+  assert.ok(led >= 10, `only ${led} of ${options.length} options carry a hint at all`);
+});
+
+test("every published section has a hint decision recorded, empty or not", () => {
+  // Keyed by `en_name`, so a section НСИ rename or add lands here rather than
+  // rendering a bare classification title nobody recognises — the silent half
+  // of the failure, since the option still works and still says nothing.
+  //
+  // An empty string is a decision: «Строителство» and «Образование» say what
+  // they are and a hint under them is a word to skip. What is barred is a
+  // section with no entry at all.
+  const payload = read("sector_salary");
+  if (!payload) return;
+  const sections = payload.sectors
+    .filter((s) => s.en_name !== SECTOR_TOTAL_KEY)
+    .map((s) => s.en_name);
+
+  const missing = sections.filter((n) => !Object.hasOwn(SECTOR_HINTS, n));
+  assert.deepEqual(
+    missing,
+    [],
+    `no hint decision for: ${missing.join(", ")}\n` +
+      "Add an entry to content.js#SECTOR_HINTS naming the divisions inside the " +
+      "section, or an empty string if НСИ's own name already reads plainly."
+  );
+
+  const stale = Object.keys(SECTOR_HINTS).filter((n) => !sections.includes(n));
+  assert.deepEqual(stale, [], `hints for sections НСИ no longer publish: ${stale.join(", ")}`);
+
+  // A hint names KINDS OF WORK, so it never carries a figure — the numbers on
+  // this card are НСИ's and Eurostat's, and a euro or a percent inside a picker
+  // label would be one under nobody's credit at all.
+  for (const [key, hint] of Object.entries(SECTOR_HINTS)) {
+    for (const text of [hint.bg, hint.en]) {
+      assert.ok(!/[\d€%]/.test(text), `SECTOR_HINTS[${key}] carries a figure: ${text}`);
+      // The option joins hint and name with an em dash, so a hint containing
+      // one draws a second boundary and the reader cannot tell which side is
+      // НСИ's. «фабрики — храни, облекло … — Преработваща промишленост» read
+      // as three things rather than two.
+      assert.ok(!text.includes("—"), `SECTOR_HINTS[${key}] contains the separator: ${text}`);
+    }
+    assert.equal(
+      hint.bg === "",
+      hint.en === "",
+      `SECTOR_HINTS[${key}] is hinted in one language and not the other`
+    );
+  }
 });
 
 test("the all-activities row is not offered as somebody's sector", () => {
