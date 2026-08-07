@@ -19,6 +19,8 @@ import { pathToFileURL } from "node:url";
 import { join } from "node:path";
 import { SITE } from "./render-dist.mjs";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
+import { published } from "./published-payload.mjs";
+import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
 
 test("the built page mounts over the shell rather than beside it", { skip }, async () => {
   await withApp(async (page, errors) => {
@@ -404,6 +406,10 @@ test(
       await page.waitForTimeout(300);
 
       const card = await page.locator(".m-pay").innerText();
+      // The credit line on its own. The claims about what «НСИ ·» spans are
+      // claims about this line, and a figure matched against the whole card can
+      // be satisfied by one of the reader's own numbers a few rows up.
+      const credit = await page.locator(".m-pay .src").innerText();
       // НСИ's own Bulgarian name for section J, which no reader takes for «ИТ».
       assert.match(
         card,
@@ -417,17 +423,38 @@ test(
       // arithmetic and leaves a reader who opens the file with nothing to match
       // the row against.
       assert.match(
-        card,
+        credit,
         /3\s?176/,
         "НСИ's published gross for the section is not on the card — only our net conversion is"
       );
+      // **The net slot, by value.** The gross above and the attribution below
+      // are both satisfied by a template that renders 3176 into both slots, and
+      // the card then claims НСИ's section average takes home every lev of
+      // itself — a reference net 23% too high, which is a reader on €2,100
+      // being told they are 34% behind their industry rather than 18%. Read out
+      // of the payload through the page's own payroll function, so a quarterly
+      // refresh moves the expectation with the figure.
+      const sectorNet = Math.round(
+        bgNetSalary(
+          published("sector_salary").sectors.find(
+            (s) => s.en_name === "Information and communication"
+          ).value_eur,
+          payrollParams(published("payroll"))
+        ).net
+      );
       assert.match(
-        card,
+        credit,
+        new RegExp(String(sectorNet).replace(/^(\d)(\d{3})$/, "$1\\s?$2")),
+        `our conversion of НСИ's 3176 gross is ${sectorNet} net and the credit line ` +
+          `shows neither — its net slot is carrying something else: ${credit}`
+      );
+      assert.match(
+        credit,
         /(по наша сметка|our conversion)/,
         "the gross-to-net step is not attributed to us"
       );
       assert.match(
-        card,
+        credit,
         /(предварителни данни|preliminary)/,
         "2026 is preliminary at НСИ and the card shows the figure as settled"
       );
@@ -459,6 +486,25 @@ test(
         "the correction for how much an average flatters is absent"
       );
       assert.match(card, /трудово и служебно правоотношение/, "the coverage line is absent");
+
+      // **Each language gets its own edition's label.** НСИ print the section
+      // twice — «Създаване и разпространение на информация и творчески
+      // продукти; далекосъобщения» and "Information and communication" — and
+      // the card renders both spans whatever the reader picked, so handing the
+      // English one the Bulgarian name is a one-character edit that leaves the
+      // Bulgarian card word-perfect. `format.js#label` admits any letter,
+      // Cyrillic included, so nothing below this catches it either.
+      const english = (await page.locator(".m-pay .l-en").allTextContents()).join(" ");
+      assert.match(
+        english,
+        /Information and communication/,
+        "the English sector sentence does not carry НСИ's own English section name"
+      );
+      assert.doesNotMatch(
+        english,
+        /[Ѐ-ӿ]/,
+        `a Bulgarian string reaches the English pay card: ${english.replace(/\s+/g, " ")}`
+      );
 
       assert.deepEqual(errors, [], errors.join(" | "));
     });

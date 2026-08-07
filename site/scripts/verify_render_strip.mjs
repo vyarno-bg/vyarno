@@ -10,6 +10,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
+import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
 
 test("the national strip leaves no orphaned cell on its last row", { skip }, async () => {
   // The strip renders five one-number tiles plus one card carrying a chart. A
@@ -112,32 +113,65 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
   // this: a template feeding the gross slot the net it already had satisfies
   // every check on the copy while the card says 1486 twice under НСИ's name.
   // The slot is asserted there; the value behind it is asserted here.
+  //
+  // **Both slots, and the period.** A caption with three placeholders has three
+  // ways to carry the wrong figure, and asserting one of them proves the other
+  // two nothing: feeding the NET slot the gross renders «1 915 € · ≈ 1 915 €
+  // нето по наша сметка», which still shows НСИ's own cell and still attributes
+  // the conversion, so a check on those two alone passes a card claiming their
+  // Sofia average takes home every lev of it. The period is the same shape —
+  // blanked to an em dash it leaves an undated wage under a dated credit.
   const wage = published("sofia_salary");
+  const payroll = published("payroll");
   const gross = Math.round(wage.value);
   assert.ok(gross > 0, "sofia_salary.json carries no value to render");
+  // Our conversion, through the same function the page runs it through, so the
+  // assertion is the identity rather than a second implementation of the
+  // payroll that would need updating whenever the rates move.
+  const net = Math.round(bgNetSalary(wage.value, payrollParams(payroll)).net);
+  assert.ok(net > 0 && net < gross, "the payroll conversion did not produce a net below the gross");
 
   await withApp(async (page, errors) => {
     // The Sofia AVERAGE card, by its own label. Matching on the «НСИ» credit
     // alone lands on the median card next to it, which cites the same publisher
     // as one of two inputs to a figure it says in as many words is worked out —
     // a dataset-and-vintage credit rather than a claim about what НСИ printed.
-    const card = await page
+    const stat = page
       .locator(".strip .stat", { hasText: /средна нетна заплата в София|Sofia average NET pay/ })
-      .first()
-      .innerText();
+      .first();
+    // **The caption, not the card.** The card LEADS with the net, so a figure
+    // asserted against the whole card is satisfied by the headline it was
+    // already showing — the caption's own net slot can carry anything and the
+    // match still lands. Every claim below is about what the «НСИ ·» credit
+    // spans, so it is read off the line that carries the credit.
+    const caption = await stat.locator(".ss").innerText();
     // Both thousands separators, because `integer()` groups per locale and the
     // BG and EN renderings of 1915 differ by the character between 1 and 915.
-    const grouped = new RegExp(String(gross).replace(/^(\d)(\d{3})$/, "$1\\s?$2"));
+    const grouped = (n) => new RegExp(String(n).replace(/^(\d)(\d{3})$/, "$1\\s?$2"));
     assert.match(
-      card,
-      grouped,
-      `НСИ publish ${gross} gross for Sofia and it is nowhere on the card that ` +
-        `credits them — only a figure we derived from it:\n${card}`
+      caption,
+      grouped(gross),
+      `НСИ publish ${gross} gross for Sofia and it is nowhere on the line that ` +
+        `credits them — only a figure we derived from it:\n${caption}`
     );
     assert.match(
-      card,
+      caption,
+      grouped(net),
+      `our conversion of НСИ's ${gross} gross is ${net} net and the credit line ` +
+        `shows neither — its net slot is carrying something else:\n${caption}`
+    );
+    assert.match(
+      caption,
       /(по наша сметка|our conversion)/,
-      `the gross-to-net step on the Sofia card is not attributed to us:\n${card}`
+      `the gross-to-net step on the Sofia card is not attributed to us:\n${caption}`
+    );
+    // The quarter the two figures describe, as НСИ label it. Both are averages
+    // over one of their reporting periods and neither means anything without
+    // it — «1 915 € · ≈ 1 486 € нето» dates a Q1 average to nothing at all.
+    assert.match(
+      caption,
+      new RegExp(wage.ref_period),
+      `the Sofia card dates its figures to ${wage.ref_period} nowhere:\n${caption}`
     );
     assert.deepEqual(errors, [], errors.join(" | "));
   });
