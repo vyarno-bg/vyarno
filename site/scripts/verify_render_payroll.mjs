@@ -61,6 +61,75 @@ test("the placeholder's payslip and comparator wait for a salary", { skip }, asy
   });
 });
 
+test("neither pay comparison is painted as a verdict", { skip }, async () => {
+  // `--real` and `--erode` mean the reader's figure beat or lost to the
+  // country's, and they are right where a quantity HAS a good end — a rent
+  // burden, a basket rising faster than the average one. A distance from a
+  // mean does not have one. Both Sofia's mean and the country's sit above
+  // their medians, so «41% над средната» painted green tells a reader they are
+  // doing well by a measure that is not the middle, which is what the card's
+  // own flattery caveat denies and what `mirror.js#meanRungPosition` exists to
+  // correct. P6: we describe, we do not advise.
+  //
+  // Both directions, because the failure that matters is half a fix — a
+  // neutral «над» beside a red «под» still reads the gap as a verdict, and it
+  // is the reading a reader below the average is likeliest to take personally.
+  await withApp(async (page, errors) => {
+    const verdicts = await page.evaluate(() => {
+      const resolve = (token) => {
+        const probe = document.createElement("div");
+        probe.style.color = `var(${token})`;
+        document.body.append(probe);
+        const value = getComputedStyle(probe).color;
+        probe.remove();
+        return value;
+      };
+      return ["--real", "--real-ink", "--erode", "--erode-ink"].map(resolve);
+    });
+
+    // €2,100 is above the Sofia average and below section J's, so one pass
+    // already covers both directions; €900 puts both below, which is where the
+    // red used to land hardest.
+    const seen = new Set();
+    for (const pay of ["2100", "900"]) {
+      await page.locator("#inSalary").fill(pay);
+      await page.waitForTimeout(300);
+      await page.locator("#sector-pick").selectOption("Information and communication");
+      await page.waitForTimeout(300);
+
+      const lines = await page
+        .locator(".m-pay .gap")
+        .evaluateAll((els) =>
+          els.map((el) => ({ text: el.innerText, color: getComputedStyle(el).color }))
+        );
+      assert.equal(lines.length, 2, `€${pay} rendered ${lines.length} comparison lines, not 2`);
+      for (const line of lines) {
+        assert.ok(
+          !verdicts.includes(line.color),
+          `«${line.text.slice(0, 48)}» is painted ${line.color}, which is a verdict ` +
+            "colour — a distance from an average has no good end"
+        );
+        // The sign is still on the page. Dropping the colour is only honest
+        // while the direction is a word, and a line that lost both says
+        // nothing.
+        // Whitespace, never `\b`: a JS word boundary is defined on
+        // [A-Za-z0-9_], so it never fires beside Cyrillic and `\bнад\b`
+        // matches nothing at all — an assertion that passes whatever the page
+        // says.
+        const word = line.text.match(/(?:^|\s)(над|под)(?:\s|$)/);
+        assert.ok(word, `«${line.text.slice(0, 48)}» states no direction at €${pay}`);
+        seen.add(word[1]);
+      }
+    }
+    assert.deepEqual(
+      [...seen].sort(),
+      ["над", "под"],
+      "only one direction was exercised, so a half-neutralised pair would pass"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("adding an income changes nothing until it is answered", { skip }, async () => {
   // A second field seeded with the €900 placeholder would add €900 to the rent
   // burden, the mortgage cap and the basket the moment it appeared — a figure

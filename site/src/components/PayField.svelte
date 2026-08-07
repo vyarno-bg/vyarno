@@ -58,28 +58,29 @@
   // both produced «-39% под средната» / "-39% below the average" — a double
   // negative that reads, literally, as 39% less far below.
   const DIR_KEY = { above: "statSofiaAbove", below: "statSofiaBelow", equal: "statSofiaEqual" };
-  const DIR_COLOR = { above: "var(--real)", below: "var(--erode)", equal: "var(--ink-2)" };
   /**
-   * The sector gap is drawn in one colour whichever way it points.
+   * **Neither comparison on this card is painted, and the rent-burden pattern
+   * is why they both look like they should be.**
    *
-   * `--erode` is the site's «this is costing you» red — it paints «инфлацията
-   * изяде €285» and «над границата от 30%» — and it was painting «твоята нетна
-   * заплата е 18% под средната за „…"». Two lines under that sentence the card
-   * says «Средната не е средата: в България повече от половината заети изкарват
-   * под средната брутна заплата», and one line under THAT it says the figure is
-   * a comparison with an average and not a rank. The colour asserted what both
-   * of those exist to deny, and colour is read before either of them.
+   * `--real` and `--erode` there mean the reader's figure beat or lost to the
+   * country's, and a rent burden HAS a good end: 45% of net is worse than 25%.
+   * A distance from a mean does not have one. `--erode` is the site's «this is
+   * costing you» red — it paints «инфлацията изяде €285» and «над границата от
+   * 30%» — and it was painting «твоята нетна заплата е 18% под средната за
+   * „…"» two lines above the card's own «Средната не е средата», which is the
+   * sentence the colour asserted the opposite of. Colour is read first.
+   *
+   * The Sofia line is the same quantity against a different mean. Sofia's mean
+   * sits above Sofia's median for the same right skew that puts the country's
+   * above its own (`mirror.js#meanRungPosition`), so «41% над средната» in
+   * green tells a reader they are ahead by a measure that is not the middle.
    *
    * P6: we describe, we do not advise, and the strongest honest form is a
-   * comparison plus a number. A gap from an average has no good end and no bad
-   * one, so it gets the neutral the equal case already had. The direction word
-   * in the sentence carries the sign, which is all the reader needs.
-   *
-   * The Sofia comparison keeps its pair. It is the same kind of quantity and
-   * arguably has the same problem, but it carries no sentence contradicting the
-   * colour, and repainting it is an editorial call rather than a correction.
+   * comparison plus a number. Both gaps therefore get the neutral the equal
+   * case already had. The direction word in the sentence carries the sign,
+   * which is all the reader needs — and is the only version a reader who
+   * cannot separate the two colours ever had.
    */
-  const SECTOR_DIR_COLOR = "var(--ink-2)";
 
   // The whole «28% над» / "28% above" clause, built here and spliced into the
   // COPY string as ONE placeholder — which is what keeps the Bulgarian
@@ -324,16 +325,16 @@
     <!-- The personal Sofia comparison sits under the reader's typed
        salary, next to the input it compares against — the Sofia card
        in the national strip is a country reference and carries no
-       personal verdict. Colour follows the rent-burden pattern
-       (--real above, --erode below, neutral when ≈ equal).
+       personal verdict.
+       Unpainted, for the reason the block above `DIR_KEY` gives.
        One line per income: НСИ publish a WAGE, so comparing a
        two-earner total against it would report a household of two on
        €900 each as 21% above the average worker. The magnitude, the
        direction word and the dead zone are decided in
-       view.js#sofiaGap; this picks the words and the colour. -->
+       view.js#sofiaGap; this picks the words. -->
     {#if calc.earnersDirty}
       {#each calc.sofiaGaps as gap (gap.index)}
-        <div class="hint" style="margin-top:4px; color:{DIR_COLOR[gap.direction]}">
+        <div class="hint gap">
           <span class="l-bg"
             >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "bg", {
               n: fmt0(gap.ordinal),
@@ -391,7 +392,7 @@
       {#if calc.sector}
         {#if calc.earnersDirty}
           {#each calc.sector.gaps as gap (gap.index)}
-            <div class="hint" style="margin-top:4px; color:{SECTOR_DIR_COLOR}">
+            <div class="hint gap">
               <span class="l-bg"
                 >{@html t(calc.hasHousehold ? COPY.sectorDiffEarner : COPY.sectorDiff, "bg", {
                   n: fmt0(gap.ordinal),
@@ -525,6 +526,13 @@
      folding a sentence is not licence to shrink it. */
   .caveat {
     margin: 6px 0 0;
+    color: var(--ink-2);
+  }
+  /* The two comparison lines. `--ink-2` and not the dimmer `.hint` default:
+     each is the claim its caveats qualify, and a claim quieter than the
+     sentence qualifying it inverts which of the two the eye reaches first. */
+  .gap {
+    margin-top: 4px;
     color: var(--ink-2);
   }
   .caveat-more {
