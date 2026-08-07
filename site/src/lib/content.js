@@ -1276,9 +1276,20 @@ export const COPY = {
   // {country} is НСИ's own all-activities cell, shown rather than divided into
   // the sector figure: the ratio would be our arithmetic under their name, and
   // this card was already fixed once for exactly that.
+  //
+  // **The Sofia line is named by what it says, never by where it sits.** Four
+  // lines separate the two on screen — the sector picker, the sector gap, the
+  // НСИ credit and the no-rank caveat — and the nearest line above this one is
+  // the sector gap, which is the very comparison being qualified. A reader
+  // pointed at «the row above» reads it as that one and the sentence inverts:
+  // it then says the sector figure is Sofia's. Naming the comparison also
+  // survives the card being reordered, which a positional phrase does not.
+  //
+  // «разликата ти спрямо сектора» for the same reason. Two gaps are on screen
+  // by the time this renders and only one of them is the city's.
   sectorNationwide: {
-    bg: "Дейността е за цялата страна (НСИ: {country} € бруто за всички дейности), а редът по-горе е за София, където се плаща повече. Затова част от разликата ти е градът, а не работата.",
-    en: "The activity is for the whole country (NSI: {country} € gross across all activities); the line above is Sofia, where pay is higher. So part of your gap is the city, not the job.",
+    bg: "Дейността е за цялата страна (НСИ: {country} € бруто за всички дейности), а сравнението със средната заплата в София по-горе е само за столицата, където се плаща повече. Затова част от разликата ти спрямо сектора идва от града, а не от работата.",
+    en: "The activity is for the whole country (NSI: {country} € gross across all activities), while the comparison with the Sofia average above covers the capital alone, where pay is higher. So part of your gap against the sector comes from the city, not the job.",
   },
   // НСИ mark a whole year preliminary until they finalise it, and 2026 is. A
   // figure they will revise, shown as though it were settled, is the reader
@@ -1310,14 +1321,28 @@ export const COPY = {
   // number in it has to earn the attention it costs — a caveat nobody finishes
   // protects nobody, and this one is load-bearing.
   //
-  // So it shows the published PAIR and derives one figure from it. €949 and
-  // €705 are Eurostat's own, and «половината заети изкарват под медианата» is
-  // the sentence that makes them usable — two levels a reader can hold beside
+  // So it shows the published PAIR and derives one figure from it. The mean and
+  // the median are Eurostat's own, and «половината заети изкарват под {median} €»
+  // is the clause that makes them usable — two levels a reader can hold beside
   // their own wage. The mean's rung ({cut}) is the one thing computed here.
-  // `meanRungPosition` also returns the median-to-mean ratio ({medianPct}, 74%)
-  // and this deliberately does not print it: it argues the same point one step
+  // `meanRungPosition` also returns the median-to-mean ratio ({medianPct}) and
+  // this deliberately does not print it: it argues the same point one step
   // further from the evidence, and stating both puts two percentages of ours in
   // a paragraph whose whole job is to be finished.
+  //
+  // **Every level in it is a slot, and none of the four may be typed in.** The
+  // pipeline refreshes Eurostat's shape on its own schedule, so a euro figure
+  // written into the prose keeps being asserted next to the slot that has
+  // already moved past it, and the reader cannot tell which of the two is the
+  // stale one. The same holds for the survey year — `verify_copy.mjs` fails a
+  // published `ref_year` found anywhere in this file's strings.
+  //
+  // **No word here may need a statistics course.** «Медиана» and «децили» are
+  // the two that did: the first is spelled out as «половината заети изкарват
+  // под …», the second as «между публикуваните от Евростат стойности», and
+  // both say exactly what they said before at the length a reader will finish.
+  // A caveat this deep in the card competes with the number the reader came
+  // for, and the vocabulary is what loses that competition first.
   //
   // The one figure that IS ours says so. Eurostat publish D1, the median and D9
   // for BG and nothing between, so the mean lands between P60 and P70 — rungs
@@ -1339,11 +1364,11 @@ export const COPY = {
   // verb that wants a person — it overtakes nobody.
   //
   // Both levels are GROSS and the line above this one ends in a net, so the
-  // basis is named here. Two adjacent sentences pairing a €949 with a €2,573 on
-  // different bases invite a comparison neither supports.
+  // basis is named here. Two adjacent sentences pairing a country-wide gross
+  // with a Sofia net on unstated bases invite a comparison neither supports.
   sectorAverageFlatters: {
-    bg: "Средната не е средата. За България Евростат дават средна брутна заплата {mean} € и медиана {median} € ({shapeYear} г.) — половината заети изкарват под медианата. Под средната са около {cut}% от тях: наша сметка, изчислено между публикуваните децили, а не измерено. Затова „под средната за сектора“ не значи „под средата“.",
-    en: "An average is not a middle. For Bulgaria Eurostat publish a mean GROSS wage of €{mean} against a median of €{median} ({shapeYear}) — half of employees earn less than the median. About {cut}% earn less than the mean: a figure of ours, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
+    bg: "Средната не е средата. За България Евростат дават средна брутна заплата {mean} € ({shapeYear} г.), а средата е по-ниска: половината заети изкарват под {median} € бруто. Под средната са около {cut}% от заетите — това число е наше, изчислено между публикуваните от Евростат стойности, а не измерено. Затова „под средната за сектора“ не значи „под средата“.",
+    en: "An average is not a middle. For Bulgaria Eurostat publish an average GROSS wage of €{mean} ({shapeYear}), and the middle sits lower: half of employees earn less than €{median} gross. About {cut}% of employees earn less than that average — a figure of ours, worked out between the values Eurostat publish rather than measured. So below your sector's average does not mean below the middle.",
   },
   // The English has to name «служебно правоотношение» too. НСИ count both
   // employment relationships, and «Държавно управление» is one of the sections
