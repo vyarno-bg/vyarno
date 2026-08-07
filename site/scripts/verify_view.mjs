@@ -2425,26 +2425,6 @@ test("sectorComparison reads НСИ's published cell and computes no rank", () =
   // be able to say so rather than presenting a figure they will revise.
   assert.equal(out.isPreliminary, payload.is_preliminary);
 
-  // **The all-activities cell, because this table is the COUNTRY's.** The card
-  // shows the Sofia comparison a few lines above this one, and Sofia pay is
-  // structurally higher — 1915 gross against НСИ's whole-economy figure at the
-  // same quarter. Read together with nothing saying the scopes differ, the gap
-  // to a sector average charges the city to the reader's industry, in the
-  // flattering direction for nearly every section (docs/principles.md P7).
-  //
-  // Selected, never divided: the ratio between the two would be our arithmetic
-  // under НСИ's name, which is the defect this card was already fixed for.
-  const total = payload.sectors.find((s) => s.en_name === "Total");
-  assert.equal(
-    out.countryGross,
-    total.value_eur,
-    "the all-activities figure is not НСИ's published Total cell"
-  );
-  assert.ok(
-    out.countryGross > 0,
-    "the card cannot say what the sector figure's scope is without this cell"
-  );
-
   // **There is no rank here and there must never be one.** Nobody publishes a
   // pay distribution by activity for Bulgaria, so a percentile against a sector
   // could only be invented. The shape is the guard: a field added to carry one
@@ -2453,7 +2433,6 @@ test("sectorComparison reads НСИ's published cell and computes no rank", () =
     Object.keys(out).sort(),
     [
       "bgName",
-      "countryGross",
       "enName",
       "gaps",
       "gross",
