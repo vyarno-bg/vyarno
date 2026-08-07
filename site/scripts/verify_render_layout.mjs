@@ -203,6 +203,37 @@ test("the method drawer fits a phone, and its table scrolls inside it", { skip }
   );
 });
 
+test("the sector picker gets a line of its own on a phone", { skip }, async () => {
+  // The label and the select share a wrapping flex row, and `min-width: 0` let
+  // the select shrink to whatever was left beside «Твоят сектор» instead of
+  // wrapping under it. At 360px that left 178px and clipped the placeholder
+  // mid-word — «— избери дейно» — on the one control whose options are the
+  // longest strings on the page, НСИ's own section names.
+  //
+  // Asserted as the select taking the row's full width rather than as the text
+  // fitting: a native <select> clips its option without reporting any overflow,
+  // so `scrollWidth` reads as content that fits and would pass the broken
+  // layout. The width is the thing that can actually be measured, and it is
+  // what the fix is.
+  await withApp(
+    async (page, errors) => {
+      const box = await page.evaluate(() => {
+        const row = document.querySelector(".sector").getBoundingClientRect();
+        const sel = document.querySelector("#sector-pick").getBoundingClientRect();
+        return { row: Math.round(row.width), sel: Math.round(sel.width) };
+      });
+      assert.ok(
+        box.sel >= box.row - 2,
+        `the sector picker is ${box.sel}px inside a ${box.row}px row, so it is sharing ` +
+          "the line with its label and clipping НСИ's section names"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/",
+    { viewport: { width: 360, height: 800 } }
+  );
+});
+
 test("a phone is asked before it is told", { skip }, async () => {
   // The order below 820px is ask, answer, refine: the pay field, then the
   // results, then everything the reader can leave alone. Answer-then-everything
