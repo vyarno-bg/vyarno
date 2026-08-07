@@ -387,6 +387,28 @@
             · {sofiaNDistricts}
             {$lang === "bg" ? "квартала" : "districts"} · {sofiaPriceDated || "—"}
           </div>
+          <!-- Three of the figures on this card are OURS, and the credit line
+               above names имот.bg. They publish one average per district and
+               nothing for Sofia as a whole, so the median across the districts,
+               the price of a 70 m² home built on it and the change since the
+               baseline year are all our arithmetic over their cells. A
+               publisher's name spanning our own working is the quiet way a card
+               stops being checkable — a reader who opens the link has nothing to
+               match the number against (P3).
+               `/how/` has carried this disclosure beside the same three figures
+               since they were added; the calculator was the surface that did
+               not. Same key, so the two cannot drift into different admissions
+               of the same thing. -->
+          <div class="ours">
+            <span class="l-bg"
+              >{COPY.oursNote.bg}
+              <a href="/legal/#sources">{COPY.oursMoreK.bg} →</a></span
+            >
+            <span class="l-en"
+              >{COPY.oursNote.en}
+              <a href="/legal/#sources">{COPY.oursMoreK.en} →</a></span
+            >
+          </div>
         </div>
       </div>
     {/if}

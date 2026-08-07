@@ -233,12 +233,12 @@
 {#snippet ours()}
   <p class="ours">
     <span class="l-bg"
-      >{COPY.howOurs.bg}
-      <a href="/legal/#sources">{COPY.howOursMoreK.bg} →</a></span
+      >{COPY.oursNote.bg}
+      <a href="/legal/#sources">{COPY.oursMoreK.bg} →</a></span
     >
     <span class="l-en"
-      >{COPY.howOurs.en}
-      <a href="/legal/#sources">{COPY.howOursMoreK.en} →</a></span
+      >{COPY.oursNote.en}
+      <a href="/legal/#sources">{COPY.oursMoreK.en} →</a></span
     >
   </p>
 {/snippet}

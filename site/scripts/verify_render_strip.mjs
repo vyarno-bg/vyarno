@@ -12,6 +12,36 @@ import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
 
+test("the housing card says which of its figures are ours", { skip }, async () => {
+  // имот.bg publish one average per district and nothing for Sofia as a whole,
+  // so the median across the districts, the price of a 70 m² home built on it
+  // and the change since the baseline are all our arithmetic over their cells.
+  // The card credits имот.bg and links to them, which is right for the district
+  // averages and puts their name over our working for the other three — the
+  // quiet way a card stops being checkable, because a reader who follows the
+  // link finds nothing to match the number against (P3).
+  //
+  // /how/ has carried the disclosure beside the same three figures all along
+  // and `verify_copy.mjs` holds it there; this is the calculator's copy of the
+  // same obligation, on the surface most readers actually see.
+  await withApp(async (page, errors) => {
+    const card = page.locator(".strip .stat.wide");
+    assert.ok(await card.count(), "the housing card is not on the strip");
+    const text = (await card.innerText()).replace(/\s+/g, " ");
+    assert.match(
+      text,
+      /Това число е наше/,
+      `the housing card credits имот.bg for figures we computed: ${text}`
+    );
+    assert.ok(
+      await card.locator("a[href='/legal/#sources']").count(),
+      "the disclosure no longer routes to the sources document, which carries " +
+        "the Eurostat non-responsibility wording it is half of"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the national strip leaves no orphaned cell on its last row", { skip }, async () => {
   // The strip renders five one-number tiles plus one card carrying a chart. A
   // fixed-column grid held its column width, so the tail of the last row was an
