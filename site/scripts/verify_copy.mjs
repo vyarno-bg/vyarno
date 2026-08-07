@@ -1455,6 +1455,17 @@ test("no prose freezes a date or a count the payloads already carry", () => {
     }
   }
 
+  // The ДВ citation is the same shape and the payload it has to track is
+  // `payroll.json`. Both halves are slots, and no digit may sit beside them:
+  // «бр. 68 от 28.07.2026» is true of the act in force and false of the next
+  // ЗБДОО, which will move both — and this string captions five figures.
+  for (const lang of ["bg", "en"]) {
+    const line = COPY.howSrcDvIssue[lang];
+    assert.ok(line.includes("{issue}"), `the ${lang} ДВ citation has no {issue} slot`);
+    assert.ok(line.includes("{date}"), `the ${lang} ДВ citation has no {date} slot`);
+    assert.ok(!/\d/.test(line), `the ${lang} ДВ citation writes a figure into the copy: ${line}`);
+  }
+
   // The footer's year is the third case and it has no payload to compare
   // against — it is the reader's own clock, so the check is that the slot is
   // there and no year was typed beside it.

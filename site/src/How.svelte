@@ -135,6 +135,20 @@
   const ESTAT_SES_URL =
     "https://ec.europa.eu/eurostat/databrowser/view/earn_ses_monthly/default/table?lang=en";
   const DV_URL = "https://dv.parliament.bg/";
+  // What dates the four payroll figures. `DV_URL` is the gazette's landing
+  // page and cannot be a per-issue permalink, so under P9 the caption has to
+  // carry the instrument: «бр. 68 от 28.07.2026» is what ДВ's own archive is
+  // searched by, and it moves with the next ЗБДОО rather than staying true by
+  // accident. The year is the fallback for a parameter set assembled from
+  // several acts, where no single issue is true of it.
+  const dvWhen = $derived.by(() => {
+    const { gazetteIssue, gazetteDate, effectiveYear } = calc.systemWedge;
+    if (!gazetteIssue) return asIs(effectiveYear);
+    return {
+      bg: t(COPY.howSrcDvIssue, "bg", { issue: gazetteIssue, date: dateShort(gazetteDate, "bg") }),
+      en: t(COPY.howSrcDvIssue, "en", { issue: gazetteIssue, date: dateShort(gazetteDate, "en") }),
+    };
+  });
   const IMOT_URL = "https://www.imot.bg/sredni-ceni";
 </script>
 
@@ -511,28 +525,28 @@
           COPY.howKContrib,
           COPY.howSrcDv,
           DV_URL,
-          asIs(calc.systemWedge.effectiveYear)
+          dvWhen
         )}
         {@render stat(
           `${fmt(calc.systemWedge.incomeTaxRatePct, 0)}%`,
           COPY.howKTax,
           COPY.howSrcDv,
           DV_URL,
-          asIs(calc.systemWedge.effectiveYear)
+          dvWhen
         )}
         {@render stat(
           `${fmt0(calc.systemWedge.maxInsurable)} €`,
           COPY.howKCeiling,
           COPY.howSrcDv,
           DV_URL,
-          asIs(calc.systemWedge.effectiveYear)
+          dvWhen
         )}
         {@render stat(
           `${fmt(calc.systemWedge.minWageGross, 2)} €`,
           COPY.howKMinWage,
           COPY.howSrcDv,
           DV_URL,
-          asIs(calc.systemWedge.effectiveYear)
+          dvWhen
         )}
       {/if}
     </div>
@@ -608,19 +622,13 @@
           </tbody>
         </table>
       </div>
+      <!-- The table is computed from the four figures above it, so it carries
+           their citation rather than a year of its own. Two captions on one
+           section naming one publisher at two levels of precision is a reader
+           working out which of them is the instrument. -->
       <p class="cap">
-        <span class="l-bg"
-          >{t(COPY.howSrc, "bg", {
-            s: COPY.howSrcDv.bg,
-            p: asIs(calc.systemWedge.effectiveYear).bg,
-          })}</span
-        >
-        <span class="l-en"
-          >{t(COPY.howSrc, "en", {
-            s: COPY.howSrcDv.en,
-            p: asIs(calc.systemWedge.effectiveYear).en,
-          })}</span
-        >
+        <span class="l-bg">{t(COPY.howSrc, "bg", { s: COPY.howSrcDv.bg, p: dvWhen.bg })}</span>
+        <span class="l-en">{t(COPY.howSrc, "en", { s: COPY.howSrcDv.en, p: dvWhen.en })}</span>
       </p>
     {/if}
   </section>

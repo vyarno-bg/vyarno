@@ -66,6 +66,51 @@ def _pair(entry: dict[str, Any], field: str) -> tuple[float, float]:
     return float(eur), _bgn(float(eur))
 
 
+def _gazette(entry: dict[str, Any]) -> tuple[int | None, str | None]:
+    """The ДВ issue an entry's instrument was promulgated in, as (issue, ISO date).
+
+    `source_url` is dv.parliament.bg's landing page and cannot be anything
+    else — their permalinks are built from a session-side id that the issue
+    number does not yield, so a constructed one 404s for the reader who checks.
+    P9 says a citation that cannot carry a link carries the source name AND the
+    date, and «Държавен вестник · 2026» satisfies neither half: a year is not
+    an issue, and four figures on the page hang off it.
+
+    (None, None) is a legitimate answer and the reason is the January entry.
+    Its parameter set is not one act — ЗБДОО for the ceiling and the five
+    contribution lines, ЗДДФЛ чл. 48 ал. 1 for the flat rate, a ПМС for the
+    minimum wage — so no single issue number is true of it, and inventing one
+    that looks right is worse than a caption that names the year. An entry that
+    IS one act carries its issue and the site prints it.
+
+    Half a citation is refused rather than published: an issue with no date is
+    unfindable in ДВ's own archive, which is indexed by both, and a date with no
+    issue names a day on which several were promulgated.
+    """
+    issue, when = entry.get("gazette_issue"), entry.get("gazette_date")
+    if issue is None and when is None:
+        return None, None
+    if (issue is None) != (when is None):
+        raise ValueError(
+            f"payroll entry effective {entry['effective_from']} carries half a "
+            f"ДВ citation — issue={issue!r}, date={when!r}. Both or neither: "
+            f"the gazette's own archive is indexed by the pair."
+        )
+    if not isinstance(issue, int) or issue <= 0:
+        raise ValueError(
+            f"payroll entry effective {entry['effective_from']} has gazette_issue"
+            f"={issue!r}. ДВ numbers its issues from 1 within each year."
+        )
+    if when > entry["effective_from"]:
+        raise ValueError(
+            f"payroll entry effective {entry['effective_from']} says it was "
+            f"promulgated on {when} — after it came into force. Promulgation is "
+            f"what starts the clock, so the citation and the entry disagree "
+            f"about which act this is."
+        )
+    return issue, when.isoformat()
+
+
 # ---------------------------------------------------------------------------
 # The dated table. Newest entries LAST. Each entry is the full parameter set
 # in force from `effective_from` until the next entry's `effective_from`.
@@ -184,8 +229,13 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
         # 2026-07-28 is the text in force. Still the landing page and not a
         # per-issue permalink — dv.parliament.bg builds those from a session-side
         # id that is not derivable from the issue number, and a guessed one
-        # would 404 for the reader who checks.
+        # would 404 for the reader who checks. The issue and its date therefore
+        # travel as fields: the link cannot reach the instrument, so the caption
+        # has to name it (P9), and four figures on /how/ are captioned off this
+        # entry.
         "source_url": "https://dv.parliament.bg/",
+        "gazette_issue": 68,
+        "gazette_date": date(2026, 7, 28),
         "note": (
             "State Social Insurance Budget Act 2026 (ЗБДОО 2026), adopted by "
             "the National Assembly on 2026-07-22, promulgated in ДВ бр. 68 of "
@@ -223,6 +273,7 @@ def build_payroll_payload(as_of: date) -> dict[str, Any]:
 
     max_ins_eur, max_ins_bgn = _pair(e, "max_insurable_income")
     min_wage_eur, min_wage_bgn = _pair(e, "min_wage_gross")
+    gazette_issue, gazette_date = _gazette(e)
 
     # Scheduled changes: fill EUR alongside the BGN so the SPA needn't convert.
     scheduled = []
@@ -239,6 +290,12 @@ def build_payroll_payload(as_of: date) -> dict[str, Any]:
         "as_of": as_of.isoformat(),
         "source": "legislation",
         "source_url": e.get("source_url", ""),
+        # Both keys always, `null` where the entry's parameters come from more
+        # than one act. An absent key would leave the site unable to tell "this
+        # set has no single instrument" from "an envelope written before the
+        # citation was published", and those want different captions.
+        "gazette_issue": gazette_issue,
+        "gazette_date": gazette_date,
         "payload_name": "payroll",
         "effective_year": e["effective_year"],
         "effective_from": e["effective_from"].isoformat(),

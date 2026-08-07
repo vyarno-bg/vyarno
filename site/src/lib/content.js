@@ -1681,6 +1681,13 @@ export const COPY = {
   // them: имот.bg is Latin in both languages, and ДВ has an English name worth
   // spelling out for a reader who has never met it.
   howSrcImot: { bg: "имот.bg", en: "imot.bg" },
+  // What goes in `howSrc`'s `{p}` slot for the four payroll figures. ДВ cannot
+  // be linked per issue — their permalinks are built from a session-side id the
+  // issue number does not yield — so P9 says the caption carries the instrument
+  // itself, and an issue plus its date is what ДВ's own archive is searched by.
+  // A year identifies no act: every one of the four figures is set by a
+  // different statute promulgated in a different issue of the same year.
+  howSrcDvIssue: { bg: "бр. {issue} от {date}", en: "issue {issue} of {date}" },
   howSrcDv: { bg: "Държавен вестник", en: "the State Gazette" },
   // The Eurostat disclosure obligation, on the page that carries the three
   // figures it applies to (the modelled ladder, the Sofia €/m² median across

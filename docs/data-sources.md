@@ -641,6 +641,21 @@ Which entry ships is whichever was in force on the refresh's `as_of`,
 so the way to read the shipped figure is `payroll.json`'s `effective_from`
 rather than this list.
 
+**The ДВ citation is a field, not a caption.** `source_url` is
+dv.parliament.bg's landing page and can be nothing else: their permalinks are
+built from a session-side id that the issue number does not yield, so a
+constructed one 404s for the reader who checks. P9 therefore puts the
+instrument in the caption instead of behind the link, and an entry that IS one
+act carries `gazette_issue` + `gazette_date` — «бр. 68 от 28.07.2026», which is
+what ДВ's own archive is searched by. `payroll.py#_gazette` **raises on half a
+citation** (the archive is indexed by both, and a date alone names a day
+several issues were promulgated on) and on a promulgation dated after the entry
+comes into force. Both keys are published as `null` where the set comes from
+several acts — the January entry's ceiling is ЗБДОО's, its flat rate ЗДДФЛ чл.
+48 ал. 1's and its minimum wage a ПМС's, so no single issue is true of it and
+the caption names the year instead. Five figures on `/how/` render off this
+pair.
+
 **Which currency is authoritative.** Pre-euro figures were legislated in BGN and
 the EUR side is a conversion (1213 BGN → €620.20). From 2026-01-01 Bulgaria
 legislates in euro, so the newer figures are **EUR-native** and the BGN side is
