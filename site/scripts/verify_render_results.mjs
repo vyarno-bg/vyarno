@@ -256,6 +256,48 @@ test("the ladder row ranks nobody who has not typed a salary", { skip }, async (
   });
 });
 
+test("the wedge row states no gross for anyone who has not typed a salary", { skip }, async () => {
+  // Same rule as the ladder row above, on the row that was breaking it.
+  // «Заплатата ти преди удръжките (бруто) е ≈ €1160. От нея 22,4% отиват за
+  // осигуровки и данък» is a claim about the reader's own contract, and on
+  // first paint it was a claim about whoever earns the €900 placeholder — with
+  // the pocket row and the ladder row both declining to answer beside it (P7).
+  //
+  // What the row must NOT lose is the system curve. `wedgeNone` states the
+  // peak and the ceiling, the chart still draws, and both are built from
+  // payroll.json with no reader in them — so the assertions run in both
+  // directions: no personal gross before, the personal sentence after, and the
+  // chart throughout.
+  await withApp(async (page, errors) => {
+    const row = page.locator(".r-row").filter({ hasText: "колко не стига до теб" });
+    assert.equal(await row.count(), 1, "the wedge row is missing from the results card");
+
+    const idle = await row.innerText();
+    assert.doesNotMatch(
+      idle,
+      /Заплатата ти преди удръжките/i,
+      `the wedge stated a placeholder's gross: ${idle.replace(/\s+/g, " ")}`
+    );
+    assert.match(
+      idle,
+      /Въведи заплата горе/i,
+      `the wedge row lost the sentence written for this state: ${idle.replace(/\s+/g, " ")}`
+    );
+    assert.ok(await page.locator("svg.wedge").count(), "the system curve stopped being drawn");
+
+    await page.locator("#inSalary").fill("2400");
+    await page.waitForTimeout(400);
+    const answered = await row.innerText();
+    assert.match(
+      answered,
+      /Заплатата ти преди удръжките/i,
+      `the wedge stayed silent after a salary was typed: ${answered.replace(/\s+/g, " ")}`
+    );
+    assert.ok(await page.locator("svg.wedge").count(), "the chart went away once a salary arrived");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("nothing that makes a figure checkable is folded out of view", { skip }, async () => {
   // The results card tiers what it shows: the figure, one plain sentence and
   // its caveat stay put, and the working goes one tap in. Three things may
