@@ -353,9 +353,17 @@ The gates protect against bad data; `pytest -m live` protects against the
 premise changing underneath them. `tests/test_live_upstreams.py` calls the real
 connectors and asserts the live responses still have the shape the parsers
 expect — the rate cube is still current, every ЕЦБ series key still resolves to
-its own series, the НСИ workbook still has the Sofia-city row, БНБ still agrees
-with ЕЦБ MIR. Excluded from the default run; never gates a commit. Run it when a
-refresh looks wrong, or before trusting a fixture.
+its own series, the НСИ workbooks still have the Sofia-city row and both
+language editions of the by-activity table, БНБ still agrees with ЕЦБ MIR.
+Excluded from the default run; never gates a commit. Run it when a refresh looks
+wrong, or before trusting a fixture.
+
+**One probe treats a status as a finding rather than as an environment
+result.** НСИ serve their workbooks to anyone, so a 404 or a 410 on either
+edition of `Labour_1.1.2.1` means the file was renamed or withdrawn, and that is
+the whole reason the probe exists — it fails there instead of skipping. A 403, a
+rate limit, a 5xx or a timeout still skips, and so does every status on
+имот.bg, which answers datacenter IPs with 403 by policy.
 
 ## Cross-references
 

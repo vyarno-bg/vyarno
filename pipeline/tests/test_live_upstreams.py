@@ -43,7 +43,7 @@ from vyarno_pipeline.sources.eurostat import (
     group_codes_in_basket,
 )
 from vyarno_pipeline.sources.imot import fetch_sofia_avg_prices
-from vyarno_pipeline.sources.nsi import fetch_sofia_salary_eu
+from vyarno_pipeline.sources.nsi import fetch_sector_salary_eu, fetch_sofia_salary_eu
 
 pytestmark = pytest.mark.live
 
@@ -242,6 +242,105 @@ def test_nsi_workbook_still_has_the_sofia_city_row():
     assert _quarters_old(result["ref_period"]) <= 3, (
         f"latest NSI quarter {result['ref_period']} is stale"
     )
+
+
+def test_nsi_still_publishes_both_editions_of_the_by_activity_table():
+    """Both language editions must download and still agree, section by section.
+
+    This arm reads TWO files where every other reads one, and that is what it
+    is here for. `Labour_1.1.2.1_EUR_EN.xlsx` carries the English section names
+    and `_EUR.xlsx` the Bulgarian ones, and the payload needs both — a run that
+    got only one of them would have to invent the other language, which is the
+    single thing this feature must not do. So there are two URLs, two sheet
+    naming conventions (`{year}NaceRev2` against `{year}КИД2008`) and two ways
+    for NSI to move a file, and none of them is exercised by the sibling probe
+    above: `1.1.2.2` can sit exactly where it always has while `1.1.2.1` is
+    renamed.
+
+    Without this the first thing to notice would be a `--source all` run dying
+    at exit 4 partway through, with the arms before it already rewritten on
+    disk. That is the shape of failure the live suite exists to move earlier.
+
+    `fetch_sector_salary_eu` raises rather than returns on a changed structure,
+    so several of the connector's own guards are asserted just by getting here:
+    the per-year block bounds, the 20-row count, and the cell-for-cell
+    agreement that makes pairing the editions by position safe.
+    """
+    # **A 404 here is the finding, not an environment result.** The blanket
+    # `except httpx.HTTPError` the probes above use turns every status into a
+    # skip, and for imot.bg that is right — it answers datacenter IPs with 403,
+    # so a block genuinely is about the network. NSI serve these files to
+    # anyone. A 404 or a 410 from them means the workbook was renamed or
+    # withdrawn, which is the single thing this test exists to report, and
+    # skipping it would report "unreachable from this environment" over exactly
+    # the failure that has to be loud.
+    #
+    # Everything else still skips: a 403, a rate limit, a 5xx or a timeout is
+    # not evidence the file moved.
+    try:
+        result = fetch_sector_salary_eu()
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in (404, 410):
+            raise AssertionError(
+                f"NSI returned {e.response.status_code} for a by-activity workbook "
+                f"({e.request.url}). The file was renamed or withdrawn — find its new "
+                f"name in the timeseries directory and move SECTOR_SOURCE_URL_EN / _BG "
+                f"together, since the two editions have to stay the same table."
+            ) from e
+        _skip_if_blocked_here(
+            e, "NSI", "See docs/data-sources.md §'gross wage by economic activity'."
+        )
+    except httpx.TransportError as e:
+        _skip_if_blocked_here(
+            e, "NSI", "See docs/data-sources.md §'gross wage by economic activity'."
+        )
+
+    sectors = result["sectors"]
+    # 19 NACE Rev 2 sections plus NSI's all-activities row. Pinned as a count
+    # rather than a floor: a section appearing or disappearing is a
+    # classification change, and КИД-2025 replaced КИД-2008 on 2025-01-01
+    # without NSI having moved this table onto it yet. When they do, this is
+    # where it should surface.
+    assert len(sectors) == 20, f"NSI now publish {len(sectors)} activities, not 19 + Total"
+
+    assert re.fullmatch(r"\d{4}-Q[1-4]", result["ref_period"]), (
+        f"NSI by-activity period {result['ref_period']!r} is not a quarter — the "
+        "connector is reading the monthly block again, where March carries the "
+        "annual bonus and reads ~14% high"
+    )
+    assert _quarters_old(result["ref_period"]) <= 3, (
+        f"latest NSI by-activity quarter {result['ref_period']} is stale"
+    )
+
+    for s in sectors:
+        assert s["en_name"] and s["bg_name"], f"an activity is missing a name: {s}"
+        # The payload gate's own band, re-checked against what NSI serve today.
+        assert 200 <= s["value_eur"] <= 20000, s
+        assert s["value_eur"] == s["series_by_period"][result["ref_period"]], (
+            f"{s['en_name']}: the headline is not the published cell at "
+            f"{result['ref_period']} — NSI's licence forbids distributing a "
+            f"derived figure (docs/legal.md §НСИ)"
+        )
+
+    # **The all-activities row sits strictly inside the sections**, which is the
+    # connector's wrong-block guard: `Total` appears in column 0 of four rows on
+    # every sheet, two of them section titles with no data, so a read that
+    # drifted onto the ownership block or the monthly table lands outside the
+    # range it should be the middle of.
+    total = next(s for s in sectors if s["en_name"] == "Total")
+    others = [s["value_eur"] for s in sectors if s["en_name"] != "Total"]
+    assert min(others) < total["value_eur"] < max(others), (
+        f"all-activities {total['value_eur']} is outside the section range "
+        f"[{min(others)}, {max(others)}] — the parse is on the wrong block"
+    )
+
+    # Two editions, not the same file twice. Serving the English workbook at
+    # both URLs would pair row for row and agree on every cell — the check that
+    # makes pairing safe cannot see it — and the Bulgarian card would render
+    # NSI's English names under an NSI credit. The sheet-name regexes are what
+    # actually refuse it; this pins the outcome from the other side.
+    same = [s["en_name"] for s in sectors if s["en_name"] == s["bg_name"]]
+    assert not same, f"both editions returned the same labels for: {same}"
 
 
 # ---------------------------------------------------------------------------
