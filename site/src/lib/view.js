@@ -853,12 +853,21 @@ export const WEDGE_LADDER_LEVELS = Object.freeze([1000, 2000, 3000, 5000]);
  * the same constraint as `taxWedgePanel` and `payslipPanel` — a caller who
  * cannot hand over rates cannot hand over last year's.
  *
+ * **The ДВ citation travels with the four figures it dates.** `source_url` is
+ * the gazette's landing page and can be nothing else — their permalinks are
+ * built from a session-side id the issue number does not yield — so under P9
+ * the caption carries the instrument instead of reaching it, and «бр. 68 от
+ * 28.07.2026» is what a reader searches ДВ's archive with. Both fields are
+ * null together where the entry's parameters come from several acts, and the
+ * caption falls back to the year the set is in force for.
+ *
  * @param {object} args
  * @param {object|null} args.payroll  data.payroll (payroll.json), unmodified
  * @param {ReadonlyArray<number>} [args.grossLevels]  EUR/month
  * @returns {{effectiveYear:number|null, maxInsurable:number,
  *            contributionRatePct:number, incomeTaxRatePct:number,
- *            minWageGross:number,
+ *            minWageGross:number, gazetteIssue:number|null,
+ *            gazetteDate:string,
  *            rungs:Array<{gross:number, net:number, deductions:number,
  *                         effectivePct:number, marginalPct:number,
  *                         atCeiling:boolean, overCeiling:boolean}>}}
@@ -868,6 +877,14 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
   const levels = [...new Set([...grossLevels, params.maxInsurable])].sort((a, b) => a - b);
   return {
     effectiveYear: payroll?.effective_year ?? null,
+    // Both or neither, decided here rather than in the template: the pipeline
+    // refuses to publish half a citation, and a caption reading «бр. 68 от —»
+    // is the one shape that would survive a payload edited by hand.
+    gazetteIssue:
+      Number.isInteger(payroll?.gazette_issue) && payroll.gazette_date
+        ? payroll.gazette_issue
+        : null,
+    gazetteDate: (Number.isInteger(payroll?.gazette_issue) && payroll?.gazette_date) || "",
     maxInsurable: params.maxInsurable,
     contributionRatePct: 100 * params.totalEmployeeRate,
     incomeTaxRatePct: 100 * params.incomeTaxRate,
