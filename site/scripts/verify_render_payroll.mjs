@@ -34,6 +34,16 @@ test("the placeholder's payslip and comparator wait for a salary", { skip }, asy
       "a payslip was itemised for whoever earns the placeholder"
     );
 
+    // The hint under the field describes the €900, so it belongs to the same
+    // state as the figures above: present while the placeholder is what is in
+    // the box, gone the moment it is not. Left standing it tells a reader that
+    // the pay they just typed «е просто начална стойност».
+    assert.match(
+      idle,
+      /просто начална стойност/i,
+      `the placeholder is in the box with nothing saying so: ${idle.replace(/\s+/g, " ")}`
+    );
+
     await page.locator("#inSalary").fill("2400");
     await page.waitForTimeout(400);
     const answered = await pay.innerText();
@@ -41,6 +51,11 @@ test("the placeholder's payslip and comparator wait for a salary", { skip }, asy
       answered,
       /по договор/i,
       "the payslip summary never appeared after a salary was typed"
+    );
+    assert.doesNotMatch(
+      answered,
+      /просто начална стойност/i,
+      `the reader's own pay is still called a starting value: ${answered.replace(/\s+/g, " ")}`
     );
     assert.deepEqual(errors, [], errors.join(" | "));
   });
