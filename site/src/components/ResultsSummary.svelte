@@ -65,6 +65,27 @@
     field.focus({ preventScroll: true });
     field.scrollIntoView({ block: "center" });
   }
+
+  // The second cross-boundary route, and it exists because the two rates it is
+  // about share a screen while the paragraph reconciling them does not. The
+  // explainer band is one closed `<details>` at the foot of the page; opening
+  // it and landing on the right heading is two steps, and a bare `href="#…"`
+  // does only the second — the browsers that expand a closed `<details>` for a
+  // fragment inside it are not all of them, and the ones that do not scroll the
+  // reader to a collapsed block with nothing in it.
+  //
+  // By id across the boundary, like `focusSalary` above: the band is a sibling
+  // component 3,000px down and Svelte gives this one no handle on it.
+  //
+  // No focus() here, unlike the salary route. That one exists to raise a
+  // keyboard; this one takes the reader somewhere to read, and moving focus to
+  // a heading would announce it mid-sentence to a screen reader already
+  // reading the results. The scroll is instant for the reason the other is.
+  function openReconciliation() {
+    const band = document.querySelector(".explain-band details.explain");
+    if (band) band.open = true;
+    document.getElementById("two-official")?.scrollIntoView({ block: "center" });
+  }
 </script>
 
 <div class="h4row">
@@ -242,6 +263,21 @@
   {/if}
 </p>
 
+<!-- The bridge between the two official rates, and deliberately a route
+     rather than a sentence. The banner's figure and the average-basket bar are
+     on screen together and differ for two compounding reasons; the explainer
+     answers that in full, three screens down and folded away. Restating the
+     answer here would put a third rate beside the bars, which is the second
+     headline number `docs/principles.md` closes — and the verdict above is
+     figure-free on the same grounds. So this carries the question and nothing
+     else. -->
+<p class="m-gap-route">
+  <button type="button" onclick={openReconciliation}>
+    <span class="l-bg">{COPY.explainGapRoute.bg} →</span>
+    <span class="l-en">{COPY.explainGapRoute.en} →</span>
+  </button>
+</p>
+
 {#if activePresetLabel}
   <p class="m-preset-note">
     <span class="l-bg">{t(COPY.presetActive, "bg", { p: activePresetLabel })}</span>
@@ -285,6 +321,38 @@
     cursor: pointer;
   }
   .placeholder button:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  /* The route to the reconciliation, quieter still than the one to the salary
+     field. That one is the page asking for the reader's number; this one is an
+     offer to explain a gap they may not have noticed, and a control that
+     competes with the verdict above it has made the gap look like a problem
+     before saying anything about it. Same underline treatment, one step down
+     in size, so it reads as an aside to the bars rather than a third claim.
+
+     The underline is `--muted` and not `--line`: it is the only thing on this
+     control saying it IS one, so WCAG 1.4.11 asks 3:1 of it against the paper
+     and `--line` is 1.4:1. Quiet is the brief, invisible is not. */
+  .m-gap-route {
+    margin: 8px 0 0;
+    font-size: var(--fs-small);
+    line-height: 1.45;
+  }
+  .m-gap-route button {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: var(--ink-2);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--muted);
+    cursor: pointer;
+  }
+  .m-gap-route button:hover {
     color: var(--ink);
     border-bottom-color: var(--ink);
   }
