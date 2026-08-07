@@ -1194,7 +1194,7 @@ export const COPY = {
   // the same voice as the median beside it. Only P10, P50 and P90 are survey
   // anchors: P20 and P80 — the two ends of this range — are interpolated
   // between them, so the card has to say so on the band itself rather than
-  // relying on the general "worked out from a 2022 survey" line below.
+  // relying on the general "worked out from a {shapeYear} survey" line below.
   statMedianSubModelled: {
     bg: "(двата края са пресметнати между измерените стойности)",
     en: "(both ends are worked out between the surveyed points)",
@@ -1322,14 +1322,16 @@ export const COPY = {
   // returned. Two problems, and the second is why showing the pair is not an
   // option to go back to:
   //
-  // The Eurostat pair is at SES's own level, four years behind the НСИ
-  // quarter this card is built on. Every other euro figure on the site is
-  // re-levelled to the current anchor before a reader sees it — the ladder
-  // multiplies the shape by (target mean / ses_mean) for exactly this reason —
-  // and this string was the one place raw SES euros reached the page. Beside a
-  // 1407 € national average and a Sofia figure from the current quarter, a
-  // 949 € "average wage" is not read as a four-year-old survey level however
-  // it is dated: it is read as a contradiction, and the reader is left to work
+  // The Eurostat pair is at SES's own level, and SES runs four-yearly against
+  // an НСИ table that moves every quarter — so the pair is between one and
+  // five years behind the figures beside it, and never level with them. Every
+  // other euro on the site is re-levelled to the current anchor before a reader
+  // sees it — the ladder multiplies the shape by (target mean / ses_mean) for
+  // exactly this reason — and this string was the one place raw SES euros
+  // reached the page. Under НСИ's national all-activities figure for the
+  // current quarter, and well under it because wages moved in between, an SES
+  // "average wage" is not read as a survey level from an earlier round however
+  // it is dated: it is read as a contradiction, and the reader is left working
   // out which of the two numbers is the wrong one. A date does not fix that.
   //
   // And the rung was ours. Eurostat publish D1, the median and D9 for BG and
