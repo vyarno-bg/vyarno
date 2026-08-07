@@ -38,5 +38,6 @@
     "2026-Q1": 1915.0
   },
   "methodology_change": null,
-  "disclaimer": "Sofia-city is a single statistical region (BG411). The number is the average GROSS wage across all employees on a labour contract or in the civil service in the region (not net; not specific to any industry or occupation), reported for НСИ's own quarter. The Q4 figure excludes annual bonuses, which НСИ publish as a separate column. EUR figures from NSI use the fixed eurozone rate 1.95583 BGN/EUR — no FX adjustment over time. Landing page: https://www.nsi.bg/en/statistical-data/179/569"
+  "disclaimer": "Sofia-city is a single statistical region (BG411). The number is the average GROSS wage across all employees on a labour contract or in the civil service in the region (not net; not specific to any industry or occupation), reported for НСИ's own quarter. The Q4 figure excludes annual bonuses, which НСИ publish as a separate column. EUR figures from NSI use the fixed eurozone rate 1.95583 BGN/EUR — no FX adjustment over time. Landing page: https://www.nsi.bg/en/statistical-data/179/569",
+  "is_preliminary": true
 }

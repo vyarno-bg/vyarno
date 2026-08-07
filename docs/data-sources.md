@@ -515,7 +515,18 @@ headers that roll forward every quarter and break naive parsers.
 `sofia_salary.json` carries the envelope, `dataset`
 (`…xlsx:sheet={year}trimes:row=-Sofia cap.`), `ref_period`, `unit`
 `eur_per_month`, `value`, `series_by_period` (every published quarter since
-2020-Q1) and `disclaimer`.
+2020-Q1), `is_preliminary` and `disclaimer`.
+
+**`is_preliminary` is the star on the sheet title, and it is a field rather
+than a sentence in `notes`.** НСИ mark a whole year provisional until they
+finalise it, so their newest quarter carries it for about a year — long enough
+that a reader meeting one has no reason to think it anything but settled unless
+told. The SPA renders it beside the figure on the Sofia strip card, the same
+marker `sector_salary.json` puts on the sector card: the two are one publisher's
+two cuts of one quarterly release, and marking one without the other leaves a
+reader unable to tell the two claims are the same claim. This figure also
+re-levels every rung of the salary ladder, so it is the provisional number a
+reader is placed against twice.
 
 **Every figure in it is one НСИ published**, headline included, and nothing
 computes over it afterwards: `view.js#sofiaQuarter` selects the headline rather

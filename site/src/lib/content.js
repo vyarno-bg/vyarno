@@ -70,6 +70,11 @@ export const HOME = {
   sofiaSalaryFallback: {
     value: 1915,
     ref_period: "2026-Q1",
+    // НСИ star the year until they finalise it, and the quarter this sentinel
+    // mirrors is starred. A sentinel that dropped the marker would show the
+    // pre-load card as settled and the loaded one as provisional, on the same
+    // figure — so it carries whatever `sofia_salary.json` carries.
+    is_preliminary: true,
     series_by_period: { "2026-Q1": 1915 },
   },
   sofiaMeanGrossSource:
@@ -1278,7 +1283,12 @@ export const COPY = {
   // НСИ mark a whole year preliminary until they finalise it, and 2026 is. A
   // figure they will revise, shown as though it were settled, is the reader
   // being told more certainty than exists (P4). Empty for a final quarter.
-  sectorPrelim: { bg: " (предварителни данни)", en: " (preliminary)" },
+  //
+  // One marker for both НСИ credit lines rather than one each. The two carry
+  // the same publisher's sibling tables at the same quarter under the same
+  // star, and two keys holding the same string is how one of them ends up
+  // saying something the other does not.
+  srcPrelim: { bg: " (предварителни данни)", en: " (preliminary)" },
   // **The sentence the whole feature turns on.** НСИ publish an average by
   // activity and nobody publishes a distribution by one, so the card can say
   // how far the reader is from an average and cannot say where they rank.
@@ -1336,8 +1346,8 @@ export const COPY = {
   // a reader who opens the linked workbook nothing to match against — the
   // whole point of the link.
   statSofiaSrc: {
-    bg: "НСИ · средна брутна заплата в София-град {gross} € · ≈ {net} € нето по наша сметка · {period}",
-    en: "NSI · Sofia-city average GROSS {gross} € · ≈ {net} € net, our conversion · {period}",
+    bg: "НСИ · средна брутна заплата в София-град {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
+    en: "NSI · Sofia-city average GROSS {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
   },
   statFastK: { bg: "— най-бързо поскъпващата група", en: "- the fastest-rising group" },
   // The housing card's label, and it needs one: every card in the strip has
