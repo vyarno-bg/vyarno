@@ -4,7 +4,19 @@
   card is on the left.
 -->
 <script>
-  import { COPY } from "$lib/content.js";
+  import { COPY, t } from "$lib/content.js";
+
+  /**
+   * The year in the attribution line, from the reader's own clock, for the
+   * reason `SiteFooter.svelte` carries at length: baked at build time it keeps
+   * saying the build's year on a site that republishes when the DATA moves.
+   *
+   * The two components render the same key and each has to substitute it. This
+   * one read `COPY.footerNote.bg` straight, so the slot survived to the screen
+   * and the results card printed «Вярно {year}» under the five publisher names
+   * — on the one line that is a licence condition rather than decoration.
+   */
+  const YEAR = new Date().getFullYear();
 </script>
 
 <div class="r-brand mono">
@@ -16,8 +28,8 @@
     vyarno.bg
   </span>
   <span>
-    <span class="l-bg">{COPY.footerNote.bg}</span>
-    <span class="l-en">{COPY.footerNote.en}</span>
+    <span class="l-bg">{t(COPY.footerNote, "bg", { year: YEAR })}</span>
+    <span class="l-en">{t(COPY.footerNote, "en", { year: YEAR })}</span>
   </span>
 </div>
 

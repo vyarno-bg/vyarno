@@ -193,6 +193,44 @@ test("no COPY key is dead, and no rendered key is missing", () => {
   assert.deepEqual(missing, [], `rendered COPY keys that do not exist: ${missing.join(", ")}`);
 });
 
+test("no string with a slot in it reaches the page unsubstituted", () => {
+  // A key carrying `{year}` or `{gross}` is a template, and reading it as a
+  // plain property renders the braces. That is what the results card did: it
+  // took `COPY.footerNote.bg` directly while the page footer took the same key
+  // through `t()`, so one of the two printed «Вярно {year}» — on the upstream
+  // attribution line, which is a licence condition and the product's own
+  // credibility claim.
+  //
+  // Nothing above catches it. The dead-key scan passes because the key IS
+  // rendered; every-entry-has-both-languages passes because the string is
+  // fine. The defect is entirely in HOW the render site reached it, which is
+  // the one thing only a source check can see.
+  //
+  // Two ways to substitute are legitimate and both are accepted: `t(COPY.key,
+  // …)`, which never matches `COPY.key.bg` at all, and the `.replace("{m}", …)`
+  // chains the home row uses where several slots are filled from different
+  // formatters. So the rule is not "must use `t()`" — it is that a direct
+  // `COPY.key.bg` read of a template must be followed by a substitution.
+  const offenders = [];
+  for (const [key, value] of bilingualEntries()) {
+    const hasSlot = ["bg", "en"].some((l) => /\{[A-Za-z_]/.test(value[l] ?? ""));
+    if (!hasSlot) continue;
+    for (const lang of ["bg", "en"]) {
+      // LIVE_SOURCES is whitespace-normalised, so a `.replace(` Prettier put on
+      // the next line is one space away here rather than across a newline.
+      const read = new RegExp(`COPY\\.${key}\\.${lang}\\b\\s*(\\.replace\\()?`, "g");
+      for (const m of LIVE_SOURCES.matchAll(read)) {
+        if (!m[1]) offenders.push(`COPY.${key}.${lang}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `templates rendered without filling their slots — reach them through t() or .replace(): ${offenders.join(", ")}`
+  );
+});
+
 test("the payload manifest's reader-facing strings follow the COPY rules too", () => {
   // `payloads.js` carries a `name` and a `feeds` sentence per payload, and the
   // data panel renders both. They are copy, and they live outside `COPY` on
