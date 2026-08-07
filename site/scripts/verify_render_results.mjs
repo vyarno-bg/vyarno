@@ -256,6 +256,31 @@ test("the ladder row ranks nobody who has not typed a salary", { skip }, async (
   });
 });
 
+test("no amount on the results card is separated from its unit", { skip }, async () => {
+  // «≈ €13/ мес», because the slash closed a <span> and the unit opened the
+  // next one on the following source line, and Svelte renders that newline as
+  // a space. Every other rate on the page is «€/мес» closed up.
+  //
+  // Read off the DOM rather than out of the template: the seam is whitespace,
+  // and a source assertion on whitespace is one Prettier can fail without any
+  // behaviour changing — the mistake verify_wiring.mjs's header records paying
+  // for once already. A rule over the whole card rather than over this one
+  // line, because the defect is the amount/unit seam and there are a dozen of
+  // them.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2100");
+    await page.waitForTimeout(400);
+    const card = await page.locator(".m-results").innerText();
+    // No `\b` after the unit: JS word boundaries are defined on [A-Za-z0-9_],
+    // so there is never one at the end of «мес» and the pattern matched
+    // nothing at all on the Bulgarian page. Caught by breaking the template on
+    // purpose and watching this stay green.
+    const split = [...card.matchAll(/\S*\/[ \t\n]+(?:мес|mo|м²|г\.)/g)].map((m) => m[0]);
+    assert.deepEqual(split, [], `an amount is separated from its unit: ${split.join(" | ")}`);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the wedge row states no gross for anyone who has not typed a salary", { skip }, async () => {
   // Same rule as the ladder row above, on the row that was breaking it.
   // «Заплатата ти преди удръжките (бруто) е ≈ €1160. От нея 22,4% отиват за
