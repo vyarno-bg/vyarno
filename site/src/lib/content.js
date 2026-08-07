@@ -1775,6 +1775,110 @@ export const COPY = {
 };
 
 /**
+ * What kind of work is inside each НСИ section, in the words people use.
+ *
+ * **НСИ's section names are written for the classification, not for the person
+ * being classified.** Section J is «Създаване и разпространение на информация и
+ * творчески продукти; далекосъобщения», and a software developer scanning
+ * nineteen lines of that register does not stop on it — the word for their job
+ * is two levels down, in division 62, «Дейности в областта на информационните
+ * технологии», which the picker never shows. A list somebody cannot find
+ * themselves in is a feature that quietly serves the readers who already know
+ * their КИД code.
+ *
+ * So each option leads with the everyday words and carries НСИ's full name
+ * after them. **The name is never replaced**, here or anywhere: the moment a
+ * section is picked, every sentence stating a figure uses `bg_name` / `en_name`
+ * straight from the payload, and the source line credits НСИ over their own
+ * label. This is navigation; the claims stay theirs. `verify_view.mjs` holds
+ * both halves — the option ends with НСИ's name in full, and no hint reaches a
+ * figure.
+ *
+ * **Every item is a division inside the section it describes**, off НСИ's own
+ * КИД-2008 structure — «кол центрове» is 82, «зъболекари» is 86, «кино и ТВ»
+ * is 59 and 60. That is what keeps these from drifting into a claim: writing
+ * «ИТ» alone for J would be one, because J is also publishing, film, radio and
+ * telecoms, and its average is diluted across all of it. Naming the breadth
+ * costs a few words and tells the reader what the figure is an average OF —
+ * the same thing `sectorCoverage` says about who is counted.
+ *
+ * An empty string is a decision, not a gap: `Строителство`, `Образование` and
+ * `Хотелиерство и ресторантьорство` say what they are, and a hint under them
+ * would be words a reader has to skip. Keyed by `en_name`, the payload's own
+ * key, so a section НСИ rename or add turns up as a red test rather than as a
+ * line with nothing in front of it.
+ */
+export const SECTOR_HINTS = Object.freeze({
+  "Agriculture,forestry and fishing": {
+    bg: "земеделие, гори, риболов",
+    en: "farming, forestry, fishing",
+  },
+  "Mining and quarrying": {
+    bg: "мини и кариери, нефт и газ",
+    en: "mines and quarries, oil and gas",
+  },
+  Manufacturing: {
+    bg: "заводи и фабрики, храни, облекло, машини, електроника",
+    en: "factories, food, clothing, machinery, electronics",
+  },
+  "Electricity,gas,steam and air conditioning supply": {
+    bg: "ток, топлофикация, газ",
+    en: "power, district heating, gas",
+  },
+  "Water supply,sewerage,waste management and remediation activities": {
+    bg: "ВиК, отпадъци, рециклиране",
+    en: "water, waste, recycling",
+  },
+  Construction: { bg: "", en: "" },
+  "Wholesale and retail trade;repair of motor vehicles and motorcycles": {
+    bg: "магазини, търговия на едро, автосервизи",
+    en: "shops, wholesale, car repair",
+  },
+  "Transportation and storage": {
+    bg: "шофьори, куриери, складове, поща",
+    en: "drivers, couriers, warehouses, post",
+  },
+  "Accommodation and food service activities": { bg: "", en: "" },
+  "Information and communication": {
+    bg: "ИТ и софтуер, телекоми, издателства, кино и ТВ",
+    en: "IT and software, telecoms, publishing, film and TV",
+  },
+  "Financial and insurance activities": {
+    bg: "банки, застрахователи, пенсионни фондове",
+    en: "banks, insurers, pension funds",
+  },
+  "Real estate activities": {
+    bg: "агенции за имоти, наеми",
+    en: "estate agencies, letting",
+  },
+  "Professional,scientific and technical activities": {
+    bg: "адвокати, счетоводители, инженери, реклама, наука",
+    en: "lawyers, accountants, engineers, advertising, research",
+  },
+  "Administrative and support service activities": {
+    bg: "охрана, почистване, подбор на кадри, кол центрове",
+    en: "security, cleaning, recruitment, call centres",
+  },
+  "Public administration and defence;compulsory social security": {
+    bg: "държавна и общинска администрация, армия, полиция",
+    en: "state and municipal administration, army, police",
+  },
+  Education: { bg: "", en: "" },
+  "Human health and social work activities": {
+    bg: "болници, лекари, зъболекари, социални грижи",
+    en: "hospitals, doctors, dentists, social care",
+  },
+  "Arts,entertainment and recreation": {
+    bg: "театри, музеи, спорт, хазарт",
+    en: "theatres, museums, sport, gambling",
+  },
+  "Other service activities": {
+    bg: "сдружения, ремонт на техника, фризьори и козметика",
+    en: "associations, repairs, hairdressing and beauty",
+  },
+});
+
+/**
  * Returns the BG or EN string from a {bg, en} pair, with optional
  * {placeholder} substitution.
  */

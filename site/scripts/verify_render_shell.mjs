@@ -410,11 +410,16 @@ test(
       // claims about this line, and a figure matched against the whole card can
       // be satisfied by one of the reader's own numbers a few rows up.
       const credit = await page.locator(".m-pay .src").innerText();
-      // НСИ's own Bulgarian name for section J, which no reader takes for «ИТ».
+      // НСИ's own Bulgarian name for section J, INSIDE the claim rather than
+      // anywhere on the card. The picker's own option carries that name too —
+      // it leads with «ИТ и софтуер…» and ends with НСИ's label — so a match
+      // against the whole card is satisfied by the control the reader just
+      // used, and would stay green if the sentence itself started saying «ИТ».
+      // The quoted slot in «средната за „…“» is the claim.
       assert.match(
         card,
-        /далекосъобщения/,
-        "the sector line does not carry НСИ's own section name"
+        /средната за „[^„“]*далекосъобщения/,
+        "the sector claim does not name the section in НСИ's own words"
       );
       assert.match(card, /18%/, "the sector gap against €2,100 net is not the published 18%");
       // **НСИ's own figure, on screen, beside the one we derived from it.** The
