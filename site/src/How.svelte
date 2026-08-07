@@ -69,7 +69,28 @@
   // in `tokens.css` hides one), so a caption assembled from `$lang` puts «юли
   // 2026 г.» inside the English span — invisible to a reader, who only ever
   // sees the other one, and served verbatim to whatever indexes the HTML.
-  const when = (p) => ({ bg: periodLong(p, "bg"), en: periodLong(p, "en") });
+  /**
+   * The period a figure describes, carrying НСИ's own provisional marker where
+   * they have one.
+   *
+   * НСИ star a whole year until they finalise it, and 2026 is starred. The
+   * calculator says so on both of its НСИ credit lines — «… · 2026-Q1
+   * (предварителни данни)» — and this page, whose entire job is provenance, was
+   * showing the same cell as settled in four places: the Sofia wage card, the
+   * years-of-pay card, the ladder's caption and the quarterly wage table. A
+   * figure the publisher will revise, shown as final, tells the reader more
+   * certainty than exists (P4).
+   *
+   * The marker is `COPY.srcPrelim`, the one both calculator credit lines
+   * already share, rather than a second string here: two keys holding the same
+   * sentence is how one of them ends up saying something the other does not.
+   */
+  const when = (p, preliminary = false) => ({
+    bg: periodLong(p, "bg") + (preliminary ? t(COPY.srcPrelim, "bg") : ""),
+    en: periodLong(p, "en") + (preliminary ? t(COPY.srcPrelim, "en") : ""),
+  });
+  /** True while НСИ have not finalised the quarter the wage figures come from. */
+  const wagesArePreliminary = $derived(Boolean(calc.data.sofiaSalary?.is_preliminary));
   const onDay = (d) => ({ bg: dateShort(d, "bg"), en: dateShort(d, "en") });
   /** A period that is already language-independent — a year, an ISO effective date. */
   const asIs = (v) => ({ bg: String(v ?? ""), en: String(v ?? "") });
@@ -612,7 +633,7 @@
           COPY.howKSofiaWage,
           COPY.srcNsiWages,
           calc.payLadderRows.anchorUrl,
-          when(calc.payLadderRows.anchorPeriod)
+          when(calc.payLadderRows.anchorPeriod, wagesArePreliminary)
         )}
       {/if}
     </div>
@@ -679,7 +700,7 @@
           <a href={httpUrl(calc.payLadderRows.anchorUrl)}
             >{t(COPY.howSrc, "bg", {
               s: COPY.srcNsiWages.bg,
-              p: when(calc.payLadderRows.anchorPeriod).bg,
+              p: when(calc.payLadderRows.anchorPeriod, wagesArePreliminary).bg,
             })}</a
           >.</span
         >
@@ -693,7 +714,7 @@
           <a href={httpUrl(calc.payLadderRows.anchorUrl)}
             >{t(COPY.howSrc, "en", {
               s: COPY.srcNsiWages.en,
-              p: when(calc.payLadderRows.anchorPeriod).en,
+              p: when(calc.payLadderRows.anchorPeriod, wagesArePreliminary).en,
             })}</a
           >.</span
         >
@@ -900,7 +921,7 @@
             COPY.howKHomeYears,
             COPY.srcNsiWages,
             calc.payLadderRows.anchorUrl,
-            when(calc.sofiaHome.wagePeriod)
+            when(calc.sofiaHome.wagePeriod, wagesArePreliminary)
           )}
         {/if}
       {/if}
@@ -1024,7 +1045,7 @@
           ><a href={httpUrl(calc.payLadderRows.anchorUrl)} target="_blank" rel="noopener"
             >{t(COPY.howSrc, "bg", {
               s: COPY.srcNsiWages.bg,
-              p: when(calc.payLadderRows.anchorPeriod).bg,
+              p: when(calc.payLadderRows.anchorPeriod, wagesArePreliminary).bg,
             })}</a
           ></span
         >
@@ -1032,7 +1053,7 @@
           ><a href={httpUrl(calc.payLadderRows.anchorUrl)} target="_blank" rel="noopener"
             >{t(COPY.howSrc, "en", {
               s: COPY.srcNsiWages.en,
-              p: when(calc.payLadderRows.anchorPeriod).en,
+              p: when(calc.payLadderRows.anchorPeriod, wagesArePreliminary).en,
             })}</a
           ></span
         >

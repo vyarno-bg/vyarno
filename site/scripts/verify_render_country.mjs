@@ -12,6 +12,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {} from "./render-dist.mjs";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
+import { published } from "./published-payload.mjs";
 
 test("the country page mounts over its prerender rather than beside it", { skip }, async () => {
   // The failure `how-main.js`'s `replaceChildren()` prevents, checked on the
@@ -83,6 +84,39 @@ test("every figure on the country page names a source and a period", { skip }, a
       assert.ok(
         hrefs.includes(host),
         `/how/ renders figures from ${host} and links to none of them`
+      );
+    }
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
+});
+
+test("the country page marks a figure its publisher has not finalised", { skip }, async () => {
+  // НСИ star a whole year until they settle it, and `sofia_salary.json` carries
+  // `is_preliminary` for the quarter this page reads. The calculator says so on
+  // both of its НСИ credit lines; this page showed the same cell as final in
+  // four places — the Sofia wage card, the years-of-pay card, the ladder's
+  // caption and the quarterly wage table. Telling a reader more certainty than
+  // exists is P4, and it lands hardest on the page they came to for provenance.
+  //
+  // Driven off the payload rather than pinned to today's data: when НСИ
+  // finalise the quarter the flag clears, the marker goes with it, and this
+  // asserts the absence instead. Either way the page and the payload agree.
+  const preliminary = Boolean(published("sofia_salary").is_preliminary);
+  await withApp(async (page, errors) => {
+    const captions = await page
+      .locator("main.how .ss, main.how p.cap")
+      .evaluateAll((els) =>
+        els.map((el) => (el.textContent ?? "").replace(/\s+/g, " ").trim()).filter(Boolean)
+      );
+    const nsi = captions.filter((c) => c.includes("НСИ"));
+    assert.ok(nsi.length >= 3, `/how/ renders ${nsi.length} НСИ captions, expected at least three`);
+    for (const caption of nsi) {
+      assert.equal(
+        caption.includes("предварителни данни"),
+        preliminary,
+        preliminary
+          ? `an НСИ figure is shown as settled while the payload calls it provisional: ${caption}`
+          : `the quarter is final at НСИ and the page still calls it provisional: ${caption}`
       );
     }
     assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
