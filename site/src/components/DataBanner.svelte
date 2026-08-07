@@ -32,6 +32,13 @@
     headline = null,
     /** The month the headline rate describes, as "YYYY-MM". */
     headlineRefPeriod = "",
+    /**
+     * True when that rate is Eurostat's flash — their early all-items estimate
+     * for the month, published ahead of the index and the divisions. The strip
+     * says so, because the figure beside it moves when the full release lands
+     * and nothing else on this line would tell a reader that.
+     */
+    headlineIsFlash = false,
     /** True when some payload is overdue against its own cadence. */
     showStaleBanner = false,
     /** How many payloads are overdue — the banner counts them, not days. */
@@ -99,12 +106,14 @@
             >{t(COPY.headlineRate, "bg", {
               rate: number(headline, 1, "bg"),
               ref_period: periodLong(headlineRefPeriod, "bg"),
+              flash: headlineIsFlash ? t(COPY.srcFlash, "bg") : "",
             })}</span
           >
           <span class="l-en"
             >{t(COPY.headlineRate, "en", {
               rate: number(headline, 1, "en"),
               ref_period: periodLong(headlineRefPeriod, "en"),
+              flash: headlineIsFlash ? t(COPY.srcFlash, "en") : "",
             })}</span
           >
         </span>

@@ -29,6 +29,7 @@ import {
   dataAge,
   payloadStatus,
   STALE_AFTER_DAYS,
+  headlineIsFlash,
   headlineRate,
   monthsSplit,
   pctAhead,
@@ -345,6 +346,52 @@ test("headlineRate returns Eurostat's all-items figure verbatim", () => {
   assert.equal(headlineRate(null), 0);
   assert.equal(headlineRate({}), 0);
   assert.equal(headlineRate({ headline_rate_pct: null }), 0);
+});
+
+test("the flash marker is read off the payload, not off its two months", () => {
+  // The equivalence between the flag and the months is gated at publish time,
+  // so the interesting cases here are the ones where a months-based inference
+  // and the field disagree. Both directions matter to the reader: an unmarked
+  // estimate reads as settled, and a marked settled figure hedges for nothing.
+  assert.equal(headlineIsFlash({ is_flash: true }), true);
+  assert.equal(headlineIsFlash({ is_flash: false }), false);
+  // No months at all, and the answer is still the field's.
+  assert.equal(
+    headlineIsFlash({ is_flash: true, ref_period: "2026-07" }),
+    true,
+    "a payload whose index half never loaded still says which release it is"
+  );
+  // Absent means "an envelope written before the field existed", and the safe
+  // reading of that is no marker rather than a hedge nobody can check.
+  assert.equal(headlineIsFlash({}), false);
+  assert.equal(headlineIsFlash(null), false);
+  assert.equal(headlineIsFlash(undefined), false);
+  // Truthy is not true: a string, a 1 or an object would all mark the banner
+  // if this took anything JavaScript calls true.
+  assert.equal(headlineIsFlash({ is_flash: "no" }), false);
+});
+
+test("the published headline says which Eurostat release it came from", () => {
+  const head = read("hicp_headline");
+  if (!head) return;
+  assert.equal(
+    typeof head.is_flash,
+    "boolean",
+    "hicp_headline.json carries no is_flash — the banner cannot say whether its " +
+      "figure is Eurostat's estimate for the month or their settled reading"
+  );
+  // The gate that holds the flag to the payload's months lives in the
+  // pipeline; this is the same property read off what actually shipped, so a
+  // hand-edited payload cannot put a marker on the page that the figures
+  // contradict.
+  const split = head.latest_index?.time !== head.ref_period;
+  assert.equal(
+    head.is_flash,
+    split,
+    `hicp_headline.json is dated ${head.ref_period} with its index at ` +
+      `${head.latest_index?.time} and is_flash=${head.is_flash} — the flag and ` +
+      `the months disagree about which release this is`
+  );
 });
 
 test("the strip headline is NOT the sum of the divisions — they differ by the chain link", () => {

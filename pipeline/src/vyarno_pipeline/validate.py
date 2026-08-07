@@ -1,6 +1,6 @@
 """Validation gates. Publish blocks if any of these raise.
 
-Six gates guard the HICP publish:
+Seven gates guard the HICP publish:
 
 1. **Classification agreement** — the weights cube and the rates cube must
    agree, code by code, on what each code *means*. A shared code string is not
@@ -18,11 +18,15 @@ Six gates guard the HICP publish:
    an actual Eurostat response (NOT just the status code — Eurostat returns
    200 with an error payload on rate-limit / invalid params, and a naive
    200-check would silently pass that).
+7. **Flash marker** — `is_flash` agrees with the two months the headline
+   payload publishes. The site prints the marker beside the rate, so a wrong
+   one either calls a settled figure an estimate or lets an estimate render as
+   settled.
 
 One more guards the НСИ by-sector wage publish, and it is listed apart because
-it gates a different payload rather than a seventh property of the same one:
+it gates a different payload rather than an eighth property of the same one:
 
-7. **Sector wages** — every activity carries both language names and a value at
+8. **Sector wages** — every activity carries both language names and a value at
    the payload's own reference period, no two rows resolve to one activity, and
    the headline IS the published cell rather than anything computed from it.
 """
@@ -417,6 +421,69 @@ def validate_link_status(
                     f"link: {url} body failed validation predicate "
                     f"(looks like an error payload, not a real Eurostat response)"
                 )
+
+
+# ---------------------------------------------------------------------------
+# Gate 7 — the flash marker
+# ---------------------------------------------------------------------------
+
+
+def validate_headline_flash(
+    ref_period: str,
+    latest_index_time: str,
+    flash: bool,
+) -> None:
+    """`is_flash` must agree with the two months the headline payload carries.
+
+    Eurostat's flash publishes the all-items rate about two weeks before the
+    index and the divisions, so on a flash `ref_period` is one month ahead of
+    `latest_index.time` and on a full release the two name the same month.
+    That equivalence is what makes the marker checkable at all: nothing else in
+    the payload records which release it came from, and the flag is written
+    from a detection at the top of the run that a future edit could get wrong
+    in either direction.
+
+    Both directions cost the reader something, which is why this is an
+    equivalence and not a one-sided check. A missing marker renders Eurostat's
+    early estimate on the banner in the same voice as a settled figure, and
+    that figure moves when the full release lands. A spurious one hangs
+    «експресна оценка» on a rate Eurostat has finalised, so a reader who
+    checks against the cube finds the two agree and the site hedging anyway —
+    which costs more than it saves, because the whole argument for the marker
+    is that it appears only when it is true.
+
+    The index ahead of the rate is a third state and it is not a release shape:
+    Eurostat publish the rate for a month at or before the index for it, never
+    after, so this is a mis-selected series rather than a flash to be marked.
+    """
+    if not ref_period or not latest_index_time:
+        raise ValidationError(
+            f"flash marker: the headline needs both months to be checkable — "
+            f"ref_period={ref_period!r}, latest_index.time={latest_index_time!r}. "
+            f"A payload that names only one cannot say whether its rate is an "
+            f"estimate or a settled reading."
+        )
+    if latest_index_time > ref_period:
+        raise ValidationError(
+            f"flash marker: the index is at {latest_index_time} but the rate is "
+            f"at {ref_period}. Eurostat never publish an index ahead of the "
+            f"all-items rate for the same month — one of the two series is the "
+            f"wrong extract."
+        )
+    split = latest_index_time != ref_period
+    if flash and not split:
+        raise ValidationError(
+            f"flash marker: is_flash is set but the index and the rate are both "
+            f"at {ref_period}, which is the full release. Publishing would print "
+            f"«експресна оценка» over a figure Eurostat has settled."
+        )
+    if split and not flash:
+        raise ValidationError(
+            f"flash marker: the rate is at {ref_period} and the index still at "
+            f"{latest_index_time}, which is Eurostat's flash, but is_flash is "
+            f"not set. Publishing would render an early estimate in the same "
+            f"voice as a settled figure."
+        )
 
 
 # ---------------------------------------------------------------------------

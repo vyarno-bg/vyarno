@@ -26,6 +26,7 @@ from vyarno_pipeline.validate import (
     validate_classification_agreement,
     validate_coverage,
     validate_group_consistency,
+    validate_headline_flash,
     validate_link_status,
     validate_meta_labels_cover,
     validate_reconciliation,
@@ -531,7 +532,47 @@ def test_link_status_fails_on_non_json_body():
 
 
 # ---------------------------------------------------------------------------
-# Gate 7 — the by-sector wage payload (НСИ, Labour_1.1.2.1)
+# Gate 7 — the flash marker
+# ---------------------------------------------------------------------------
+
+
+def test_flash_marker_accepts_a_flash_whose_index_is_a_month_behind():
+    validate_headline_flash(ref_period="2026-07", latest_index_time="2026-06", flash=True)
+
+
+def test_flash_marker_accepts_a_full_release_at_one_month():
+    validate_headline_flash(ref_period="2026-06", latest_index_time="2026-06", flash=False)
+
+
+def test_flash_marker_rejects_an_unmarked_flash():
+    """The failure the reader meets: an early estimate rendered as settled."""
+    with pytest.raises(ValidationError) as e:
+        validate_headline_flash(ref_period="2026-07", latest_index_time="2026-06", flash=False)
+    assert "is_flash is not set" in str(e.value)
+
+
+def test_flash_marker_rejects_a_marked_full_release():
+    """The other direction: hedging a figure Eurostat has finalised."""
+    with pytest.raises(ValidationError) as e:
+        validate_headline_flash(ref_period="2026-06", latest_index_time="2026-06", flash=True)
+    assert "full release" in str(e.value)
+
+
+def test_flash_marker_rejects_an_index_ahead_of_the_rate():
+    """Not a release shape at all — Eurostat never publish the index first."""
+    with pytest.raises(ValidationError):
+        validate_headline_flash(ref_period="2026-06", latest_index_time="2026-07", flash=True)
+
+
+@pytest.mark.parametrize("ref,idx", [("", "2026-06"), ("2026-07", "")])
+def test_flash_marker_rejects_a_payload_missing_either_month(ref: str, idx: str):
+    """A marker nothing can be checked against is one nobody should trust."""
+    with pytest.raises(ValidationError):
+        validate_headline_flash(ref_period=ref, latest_index_time=idx, flash=True)
+
+
+# ---------------------------------------------------------------------------
+# Gate 8 — the by-sector wage payload (НСИ, Labour_1.1.2.1)
 # ---------------------------------------------------------------------------
 
 

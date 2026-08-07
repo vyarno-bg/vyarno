@@ -211,11 +211,19 @@ def write_hicp_headline(
     Eurostat's, in both cases, because neither is scaled on the way through.
 
     **`flash`** says the rate is Eurostat's early all-items estimate, published
-    about two weeks before the rest of the month's cube. It changes no figure;
-    it adds the sentence that stops `ref_period` and `latest_index.time` looking
-    like a bug when they name different months. A consumer that needs to know
-    whether they line up should compare the two fields, which is why this is a
-    sentence in `notes` and not a boolean of ours for them to trust.
+    about two weeks before the rest of the month's cube. It changes no figure.
+    It writes `is_flash` and the sentence in `notes` that stops `ref_period` and
+    `latest_index.time` looking like a bug when they name different months.
+
+    **The flag is written even though the two months already imply it**, and
+    the reason is what a consumer does with the answer. The site prints a
+    marker beside the rate, and a marker is a claim about the release: reading
+    it off `ref_period != latest_index.time` means every renderer re-derives
+    the same rule, and any of them can be handed a payload whose index half is
+    missing — `latest_index` is optional here — and quietly conclude "settled".
+    A publisher that knows which release it fetched owes the reader the fact
+    rather than the evidence for it. `validate_headline_flash` keeps the two
+    honest: the flag and the months have to agree or nothing is written.
     """
     payload = _envelope(
         as_of=as_of,
@@ -241,6 +249,11 @@ def write_hicp_headline(
     )
     payload["headline_rate_pct"] = headline_rate_pct
     payload["ref_period"] = ref_period
+    # Always present, both ways round. A field that appears only on a flash is
+    # one a consumer reads as absent-means-false, and absent also means "an
+    # older envelope that never carried it" — two different states behind one
+    # missing key, on the field that decides whether the banner hedges.
+    payload["is_flash"] = flash
     if index_by_year:
         payload["index_base_year"] = INDEX_BASE_YEAR
         payload["unit"] = f"index_{INDEX_BASE_YEAR}=100"

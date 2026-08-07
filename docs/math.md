@@ -70,6 +70,7 @@ fields are exactly as traceable as a division's.
 |---|---|---|---|
 | `hicp_headline.json.headline_rate_pct` | `prc_hicp_minr` RCH_A (TOTAL) | latest month | none — verbatim |
 | `hicp_headline.json.ref_period` | `prc_hicp_minr` RCH_A (TOTAL) | latest month | none |
+| `hicp_headline.json.is_flash` | which Eurostat release the run fetched | that month | none — a fact about the release, gated against the payload's own two months |
 | `hicp_headline.json.index_by_year` | `prc_hicp_minr` I15 (TOTAL) | Dec of completed years, since 2020 | none — verbatim |
 | `hicp_headline.json.latest_index` | `prc_hicp_minr` I15 (TOTAL) | freshest monthly reading | none — verbatim |
 | `categories[*].annual_rate_pct` | `prc_hicp_minr` RCH_A (CPnn) | latest month | none — verbatim |
@@ -96,6 +97,14 @@ Eurostat's, at the months they name; neither is estimated, extrapolated or
 carried forward. Read the months, never assume them: the pair to compare a
 division against is `latest_index`, and the pair to date the national headline
 by is `ref_period`.
+
+**`is_flash` is the fact rather than the evidence for it.** The two months imply
+the release shape, but a renderer that infers it re-derives the rule on every
+surface, and one handed a payload with no `latest_index` concludes "settled" —
+which is the wrong way to be wrong about a figure the banner prints as official.
+So the publisher writes what it fetched, `validate.py#validate_headline_flash`
+requires the flag and the months to agree in both directions, and the site's
+banner and strip card mark the estimate off the field.
 
 The alternative was to omit `latest_index` until the full release caught up.
 That is worse, and not by a little: the SPA's fallback rebuilds the

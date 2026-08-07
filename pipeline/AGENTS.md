@@ -52,9 +52,9 @@ still resolve — and those URLs are the "↗" the reader clicks.
 it (`docs/data-sources.md` §"TLS setup"). Never disable verification.
 `sofia-price` needs an ordinary Bulgarian connection rather than a cloud one.
 
-## The six HICP gates
+## The seven HICP gates
 
-Named in order, and **six gate lines printed is the pass condition** — a run
+Named in order, and **seven gate lines printed is the pass condition** — a run
 that publishes with fewer has skipped one.
 
 1. **classification agreement** — the two HICP cubes give each code the same
@@ -67,9 +67,14 @@ that publishes with fewer has skipped one.
 5. **coverage** — every code we intend to publish is present.
 6. **link status** — every published `source_url` fetched and its **body**
    inspected. A 200 with `value: {}` is a failure, not a pass.
+7. **flash marker** — `is_flash` agrees with the payload's own two months. The
+   only gate here checking what a payload says about itself rather than what
+   its figures are, and it runs on both release shapes: an unmarked flash
+   renders an early estimate as settled, a marked full release hedges a figure
+   Eurostat has finalised.
 
 `--source mortgage` runs its own five plus freshness on both tiers, and
-`--source sector-salary` runs a seventh gate of its own: `value_eur` must BE
+`--source sector-salary` runs an eighth gate of its own: `value_eur` must BE
 the published cell at the payload's `ref_period`, an identity rather than a
 band. НСИ's §2.1.1 forbids distributing производни произведения, so a headline
 this pipeline calculated rather than read is a licence breach that looks exactly
