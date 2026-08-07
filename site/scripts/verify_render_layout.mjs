@@ -203,35 +203,48 @@ test("the method drawer fits a phone, and its table scrolls inside it", { skip }
   );
 });
 
-test("the sector picker gets a line of its own on a phone", { skip }, async () => {
-  // The label and the select share a wrapping flex row, and `min-width: 0` let
-  // the select shrink to whatever was left beside «Твоят сектор» instead of
-  // wrapping under it. At 360px that left 178px and clipped the placeholder
-  // mid-word — «— избери дейно» — on the one control whose options are the
-  // longest strings on the page, НСИ's own section names.
+test("the sector picker is laid out like every other control in its card", { skip }, async () => {
+  // It used to be the one side-by-side label-and-control pair here, with the
+  // select shrinking into whatever was left beside «Твоят сектор». At 360px
+  // that was 178px, which clipped «— избери дейност —» to «— избери дейно» on
+  // the control whose options are НСИ's section names — the longest strings on
+  // the page.
   //
-  // Asserted as the select taking the row's full width rather than as the text
-  // fitting: a native <select> clips its option without reporting any overflow,
-  // so `scrollWidth` reads as content that fits and would pass the broken
-  // layout. The width is the thing that can actually be measured, and it is
-  // what the fix is.
-  await withApp(
-    async (page, errors) => {
-      const box = await page.evaluate(() => {
-        const row = document.querySelector(".sector").getBoundingClientRect();
-        const sel = document.querySelector("#sector-pick").getBoundingClientRect();
-        return { row: Math.round(row.width), sel: Math.round(sel.width) };
-      });
-      assert.ok(
-        box.sel >= box.row - 2,
-        `the sector picker is ${box.sel}px inside a ${box.row}px row, so it is sharing ` +
-          "the line with its label and clipping НСИ's section names"
-      );
-      assert.deepEqual(errors, [], errors.join(" | "));
-    },
-    "/",
-    { viewport: { width: 360, height: 800 } }
-  );
+  // Both widths, because the failure this replaced was a layout that depended
+  // on measuring text: a `ch` floor is the font's own `0` advance, the select
+  // falls back to a different face per platform, and the rule that wrapped the
+  // row on Linux left it one line on Windows CI at 179px. Asserting the same
+  // thing at 360 and at 1280 is what makes the check independent of whose font
+  // is installed — a stacked field is full width at every width.
+  //
+  // And on the width rather than on the text fitting: a native <select> clips
+  // its option without reporting overflow, so `scrollWidth` reads as content
+  // that fits and passes the broken layout. Watched it do exactly that.
+  for (const width of [360, 1280]) {
+    await withApp(
+      async (page, errors) => {
+        const box = await page.evaluate(() => {
+          const field = document.querySelector(".sector").getBoundingClientRect();
+          const sel = document.querySelector("#sector-pick").getBoundingClientRect();
+          const label = document.querySelector(".sector label").getBoundingClientRect();
+          return {
+            field: Math.round(field.width),
+            sel: Math.round(sel.width),
+            stacked: sel.top >= label.bottom,
+          };
+        });
+        assert.ok(
+          box.sel >= box.field - 2,
+          `at ${width}px the sector picker is ${box.sel}px inside a ${box.field}px field, ` +
+            "so it is sharing the line with its label and clipping НСИ's section names"
+        );
+        assert.ok(box.stacked, `at ${width}px the label is not on its own line above the picker`);
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      "/",
+      { viewport: { width, height: 800 } }
+    );
+  }
 });
 
 test("a phone is asked before it is told", { skip }, async () => {

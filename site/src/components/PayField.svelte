@@ -364,8 +364,15 @@
        `sectorAverageFlatters`, whose figures are the COUNTRY's shape and
        come nowhere near the sector average (mirror.js#meanRungPosition). -->
     {#if calc.sectorOptions.length > 0}
-      <div class="sector">
-        <label class="sector-l" for="sector-pick">
+      <!-- A `.field` like every other control in this card: the label on its own
+           line, the select at full width under it. It was the one side-by-side
+           pair here, and sharing the line is what left the select 178px wide at
+           360px — clipping «— избери дейност —» to «— избери дейно» on the
+           control whose options are НСИ's section names, the longest strings on
+           the page. Stacking is not a narrow-screen workaround; it is what the
+           salary, the rent, the savings and the size fields all already do. -->
+      <div class="field sector">
+        <label for="sector-pick">
           <span class="l-bg">{COPY.sectorLabel.bg}</span>
           <span class="l-en">{COPY.sectorLabel.en}</span>
         </label>
@@ -483,30 +490,23 @@
   /* The picker sits apart from the income rows: it describes the reader's
      work rather than their pay, and running it into the stack of amounts
      reads as a third field of the same kind. */
+  /* Only the spacing. `card.css` already lays a `.field` out — label block on
+     its own line, control at `width: 100%` — and the picker now takes that
+     rather than a flex row of its own.
+
+     The row it used to be tried to keep the label and the select side by side
+     and let the select shrink into whatever was left, which at 360px was 178px
+     and clipped «— избери дейност —» down to «— избери дейно». Widening the
+     select's floor instead only moved the problem: a `ch` floor is the font's
+     own `0` advance, the select falls back to a different face per platform,
+     and the same rule that wrapped the row on Linux left it one line on
+     Windows CI at 179px. Any rule that decides this by measuring text is a rule
+     that answers differently on somebody's machine.
+
+     So the layout is a decision rather than an outcome, and it is the one the
+     other eleven controls in this card already make. */
   .sector {
     margin-top: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  /* `min-width: 0` let the select shrink to whatever was left beside the label
-     rather than wrapping under it, and at 360px what was left was 178px — which
-     clipped even the placeholder, «— избери дейно», on the control whose options
-     are the longest strings on the page.
-
-     A floor is what makes `flex-wrap` above actually fire. 20ch clears the
-     placeholder and sits between the 178px a phone leaves and the 264px the
-     desktop column does, so the row wraps on a phone and the select takes the
-     full 286px, while the wide layout keeps the label and the control on one
-     line exactly as before. No breakpoint, because the number that matters is
-     how much room is left rather than how wide the window is. */
-  .sector select {
-    flex: 1;
-    min-width: 20ch;
-  }
-  .sector-l {
-    white-space: nowrap;
   }
   /* The two caveats are the sentence the number cannot be read without, so
      they are quiet but not fine print — same size as every other hint here,
