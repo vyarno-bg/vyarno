@@ -423,14 +423,34 @@ test("a gross becomes a net in exactly one place", () => {
     LIVE.includes("nets = $derived(netsOf(pay, data.payroll))"),
     "the calculator no longer converts through view.js#netsOf"
   );
-  // Every per-person panel takes the `pay` object, which carries the basis with
+  // Every per-person panel takes a `pay` OBJECT, which carries the basis with
   // the amounts, so an amount cannot arrive anywhere without saying what it is.
-  for (const panel of [
-    "payslipPanel({ payroll: data.payroll, pay: pay })",
-    "taxWedgePanel({ payroll: data.payroll, pay: pay })",
+  //
+  // The wedge is fed `wedgePay` rather than `pay` itself: it withholds the
+  // amounts until the reader has typed over the placeholder, so the row states
+  // no gross for a person who entered nothing. That is still a pay object and
+  // is asserted to be one below — what the rule forbids is a bare amount, not a
+  // second object. Naming the accepted feeds rather than accepting any
+  // expression is what keeps this from passing `pay: nets` or
+  // `pay: earners[0].amount`.
+  for (const [panel, feed] of [
+    ["payslipPanel", "pay"],
+    ["taxWedgePanel", "wedgePay"],
   ]) {
-    assert.ok(LIVE.includes(panel), `${panel} is no longer how the panel is fed`);
+    const call = `${panel}({ payroll: data.payroll, pay: ${feed} })`;
+    assert.ok(LIVE.includes(call), `${call} is no longer how the panel is fed`);
   }
+  // `wedgePay` is the alternative feed, so what it IS gets pinned here too —
+  // otherwise the loop above is satisfied by a name and the object behind it is
+  // free to become the amounts alone. Both halves: the reader's own pay once
+  // they have typed, and a pay object with no amounts before that.
+  assert.match(
+    FLAT,
+    /wedgePay = \$derived\(\s*earnersDirty \? pay : \{ basis: payBasis, amounts: \[\] \}\s*\)/,
+    "the wedge's pay object is no longer the reader's own pay gated on having " +
+      "typed one — either the gate went, or what stands in for it stopped " +
+      "carrying the basis"
+  );
   // And the household total is built from the CONVERTED nets, never from what
   // was typed — the one line where a gross would reach the basket and the rent.
   assert.ok(
