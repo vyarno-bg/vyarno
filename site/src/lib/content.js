@@ -1311,6 +1311,11 @@ export const COPY = {
   // obligation to name its inputs and its vintage.
   // «половината вземат под X% от нея» rather than «медианният работещ взима» —
   // the median as a share of the mean, said the way it is said in Bulgarian.
+  // Both halves say EMPLOYEES, because that is who Eurostat's SES surveys. The
+  // Bulgarian says «работещи» and «заетите»; an English "half the country" is
+  // the same figure spread over a population that includes everybody the survey
+  // does not cover, and the second half of the very same sentence then says
+  // "employees" — one claim, two denominators, in one breath.
   // The percentile is said the same way, and for the same reason: «около X% от
   // заетите изкарват под нея» puts the people in the subject and the wage in
   // the comparison, where each belongs. «Стои на X-ия процентил» is jargon a
@@ -1328,7 +1333,7 @@ export const COPY = {
   // over between them, not the levels.
   sectorAverageFlatters: {
     bg: "Средната заплата не е средата. За България Евростат публикуват средна брутна заплата {mean} € и медиана {median} € ({shapeYear} г.); съотношението между тях е наша сметка — половината работещи вземат под {medianPct}% от средната. Около {cut}% от заетите изкарват под нея, сметнато между публикуваните децили, а не измерено. Затова под средната за сектора не означава под средата.",
-    en: "An average is not a middle. For Bulgaria Eurostat publish a mean GROSS wage of €{mean} and a median of €{median} ({shapeYear}); the ratio between them is ours — half the country earns less than {medianPct}% of the average. About {cut}% of employees earn less than it, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
+    en: "An average is not a middle. For Bulgaria Eurostat publish a mean GROSS wage of €{mean} and a median of €{median} ({shapeYear}); the ratio between them is ours — half of employees earn less than {medianPct}% of the average. About {cut}% of employees earn less than it, worked out between the published deciles rather than measured. So below your sector's average is not below the middle.",
   },
   // The English has to name «служебно правоотношение» too. НСИ count both
   // employment relationships, and «Държавно управление» is one of the sections
