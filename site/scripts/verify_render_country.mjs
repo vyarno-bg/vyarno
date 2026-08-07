@@ -74,6 +74,22 @@ test("every figure on the country page names a source and a period", { skip }, a
       );
     }
 
+    // **And the имот.bg captions say WHICH date they carry.** The payload holds
+    // two facts: `page_as_of_dd_mm_yyyy` is имот.bg's own «обновена на» stamp,
+    // `as_of` is the day we fetched it, and the scrape leaves the first empty
+    // when the page does not carry one — which is the case shipped today. A
+    // bare «имот.bg · 23.07.2026 г.» therefore lets our download date read as
+    // their publication date, on a page whose whole claim is provenance. The
+    // calculator has qualified it since the case first turned up.
+    for (const block of blocks.filter((b) => b.caption.includes("имот.bg"))) {
+      assert.match(
+        block.caption,
+        /(обновена на|свалена от нас|updated|we fetched it)/,
+        `«${block.label.slice(0, 40)}» dates an имот.bg figure without saying whether ` +
+          `that is their date or ours: ${block.caption}`
+      );
+    }
+
     // The five publishers, each reachable from the page that names their
     // figures. The footer's attribution line is a licence condition; these are
     // the links that make it checkable.
