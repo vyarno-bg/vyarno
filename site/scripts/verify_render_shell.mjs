@@ -63,6 +63,27 @@ test("the calculator renders with no console errors", { skip }, async () => {
   });
 });
 
+test("the as-of strip writes both its dates the same way", { skip }, async () => {
+  // The bar carries two months and they are not always the same one: the page
+  // is dated by the basket's period and the headline by its own, which runs up
+  // to a month ahead during Eurostat's flash. Saying so is the bar's whole job.
+  //
+  // It could not do it while one date went through `periodLong` and the other
+  // was interpolated raw — «ЧИСЛАТА СА КЪМ ЮНИ 2026 Г. · ОФИЦИАЛНА ИНФЛАЦИЯ:
+  // 4,1% ЗА 2026-07» asks a reader to convert an ISO period before they can
+  // even see that the two differ.
+  //
+  // Asserted as the absence of an ISO period rather than the presence of a
+  // month name, so it holds for whatever month the payloads carry and for the
+  // English bar too.
+  await withApp(async (page, errors) => {
+    const strip = await page.locator(".data-strip .data-strip-inner").innerText();
+    const iso = [...strip.matchAll(/\d{4}-\d{2}(?!-)/g)].map((m) => m[0]);
+    assert.deepEqual(iso, [], `the as-of strip states a raw period: ${strip.replace(/\s+/g, " ")}`);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the footer's route to donating is a link, on every page", { skip }, async () => {
   // The footer is shared, so this is the ask as a reader meets it on the
   // calculator — not on `/legal/`, where they already went looking for it.
@@ -168,27 +189,31 @@ test("the home block draws its mortgage bar and the wedge chart", { skip }, asyn
 // nothing published is at fault (docs/site.md §"A correct formula fed the wrong
 // number"). Reading the two back off the rendered sentence is what closes it:
 // the assertion fails the moment the row stops being handed what it describes.
-test("the mortgage sentence states the rate and the term the payment was built from", {
-  skip,
-}, async () => {
-  await withApp(async (page, errors) => {
-    await page.locator("input[type=number]").first().fill("2500");
-    const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
-    if (await homeToggle.count()) await homeToggle.check();
-    await page.waitForTimeout(300);
+test(
+  "the mortgage sentence states the rate and the term the payment was built from",
+  {
+    skip,
+  },
+  async () => {
+    await withApp(async (page, errors) => {
+      await page.locator("input[type=number]").first().fill("2500");
+      const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
+      if (await homeToggle.count()) await homeToggle.check();
+      await page.waitForTimeout(300);
 
-    // Typed rather than read off the defaults: a rate that happened to match
-    // whatever `HomeRow` falls back to would pass without the props arriving.
-    await page.locator("#inRate").fill("3.5");
-    await page.locator("#inTerm").fill("20");
-    await page.waitForTimeout(300);
+      // Typed rather than read off the defaults: a rate that happened to match
+      // whatever `HomeRow` falls back to would pass without the props arriving.
+      await page.locator("#inRate").fill("3.5");
+      await page.locator("#inTerm").fill("20");
+      await page.waitForTimeout(300);
 
-    const row = await page.locator(".r-row", { hasText: "вноска при" }).first().innerText();
-    assert.match(row, /вноска при\s*3,5%/, `the rate is not in the sentence: ${row}`);
-    assert.match(row, /за\s*20\s*г\./, `the term is not in the sentence: ${row}`);
-    assert.deepEqual(errors, [], errors.join(" | "));
-  });
-});
+      const row = await page.locator(".r-row", { hasText: "вноска при" }).first().innerText();
+      assert.match(row, /вноска при\s*3,5%/, `the rate is not in the sentence: ${row}`);
+      assert.match(row, /за\s*20\s*г\./, `the term is not in the sentence: ${row}`);
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
 
 test("the language and theme toggles change the page", { skip }, async () => {
   await withApp(async (page, errors) => {

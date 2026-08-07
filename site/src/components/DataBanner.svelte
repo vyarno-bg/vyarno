@@ -73,17 +73,25 @@
              and served verbatim to whatever reads the HTML. The build writes
              this strip into `dist/index.html` (scripts/prerender.mjs), which is
              read by a crawler that sees no CSS and both spans. -->
+        <!-- Both dates in this bar go through `periodLong`. The line beside
+             this one already did and this one did not, so the strip carried
+             «ЧИСЛАТА СА КЪМ ЮНИ 2026 Г.» and «ОФИЦИАЛНА ИНФЛАЦИЯ: 4,1% ЗА
+             2026-07» — two different months in two notations, side by side.
+             They differ during Eurostat's flash, which is the one thing the bar
+             has to make obvious, and a reader had to convert an ISO period
+             before they could even see that they were not the same month.
+             `/how/` prints the same pair as «юли 2026 г.» and «юни 2026 г.». -->
         <span class="off-fig">
           <span class="l-bg"
             >{t(COPY.headlineRate, "bg", {
               rate: number(headline, 1, "bg"),
-              ref_period: headlineRefPeriod,
+              ref_period: periodLong(headlineRefPeriod, "bg"),
             })}</span
           >
           <span class="l-en"
             >{t(COPY.headlineRate, "en", {
               rate: number(headline, 1, "en"),
-              ref_period: headlineRefPeriod,
+              ref_period: periodLong(headlineRefPeriod, "en"),
             })}</span
           >
         </span>
