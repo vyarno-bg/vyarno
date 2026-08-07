@@ -431,49 +431,59 @@
           <span class="l-bg">{COPY.sectorNoRank.bg}</span>
           <span class="l-en">{COPY.sectorNoRank.en}</span>
         </p>
-        <!-- Directly under the rank caveat and above the flattery one, because
-             it answers the same question they do: what this gap is NOT. The
-             sector table is НСИ's country-wide one and the Sofia line sits a
-             few rows up, so without this the two read as one scale. Gated on
-             the all-activities cell being there — the sentence names it, and a
-             caveat reading «0 € бруто средно» is a figure nobody published. -->
-        {#if calc.sector.countryGross > 0}
-          <p class="hint caveat">
-            <span class="l-bg"
-              >{t(COPY.sectorNationwide, "bg", { country: fmt0(calc.sector.countryGross) })}</span
-            >
-            <span class="l-en"
-              >{t(COPY.sectorNationwide, "en", { country: fmt0(calc.sector.countryGross) })}</span
-            >
-          </p>
-        {/if}
-        <!-- Gated on the skew the sentence asserts, not merely on the payload
-             being readable. It says more than half of employees earn below the
-             average and shows neither level to prove it, so the only thing
-             standing between the reader and a false claim is the published
-             median sitting below the published mean —
-             `mirror.js#meanRungPosition` reads that off the shape. Where a
-             future SES round did not carry it, this renders nothing rather
-             than a confident sentence about a distribution that had changed
-             shape underneath it. -->
-        {#if calc.averageFlatters?.meanAboveMedian}
-          <p class="hint caveat">
-            <span class="l-bg"
-              >{t(COPY.sectorAverageFlatters, "bg", {
-                shapeYear: period(calc.averageFlatters.shapeYear),
-              })}</span
-            >
-            <span class="l-en"
-              >{t(COPY.sectorAverageFlatters, "en", {
-                shapeYear: period(calc.averageFlatters.shapeYear),
-              })}</span
-            >
-          </p>
-        {/if}
+        <!-- Directly under the rank caveat, because it answers the same
+             question: what this gap is NOT. The sector table is НСИ's
+             country-wide one and the Sofia line sits a few rows up, so without
+             this the two read as one scale. -->
+        <!-- The other two, one tap down.
+             Four caveats under one figure is longer than a reader finishes,
+             and the two above are the ones that say what the figure IS: an
+             average rather than a rank, and the country's rather than Sofia's.
+             What folds is how to read a gap the reader has already been told
+             is a gap from an average.
+             The chip's own label carries that, so a reader who never opens it
+             has still been told there is more to the average than the level —
+             the same standard the receipt rows' working is held to. -->
         <p class="hint caveat">
-          <span class="l-bg">{COPY.sectorCoverage.bg}</span>
-          <span class="l-en">{COPY.sectorCoverage.en}</span>
+          <span class="l-bg">{COPY.sectorNationwide.bg}</span>
+          <span class="l-en">{COPY.sectorNationwide.en}</span>
         </p>
+        <details class="caveat-more">
+          <summary class="disclose">
+            <span class="dc-caret" aria-hidden="true">›</span>
+            <span class="l-bg">{COPY.discloseSectorMore.bg}</span>
+            <span class="l-en">{COPY.discloseSectorMore.en}</span>
+          </summary>
+          <div class="caveat-more-body">
+            <!-- Gated on the skew the sentence asserts, not merely on the
+                 payload being readable. It says more than half of employees
+                 earn below the average and shows neither level to prove it, so
+                 the only thing standing between the reader and a false claim is
+                 the published median sitting below the published mean —
+                 `mirror.js#meanRungPosition` reads that off the shape. Where a
+                 future SES round did not carry it, this renders nothing rather
+                 than a confident sentence about a distribution that had changed
+                 shape underneath it. -->
+            {#if calc.averageFlatters?.meanAboveMedian}
+              <p class="hint caveat">
+                <span class="l-bg"
+                  >{t(COPY.sectorAverageFlatters, "bg", {
+                    shapeYear: period(calc.averageFlatters.shapeYear),
+                  })}</span
+                >
+                <span class="l-en"
+                  >{t(COPY.sectorAverageFlatters, "en", {
+                    shapeYear: period(calc.averageFlatters.shapeYear),
+                  })}</span
+                >
+              </p>
+            {/if}
+            <p class="hint caveat">
+              <span class="l-bg">{COPY.sectorCoverage.bg}</span>
+              <span class="l-en">{COPY.sectorCoverage.en}</span>
+            </p>
+          </div>
+        </details>
       {/if}
     {/if}
   </div>
@@ -508,13 +518,27 @@
   .sector {
     margin-top: 14px;
   }
-  /* The two caveats are the sentence the number cannot be read without, so
-     they are quiet but not fine print — same size as every other hint here,
-     only dimmed. A caveat set smaller than the claim it qualifies is a
-     caveat designed not to be read. */
+  /* The caveats are the sentence the number cannot be read without, so they
+     are quiet but not fine print — same size as every other hint here, only
+     dimmed. A caveat set smaller than the claim it qualifies is a caveat
+     designed not to be read. That holds for the two behind the chip as well:
+     folding a sentence is not licence to shrink it. */
   .caveat {
     margin: 6px 0 0;
     color: var(--ink-2);
+  }
+  .caveat-more {
+    margin-top: 8px;
+  }
+  /* The rule down the left is what says the two sentences belong to the figure
+     above rather than starting a new claim — the same mark the receipt rows'
+     working carries, and the reason `disclosure.css` draws one there. It is
+     not repeated here from that file because these rules are scoped to a
+     component and that one is scoped to `.r-row`. */
+  .caveat-more-body {
+    margin-top: 7px;
+    padding-left: 10px;
+    border-left: 1px solid var(--line-2);
   }
   .earner-in {
     display: flex;

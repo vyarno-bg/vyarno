@@ -1834,11 +1834,17 @@ test("the sector figure says which geography it covers", () => {
       /(София|Sofia)/.test(text),
       `sectorNationwide does not name the comparison whose scope differs: ${text}`
     );
-    // НСИ's own all-activities cell, shown rather than divided into the sector
-    // figure — a ratio here would be our arithmetic under their credit.
+    // **And no euro level in it.** The claim is that two scopes are stacked and
+    // the sentence makes it in words; a third euro figure on a card already
+    // carrying the sector gross, our net of it and the reader's own pay
+    // invites a comparison this line cannot settle — "is my industry well
+    // paid" is a different question from "how much of my gap is the city".
+    // A slot rather than a literal would be no better: a figure is a figure to
+    // the reader whichever end it was typed at.
     assert.ok(
-      /\{country\}/.test(text),
-      `sectorNationwide claims a national level without showing НСИ's published figure: ${text}`
+      !/\{country\}|\d/.test(text),
+      `sectorNationwide carries a euro level, and the sentence it belongs to ` +
+        `already states the scope in words: ${text}`
     );
   }
 });
