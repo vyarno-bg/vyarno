@@ -139,6 +139,49 @@ test("the country page marks a figure its publisher has not finalised", { skip }
   }, "/how/");
 });
 
+test("the payroll figures name the ДВ issue, not just its year", { skip }, async () => {
+  // The one section on this page whose link cannot reach the instrument:
+  // dv.parliament.bg builds permalinks from a session-side id that the issue
+  // number does not yield, so a constructed one 404s and the landing page is
+  // the honest href. P9 is what that leaves — the caption carries the source
+  // name AND the date, and a year is neither: five figures on this section
+  // hang off one act, and every ЗБДОО is promulgated in a different issue of
+  // whatever year it passes in.
+  //
+  // Read off the payload so the assertion is the identity rather than a
+  // constant that goes stale at the next amendment and gets "fixed" by copying
+  // whatever the page shows.
+  const payroll = published("payroll");
+  const issue = payroll?.gazette_issue;
+  assert.ok(issue > 0, "payroll.json carries no ДВ issue for the caption to name");
+  const year = payroll.gazette_date.slice(0, 4);
+
+  await withApp(async (page, errors) => {
+    // The stat captions and the wedge table's, because the table is computed
+    // from those four figures and citing it one act less precisely is the same
+    // reader asking which of the two captions is the instrument.
+    const captions = [
+      ...(await page.locator("#pay .stat .ss").allInnerTexts()),
+      ...(await page.locator("#pay p.cap").allInnerTexts()),
+    ];
+    assert.equal(captions.length, 5, `the payroll section rendered ${captions.length} captions`);
+    for (const caption of captions) {
+      assert.match(
+        caption,
+        new RegExp(`(бр\\.|issue)\\s*${issue}\\b`),
+        `a payroll figure is cited as «${caption}» — ДВ issue ${issue} is what a ` +
+          "reader searches the gazette's archive with, and a year is not it"
+      );
+      assert.ok(
+        caption.includes(year),
+        `«${caption}» names an issue with no year beside it, and ДВ restarts its ` +
+          "numbering every January"
+      );
+    }
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
+});
+
 test("the country page answers in the reader's language, both ways", { skip }, async () => {
   // Both languages ship in the DOM at once and one is hidden by CSS, which is
   // exactly why a missing string is invisible in review: the person editing

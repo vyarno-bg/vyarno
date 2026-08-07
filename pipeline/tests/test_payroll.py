@@ -216,6 +216,54 @@ def test_an_entry_must_set_exactly_one_currency_side() -> None:
     assert _pair({**base, "x_eur": 2300.0}, "x")[1] == pytest.approx(4498.41, abs=0.01)
 
 
+def test_the_entry_in_force_names_the_gazette_issue_that_promulgated_it() -> None:
+    """The four figures on /how/ are captioned off this pair.
+
+    `source_url` is dv.parliament.bg's landing page and can be nothing else —
+    their permalinks come from a session-side id the issue number does not
+    yield — so P9 puts the instrument in the caption instead of behind a link,
+    and a year identifies no act.
+    """
+    p = build_payroll_payload(date(2026, 8, 2))
+    assert p["gazette_issue"] == 68
+    assert p["gazette_date"] == "2026-07-28"
+    # Promulgation starts the clock, so it cannot fall after the entry is in
+    # force. Asserted on the shipped pair rather than only inside the guard,
+    # because this is the one direction a plausible typo runs.
+    assert date.fromisoformat(p["gazette_date"]) <= date.fromisoformat(p["effective_from"])
+
+
+def test_a_parameter_set_from_several_acts_publishes_no_single_issue() -> None:
+    """The January entry's ceiling, flat rate and minimum wage are three
+    statutes, so no issue number is true of the set. Both keys are still
+    present and null: absent would leave a consumer unable to tell that from an
+    envelope written before the citation shipped."""
+    p = build_payroll_payload(date(2026, 3, 1))
+    assert p["gazette_issue"] is None
+    assert p["gazette_date"] is None
+
+
+def test_a_half_written_gazette_citation_is_refused() -> None:
+    """ДВ's archive is indexed by issue AND year, so half of one finds nothing,
+    and a bare date names a day several issues were promulgated on."""
+    from vyarno_pipeline.payroll import _gazette
+
+    base = {"effective_from": date(2026, 8, 1)}
+    with pytest.raises(ValueError, match="half a"):
+        _gazette({**base, "gazette_issue": 68})
+    with pytest.raises(ValueError, match="half a"):
+        _gazette({**base, "gazette_date": date(2026, 7, 28)})
+    with pytest.raises(ValueError, match="numbers its issues"):
+        _gazette({**base, "gazette_issue": 0, "gazette_date": date(2026, 7, 28)})
+    with pytest.raises(ValueError, match="after it came into force"):
+        _gazette({**base, "gazette_issue": 68, "gazette_date": date(2026, 8, 2)})
+    assert _gazette({**base, "gazette_issue": 68, "gazette_date": date(2026, 7, 28)}) == (
+        68,
+        "2026-07-28",
+    )
+    assert _gazette(base) == (None, None)
+
+
 def test_a_scheduled_change_carries_a_real_date_not_a_condition() -> None:
     """`effective_from` on a scheduled change must be parseable as a date.
 

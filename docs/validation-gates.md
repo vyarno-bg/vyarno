@@ -273,7 +273,7 @@ detail.
 | `sofia-salary` | Sofia city must exceed Sofia province, else exit 2 | Regression guard on the row selector |
 | `sector-salary` | gate 8 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
 | `salary-dist` | P1 floored at the statutory minimum wage | — |
-| `payroll` | no network; parity-checked against the SPA sentinel | `test_payroll.py` reads `mirror.js` |
+| `payroll` | no network; parity-checked against the SPA sentinel. `payroll.py` raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | `test_payroll.py` reads `mirror.js` |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
 
 ## A good HICP run

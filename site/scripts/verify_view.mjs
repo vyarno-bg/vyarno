@@ -2101,6 +2101,27 @@ test("systemWedgeLadder reads the ceiling and the rates out of the PUBLISHED pay
   );
 });
 
+test("the wedge ladder carries the ДВ issue the four figures are cited by", () => {
+  if (!PAYROLL) return;
+  const ladder = systemWedgeLadder({ payroll: PAYROLL });
+  assert.equal(ladder.gazetteIssue, PAYROLL.gazette_issue ?? null);
+  assert.equal(ladder.gazetteDate, PAYROLL.gazette_date ?? "");
+  // A published set assembled from several acts has no single issue, and the
+  // caption falls back to the year. Both halves go together — «бр. 68 от —»
+  // is a citation ДВ's archive cannot be searched with, and it is the shape a
+  // payload edited by hand produces.
+  const half = systemWedgeLadder({ payroll: { ...PAYROLL, gazette_date: null } });
+  assert.equal(half.gazetteIssue, null, "an issue with no date reached the caption");
+  const other = systemWedgeLadder({ payroll: { ...PAYROLL, gazette_issue: null } });
+  assert.equal(other.gazetteDate, "", "a date with no issue reached the caption");
+  // Read, not closed over: the next ЗБДОО moves the issue.
+  const moved = systemWedgeLadder({
+    payroll: { ...PAYROLL, gazette_issue: 3, gazette_date: "2027-01-09" },
+  });
+  assert.equal(moved.gazetteIssue, 3);
+  assert.equal(moved.gazetteDate, "2027-01-09");
+});
+
 test("the wedge ladder always has a rung ON the ceiling, and it is the peak", () => {
   // The curve's only kink is at the ceiling: below it the effective rate is
   // constant, above it every further euro is taxed at less than the average so
