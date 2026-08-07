@@ -158,10 +158,19 @@
         aria-label={calc.hasHousehold ? t(COPY.earnerLabel, $lang, { n: 1 }) : t(payLabel, $lang)}
       />
     </span>
-    <div class="hint" style="margin-top:4px">
-      <span class="l-bg">{COPY.medianDefault.bg}</span>
-      <span class="l-en">{COPY.medianDefault.en}</span>
-    </div>
+    <!-- The hint describes the €900 in the box, so it goes when the €900 does.
+         Left ungated it told a reader who had just typed their own pay that
+         «числото е просто начална стойност — смени го със своята заплата», which
+         is a false statement about the one figure on the page that is theirs.
+         Its twin over the headline figure — `startingSalary`, which names the
+         amount — has taken this gate since it was written; only the hint
+         attached to the field was missing it. -->
+    {#if !calc.earnersDirty}
+      <div class="hint" style="margin-top:4px">
+        <span class="l-bg">{COPY.medianDefault.bg}</span>
+        <span class="l-en">{COPY.medianDefault.en}</span>
+      </div>
+    {/if}
     <div class="hint" style="margin-top:2px">
       <span class="l-bg">{COPY.basisHint.bg}</span>
       <span class="l-en">{COPY.basisHint.en}</span>
