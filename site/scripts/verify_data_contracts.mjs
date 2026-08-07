@@ -522,6 +522,17 @@ test("the offline sentinels in content.js still match what the pipeline publishe
       `the offline sentinel averages ${offline} but the published series averages ` +
         `${live} — copy the newest complete quarter into HOME.sofiaSalaryFallback`
     );
+    // The marker travels with the quarter, not only the figure. Both go through
+    // `sofiaQuarter` for the same reason the values do — the sentinel is what
+    // the card renders for the first few hundred milliseconds, and a marker that
+    // appears once the JSON lands shows the same wage as settled and then as
+    // provisional, which reads as the number having changed.
+    assert.equal(
+      sofiaQuarter(HOME.sofiaSalaryFallback).isPreliminary,
+      sofiaQuarter(sofia).isPreliminary,
+      "HOME.sofiaSalaryFallback disagrees with sofia_salary.json about whether " +
+        "НСИ will still revise the quarter it mirrors"
+    );
   }
   if (price) {
     assert.ok(
