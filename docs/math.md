@@ -605,11 +605,19 @@ people in it, and a card reporting only the gap would tell them the opposite.
 voice.** Eurostat publish D1, the median and D9 for BG and nothing between, so
 `SES_SURVEYED_CUTS` is `[10, 50, 90]`. The mean (949) falls between P60
 (838.99) and P70 (1010.66) — **both interpolated**, piecewise-lognormal in the
-normal quantile. So "the median earner takes 74% of the average" is two
-published numbers divided, and "the average sits near the 66th rung" is read off
-modelled ones. `COPY.sectorAverageFlatters` states which is which and dates the
-survey, and `the calibration marks its modelled figure and dates its measured
-one` in `verify_copy.mjs` fails if that distinction is flattened.
+normal quantile. So €949 against €705 is two published numbers, and "the average
+sits near the 66th rung" is read off modelled ones.
+
+**The card shows the pair and derives one figure from it, not two.** `949` and
+`705` go on screen as published, with the sentence a reader needs to use them —
+half of employees earn less than the median — and the only number computed here
+is the rung. The median-to-mean ratio (`meanRungPosition#medianPct`, 74%) makes
+the same point one step further from the evidence, and stating both put two of
+our own percentages in a four-line caveat that a reader has to hold at once. Two
+published levels are easier to check than a ratio between them and easier to
+read than either. `COPY.sectorAverageFlatters` attributes the rung to us and
+dates the survey, and `the calibration marks its modelled figure and dates its
+measured one` in `verify_copy.mjs` fails if either goes.
 
 What the modelling can and cannot move: a different interpolation between the
 published median and D9 shifts the rung by a few points, and cannot put the mean
