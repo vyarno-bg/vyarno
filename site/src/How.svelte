@@ -92,6 +92,32 @@
   /** True while НСИ have not finalised the quarter the wage figures come from. */
   const wagesArePreliminary = $derived(Boolean(calc.data.sofiaSalary?.is_preliminary));
   const onDay = (d) => ({ bg: dateShort(d, "bg"), en: dateShort(d, "en") });
+  /**
+   * WHICH date is on the имот.bg figures, said out loud.
+   *
+   * They carry two different facts. `page_as_of_dd_mm_yyyy` is имот.bg's own
+   * «обновена на» stamp — the day the SOURCE published the number — and `as_of`
+   * is the day our pipeline fetched it. A scrape that cannot find the page date
+   * leaves the first an empty string, which is the case for the payload
+   * currently shipped, so printing whichever is available with no qualifier
+   * lets our download date read as имот.bg's publication date.
+   *
+   * `App.svelte` has said which one it is showing since the case first turned
+   * up; this page printed «имот.bg · 23.07.2026 г.» on all three cards and left
+   * the reader to assume. Same two strings, so the two pages cannot come to
+   * different words for the same distinction.
+   */
+  const imotDated = $derived(
+    calc.sofiaPricePageDate
+      ? {
+          bg: t(COPY.srcDatedByPage, "bg", { d: calc.sofiaPricePageDate }),
+          en: t(COPY.srcDatedByPage, "en", { d: calc.sofiaPricePageDate }),
+        }
+      : {
+          bg: t(COPY.srcDatedByFetch, "bg", { d: dateShort(calc.sofiaPriceAsOf, "bg") }),
+          en: t(COPY.srcDatedByFetch, "en", { d: dateShort(calc.sofiaPriceAsOf, "en") }),
+        }
+  );
   /** A period that is already language-independent — a year, an ISO effective date. */
   const asIs = (v) => ({ bg: String(v ?? ""), en: String(v ?? "") });
 
@@ -893,7 +919,7 @@
           COPY.howKEurM2,
           COPY.howSrcImot,
           IMOT_URL,
-          onDay(calc.sofiaPriceAsOf)
+          imotDated
         )}
         {@render stat(
           `${fmt0(calc.data.sofiaPrice.eur_per_m2_min)}–${fmt0(calc.data.sofiaPrice.eur_per_m2_max)} €`,
@@ -903,7 +929,7 @@
           },
           COPY.howSrcImot,
           IMOT_URL,
-          onDay(calc.sofiaPriceAsOf)
+          imotDated
         )}
         {@render stat(
           `${fmt0(calc.sofiaHome.price)} €`,
@@ -913,7 +939,7 @@
           },
           COPY.howSrcImot,
           IMOT_URL,
-          onDay(calc.sofiaPriceAsOf)
+          imotDated
         )}
         {#if calc.sofiaHome.netMonthly > 0}
           {@render stat(
