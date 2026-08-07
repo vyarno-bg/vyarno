@@ -1310,65 +1310,55 @@ export const COPY = {
     en: "This compares you with an average, not a rank — nobody publishes how pay is spread inside a Bulgarian sector.",
   },
   // The correction that keeps the line above from being read as bad news.
-  // Earnings are right-skewed, so an average is roughly a two-thirds-of-the-
-  // way-up figure. Every number here comes from mirror.js#meanRungPosition,
-  // which reads Eurostat's shape for the COUNTRY — there is no sector
-  // distribution to read them off, which is the point of the sentence before
-  // this one.
+  // Earnings are right-skewed, so an average sits above the middle and a reader
+  // told they are «под средната за сектора» hears «под средата», which does not
+  // follow. `mirror.js#meanRungPosition` reads Eurostat's shape for the COUNTRY
+  // — there is no sector distribution to read it off, which is the point of the
+  // sentence before this one.
   //
-  // **This is the longest caveat on the page, and its length is the risk.** It
-  // is four figures deep in a card a reader reached looking for one, so every
-  // number in it has to earn the attention it costs — a caveat nobody finishes
-  // protects nobody, and this one is load-bearing.
+  // **One sentence, and no figure in it.** The three earlier drafts of this
+  // caveat all carried the evidence — Eurostat's mean and median, and the rung
+  // the mean lands on — and every one of them cost the reader more than it
+  // returned. Two problems, and the second is why showing the pair is not an
+  // option to go back to:
   //
-  // So it shows the published PAIR and derives one figure from it. The mean and
-  // the median are Eurostat's own, and «половината заети изкарват под {median} €»
-  // is the clause that makes them usable — two levels a reader can hold beside
-  // their own wage. The mean's rung ({cut}) is the one thing computed here.
-  // `meanRungPosition` also returns the median-to-mean ratio ({medianPct}) and
-  // this deliberately does not print it: it argues the same point one step
-  // further from the evidence, and stating both puts two percentages of ours in
-  // a paragraph whose whole job is to be finished.
+  // The Eurostat pair is at SES's own level, four years behind the НСИ
+  // quarter this card is built on. Every other euro figure on the site is
+  // re-levelled to the current anchor before a reader sees it — the ladder
+  // multiplies the shape by (target mean / ses_mean) for exactly this reason —
+  // and this string was the one place raw SES euros reached the page. Beside a
+  // 1407 € national average and a Sofia figure from the current quarter, a
+  // 949 € "average wage" is not read as a four-year-old survey level however
+  // it is dated: it is read as a contradiction, and the reader is left to work
+  // out which of the two numbers is the wrong one. A date does not fix that.
   //
-  // **Every level in it is a slot, and none of the four may be typed in.** The
-  // pipeline refreshes Eurostat's shape on its own schedule, so a euro figure
-  // written into the prose keeps being asserted next to the slot that has
-  // already moved past it, and the reader cannot tell which of the two is the
-  // stale one. The same holds for the survey year — `verify_copy.mjs` fails a
-  // published `ref_year` found anywhere in this file's strings.
+  // And the rung was ours. Eurostat publish D1, the median and D9 for BG and
+  // nothing between, so a percentile of the mean is interpolated — which P3
+  // obliges us to mark, and «наша сметка, изчислено … а не измерено» is three
+  // clauses of methodology in a caveat that has to be finished to protect
+  // anybody. A figure that needs more disclaimer than it carries argument is
+  // one to drop, not one to explain harder.
   //
-  // **No word here may need a statistics course.** «Медиана» and «децили» are
-  // the two that did: the first is spelled out as «половината заети изкарват
-  // под …», the second as «между публикуваните от Евростат стойности», and
-  // both say exactly what they said before at the length a reader will finish.
-  // A caveat this deep in the card competes with the number the reader came
-  // for, and the vocabulary is what loses that competition first.
+  // What is left is the claim itself, credited and dated: the reader can check
+  // it against Eurostat's SES for the year named. It is weaker evidence than
+  // the pair and it is read by more people, which is the trade being made.
   //
-  // The one figure that IS ours says so. Eurostat publish D1, the median and D9
-  // for BG and nothing between, so the mean lands between P60 and P70 — rungs
-  // mirror.js interpolates — and «изчислено … а не измерено» marks it while
-  // «наша сметка» attributes it. P3: a figure derived from published figures
-  // inherits the obligation to name its inputs and its vintage, and a
-  // «(Евростат)» credit spanning a number they never printed is the quiet way
-  // this card stops being checkable.
+  // **Nothing on screen backs it, so the code has to.** `meanAboveMedian` is
+  // the published median sitting below the published mean, and the card renders
+  // this only where that holds — see the gate in PayField.
   //
-  // Both halves say EMPLOYEES, because that is who Eurostat's SES surveys. An
-  // English "half the country" is the same figure spread over a population the
-  // survey does not cover, and the next clause then says "employees" — one
-  // claim, two denominators, in one breath.
+  // «Заети» / EMPLOYEES, because that is who Eurostat's SES surveys, and
+  // person-first in both languages: the people are the subject and the wage is
+  // what they are compared against. «Стои на X-ия процентил» is jargon a reader
+  // is entitled not to know, and «средната изпреварва X% от заетите» hands a
+  // wage a verb that wants a person — it overtakes nobody.
   //
-  // Person-first in both languages: «половината заети изкарват под медианата»
-  // and «под средната са около {cut}% от тях» put the people in the subject and
-  // the wage in the comparison. «Стои на X-ия процентил» is jargon a reader is
-  // entitled not to know, and «средната изпреварва X% от заетите» hands a wage a
-  // verb that wants a person — it overtakes nobody.
-  //
-  // Both levels are GROSS and the line above this one ends in a net, so the
-  // basis is named here. Two adjacent sentences pairing a country-wide gross
-  // with a Sofia net on unstated bases invite a comparison neither supports.
+  // The level is named GROSS because the credit line above this one ends in a
+  // net. Two adjacent sentences pairing a country-wide gross with a Sofia net
+  // on unstated bases invite a comparison neither supports.
   sectorAverageFlatters: {
-    bg: "Средната не е средата. За България Евростат дават средна брутна заплата {mean} € ({shapeYear} г.), а средата е по-ниска: половината заети изкарват под {median} € бруто. Под средната са около {cut}% от заетите — това число е наше, изчислено между публикуваните от Евростат стойности, а не измерено. Затова „под средната за сектора“ не значи „под средата“.",
-    en: "An average is not a middle. For Bulgaria Eurostat publish an average GROSS wage of €{mean} ({shapeYear}), and the middle sits lower: half of employees earn less than €{median} gross. About {cut}% of employees earn less than that average — a figure of ours, worked out between the values Eurostat publish rather than measured. So below your sector's average does not mean below the middle.",
+    bg: "Средната не е средата: в България повече от половината заети изкарват под средната брутна заплата (Евростат, {shapeYear} г.), затова „под средната за сектора“ не значи „под средата“.",
+    en: "An average is not a middle: in Bulgaria more than half of employees earn less than the average GROSS wage (Eurostat, {shapeYear}), so below your sector's average does not mean below the middle.",
   },
   // The English has to name «служебно правоотношение» too. НСИ count both
   // employment relationships, and «Държавно управление» is one of the sections
