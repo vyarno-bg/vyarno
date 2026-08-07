@@ -279,6 +279,12 @@ the parser; these pin the premise. An upstream this machine cannot reach reports
 SKIP with the reason (имот.bg 403s datacenter IPs; БНБ omits a TLS
 intermediate) rather than a misleading failure.
 
+**A 404 from НСИ is the exception, and fails.** `sector-salary` reads two files
+where every other arm reads one, and a missing workbook there is a rename rather
+than a blocked network — the one case where "unreachable from this environment"
+would be the wrong report. See [`validation-gates.md`](./validation-gates.md)
+§"Probing the upstreams".
+
 ### The site's tests
 
 ```bash
