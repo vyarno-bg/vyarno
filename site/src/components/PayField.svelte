@@ -415,7 +415,6 @@
             <span class="l-bg"
               >{t(COPY.sectorAverageFlatters, "bg", {
                 cut: fmt0(calc.averageFlatters.cut),
-                medianPct: fmt0(calc.averageFlatters.medianPct),
                 mean: fmt0(calc.averageFlatters.mean),
                 median: fmt0(calc.averageFlatters.median),
                 shapeYear: period(calc.averageFlatters.shapeYear),
@@ -424,7 +423,6 @@
             <span class="l-en"
               >{t(COPY.sectorAverageFlatters, "en", {
                 cut: fmt0(calc.averageFlatters.cut),
-                medianPct: fmt0(calc.averageFlatters.medianPct),
                 mean: fmt0(calc.averageFlatters.mean),
                 median: fmt0(calc.averageFlatters.median),
                 shapeYear: period(calc.averageFlatters.shapeYear),

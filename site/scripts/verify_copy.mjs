@@ -1629,18 +1629,26 @@ test("the calibration marks its modelled figure and dates its measured one", () 
       /(Евростат|Eurostat)/.test(text),
       `sectorAverageFlatters does not name whose figures these are: ${text}`
     );
-    // Eurostat print a mean and a median for BG; the RATIO is ours. Both
-    // published figures have to be on screen and the division attributed to
-    // us, or the Eurostat credit spans a number they never published.
+    // Eurostat print a mean and a median for BG and nothing between them, so
+    // both have to be on screen: they are what makes «средната не е средата»
+    // checkable rather than asserted, and the sentence is otherwise one figure
+    // of ours under a Eurostat credit.
     for (const slot of ["{mean}", "{median}"]) {
       assert.ok(
         text.includes(slot),
-        `sectorAverageFlatters states a ratio without showing ${slot}, the published figure it divides: ${text}`
+        `sectorAverageFlatters claims an average sits above the middle without showing ${slot}, ` +
+          `the published figure that demonstrates it: ${text}`
       );
     }
+    // {cut} is ours — the mean's rung, read off interpolated ones — and it sits
+    // in a sentence naming Eurostat twice. The attribution is checked by
+    // meaning rather than by the phrase that carried it, because the phrase is
+    // the part a plain-language pass legitimately rewrites and the obligation
+    // is the part that must survive one.
     assert.ok(
-      /(наша сметка|ratio between them is ours)/i.test(text),
-      `sectorAverageFlatters credits our own division to Eurostat: ${text}`
+      /(наша сметка|наше|\bours\b|\bour\b)/i.test(text),
+      `sectorAverageFlatters leaves a figure of ours inside a Eurostat credit: ${text}\n` +
+        "Eurostat publish the mean and the median. The percentile between them is not theirs."
     );
     // Eurostat's mean and median are GROSS, and the source line directly above
     // ends in a net. Unlabelled, the two sit a line apart on different bases
