@@ -591,6 +591,45 @@ test(
       );
       assert.match(card, /трудово и служебно правоотношение/, "the coverage line is absent");
 
+      // **And the colour agrees with the two sentences above.** The card says
+      // the figure is a comparison rather than a rank, and that «под средната
+      // за сектора» does not mean «под средата» — while the gap itself was
+      // drawn in `--erode`, the red that paints «инфлацията изяде €285» and
+      // «над границата от 30%». Colour is a claim (P6) and it is read before
+      // either sentence, so a reader met the verdict first and the denial
+      // after. Asserted as "not the erode red" in both directions rather than
+      // as one hex, so a palette change moves with it.
+      // Resolved through a probe element rather than read off the custom
+      // property: `getComputedStyle().color` answers in `rgb(...)` and the
+      // token is a hex, so comparing the two directly is an assertion that can
+      // never match — it would pass whatever the gap is painted.
+      const erode = await page.evaluate(() => {
+        const probe = document.createElement("span");
+        probe.style.color = "var(--erode)";
+        document.body.append(probe);
+        const c = getComputedStyle(probe).color;
+        probe.remove();
+        return c;
+      });
+      const gapColour = () =>
+        page
+          .locator(".m-pay .hint")
+          .filter({ hasText: "средната за „" })
+          .first()
+          .evaluate((el) => getComputedStyle(el).color);
+      const below = await gapColour();
+      await page.locator("input[type=number]").first().fill("4200");
+      await page.waitForTimeout(300);
+      const above = await gapColour();
+      assert.equal(below, above, "the sector gap changes colour with its direction");
+      for (const c of [below, above]) {
+        assert.notEqual(
+          c,
+          erode,
+          `the sector gap is painted the erode red (${c}), which grades a comparison`
+        );
+      }
+
       // **Each language gets its own edition's label.** НСИ print the section
       // twice — «Създаване и разпространение на информация и творчески
       // продукти; далекосъобщения» and "Information and communication" — and

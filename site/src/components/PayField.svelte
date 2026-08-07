@@ -59,6 +59,27 @@
   // negative that reads, literally, as 39% less far below.
   const DIR_KEY = { above: "statSofiaAbove", below: "statSofiaBelow", equal: "statSofiaEqual" };
   const DIR_COLOR = { above: "var(--real)", below: "var(--erode)", equal: "var(--ink-2)" };
+  /**
+   * The sector gap is drawn in one colour whichever way it points.
+   *
+   * `--erode` is the site's «this is costing you» red — it paints «инфлацията
+   * изяде €285» and «над границата от 30%» — and it was painting «твоята нетна
+   * заплата е 18% под средната за „…"». Two lines under that sentence the card
+   * says «Средната не е средата: в България повече от половината заети изкарват
+   * под средната брутна заплата», and one line under THAT it says the figure is
+   * a comparison with an average and not a rank. The colour asserted what both
+   * of those exist to deny, and colour is read before either of them.
+   *
+   * P6: we describe, we do not advise, and the strongest honest form is a
+   * comparison plus a number. A gap from an average has no good end and no bad
+   * one, so it gets the neutral the equal case already had. The direction word
+   * in the sentence carries the sign, which is all the reader needs.
+   *
+   * The Sofia comparison keeps its pair. It is the same kind of quantity and
+   * arguably has the same problem, but it carries no sentence contradicting the
+   * colour, and repainting it is an editorial call rather than a correction.
+   */
+  const SECTOR_DIR_COLOR = "var(--ink-2)";
 
   // The whole «28% над» / "28% above" clause, built here and spliced into the
   // COPY string as ONE placeholder — which is what keeps the Bulgarian
@@ -363,7 +384,7 @@
       {#if calc.sector}
         {#if calc.earnersDirty}
           {#each calc.sector.gaps as gap (gap.index)}
-            <div class="hint" style="margin-top:4px; color:{DIR_COLOR[gap.direction]}">
+            <div class="hint" style="margin-top:4px; color:{SECTOR_DIR_COLOR}">
               <span class="l-bg"
                 >{@html t(calc.hasHousehold ? COPY.sectorDiffEarner : COPY.sectorDiff, "bg", {
                   n: fmt0(gap.ordinal),
