@@ -399,6 +399,46 @@ test(
   }
 );
 
+test("rent and a mortgage together get one carve-out sentence", { skip }, async () => {
+  // Both housing costs live at once is a state the app invites — the home
+  // block is for somebody renting now and pricing a purchase. Two sentences
+  // there each say the € column is what is left after their own payment and
+  // neither mentions the other, so the reader is choosing between three bases
+  // and only the sum is the one the arithmetic used.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2200");
+    await page.locator("#inRent").fill("650");
+    await page.locator("input[type=checkbox]").first().check();
+    await page.waitForTimeout(400);
+
+    // The carve-out lines, by what they claim rather than by position: they
+    // are `p.leg` like the basket's own legend, and matching the whole card
+    // would pick that up too.
+    const carved = page.locator("p.leg", { hasText: /остатъка след|carved out of/ });
+    assert.equal(
+      await carved.count(),
+      1,
+      "the basket states its base more than once with rent and a mortgage both on"
+    );
+    const line = await carved.innerText();
+
+    // The sum the € column is genuinely drawn from, read off the page's own
+    // leftover row rather than added up here — the two sentences describe one
+    // arithmetic, so a test that recomputes it would pass while they disagreed.
+    const housing = (await page.locator(".ss-lab").innerText()).match(
+      /€?\s*([\d\s ]+)\s*за жилище/
+    );
+    assert.ok(housing, "the leftover row stopped naming the housing total");
+    const total = housing[1].trim();
+    assert.ok(
+      line.includes(total),
+      `the carve-out sentence reads «${line}» while the € figures are drawn from ` +
+        `what is left after ${total} — the reader is given no base that is true`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the euro mode's measured remainder is the only one on screen there", { skip }, async () => {
   // Two live controls both meaning "I don't spend everything" can disagree in
   // front of the reader: the euro tally MEASURES the remainder off thirteen

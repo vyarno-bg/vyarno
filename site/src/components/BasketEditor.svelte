@@ -28,6 +28,18 @@
   // the base by the housing payment above it. Same gate, same reason, as
   // LeftoverRow.
   const hasHousing = $derived(calc.housingCost > 0);
+
+  // Every figure the carve-out sentence can name, formatted once. Each of the
+  // three strings takes the slots it needs and bolds the one it is about, so a
+  // shared set cannot hand a sentence a figure formatted a different way from
+  // its neighbour's. `housingCost` is view.js#housingCarveOut's — the amount
+  // the € column is genuinely carved out of, and the same total the leftover
+  // row states one control further down.
+  const carvedArgs = $derived({
+    rent: fmt0(calc.rent),
+    mort: fmt0(calc.monthlyMort),
+    total: fmt0(calc.housingCost),
+  });
 </script>
 
 <!-- BASKET PRESETS + SLIDERS -->
@@ -39,33 +51,34 @@
   <span class="l-bg">{COPY.basketLegend.bg}</span>
   <span class="l-en">{COPY.basketLegend.en}</span>
 </p>
-<!-- Carve-out hint(s): when a home or a rent is on, the € column is
-     drawn from what is left after it and the percentages do not move.
-     They sit above the list because they explain a column the reader
-     is about to read, not one they have read.
+<!-- Carve-out hint: when a home or a rent is on, the € column is drawn
+     from what is left after it and the percentages do not move. It sits
+     above the list because it explains a column the reader is about to
+     read, not one they have read.
 
-     Both can show — a user can have rent AND a mortgage active (buying
-     while still renting, or renting a room in the new place). Each hint
-     is independent and only renders when its housing payment is
-     actually nonzero. -->
-{#if calc.homeOn && calc.monthlyMort > 0}
+     ONE sentence, whichever housing costs are on. A reader buying while
+     still renting is who the home block is for, so both being live is a
+     state the app invites — and two sentences there each claim the €
+     figures are what is left after their own payment, neither mentioning
+     the other. The reader cannot tell whether the base is the salary less
+     the rent, less the payment, or less both, and only the last is true.
+     The combined variant names the sum instead, and takes it from
+     `housingCost` so the sentence and the arithmetic cannot name different
+     numbers. -->
+{#if calc.homeOn && calc.monthlyMort > 0 && calc.rent > 0}
   <p class="leg" style="color:var(--ink-2); margin-top:2px">
-    <span class="l-bg"
-      >{@html COPY.basketCarved.bg.replace("{mort}", `<b>${fmt0(calc.monthlyMort)}</b>`)}</span
-    >
-    <span class="l-en"
-      >{@html COPY.basketCarved.en.replace("{mort}", `<b>${fmt0(calc.monthlyMort)}</b>`)}</span
-    >
+    <span class="l-bg">{@html t(COPY.housingCarved, "bg", carvedArgs)}</span>
+    <span class="l-en">{@html t(COPY.housingCarved, "en", carvedArgs)}</span>
   </p>
-{/if}
-{#if calc.rent > 0}
+{:else if calc.rent > 0}
   <p class="leg" style="color:var(--ink-2); margin-top:2px">
-    <span class="l-bg"
-      >{@html COPY.rentCarved.bg.replace("{rent}", `<b>${fmt0(calc.rent)}</b>`)}</span
-    >
-    <span class="l-en"
-      >{@html COPY.rentCarved.en.replace("{rent}", `<b>${fmt0(calc.rent)}</b>`)}</span
-    >
+    <span class="l-bg">{@html t(COPY.rentCarved, "bg", carvedArgs)}</span>
+    <span class="l-en">{@html t(COPY.rentCarved, "en", carvedArgs)}</span>
+  </p>
+{:else if calc.homeOn && calc.monthlyMort > 0}
+  <p class="leg" style="color:var(--ink-2); margin-top:2px">
+    <span class="l-bg">{@html t(COPY.basketCarved, "bg", carvedArgs)}</span>
+    <span class="l-en">{@html t(COPY.basketCarved, "en", carvedArgs)}</span>
   </p>
 {/if}
 <!-- INPUT MODE: percentage shares vs actual euros per month.

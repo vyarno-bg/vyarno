@@ -407,15 +407,38 @@ export const COPY = {
   // page where every other figure carries its unit, a bare number is the one
   // thing a reader has to guess at, and the two languages may not disagree
   // about whether it is there.
+  //
+  // The `<b>` is in the string rather than spliced round the value at the call
+  // site, so the three carve-out lines can share one set of already-formatted
+  // arguments and each still bolds the figure ITS sentence is about.
   basketCarved: {
-    bg: "Имаш активна вноска {mort} €/мес — сумите вдясно вече са от остатъка след нея. Процентите не се променят.",
-    en: "You have a €{mort}/mo mortgage active - the € per group is now carved out of what's left after it. Percentages stay the same.",
+    bg: "Имаш активна вноска <b>{mort}</b> €/мес — сумите вдясно вече са от остатъка след нея. Процентите не се променят.",
+    en: "You have a €<b>{mort}</b>/mo mortgage active - the € per group is now carved out of what's left after it. Percentages stay the same.",
   },
   // The rent case mirrors basketCarved, so the €/group tracks the leftover
   // after rent exactly as it does after a mortgage payment.
   rentCarved: {
-    bg: "Плащаш наем {rent} €/мес — сумите вдясно вече са от остатъка след него. Процентите не се променят.",
-    en: "You pay €{rent}/mo rent - the € per group is now carved out of what's left after it. Percentages stay the same.",
+    bg: "Плащаш наем <b>{rent}</b> €/мес — сумите вдясно вече са от остатъка след него. Процентите не се променят.",
+    en: "You pay €<b>{rent}</b>/mo rent - the € per group is now carved out of what's left after it. Percentages stay the same.",
+  },
+  // **Both at once, and the pair above may not simply stack.** Somebody renting
+  // now while pricing a home is who the home block is for, so this is a state
+  // the app invites rather than an edge case. Rendered as two sentences, each
+  // says the € column is what is left after ITS OWN payment and neither
+  // mentions the other, so a reader cannot tell which of three bases the
+  // figures are drawn from — after the rent, after the mortgage, or after both.
+  // Only the third is true.
+  //
+  // So the combined figure is named, once, and it is the one bolded: the rent
+  // and the payment are on the two controls the reader just used, and the total
+  // is the number nothing else on the page has told them yet. It has to be
+  // `view.js#housingCarveOut`'s `housingCost` — the same sum the € column is
+  // actually carved out of, and the same one the leftover row states one
+  // control further down. A sentence adding two figures the reader can also see
+  // is a sentence that can disagree with the arithmetic beside it.
+  housingCarved: {
+    bg: "Плащаш наем {rent} €/мес и вноска {mort} €/мес — общо <b>{total}</b> €/мес за жилище. Сумите вдясно вече са от остатъка след тях. Процентите не се променят.",
+    en: "You pay €{rent}/mo rent and a €{mort}/mo mortgage - €<b>{total}</b>/mo for housing in all. The € per group is now carved out of what's left after them. Percentages stay the same.",
   },
   // **The chips name a basket, never a person.** In the first person - «карам
   // кола всеки ден», «пенсионер съм» - five mutually-cancelling buttons are a
