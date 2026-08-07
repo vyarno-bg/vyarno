@@ -213,7 +213,7 @@ test(
       ["the upstream attribution", attribution("bg")],
       ["the wedge table's heading", COPY.howColEffective.bg],
       ["the ladder's modelled marker", COPY.howModelled.bg],
-      ["the Eurostat derivation disclosure", COPY.howOurs.bg],
+      ["the Eurostat derivation disclosure", COPY.oursNote.bg],
       ["the lead heading", "Числата за България"],
     ]) {
       assert.ok(html.includes(text), `${what} is not in the served HTML of /how/`);

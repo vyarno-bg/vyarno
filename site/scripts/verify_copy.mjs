@@ -1474,8 +1474,8 @@ test("the country page discloses that three of its figures are ours", () => {
   // the Sofia €/m² median across имот.bg's districts and the change since 2015
   // built on it — and two of the three are rendered here. The disclosure and
   // the route to the full wording both have to travel with them.
-  const [bg, en] = pair("howOurs");
-  assert.ok(HOW.includes("COPY.howOurs.bg") && HOW.includes("COPY.howOurs.en"));
+  const [bg, en] = pair("oursNote");
+  assert.ok(HOW.includes("COPY.oursNote.bg") && HOW.includes("COPY.oursNote.en"));
   assert.ok(
     (HOW.match(/\{@render ours\(\)\}/g) ?? []).length >= 2,
     "the derivation disclosure is rendered fewer than twice — the modelled " +

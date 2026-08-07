@@ -1666,11 +1666,11 @@ export const COPY = {
   // имот.bg's districts, and the change since 2015 built on it). The link goes
   // to the sources document, which carries the full text and the
   // non-responsibility wording.
-  howOurs: {
+  oursNote: {
     bg: "Това число е наше, а не на институцията под него — сметнато е от публикуваните ѝ данни.",
     en: "This figure is ours rather than the publisher's below it — worked out from their published data.",
   },
-  howOursMoreK: { bg: "Как и защо", en: "How, and why" },
+  oursMoreK: { bg: "Как и защо", en: "How, and why" },
   howToCalculatorK: { bg: "Сметни своята инфлация", en: "Work out your own inflation" },
 
   // --- Sharing -------------------------------------------------------------
