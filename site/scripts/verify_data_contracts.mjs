@@ -238,12 +238,18 @@ test("the SPA's own math lands near the published headline (basket-sum sanity)",
   const head = headPayload?.headline_rate_pct;
   if (!cats || head == null) return;
   if (headPayload.latest_index?.time !== headPayload.ref_period) {
+    assert.equal(
+      headPayload.is_flash,
+      true,
+      `hicp_headline.json is dated ${headPayload.ref_period} with its index at ` +
+        `${headPayload.latest_index?.time} and does not say it is a flash — that is ` +
+        `a stale pair, not a release, and Σ(w·r) has no headline to reconcile against`
+    );
     assert.match(
       headPayload.notes ?? "",
       /FLASH/,
-      `hicp_headline.json is dated ${headPayload.ref_period} with its index at ` +
-        `${headPayload.latest_index?.time} and nothing saying why — that is a stale ` +
-        `pair, not a flash, and Σ(w·r) has no headline to reconcile against`
+      "the flag is what the site reads; the note is what somebody reading the " +
+        "payload by hand gets, and the two months are unexplained without it"
     );
     return;
   }

@@ -83,8 +83,10 @@ one response shape and one decoder (`_cube_to_rows`).
   nothing. So the freshest CP00 rate can be one month ahead of every other
   figure in both payloads. `cli.py#_refresh_hicp` detects that from the cube —
   the headline's month missing from both the index series and CP01..CP13 —
-  publishes `hicp_headline.json` alone, and leaves `hicp_categories.json`
-  untouched until the full release lands. The aggregates are why the detector
+  publishes `hicp_headline.json` alone with `is_flash: true` on it, and leaves
+  `hicp_categories.json` untouched until the full release lands. The flag is
+  what the site marks «експресна оценка» off, and gate 7 refuses to publish a
+  headline whose flag and whose two months disagree. The aggregates are why the detector
   names the divisions rather than "any code but CP00": both fetches are
   unfiltered, so those nine are in the response, at the flash month.
 - **No COICOP filter, one call per (dataset × unit).** A multi-value

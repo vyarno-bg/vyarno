@@ -1858,4 +1858,26 @@ test("every НСИ credit line marks a preliminary quarter as preliminary", () =
       `srcPrelim does not say the figure is preliminary: ${text}`
     );
   }
+  // Eurostat's flash gets its own marker, and the reason it is a second string
+  // rather than a second use of the first is that both can be on screen at
+  // once — the banner over the calculator and the Sofia credit inside it. Two
+  // markers reading alike tell a reader the two figures are provisional in the
+  // same way, when one is an estimate about to be replaced and the other a
+  // published quarter waiting to be finalised.
+  for (const text of pair("srcFlash")) {
+    assert.ok(
+      /(експресна|flash)/i.test(text),
+      `srcFlash does not say the figure is an early estimate: ${text}`
+    );
+    assert.ok(
+      !/(предварител|preliminary)/i.test(text),
+      `srcFlash reads as НСИ's provisional-quarter marker: ${text}`
+    );
+  }
+  for (const text of pair("headlineRate")) {
+    assert.ok(
+      /\{flash\}/.test(text),
+      `COPY.headlineRate has no slot for the flash marker: ${text}`
+    );
+  }
 });

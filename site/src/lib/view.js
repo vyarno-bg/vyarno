@@ -275,6 +275,27 @@ export function headlineRate(payload) {
 }
 
 /**
+ * Whether the published headline is Eurostat's flash estimate.
+ *
+ * Read off the payload's own `is_flash`, never inferred from the months. The
+ * two are gated to agree at publish time (`validate.py#validate_headline_flash`),
+ * so inferring would give the same answer today and for a worse reason: a
+ * payload whose index half is absent has no months to compare, and the
+ * inference's answer there is "settled" — a marker missing from a figure that
+ * needs it, which is the one direction that misleads a reader rather than
+ * merely hedging at them.
+ *
+ * Absent reads as false, and that is the safe end: it prints the figure with no
+ * marker, which is what an envelope written before the field existed means.
+ *
+ * @param {{is_flash?: boolean} | null | undefined} payload
+ * @returns {boolean}
+ */
+export function headlineIsFlash(payload) {
+  return payload?.is_flash === true;
+}
+
+/**
  * Whether the all-items headline and the per-division figures are at DIFFERENT
  * months — the state in which the gap between them is mostly not the method.
  *

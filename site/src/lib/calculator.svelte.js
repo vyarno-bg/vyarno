@@ -76,6 +76,7 @@ import {
   convertPay,
   dataAge,
   earnerRanks,
+  headlineIsFlash,
   headlineRate,
   householdRaise,
   netsOf,
@@ -398,6 +399,10 @@ export class Calculator {
   // headline payload so it cannot be handed `categories` and quietly become
   // Σ(w·r) — a different number by ~0.16 pp. See view.js#headlineRate.
   headline = $derived(headlineRate(this.data.hicpHeadline));
+  // Whether that figure is Eurostat's early estimate for the month. Off the
+  // payload's own field — see view.js#headlineIsFlash for why the two months
+  // are not the thing to read it from.
+  headlineIsFlash = $derived(headlineIsFlash(this.data.hicpHeadline));
 
   // Derived: mortgage default rate (live, with fallback chain). Wired from
   // mortgage.json when available, otherwise HOME.rateDefaultPct is the offline
