@@ -159,6 +159,37 @@ test("the home block draws its mortgage bar and the wedge chart", { skip }, asyn
   });
 });
 
+// The euro is computed from the rate and the term; the sentence beside it is
+// written from two more props, and nothing made them the same two numbers. A
+// call site that forgets them leaves `HomeRow`'s own `= 0` defaults in the
+// slots, so the row reads «вноска при 0,0% за 0 г.» over a payment that moves
+// correctly whenever the reader edits either field — every figure right, the
+// sentence describing them wrong, and no gate upstream able to see it because
+// nothing published is at fault (docs/site.md §"A correct formula fed the wrong
+// number"). Reading the two back off the rendered sentence is what closes it:
+// the assertion fails the moment the row stops being handed what it describes.
+test("the mortgage sentence states the rate and the term the payment was built from", {
+  skip,
+}, async () => {
+  await withApp(async (page, errors) => {
+    await page.locator("input[type=number]").first().fill("2500");
+    const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
+    if (await homeToggle.count()) await homeToggle.check();
+    await page.waitForTimeout(300);
+
+    // Typed rather than read off the defaults: a rate that happened to match
+    // whatever `HomeRow` falls back to would pass without the props arriving.
+    await page.locator("#inRate").fill("3.5");
+    await page.locator("#inTerm").fill("20");
+    await page.waitForTimeout(300);
+
+    const row = await page.locator(".r-row", { hasText: "вноска при" }).first().innerText();
+    assert.match(row, /вноска при\s*3,5%/, `the rate is not in the sentence: ${row}`);
+    assert.match(row, /за\s*20\s*г\./, `the term is not in the sentence: ${row}`);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the language and theme toggles change the page", { skip }, async () => {
   await withApp(async (page, errors) => {
     const root = page.locator("html");

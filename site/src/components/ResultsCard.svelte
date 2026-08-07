@@ -57,6 +57,8 @@
     <HomeRow
       homeOn={calc.homeOn}
       householdNet={calc.householdNet}
+      rate={calc.rate}
+      term={calc.term}
       downPayPct={calc.downPayPct}
       m2={calc.m2}
       homePrice={calc.homePrice}
