@@ -490,11 +490,11 @@ test("every euro amount in the carve-out copy carries its unit", () => {
   // The EN carve-out lines once read "a {mort}/mo mortgage" — a bare number on
   // a page where every other figure carries its currency, while the BG side
   // said «{mort} €/мес».
-  for (const key of ["basketCarved", "rentCarved"]) {
+  for (const key of ["basketCarved", "rentCarved", "housingCarved"]) {
     const entry = COPY[key];
     assert.ok(entry, `COPY.${key} is gone`);
     for (const lang of ["bg", "en"]) {
-      for (const [, placeholder] of entry[lang].matchAll(/\{(mort|rent)\}/g)) {
+      for (const [, placeholder] of entry[lang].matchAll(/\{(mort|rent|total)\}/g)) {
         const around = entry[lang].slice(
           Math.max(0, entry[lang].indexOf(`{${placeholder}}`) - 6),
           entry[lang].indexOf(`{${placeholder}}`) + placeholder.length + 12
@@ -506,6 +506,27 @@ test("every euro amount in the carve-out copy carries its unit", () => {
         );
       }
     }
+  }
+});
+
+test("the both-housing carve-out names the combined figure", () => {
+  // Rent and a mortgage payment can be live at once — somebody renting while
+  // pricing a home is who the home block is for. Two sentences there each say
+  // the € column is the remainder after their own payment and neither names
+  // the other, so the reader is left choosing between three bases and only the
+  // sum is right. This is what makes the sum expressible in the sentence.
+  for (const lang of ["bg", "en"]) {
+    const line = COPY.housingCarved[lang];
+    for (const slot of ["{rent}", "{mort}", "{total}"]) {
+      assert.ok(line.includes(slot), `COPY.housingCarved.${lang} has no ${slot} slot: ${line}`);
+    }
+    // The two components say the € column is what is left after BOTH of them,
+    // in one clause. A sentence that keeps the singular has kept the ambiguity
+    // and only added a number to it.
+    assert.ok(
+      /(след тях|after them)/.test(line),
+      `COPY.housingCarved.${lang} still names one payment's remainder: ${line}`
+    );
   }
 });
 
