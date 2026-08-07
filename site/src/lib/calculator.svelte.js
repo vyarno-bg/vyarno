@@ -598,13 +598,18 @@ export class Calculator {
    * горе, за да видиш къде си»), drops the markers and lets the right-edge
    * label back. That branch was written for exactly this state and was
    * unreachable while the placeholder sat in the box.
+   *
+   * **It is a named pay object, not a conditional inside the call.** Every
+   * per-person panel takes `{basis, amounts}` together so an amount cannot
+   * reach one without saying which basis it is on — a net read as a gross is
+   * ~29% out, in the flattering direction on the mortgage line — and
+   * `verify_wiring.mjs` holds that by reading the call. A ternary in the
+   * argument list is wiring inside a `$derived`, which is what `view.js`'s
+   * header exists to keep out; naming it leaves one identifier at the call site
+   * and one place where the empty case is built.
    */
-  wedge = $derived(
-    taxWedgePanel({
-      payroll: this.data.payroll,
-      pay: this.earnersDirty ? this.pay : { basis: this.payBasis, amounts: [] },
-    })
-  );
+  wedgePay = $derived(this.earnersDirty ? this.pay : { basis: this.payBasis, amounts: [] });
+  wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, pay: this.wedgePay }));
 
   // How each earner compares with the Sofia average wage — per earner, because
   // НСИ publish a wage rather than a household income. See view.js#sofiaGap.
