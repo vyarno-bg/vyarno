@@ -378,7 +378,7 @@
               gross: fmt0(calc.sector.gross),
               net: fmt0(calc.sector.net),
               period: period(calc.sector.refPeriod),
-              prelim: calc.sector.isPreliminary ? t(COPY.sectorPrelim, "bg") : "",
+              prelim: calc.sector.isPreliminary ? t(COPY.srcPrelim, "bg") : "",
             })}</a
           >
           <a class="l-en" href={httpUrl(calc.sector.sourceUrl)} target="_blank" rel="noopener"
@@ -386,7 +386,7 @@
               gross: fmt0(calc.sector.gross),
               net: fmt0(calc.sector.net),
               period: period(calc.sector.refPeriod),
-              prelim: calc.sector.isPreliminary ? t(COPY.sectorPrelim, "en") : "",
+              prelim: calc.sector.isPreliminary ? t(COPY.srcPrelim, "en") : "",
             })}</a
           >
         </div>

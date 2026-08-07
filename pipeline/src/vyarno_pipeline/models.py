@@ -149,3 +149,13 @@ class TimeSeriesObservation(BaseModel):
     methodology_change: str | None = None
     # Optional: caveat text surfaced to the user in the UI
     disclaimer: str | None = None
+    # Optional: the publisher marks this reading provisional and will revise it.
+    #
+    # A flag rather than a sentence in `notes`, because the SPA has to render it
+    # beside the figure and no reader opens the JSON. НСИ star a whole year's
+    # sheet title until they finalise it, so their latest quarter is provisional
+    # for around a year after it is first published — long enough that "the
+    # current quarter" and "a settled quarter" are the same thing to anybody
+    # reading the card. `None` where the publisher makes no such distinction,
+    # which is not the same claim as `False`.
+    is_preliminary: bool | None = None

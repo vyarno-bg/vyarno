@@ -481,6 +481,10 @@ export class Calculator {
   // are weeks apart, and a caption reading «≈ 1486 нето · 2026-07-30» dates
   // Q1's average to a day in July.
   sofiaWagePeriod = $derived(this.sofiaQuarter?.refPeriod ?? "");
+  // Whether НСИ will still revise that quarter. Read off the same selection as
+  // the value and the period, so a card cannot show one quarter's figure under
+  // another quarter's marker.
+  sofiaWageIsPreliminary = $derived(Boolean(this.sofiaQuarter?.isPreliminary));
 
   // Payroll parameters — live from the pipeline-published payroll.json when
   // loaded, else the frozen offline sentinel (BG_PAYROLL_DEFAULT). All

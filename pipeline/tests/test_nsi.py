@@ -342,8 +342,20 @@ def test_transform_wraps_into_observation() -> None:
     assert obs.source == "nsi"
     assert obs.dataset == "Labour_1.1.2.2_EUR_EN.xlsx:sheet={year}trimes:row=-Sofia cap."
     assert len(obs.series_by_period) == 2
-    # Notes carry the preliminary flag, the province figure (the
-    # regression-guard evidence) and the Q4 column actually taken.
+    # **The preliminary marker is a FIELD, not a sentence.** Nobody reads a
+    # payload's prose, and the strip has to put the marker beside the figure —
+    # it reached `notes` and stopped there, so the Sofia card showed 1915 as
+    # settled while the sector card three rows up marked НСИ's same quarter
+    # «(предварителни данни)». This figure also re-levels every ladder rung.
+    assert obs.is_preliminary is True
+    assert (
+        sofia_salary_observation(
+            {**scrape, "is_preliminary": False}, as_of=date(2026, 7, 30), source_url=SOURCE_URL
+        ).is_preliminary
+        is False
+    )
+    # Notes carry it too, the province figure (the regression-guard evidence)
+    # and the Q4 column actually taken.
     assert "preliminary" in obs.notes
     assert "1294" in obs.notes
     assert "incl.annual bonuses" in obs.notes

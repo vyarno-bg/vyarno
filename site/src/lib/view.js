@@ -227,23 +227,34 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
  * key in the series — which is the same cell, and keeps a payload written by an
  * older envelope readable.
  *
- * @param {{value?: number, ref_period?: string, series_by_period?: Record<string, number>}} payload
- * @returns {{value: number, refPeriod: string}} zeroed when unavailable
+ * `isPreliminary` is НСИ's own marker for the year the quarter falls in, and it
+ * travels with the figure because the card has to say it. They star a sheet
+ * title until they finalise the year, so their newest quarter carries it for
+ * about a year — long enough that a reader meeting a starred figure has no
+ * reason to think it is anything but settled unless told. Both returns carry
+ * it: only the headline path is exercised by a live payload, so a flag wired
+ * into that one alone drops the marker on the older envelope the fallback is
+ * there for.
+ *
+ * @param {{value?: number, ref_period?: string, is_preliminary?: boolean,
+ *          series_by_period?: Record<string, number>}} payload
+ * @returns {{value: number, refPeriod: string, isPreliminary: boolean}} zeroed when unavailable
  */
 export function sofiaQuarter(payload) {
-  const empty = { value: 0, refPeriod: "" };
+  const isPreliminary = Boolean(payload?.is_preliminary);
+  const empty = { value: 0, refPeriod: "", isPreliminary: false };
   const series = payload?.series_by_period ?? {};
   const quarters = Object.keys(series).filter(
     (k) => /^\d{4}-Q[1-4]$/.test(k) && typeof series[k] === "number"
   );
 
   if (typeof payload?.value === "number" && /^\d{4}-Q[1-4]$/.test(payload?.ref_period ?? "")) {
-    return { value: payload.value, refPeriod: payload.ref_period };
+    return { value: payload.value, refPeriod: payload.ref_period, isPreliminary };
   }
   if (!quarters.length) return empty;
   // "YYYY-Qn" sorts lexicographically as chronologically, for any 4-digit year.
   const refPeriod = quarters.sort()[quarters.length - 1];
-  return { value: series[refPeriod], refPeriod };
+  return { value: series[refPeriod], refPeriod, isPreliminary };
 }
 
 /**

@@ -1732,18 +1732,30 @@ test("the sector figure says which geography it covers", () => {
   }
 });
 
-test("the sector source line marks a preliminary quarter as preliminary", () => {
+test("every НСИ credit line marks a preliminary quarter as preliminary", () => {
   // НСИ mark a whole year preliminary until they finalise it, and 2026 is one.
   // A figure they will revise, shown as settled, tells the reader more
   // certainty than exists (P4). The slot is empty for a final quarter, so this
   // holds the slot rather than the word.
-  for (const text of pair("sectorSrc")) {
-    assert.ok(/\{prelim\}/.test(text), `sectorSrc has no slot for the preliminary marker: ${text}`);
+  //
+  // **Both carriers, because they are one publisher's two cuts of one release.**
+  // `Labour_1.1.2.1` by activity and `1.1.2.2` by region come off the same
+  // quarterly publication under the same star, and they render three rows
+  // apart. Holding the rule over the sector line alone is how the Sofia line
+  // showed 1915 as settled beside a sector average marked provisional — a
+  // reader with no way to tell the two claims are the same claim.
+  for (const key of ["sectorSrc", "statSofiaSrc"]) {
+    for (const text of pair(key)) {
+      assert.ok(
+        /\{prelim\}/.test(text),
+        `COPY.${key} has no slot for the preliminary marker: ${text}`
+      );
+    }
   }
-  for (const text of pair("sectorPrelim")) {
+  for (const text of pair("srcPrelim")) {
     assert.ok(
       /(предварител|preliminary)/i.test(text),
-      `sectorPrelim does not say the figure is preliminary: ${text}`
+      `srcPrelim does not say the figure is preliminary: ${text}`
     );
   }
 });

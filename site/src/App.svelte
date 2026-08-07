@@ -186,6 +186,7 @@
         sofiaEurPerM2={calc.sofiaEurPerM2}
         sofiaMeanGrossUrl={calc.sofiaMeanGrossUrl}
         sofiaWagePeriod={calc.sofiaWagePeriod}
+        sofiaWageIsPreliminary={calc.sofiaWageIsPreliminary}
         sofiaNDistricts={calc.sofiaNDistricts}
         sofiaPriceIsLive={calc.sofiaPriceIsLive}
         {sofiaPriceDated}

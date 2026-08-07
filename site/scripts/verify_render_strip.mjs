@@ -173,6 +173,21 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
       new RegExp(wage.ref_period),
       `the Sofia card dates its figures to ${wage.ref_period} nowhere:\n${caption}`
     );
+    // **The star on НСИ's sheet, where the reader meets the number.** They mark
+    // a whole year provisional until they finalise it, so their newest quarter
+    // carries it for about a year — and this table and the sector card's are the
+    // same publication read two ways, three rows apart on the same page. Shown
+    // on one and not the other, a reader has no way to tell the two claims are
+    // the same claim. Read off the payload, so a finalised quarter drops the
+    // assertion with the marker rather than pinning a word that must go.
+    if (wage.is_preliminary) {
+      assert.match(
+        caption,
+        /(предварителни данни|preliminary)/,
+        `${wage.ref_period} is still provisional at НСИ and the Sofia card shows ` +
+          `it as settled:\n${caption}`
+      );
+    }
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });

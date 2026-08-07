@@ -454,6 +454,14 @@ def sofia_salary_observation(
         unit="eur_per_month",
         value=value_eur,
         series_by_period=series,
+        # The star on НСИ's sheet title, carried to where a reader meets the
+        # number. It reached `notes` and stopped there, and nobody reads a
+        # payload's prose — so the strip showed 1915 as settled while the sector
+        # card three rows up marked the SAME publisher's SAME quarter
+        # «(предварителни данни)». This figure also re-levels every rung of the
+        # salary ladder, so a reader placed on it is placed on a provisional
+        # number twice over.
+        is_preliminary=is_prelim,
         notes=(
             f"Average GROSS monthly wage in the Sofia-city statistical region "
             f"(BG411), as published by НСИ and unmodified. `value` and "

@@ -473,12 +473,50 @@ test("sofiaQuarter prefers the payload headline, and falls back to the newest ke
   const withHeadline = {
     value: 1915,
     ref_period: "2026-Q1",
+    is_preliminary: true,
     series_by_period: { "2025-Q4": 1859, "2026-Q1": 1915 },
   };
-  assert.deepEqual(sofiaQuarter(withHeadline), { value: 1915, refPeriod: "2026-Q1" });
+  assert.deepEqual(sofiaQuarter(withHeadline), {
+    value: 1915,
+    refPeriod: "2026-Q1",
+    isPreliminary: true,
+  });
 
   const seriesOnly = { series_by_period: { "2025-Q4": 1859, "2026-Q1": 1915 } };
-  assert.deepEqual(sofiaQuarter(seriesOnly), { value: 1915, refPeriod: "2026-Q1" });
+  assert.deepEqual(sofiaQuarter(seriesOnly), {
+    value: 1915,
+    refPeriod: "2026-Q1",
+    isPreliminary: false,
+  });
+});
+
+test("sofiaQuarter carries НСИ's preliminary marker down both paths", () => {
+  // The marker is what the card says beside the figure, and it has to come off
+  // the same selection the figure did. Absent it, the strip shows 1915 as
+  // settled while the sector card three rows up marks the same publisher's same
+  // quarter «(предварителни данни)» — one release, two claims about it.
+  //
+  // Both paths, because the headline path and the series fallback are separate
+  // returns and only the first one is exercised by a live payload: a flag
+  // wired into that one alone passes every test written against today's file
+  // and drops the marker on the older envelope the fallback exists for.
+  const flagged = { "2026-Q1": 1915 };
+  assert.equal(
+    sofiaQuarter({
+      value: 1915,
+      ref_period: "2026-Q1",
+      is_preliminary: true,
+      series_by_period: flagged,
+    }).isPreliminary,
+    true
+  );
+  assert.equal(
+    sofiaQuarter({ is_preliminary: true, series_by_period: flagged }).isPreliminary,
+    true
+  );
+  // A publisher that draws no such distinction is not the same claim as one
+  // who marked the quarter final, but the card can only stay silent for both.
+  assert.equal(sofiaQuarter({ series_by_period: flagged }).isPreliminary, false);
 });
 
 test("sofiaQuarter ignores a monthly key rather than treating it as a quarter", () => {
@@ -487,7 +525,7 @@ test("sofiaQuarter ignores a monthly key rather than treating it as a quarter", 
   // ~7.6% above its own quarter on the published series, which propagates to
   // every rung of the ladder.
   const monthly = { series_by_period: { "2026-01": 1865, "2026-02": 1818, "2026-03": 2061 } };
-  assert.deepEqual(sofiaQuarter(monthly), { value: 0, refPeriod: "" });
+  assert.deepEqual(sofiaQuarter(monthly), { value: 0, refPeriod: "", isPreliminary: false });
 });
 
 test("sofiaQuarter returns zeros rather than NaN when the payload is missing", () => {

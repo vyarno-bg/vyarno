@@ -33,6 +33,8 @@
     sofiaEurPerM2 = 0,
     sofiaMeanGrossUrl = "",
     sofiaWagePeriod = "",
+    /** НСИ star the year until they finalise it; the card has to say so. */
+    sofiaWageIsPreliminary = false,
     sofiaNDistricts = 0,
     /** True when the €/m² came from sofia_price.json, not the offline constant. */
     sofiaPriceIsLive = false,
@@ -51,15 +53,23 @@
   const fmt0 = (x) => integer(x, $lang);
   const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
-  // Both figures on the Sofia card's source line, built once so the two
+  // Everything on the Sofia card's source line, built in one place so the two
   // language spans cannot be handed different numbers. The gross is НСИ's own
   // published cell and the net is our conversion of it; the em dash is what a
   // missing payload renders as, because a caption reading «0 €» under their
   // name is a figure nobody published.
-  const sofiaSrcArgs = $derived({
+  //
+  // It takes the language rather than reading `$lang`, because one of these is
+  // a TRANSLATED string and the rest are digits. Both language spans are in the
+  // DOM whatever the reader chose, so a shared `$lang` lookup files
+  // «(предварителни данни)» inside the English sentence for every Bulgarian
+  // reader — invisible to them, and to a suite reading only what is on screen.
+  const sofiaSrcArgs = (lang) => ({
     gross: sofiaMeanGross > 0 ? fmt0(sofiaMeanGross) : "—",
     net: sofiaNet > 0 ? fmt0(sofiaNet) : "—",
     period: period(sofiaWagePeriod),
+    // Empty for a settled quarter, so the marker is absent rather than negated.
+    prelim: sofiaWageIsPreliminary ? t(COPY.srcPrelim, lang) : "",
   });
 
   // The sparkline is drawn in user units scaled to the card's measured width,
@@ -214,8 +224,8 @@
         </div>
         <div class="ss">
           <a href={sofiaMeanGrossUrl} target="_blank" rel="noopener">
-            <span class="l-bg">{t(COPY.statSofiaSrc, "bg", sofiaSrcArgs)}</span>
-            <span class="l-en">{t(COPY.statSofiaSrc, "en", sofiaSrcArgs)}</span>
+            <span class="l-bg">{t(COPY.statSofiaSrc, "bg", sofiaSrcArgs("bg"))}</span>
+            <span class="l-en">{t(COPY.statSofiaSrc, "en", sofiaSrcArgs("en"))}</span>
           </a>
         </div>
       </div>
