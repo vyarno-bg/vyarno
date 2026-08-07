@@ -1,7 +1,7 @@
 # Validation gates
 
-Six gates block the HICP publish, plus five on the mortgage panel and one on the
-by-sector wage payload. They run in order, short-circuit on the first failure,
+Seven gates block the HICP publish, plus five on the mortgage panel and one on
+the by-sector wage payload. They run in order, short-circuit on the first failure,
 and never pass silently. On any failure the CLI exits **before** publish, so the
 on-disk JSON never represents a failed run.
 
@@ -13,7 +13,8 @@ on-disk JSON never represents a failed run.
 | 4 | Group consistency | A division's sub-groups not adding up to it |
 | 5 | Coverage | A missing year, at either level |
 | 6 | Link status | A published verify link that does not resolve to real data |
-| 7 | Sector wages | An НСИ by-activity headline that was computed rather than selected |
+| 7 | Flash marker | A headline that does not say which Eurostat release it came from |
+| 8 | Sector wages | An НСИ by-activity headline that was computed rather than selected |
 
 ## Gate 1 — classification agreement
 
@@ -170,7 +171,33 @@ and that link is what the reader clicks to verify a number.
 rate-limiting, wait and re-run. If the URL shape changed, fix `api_url` in
 `transform.py`.
 
-## Gate 7 — sector wages (`--source sector-salary`)
+## Gate 7 — flash marker
+
+`validate.py#validate_headline_flash`
+
+`hicp_headline.json` carries `is_flash`, and this gate is what makes it worth
+reading. Eurostat's flash publishes the all-items rate about two weeks ahead of
+the index and the divisions, so on a flash `ref_period` sits one month past
+`latest_index.time` and on a full release the two name one month. The gate
+requires the flag and that pair to agree, in both directions, on both release
+shapes.
+
+Both directions cost the reader, which is why it is an equivalence rather than
+a check for a missing marker. Unmarked, Eurostat's early estimate renders in the
+banner in the same voice as a settled figure — and it moves when the full
+release lands. Marked wrongly, the site hangs «експресна оценка» on a rate
+Eurostat has finalised, so a reader who opens the cube finds the two agree and
+the page hedging anyway.
+
+An index AHEAD of the rate fails too. That is not a release shape: Eurostat
+publish the all-items rate for a month at or before the index for it, so the two
+series being the other way round means one of the extracts is wrong.
+
+**What to do when it trips:** read the two months in the message. If they are
+the ones Eurostat published, the detection at the top of `_refresh_hicp` is what
+disagrees with them — fix `is_flash` there. Do not pass the flag by hand.
+
+## Gate 8 — sector wages (`--source sector-salary`)
 
 `validate.py#validate_sector_salary`. Guards the **payload**; the connector
 guards the sheet, and the two catch different things.
@@ -239,12 +266,12 @@ detail.
 
 | `--source` | Gates | Notes |
 |---|---|---|
-| `hicp` (full release) | 1-6 (gate 6 unless `--skip-link-check`) | The full set; writes both payloads |
-| `hicp` (flash) | 1, 5 and 6 — 2, 3 and 4 have no inputs at the flash month | Writes `hicp_headline.json` only, exit 0 |
+| `hicp` (full release) | 1-7 (gate 6 unless `--skip-link-check`) | The full set; writes both payloads |
+| `hicp` (flash) | 1, 5, 6 and 7 — 2, 3 and 4 have no inputs at the flash month | Writes `hicp_headline.json` only, exit 0 |
 | `mortgage` | the five mortgage gates + freshness on both tiers | No best-effort tier |
 | `sofia-price` | bounds [100, 10000] €/m²; <20 districts = exit 2 | WARNs when имот.bg publishes no «обновена на» date, so a frozen page is visible |
 | `sofia-salary` | Sofia city must exceed Sofia province, else exit 2 | Regression guard on the row selector |
-| `sector-salary` | gate 7 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
+| `sector-salary` | gate 8 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
 | `salary-dist` | P1 floored at the statutory minimum wage | — |
 | `payroll` | no network; parity-checked against the SPA sentinel | `test_payroll.py` reads `mirror.js` |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
@@ -263,13 +290,14 @@ detail.
 → gate: chain reconciliation (divisions rebuild the all-items index, ±0.02 pp)...
 → gate: basket sum (Σ(w·r) near headline, ±0.5 pp)...
 → gate: group consistency (each division's groups sum to it)...
+→ gate: flash marker (is_flash agrees with the two published months)...
 → gate: coverage (every division AND group, every completed year 2020→2025; partial 2026 excluded)...
 → gate: link status (52 URLs — both extracts per division plus a sampled group, body inspection)...
 → publishing to ../data/published/
 OK: wrote hicp_categories.json (13 divisions + 46 groups, 2026 weights) + hicp_headline.json (headline 5.2% / 2026-06)
 ```
 
-**Six gate lines is the pass condition.** A run that publishes with fewer has
+**Seven gate lines is the pass condition.** A run that publishes with fewer has
 skipped one — usually `--skip-link-check`.
 
 ## A good HICP flash run
@@ -279,6 +307,7 @@ skipped one — usually `--skip-link-check`.
 → gate: classification agreement (59 codes × prc_hicp_iw vs prc_hicp_minr)...
   FLASH: 2026-07 carries CP00 alone — the divisions and the index are still at 2026-06
 → gates: chain reconciliation, basket sum, group consistency SKIPPED — no index and no divisions at the flash month to feed them
+→ gate: flash marker (is_flash agrees with the two published months)...
 → gate: coverage (every division AND group, every completed year 2020→2025; partial 2026 excluded)...
 → gate: link status (52 URLs — both extracts per division plus a sampled group, body inspection)...
 → publishing to ../data/published/

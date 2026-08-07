@@ -163,6 +163,9 @@ def test_refresh_hicp_publishes_the_headline_from_cp00_at_its_own_month(tmp_path
     headline = json.loads((tmp_path / "hicp_headline.json").read_text(encoding="utf-8"))
     assert headline["headline_rate_pct"] == pytest.approx(5.2)
     assert headline["ref_period"] == "2026-06"
+    # Written on both shapes, so a consumer never has to read an absent key as
+    # "not a flash" — which is also what an envelope predating the field means.
+    assert headline["is_flash"] is False
 
     # …and the categories payload carries the SAME month. One cube, one call,
     # one month: were these to disagree, the site's data panel would date two
@@ -214,6 +217,11 @@ def test_refresh_publishes_a_flash_headline_and_leaves_the_categories_alone(tmp_
     assert headline["latest_index"] == {"time": "2026-06", "value": pytest.approx(148.86)}
     assert headline["index_by_year"]["2020"] == pytest.approx(106.43)
     assert "FLASH" in headline["notes"], "the payload does not say the two months differ on purpose"
+    # The field the site reads. The note above is prose for whoever opens the
+    # JSON; this is what puts «експресна оценка» on the banner, and a run that
+    # writes one without the other leaves the page stating an estimate as
+    # settled while the payload explains itself to nobody who renders it.
+    assert headline["is_flash"] is True
 
     # Gates 1, 5 and 6 keep their inputs on this path; 2, 3 and 4 do not.
     assert "classification agreement" in result.output

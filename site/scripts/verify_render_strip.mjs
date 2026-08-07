@@ -307,6 +307,52 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
   });
 });
 
+test("Eurostat's estimate is marked as one, on both surfaces", { skip }, async () => {
+  // The headline rate reaches the reader twice on this page — the banner above
+  // the calculator and the first strip card — and both print it as an official
+  // figure with a month on it. On a flash that month's reading is Eurostat's
+  // early estimate and it moves when the full release lands, so a page that
+  // marks one surface and not the other tells a reader whichever it is they
+  // happened to read.
+  //
+  // Driven off `is_flash` rather than asserting the marker unconditionally:
+  // the payload is a flash today and will be a full release after the next
+  // refresh, and a test pinned to the marker would then be failed by correct
+  // data. The negative branch is not decoration either — it is what catches a
+  // marker rendered whatever the payload says, which is the same defect from
+  // the other side.
+  const head = published("hicp_headline");
+  const flash = head.is_flash === true;
+
+  await withApp(async (page, errors) => {
+    const banner = await page.locator(".data-strip-inner .off-fig").innerText();
+    const card = await page
+      .locator(".strip .stat", { hasText: /инфлация за година|annual inflation/ })
+      .first()
+      .locator(".ss")
+      .innerText();
+    // The rendered marker, not a literal: the banner is uppercased by CSS, and
+    // `innerText` returns what the reader sees, so a hardcoded «експресна»
+    // never matches while the page is right.
+    const MARK = /експресна оценка|flash estimate/i;
+    for (const [where, text] of [
+      ["banner", banner],
+      ["strip card", card],
+    ]) {
+      assert.equal(
+        MARK.test(text),
+        flash,
+        flash
+          ? `hicp_headline.json is Eurostat's flash and the ${where} states the ` +
+              `rate as settled:\n${text}`
+          : `hicp_headline.json is a full release and the ${where} hedges it as ` +
+              `an estimate anyway:\n${text}`
+      );
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("no SVG on the page is drawn with distorted axes", { skip }, async () => {
   // The Sofia sparkline was a fixed 110×22 box rendered at `width: 100%` with
   // `preserveAspectRatio="none"`, so at a card's real width the horizontal scale

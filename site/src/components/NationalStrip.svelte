@@ -19,6 +19,10 @@
     data = {},
     /** Official annual HICP rate; the strip's first card. */
     headline = 0,
+    /** True when that rate is Eurostat's flash estimate for the month — their
+        early all-items reading, ahead of the index and the divisions. The
+        card's source line carries the marker, beside the month it qualifies. */
+    headlineIsFlash = false,
     /** 11-point gross earnings ladder; index 5 is the median. */
     ladder = [],
     /** Sofia's median NET wage, for the comparator card. */
@@ -129,7 +133,7 @@
           <a href={estatHeadlineUrl} target="_blank" rel="noopener"
             >{COPY.srcEurostat[$lang] ?? COPY.srcEurostat.en}</a
           >
-          · {data.hicpHeadline?.ref_period ?? ""}
+          · {data.hicpHeadline?.ref_period ?? ""}{headlineIsFlash ? t(COPY.srcFlash, $lang) : ""}
         </div>
       </div>
     {/if}

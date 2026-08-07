@@ -97,6 +97,7 @@
   asOfDisplay={calc.asOfDisplay}
   headline={calc.headline}
   headlineRefPeriod={calc.headlineRefPeriod}
+  headlineIsFlash={calc.headlineIsFlash}
   showStaleBanner={calc.showStaleBanner}
   dataOverdueCount={calc.dataOverdueCount}
   dataOldestAsOf={calc.dataOldestAsOf}
@@ -177,6 +178,7 @@
         categories={calc.categories}
         data={calc.data}
         headline={calc.headline}
+        headlineIsFlash={calc.headlineIsFlash}
         ladder={calc.ladder}
         sofiaNet={calc.sofiaNet}
         sofiaMeanGross={calc.sofiaMeanGrossEur}

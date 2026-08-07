@@ -107,6 +107,7 @@ from vyarno_pipeline.validate import (
     validate_classification_agreement,
     validate_coverage,
     validate_group_consistency,
+    validate_headline_flash,
     validate_link_status,
     validate_meta_labels_cover,
     validate_reconciliation,
@@ -462,6 +463,33 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
             f"index are still at {max(division_rate_periods, default='?')}"
         )
 
+    # The all-items index alongside the rate. `raw_index["CP00"]` is the same
+    # TOTAL series the chain gate consumes, so this adds no fetch and cannot
+    # drift from what that gate checked.
+    #
+    # It goes through `index_fields` — the SAME helper every division uses —
+    # rather than a local copy of the selection rules. Two implementations of
+    # "which reading is this year's" in two places is how the numerator and the
+    # denominator of a since-year division end up describing different months,
+    # which is the one failure `math.md` invariant #1 exists to prevent and the
+    # one a 12-month rate cannot reveal.
+    #
+    # Computed above the gates because gate 7 reads `total_latest["time"]` —
+    # the month that actually reaches the payload. Re-deriving "the freshest
+    # index month" for the gate would let the gate pass on a month the publish
+    # step never writes.
+    cp00_index_rows = [
+        {"time": t, "value": v} for t, v in sorted(raw_index.get("CP00", {}).items())
+    ]
+    if not cp00_index_rows:
+        click.echo("ERROR: CP00 (TOTAL) index missing from index response", err=True)
+        sys.exit(2)
+    try:
+        total_by_year, total_latest, _ = index_fields(cp00_index_rows, "CP00")
+    except MissingSeriesError as e:
+        click.echo(f"ERROR: transform failed on the all-items index: {e}", err=True)
+        sys.exit(2)
+
     try:
         if is_flash:
             # Gates 2, 3 and 4 do not run here because their inputs do not
@@ -504,6 +532,18 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
 
             click.echo("→ gate: group consistency (each division's groups sum to it)...")
             validate_group_consistency(list(cats.values()))
+
+        # Runs on BOTH release shapes, because both can carry a wrong marker
+        # and the wrong one is invisible on screen either way: an unmarked
+        # flash reads as settled, and a marked full release hedges a figure
+        # Eurostat has finalised. It is the only gate here that checks what
+        # the payload SAYS about itself rather than what its figures are.
+        click.echo("→ gate: flash marker (is_flash agrees with the two published months)...")
+        validate_headline_flash(
+            ref_period=headline_period,
+            latest_index_time=str(total_latest["time"]),
+            flash=is_flash,
+        )
 
         # Coverage gate requires every CP to have every COMPLETED year.
         # A year is "completed" only if its December reading has been
@@ -565,27 +605,6 @@ def _refresh_hicp(out: Path, geo: str, since_year: int, skip_link_check: bool, a
             # into `categories[]`.
             ref_period=headline_period,
         )
-    # The all-items index alongside the rate. `raw_index["CP00"]` is the same
-    # TOTAL series the chain gate just consumed, so this adds no fetch and
-    # cannot drift from what that gate checked.
-    #
-    # It goes through `index_fields` — the SAME helper every division uses —
-    # rather than a local copy of the selection rules. Two implementations of
-    # "which reading is this year's" in two places is how the numerator and the
-    # denominator of a since-year division end up describing different months,
-    # which is the one failure `math.md` invariant #1 exists to prevent and the
-    # one a 12-month rate cannot reveal.
-    cp00_index_rows = [
-        {"time": t, "value": v} for t, v in sorted(raw_index.get("CP00", {}).items())
-    ]
-    if not cp00_index_rows:
-        click.echo("ERROR: CP00 (TOTAL) index missing from index response", err=True)
-        sys.exit(2)
-    try:
-        total_by_year, total_latest, _ = index_fields(cp00_index_rows, "CP00")
-    except MissingSeriesError as e:
-        click.echo(f"ERROR: transform failed on the all-items index: {e}", err=True)
-        sys.exit(2)
     # `total_latest` is the freshest month in the INDEX cube, which on a flash
     # is the month before the headline's. That gap is the point: the June index
     # is a figure Eurostat has published, and carrying it keeps the savings card

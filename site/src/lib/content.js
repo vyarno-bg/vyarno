@@ -1180,9 +1180,14 @@ export const COPY = {
   // it covers — the same latest month the calculator's default (y1) uses.
   // Plain language, no dataset code. "инфлация" is the everyday word for
   // how much prices went up; "ставка" sounds like a bank rate.
+  // `{flash}` lands at the END, next to the period it qualifies rather than
+  // next to the publisher's name — the estimate is a property of this month's
+  // reading, not of Eurostat. Which is also why the Bulgarian carries the
+  // attribution up front: two parentheticals in a row read as an aside about
+  // an aside, and the marker is the one a reader has to see.
   headlineRate: {
-    bg: "официална инфлация: {rate}% за {ref_period} (по данни на Евростат)",
-    en: "official Eurostat inflation: {rate}% for {ref_period}",
+    bg: "официална инфлация по данни на Евростат: {rate}% за {ref_period}{flash}",
+    en: "official Eurostat inflation: {rate}% for {ref_period}{flash}",
   },
   statInfK: { bg: "инфлация за година", en: "annual inflation" },
   // Always-on "typical pay" card. The MEDIAN (half earn less, half more) is
@@ -1310,6 +1315,19 @@ export const COPY = {
   // star, and two keys holding the same string is how one of them ends up
   // saying something the other does not.
   srcPrelim: { bg: " (предварителни данни)", en: " (preliminary)" },
+  // Eurostat's flash, and it gets its OWN words rather than reusing the marker
+  // above. «Предварителни данни» is what НСИ print over a quarter they will
+  // finalise at the end of the year: the figure stands, the sheet is not
+  // closed. Eurostat's flash is a different state — the all-items rate for a
+  // month, published about two weeks ahead of that month's index and its
+  // divisions, and replaced by the full reading rather than confirmed by it.
+  // «Експресна оценка» is the term the publisher's own Bulgarian uses for it,
+  // and the site prints both markers on the same screen, so the one thing they
+  // may not do is read as the same claim.
+  //
+  // Shared by the banner and the strip card for the reason srcPrelim is shared
+  // by the two НСИ credit lines: one string cannot drift from itself.
+  srcFlash: { bg: " (експресна оценка)", en: " (flash estimate)" },
   // **The sentence the whole feature turns on.** НСИ publish an average by
   // activity and nobody publishes a distribution by one, so the card can say
   // how far the reader is from an average and cannot say where they rank.
