@@ -490,9 +490,20 @@
     gap: 8px;
     flex-wrap: wrap;
   }
+  /* `min-width: 0` let the select shrink to whatever was left beside the label
+     rather than wrapping under it, and at 360px what was left was 178px — which
+     clipped even the placeholder, «— избери дейно», on the control whose options
+     are the longest strings on the page.
+
+     A floor is what makes `flex-wrap` above actually fire. 20ch clears the
+     placeholder and sits between the 178px a phone leaves and the 264px the
+     desktop column does, so the row wraps on a phone and the select takes the
+     full 286px, while the wide layout keeps the label and the control on one
+     line exactly as before. No breakpoint, because the number that matters is
+     how much room is left rather than how wide the window is. */
   .sector select {
     flex: 1;
-    min-width: 0;
+    min-width: 20ch;
   }
   .sector-l {
     white-space: nowrap;
