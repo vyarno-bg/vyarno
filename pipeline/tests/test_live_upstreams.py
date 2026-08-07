@@ -67,6 +67,48 @@ def _quarters_old(period: str, today: date | None = None) -> int:
     return (today.year - int(year)) * 4 + ((today.month - 1) // 3 + 1 - int(quarter))
 
 
+# How many months of the rate cube a detail probe reads. One is wrong for the
+# reason `_newest_month_carrying` explains; three spans a flash window plus the
+# full release before it, with a month to spare.
+DETAIL_WINDOW = 3
+
+
+def _newest_month_carrying(cube, required: set[str]) -> str:
+    """The newest month with every one of `required` in it — not the newest month.
+
+    **Eurostat's flash is the whole reason this is not `max(times)`.** The
+    all-items rate for a month is published about two weeks before that month's
+    divisions exist, so for two or three weeks in every month the newest month
+    in this cube carries aggregates and nothing else. That is not a fault: it is
+    the regime this site is built for, where `hicp_headline.json` moves to the
+    flash month and `hicp_categories.json` stays exactly where the last full
+    release left it (`docs/validation-gates.md` §"Gate 2", `docs/math.md`
+    §"Eurostat's flash release separates them").
+
+    A probe reading the newest month and expecting detail under it therefore
+    reports "upstream reshaped the cube" on roughly a fifth of all days, against
+    an upstream that is behaving exactly as documented. That is the failure mode
+    the live suite can least afford — its entire value is that a red run means
+    something, and a probe that cries wolf every month is one somebody stops
+    running, taking the real signal with it.
+
+    Reading the newest COMPLETE month instead keeps the assertion strict about
+    what it actually cares about: that the detail is still published somewhere
+    recent. The freshness check at each call site is what stops a widened window
+    from hiding a cube that has genuinely stopped.
+    """
+    by_month: dict[str, set[str]] = {}
+    for row in cube.rows:
+        by_month.setdefault(row["time"], set()).add(row["coicop"])
+    complete = [m for m, codes in by_month.items() if required <= codes]
+    assert complete, (
+        f"no month in {sorted(by_month)} carries all {len(required)} required codes. "
+        f"That is wider than a flash window — the newest month being partial is "
+        f"normal, every month being partial is a reshape."
+    )
+    return max(complete)
+
+
 # ---------------------------------------------------------------------------
 # Eurostat — the headline, the categories, the weights
 # ---------------------------------------------------------------------------
@@ -145,7 +187,15 @@ def test_eurostat_weights_and_rates_still_agree_on_what_each_code_means():
     from vyarno_pipeline.validate import validate_classification_agreement
 
     weights = fetch_hicp_weights_bg(geo="BG", last_periods=1)
-    rates = fetch_hicp_rates_bg(geo="BG", last_periods=1)
+    # Labels are dimension metadata and do not vary by month, so the window is
+    # not about what is compared — it is about the fetch completing at all.
+    # `fetch_hicp_rates_bg` requires every division to be present in what comes
+    # back, and at the flash month none of them is, so a one-month window makes
+    # this raise for two weeks out of every four. One year the weights really
+    # did come from a ver.1 cube while the rates came from ver.2; the probe that
+    # would catch that recurring must not be the one people have learned to
+    # ignore.
+    rates = fetch_hicp_rates_bg(geo="BG", last_periods=DETAIL_WINDOW)
     codes = [*CP_DIVISIONS, *group_codes_in_basket(weights)]
 
     validate_classification_agreement(
@@ -163,6 +213,10 @@ def test_eurostat_still_publishes_group_level_detail_for_bg():
     If Eurostat stopped publishing them, every division's drill-down would
     empty out — the group-consistency gate would fail the refresh, and this
     probe says why.
+
+    Asserted at the newest month that carries the whole group set rather than at
+    the newest month full stop, because during a flash window those are not the
+    same month and only one of them is a claim about Eurostat.
     """
     weights = fetch_hicp_weights_bg(geo="BG", last_periods=1)
     groups = group_codes_in_basket(weights)
@@ -171,8 +225,21 @@ def test_eurostat_still_publishes_group_level_detail_for_bg():
     assert parents == set(CP_DIVISIONS), (
         f"divisions with no groups: {sorted(set(CP_DIVISIONS) - parents)}"
     )
-    rated = {r["coicop"] for r in fetch_hicp_rates_bg(geo="BG", last_periods=1, codes=groups).rows}
-    assert set(groups) <= rated, f"groups with a weight but no rate: {sorted(set(groups) - rated)}"
+
+    cube = fetch_hicp_rates_bg(geo="BG", last_periods=DETAIL_WINDOW, codes=groups)
+    month = _newest_month_carrying(cube, set(groups))
+    rated = {r["coicop"] for r in cube.rows if r["time"] == month}
+    assert set(groups) <= rated, (
+        f"at {month}, groups with a weight but no rate: {sorted(set(groups) - rated)}"
+    )
+    # The window above is wide enough to step over a flash month, which is also
+    # wide enough to step over a cube that quietly stopped. This is what keeps
+    # the first from buying the second: the newest COMPLETE month still has to be
+    # recent. A flash costs one month, so anything past two is not a flash.
+    assert _months_old(month) <= 3, (
+        f"the newest month with full group detail is {month} — too old to be a "
+        f"flash window, so the detail has stopped being published"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -365,6 +365,22 @@ the whole reason the probe exists — it fails there instead of skipping. A 403,
 rate limit, a 5xx or a timeout still skips, and so does every status on
 имот.bg, which answers datacenter IPs with 403 by policy.
 
+**The detail probes read the newest COMPLETE month, not the newest one**, and
+that follows from the flash regime above rather than being a looser assertion.
+For two or three weeks in every month the newest month in `prc_hicp_minr`
+carries the all-items rate and no divisions, which is exactly what the flash
+path is built for — so a probe reading `max(times)` and expecting divisions
+under it reports "upstream reshaped the cube" on roughly a fifth of all days,
+against an upstream behaving as documented. The live suite's whole value is that
+a red run means something, and a probe that cries wolf monthly is one somebody
+stops running.
+
+Two assertions keep the wider window from buying that quiet. If **no** month in
+the window carries the full set, the probe raises — the newest month being
+partial is normal, every month being partial is a reshape. And the newest
+complete month must still be recent: a flash costs one month, so anything past
+two has stopped being published rather than being briefly ahead.
+
 ## Cross-references
 
 - [`math.md`](./math.md) — why each reconciliation is shaped the way it is
