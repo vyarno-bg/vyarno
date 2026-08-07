@@ -1625,19 +1625,20 @@ test("the sector coverage line says who the series leaves out", () => {
 
 test("the calibration states the skew in words and puts no level on screen", () => {
   // **The one string on the site that may not print a euro figure.** It draws
-  // on Eurostat's SES, whose levels are the survey's own and four years behind
-  // the НСИ quarter the rest of this card is built on. Everywhere else the
-  // shape is re-levelled to the current anchor before a reader sees a euro
-  // (`mirror.js#composeLadder`); here there is nothing to re-level against,
-  // because the sentence is about the whole country and the card's anchors are
-  // Sofia's and the sector's.
+  // on Eurostat's SES, which runs four-yearly against an НСИ table that moves
+  // every quarter, so its levels are between one and five years behind the
+  // figures on the rest of this card and never level with them. Everywhere
+  // else the shape is re-levelled to the current anchor before a reader sees a
+  // euro (`mirror.js#composeLadder`); here there is nothing to re-level
+  // against, because the sentence is about the whole country while the card's
+  // anchors are Sofia's and the sector's.
   //
   // So an SES mean rendered here lands three lines under НСИ's national
-  // all-activities figure for the current quarter and roughly a third below
-  // it. Dating it does not help: the reader is not deciding which figure is
-  // fresher, they are deciding which one is wrong. The claim survives without
-  // the levels — the skew is what the sentence is about — and the levels do
-  // not survive the neighbours.
+  // all-activities figure for the current quarter and well below it. Dating it
+  // does not help: the reader is not deciding which figure is fresher, they are
+  // deciding which one is wrong. The claim survives without the levels — the
+  // skew is what the sentence is about — and the levels do not survive the
+  // neighbours.
   for (const text of pair("sectorAverageFlatters")) {
     assert.ok(
       /\{shapeYear\}/.test(text),
