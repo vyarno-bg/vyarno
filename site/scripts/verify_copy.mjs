@@ -1623,57 +1623,62 @@ test("the sector coverage line says who the series leaves out", () => {
   }
 });
 
-test("the calibration marks its modelled figure and dates its measured one", () => {
-  // The sentence carries two figures of different standing and must not say
-  // them in one voice. Eurostat publish BG's median and mean, so the ratio is
-  // measured; they publish only D1, the median and D9, and the mean falls
-  // between P60 and P70 — rungs mirror.js interpolates — so the percentile is
-  // modelled. P3: a figure derived from published figures inherits the
-  // obligation to name its inputs and its vintage.
+test("the calibration states the skew in words and puts no level on screen", () => {
+  // **The one string on the site that may not print a euro figure.** It draws
+  // on Eurostat's SES, whose levels are the survey's own and four years behind
+  // the НСИ quarter the rest of this card is built on. Everywhere else the
+  // shape is re-levelled to the current anchor before a reader sees a euro
+  // (`mirror.js#composeLadder`); here there is nothing to re-level against,
+  // because the sentence is about the whole country and the card's anchors are
+  // Sofia's and the sector's.
+  //
+  // So an SES mean rendered here lands three lines under НСИ's national
+  // all-activities figure for the current quarter and roughly a third below
+  // it. Dating it does not help: the reader is not deciding which figure is
+  // fresher, they are deciding which one is wrong. The claim survives without
+  // the levels — the skew is what the sentence is about — and the levels do
+  // not survive the neighbours.
   for (const text of pair("sectorAverageFlatters")) {
     assert.ok(
       /\{shapeYear\}/.test(text),
-      `sectorAverageFlatters states a percentile without dating the survey behind it: ${text}`
-    );
-    assert.ok(
-      /(сметнато|изчислено|не е измерено|worked out|not measured)/i.test(text),
-      `sectorAverageFlatters states a modelled percentile as if it were measured: ${text}\n` +
-        "Eurostat publish D1, the median and D9 for BG — every rung between them is interpolated."
+      `sectorAverageFlatters cites a survey without dating it: ${text}`
     );
     assert.ok(
       /(Евростат|Eurostat)/.test(text),
-      `sectorAverageFlatters does not name whose figures these are: ${text}`
+      `sectorAverageFlatters does not name whose survey this is: ${text}`
     );
-    // Eurostat print a mean and a median for BG and nothing between them, so
-    // both have to be on screen: they are what makes «средната не е средата»
-    // checkable rather than asserted, and the sentence is otherwise one figure
-    // of ours under a Eurostat credit.
-    for (const slot of ["{mean}", "{median}"]) {
-      assert.ok(
-        text.includes(slot),
-        `sectorAverageFlatters claims an average sits above the middle without showing ${slot}, ` +
-          `the published figure that demonstrates it: ${text}`
-      );
-    }
-    // {cut} is ours — the mean's rung, read off interpolated ones — and it sits
-    // in a sentence naming Eurostat twice. The attribution is checked by
-    // meaning rather than by the phrase that carried it, because the phrase is
-    // the part a plain-language pass legitimately rewrites and the obligation
-    // is the part that must survive one.
-    assert.ok(
-      /(наша сметка|наше|\bours\b|\bour\b)/i.test(text),
-      `sectorAverageFlatters leaves a figure of ours inside a Eurostat credit: ${text}\n` +
-        "Eurostat publish the mean and the median. The percentile between them is not theirs."
-    );
-    // Eurostat's mean and median are GROSS, and the source line directly above
-    // ends in a net. Unlabelled, the two sit a line apart on different bases
-    // and read as comparable levels — only the ratio carries between them.
+    // The basis, though no level is shown: the credit line three rows up ends
+    // in a net, and «средната заплата» with no basis reads as whichever one the
+    // reader last saw.
     assert.ok(
       /(брутна|GROSS)/.test(text),
-      `sectorAverageFlatters states a mean and a median without naming their basis: ${text}\n` +
-        "The line above it ends in a net figure, so an unlabelled level invites the comparison."
+      `sectorAverageFlatters names an average without naming its basis: ${text}\n` +
+        "The credit line above it ends in a net figure, so an unlabelled average invites the comparison."
+    );
+    for (const slot of ["{mean}", "{median}", "{cut}", "{medianPct}"]) {
+      assert.ok(
+        !text.includes(slot),
+        `sectorAverageFlatters renders ${slot}: ${text}\n` +
+          "SES levels are the survey's own and sit years behind the НСИ quarter on the same card, " +
+          "and {cut}/{medianPct} are figures of ours needing more disclaimer than the sentence can " +
+          "carry. State the skew in words — mirror.js#meanRungPosition gates it on the published pair."
+      );
+    }
+    assert.ok(
+      !/\d/.test(text.replace(/\{[a-zA-Z]+\}/g, "")),
+      `sectorAverageFlatters writes a digit into prose that shows no figures: ${text}`
     );
   }
+
+  // The sentence asserts a skew and shows nothing that evidences it, so the
+  // gate is the evidence. Rendered on `calc.averageFlatters` alone it would
+  // keep asserting the skew through a survey round that stopped carrying one.
+  const src = readFileSync(join(SRC, "components", "PayField.svelte"), "utf8");
+  assert.match(
+    src.replace(/\s+/g, " "),
+    /\{#if calc\.averageFlatters\?\.meanAboveMedian\}/,
+    "the flattery caveat renders without checking that the published median is below the published mean"
+  );
 });
 
 test("an НСИ credit never spans a net figure they did not publish", () => {

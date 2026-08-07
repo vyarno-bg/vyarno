@@ -1063,6 +1063,18 @@ test("meanRungPosition says where an average sits, and takes no anchor", () => {
   assert.equal(at.mean, 949, "the published mean is not the one the card credits to Eurostat");
   assert.equal(at.median, 705, "the published median is not the one the card credits to Eurostat");
   assert.ok(at.mean > at.median, "a mean below the median inverts the claim the card rests on");
+
+  // **The skew, as a flag the card can gate on.** The caveat states it in words
+  // and shows no level, so nothing on screen evidences it and this is the whole
+  // of the evidence. It has to follow the published pair rather than a constant:
+  // fed a shape whose median sits above its mean, the sentence «повече от
+  // половината заети изкарват под средната» is false and must not render.
+  assert.equal(at.meanAboveMedian, true);
+  assert.equal(
+    meanRungPosition(distOf({ ...dist.shape.ladder_ses, P50: 1200 }, 949)).meanAboveMedian,
+    false,
+    "a median above the mean still reports the skew the caveat asserts"
+  );
   assert.equal(
     at.medianPct,
     Math.round((100 * at.median) / at.mean),

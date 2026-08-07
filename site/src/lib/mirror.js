@@ -538,9 +538,19 @@ export function wageGap(net, referenceNet) {
  * `medianPct` is rounded here rather than in the template, because a rounding
  * done in the render layer is arithmetic no unit test can reach.
  *
+ * `meanAboveMedian` is the one field the sector card renders on. The caveat it
+ * gates states the skew in words and shows neither level, so nothing on screen
+ * evidences it — the reader is taking «повече от половината заети изкарват под
+ * средната» on our word. That sentence is true exactly when the published
+ * median sits below the published mean, so the condition is read off the
+ * payload and the copy renders only where the data carries it. Earnings have
+ * been right-skewed in every SES round, which is the argument for asserting it
+ * and not the argument for assuming it.
+ *
  * @param {object} dist  salary_dist.json payload
  * @param {string} [shapeYear]  the survey vintage, echoed back for the caption
- * @returns {{cut:number, medianPct:number, shapeYear:string} | null}
+ * @returns {{cut:number, medianPct:number, meanAboveMedian:boolean,
+ *            shapeYear:string} | null}
  */
 export function meanRungPosition(dist, shapeYear = "") {
   const shape = dist?.shape;
@@ -554,10 +564,11 @@ export function meanRungPosition(dist, shapeYear = "") {
   return {
     cut: percentile(mean, ladder),
     medianPct: Math.round((100 * median) / mean),
-    // The two PUBLISHED figures the ratio above divides, returned so the card
-    // can show them. Eurostat print a mean and a median for BG; the ratio
-    // between them is ours, and a card that stated only the ratio under a
-    // Eurostat credit would be crediting them with our arithmetic.
+    meanAboveMedian: median < mean,
+    // The two PUBLISHED figures the ratio above divides. Eurostat print a mean
+    // and a median for BG; the ratio between them is ours, and a caller that
+    // stated only the ratio under a Eurostat credit would be crediting them
+    // with our arithmetic.
     mean,
     median,
     shapeYear: String(shapeYear || shape?.ref_year || ""),

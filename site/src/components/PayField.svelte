@@ -410,21 +410,24 @@
             >
           </p>
         {/if}
-        {#if calc.averageFlatters}
+        <!-- Gated on the skew the sentence asserts, not merely on the payload
+             being readable. It says more than half of employees earn below the
+             average and shows neither level to prove it, so the only thing
+             standing between the reader and a false claim is the published
+             median sitting below the published mean —
+             `mirror.js#meanRungPosition` reads that off the shape. Where a
+             future SES round did not carry it, this renders nothing rather
+             than a confident sentence about a distribution that had changed
+             shape underneath it. -->
+        {#if calc.averageFlatters?.meanAboveMedian}
           <p class="hint caveat">
             <span class="l-bg"
               >{t(COPY.sectorAverageFlatters, "bg", {
-                cut: fmt0(calc.averageFlatters.cut),
-                mean: fmt0(calc.averageFlatters.mean),
-                median: fmt0(calc.averageFlatters.median),
                 shapeYear: period(calc.averageFlatters.shapeYear),
               })}</span
             >
             <span class="l-en"
               >{t(COPY.sectorAverageFlatters, "en", {
-                cut: fmt0(calc.averageFlatters.cut),
-                mean: fmt0(calc.averageFlatters.mean),
-                median: fmt0(calc.averageFlatters.median),
                 shapeYear: period(calc.averageFlatters.shapeYear),
               })}</span
             >

@@ -600,9 +600,14 @@ export class Calculator {
   );
   // **What stops the sector card reading as a rank.** Nobody publishes a pay
   // distribution by activity for Bulgaria, so `sector.gaps` is a distance from
-  // an average and nothing more. This is the national correction for that: an
-  // average sits around the 66th rung and the median earner takes about 74% of
-  // it, so "below your sector's average" is not "below the middle".
+  // an average and nothing more. This is the national correction for that: on a
+  // right-skewed wage distribution an average sits above the middle, so "below
+  // your sector's average" is not "below the middle".
+  //
+  // The card renders only `meanAboveMedian` and `shapeYear` off this. The rest
+  // of what it returns is unrendered on purpose — the levels are SES's own and
+  // years behind the НСИ quarter beside them, and the rung between them is
+  // ours; content.js#sectorAverageFlatters carries that argument.
   //
   // It reads the Eurostat shape alone and never `sector` — a sector average
   // fed into this would produce the sector percentile the feature exists to
