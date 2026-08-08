@@ -216,7 +216,21 @@ export class Calculator {
   raiseDirty = $state(false);
   anchor = $state("y1");
   rent = $state(0);
-  cash = $state(1000);
+  // Empty, like the rent beside it, and for the same reason the payslip is
+  // `null` for a salary nobody typed: «спестеното» is a row that says what
+  // inflation took off THIS reader's money, and it has no caveat available to
+  // it. The pay placeholder can carry one — «сметнато е с начална заплата
+  // €900 на месец, не с твоята» sits on the figure it produced, and the two
+  // rows that make a claim about the reader rather than about prices
+  // («в джоба», «къде си по заплата») wait for `earnersDirty` instead. A
+  // stand-in savings balance has neither route: −€285 under «спестеното»
+  // reads as a fact about the visitor before they have typed a character, and
+  // a note explaining that the €1,000 above it is ours would be a fourth
+  // sentence on a card that already carries three.
+  //
+  // So the row appears when there is a balance to talk about, which is the
+  // rule `rent` and the home block already keep.
+  cash = $state(0);
 
   // The home block.
   homeOn = $state(false);

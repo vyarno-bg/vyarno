@@ -256,6 +256,47 @@ test("the ladder row ranks nobody who has not typed a salary", { skip }, async (
   });
 });
 
+test("a row built on an optional figure waits until there is one", { skip }, async () => {
+  // The rent and the savings balance are the two amounts the calculator can
+  // answer without, and their rows are the two that state a second-person
+  // result off them: «това е 40% от €1500 нетно», «инфлацията изяде €285».
+  // Neither has a caveat available to it the way the €900 pay placeholder
+  // does — that note sits on the figure it produced and says whose salary it
+  // is — so a stand-in balance renders as a finding about a visitor who has
+  // typed nothing. The rule both rows keep is `payslipPanel`'s: there is no
+  // receipt for a number nobody entered (view.js).
+  //
+  // Over both rows rather than over the one that broke it. A check naming
+  // «спестеното» stays green when the rent field acquires a friendly default
+  // next, and the two rows are one rule, not two.
+  await withApp(async (page, errors) => {
+    const rows = { "#inRent": "наемът", "#inCash": "спестеното" };
+    for (const [input, heading] of Object.entries(rows)) {
+      const row = page.locator(".r-rows > .r-row").filter({ hasText: heading });
+      assert.equal(
+        await row.count(),
+        0,
+        `«${heading}» is on the card before anything was typed into ${input}, so ` +
+          "it is stating a result off a figure the reader never gave"
+      );
+      const field = page.locator(input);
+      assert.equal(await field.inputValue(), "0", `${input} does not start empty`);
+    }
+    await page.locator("#inSalary").fill("1500");
+    await page.locator("#inRent").fill("600");
+    await page.locator("#inCash").fill("1000");
+    await page.waitForTimeout(400);
+    for (const heading of Object.values(rows)) {
+      assert.equal(
+        await page.locator(".r-rows > .r-row").filter({ hasText: heading }).count(),
+        1,
+        `«${heading}» stayed away after a figure was typed for it`
+      );
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("no amount on the results card is separated from its unit", { skip }, async () => {
   // «≈ €13/ мес», because the slash closed a <span> and the unit opened the
   // next one on the following source line, and Svelte renders that newline as
