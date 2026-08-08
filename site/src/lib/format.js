@@ -35,18 +35,52 @@ export function integer(x, lang = "bg") {
 }
 
 /**
- * A percentage carrying its own sign, always.
+ * A percentage carrying its own sign — one sign, and only where there is a
+ * direction to name.
  *
  * `+{number(x)}%` was printed for the raise and for π, and both can be
  * negative — a pay cut is typeable, and a basket weighted onto the groups that
  * are FALLING makes π negative. Either one rendered as «+−5,0%».
  *
+ * **A magnitude that rounds to zero takes no sign**, because the sign would be
+ * claiming something the digits beside it do not support. Eurostat publishes
+ * the divisions' annual rates to one decimal and «Облекло и обувки» is 0.0
+ * right now, which the basket rendered as «+0,0%» — prices rose by nothing.
+ * The unsigned pair is worse: +0.04 and −0.04 both print «0,0%» of magnitude,
+ * so a signed rendering put «+0,0%» beside «−0,0%» and asked a reader to read
+ * a difference out of two identical digits. Where the rate is genuinely zero
+ * and where it is too small to show at this precision, «0,0%» is the same true
+ * statement, and it is the one the published figure will support.
+ *
  * The minus is U+2212, matching the table and the pocket figure; the locale's
  * own hyphen is narrower and reads as a dash mid-sentence.
  */
-export function percentSigned(x, digits = 1, lang = "bg") {
+export function signed(x, digits = 1, lang = "bg") {
   if (!Number.isFinite(x)) return "—";
-  return (x < 0 ? "−" : "+") + number(Math.abs(x), digits, lang) + "%";
+  const magnitude = number(Math.abs(x), digits, lang);
+  // Decided by what is about to be PRINTED, never by rounding `x` a second
+  // time. The two roundings disagree at the boundary and in opposite
+  // directions: `Math.round(-0.5)` is `-0`, which reads as no direction, while
+  // `toLocaleString` renders the same input as "0,1", which has one. Reading
+  // the digits back off the string cannot drift from them, at any `digits` and
+  // in either language — both write 0-9.
+  const sign = /[1-9]/.test(magnitude) ? (x < 0 ? "−" : "+") : "";
+  return sign + magnitude;
+}
+
+/**
+ * The same, carrying a percent sign.
+ *
+ * Built on `signed` rather than repeating it, because the two rules above are
+ * what six templates each got a little bit wrong while writing their own: some
+ * printed «+0,0%», some took their minus from `toLocaleString` (U+002D), and
+ * the ones rendering points did both. A unit is the only thing that separates
+ * a share from a contribution in points, so the unit is the only thing that
+ * varies here.
+ */
+export function percentSigned(x, digits = 1, lang = "bg") {
+  const magnitude = signed(x, digits, lang);
+  return magnitude === "—" ? magnitude : magnitude + "%";
 }
 
 /**

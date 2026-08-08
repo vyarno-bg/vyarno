@@ -11,7 +11,7 @@
    * categories, not a literal list" exists to hold.
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer } from "../lib/format.js";
+  import { integer, percentSigned } from "../lib/format.js";
   import { COPY } from "../lib/content.js";
   import { rateFor } from "../lib/mirror.js";
   import { t } from "../lib/content.js";
@@ -19,8 +19,13 @@
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
 
-  const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  // The rate beside a row's code, in the same hand as every other signed
+  // percentage on the page. Both rows here used to write the sign inline —
+  // `{rate < 0 ? "" : "+"}{fmt(rate)}` — which reads as equivalent and is not:
+  // it prints «+0,0%» over a rate of zero, and it takes its minus from
+  // `toLocaleString`, which is U+002D where the whole page is U+2212.
+  const signedPct = (x) => percentSigned(x, 1, $lang);
 
   // Which spend-share sentence is true of this reader. `spendable` is the
   // household's net pay minus whatever rent or mortgage they entered, so the
@@ -230,9 +235,7 @@
                 : `${c.cp_code} ${c.eurostat_label ? "· " + c.eurostat_label : ""} - Eurostat's own data for exactly this figure`}
               >{c.cp_code} ↗</a
             >
-            <span class="yo mono"
-              >· {calc.rateForDivision(i) < 0 ? "" : "+"}{fmt(calc.rateForDivision(i))}%</span
-            >
+            <span class="yo mono">· {signedPct(calc.rateForDivision(i))}</span>
           </span>
           {#if edited}
             <button
@@ -306,11 +309,7 @@
                       rel="noopener"
                       title={`${g.cp_code} · ${g.eurostat_label}`}>{g.cp_code} ↗</a
                     >
-                    <span class="yo mono"
-                      >· {rateFor(g, calc.anchor) < 0 ? "" : "+"}{fmt(
-                        rateFor(g, calc.anchor)
-                      )}%</span
-                    >
+                    <span class="yo mono">· {signedPct(rateFor(g, calc.anchor))}</span>
                   </span>
                 </span>
                 <span class="pc mono">

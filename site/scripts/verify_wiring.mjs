@@ -731,12 +731,40 @@ test("no percentage is printed with a sign the template wrote itself", () => {
     "the calculator no longer binds signedPct to percentSigned, so a template " +
       "is deciding the sign of a percentage for itself again"
   );
-  const offenders = [...LIVE.matchAll(/\+\{fmt0?\([^)]*\)/g)].map((m) => m[0]);
+  const glued = [...LIVE.matchAll(/\+\{fmt0?\([^)]*\)/g)].map((m) => m[0]);
   assert.deepEqual(
-    offenders,
+    glued,
     [],
     `these glue a "+" onto a formatted number, so a negative value renders as ` +
-      `"+−1,2%": ${offenders.join(", ")}`
+      `"+−1,2%": ${glued.join(", ")}`
+  );
+
+  // A sign CHOSEN by testing the number's direction is the same offence, and
+  // the regex above cannot see it. Six of these stood across four components —
+  // `{rate < 0 ? "" : "+"}{fmt(rate)}` and `{pp >= 0 ? "+" : "−"}` — each
+  // avoiding the double sign and getting the other two rules wrong. A rate of
+  // 0.0 (Eurostat publishes one decimal, and «Облекло и обувки» is 0.0 on the
+  // payload in this tree) printed «+0,0%», prices rose by nothing; and the
+  // minus came from `toLocaleString`, U+002D against the U+2212 the rest of
+  // the page uses. All of that is what this test's NAME has always claimed to
+  // cover, and it went green beside all six for as long as they stood.
+  //
+  // Anchored on a comparison against 0, not on the quoted sign alone: the
+  // basket's fold-out button writes `{open ? "−" : "+"}` for its own glyph,
+  // which is a caret rather than the direction of a number, and a rule that
+  // cannot tell those apart is one somebody switches off.
+  //
+  // `format.js` is deliberately outside `LIVE`. The sign has to be decided
+  // somewhere, and that is the somewhere.
+  const chosen = [...LIVE.matchAll(/[<>]=?\s*0\s*\?\s*(?:"[+−]"|""\s*:\s*"[+−]")/g)].map(
+    (m) => m[0]
+  );
+  assert.deepEqual(
+    chosen,
+    [],
+    `a template picks a sign by testing a number instead of calling signed() ` +
+      `or percentSigned(), so its zero reads as a direction and its minus is ` +
+      `the wrong glyph: ${chosen.join(", ")}`
   );
 });
 
