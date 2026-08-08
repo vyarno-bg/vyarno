@@ -845,18 +845,25 @@ export const COPY = {
   // **«нагласяваме» is out of bounds anywhere near a figure.** In everyday
   // Bulgarian «нагласен» is what a rigged match or a fixed election is, so a
   // sentence saying we «нагласяваме» the amounts hands a suspicious reader the
-  // exact word they are looking for — on the one card whose job is to admit
-  // how the number is built. «преизчисляваме» states the same operation and
-  // carries no such reading. The same goes for the explainer band, `legal.js`
-  // and the two READMEs, which describe this operation too.
+  // exact word they are looking for — on the card whose job is to admit how
+  // the number is built. «преизчисляваме» states the same operation and
+  // carries no such reading. It binds every place that describes the
+  // re-levelling: the explainer band, `legal.js` and the two READMEs.
   // **The survey is national, and the sentence has to say so.**
   // `salary_dist.json` carries the admission in its own `disclaimer` field —
   // "the shape is national: using it for Sofia assumes Sofia's dispersion
   // tracks the national one" — and a payload field is read by nobody the card
   // is for. Every other clause here names a limit the reader can weigh (the
-  // survey year, who it leaves out, that the level is re-computed, that Sofia
-  // flatters them); leaving out the one assumption that the ladder's SHAPE is
-  // borrowed from the country made the list read as complete when it was not.
+  // survey year, who it leaves out, that Sofia flatters them); leaving out the
+  // one assumption that the ladder's SHAPE is borrowed from the country made
+  // the list read as complete when it was not.
+  //
+  // **Where the LEVEL comes from is `pctSrc`'s to say, not this sentence's.**
+  // «нивото е от НСИ · средна заплата {anchorPeriod}» is the line directly
+  // under this one, it carries the link that evidences the claim and the
+  // quarter the claim is dated by, and a prose copy of it here is the same
+  // admission twice on one card — two strings to keep in step, and 14 words
+  // of a caveat a reader has to finish for any of it to protect them.
   // Said in the words for a gap between wages, not in the words for a
   // statistical dispersion, for the same reason «нагласяваме» is out of bounds
   // below: this is the one card whose job is admitting how the number is made,
@@ -869,8 +876,8 @@ export const COPY = {
   // the card whose whole claim is that it tells you what the figure is built
   // from. Nothing on this page may state a date the data does not.
   pctCaveat: {
-    bg: "Сравняваме всяка чиста заплата с това, което изкарват останалите в София. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), но то е за цялата страна, а не отделно за София, така че приемаме, че разликата между ниските и високите заплати в София е като в останалата страна. Самите суми преизчисляваме спрямо последната средна заплата за София на НСИ, за да са актуални. Затова числото показва приблизително къде си, а не точно. Извън София същата заплата те нарежда по-нагоре.",
-    en: "We compare each take-home pay with what other people in Sofia earn. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), but that survey covers the whole country rather than Sofia alone, so we assume the gap between low and high pay in Sofia looks like the national one. The amounts themselves are set from the latest NSI average wage for Sofia so they stay current. So the figure shows roughly where you stand, not exactly. Outside Sofia the same pay places you higher.",
+    bg: "Сравняваме всяка чиста заплата с това, което изкарват останалите в София. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), но то е за цялата страна, а не отделно за София, така че приемаме, че разликата между ниските и високите заплати в София е като в останалата страна. Затова числото показва приблизително къде си, а не точно. Извън София същата заплата те нарежда по-нагоре.",
+    en: "We compare each take-home pay with what other people in Sofia earn. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), but that survey covers the whole country rather than Sofia alone, so we assume the gap between low and high pay in Sofia looks like the national one. So the figure shows roughly where you stand, not exactly. Outside Sofia the same pay places you higher.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE

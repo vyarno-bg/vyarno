@@ -1088,9 +1088,10 @@ test("the percentile caveat admits the survey behind it is national", () => {
   // field is read by nobody this card is written for.
   //
   // The other limits are already admitted — the survey year, who it excludes,
-  // that the level is recomputed, that Sofia flatters the reader — which is
-  // exactly what makes the omission cost something: a caveat listing four
-  // qualifications reads as the complete set.
+  // that Sofia flatters the reader — which is exactly what makes the omission
+  // cost something: a caveat listing the limits reads as listing all of them.
+  // Where the LEVEL comes from is admitted too, in `pctSrc` one line below,
+  // with the link and the quarter that date it.
   const [bg, en] = pair("pctCaveat");
   assert.ok(
     /цялата страна|национал/i.test(bg),
