@@ -10,7 +10,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY } from "$lib/content.js";
-  import { number, integer } from "$lib/format.js";
+  import { integer, percentSigned } from "$lib/format.js";
   import { rateFor } from "$lib/mirror.js";
 
   let {
@@ -45,7 +45,7 @@
     estatCatUrl,
   } = $props();
 
-  const fmt = (x, d = 1) => number(x, d, $lang);
+  const signedPct = (x) => percentSigned(x, 1, $lang);
   const fmt0 = (x) => integer(x, $lang);
 </script>
 
@@ -246,7 +246,7 @@
             </td>
             <td>{fmt0(divisionSharePct(i))}%</td>
             <td>{c.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
-            <td>{rateForDivision(i) < 0 ? "−" : "+"}{fmt(Math.abs(rateForDivision(i)))}%</td>
+            <td>{signedPct(rateForDivision(i))}</td>
             <td
               ><a
                 href={estatCatUrl(c)}
@@ -273,7 +273,7 @@
                   )}%</td
                 >
                 <td>{g.weight_pct.toFixed(3).replace(".", $lang === "bg" ? "," : ".")}%</td>
-                <td>{rateFor(g, anchor) < 0 ? "−" : "+"}{fmt(Math.abs(rateFor(g, anchor)))}%</td>
+                <td>{signedPct(rateFor(g, anchor))}</td>
                 <td
                   ><a
                     href={estatCatUrl(g)}

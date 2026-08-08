@@ -10,7 +10,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer } from "$lib/format.js";
+  import { number, integer, signed } from "$lib/format.js";
 
   const {
     /** Rows from mirror.js#contributions, already ordered by size. */
@@ -28,6 +28,11 @@
   } = $props();
 
   const fmt = (x, d = 1) => number(x, d, $lang);
+  // Points, so no unit here — «пункта» is its own <small> beside the
+  // figure, and the rest sits in COPY.rankRest. The sign and the zero rule
+  // are the shared half, which is why this reaches for `signed` rather than
+  // choosing a "+" the way the three sites below it used to.
+  const signedPp = (x) => signed(x, 1, $lang);
   const fmt0 = (x) => integer(x, $lang);
 
   /**
@@ -121,7 +126,7 @@
             >
           </span>
           <span class="rv mono">
-            {r.contributionPp >= 0 ? "+" : "−"}{fmt(Math.abs(r.contributionPp))}
+            {signedPp(r.contributionPp)}
             <small
               ><span class="l-bg">{COPY.rankPp.bg}</span><span class="l-en">{COPY.rankPp.en}</span
               ></small
@@ -179,13 +184,13 @@
         <span class="l-bg"
           >{t(COPY.rankRest, "bg", {
             n: restN,
-            pp: (restPp >= 0 ? "+" : "−") + fmt(Math.abs(restPp)),
+            pp: signedPp(restPp),
           })}</span
         >
         <span class="l-en"
           >{t(COPY.rankRest, "en", {
             n: restN,
-            pp: (restPp >= 0 ? "+" : "−") + fmt(Math.abs(restPp)),
+            pp: signedPp(restPp),
           })}</span
         >
       </div>

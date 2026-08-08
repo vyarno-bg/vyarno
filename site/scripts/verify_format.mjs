@@ -33,18 +33,39 @@ test("integer() rounds rather than truncating", () => {
   assert.equal(integer(-0.4, "en"), "-0");
 });
 
-test("percentSigned prints exactly one sign, whichever way the number goes", () => {
+test("percentSigned never prints two signs, whichever way the number goes", () => {
   // The bug this exists to prevent: `+{number(x)}%` renders «+−5,0%» as soon
   // as x is negative, and both operands can be — a pay cut is typeable, and a
   // basket weighted onto falling groups makes personal inflation negative.
   assert.equal(percentSigned(5, 1, "en"), "+5.0%");
   assert.equal(percentSigned(-5, 1, "en"), "−5.0%");
-  assert.equal(percentSigned(0, 1, "en"), "+0.0%");
-  for (const x of [12.34, -12.34, 0, -0.04]) {
+  for (const x of [12.34, -12.34, 0, -0.04, -0.05, 0.05]) {
     const rendered = percentSigned(x, 1, "en");
     const signs = rendered.match(/[+−-]/g) ?? [];
-    assert.equal(signs.length, 1, `${rendered} carries ${signs.length} signs`);
+    assert.ok(signs.length <= 1, `${rendered} carries ${signs.length} signs`);
   }
+});
+
+test("a percentage that rounds to zero is printed without a direction", () => {
+  // Eurostat publishes the divisions' annual rates to one decimal, and
+  // «Облекло и обувки» is 0.0 in the payload this ships with: the basket read
+  // «CP03 · +0,0%», a plus over digits saying prices did not move. The pair
+  // either side of it is the reason the sign cannot stay: +0.04 and −0.04
+  // print the same magnitude, so a signed rendering hands a reader «+0,0%»
+  // and «−0,0%» and asks them to tell the two apart on the sign alone.
+  assert.equal(percentSigned(0, 1, "en"), "0.0%");
+  assert.equal(percentSigned(0.04, 1, "en"), "0.0%");
+  assert.equal(percentSigned(-0.04, 1, "en"), "0.0%");
+  assert.equal(percentSigned(0, 0, "en"), "0%");
+  assert.equal(percentSigned(0.4, 0, "en"), "0%");
+
+  // And the sign comes back the moment a digit does. This is the half-way
+  // case, where deriving the sign by rounding `x` a second time disagrees with
+  // the rendering: `Math.round(-0.5)` is `-0` and would drop the minus off a
+  // figure printed as 0.1.
+  assert.equal(percentSigned(0.05, 1, "en"), "+0.1%");
+  assert.equal(percentSigned(-0.05, 1, "en"), "−0.1%");
+  assert.equal(percentSigned(-0.05, 1, "bg"), "−0,1%");
 });
 
 test("the minus is U+2212, matching the tables it sits beside", () => {

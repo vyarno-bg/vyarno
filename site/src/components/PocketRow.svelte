@@ -83,10 +83,7 @@
           ? 'var(--real-ink)'
           : calc.pocket <= -1
             ? 'var(--erode)'
-            : 'var(--ink)'}"
-      >{!Number.isFinite(calc.pocket)
-        ? "—"
-        : (calc.pocket >= 0 ? "+" : "−") + fmt(Math.abs(calc.pocket)) + "%"}</span
+            : 'var(--ink)'}">{signedPct(calc.pocket)}</span
     >
   </div>
   <div class="rr-t">
