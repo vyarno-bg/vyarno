@@ -42,6 +42,47 @@ test("the housing card says which of its figures are ours", { skip }, async () =
   });
 });
 
+test("a strip card's source caption sits under its own content", { skip }, async () => {
+  // `align-items: stretch` makes every card in a row as tall as the tallest,
+  // and the median-pay card carries three footer lines to its neighbours' one.
+  // With the caption pushed to the foot by `margin-top: auto`, each of the
+  // others was handed that difference as a hole between its label and its
+  // date: 175px in the inflation tile, 138px in the fastest-rising one, 199px
+  // in unemployment, measured at 1280. The section read as four mostly-empty
+  // boxes and each caption had come loose from the figure it dates.
+  //
+  // Asserted against whatever element precedes the caption rather than against
+  // `.sl`, so it covers the housing card too — a sparkline sits between the
+  // two there, and the rule is the same one: a caption follows the thing it
+  // captions. The slack still exists and still goes somewhere; the point is
+  // that it goes to the bottom of a short card, not into its middle.
+  //
+  // The bound is the caption's own 10px of padding plus room for a fractional
+  // layout, well under any gap `margin-top: auto` produces on this row.
+  await withApp(async (page) => {
+    const gaps = await page.locator(".strip .stat").evaluateAll((els) =>
+      els.map((card) => {
+        const ss = card.querySelector(".ss");
+        const above = ss?.previousElementSibling;
+        if (!ss || !above) return null;
+        return {
+          card: (card.querySelector(".sl")?.innerText ?? "?").replace(/\s+/g, " ").slice(0, 40),
+          gap: Math.round(ss.getBoundingClientRect().top - above.getBoundingClientRect().bottom),
+        };
+      })
+    );
+    const measured = gaps.filter(Boolean);
+    assert.ok(measured.length >= 5, `only ${measured.length} strip captions could be measured`);
+    const adrift = measured.filter((g) => g.gap > 16);
+    assert.deepEqual(
+      adrift,
+      [],
+      "a strip card's source caption is pushed away from the content it " +
+        `dates: ${adrift.map((g) => `${g.gap}px under "${g.card}"`).join(", ")}`
+    );
+  });
+});
+
 test("the national strip leaves no orphaned cell on its last row", { skip }, async () => {
   // The strip renders five one-number tiles plus one card carrying a chart. A
   // fixed-column grid held its column width, so the tail of the last row was an
