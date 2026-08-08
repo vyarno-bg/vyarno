@@ -9,7 +9,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { number, integer, percentSigned, dateShort, ordinalDay } from "../src/lib/format.js";
+import {
+  number,
+  integer,
+  percentSigned,
+  dateShort,
+  ordinalDay,
+  parseDecimal,
+  decimalText,
+} from "../src/lib/format.js";
 
 test("a missing or non-finite value formats as an em dash, never NaN", () => {
   // The calculator renders continuously while someone types, so an empty or
@@ -31,6 +39,45 @@ test("the decimal separator follows the language", () => {
 test("integer() rounds rather than truncating", () => {
   assert.equal(integer(1999.6, "en"), "2,000");
   assert.equal(integer(-0.4, "en"), "-0");
+});
+
+test("a decimal typed in either notation parses to the same number", () => {
+  // The comma is what a Bulgarian reader types, and until the two decimal
+  // fields stopped being `type="number"` the browser deleted it before this
+  // could see it — «2,75» reaching the mortgage row as 275.
+  assert.equal(parseDecimal("2,75"), 2.75);
+  assert.equal(parseDecimal("2.75"), 2.75);
+  assert.equal(parseDecimal("-0,5"), -0.5);
+  // Off this very page: `integer()` groups thousands with a space, and the one
+  // it uses is non-breaking.
+  assert.equal(parseDecimal("34 102"), 34102);
+  assert.equal(parseDecimal("34 102"), 34102);
+  assert.equal(parseDecimal("34 102"), 34102);
+});
+
+test("a decimal that could mean two things parses to neither", () => {
+  // «1,234» is one thousand two hundred and thirty-four to an English reader
+  // and 1.234 to a Bulgarian one. Both separators in one string is the case
+  // where guessing gets it wrong for half the readers, so nothing is guessed.
+  assert.ok(Number.isNaN(parseDecimal("1,234.5")));
+  assert.ok(Number.isNaN(parseDecimal("1.234,5")));
+  // And the ordinary refusals. `parseFloat` answers 3 to the first of these
+  // and 1.2 to the second, which is a number quietly made out of something
+  // that is not one.
+  assert.ok(Number.isNaN(parseDecimal("3,5%")));
+  assert.ok(Number.isNaN(parseDecimal("1.2.3")));
+  assert.ok(Number.isNaN(parseDecimal("")));
+  assert.ok(Number.isNaN(parseDecimal(null)));
+});
+
+test("a field is handed the number back in the reader's own notation", () => {
+  // The rate box sits directly above a hint reading «2,41%». It showed "2.41".
+  assert.equal(decimalText(2.41, "bg"), "2,41");
+  assert.equal(decimalText(2.41, "en"), "2.41");
+  assert.equal(decimalText(25, "bg"), "25");
+  // Empty, never "NaN" or "—": this goes back into an input the reader edits.
+  assert.equal(decimalText(NaN, "bg"), "");
+  assert.equal(decimalText(undefined, "bg"), "");
 });
 
 test("percentSigned never prints two signs, whichever way the number goes", () => {

@@ -14,7 +14,7 @@
    * full-width unit: label + hint + input + optional sub-hint.
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, period } from "../lib/format.js";
+  import { number, integer, period, decimalText } from "../lib/format.js";
   import { COPY, HOME, t } from "../lib/content.js";
   import BasketEditor from "./BasketEditor.svelte";
 
@@ -23,6 +23,26 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  /**
+   * What the rate field SHOWS, which is not always what the model holds.
+   *
+   * The two decimal fields on this card are `type="text"` so that a comma
+   * reaches `parseDecimal` instead of being eaten by the number sanitiser
+   * (format.js says what that cost). A text input has to be handed a string,
+   * and the string cannot simply be `decimalText(calc.rate)`: re-deriving it
+   * from the parsed number rewrites the box under the reader's caret, so
+   * «2,» normalises to «2» before they have finished typing «2,75».
+   *
+   * So the draft is only ever assigned from somewhere the reader is not: the
+   * published ECB figure, which lands after the payloads load and stops
+   * landing the moment `rateTouched` flips. While they are typing, this holds
+   * exactly the characters they entered and Svelte writes nothing back.
+   */
+  let rateDraft = $state(decimalText(HOME.rateDefaultPct, $lang));
+  $effect(() => {
+    if (!calc.rateTouched) rateDraft = decimalText(calc.rate, $lang);
+  });
 
   // Short source label for the live-mortgage hint. We map the fallback chain
   // to a visible provenance string so the user can see WHICH tier the rate
@@ -157,11 +177,11 @@
       <span class="unit" data-u="%">
         <input
           id={i === 0 ? "inRaise" : `inRaise${i}`}
-          type="number"
+          type="text"
           inputmode="decimal"
-          step="0.5"
+          autocomplete="off"
           placeholder="—"
-          value={Number.isFinite(earner.raise) ? earner.raise : ""}
+          value={earner.raiseText}
           oninput={(e) => calc.onRaiseInput(i, e)}
           aria-label={raiseLabel($lang, i)}
         />
@@ -300,12 +320,11 @@
           <span class="unit" data-u="%">
             <input
               id="inRate"
-              type="number"
+              type="text"
               inputmode="decimal"
-              min="0.1"
-              step="0.1"
-              bind:value={calc.rate}
-              oninput={calc.onRateInput}
+              autocomplete="off"
+              bind:value={rateDraft}
+              oninput={(e) => calc.onRateInput(e)}
               aria-label={t(COPY.rateLabel, $lang)}
             />
           </span>
