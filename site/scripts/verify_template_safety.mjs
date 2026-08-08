@@ -6,9 +6,14 @@
  * without evidence would be exactly the kind of thing it is there to prevent.
  * The evidence is two invariants, checked here on every run:
  *
- *   1. The app has no free-text input surface at all. Every control is a
- *      number, range, checkbox or radio, and there is no `<textarea>` and no
- *      `contenteditable`. Nothing a visitor types can be anything but a number.
+ *   1. Nothing a visitor types can be anything but a number. Every control is
+ *      a number, range, checkbox or radio, and there is no `<textarea>` and no
+ *      `contenteditable`. The two decimal fields are `type="text"` — the
+ *      number sanitiser ate the comma a Bulgarian reader types, and «2,75»
+ *      reached the mortgage row as 275 — so their characters go to
+ *      `parseDecimal` and the model keeps what it returns. What they hold
+ *      raw goes to the input's own `value` and nowhere else, which the second
+ *      assertion in that test checks by name.
  *
  *   2. Every `{@html …}` expression is rooted in an in-repo constant — a `COPY`
  *      key from `src/lib/content.js`, or a paragraph from the legal documents
@@ -359,11 +364,31 @@ test("no fetched value is substituted into an {@html} template unformatted", () 
 });
 
 test("the app has no free-text input surface", () => {
+  // Everything a visitor can enter is a NUMBER, which is what makes rendering
+  // COPY through {@html} safe.
+  //
+  // Two fields are `type="text"` and still keep that guarantee, because the
+  // type attribute is not what the guarantee rests on. They are the decimal
+  // ones — the mortgage rate and the raise — and they had to stop being
+  // `type="number"` because that type's value sanitiser silently deleted the
+  // comma a Bulgarian reader types, turning «2,75» into 275 and stating a
+  // €34,102 monthly payment as the answer (format.js#parseDecimal). What each
+  // one holds is still a number: the string goes to `parseDecimal`, the model
+  // stores what comes back, and the raw characters go nowhere but the input's
+  // own `value`, which Svelte escapes like any attribute.
+  //
+  // So the exception is narrow — a text input must declare itself decimal —
+  // and the assertion below is the half that actually protects the {@html}
+  // paths, naming the two states that hold reader characters and checking no
+  // interpolation renders them. The allowlisted-value scan above would catch
+  // it too, since neither is in SAFE_VALUE_SOURCES; this says it in the test
+  // whose name a reader will look for.
   const ALLOWED_TYPES = new Set(["number", "range", "checkbox", "radio"]);
   const offenders = [];
   for (const { name, text } of COMPONENTS) {
     for (const tag of text.match(/<input\b[^>]*>/g) ?? []) {
       const type = tag.match(/type="([a-z]+)"/)?.[1];
+      if (type === "text" && /inputmode="decimal"/.test(tag)) continue;
       if (!type || !ALLOWED_TYPES.has(type)) offenders.push(`${name}: ${tag.slice(0, 80)}`);
     }
     for (const forbidden of ["<textarea", "contenteditable"]) {
@@ -374,9 +399,31 @@ test("the app has no free-text input surface", () => {
     offenders,
     [],
     "A free-text input appeared. Everything a visitor can enter is currently a\n" +
-      "number, which is why rendering COPY through {@html} is safe. Adding text\n" +
-      "input means auditing every {@html} path first:\n  " +
+      "number, which is why rendering COPY through {@html} is safe. A text input\n" +
+      'is allowed only where it declares inputmode="decimal" and hands its\n' +
+      "characters straight to parseDecimal; anything else means auditing every\n" +
+      "{@html} path first:\n  " +
       offenders.join("\n  ")
+  );
+
+  // The characters a reader types into those two fields, by the names the
+  // model stores them under. Neither may reach markup.
+  const RAW_READER_TEXT = ["rateDraft", "raiseText"];
+  const rendered = [];
+  for (const { name, text } of COMPONENTS) {
+    for (const { expression } of atHtmlExpressions(text)) {
+      for (const held of RAW_READER_TEXT) {
+        if (expression.includes(held)) rendered.push(`${name}: {@html …${held}…}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    rendered,
+    [],
+    "A decimal field's raw characters are rendered as markup. They are the one\n" +
+      "thing on this page a visitor writes and the calculator does not turn into\n" +
+      "a number, so they may go to an input's value and nowhere else:\n  " +
+      rendered.join("\n  ")
   );
 });
 

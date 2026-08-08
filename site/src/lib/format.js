@@ -19,6 +19,49 @@ function locale(lang) {
   return lang === "bg" ? "bg-BG" : "en-GB";
 }
 
+/**
+ * A decimal a reader typed, in either notation, as a number — or NaN.
+ *
+ * **The comma is the Bulgarian decimal separator and this page writes it
+ * everywhere**, including in the hint sitting directly under the rate field.
+ * `<input type="number">` does not accept it: the HTML value sanitiser strips
+ * every character that is not part of a valid floating-point number, so «2,75»
+ * arrived as `275` with `validity.valid` true and nothing to show a reader
+ * that anything had happened. The mortgage row then stated «вноска при 275,0%
+ * за 25 г.: €34 102/мес», an answer in the second person built out of a
+ * correctly-typed number multiplied by a hundred. A 3,5% raise became 35%
+ * the same way. Setting the browser's locale to bg-BG changes none of it.
+ *
+ * So the two decimal fields are `type="text" inputmode="decimal"` and arrive
+ * here instead. Nothing is lost by that: the page has no `<form>`, so `min`
+ * and `step` never validated anything — they drew the spinner arrows, and the
+ * mangled value passed `validity.valid` regardless.
+ *
+ * Both separators are accepted, because both are things a person here types.
+ * Spaces go too. `\s` covers the non-breaking and narrow ones `toLocaleString`
+ * puts in a thousands group, so a figure pasted back off this very page reads.
+ * A string carrying both separators is refused rather than guessed at: «1,234»
+ * is one number to a Bulgarian reader and a different one to an English one,
+ * and there is no answer here that is right for both.
+ */
+export function parseDecimal(raw) {
+  const text = String(raw ?? "").replace(/\s/g, "");
+  if (text === "" || (text.includes(",") && text.includes("."))) return NaN;
+  const value = Number(text.replace(",", "."));
+  return Number.isFinite(value) ? value : NaN;
+}
+
+/**
+ * The inverse: a number as the reader's own notation, for the field to show.
+ *
+ * Plain rather than grouped — this is what goes back INTO an input, and a
+ * thousands space is not something a reader wants to edit around.
+ */
+export function decimalText(x, lang = "bg") {
+  if (!Number.isFinite(x)) return "";
+  return String(x).replace(".", lang === "bg" ? "," : ".");
+}
+
 /** `x` to `digits` decimal places, or "—" when there is no number to show. */
 export function number(x, digits = 1, lang = "bg") {
   if (x === null || x === undefined || !Number.isFinite(x)) return "—";

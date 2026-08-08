@@ -258,6 +258,48 @@ test(
   }
 );
 
+test("every decimal field takes the separator this page writes", { skip }, async () => {
+  // `<input type="number">` sanitises its value to a valid floating-point
+  // number, and the comma is not part of one. A reader typing «2,75» into the
+  // mortgage rate — the notation of the hint directly under that field, and of
+  // every figure on the page — got 275, `validity.valid` true, and the row
+  // below stating «вноска при 275,0% за 25 г.: €34 102/мес» as their answer.
+  // The raise field turned «3,5» into 35 the same way. Neither showed a reader
+  // anything was wrong, and a bg-BG browser locale did not change it.
+  //
+  // Keystrokes, not `fill()`: `fill()` assigns `.value`, which on a number
+  // input the browser rejects outright rather than mangling, so the failing
+  // path is the one only typing reaches.
+  //
+  // Over every field marked as decimal rather than over the two that broke.
+  // The next one added is the case this is for, and the check costs a
+  // keystroke each.
+  await withApp(async (page, errors) => {
+    const home = page.locator(".homeTog input[type=checkbox]").first();
+    if (await home.count()) await home.check();
+    await page.waitForTimeout(300);
+
+    const fields = page.locator("input[inputmode=decimal]");
+    const n = await fields.count();
+    assert.ok(n >= 2, `the page offers ${n} decimal fields, so this checks nothing`);
+
+    for (let i = 0; i < n; i++) {
+      const field = fields.nth(i);
+      const id = (await field.getAttribute("id")) ?? `decimal field ${i}`;
+      await field.fill("");
+      await field.pressSequentially("2,75", { delay: 15 });
+      await page.waitForTimeout(200);
+      assert.equal(
+        await field.inputValue(),
+        "2,75",
+        `#${id} did not keep «2,75». A field that silently drops the comma ` +
+          "reads the number a hundred times too large and says so in a sentence"
+      );
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the language and theme toggles change the page", { skip }, async () => {
   await withApp(async (page, errors) => {
     const root = page.locator("html");

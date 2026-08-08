@@ -46,6 +46,7 @@
  * this is a rule without one.
  */
 import { HOME, PRESETS } from "./content.js";
+import { parseDecimal } from "./format.js";
 import { loadAll, mortgageDefaultRate, mortgageAprc, mortgageLendingLimits } from "./data.js";
 import { PAYLOADS } from "./payloads.js";
 import {
@@ -170,14 +171,22 @@ export class Calculator {
   // as it did before anybody thought about households. Nothing about the
   // second income exists until the reader asks for it.
   //
-  // Each entry is `{ amount, stashed, raise }`, never a bare number:
-  //   amount   what the reader typed, in whatever `payBasis` says
-  //   stashed  the last amount they typed in the OTHER basis, or null
-  //   raise    that earner's own change over the window, percent, NaN if unsaid
-  // One object per person rather than three parallel arrays, because removing
-  // an income has to remove all three and parallel arrays are where that goes
+  // Each entry is `{ amount, stashed, raise, raiseText }`, never a bare number:
+  //   amount     what the reader typed, in whatever `payBasis` says
+  //   stashed    the last amount they typed in the OTHER basis, or null
+  //   raise      that earner's own change over the window, percent, NaN if unsaid
+  //   raiseText  the characters in the raise box, which `raise` is the parse of
+  // One object per person rather than four parallel arrays, because removing
+  // an income has to remove all four and parallel arrays are where that goes
   // wrong — silently, and one earner out of step.
-  earners = $state([{ amount: 900, stashed: null, raise: NaN }]);
+  //
+  // `raiseText` is here rather than in the component for exactly that reason.
+  // The raise field is `type="text"` so a comma reaches `parseDecimal` (see
+  // format.js), which means something has to hold the string; held beside the
+  // template's `{#each}` index it survives the earner it belongs to being
+  // removed, and the next reader to add an income inherits somebody else's
+  // number in a box the model says is empty.
+  earners = $state([{ amount: 900, stashed: null, raise: NaN, raiseText: "" }]);
   /**
    * Which figure the pay fields carry.
    *
@@ -1038,8 +1047,21 @@ export class Calculator {
   // ---------------------------------------------------------------------
   // Handlers. Arrow fields, per the rule in this file's header.
   // ---------------------------------------------------------------------
-  onRateInput = () => {
+  onRateInput = (event) => {
     this.rateTouched = true;
+    // The rate field carries the string and this owns the number. It stopped
+    // being a `bind:value` when the field stopped being `type="number"` — see
+    // format.js#parseDecimal for what that sanitiser was doing to «2,75» — so
+    // the parse happens here, once, rather than in the template.
+    //
+    // A rate that will not parse leaves the last good one standing rather than
+    // writing NaN into the annuity: the reader is mid-edit, and the mortgage
+    // row answering «€NaN/мес» while they clear the box to retype it is a
+    // worse answer than the one they are replacing. A rate of zero or less is
+    // refused for the same reason, and `min="0.1"` never refused it — the page
+    // has no form, so the attribute drew the spinner and validated nothing.
+    const parsed = parseDecimal(event.currentTarget.value);
+    if (parsed > 0) this.rate = parsed;
   };
 
   /** Anchor change → keep raise empty (we don't have a nominal default). */
@@ -1072,7 +1094,7 @@ export class Calculator {
    */
   addEarner = () => {
     if (!this.canAddEarner) return;
-    this.earners = [...this.earners, { amount: null, stashed: null, raise: NaN }];
+    this.earners = [...this.earners, { amount: null, stashed: null, raise: NaN, raiseText: "" }];
   };
 
   /**
@@ -1087,8 +1109,16 @@ export class Calculator {
 
   onRaiseInput = (i, event) => {
     this.raiseDirty = true;
-    const v = parseFloat(event.currentTarget.value);
-    this.earners[i].raise = isFinite(v) ? v : NaN;
+    const text = event.currentTarget.value;
+    this.earners[i].raiseText = text;
+    // `parseDecimal`, not `parseFloat`: the field is `type="text"` now, so it
+    // hands over whatever was typed rather than whatever the number sanitiser
+    // left of it, and «3,5» has to mean 3.5 rather than 35. `parseFloat` reads
+    // the leading run of digits and discards the rest, which turns «3,5» into
+    // 3 and «1.2.3» into 1.2 — a number, quietly, out of something that is not
+    // one. NaN is the honest answer to both, and every row downstream already
+    // treats an unparsed raise as unsaid.
+    this.earners[i].raise = parseDecimal(text);
   };
 
   /**
