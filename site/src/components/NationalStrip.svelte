@@ -255,11 +255,18 @@
         </div>
       </div>
     {/if}
+    <!-- No `.sd` beside the value. The badge slot says what KIND of number the
+         card carries — «за 1 г. · Евростат» on the two rates, nothing on the
+         two pay levels, because a level is not a change over a period. An
+         unemployment rate is a level too, and the string this card put there
+         was its reference month, which the source line under it already
+         states: one month, printed twice, 199px apart in the same card. The
+         rule the strip keeps is that a card names each of its facts once and
+         its period in the source line, where every other card's period is. -->
     {#if data.unemployment}
       <div class="stat">
         <div class="sv mono">
           <span>{fmt(data.unemployment.value)}%</span>
-          <span class="sd mono">{data.unemployment.ref_period ?? ""}</span>
         </div>
         <div class="sl">
           <span class="l-bg">{COPY.statUnempK.bg}</span>

@@ -109,6 +109,50 @@ test(
   }
 );
 
+test("a strip card names its period in the source line and nowhere else", { skip }, async () => {
+  // Each card is a figure, a label, and one `.ss` source line carrying the
+  // publisher and the period. A period printed a second time somewhere else in
+  // the same card is one fact with two homes: the two are rendered from
+  // separate expressions and drift the day either payload field moves, and
+  // until then the card just says the same month twice.
+  //
+  // Written over EVERY card rather than over the one that broke it. A check
+  // naming the unemployment tile would stay green the moment the next card put
+  // its own month beside its value, and the rule being kept is about the strip
+  // — the reader learns once that the period lives under the figure, and that
+  // holds for all six.
+  //
+  // Only the qualified forms count: 2026-07, 2026-Q1, 2026-07-23. A bare
+  // four-digit year is deliberately NOT matched, because four digits is also
+  // €2501 per square metre and 2015 on a chart axis, and a rule that fires on
+  // those is one somebody switches off rather than one that catches anything.
+  const PERIOD = /\d{4}-(?:Q[1-4]|\d{2}(?:-\d{2})?)/g;
+  await withApp(async (page) => {
+    const cards = await page.locator(".strip .stat").evaluateAll((els) =>
+      els.map((el) => {
+        const withoutSource = el.cloneNode(true);
+        for (const ss of withoutSource.querySelectorAll(".ss")) ss.remove();
+        return {
+          source: (el.querySelector(".ss")?.innerText ?? "").replace(/\s+/g, " "),
+          rest: withoutSource.innerText.replace(/\s+/g, " "),
+        };
+      })
+    );
+    assert.ok(cards.length >= 5, `the strip rendered ${cards.length} cards`);
+    const repeats = cards.flatMap(({ source, rest }) =>
+      [...new Set(source.match(PERIOD) ?? [])]
+        .filter((p) => rest.includes(p))
+        .map((p) => `"${p}" is in the source line AND in "${rest.trim().slice(0, 90)}"`)
+    );
+    assert.deepEqual(
+      repeats,
+      [],
+      "a strip card prints its reference period twice, so one card answers " +
+        `"when is this from" in two places:\n  ${repeats.join("\n  ")}`
+    );
+  });
+});
+
 test("the strip shows the same cards whatever the reader typed", { skip }, async () => {
   // Gating the Sofia average-wage card on a typed salary makes the section a
   // reader sees depend on their own input, while the card carries no figure
