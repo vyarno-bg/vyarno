@@ -458,14 +458,13 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    /* Cards in the same row are the same height, and each one's source
-       caption is pinned to its foot (`.ss` takes the slack), so the footers
-       line up across the row instead of floating at ragged heights. */
+    /* Cards in the same row stay the same height, so the row reads as a row of
+       tiles rather than a ragged edge. Their captions do NOT stretch to meet
+       the bottom — see `.ss`. */
     align-items: stretch;
   }
   /* Every stat card has the same internal structure regardless of height:
-     headline on top, label in the middle, source caption pinned to the
-     bottom by `margin-top: auto` on `.ss`. */
+     headline, label, source caption, each following the one above it. */
   .stat {
     flex: 1 1 180px;
     min-width: 0;
@@ -484,11 +483,25 @@
   .stat.wide {
     flex: 1 1 100%;
   }
-  /* One rule, carrying both the pinning margin and the typography: a second
-     .stat .ss rule further down would override margin-top and unpin the
-     source caption. */
+  /* The caption follows its own card's label, and is NOT pushed to the foot of
+     the tallest card in the row.
+
+     `margin-top: auto` bought one thing — the captions' rules lining up across
+     the row — and it charged for it in the only currency a tile has. The
+     median-pay card carries three footer lines to its neighbours' one, which
+     makes it 302px where they need around 130, and stretch hands every one of
+     them the difference as a hole between the label and the caption: measured
+     at 1280px, 175px in the inflation tile, 138px in the fastest-rising one,
+     199px in unemployment. «Страната накратко» read as four mostly-empty
+     boxes, and the caption each one ended with had visibly come loose from the
+     figure it dates.
+
+     The alignment is worth having where the cards are comparable and this row
+     is the case where they are not. What replaces it is the ordinary rule for
+     a caption: it sits under the thing it captions. The slack goes to the
+     bottom of the short cards, where trailing space in a stretched tile reads
+     as room rather than as something missing. */
   .stat .ss {
-    margin-top: auto;
     padding-top: 10px;
     border-top: 1px solid var(--rule);
     font-size: var(--fs-micro);
