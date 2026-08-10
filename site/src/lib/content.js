@@ -1292,20 +1292,41 @@ export const COPY = {
     bg: "кой колко изкарва е изчислено по изследване от {shapeYear} г.",
     en: "who earns what is worked out from a {shapeYear} survey",
   },
-  statSofiaK: { bg: "средна нетна заплата в София", en: "Sofia average NET pay" },
+  // **Every one of these names the област, and none of them hardcodes which.**
+  // НСИ publish the wage by област and the reader picks theirs, so a label
+  // reading «в София» beside a Варна figure is the exact failure this whole
+  // setting exists to end — and it is invisible, because both are plausible
+  // Bulgarian wages. `{region}` is НСИ's own name for it in the reader's
+  // language, out of the payload, never a transliteration.
+  statSofiaK: {
+    bg: "средна нетна заплата · {region}",
+    en: "average NET pay · {region}",
+  },
+  // What the card says before a reader has picked an област. There is no
+  // default (P7): Sofia-by-default would hand a Бургас reader Sofia's average
+  // wearing the appearance of a choice they made, which is the same defect the
+  // blank raise field exists to avoid.
+  statRegionUnset: {
+    bg: "средна нетна заплата · избери област",
+    en: "average NET pay · choose an oblast",
+  },
+  statRegionUnsetHint: {
+    bg: "избери областта си, за да сравним заплатата ти с нейната средна",
+    en: "choose your oblast to compare your pay with its average",
+  },
   // One coherent clause rather than spliced fragments: the {delta}
   // placeholder carries the whole "+28% над" / "-28% под" / "≈ на" phrase,
   // built in the template, which is what keeps the Bulgarian grammatical.
   statSofiaDiff: {
-    bg: "твоята нетна заплата е <b>{delta}</b> средната нетна заплата в София",
-    en: "your net pay is <b>{delta}</b> the Sofia net average",
+    bg: "твоята нетна заплата е <b>{delta}</b> средната за {region}",
+    en: "your net pay is <b>{delta}</b> the {region} net average",
   },
   // Per income, for the same reason the ladder is: НСИ publish a WAGE. Measured
   // against a two-earner total, a household of two on €900 each reads as 21%
   // above the average worker — two true numbers making one false sentence.
   statSofiaDiffEarner: {
-    bg: "доход {n} е <b>{delta}</b> средната нетна заплата в София",
-    en: "income {n} is <b>{delta}</b> the Sofia net average",
+    bg: "доход {n} е <b>{delta}</b> средната за {region}",
+    en: "income {n} is <b>{delta}</b> the {region} net average",
   },
   statSofiaAbove: { bg: "над", en: "above" },
   statSofiaBelow: { bg: "под", en: "below" },
@@ -1314,6 +1335,25 @@ export const COPY = {
   // the same reason: {delta} carries the whole "+28% над" phrase so the
   // Bulgarian stays grammatical, and {sector} is НСИ's own section name in the
   // reader's language — never our translation of the other edition's.
+  // The област picker. Its own block rather than beside the sector one,
+  // because the two answer different questions and only this one moves which
+  // published figures the page reads.
+  regionLabel: { bg: "Твоята област", en: "Your oblast" },
+  regionNone: { bg: "— избери област —", en: "— choose an oblast —" },
+  // The suffix on the one option имот.bg publishes no price for. In the list
+  // rather than out of it: НСИ publish a wage for Софийска област and a reader
+  // who lives there should get it, with the missing half named rather than
+  // silently absent.
+  regionNoPriceSuffix: { bg: "(без цени на жилища)", en: "(no home prices)" },
+  // **The counts are placeholders because the coverage is data.** имот.bg add
+  // and retire cities and НСИ could split an област; a sentence with "28" and
+  // "27" written into it would go quietly wrong on the refresh that changed
+  // either, and the wrongness would be a claim about how much of the country
+  // this page covers.
+  regionHint: {
+    bg: "НСИ публикуват средна заплата за всичките {n} области. Цени на жилища има за {p} от тях — имот.bg публикува по градове, а не по области.",
+    en: "NSI publish an average wage for all {n} oblasts. Home prices exist for {p} of them — imot.bg publish by city, not by oblast.",
+  },
   sectorLabel: { bg: "Твоят сектор", en: "Your sector" },
   sectorNone: { bg: "— избери дейност —", en: "— choose an activity —" },
   // «средната» carries «нетна заплата» from the subject, so naming it twice in
@@ -1492,20 +1532,35 @@ export const COPY = {
   // a reader who opens the linked workbook nothing to match against — the
   // whole point of the link.
   statSofiaSrc: {
-    bg: "НСИ · средна брутна заплата в София-град {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
-    en: "NSI · Sofia-city average GROSS {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
+    bg: "НСИ · средна брутна заплата в област {region} {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
+    en: "NSI · {region} oblast average GROSS {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
   },
   statFastK: { bg: "— най-бързо поскъпващата група", en: "- the fastest-rising group" },
   // The housing card's label, and it needs one: every card in the strip has
   // the same anatomy — value, label, chart, source. Folding the place name
   // into the value slot as "София · €175 070" and pushing the rest into the
   // source caption gives this one card a shape none of its neighbours have.
-  statHomeK: { bg: "жилище в София", en: "a home in Sofia" },
-  // The "{pct}% от 2015" sub-caption on the stat card. Carries the
-  // historical archive's own median-vs-2015-median delta (imot.bg
-  // historical, NOT HICP). The {pct} placeholder is the current-year
-  // row's since_baseline_median_pct from city_price.json.
-  statHomeDelta: { bg: "+{pct}% от 2015 · медиана", en: "+{pct}% since 2015 · median" },
+  statHomeK: { bg: "жилище в {city}", en: "a home in {city}" },
+  // What the housing card says before an област is picked. Two different
+  // absences, and the copy has to tell them apart: nobody chose yet, against
+  // имот.bg publishing no price for the one област whose towns are not among
+  // their 27 cities. The second is P11 — a figure nobody publishes is
+  // uncomputed rather than concealed, and saying which is which is the
+  // difference between the two.
+  statHomeUnset: { bg: "жилище · избери област", en: "a home · choose an oblast" },
+  statHomeNoCity: {
+    bg: "имот.bg не публикува цени за {region}",
+    en: "imot.bg publishes no prices for {region}",
+  },
+  // The "+{pct}% от {y}" sub-caption on the stat card. Carries имот.bg's own
+  // median-against-baseline-median delta (their historical pages, NOT HICP).
+  //
+  // **The year is a placeholder because it is per city.** How far back имот.bg's
+  // coverage of a city supports a comparison differs by two decades between
+  // София and Смолян, so a year written into this string would be right for one
+  // city and wrong for the rest — and it is the kind of wrong nobody spots,
+  // because every year in the range is a plausible one to have measured from.
+  statHomeDelta: { bg: "+{pct}% от {y} · медиана", en: "+{pct}% since {y} · median" },
   statUnempK: { bg: "безработица · 15-74 г.", en: "unemployment · age 15-74" },
 
   // As-of banner.

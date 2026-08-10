@@ -217,6 +217,45 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
 export const SOFIA_CITY_CODE = "sofiya";
 
 /**
+ * The области a reader may pick, in the order the picker lists them.
+ *
+ * **Alphabetical in the reader's own language, not by size.** Size order puts
+ * София first, which reads as a default on a control whose whole point is that
+ * there is not one (P7) — and it makes a 28-item list on a 360px screen
+ * unscannable, because nobody knows where Разград falls in a population
+ * ranking. Bulgarian sorts with the BG collator, which orders Cyrillic
+ * correctly where a plain `<` does not.
+ *
+ * The names are НСИ's own in each language, straight from the payload. Nothing
+ * here transliterates: their Bulgarian for BG411 is «София(столица)», which is
+ * not a string anybody would arrive at from "Sofia cap.".
+ *
+ * `hasPrice` says whether имот.bg publishes a €/m² for that област's city.
+ * Exactly one — Софийска област — does not, and it is carried as a fact about
+ * the option rather than as a reason to leave it out: a reader who lives there
+ * gets their wage comparator and is told plainly that no price is published,
+ * which is the whole difference between "uncomputed" and "concealed" (P11).
+ *
+ * @param {object|null} regionSalary  data.regionSalary (region_salary.json)
+ * @param {object|null} cityPrice     data.cityPrice (city_price.json)
+ * @param {"bg"|"en"} lang
+ * @returns {Array<{code:string, name:string, hasPrice:boolean}>}
+ */
+export function regionOptions(regionSalary, cityPrice, lang) {
+  const rows = Array.isArray(regionSalary?.regions) ? regionSalary.regions : [];
+  const priced = new Set((cityPrice?.cities ?? []).map((c) => c?.code).filter(Boolean));
+  const collator = new Intl.Collator(lang === "bg" ? "bg" : "en");
+  return rows
+    .map((r) => ({
+      code: r?.code ?? "",
+      name: (lang === "bg" ? r?.bg_name : r?.en_name) ?? "",
+      hasPrice: priced.has(r?.code),
+    }))
+    .filter((o) => o.code && o.name)
+    .sort((a, b) => collator.compare(a.name, b.name));
+}
+
+/**
  * One city's whole row out of `city_price.json`, or null.
  *
  * The price twin of `regionRow`, and separate from it because the two payloads

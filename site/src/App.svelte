@@ -12,8 +12,9 @@
    * `$lib/view`, BG/EN copy in `$lib/content`, and the fetch in `$lib/data`.
    */
   import { onMount } from "svelte";
-  import { lang } from "./lib/stores.js";
+  import { lang, region } from "./lib/stores.js";
   import { Calculator } from "./lib/calculator.svelte.js";
+  import { regionOptions } from "./lib/view.js";
   // The footer is shared with /legal/ and /404.html so the upstream
   // attribution and the legal links cannot be present on one page and missing
   // from another. See lib/SiteFooter.svelte.
@@ -79,6 +80,21 @@
         ? t(COPY.srcDatedByFetch, $lang, { d: calc.cityPriceAsOf })
         : ""
   );
+
+  // The picker's options. Derived here rather than in the calculator for the
+  // same reason `cityPriceDated` is: it picks WORDS — НСИ's name for each
+  // област in the reader's language, sorted with that language's collator —
+  // and the calculator is deliberately language-agnostic.
+  const regionChoices = $derived(regionOptions(calc.data.regionSalary, calc.data.cityPrice, $lang));
+
+  // The reader's choice is the store's, and the calculator reads it from here.
+  // The store is what persists and what the picker binds to; the calculator is
+  // what every figure hangs off. Keeping the copy one-directional means there
+  // is exactly one writer and no path by which the two can hold different
+  // области while a card is being drawn.
+  $effect(() => {
+    calc.regionCode = $region;
+  });
 </script>
 
 <svelte:head>
@@ -156,7 +172,7 @@
       <div class="m-grid">
         <div class="m-col">
           <PayField {calc} />
-          <InputsCard {calc} />
+          <InputsCard {calc} {regionChoices} />
         </div>
         <ResultsCard {calc} {cityPriceDated} />
       </div>
@@ -181,6 +197,12 @@
         headlineIsFlash={calc.headlineIsFlash}
         ladder={calc.ladder}
         regionNet={calc.regionNet}
+        regionNameBg={calc.regionNameBg}
+        regionNameEn={calc.regionNameEn}
+        cityNameBg={calc.cityNameBg}
+        cityNameEn={calc.cityNameEn}
+        regionChosen={calc.regionChosen}
+        regionHasNoCity={calc.regionHasNoCity}
         regionMeanGross={calc.regionMeanGrossEur}
         salaryShapeUrl={calc.salaryShapeUrl}
         salaryShapeYear={calc.salaryShapeYear}

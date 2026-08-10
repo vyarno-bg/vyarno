@@ -17,9 +17,15 @@
   import { number, integer, period, decimalText } from "../lib/format.js";
   import { COPY, HOME, t } from "../lib/content.js";
   import BasketEditor from "./BasketEditor.svelte";
+  import RegionPicker from "./RegionPicker.svelte";
 
-  /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
-  const { calc } = $props();
+  /**
+   * @type {{
+   *   calc: import("../lib/calculator.svelte.js").Calculator,
+   *   regionChoices?: Array<{code: string, name: string, hasPrice: boolean}>,
+   * }}
+   */
+  const { calc, regionChoices = [] } = $props();
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
@@ -88,6 +94,27 @@
     <span class="l-bg">{COPY.restOfNumbers.bg}</span>
     <span class="l-en">{COPY.restOfNumbers.en}</span>
   </h4>
+
+  <!-- The област picker leads, because it is the one control here that
+     changes WHICH published figures the page reads rather than what is done
+     with them — and it governs two cards in the strip that render an explicit
+     "choose one" state until it is answered.
+
+     Inside this card rather than between the two, which is where it first
+     went: `card.css` closes the seam between the pay field and this one on a
+     wide screen so they read as a single card, and a third element between
+     them opens a 135px hole that `verify_render_layout.mjs` measures.
+
+     Not a modal, either: `docs/seo.md` prerenders every indexable entry, and
+     what the READER decides may not be baked in — so an overlay would ship
+     shut to a crawler or pop in over an already-hydrated page. A native
+     `<select>` also degrades to a working control with no JavaScript, and on a
+     360px screen the platform's own picker beats any listbox written here. -->
+  {#if regionChoices.length > 0}
+    <div class="field">
+      <RegionPicker options={regionChoices} />
+    </div>
+  {/if}
 
   <!-- Single-column on purpose: the fields have very different
      heights (the anchor is a dropdown plus a hint, the home block

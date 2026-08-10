@@ -44,7 +44,7 @@
    * total take-home).
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, label, period, httpUrl } from "../lib/format.js";
+  import { number, integer, label, period, httpUrl, safeText } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import PayslipTable from "./PayslipTable.svelte";
 
@@ -339,12 +339,14 @@
             >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "bg", {
               n: fmt0(gap.ordinal),
               delta: deltaPhrase(gap, "bg"),
+              region: safeText(calc.regionNameBg),
             })}</span
           >
           <span class="l-en"
             >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "en", {
               n: fmt0(gap.ordinal),
               delta: deltaPhrase(gap, "en"),
+              region: safeText(calc.regionNameEn),
             })}</span
           >
         </div>

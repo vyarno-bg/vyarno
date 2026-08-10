@@ -9,7 +9,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, HOME, t } from "$lib/content.js";
-  import { number, integer, percentSigned, period } from "$lib/format.js";
+  import { number, integer, percentSigned, period, safeText, yearText } from "$lib/format.js";
   import { fastestRisingDivision } from "$lib/view.js";
 
   const {
@@ -25,16 +25,35 @@
     headlineIsFlash = false,
     /** 11-point gross earnings ladder; index 5 is the median. */
     ladder = [],
-    /** Sofia's median NET wage, for the comparator card. */
+    /** The chosen област's average NET wage, for the comparator card. */
     regionNet = 0,
+    /** НСИ's own name for that област, in each language, or "" before a reader
+        has picked one. Both languages arrive because the strip renders both
+        and lets CSS pick — a single string would put a Bulgarian name in the
+        English column. */
+    regionNameBg = "",
+    regionNameEn = "",
     /** НСИ's own published gross for the same quarter, which `regionNet` is our
         conversion of. Both go on the card: the credit beside them is theirs. */
     regionMeanGross = 0,
     salaryShapeUrl = "",
     salaryShapeYear = "",
     salaryAnchorPeriod = "",
-    /** Sofia €/m² median and its provenance. */
+    /** The chosen city's €/m² median and its provenance. */
     cityEurPerM2 = 0,
+    /** имот.bg's own name for that град, in each language. Distinct from the
+        област's on purpose: they are the same word for 26 of the 28 and NOT
+        for София, and the two cards are about different areas. */
+    cityNameBg = "",
+    cityNameEn = "",
+    /** True once the reader has picked an област. The two city-scoped cards
+        gate on this rather than on a zero figure, because "nobody has chosen"
+        and "the payload did not load" are different claims and the copy says
+        different things about them. */
+    regionChosen = false,
+    /** True when НСИ publish a wage for the chosen област and имот.bg publish
+        no price for its towns. Софийска област is the only one. */
+    regionHasNoCity = false,
     regionMeanGrossUrl = "",
     regionWagePeriod = "",
     /** НСИ star the year until they finalise it; the card has to say so. */
@@ -55,6 +74,10 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  /** НСИ's name for the chosen област, in one language. */
+  const regionName = (l) => safeText(l === "bg" ? regionNameBg : regionNameEn);
+  /** имот.bg's name for the chosen град, in one language. */
+  const cityName = (l) => safeText(l === "bg" ? cityNameBg : cityNameEn);
   const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
   // Everything on the Sofia card's source line, built in one place so the two
@@ -69,6 +92,7 @@
   // «(предварителни данни)» inside the English sentence for every Bulgarian
   // reader — invisible to them, and to a suite reading only what is on screen.
   const regionSrcArgs = (lang) => ({
+    region: regionName(lang),
     gross: regionMeanGross > 0 ? fmt0(regionMeanGross) : "—",
     net: regionNet > 0 ? fmt0(regionNet) : "—",
     period: period(regionWagePeriod),
@@ -219,14 +243,33 @@
          `regionNet` comes from sofia_salary.json alone. The personal
          verdict against it lives under the salary input, where the
          number it compares to is. -->
-    {#if regionNet > 0}
+    <!-- Three states, and they are three different claims. A wage, which is
+         НСИ's for the област the reader picked; nobody has picked yet, which
+         is a prompt and not a missing figure; and a chosen област whose wage
+         did not load, which is the payload being absent and is what the
+         `regionNet > 0` branch is gated on. Collapsing the first two would
+         either show a number about somewhere the reader may not live or show
+         nothing with no way to fix it. -->
+    {#if !regionChosen}
+      <div class="stat">
+        <div class="sv mono"><span>—</span></div>
+        <div class="sl">
+          <span class="l-bg">{COPY.statRegionUnset.bg}</span>
+          <span class="l-en">{COPY.statRegionUnset.en}</span>
+        </div>
+        <div class="ss">
+          <span class="l-bg">{COPY.statRegionUnsetHint.bg}</span>
+          <span class="l-en">{COPY.statRegionUnsetHint.en}</span>
+        </div>
+      </div>
+    {:else if regionNet > 0}
       <div class="stat">
         <div class="sv mono">
           <span>{fmt0(regionNet)} €</span>
         </div>
         <div class="sl">
-          <span class="l-bg">{COPY.statSofiaK.bg}</span>
-          <span class="l-en">{COPY.statSofiaK.en}</span>
+          <span class="l-bg">{t(COPY.statSofiaK, "bg", { region: regionName("bg") })}</span>
+          <span class="l-en">{t(COPY.statSofiaK, "en", { region: regionName("en") })}</span>
         </div>
         <div class="ss">
           <a href={regionMeanGrossUrl} target="_blank" rel="noopener">
@@ -298,7 +341,28 @@
          attributed a figure имот.bg never published to имот.bg — with «0
          квартала» as the only tell. The strip's own rule is that every card
          is gated on its own payload; this restores it. -->
-    {#if categories.length > 0 && cityPriceIsLive && cityEurPerM2 > 0}
+    <!-- The same three-state split as the wage card, plus a fourth that only
+         this one has: an област имот.bg publishes no city for. Софийска област
+         is the case, and it is P11 in one line — a figure nobody publishes is
+         uncomputed rather than concealed, so the card names имот.bg and says
+         they do not publish it, instead of going blank or borrowing София's. -->
+    {#if categories.length > 0 && !regionChosen}
+      <div class="stat">
+        <div class="sv mono"><span>—</span></div>
+        <div class="sl">
+          <span class="l-bg">{COPY.statHomeUnset.bg}</span>
+          <span class="l-en">{COPY.statHomeUnset.en}</span>
+        </div>
+      </div>
+    {:else if categories.length > 0 && regionHasNoCity}
+      <div class="stat">
+        <div class="sv mono"><span>—</span></div>
+        <div class="sl">
+          <span class="l-bg">{t(COPY.statHomeNoCity, "bg", { region: regionName("bg") })}</span>
+          <span class="l-en">{t(COPY.statHomeNoCity, "en", { region: regionName("en") })}</span>
+        </div>
+      </div>
+    {:else if categories.length > 0 && cityPriceIsLive && cityEurPerM2 > 0}
       {@const hP = cityEurPerM2 * HOME.m2Default}
       <div class="stat wide">
         <div class="sv mono" style="color: var(--erode)">
@@ -307,8 +371,8 @@
           >
         </div>
         <div class="sl">
-          <span class="l-bg">{COPY.statHomeK.bg}</span>
-          <span class="l-en">{COPY.statHomeK.en}</span>
+          <span class="l-bg">{t(COPY.statHomeK, "bg", { city: cityName("bg") })}</span>
+          <span class="l-en">{t(COPY.statHomeK, "en", { city: cityName("en") })}</span>
         </div>
         {#if cityHistorical.length > 1}
           {@const _minH = Math.min(...cityHistorical.map((r) => r.eur_per_m2_median))}
@@ -380,10 +444,16 @@
             </div>
             <div class="hist-delta mono">
               <span class="l-bg"
-                >{@html t(COPY.statHomeDelta, "bg", { pct: fmt(citySinceBaselinePct, 0) })}</span
+                >{@html t(COPY.statHomeDelta, "bg", {
+                  pct: fmt(citySinceBaselinePct, 0),
+                  y: yearText(cityBaselineYear),
+                })}</span
               >
               <span class="l-en"
-                >{@html t(COPY.statHomeDelta, "en", { pct: fmt(citySinceBaselinePct, 0) })}</span
+                >{@html t(COPY.statHomeDelta, "en", {
+                  pct: fmt(citySinceBaselinePct, 0),
+                  y: yearText(cityBaselineYear),
+                })}</span
               >
             </div>
           </div>

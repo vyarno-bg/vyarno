@@ -490,22 +490,68 @@ export class Calculator {
   cityBaselineYear = $derived(this.cityHome.baselineYear);
   cityBaselineMedian = $derived(this.cityHistorical[0]?.eur_per_m2_median ?? 0);
 
-  // Which област every wage figure below is read from.
+  // Which област every city-scoped figure below is read from — the reader's
+  // own choice, and "" until they make one.
   //
-  // A named constant rather than a reader setting, for now: this object is
-  // wired to one область and the control that lets somebody choose theirs is a
-  // separate change. Sofia-city is the one it points at because that is the
-  // област the page has always shown, so nothing a reader sees moves — the
-  // widening is in where the figure is read FROM, `region_salary.json`'s 28
-  // rows rather than a file with one.
-  regionCode = $derived(SOFIA_CITY_CODE);
+  // **There is no default and the empty string is a real state.** P7: a
+  // preselected София hands a Бургас reader Sofia's average wage and Sofia's
+  // €/m² wearing the appearance of a choice they made. `view.js#regionQuarter`
+  // and `view.js#cityRow` both answer with nothing for "", so every figure
+  // downstream is zero and the two cards render what they are waiting for,
+  // while every national figure on the page renders in full.
+  regionCode = $state("");
 
-  // And which град the €/m² is read from. Separate from `regionCode` because
-  // the two payloads cover different sets — 28 области have a wage and 27
-  // cities have a price — so one of them is legitimately absent for a reader in
-  // Софийска област, and a single field could not express that.
-  cityCode = $derived(SOFIA_CITY_CODE);
+  // And which град the €/m² is read from. The same code — `regions.py` keys
+  // both payloads by it — but a SEPARATE field, because the two files cover
+  // different sets: 28 области have a wage and 27 cities have a price. For
+  // Софийска област the wage exists and the price does not, and one field
+  // could not express that without the price card borrowing a neighbour's
+  // figure, which is the substitution this whole setting exists to end.
+  cityCode = $derived(this.regionCode);
 
+  /** НСИ's own name for the chosen област, or "" — never a transliteration. */
+  regionNameBg = $derived(regionRow(this.data.regionSalary, this.regionCode)?.bg_name ?? "");
+  regionNameEn = $derived(regionRow(this.data.regionSalary, this.regionCode)?.en_name ?? "");
+  /** имот.bg's own name for the chosen град. Distinct from the област's for
+      София, and the same word for the other 26. */
+  cityNameBg = $derived(this.cityRowNow?.bg_name ?? "");
+  cityNameEn = $derived(this.cityRowNow?.en_name ?? "");
+  /** True once a reader has picked. Every city-scoped card gates on this rather
+      than on a zero figure: a payload that failed to load and a reader who has
+      not chosen are different things, and the copy says different things about
+      them. */
+  regionChosen = $derived(Boolean(this.regionCode));
+  /** True when the chosen област has a wage and имот.bg publish no price for
+      its towns. Софийска област is the only one today, and it is a fact about
+      имот.bg's coverage rather than a gap to fill. */
+  regionHasNoCity = $derived(Boolean(this.regionCode) && !this.cityRowNow);
+
+  // ---------------------------------------------------------------------
+  // The reference област — `/how/`'s, and nobody's
+  //
+  // **`/how/` is the country page and has no reader in it.** Every figure on
+  // it is a function of the published payloads alone, which is what makes it
+  // safe to freeze into served HTML (docs/seo.md) and what keeps a page with
+  // no inputs from acquiring one. A reader's chosen област is an input, so the
+  // four derivations that page renders may not take it — hydrated, the page
+  // would rewrite itself into a different set of numbers than the crawler and
+  // the first paint saw.
+  //
+  // So `/how/` names one place and says which: София-city, because it is the
+  // largest, because it is the one област whose град and област coincide, and
+  // because it is what that page has always been about. That is a different
+  // thing from a DEFAULT — the calculator's own cards still show nothing until
+  // a reader chooses (P7). A page that says «жилище в София» is stating where
+  // its figure is from; a card that says it to somebody who never picked
+  // София is answering a question they did not ask.
+  // ---------------------------------------------------------------------
+  referenceCode = SOFIA_CITY_CODE;
+  referenceCityRow = $derived(cityRow(this.data.cityPrice, this.referenceCode));
+  /** `/how/`'s €/m² provenance, read off the reference city rather than the
+      reader's. */
+  refCityPriceIsLive = $derived(Boolean(this.referenceCityRow?.eur_per_m2_median));
+  refCityPriceAsOf = $derived(this.data.cityPrice?.as_of ?? "");
+  refCityPriceSnapshot = $derived(this.referenceCityRow?.snapshot_date ?? "");
   // The average monthly GROSS pay in that област — the comparator on the strip,
   // and the one number two cards and the whole percentile ladder hang off.
   // `region_salary.json` publishes НСИ's own quarterly series per област, so
@@ -571,7 +617,7 @@ export class Calculator {
     payLadder({
       salaryDist: this.data.salaryDist,
       regionSalary: this.data.regionSalary,
-      regionCode: this.regionCode,
+      regionCode: this.referenceCode,
       payroll: this.data.payroll,
     })
   );
@@ -579,15 +625,15 @@ export class Calculator {
   cityHome = $derived(
     cityHomeAtAverageWage({
       cityPrice: this.data.cityPrice,
-      cityCode: this.cityCode,
+      cityCode: this.referenceCode,
       regionSalary: this.data.regionSalary,
-      regionCode: this.regionCode,
+      regionCode: this.referenceCode,
       payroll: this.data.payroll,
       m2: HOME.m2Default,
     })
   );
   /** НСИ's quarterly wage cells for the област, a year to a row — selected, never averaged. */
-  regionWageGrid = $derived(quarterGrid(regionRow(this.data.regionSalary, this.regionCode)));
+  regionWageGrid = $derived(quarterGrid(regionRow(this.data.regionSalary, this.referenceCode)));
 
   // ---------------------------------------------------------------------
   // Derived: the pay packet
@@ -898,12 +944,28 @@ export class Calculator {
 
   // Fresh individual-earnings ladder. `salary_dist.json` carries the Eurostat
   // SES shape at SES's own level and nothing else; `buildLadder` re-levels it
-  // onto `regionMeanGrossEur` and converts each rung to NET. The two publishers'
+  // onto the anchor below and converts each rung to NET. The two publishers'
   // figures meet here, in the reader's tab — see `mirror.js#composeLadder`.
   // `salary` is net take-home, so this is a net-vs-net rank.
+  //
+  // **The anchor is the reference област, NOT the reader's**, and that is the
+  // whole of what makes this a rank rather than a local one. The SES shape is
+  // national and no sub-national distribution exists at any vintage from any
+  // publisher, so re-levelling it onto Русе would assert that pay in Русе is
+  // spread the way Bulgaria's is — which nothing measures
+  // (`docs/data-sources.md` §Salary distribution). The city setting moves the
+  // two comparators and leaves the ladder alone, deliberately.
+  //
+  // It also has to be independent of the reader's choice for a plainer reason:
+  // the rank is on `/how/` as well as here, and that page renders at build
+  // time with nobody in it.
+  ladderAnchorGross = $derived(
+    publishedRegionQuarter(this.data.regionSalary || HOME.regionSalaryFallback, this.referenceCode)
+      ?.value || 0
+  );
   ladder = $derived(
     this.data.salaryDist
-      ? buildLadder(this.data.salaryDist, this.regionMeanGrossEur, this.payroll)
+      ? buildLadder(this.data.salaryDist, this.ladderAnchorGross, this.payroll)
       : []
   );
   // ONE RANK PER EARNER. The rungs are individual full-time earnings, so a
