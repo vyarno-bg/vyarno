@@ -90,15 +90,13 @@
 </script>
 
 <div class="m-card m-inputs">
-  <h4>
-    <span class="l-bg">{COPY.restOfNumbers.bg}</span>
-    <span class="l-en">{COPY.restOfNumbers.en}</span>
-  </h4>
-
-  <!-- The place picker leads, because it is the one control here that changes
-     WHICH published figures the page reads rather than what is done with them
-     — and it governs two cards in the strip that render an explicit "say where
-     you live" state until it is answered.
+  <!-- The place picker sits ABOVE this card's heading, and the heading is the
+     reason. «Ако искаш — още за теб» is a true promise about the raise, the
+     rent, the savings and the home block below it — none of them has to be
+     filled in — and it is the wrong promise about the one control on the card
+     that decides WHICH published figures two other cards read. A reader who
+     takes the heading at its word and skips the card meets «избери къде
+     живееш» twice further down with nothing to act on.
 
      Inside this card rather than between the two, which is where it first
      went: `card.css` closes the seam between the pay field and this one on a
@@ -115,6 +113,11 @@
       <RegionPicker options={regionChoices} />
     </div>
   {/if}
+
+  <h4>
+    <span class="l-bg">{COPY.restOfNumbers.bg}</span>
+    <span class="l-en">{COPY.restOfNumbers.en}</span>
+  </h4>
 
   <!-- Single-column on purpose: the fields have very different
      heights (the anchor is a dropdown plus a hint, the home block

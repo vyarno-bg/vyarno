@@ -147,6 +147,14 @@
 .m-inputs > .field:last-child {
   margin-bottom: 0;
 }
+/* The place picker is the one field in this card that comes BEFORE its heading
+   (`InputsCard.svelte` says why), so the heading after it needs the space a
+   heading gets rather than the 14px between two fields. At the field rhythm
+   «Ако искаш — още за теб» reads as a caption under the picker instead of as
+   the label on everything below it, which inverts what the move was for. */
+.m-inputs > .field + h4 {
+  margin-top: 24px;
+}
 /* The results card fills the m-grid row so its bottom items (drawer, share
    button, brand footer) anchor to the bottom instead of floating mid-card
    when the inputs column is taller. Only the right card is a flex column; the
