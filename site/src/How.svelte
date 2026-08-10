@@ -649,8 +649,8 @@
         <b>днешната средна заплата за страната</b>, която НСИ публикува всяко тримесечие. Взимаме
         разпъването от първото и го прилагаме върху днешната средна от второто, за да носят
         стъпалата днешни суми. После всяко стъпало се превръща от бруто в нето. И двете числа са за
-        цялата страна — как са разпределени заплатите вътре в една област не се публикува от никого,
-        затова тази подредба не се мени с областта.</span
+        цялата страна: никой не публикува как са разпределени заплатите вътре в една област, затова
+        тази подредба не зависи от нея.</span
       >
       <span class="l-en"
         >This needs two official numbers, because neither is enough on its own. The first says
@@ -935,7 +935,7 @@
           imotDated
         )}
         {@render stat(
-          `${fmt0(calc.data.cityPrice.eur_per_m2_min)}–${fmt0(calc.data.cityPrice.eur_per_m2_max)} €`,
+          `${fmt0(calc.cityHome.eurPerM2Min)}–${fmt0(calc.cityHome.eurPerM2Max)} €`,
           {
             bg: t(COPY.howKEurM2Range, "bg", { n: fmt0(calc.cityHome.nDistricts) }),
             en: t(COPY.howKEurM2Range, "en", { n: fmt0(calc.cityHome.nDistricts) }),

@@ -106,6 +106,29 @@ test("every figure on the country page names a source and a period", { skip }, a
   }, "/how/");
 });
 
+test("no figure on the country page is drawn as an em dash", { skip }, async () => {
+  // **An em dash where a number goes is what a missed READ looks like**, and
+  // it is indistinguishable from a payload that has not loaded. The
+  // cheapest-and-dearest-district card reached for `eur_per_m2_min` on the
+  // envelope after those fields moved onto each city's row, so it rendered
+  // «— – — €» on the one page whose whole claim is that every figure comes
+  // from the data — and it did it in served HTML, where a crawler reads it.
+  //
+  // Over every stat on the page rather than that one card: the payload is
+  // reshaped by the pipeline and this is the failure mode a reshape has.
+  await withApp(async (page, errors) => {
+    const values = await page.locator("main.how .stats .sv").allInnerTexts();
+    assert.ok(values.length > 4, "the country page's stat cards are missing");
+    for (const v of values) {
+      assert.ok(
+        /\d/.test(v),
+        `a country-page figure carries no digits, which is what a missed payload read looks like: ${v.replace(/\s+/g, " ")}`
+      );
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/how/");
+});
+
 test("the country page marks a figure its publisher has not finalised", { skip }, async () => {
   // НСИ star a whole year until they settle it, and `region_salary.json` carries
   // `is_preliminary` for the quarter this page reads. The calculator says so on
