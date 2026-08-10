@@ -3,8 +3,8 @@
   the country rather than the visitor.
 
   Everything here is read-only — published figures and the links that prove
-  them. The one piece of state it owns is the measured width of the Sofia
-  housing card, which the sparkline is drawn against.
+  them. The one piece of state it owns is the measured width of the housing
+  card, which the sparkline is drawn against.
 -->
 <script>
   import { lang } from "$lib/stores.js";
@@ -69,7 +69,9 @@
     /** True when the €/m² came from city_price.json, not the offline constant. */
     cityPriceIsLive = false,
     cityPriceDated = "",
-    /** Per-year €/m² medians back to 2015, for the sparkline. */
+    /** That city's own per-year €/m² medians, oldest first, for the sparkline.
+        How far back they run is per city and is not a constant — имот.bg's
+        archive reaches 2003 for three of them and last year for others. */
     cityHistorical = [],
     citySinceBaselinePct = 0,
     cityBaselineYear = 0,

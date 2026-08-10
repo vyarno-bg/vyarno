@@ -207,11 +207,12 @@ export const COPY = {
     bg: "(брутната заплата на един човек по договор, на месец)",
     en: "(one person's gross contract pay, monthly)",
   },
-  // NOT a claim about what people earn. We publish no national median net
-  // wage — the only median in the data is the Sofia net ladder's P50 (~€1104),
-  // and this placeholder sits at its 34th percentile, on the same screen as
-  // the "median NET pay · Sofia" card. Calling it "typical" or "the median"
-  // would be false twice over. docs/principles.md P7: no unsourced defaults.
+  // NOT a claim about what people earn. Nobody publishes a national median net
+  // wage; the only median in the data is the P50 of the ladder this site
+  // composes, and it is on screen a few hundred pixels away under «медианна
+  // нетна заплата · страната». A placeholder sitting near it and called
+  // "typical" or "the median" would be borrowing that card's provenance.
+  // docs/principles.md P7: no unsourced defaults.
   medianDefault: {
     bg: "числото е просто начална стойност — смени го със своята заплата",
     en: "that's just a starting value - replace it with your own pay",
@@ -887,10 +888,11 @@ export const COPY = {
   // Phrased from the BOTTOM ("ahead of {r}%"), NOT "top {n}%". "Top 63%" for
   // a below-median pay reads as an achievement when it isn't. {r} is the rank
   // from the bottom (mirror.js percentile), so higher pay → bigger number →
-  // honest and monotonic. Comparator is now INDIVIDUAL NET PAY of Sofia
-  // earners: the SES gross-earnings distribution (earn_ses_monthly) re-leveled
-  // to the live NSI Sofia average and converted to net — same unit as the
-  // input. {m} is the net median (ladder[5]), already monthly (no ÷12).
+  // honest and monotonic. The comparator is INDIVIDUAL NET PAY across the
+  // country: Eurostat's SES gross-earnings distribution (earn_ses_monthly)
+  // re-levelled onto НСИ's national all-activities average and converted to net
+  // — the same unit as the input. {m} is the net median (ladder[5]), already
+  // monthly (no ÷12).
   pctTopTxt: {
     bg: "По нетна заплата изпреварваш <b>{r}%</b> от работещите в страната. Медианната нетна заплата е <b>€{m}/мес</b>.",
     en: "By net pay you're ahead of <b>{r}%</b> of earners in the country - the median net pay is <b>€{m}/mo</b>.",
@@ -1421,21 +1423,22 @@ export const COPY = {
   // under an «НСИ ·» credit puts their name over our arithmetic and leaves the
   // reader who opens the workbook with no figure to match the row against.
   // «в страната» / "nationwide" is load-bearing, not decoration. The line above
-  // this one on the card compares the reader with Sofia, and this table is
-  // НСИ's country-wide one, so the scope has to be attached to the figure
-  // itself — a reader who takes in only the number and its credit must not
-  // carry away a Sofia reading of a national average.
+  // this one on the card compares the reader with their own област, and this
+  // table is НСИ's country-wide one, so the scope has to be attached to the
+  // figure itself — a reader who takes in only the number and its credit must
+  // not carry away a local reading of a national average.
   sectorSrc: {
     bg: "НСИ · средна брутна заплата за дейността в страната {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
     en: "NSI · average GROSS for the activity, nationwide {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
   },
   // **The scope mismatch, said out loud.** НСИ's by-activity table covers the
-  // whole country; the Sofia comparison sits three lines above it on the same
-  // card, and Sofia pay is structurally higher. Stacked without this, the two
-  // read as one scale and the gap to a sector average gets charged entirely to
-  // the reader's industry — «144% над средната за „Строителство“» for a Sofia
-  // builder is mostly the city. It flatters in nearly every section, which is
-  // the direction docs/principles.md P7 says to distrust hardest.
+  // whole country; the област comparison sits three lines above it on the same
+  // card, and the two scopes differ in every област — София pay is structurally
+  // higher, Благоевград's is half of it. Stacked without this, the two read as
+  // one scale and the gap to a sector average gets charged entirely to the
+  // reader's industry: «144% над средната за „Строителство“» for a builder in
+  // София is mostly the city. It flatters in nearly every section, which is the
+  // direction docs/principles.md P7 says to distrust hardest.
   //
   // **No euro level in it, and that is what keeps the sentence readable.** The
   // claim is that two scopes are being stacked, and the sentence makes it in
@@ -1446,13 +1449,14 @@ export const COPY = {
   // against 1407 has started answering "is my industry well paid", which is a
   // different question and one this line cannot settle for them.
   //
-  // **The Sofia line is named by what it says, never by where it sits.** Three
-  // lines separate the two on screen — the sector picker, the sector gap and
-  // the НСИ credit — and the nearest line above this one is the no-rank
+  // **The other comparison is named by what it says, never by where it sits.**
+  // Three lines separate the two on screen — the sector picker, the sector gap
+  // and the НСИ credit — and the nearest line above this one is the no-rank
   // caveat, which qualifies the very comparison being qualified again here. A
   // reader pointed at «the row above» reads it as that one and the sentence
-  // inverts: it then says the sector figure is Sofia's. Naming the comparison
-  // also survives the card being reordered, which a positional phrase does not.
+  // inverts: it then says the sector figure is the local one. Naming the
+  // comparison also survives the card being reordered, which a positional
+  // phrase does not.
   //
   // «разликата ти спрямо сектора» for the same reason. Two gaps are on screen
   // by the time this renders and only one of them is the city's.
@@ -1538,7 +1542,7 @@ export const COPY = {
   // wage a verb that wants a person — it overtakes nobody.
   //
   // The level is named GROSS because the credit line above this one ends in a
-  // net. Two adjacent sentences pairing a country-wide gross with a Sofia net
+  // net. Two adjacent sentences pairing a country-wide gross with a local net
   // on unstated bases invite a comparison neither supports.
   sectorAverageFlatters: {
     bg: "Средната не е средата: в България повече от половината заети изкарват под средната брутна заплата (Евростат, {shapeYear} г.), затова „под средната за сектора“ не значи „под средата“.",
@@ -1749,12 +1753,17 @@ export const COPY = {
     en: "If it keeps happening, write to {email} — that's a problem on our side.",
   },
 
-  // Sofia-only home row. Slots:
+  // The home row, for whichever град the reader picked. Slots:
+  //   {v}     «в» or «във», from format.js#bgIn
+  //   {city}  имот.bg's own name for that град
   //   {m}     apartment size (m²)
   //   {p}     total asking price
-  //   {pm2}   per-m² asking price (the city median from city_price.json)
+  //   {pm2}   per-m² asking price (that city's median from city_price.json)
+  //   {basis} what the €/m² beside it IS — a median, the reader's own, or a
+  //           placeholder
   //   {y}     years of monthly net pay
-  //   {src}   short source caption (e.g. "имоти.бг · 143 квартала · 16.7.2026")
+  //   {src}   short source caption: имот.bg, that city's district count, the
+  //           date
   homeYears: {
     bg: "{m} м² {v} <b>{city}</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
     en: "{m} m² in <b>{city}</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
@@ -1983,11 +1992,11 @@ export const COPY = {
   // different statute promulgated in a different issue of the same year.
   howSrcDvIssue: { bg: "бр. {issue} от {date}", en: "issue {issue} of {date}" },
   howSrcDv: { bg: "Държавен вестник", en: "the State Gazette" },
-  // The Eurostat disclosure obligation, on the page that carries the three
-  // figures it applies to (the modelled ladder, the Sofia €/m² median across
-  // имот.bg's districts, and the change since 2015 built on it). The link goes
-  // to the sources document, which carries the full text and the
-  // non-responsibility wording.
+  // The Eurostat disclosure obligation, on the two surfaces that carry the
+  // figures it applies to: the modelled ladder, the €/m² median across
+  // имот.bg's districts for one city, and the change since that city's baseline
+  // year built on it. The link goes to the sources document, which carries the
+  // full text and the non-responsibility wording.
   oursNote: {
     bg: "Това число е наше, а не на институцията под него — сметнато е от публикуваните ѝ данни.",
     en: "This figure is ours rather than the publisher's below it — worked out from their published data.",

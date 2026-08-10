@@ -170,11 +170,11 @@ export class Calculator {
   //
   // 900 EUR is a round PLACEHOLDER, not a statistic: no published series here
   // carries a national median net wage, so there is nothing to source a
-  // "typical" default to (docs/principles.md P7 — no unsourced defaults). For
-  // reference, the one median we DO publish is the Sofia net ladder's P50,
-  // ~€1,104 (salary_dist.json → buildLadder), and €900 sits at its 34th
-  // percentile — which is why the copy under this field asks the user to
-  // replace it rather than calling it typical.
+  // "typical" default to (docs/principles.md P7 — no unsourced defaults). It
+  // lands near the middle of the net ladder `buildLadder` composes, and that is
+  // the reason the copy under this field asks the reader to replace it rather
+  // than calling it typical: a round number close to the median is more
+  // convincing as a measurement, not less.
   //
   // A single-earner household is a list of one, and the page renders exactly
   // as it did before anybody thought about households. Nothing about the
@@ -205,15 +205,16 @@ export class Calculator {
    * happens, so no downstream figure has to care.
    *
    * NET stays the default. Every result on this page is a statement about
-   * take-home, and the €900 placeholder is documented against the Sofia NET
-   * ladder — changing which basis a reader meets first is a P7 decision with no
-   * data behind it.
+   * take-home, and the placeholder above is documented against the NET ladder —
+   * changing which basis a reader meets first is a P7 decision with no data
+   * behind it.
    */
   payBasis = $state("net");
   // Whether the reader has typed over that placeholder. The figures derived
   // from it are second-person claims — what the same life costs *you*, what
-  // *your* gross is before deductions, where *you* sit on the Sofia ladder —
-  // and every one of them is about a person earning €900 until this flips.
+  // *your* gross is before deductions, where *you* sit on the national pay ladder —
+  // and every one of them is about a person earning the placeholder until this
+  // flips.
   //
   // The hint that says so is attached to the input, and on a 360px phone that
   // input sits at y=481 with the first of those claims a screen and a half
@@ -450,9 +451,9 @@ export class Calculator {
   // not a code edit. Falls back to the same literals offline.
   limits = $derived(mortgageLendingLimits(this.data.mortgage));
 
-  // €/m² reading for the home block: prefers data.cityPrice.eur_per_m2_median
-  // (live, 143 districts), falls back to HOME.eurPerM2_offlineFallback when
-  // the JSON hasn't loaded yet (first paint, offline build).
+  // €/m² reading for the home block: prefers the chosen city's own
+  // `eur_per_m2_median` row, and falls back to HOME.eurPerM2_offlineFallback
+  // when the JSON hasn't loaded yet (first paint, offline build).
   //
   // `cityPriceIsLive` says WHICH of the two is on screen, and every consumer
   // has to ask. The fallback is a round constant with no measurement behind
@@ -466,11 +467,13 @@ export class Calculator {
   cityPriceAsOf = $derived(this.data.cityPrice?.as_of ?? "");
   cityPricePageDate = $derived(this.cityRowNow?.snapshot_date ?? "");
   cityNDistricts = $derived(this.cityRowNow?.n_districts ?? 0);
-  // Sofia price history (imot.bg, 2015..current). The pipeline fetches
-  // per-year snapshots on every refresh; the SPA reads this array verbatim
-  // (already sorted ascending by year) and renders a small sparkline + the
-  // since-2015 delta on the stat card. Empty array → the payload carries no
-  // historical block.
+  // The chosen city's own price history. The pipeline fetches one snapshot per
+  // qualifying archive year on every refresh; the SPA reads this array verbatim
+  // (already sorted ascending by year) and renders a small sparkline plus the
+  // since-baseline delta on the stat card. How far back it runs is per city —
+  // имот.bg's archive reaches 2003 for three of them and last year for others —
+  // so no year belongs in this comment. Empty array → the payload carries no
+  // historical block for that city.
   cityHistorical = $derived(
     Array.isArray(this.cityRowNow?.historical) ? this.cityRowNow.historical : []
   );
@@ -736,8 +739,9 @@ export class Calculator {
   wedgePay = $derived(this.earnersDirty ? this.pay : { basis: this.payBasis, amounts: [] });
   wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, pay: this.wedgePay }));
 
-  // How each earner compares with the Sofia average wage — per earner, because
-  // НСИ publish a wage rather than a household income. See view.js#regionGap.
+  // How each earner compares with the chosen област's average wage — per
+  // earner, because НСИ publish a wage rather than a household income. See
+  // view.js#regionGap.
   regionGaps = $derived(regionGap({ nets: this.nets, regionNet: this.regionNet }));
 
   /** The reader's chosen NACE Rev 2 section, by НСИ's own English row name. */

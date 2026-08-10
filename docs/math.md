@@ -474,7 +474,7 @@ gross and keeps the one that reproduces the typed net — for €2,100 the exact
 inverse is €2,650.2733, and rounding it up works out a cent high.
 
 **Full precision is still what everything else uses.** `bgNetSalary` is
-unrounded and remains the input to every comparison (the Sofia comparator, the
+unrounded and remains the input to every comparison (the област comparator, the
 net ladder, the wedge); the breakdown is a display layer over it, and
 `verify_net_salary.mjs` asserts the two never differ by more than display
 rounding.
