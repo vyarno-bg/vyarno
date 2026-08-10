@@ -75,6 +75,7 @@
       cityEurPerM2={calc.cityEurPerM2}
       cityNDistricts={calc.cityNDistricts}
       cityPriceIsLive={calc.cityPriceIsLive}
+      priceIsSourced={calc.homePriceIsSourced}
       {cityPriceDated}
     />
     <LeftoverRow {calc} />

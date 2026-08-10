@@ -1026,10 +1026,19 @@ export class Calculator {
       manualPrice: this.manualPrice,
       eurPerM2: this.cityEurPerM2,
       m2: this.m2,
+      eurPerM2IsReal: this.cityPriceIsLive,
     })
   );
+  /** Whether the home block has a price with a source behind it — имот.bg's
+      median for the reader's own град, or one they typed. There is no third
+      answer: `cityEurPerM2` falls back to a round constant, and everything
+      built on it, down to the basket's € column, is then a figure nobody
+      published. `HomeRow` says what it is waiting for instead. */
+  homePriceIsSourced = $derived(
+    this.cityPriceIsLive || (this.priceMode === "manual" && this.manualPrice > 0)
+  );
   // €/m² reading shown to the user as feedback in manual mode:
-  // "your €150,000 ÷ 60 m² = €2,500/m² (Sofia median is €2,501/m²)"
+  // "your €150,000 ÷ 60 m² = €2,500/m² (the Варна median is €1,100/m²)"
   manualEurPerM2 = $derived(this.m2 > 0 && this.manualPrice > 0 ? this.manualPrice / this.m2 : 0);
   homeYearsVal = $derived(homeYears(this.homePrice, this.householdNet));
   // The whole home block, from one call. `rate` is the AAR (ECB MIR new
@@ -1050,7 +1059,10 @@ export class Calculator {
       // denominator raises the cap, so the alternative would understate what a
       // couple can carry rather than overstate it.
       netSalary: this.householdNet,
-      eurPerM2: this.cityEurPerM2,
+      // Zero where the €/m² is the offline constant, so the "and that buys you
+      // N m²" reading cannot be built out of it either. `homePrice` above is
+      // already zero there and every consumer gates on the figure.
+      eurPerM2: this.cityPriceIsLive ? this.cityEurPerM2 : 0,
       limits: this.limits,
     })
   );
@@ -1383,9 +1395,18 @@ export class Calculator {
     this.splits = copy;
   };
 
-  /** Switch the home block to a hand-typed asking price, seeding it once. */
+  /** Switch the home block to a hand-typed asking price, seeding it once.
+   *
+   * **The seed needs a €/m² somebody published.** `cityEurPerM2` falls back to
+   * `HOME.eurPerM2_offlineFallback` where the chosen град has no median, and a
+   * field pre-filled from that shows the reader €175,000 as a starting point
+   * for a home nobody priced — the defect the blank raise field exists to
+   * avoid (P7). With no median the box stays empty and the reader types.
+   */
   useManualPrice = () => {
-    if (this.manualPrice === 0) this.manualPrice = Math.round(this.cityEurPerM2 * this.m2);
+    if (this.manualPrice === 0 && this.cityPriceIsLive) {
+      this.manualPrice = Math.round(this.cityEurPerM2 * this.m2);
+    }
     this.priceMode = "manual";
   };
 

@@ -1612,6 +1612,14 @@ export const COPY = {
   // after the area rather than reaching for a place — this key is added to a
   // sentence, never substituted for the end of one.
   affordWhere: { bg: "в {city}.", en: "in {city}." },
+  // The home row with no €/m² behind it. Says what to do rather than which of
+  // the three absences it is — the housing card in the strip says which, in
+  // имот.bg's name or in ours as the case may be, and repeating it here would
+  // be the same admission twice on one screen.
+  homeNoPrice: {
+    bg: "Няма цена на квадратен метър, с която да сметнем — избери област по-горе или въведи своя цена.",
+    en: "There is no €/m² to price this with — choose an oblast above, or enter your own price.",
+  },
   // **The sentence names имот.bg, so it has to be true of имот.bg.** It reads
   // for the one област whose towns are not among the 27 cities they publish,
   // and it names no place: «за София» was flatly false — имот.bg publish

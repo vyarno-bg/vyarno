@@ -854,14 +854,32 @@ export function leftoverIfHeldAsCash({ leftoverPerYear, headline }) {
 /**
  * The total asking price the mortgage math runs on.
  *
- * "auto" → the imot.bg Sofia median × the size the user picked.
+ * "auto" → имот.bg's median for the reader's own град × the size they picked.
  * "manual" → the price they typed for a home they already found.
  *
- * @param {{priceMode:string, manualPrice:number, eurPerM2:number, m2:number}} args
+ * **`eurPerM2Isreal` is the third argument and it is not optional.** The €/m²
+ * this receives falls back to `HOME.eurPerM2_offlineFallback`, a round constant
+ * with no measurement behind it, whenever the chosen град has no published
+ * median — which is now an ordinary state rather than a first-paint flicker: a
+ * reader who has picked no област at all, and one whose област имот.bg publish
+ * no city for. Multiplied by 70 m² that constant produced a €175,000 home, a
+ * €661/month payment and a "44% of your pay" verdict, and it did not stop at
+ * the home row: `monthlyMort` is carved out of the money the BASKET's € column
+ * is computed from, so an invented mortgage quietly moved thirteen category
+ * figures the reader never connected to it.
+ *
+ * Zero rather than a placeholder, because every consumer already gates on the
+ * figure being positive and none of them can gate on a provenance they were
+ * not handed. The row that would have printed it says what it is waiting for
+ * instead.
+ *
+ * @param {{priceMode:string, manualPrice:number, eurPerM2:number, m2:number,
+ *          eurPerM2IsReal:boolean}} args
  * @returns {number}
  */
-export function homePriceFor({ priceMode, manualPrice, eurPerM2, m2 }) {
+export function homePriceFor({ priceMode, manualPrice, eurPerM2, m2, eurPerM2IsReal }) {
   if (priceMode === "manual" && manualPrice > 0) return manualPrice;
+  if (!eurPerM2IsReal) return 0;
   return (eurPerM2 || 0) * (m2 || 0);
 }
 

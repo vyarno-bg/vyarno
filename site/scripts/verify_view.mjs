@@ -1140,20 +1140,40 @@ test("leftoverIfHeldAsCash degrades to zero rather than NaN", () => {
 // ---------------------------------------------------------------------------
 
 test("homePriceFor uses the typed price only in manual mode", () => {
-  assert.equal(
-    homePriceFor({ priceMode: "auto", manualPrice: 99999, eurPerM2: 2500, m2: 70 }),
-    175000
-  );
-  assert.equal(
-    homePriceFor({ priceMode: "manual", manualPrice: 150000, eurPerM2: 2500, m2: 70 }),
-    150000
-  );
+  const real = { eurPerM2: 2500, m2: 70, eurPerM2IsReal: true };
+  assert.equal(homePriceFor({ priceMode: "auto", manualPrice: 99999, ...real }), 175000);
+  assert.equal(homePriceFor({ priceMode: "manual", manualPrice: 150000, ...real }), 150000);
   // Manual mode with nothing typed yet falls back to the market price rather
   // than pricing a €0 home.
+  assert.equal(homePriceFor({ priceMode: "manual", manualPrice: 0, ...real }), 175000);
+});
+
+test("homePriceFor prices nothing off a €/m² nobody published", () => {
+  // **The €/m² handed to this function is not always a measurement.**
+  // `cityEurPerM2` falls back to `HOME.eurPerM2_offlineFallback`, a round
+  // constant, whenever the chosen град has no published median — which is an
+  // ordinary state now rather than a first-paint flicker: a reader who has
+  // picked no област, and one whose област имот.bg publish no city for.
+  //
+  // Multiplied by 70 m² that constant is a €175,000 home, and the row built a
+  // €661/month payment and a "44% of your pay" verdict on it. It reached
+  // further than the row, too: `monthlyMort` is carved out of the money the
+  // basket's € column is computed from.
+  const fake = { eurPerM2: 2500, m2: 70, eurPerM2IsReal: false };
+  assert.equal(homePriceFor({ priceMode: "auto", manualPrice: 0, ...fake }), 0);
   assert.equal(
-    homePriceFor({ priceMode: "manual", manualPrice: 0, eurPerM2: 2500, m2: 70 }),
-    175000
+    homePriceFor({ priceMode: "auto", manualPrice: 99999, ...fake }),
+    0,
+    "auto mode reached for a price the reader typed for a different question"
   );
+  assert.equal(
+    homePriceFor({ priceMode: "manual", manualPrice: 0, ...fake }),
+    0,
+    "manual mode with nothing typed fell back to the constant"
+  );
+  // A price the reader typed is sourced whatever имот.bg publish — it is the
+  // one they are asking about.
+  assert.equal(homePriceFor({ priceMode: "manual", manualPrice: 150000, ...fake }), 150000);
 });
 
 test("clampTerm holds the term at the BNB maturity ceiling", () => {
