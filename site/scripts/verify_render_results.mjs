@@ -284,7 +284,7 @@ test("the two official rates have a route between them, on one screen", { skip }
 });
 
 test("the ladder row ranks nobody who has not typed a salary", { skip }, async () => {
-  // «Изпреварваш 34% от работещите в София» is a claim about the READER, in
+  // «Изпреварваш 34% от работещите в страната» is a claim about the READER, in
   // the second person, and on first paint it is a claim about whoever earns
   // the €900 placeholder. Unlike the euro figures above it, no caveat makes
   // an unasked ranking land well, so the row waits — the same thing PocketRow
@@ -531,7 +531,7 @@ test("the plain answer sits between the headline and the working", { skip }, asy
     // otherwise the pocket row and the ladder row, well below the fold.
     const answer = await page.locator(".ans").innerText();
     assert.match(answer, /изпреварва|изостава|наравно|стояла|намаляла|вдигнаха/i, "no pay clause");
-    assert.match(answer, /работещите в София/i, "no ladder clause");
+    assert.match(answer, /пред \d+% от работещите/i, "no ladder clause");
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
@@ -555,7 +555,7 @@ test("the plain answer waits for a salary before it places the reader", { skip }
     const answered = await page.locator(".ans").innerText();
     assert.match(
       answered,
-      /пред \d+% от работещите в София/i,
+      /пред \d+% от работещите/i,
       `the answer stayed silent after a salary was typed: ${answered.replace(/\s+/g, " ")}`
     );
     assert.deepEqual(errors, [], errors.join(" | "));

@@ -368,6 +368,76 @@ export function regionQuarter(payload, code) {
 }
 
 /**
+ * The COUNTRY's average gross wage: НСИ's all-activities «Общо» row, selected
+ * out of `sector_salary.json` the same way `regionQuarter` selects an област's.
+ *
+ * WHY THIS EXISTS BESIDE `regionQuarter`
+ *
+ * Two figures on the page answer two different questions and only one of them
+ * is about where the reader lives. The wage comparator asks "what does the
+ * average person in YOUR област take home", and takes an област. The percentile
+ * ladder asks "where does this pay sit among everyone earning one", and the
+ * only earnings DISPERSION anybody publishes for Bulgaria is national — so the
+ * level it is re-levelled onto has to be national too, or the two halves of one
+ * multiplication describe two different populations.
+ *
+ * `mirror.js#composeLadder` divides this by `shape.ses_mean`, which is
+ * Eurostat's mean over the whole country. НСИ's «Общо» is the mean over the
+ * whole country. That is the like-for-like pair, and any one област in this
+ * position asserts that its own dispersion matches the national one — which
+ * nothing measures (`docs/data-sources.md` §"Salary distribution").
+ *
+ * **The all-activities row is not a sector**, which is why `sectorOptions`
+ * drops it from the picker and `sectorComparison` refuses it by name. It is the
+ * one place in the app that row is what is wanted, and it is wanted precisely
+ * because it is not one activity.
+ *
+ * Selected, never computed, for the reason `regionQuarter` carries: НСИ's
+ * §2.1.1 forbids distributing производни произведения, so the level on screen
+ * has to be a cell they printed (docs/legal.md §НСИ).
+ *
+ * @param {{ref_period?: string, is_preliminary?: boolean,
+ *          sectors?: Array<{en_name?: string, value_eur?: number,
+ *          series_by_period?: Record<string, number>}>} | null | undefined} payload
+ * @returns {{value: number, refPeriod: string, isPreliminary: boolean}} zeroed
+ *          when the row or the payload is not there
+ */
+export function nationalQuarter(payload) {
+  const empty = { value: 0, refPeriod: "", isPreliminary: false };
+  const rows = Array.isArray(payload?.sectors) ? payload.sectors : [];
+  const row = rows.find((s) => s?.en_name === SECTOR_TOTAL_KEY);
+  if (!row) return empty;
+
+  const isPreliminary = Boolean(payload?.is_preliminary);
+  const series = row.series_by_period ?? {};
+  const quarters = Object.keys(series).filter(
+    (k) => /^\d{4}-Q[1-4]$/.test(k) && typeof series[k] === "number"
+  );
+
+  if (typeof row.value_eur === "number" && /^\d{4}-Q[1-4]$/.test(payload?.ref_period ?? "")) {
+    return { value: row.value_eur, refPeriod: payload.ref_period, isPreliminary };
+  }
+  if (!quarters.length) return empty;
+  const refPeriod = quarters.sort()[quarters.length - 1];
+  return { value: series[refPeriod], refPeriod, isPreliminary };
+}
+
+/**
+ * The «Общо» row itself, for the surface that shows its quarterly cells.
+ *
+ * `/how/` prints НСИ's own series a year to a row, and it prints the country's
+ * because the ladder above it is anchored on the country's. One selector, so
+ * the table and the anchor cannot end up describing different rows.
+ *
+ * @param {{sectors?: Array<{en_name?: string}>} | null | undefined} payload
+ * @returns {object|null}
+ */
+export function nationalRow(payload) {
+  const rows = Array.isArray(payload?.sectors) ? payload.sectors : [];
+  return rows.find((s) => s?.en_name === SECTOR_TOTAL_KEY) ?? null;
+}
+
+/**
  * Eurostat's official all-items 12-month rate, exactly as published.
  *
  * This function takes the headline payload and nothing else, on purpose: it
@@ -1018,9 +1088,18 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
  * The earnings ladder as rows, with each rung saying whether it was surveyed.
  *
  * `mirror.js#composeLadder` re-levels Eurostat's SES dispersion onto НСИ's
- * latest Sofia quarter and `buildLadder` converts each rung to net; this pairs
- * the two with the cut each belongs to, so a template never has to know that
- * index 5 is the median.
+ * latest national quarter and `buildLadder` converts each rung to net; this
+ * pairs the two with the cut each belongs to, so a template never has to know
+ * that index 5 is the median.
+ *
+ * **The anchor is the country's average, and it may not become an област's.**
+ * The dispersion this re-levels is national — SES publish D1, the median and D9
+ * for Bulgaria and nothing below that, at any vintage, from any publisher — so
+ * a level from one област would multiply a national spread by a local mean and
+ * call the result that област's ranking. Nothing on screen would reveal it: a
+ * rescaled ladder is still a monotonic ladder, and every rung on it is still a
+ * plausible Bulgarian wage. `docs/data-sources.md` §"Salary distribution" is
+ * where the pair is argued.
  *
  * **`surveyed` is the honest half.** SES publishes three points for Bulgaria —
  * D1, the median and D9 — and every other rung between them is interpolated
@@ -1035,24 +1114,24 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
  * page.
  *
  * @param {object} args
- * @param {object|null} args.salaryDist  data.salaryDist (salary_dist.json)
- * @param {object|null} args.regionSalary data.regionSalary (region_salary.json)
- * @param {string} args.regionCode      which област the anchor is read from
- * @param {object|null} args.payroll     data.payroll (payroll.json)
+ * @param {object|null} args.salaryDist   data.salaryDist (salary_dist.json)
+ * @param {object|null} args.sectorSalary data.sectorSalary (sector_salary.json),
+ *                                        for its all-activities «Общо» row
+ * @param {object|null} args.payroll      data.payroll (payroll.json)
  * @returns {{anchorGross:number, anchorPeriod:string, anchorUrl:string,
  *            shapeYear:string, shapeUrl:string,
  *            rungs:Array<{cut:number, gross:number, net:number,
  *                         surveyed:boolean}>}}
  */
-export function payLadder({ salaryDist, regionSalary, regionCode, payroll }) {
+export function payLadder({ salaryDist, sectorSalary, payroll }) {
   const params = payrollParams(payroll);
-  const anchor = regionQuarter(regionSalary, regionCode);
+  const anchor = nationalQuarter(sectorSalary);
   const gross = composeLadder(salaryDist, anchor.value, params);
   const net = buildLadder(salaryDist, anchor.value, params);
   return {
     anchorGross: anchor.value,
     anchorPeriod: anchor.refPeriod,
-    anchorUrl: regionSalary?.source_url ?? "",
+    anchorUrl: sectorSalary?.source_url ?? "",
     shapeYear: String(salaryDist?.shape?.ref_year ?? ""),
     shapeUrl: salaryDist?.shape?.source_url ?? "",
     rungs: SALARY_LADDER_CUTS.map((cut, i) => ({
@@ -1094,7 +1173,8 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  * @param {number} args.m2                floor area the price is quoted for
  * @returns {{eurPerM2:number, m2:number, price:number, grossMonthly:number,
  *            netMonthly:number, wagePeriod:string, years:number,
- *            nDistricts:number, sinceBaselinePct:number, baselineYear:number}}
+ *            nDistricts:number, sinceBaselinePct:number, baselineYear:number,
+ *            trendPublishable:boolean}}
  */
 export function cityHomeAtAverageWage({
   cityPrice,
@@ -1352,7 +1432,7 @@ export function earnerRanks({ nets, ladder }) {
  *
  * @param {object} args
  * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
- * @param {number} args.regionNet  the Sofia average wage, net, EUR/month
+ * @param {number} args.regionNet  the chosen област's average wage, net, EUR/month
  * @returns {Array<{index:number, net:number, diffPct:number, magnitudePct:number,
  *                  direction:'above'|'below'|'equal'}>}
  */

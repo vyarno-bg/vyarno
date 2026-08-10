@@ -1108,27 +1108,51 @@ test("the percentile sentence is phrased from the bottom, never as a top rank", 
   );
 });
 
-test("the percentile caveat admits the survey behind it is national", () => {
-  // The card states a rank among Sofia earners, and only its LEVEL is Sofia's:
-  // the shape it ranks against is Eurostat SES for the whole country, so the
-  // sentence rests on Sofia's spread of pay resembling the national one.
-  // `salary_dist.json` carries that in a `disclaimer` field, and a payload
-  // field is read by nobody this card is written for.
+test("the percentile caveat says the rank is the country's, not the reader's област", () => {
+  // Both halves of this ladder are national — Eurostat's spread and НСИ's
+  // all-activities average — and the card sits three cards below a picker that
+  // moves other figures by област. A reader who has just said where they live
+  // reads every rank on the page as local unless told otherwise, and in
+  // Благоевград, whose average is half София's, that reading is out by tens of
+  // percentile points.
   //
-  // The other limits are already admitted — the survey year, who it excludes,
-  // that Sofia flatters the reader — which is exactly what makes the omission
-  // cost something: a caveat listing the limits reads as listing all of them.
-  // Where the LEVEL comes from is admitted too, in `pctSrc` one line below,
-  // with the link and the quarter that date it.
+  // Two halves, and the second is the one that costs something. Saying the
+  // survey is national was always here; saying the RANK does not follow the
+  // reader's област is what the setting made necessary, and it cannot be
+  // fixed by wording — nobody publishes a pay distribution below the national
+  // level for Bulgaria at any vintage, so the limit is named rather than
+  // hidden (P11).
+  //
+  // And it may not name София, which is the shape the mistake takes: a
+  // sentence about the capital was true while the level was the capital's and
+  // is now wrong for everybody.
   const [bg, en] = pair("pctCaveat");
   assert.ok(
-    /цялата страна|национал/i.test(bg),
-    `COPY.pctCaveat.bg does not say the survey covers the whole country: ${bg}`
+    /цялата страна|за страната|национал/i.test(bg),
+    `COPY.pctCaveat.bg does not say the comparison covers the whole country: ${bg}`
   );
   assert.ok(
-    /whole country|national/i.test(en),
-    `COPY.pctCaveat.en does not say the survey covers the whole country: ${en}`
+    /whole country|for the country|national/i.test(en),
+    `COPY.pctCaveat.en does not say the comparison covers the whole country: ${en}`
   );
+  assert.ok(
+    /област/i.test(bg),
+    `COPY.pctCaveat.bg does not say the rank ignores the reader's област: ${bg}`
+  );
+  assert.ok(
+    /oblast/i.test(en),
+    `COPY.pctCaveat.en does not say the rank ignores the reader's oblast: ${en}`
+  );
+  for (const [lang, text] of [
+    ["bg", bg],
+    ["en", en],
+  ]) {
+    assert.ok(
+      !/(София|Sofia)/.test(text),
+      `COPY.pctCaveat.${lang} names София, but the ladder is anchored on НСИ's ` +
+        `national average and ranks a reader anywhere in the country: ${text}`
+    );
+  }
 });
 
 // ---------------------------------------------------------------------------

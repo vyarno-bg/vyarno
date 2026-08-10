@@ -253,13 +253,19 @@ Three helpers on the same module:
   than a code edit. The literals in this function are the offline fallback only
   and mirror `mortgage.py#BNB_LENDING_LIMITS`.
 
-The Sofia-city average gross wage comparator reads `data.sofiaSalary?.value`
-through `view.js#regionQuarter` in `calculator.svelte.js#regionMeanGrossEur`,
-falling back to `HOME.sofiaSalaryFallback` — which goes through that same
-function, so the offline figure cannot be selected differently from the live
-one. The name states a **mean**: `mirror.js#composeLadder` divides it by SES's
-own mean to re-level the ladder, and a median in that position rescales every
-percentile on the page.
+The wage comparator reads the chosen област's row out of
+`data.regionSalary` through `view.js#regionQuarter`, in
+`calculator.svelte.js#regionMeanGrossEur`, falling back to
+`HOME.regionSalaryFallback` — which goes through that same function, so the
+offline figure cannot be selected differently from the live one.
+
+The percentile ladder takes a **different** level, and the two must not be
+crossed: `calculator.svelte.js#ladderAnchorGross` reads НСИ's all-activities
+«Общо» row out of `data.sectorSalary` through `view.js#nationalQuarter`. The
+spread it re-levels is national, so the level has to be
+([`data-sources.md`](./data-sources.md) §"Salary distribution"). Both names
+state a **mean**: `mirror.js#composeLadder` divides by SES's own mean, and a
+median in that position rescales every percentile on the page.
 
 Every fallback chain here is tested in `verify_data_contracts.mjs` — including
 that the mortgage fallback **relabels** when it degrades.
@@ -795,7 +801,7 @@ Two rules it holds to:
 - **Nothing computes here.** Every `$derived` is a call into `view.js` or
   `mirror.js` with named arguments. See the note under the layer table.
 - **Nothing picks words here.** The module is language-agnostic, so
-  `sofiaPriceDated` and the preset label live in the components that render
+  `cityPriceDated` and the preset label live in the components that render
   them — where `$lang` auto-subscription works anyway. `shareSentence` is the
   shape this takes for a string built in `view.js`: the words arrive as an
   argument and the component chooses which language to ask for.
@@ -857,7 +863,7 @@ the national-strip tests in `verify_render_strip.mjs`:
   match — a stat tile with 120px of nothing under its label. Being last also
   keeps the tiles in one uninterrupted run.
 - **Every card is gated on its own payload, never on what the reader typed.**
-  The Sofia average-wage card was once gated on `salary > 0` although nothing
+  The average-wage card was once gated on `salary > 0` although nothing
   on it is personal, which made "the country at a glance" change shape — and
   gave the strip a card count (5 or 6) that no layout can be tuned for.
 
@@ -1157,7 +1163,7 @@ holds it.
 
 Below the fields, a figure appears **once per person** where it describes a
 person and **once** where it describes money. Per person: the gross and its
-payslip, the position on the ladder, the comparison with НСИ's Sofia average,
+payslip, the position on the ladder, the comparison with НСИ's област average,
 and the marker on the wedge curve. Once: the household's take-home, the basket,
 rent, and everything about a home. [`math.md`](./math.md) §"A household is
 several contracts" carries the table and the reason.

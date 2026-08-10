@@ -197,19 +197,42 @@ reaches for it fails the fetch rather than mislabelling one.
 ## Salary distribution — `salary_dist.json`
 
 **No single official source publishes a fresh, machine-readable, full salary
-distribution for BG or Sofia.** Everything was probed:
+distribution for BG, and nothing at all publishes one below the national
+level.** Everything was probed:
 
 | Dataset | Latest | Why it cannot rank a salary |
 |---|---|---|
 | `earn_ses_monthly` / `_hourly` / `_annual` | 2022 | The only individual-earnings *distribution*. 4-yearly. **Used, for shape.** |
 | `earn_nt_net` / `earn_nt_netft` | 2025 | A tax model at fixed reference cases (fractions of the mean), not percentiles. |
-| `ilc_di01`, `ilc_di03` | 2025 | *Household* disposable income — the wrong unit; mixing it with a one-person salary question pushes almost every Sofia wage into the top few percent. |
+| `ilc_di01`, `ilc_di03` | 2025 | *Household* disposable income — the wrong unit; mixing it with a one-person salary question pushes almost every wage into the top few percent. |
 | `ilc_di11` (S80/S20) | 2025 | A single inequality ratio. |
 | НОИ insured income | monthly | Capped at the maximum insurable income (€2,111.64), barely above the Sofia average, so the whole upper half piles at the ceiling. |
-| НСИ quarterly wages | quarterly | *Average* only, no distribution. It is our level anchor, applied in the browser — see below. |
+| НСИ quarterly wages | quarterly | *Average* only, no distribution — by област and by activity alike. It is our level anchor, applied in the browser — see below. |
 
 So the ladder needs two official sources: the **shape** from Eurostat SES 2022,
-the **level** from the live НСИ Sofia-city average gross wage.
+the **level** from НСИ's live all-activities average gross wage.
+
+**Both halves are the COUNTRY's, and that is the constraint rather than a
+default.** The shape is national: SES publishes D1, the median and D9 for
+Bulgaria and nothing below that, at any vintage, from any publisher. So the
+level it is re-levelled onto has to be national too, or a national spread is
+being multiplied by one област's mean and the result called that област's
+ranking. Anchored on София's €1915 instead of the country's €1407, a €900 net
+wage reads as ahead of 30% of earners where the country's own ladder puts it at
+49% — every rung stays plausible, the ladder stays monotonic, and nothing on
+screen shows the difference. `view.js#nationalQuarter` is where the level is
+selected, out of `sector_salary.json`'s all-activities «Общо» row, and
+`the ladder is anchored on the country's average and never on one област's` is
+what holds it.
+
+**The reader's own област does not move the ladder**, and the copy says so —
+`COPY.pctCaveat` in both languages, and `verify_copy.mjs` requires it. That is
+P11: a figure nobody publishes is uncomputed rather than concealed.
+
+**«Общо» is not a sector**, which is why `view.js#sectorOptions` drops it from
+the picker and `sectorComparison` refuses it by name. This is the one place in
+the app that row is what is wanted, and it is wanted precisely because it is
+not one activity.
 
 **They are not blended into one file: one publisher per published artefact.**
 That keeps each file travelling under one set of terms, which is what makes both
@@ -230,12 +253,21 @@ steps 3–4 run in the reader's tab (`mirror.js#composeLadder`, over the level
    standard-normal quantile z, matching the D1/median/D9 anchors exactly.
 2. Extrapolate the P1/P99 tails along the nearest segment's log-slope. Publish
    at SES's level, to **four decimal places** — see below.
-3. In the browser: read НСИ's latest published quarter (Q1 2026 = €1915; the
-   March month alone is €2061, an annual-bonus spike, which is why the level is
-   a quarter and not a month).
-4. Multiply every rung by `f = НСИ_Sofia_mean / ses_mean` (≈ **2.02** today) and
-   floor P1 at the statutory minimum wage, which is the only point at which
-   that floor means anything.
+3. In the browser: read НСИ's latest published quarter for all activities
+   (Q1 2026 = €1407; the March month alone spikes on annual bonuses, which is
+   why the level is a quarter and not a month).
+4. Multiply every rung by `f = НСИ_national_mean / ses_mean` (≈ **1.48** today)
+   and floor **every** rung at the statutory minimum wage, after scaling.
+
+**Why the floor is on every rung and not only on P1.** A scalar re-level moves
+the whole shape by however much the MEAN moved, and Bulgaria's minimum wage has
+moved faster: €363/month at SES's 2022 vintage against €620 today, +71%, where
+the mean went 949 → 1407, +48%. So the bottom of the scaled shape lands under a
+wage it is not lawful to pay a full-time employee — P10 composes to €558 — and a
+rung there is an artefact of the model rather than a wage anybody is on. The
+floor leaves the ladder weakly rising; `mirror.js#percentile` is safe on that,
+because a flat pair at the bottom sits behind its `salary <= ladder[0]` branch
+and the interpolation never divides by a zero span.
 
 **Why the split is lossless, and why four decimals.** Re-levelling multiplies
 D1, median and D9 by the same `f`, which adds `ln(f)` to every point of the
@@ -248,19 +280,19 @@ and `test_rungs_carry_four_decimals_so_the_browser_rounds_once` holds the
 precision.
 
 **Output:** `shape.ladder_ses` at percentile cuts 1,10,20,…,90,99, `ses_mean`,
-`sigma_bottom` and `sigma_top`. Composed and rounded, that is P10 €759 ·
-P50 €1422 · P90 €3430 — the same figures this file has always quoted.
+`sigma_bottom` and `sigma_top`. Composed against the national anchor and
+rounded, that is P10 €620 (the statutory floor) · P50 €1045 · P90 €2520.
 
 **Gross → net happens in the SPA too.** The salary input is net take-home, so
 `mirror.js#buildLadder` converts each composed rung through `bgNetSalary` — one
-payroll implementation, not two. Net median ≈ €1,104/mo, and the comparison is
+payroll implementation, not two. Net median ≈ €811/mo, and the comparison is
 net vs net.
 
 **Caveats, carried in the payload's `disclaimer` and the SPA's `pctCaveat`:**
-the level is live, the shape is a 2022 survey re-levelled to today, and it
-assumes Sofia's dispersion tracks the national SES shape. Sofia-anchored, so a
-national rank would be a few points higher; the middle deciles and the tails are
-modelled, not surveyed.
+the level is live and the shape is a 2022 survey re-levelled to today; the
+middle deciles and the tails are modelled, not surveyed; and the rank does not
+follow the reader's област, because no publisher measures how pay is spread
+inside one.
 
 ---
 
@@ -708,7 +740,9 @@ published cell, and `sector_salary.json carries no rank, because nobody
 publishes one` in `verify_data_contracts.mjs` fails if a percentile-shaped field
 appears in a row.
 
-**The `Total` row is in the payload and not in the picker.** It is НСИ's
+**The `Total` row is in the payload, and it is what the percentile ladder is
+anchored on** — §"Salary distribution" above has why a national spread needs a
+national level. That is the one use of it; it is not in the picker. It is НСИ's
 all-activities average — the figure the nineteen sections are read against, and
 the connector's regression guard is that it sits inside their range — but it is
 not an economic activity anybody works in. Offered in a list labelled «Твоят
@@ -724,7 +758,7 @@ not the whole guarantee.
 
 ### BG payroll — `payroll.py#BG_PAYROLL_TABLE` → `payroll.json`
 
-The percentile ladder, the Sofia comparator and the salary verdict all convert
+The percentile ladder, the област comparator and the salary verdict all convert
 gross↔net using Bulgarian payroll rules, which are legislative constants with no
 machine-readable feed. One dated table is the source of truth; the SPA reads it
 via `mirror.js#payrollParams(data.payroll)` and threads the result through

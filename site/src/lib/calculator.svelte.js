@@ -88,6 +88,8 @@ import {
   regionGap,
   cityHomeAtAverageWage,
   regionQuarter as publishedRegionQuarter,
+  nationalQuarter as publishedNationalQuarter,
+  nationalRow,
   regionRow,
   cityRow,
   SOFIA_CITY_CODE,
@@ -616,8 +618,7 @@ export class Calculator {
   payLadderRows = $derived(
     payLadder({
       salaryDist: this.data.salaryDist,
-      regionSalary: this.data.regionSalary,
-      regionCode: this.referenceCode,
+      sectorSalary: this.data.sectorSalary,
       payroll: this.data.payroll,
     })
   );
@@ -632,8 +633,12 @@ export class Calculator {
       m2: HOME.m2Default,
     })
   );
-  /** НСИ's quarterly wage cells for the област, a year to a row — selected, never averaged. */
-  regionWageGrid = $derived(quarterGrid(regionRow(this.data.regionSalary, this.referenceCode)));
+  // НСИ's own quarterly cells, a year to a row — selected, never averaged. The
+  // COUNTRY's, because the ladder printed above the table is anchored on the
+  // country's average: a table of София's quarters under a national ladder
+  // invites the reader to check one against the other and find they do not
+  // meet.
+  nationalWageGrid = $derived(quarterGrid(nationalRow(this.data.sectorSalary)));
 
   // ---------------------------------------------------------------------
   // Derived: the pay packet
@@ -948,20 +953,22 @@ export class Calculator {
   // figures meet here, in the reader's tab — see `mirror.js#composeLadder`.
   // `salary` is net take-home, so this is a net-vs-net rank.
   //
-  // **The anchor is the reference област, NOT the reader's**, and that is the
-  // whole of what makes this a rank rather than a local one. The SES shape is
-  // national and no sub-national distribution exists at any vintage from any
-  // publisher, so re-levelling it onto Русе would assert that pay in Русе is
-  // spread the way Bulgaria's is — which nothing measures
-  // (`docs/data-sources.md` §Salary distribution). The city setting moves the
-  // two comparators and leaves the ladder alone, deliberately.
+  // **The anchor is НСИ's national average — the all-activities «Общо» row —
+  // and it may not be any one област's.** The SES shape is national: Eurostat
+  // publish D1, the median and D9 for Bulgaria and nothing below that, at any
+  // vintage, from any publisher. Multiplying a national spread by София's mean
+  // asserts that pay in София is spread the way the country's is, and then
+  // ranks a reader in Русе against the result — two true figures making one
+  // false sentence, and nothing on screen would show it, because a rescaled
+  // ladder is still a monotonic ladder of plausible Bulgarian wages. A
+  // national spread times a national mean is the like-for-like pair
+  // (`docs/data-sources.md` §"Salary distribution").
   //
   // It also has to be independent of the reader's choice for a plainer reason:
   // the rank is on `/how/` as well as here, and that page renders at build
   // time with nobody in it.
   ladderAnchorGross = $derived(
-    publishedRegionQuarter(this.data.regionSalary || HOME.regionSalaryFallback, this.referenceCode)
-      ?.value || 0
+    publishedNationalQuarter(this.data.sectorSalary || HOME.nationalWageFallback)?.value || 0
   );
   ladder = $derived(
     this.data.salaryDist
@@ -973,7 +980,7 @@ export class Calculator {
   // Sofia salary to the 99th percentile — two people on €900 each are not a
   // person on €1,800. See view.js#earnerRanks.
   //
-  // Position from the BOTTOM: "you're ahead of {ahead}% of Sofia earners".
+  // Position from the BOTTOM: "you're ahead of {ahead}% of earners".
   // percentile() returns 1 = bottom 1%, 99 = top 1%. We render that directly
   // (NOT `100 - rank` / "top N%") so higher income → bigger number → the
   // marker moves right and a below-median income never reads as an
@@ -986,15 +993,26 @@ export class Calculator {
     return { low: Math.min(...ahead), high: Math.max(...ahead) };
   });
   // Provenance for the percentile-card source line (same ↗-link contract as
-  // the basket cards). SHAPE = Eurostat SES; LEVEL = NSI Sofia average wage.
+  // the basket cards). SHAPE = Eurostat SES; LEVEL = НСИ's national average.
   salaryShapeUrl = $derived(this.data.salaryDist?.shape?.source_url ?? "");
   salaryShapeYear = $derived(this.data.salaryDist?.shape?.ref_year ?? "");
   // The LEVEL's provenance comes from the НСИ payload itself. It must not be
   // read from salary_dist.json: copying НСИ's url and period into a Eurostat
   // payload makes that one file a composite of two publishers, which is the
   // thing `no НСИ payload carries a second publisher's figures` forbids.
-  salaryAnchorUrl = $derived(this.data.regionSalary?.source_url ?? "");
-  salaryAnchorPeriod = $derived(this.regionQuarter?.refPeriod ?? "");
+  //
+  // It comes off the SAME payload the level does. Reading the url from one НСИ
+  // file and the level from the other sends a reader who clicks it to a
+  // workbook the figure above the link is not in — the verify link's whole job
+  // is that they can find the cell (P3).
+  salaryAnchorUrl = $derived(this.data.sectorSalary?.source_url ?? "");
+  salaryAnchorPeriod = $derived(this.payLadderRows.anchorPeriod);
+  // What the country's average takes home, for the one line that sets the
+  // modelled median beside a mean. It has to be the mean of the SAME
+  // population the median is read off: a national median against an област's
+  // mean is «средната е по-висока» beside a Видин average that is lower, and
+  // the sentence would simply be false there.
+  nationalNet = $derived(bgNetSalary(this.payLadderRows.anchorGross, this.payroll).net);
 
   homePrice = $derived(
     homePriceFor({
