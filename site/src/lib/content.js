@@ -1324,7 +1324,7 @@ export const COPY = {
   // setting exists to end — and it is invisible, because both are plausible
   // Bulgarian wages. `{region}` is НСИ's own name for it in the reader's
   // language, out of the payload, never a transliteration.
-  statSofiaK: {
+  statRegionK: {
     bg: "средна нетна заплата · {region}",
     en: "average NET pay · {region}",
   },
@@ -1343,20 +1343,20 @@ export const COPY = {
   // One coherent clause rather than spliced fragments: the {delta}
   // placeholder carries the whole "+28% над" / "-28% под" / "≈ на" phrase,
   // built in the template, which is what keeps the Bulgarian grammatical.
-  statSofiaDiff: {
+  statRegionDiff: {
     bg: "твоята нетна заплата е <b>{delta}</b> средната за {region}",
     en: "your net pay is <b>{delta}</b> the {region} net average",
   },
   // Per income, for the same reason the ladder is: НСИ publish a WAGE. Measured
   // against a two-earner total, a household of two on €900 each reads as 21%
   // above the average worker — two true numbers making one false sentence.
-  statSofiaDiffEarner: {
+  statRegionDiffEarner: {
     bg: "доход {n} е <b>{delta}</b> средната за {region}",
     en: "income {n} is <b>{delta}</b> the {region} net average",
   },
-  statSofiaAbove: { bg: "над", en: "above" },
-  statSofiaBelow: { bg: "под", en: "below" },
-  statSofiaEqual: { bg: "≈ на", en: "≈" },
+  statRegionAbove: { bg: "над", en: "above" },
+  statRegionBelow: { bg: "под", en: "below" },
+  statRegionEqual: { bg: "≈ на", en: "≈" },
   // The sector comparison. Same clause shape as the Sofia pair above and for
   // the same reason: {delta} carries the whole "+28% над" phrase so the
   // Bulgarian stays grammatical, and {sector} is НСИ's own section name in the
@@ -1376,9 +1376,14 @@ export const COPY = {
   // "27" written into it would go quietly wrong on the refresh that changed
   // either, and the wrongness would be a claim about how much of the country
   // this page covers.
+  // **«имаме» rather than «има», and that is the whole of it.** имот.bg serve
+  // a page for 27 of the 28 and the count here is how many this refresh
+  // actually carries — a sentence saying prices «има за {p}» hands their
+  // coverage a number that is ours, and it reads as имот.bg covering one city
+  // on a run that reached one city.
   regionHint: {
-    bg: "НСИ публикуват средна заплата за всичките {n} области. Цени на жилища има за {p} от тях — имот.bg публикува по градове, а не по области.",
-    en: "NSI publish an average wage for all {n} oblasts. Home prices exist for {p} of them — imot.bg publish by city, not by oblast.",
+    bg: "НСИ публикуват средна заплата за всичките {n} области. имот.bg публикува цени на жилища по градове, а не по области, и засега ги имаме за {p} от тях.",
+    en: "NSI publish an average wage for all {n} oblasts. imot.bg publish home prices by city rather than by oblast, and we have them for {p} of those so far.",
   },
   sectorLabel: { bg: "Твоят сектор", en: "Your sector" },
   sectorNone: { bg: "— избери дейност —", en: "— choose an activity —" },
@@ -1557,9 +1562,15 @@ export const COPY = {
   // says which step is ours. Their name over a figure only we computed leaves
   // a reader who opens the linked workbook nothing to match against — the
   // whole point of the link.
-  statSofiaSrc: {
-    bg: "НСИ · средна брутна заплата в област {region} {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
-    en: "NSI · {region} oblast average GROSS {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
+  // **The place is a slot and the word «област» is not beside it.** Which
+  // област the reader picked is already the card's label, and НСИ's own name
+  // for two of the twenty-eight carries a bracket that says which kind of
+  // place it is — «в област София (столица)» reads as a nesting that does not
+  // exist. The scope the reader needs is on the label above; this line dates
+  // and attributes the figure.
+  statRegionSrc: {
+    bg: "НСИ · средна брутна заплата · {region} · {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
+    en: "NSI · average GROSS pay · {region} · {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
   },
   statFastK: { bg: "— най-бързо поскъпващата група", en: "- the fastest-rising group" },
   // The housing card's label, and it needs one: every card in the strip has
@@ -1601,9 +1612,21 @@ export const COPY = {
   // after the area rather than reaching for a place — this key is added to a
   // sentence, never substituted for the end of one.
   affordWhere: { bg: "в {city}.", en: "in {city}." },
+  // **The sentence names имот.bg, so it has to be true of имот.bg.** It reads
+  // for the one област whose towns are not among the 27 cities they publish,
+  // and it names no place: «за София» was flatly false — имот.bg publish
+  // София's prices, and the област beside the capital shares its name — while
+  // «за {област}» fired for every city a refresh had not reached yet.
   statHomeNoCity: {
-    bg: "имот.bg не публикува цени за {region}",
-    en: "imot.bg publishes no prices for {region}",
+    bg: "имот.bg публикува цени по градове, а нито един град от тази област не е сред тях",
+    en: "imot.bg publishes prices by city, and no town in this oblast is among them",
+  },
+  // The other absence, and a different claim: имот.bg do publish this city and
+  // this refresh has not read it. Ours to fix, so the copy says so rather than
+  // putting it on them.
+  statHomeAwaited: {
+    bg: "жилище · {city} · очакваме данни от имот.bg",
+    en: "a home · {city} · waiting on imot.bg data",
   },
   // The "+{pct}% от {y}" sub-caption on the stat card. Carries имот.bg's own
   // median-against-baseline-median delta (their historical pages, NOT HICP).

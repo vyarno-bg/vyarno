@@ -203,7 +203,7 @@
         cityNameBg={calc.cityNameBg}
         cityNameEn={calc.cityNameEn}
         regionChosen={calc.regionChosen}
-        regionHasNoCity={calc.regionHasNoCity}
+        cityCoverage={calc.cityCoverageNow}
         regionMeanGross={calc.regionMeanGrossEur}
         salaryShapeUrl={calc.salaryShapeUrl}
         salaryShapeYear={calc.salaryShapeYear}

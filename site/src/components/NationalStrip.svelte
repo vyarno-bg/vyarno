@@ -10,7 +10,7 @@
   import { lang } from "$lib/stores.js";
   import { COPY, HOME, t } from "$lib/content.js";
   import { number, integer, percentSigned, period, safeText, yearText } from "$lib/format.js";
-  import { fastestRisingDivision } from "$lib/view.js";
+  import { fastestRisingDivision, CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE } from "$lib/view.js";
 
   const {
     /** Published HICP divisions, for the fastest-rising card. */
@@ -56,9 +56,11 @@
         and "the payload did not load" are different claims and the copy says
         different things about them. */
     regionChosen = false,
-    /** True when НСИ publish a wage for the chosen област and имот.bg publish
-        no price for its towns. Софийска област is the only one. */
-    regionHasNoCity = false,
+    /** Which of `view.js`'s three coverage states the chosen област's €/m² is
+        in. The card says three different things and only one of them may be
+        said in имот.bg's name — «имот.bg не публикува цени за Варна» is false,
+        and it is what a single flag prints for every city a refresh missed. */
+    cityCoverage = CITY_PRICED,
     regionMeanGrossUrl = "",
     regionWagePeriod = "",
     /** НСИ star the year until they finalise it; the card has to say so. */
@@ -275,13 +277,13 @@
           <span>{fmt0(regionNet)} €</span>
         </div>
         <div class="sl">
-          <span class="l-bg">{t(COPY.statSofiaK, "bg", { region: regionName("bg") })}</span>
-          <span class="l-en">{t(COPY.statSofiaK, "en", { region: regionName("en") })}</span>
+          <span class="l-bg">{t(COPY.statRegionK, "bg", { region: regionName("bg") })}</span>
+          <span class="l-en">{t(COPY.statRegionK, "en", { region: regionName("en") })}</span>
         </div>
         <div class="ss">
           <a href={regionMeanGrossUrl} target="_blank" rel="noopener">
-            <span class="l-bg">{t(COPY.statSofiaSrc, "bg", regionSrcArgs("bg"))}</span>
-            <span class="l-en">{t(COPY.statSofiaSrc, "en", regionSrcArgs("en"))}</span>
+            <span class="l-bg">{t(COPY.statRegionSrc, "bg", regionSrcArgs("bg"))}</span>
+            <span class="l-en">{t(COPY.statRegionSrc, "en", regionSrcArgs("en"))}</span>
           </a>
         </div>
       </div>
@@ -348,11 +350,14 @@
          attributed a figure имот.bg never published to имот.bg — with «0
          квартала» as the only tell. The strip's own rule is that every card
          is gated on its own payload; this restores it. -->
-    <!-- The same three-state split as the wage card, plus a fourth that only
-         this one has: an област имот.bg publishes no city for. Софийска област
-         is the case, and it is P11 in one line — a figure nobody publishes is
-         uncomputed rather than concealed, so the card names имот.bg and says
-         they do not publish it, instead of going blank or borrowing София's. -->
+    <!-- The same split as the wage card, plus two states only this one has:
+         an област имот.bg publish no city page for, and one they do publish
+         that this refresh did not reach. Both are P11 — a figure nobody
+         publishes is uncomputed rather than concealed — and they are separate
+         because only the first is имот.bg's doing. Saying «имот.bg не
+         публикува цени за Варна» about the second is false about a publisher
+         who does publish Варна, in wording borrowed from the one place it is
+         true. -->
     {#if categories.length > 0 && !regionChosen}
       <div class="stat">
         <div class="sv mono"><span>—</span></div>
@@ -361,12 +366,20 @@
           <span class="l-en">{COPY.statHomeUnset.en}</span>
         </div>
       </div>
-    {:else if categories.length > 0 && regionHasNoCity}
+    {:else if categories.length > 0 && cityCoverage === CITY_NO_PAGE}
       <div class="stat">
         <div class="sv mono"><span>—</span></div>
         <div class="sl">
-          <span class="l-bg">{t(COPY.statHomeNoCity, "bg", { region: regionName("bg") })}</span>
-          <span class="l-en">{t(COPY.statHomeNoCity, "en", { region: regionName("en") })}</span>
+          <span class="l-bg">{COPY.statHomeNoCity.bg}</span>
+          <span class="l-en">{COPY.statHomeNoCity.en}</span>
+        </div>
+      </div>
+    {:else if categories.length > 0 && cityCoverage === CITY_UNREAD}
+      <div class="stat">
+        <div class="sv mono"><span>—</span></div>
+        <div class="sl">
+          <span class="l-bg">{t(COPY.statHomeAwaited, "bg", { city: regionName("bg") })}</span>
+          <span class="l-en">{t(COPY.statHomeAwaited, "en", { city: regionName("en") })}</span>
         </div>
       </div>
     {:else if categories.length > 0 && cityPriceIsLive && cityEurPerM2 > 0}

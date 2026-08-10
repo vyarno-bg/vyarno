@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 
 from vyarno_pipeline import clock
-from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS_BY_CODE
+from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS_BY_CODE, SOFIA_OBLAST_CODE
 from vyarno_pipeline.sources import imot
 from vyarno_pipeline.sources.imot import (
     MAX_DROPPED_SHARE,
@@ -430,13 +430,41 @@ def test_a_short_run_publishes_its_years_but_not_a_trend_sentence() -> None:
     assert long["trend_publishable"] is True
 
 
+# Every код имот.bg serve a page for, which is what `city_pages` publishes.
+_PAGES = [r.code for r in PRICED_REGIONS]
+
+
+def test_the_payload_separates_imots_coverage_from_this_run_s_result() -> None:
+    """`city_pages` is what имот.bg publish; `cities` is what the run read.
+
+    Collapsing them is a sentence on screen: the SPA says «имот.bg не публикува
+    цени за {област}» for an област with no price, and with one list that fires
+    for every city a refresh missed. имот.bg publish Варна's prices, so the
+    claim is simply false there — and it looks exactly like the true one it
+    borrows its wording from.
+    """
+    row = _row(SOFIA, dict.fromkeys(range(THIS_YEAR - 9, THIS_YEAR + 1), 141))
+    payload = build_city_price_payload(clock.today(), [row], _PAGES)
+
+    assert payload["city_pages"] == _PAGES
+    assert len(payload["city_pages"]) == 27
+    assert SOFIA_OBLAST_CODE not in payload["city_pages"], (
+        "имот.bg serve no page for Софийска област — publishing it as covered "
+        "makes the one true 'no prices here' sentence unreachable"
+    )
+    # A run that read one city says so in the envelope rather than leaving the
+    # other twenty-six looking like places имот.bg do not publish.
+    assert "read 1 of them" in payload["notes"]
+    assert "varna" in payload["notes"]
+
+
 def test_the_payload_drops_the_per_district_dict() -> None:
     """`all_districts` was published for every city and read by nothing — no
     component, no view function, no verify script. At 27 cities it is ~120 KB
     raw and ~40 KB gzipped on every page load to serve a field nothing renders.
     """
     row = _row(SOFIA, dict.fromkeys(range(THIS_YEAR - 9, THIS_YEAR + 1), 141))
-    payload = build_city_price_payload(clock.today(), [row])
+    payload = build_city_price_payload(clock.today(), [row], _PAGES)
     blob = str(payload)
     assert "all_districts" not in blob
     assert "D17" not in blob, "a district name reached the payload"
@@ -450,7 +478,7 @@ def test_the_payload_notes_state_the_drop_count_and_who_computed_the_median() ->
     and every percentage off it are ours. A payload that did not say so would
     attribute our arithmetic to them."""
     row = _row(SOFIA, dict.fromkeys(range(THIS_YEAR - 9, THIS_YEAR + 1), 141))
-    payload = build_city_price_payload(clock.today(), [row])
+    payload = build_city_price_payload(clock.today(), [row], _PAGES)
     assert "computed by us" in payload["notes"]
     assert "imot.bg publish no city median" in payload["notes"]
     assert payload["payload_name"] == "city_price"

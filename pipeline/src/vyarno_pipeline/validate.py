@@ -645,7 +645,11 @@ def validate_city_price(cities: list[dict], covered_codes: list[str]) -> None:
     otherwise ship a figure looking exactly like a correct one.
 
     `covered_codes` is passed in rather than imported so the gate states what it
-    is checking against and a run cannot pass by agreeing with itself.
+    is checking against and a run cannot pass by agreeing with itself. It is the
+    same list the payload publishes as `city_pages`, which is what lets the SPA
+    tell «имот.bg publish no city here» from «this refresh did not reach that
+    city» — two claims that look identical in the data and only one of which may
+    be made in имот.bg's name.
     """
     if not cities:
         raise ValidationError("city prices: no city was read")

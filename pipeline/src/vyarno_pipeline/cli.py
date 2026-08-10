@@ -777,7 +777,7 @@ def _refresh_city_price(out: Path, as_of: date) -> None:
         click.echo(f"ERROR: city price gate failed: {e}", err=True)
         sys.exit(3)
 
-    payload = build_city_price_payload(as_of, cities)
+    payload = build_city_price_payload(as_of, cities, [r.code for r in PRICED_REGIONS])
     write_payload(payload, target_dir=out, filename=CITY_PRICE_FILE)
     click.echo(
         f"OK: wrote {CITY_PRICE_FILE} ({len(cities)} cities"

@@ -57,7 +57,7 @@
   // The direction word carries the sign, so the magnitude is unsigned. Emitting
   // both produced «-39% под средната» / "-39% below the average" — a double
   // negative that reads, literally, as 39% less far below.
-  const DIR_KEY = { above: "statSofiaAbove", below: "statSofiaBelow", equal: "statSofiaEqual" };
+  const DIR_KEY = { above: "statRegionAbove", below: "statRegionBelow", equal: "statRegionEqual" };
   /**
    * **Neither comparison on this card is painted, and the rent-burden pattern
    * is why they both look like they should be.**
@@ -336,14 +336,14 @@
       {#each calc.regionGaps as gap (gap.index)}
         <div class="hint gap">
           <span class="l-bg"
-            >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "bg", {
+            >{@html t(calc.hasHousehold ? COPY.statRegionDiffEarner : COPY.statRegionDiff, "bg", {
               n: fmt0(gap.ordinal),
               delta: deltaPhrase(gap, "bg"),
               region: safeText(calc.regionNameBg),
             })}</span
           >
           <span class="l-en"
-            >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "en", {
+            >{@html t(calc.hasHousehold ? COPY.statRegionDiffEarner : COPY.statRegionDiff, "en", {
               n: fmt0(gap.ordinal),
               delta: deltaPhrase(gap, "en"),
               region: safeText(calc.regionNameEn),

@@ -67,6 +67,12 @@ import {
   answerLine,
   regionQuarter,
   nationalQuarter,
+  regionOptions,
+  regionDisplayName,
+  cityCoverage,
+  CITY_PRICED,
+  CITY_UNREAD,
+  CITY_NO_PAGE,
   regionRow,
   cityRow,
   SOFIA_CITY_CODE,
@@ -515,6 +521,108 @@ test("a low income renders low and a high income renders high, end to end", () =
   assert.equal(ladder.length, 11, "the two payloads no longer compose into a ladder");
   assert.ok(pctAhead(percentile(ladder[0] - 100, ladder)) <= 5);
   assert.ok(pctAhead(percentile(ladder[ladder.length - 1] + 1000, ladder)) >= 95);
+});
+
+test("the picker offers every област, sorted in the reader's own language", () => {
+  // The one new control on the page, and nothing else decides what is in it.
+  // A row dropped here is an област a reader simply cannot pick — they get the
+  // national figures and no wage comparator, with nothing on screen saying why.
+  const regions = read("region_salary");
+  const prices = read("city_price");
+  if (!regions || !prices) return;
+
+  for (const lang of ["bg", "en"]) {
+    const options = regionOptions(regions, prices, lang);
+    assert.equal(options.length, regions.regions.length, `${lang}: an област is missing`);
+    assert.equal(new Set(options.map((o) => o.code)).size, options.length, `${lang}: duplicate`);
+    assert.ok(
+      options.every((o) => o.name),
+      `${lang}: an option has no name, which renders as a blank line rather than a fallback`
+    );
+    // Sorted with that language's collator. A plain `<` puts Cyrillic in code
+    // order, which is not alphabetical order in Bulgarian.
+    const collator = new Intl.Collator(lang);
+    const sorted = [...options].sort((a, b) => collator.compare(a.name, b.name));
+    assert.deepEqual(
+      options.map((o) => o.name),
+      sorted.map((o) => o.name),
+      `${lang}: the options are not in the reader's own alphabetical order`
+    );
+  }
+});
+
+test("no two options in the picker read the same", () => {
+  // **The failure: «София» and «София(столица)» sort adjacent.** НСИ's own
+  // labels for Софийска област and for the capital are the second and the
+  // first of those, and a reader who takes the wrong one is compared against a
+  // wage 32% lower and told имот.bg publish no price where they live. Nothing
+  // downstream can catch it — both are real области with real figures.
+  //
+  // The rule is over the collection: a label another label begins with takes
+  // the word for "oblast" after it, so НСИ splitting a second област tomorrow
+  // is disambiguated with no edit here.
+  const regions = read("region_salary");
+  const prices = read("city_price");
+  if (!regions || !prices) return;
+
+  for (const lang of ["bg", "en"]) {
+    const names = regionOptions(regions, prices, lang).map((o) => o.name);
+    assert.equal(new Set(names).size, names.length, `${lang}: two options carry the same name`);
+    for (const a of names) {
+      for (const b of names) {
+        assert.ok(
+          a === b || !b.startsWith(`${a} `),
+          `${lang}: "${a}" cannot be told from "${b}" at a glance in a 28-item list`
+        );
+      }
+    }
+  }
+  // And the rule, on its own, over names НСИ do not publish today.
+  const all = ["Русе", "Пловдив", "Пловдив (град)"];
+  assert.equal(regionDisplayName("Русе", all, "bg"), "Русе");
+  assert.equal(regionDisplayName("Пловдив", all, "bg"), "Пловдив (област)");
+  assert.equal(regionDisplayName("Пловдив (град)", all, "bg"), "Пловдив (град)");
+  // НСИ write no space before the bracket; Bulgarian does, and «София(столица)»
+  // beside «София (област)» reads as two different kinds of thing.
+  assert.equal(
+    regionDisplayName("София(столица)", ["София", "София(столица)"], "bg"),
+    "София (столица)"
+  );
+  assert.equal(regionDisplayName("София", ["София", "София(столица)"], "bg"), "София (област)");
+  assert.equal(regionDisplayName("Sofia", ["Sofia", "Sofia cap."], "en"), "Sofia (oblast)");
+});
+
+test("a city with no price is told apart from a city nobody read yet", () => {
+  // **Only one of the two may be stated in имот.bg's name.** «имот.bg не
+  // публикува цени за Варна» is false — they publish Варна's — and a single
+  // has-it/has-it-not flag prints exactly that for every city a refresh
+  // missed, in the wording borrowed from the one област it is true of.
+  // `city_price.json#city_pages` is what separates them.
+  const prices = read("city_price");
+  const regions = read("region_salary");
+  if (!prices || !regions) return;
+
+  assert.ok(Array.isArray(prices.city_pages), "city_price.json publishes no coverage list");
+  assert.equal(cityCoverage(prices, SOFIA_CITY_CODE), CITY_PRICED);
+  // Софийска област is the one имот.bg serve no page for. Named by its
+  // absence from their list rather than by a code written down here.
+  const noPage = regions.regions.map((r) => r.code).filter((c) => !prices.city_pages.includes(c));
+  assert.deepEqual(
+    noPage.map((c) => cityCoverage(prices, c)),
+    noPage.map(() => CITY_NO_PAGE)
+  );
+  assert.equal(noPage.length, 1, "the count of области имот.bg publish no city for moved");
+  // Every code they DO serve and this run did not read is `unread`, never
+  // `nopage` — that is the whole point of the two lists.
+  for (const code of prices.city_pages) {
+    const expected = prices.cities.some((c) => c.code === code) ? CITY_PRICED : CITY_UNREAD;
+    assert.equal(cityCoverage(prices, code), expected, code);
+  }
+  // And the picker carries the same three answers, so an option and the card
+  // it opens cannot disagree.
+  for (const o of regionOptions(regions, prices, "bg")) {
+    assert.equal(o.coverage, cityCoverage(prices, o.code), o.code);
+  }
 });
 
 test("regionQuarter reads НСИ's published quarter and computes nothing", () => {

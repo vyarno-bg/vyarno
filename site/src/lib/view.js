@@ -217,6 +217,58 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
 export const SOFIA_CITY_CODE = "sofiya";
 
 /**
+ * The three states an област's €/m² can be in, and they are three claims.
+ *
+ * - `priced`  — `city_price.json` carries a row for it.
+ * - `unread`  — имот.bg serve a page for it and this refresh did not read it.
+ * - `nopage`  — имот.bg serve no page for it at all.
+ *
+ * **Only `nopage` may be said in имот.bg's name.** «имот.bg не публикува цени
+ * за Варна» is false — they publish Варна's — and it is the sentence one flag
+ * produces for every city a refresh missed, wearing the wording of the one
+ * place it is true of. The payload's `city_pages` is what separates them; see
+ * `sources/imot.py#build_city_price_payload`.
+ */
+export const CITY_PRICED = "priced";
+export const CITY_UNREAD = "unread";
+export const CITY_NO_PAGE = "nopage";
+
+/**
+ * The name the picker, the cards and every caption print for one област.
+ *
+ * НСИ's own label is the base and stays the base. Two of theirs cannot stand
+ * alone in a list, and it is the pair that costs most: «София» is the област
+ * around the capital, «София(столица)» is the capital, the picker sorts them
+ * adjacent, and a reader who takes the first gets a wage 32% lower and no €/m²
+ * at all.
+ *
+ * **The rule is over the collection, not over those two names.** A label that
+ * another label in the same payload starts with cannot be told from the longer
+ * one at a glance, so it takes the word for "oblast" after it. НСИ splitting
+ * «Пловдив» into a city row tomorrow disambiguates «Пловдив» the same way, with
+ * no edit here — which is the difference between a rule and a table of two
+ * exceptions that stops working the next time НСИ change something.
+ *
+ * The space before «(столица)» is the other half, and it is typography rather
+ * than a rename: Bulgarian writes one, НСИ's sheet omits it, and «София(столица)»
+ * beside «София (област)» reads as two different kinds of thing.
+ *
+ * @param {string} name   НСИ's own label for this row, in one language
+ * @param {ReadonlyArray<string>} all  every label in that language, this one included
+ * @param {"bg"|"en"} lang
+ * @returns {string}
+ */
+export function regionDisplayName(name, all, lang) {
+  const base = String(name ?? "").replace(/(\S)\(/g, "$1 (");
+  if (!base) return "";
+  const ambiguous = (all ?? []).some((other) => {
+    const o = String(other ?? "").replace(/(\S)\(/g, "$1 (");
+    return o !== base && o.startsWith(`${base} `);
+  });
+  return ambiguous ? `${base} (${lang === "bg" ? "област" : "oblast"})` : base;
+}
+
+/**
  * The области a reader may pick, in the order the picker lists them.
  *
  * **Alphabetical in the reader's own language, not by size.** Size order puts
@@ -226,33 +278,81 @@ export const SOFIA_CITY_CODE = "sofiya";
  * ranking. Bulgarian sorts with the BG collator, which orders Cyrillic
  * correctly where a plain `<` does not.
  *
- * The names are НСИ's own in each language, straight from the payload. Nothing
- * here transliterates: their Bulgarian for BG411 is «София(столица)», which is
- * not a string anybody would arrive at from "Sofia cap.".
+ * The names are НСИ's own in each language, straight from the payload, through
+ * `regionDisplayName` — nothing here transliterates: their Bulgarian for BG411
+ * is «София(столица)», which is not a string anybody would arrive at from
+ * "Sofia cap.".
  *
- * `hasPrice` says whether имот.bg publishes a €/m² for that област's city.
- * Exactly one — Софийска област — does not, and it is carried as a fact about
- * the option rather than as a reason to leave it out: a reader who lives there
- * gets their wage comparator and is told plainly that no price is published,
- * which is the whole difference between "uncomputed" and "concealed" (P11).
+ * `coverage` is one of the three states above, and it is carried as a fact
+ * about the option rather than as a reason to leave any of them out: НСИ
+ * publish a wage for all 28, a reader who lives in any of them gets it, and the
+ * missing half is named rather than silently absent (P11).
  *
  * @param {object|null} regionSalary  data.regionSalary (region_salary.json)
  * @param {object|null} cityPrice     data.cityPrice (city_price.json)
  * @param {"bg"|"en"} lang
- * @returns {Array<{code:string, name:string, hasPrice:boolean}>}
+ * @returns {Array<{code:string, name:string, coverage:string}>}
  */
 export function regionOptions(regionSalary, cityPrice, lang) {
   const rows = Array.isArray(regionSalary?.regions) ? regionSalary.regions : [];
   const priced = new Set((cityPrice?.cities ?? []).map((c) => c?.code).filter(Boolean));
+  const pages = new Set(cityPrice?.city_pages ?? []);
   const collator = new Intl.Collator(lang === "bg" ? "bg" : "en");
+  const labels = rows.map((r) => (lang === "bg" ? r?.bg_name : r?.en_name) ?? "");
   return rows
     .map((r) => ({
       code: r?.code ?? "",
-      name: (lang === "bg" ? r?.bg_name : r?.en_name) ?? "",
-      hasPrice: priced.has(r?.code),
+      name: regionDisplayName(lang === "bg" ? r?.bg_name : r?.en_name, labels, lang),
+      coverage: priced.has(r?.code) ? CITY_PRICED : pages.has(r?.code) ? CITY_UNREAD : CITY_NO_PAGE,
     }))
     .filter((o) => o.code && o.name)
     .sort((a, b) => collator.compare(a.name, b.name));
+}
+
+/**
+ * One област's display name in both languages, or "" for each.
+ *
+ * Both, because `calculator.svelte.js` is language-agnostic and the components
+ * pick — and because the disambiguation rule needs every label in the language
+ * it is disambiguating within, which is a fact about the payload rather than
+ * about the row.
+ *
+ * @param {object|null} regionSalary  data.regionSalary (region_salary.json)
+ * @param {string} code
+ * @returns {{bg: string, en: string}}
+ */
+export function regionNames(regionSalary, code) {
+  const rows = Array.isArray(regionSalary?.regions) ? regionSalary.regions : [];
+  const row = rows.find((r) => r?.code === code);
+  if (!row) return { bg: "", en: "" };
+  return {
+    bg: regionDisplayName(
+      row.bg_name,
+      rows.map((r) => r?.bg_name),
+      "bg"
+    ),
+    en: regionDisplayName(
+      row.en_name,
+      rows.map((r) => r?.en_name),
+      "en"
+    ),
+  };
+}
+
+/**
+ * Which of the three states one област's €/m² is in — the same answer
+ * `regionOptions` puts on the picker, for the cards that render outside it.
+ *
+ * One implementation, so a card cannot decide the coverage differently from the
+ * option the reader chose it with.
+ *
+ * @param {object|null} cityPrice  data.cityPrice (city_price.json)
+ * @param {string} code
+ * @returns {string} one of CITY_PRICED / CITY_UNREAD / CITY_NO_PAGE
+ */
+export function cityCoverage(cityPrice, code) {
+  if (cityRow(cityPrice, code)) return CITY_PRICED;
+  return (cityPrice?.city_pages ?? []).includes(code) ? CITY_UNREAD : CITY_NO_PAGE;
 }
 
 /**
