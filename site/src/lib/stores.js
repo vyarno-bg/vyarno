@@ -123,6 +123,43 @@ if (typeof document !== "undefined") {
 }
 
 // ---------------------------------------------------------------------------
+// Region: one of the codes in `region_salary.json`, or "" for "not chosen".
+//
+// **THERE IS NO DEFAULT, AND THAT IS P7 RATHER THAN AN OMISSION.** Sofia is the
+// tempting one — it is the largest област and the only one this page ever
+// showed — and picking it would hand a reader in Бургас Sofia's average wage
+// and Sofia's €/m² wearing the appearance of a choice they made. The raise
+// field stays blank for exactly this reason. So the two city-scoped cards
+// render an explicit "pick your област" state until somebody picks one, while
+// every national figure on the page renders in full.
+//
+// The empty string rather than null: it is what an unselected `<select>`
+// carries, so the picker binds to this store directly and there is no third
+// state between "the store" and "the control".
+//
+// **What is NOT validated here**, deliberately: whether the saved code is a
+// real област. `stores.js` knows nothing about the payloads and must not start
+// fetching them to answer that — a code that no longer exists resolves to no
+// row in `view.js#regionRow`, which is the same empty state as no choice at
+// all. The shape check below is only that it could be a code.
+// ---------------------------------------------------------------------------
+const isRegionCode = (v) => typeof v === "string" && /^[a-z][a-z-]{1,30}$/.test(v);
+
+export const REGION_KEY = "vyarno_region";
+
+export const region = writable(readPreference(REGION_KEY, isRegionCode) ?? "");
+
+if (typeof document !== "undefined") {
+  // Same `persistOnChange` as lang and theme, and for the same ЗЕТ чл. 4а
+  // reason: nothing is written until the visitor actively chooses. A preference
+  // persisted on arrival is the weakest version of the "explicitly requested"
+  // exemption, and the privacy notice's «избраните от теб» would stop being
+  // true of it. There is no DOM side effect — the region changes figures, not
+  // presentation — so `apply` is a no-op.
+  persistOnChange(region, REGION_KEY, () => {});
+}
+
+// ---------------------------------------------------------------------------
 // Toggle helpers
 // ---------------------------------------------------------------------------
 export function toggleLang() {

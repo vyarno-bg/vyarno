@@ -26,6 +26,10 @@ test("the housing card says which of its figures are ours", { skip }, async () =
   // and `verify_copy.mjs` holds it there; this is the calculator's copy of the
   // same obligation, on the surface most readers actually see.
   await withApp(async (page, errors) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     const card = page.locator(".strip .stat.wide");
     assert.ok(await card.count(), "the housing card is not on the strip");
     const text = (await card.innerText()).replace(/\s+/g, " ");
@@ -61,6 +65,10 @@ test("a strip card's source caption sits under its own content", { skip }, async
   // The bound is the caption's own 10px of padding plus room for a fractional
   // layout, well under any gap `margin-top: auto` produces on this row.
   await withApp(async (page) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     const gaps = await page.locator(".strip .stat").evaluateAll((els) =>
       els.map((card) => {
         const ss = card.querySelector(".ss");
@@ -91,6 +99,10 @@ test("the national strip leaves no orphaned cell on its last row", { skip }, asy
   // row instead, and the wide chart card takes a row of its own, because a card
   // twice its neighbours' height stretches every tile beside it to match.
   await withApp(async (page, errors) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     const boxes = await page.locator(".strip .stat").evaluateAll((els) =>
       els.map((el) => {
         const r = el.getBoundingClientRect();
@@ -124,6 +136,10 @@ test(
   { skip },
   async () => {
     await withApp(async (page) => {
+      // The strip's city-scoped cards need an област picked: there is no default
+      // (P7), so before a reader chooses they render what they are waiting for
+      // rather than somebody else's figures.
+      await page.selectOption("#region-select", "sofiya");
       const wide = page.locator(".strip .stat.wide");
       // Assert it exists before asserting anything about it. Guarding with
       // `if (!(await wide.count())) return;` means deleting the full-width
@@ -170,6 +186,10 @@ test("a strip card names its period in the source line and nowhere else", { skip
   // those is one somebody switches off rather than one that catches anything.
   const PERIOD = /\d{4}-(?:Q[1-4]|\d{2}(?:-\d{2})?)/g;
   await withApp(async (page) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     const cards = await page.locator(".strip .stat").evaluateAll((els) =>
       els.map((el) => {
         const withoutSource = el.cloneNode(true);
@@ -201,6 +221,10 @@ test("the strip shows the same cards whatever the reader typed", { skip }, async
   // derived from it. A card count that shifts between five and six is also a
   // count no layout can be tuned for.
   await withApp(async (page) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     const before = await page.locator(".strip .stat").count();
     await page.locator("input[type=number]").first().fill("4200");
     await page.waitForTimeout(300);
@@ -248,12 +272,22 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
   assert.ok(net > 0 && net < gross, "the payroll conversion did not produce a net below the gross");
 
   await withApp(async (page, errors) => {
-    // The Sofia AVERAGE card, by its own label. Matching on the «НСИ» credit
-    // alone lands on the median card next to it, which cites the same publisher
-    // as one of two inputs to a figure it says in as many words is worked out —
-    // a dataset-and-vintage credit rather than a claim about what НСИ printed.
+    // **Pick an област first, because there is no default.** P7: the page shows
+    // no city-scoped figure until a reader says where they live, so the card
+    // this test is about does not exist before that. Selecting is therefore
+    // part of the scenario rather than setup around it — and a run that
+    // asserted without selecting would be asserting against the empty state.
+    await page.selectOption("#region-select", "sofiya");
+
+    // The AVERAGE card, by its own label, which now names the област. Matching
+    // on the «НСИ» credit alone lands on the median card next to it, which
+    // cites the same publisher as one of two inputs to a figure it says in as
+    // many words is worked out — a dataset-and-vintage credit rather than a
+    // claim about what НСИ printed.
     const stat = page
-      .locator(".strip .stat", { hasText: /средна нетна заплата в София|Sofia average NET pay/ })
+      .locator(".strip .stat", {
+        hasText: /средна нетна заплата · София|average NET pay · Sofia/,
+      })
       .first();
     // **The caption, not the card.** The card LEADS with the net, so a figure
     // asserted against the whole card is satisfied by the headline it was
@@ -279,7 +313,7 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
     assert.match(
       caption,
       /(по наша сметка|our conversion)/,
-      `the gross-to-net step on the Sofia card is not attributed to us:\n${caption}`
+      `the gross-to-net step on the wage card is not attributed to us:\n${caption}`
     );
     // The quarter the two figures describe, as НСИ label it. Both are averages
     // over one of their reporting periods and neither means anything without
@@ -287,7 +321,7 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
     assert.match(
       caption,
       new RegExp(wage.ref_period),
-      `the Sofia card dates its figures to ${wage.ref_period} nowhere:\n${caption}`
+      `the wage card dates its figures to ${wage.ref_period} nowhere:\n${caption}`
     );
     // **The star on НСИ's sheet, where the reader meets the number.** They mark
     // a whole year provisional until they finalise it, so their newest quarter
@@ -326,6 +360,10 @@ test("Eurostat's estimate is marked as one, on both surfaces", { skip }, async (
   const flash = head.is_flash === true;
 
   await withApp(async (page, errors) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     const banner = await page.locator(".data-strip-inner .off-fig").innerText();
     const card = await page
       .locator(".strip .stat", { hasText: /инфлация за година|annual inflation/ })
@@ -360,6 +398,10 @@ test("no SVG on the page is drawn with distorted axes", { skip }, async () => {
   // was several times the vertical one: the 2px stroke thinned out and every
   // year's round marker rendered as an ellipse.
   await withApp(async (page, errors) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     const distorted = await page.locator("svg").evaluateAll((els) =>
       els
         .filter((el) => {
@@ -395,6 +437,10 @@ test(
     // area closed to the baseline, and every series key is a painted block rather
     // than a zero-height box carrying a border.
     await withApp(async (page, errors) => {
+      // The strip's city-scoped cards need an област picked: there is no default
+      // (P7), so before a reader chooses they render what they are waiting for
+      // rather than somebody else's figures.
+      await page.selectOption("#region-select", "sofiya");
       await page.locator("input[type=number]").first().fill("3000");
       await page.waitForTimeout(300);
 
@@ -443,6 +489,10 @@ test("the wedge's right-edge labels belong to the series they sit on", { skip },
   // the line carries its own value where the frame cuts it, and the wash's
   // label sits INSIDE the wash rather than between the two marks.
   await withApp(async (page, errors) => {
+    // The strip's city-scoped cards need an област picked: there is no default
+    // (P7), so before a reader chooses they render what they are waiting for
+    // rather than somebody else's figures.
+    await page.selectOption("#region-select", "sofiya");
     await page.locator("input[type=number]").first().fill("900");
     await page.waitForTimeout(300);
 

@@ -241,8 +241,14 @@ test("every {@html} expression is rooted in an in-repo constant", () => {
 // splicing the clause together from separate holes in the template, is what
 // produced «-39% под средната». Add a name here only when the function's whole
 // body is COPY plus formatter output.
+// `safeText` and `yearText` are the two additions a fetched STRING forced.
+// Every other entry constrains a number or a date into a shape; a place name
+// out of a payload cannot be constrained that way, so `safeText` escapes it
+// instead — `format.js` says why that is the honest answer rather than
+// trusting the publisher. `yearText` exists because `fmt0` groups, and a year
+// through it reads «2 015».
 const SAFE_VALUE_SOURCES =
-  /^(fmt0?|fmtDate|signedPct|period|label|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|deltaPhrase|String)\b/;
+  /^(fmt0?|fmtDate|signedPct|period|label|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|deltaPhrase|String|safeText|yearText)\b/;
 
 /**
  * The `{@const NAME = …}` bindings a component declares, as name → expression.

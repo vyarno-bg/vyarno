@@ -213,12 +213,49 @@ test("a stored preference is not rewritten just by being read", async () => {
   assert.deepEqual(seen, [], `loading rewrote ${seen.join(", ")}`);
 });
 
-test("nothing but the two documented keys is ever written", async () => {
-  // The privacy notice names exactly two keys. A third would make it untrue.
+test("nothing but the three documented keys is ever written", async () => {
+  // The privacy notice names exactly three keys, and names them. A fourth
+  // would make the shipped sentence untrue — which is why the count is held
+  // here rather than left to review.
   const storage = fakeStorage({});
   const { mod } = await loadStores({ storage, language: "bg-BG" });
   mod.toggleLang();
   mod.toggleTheme();
+  mod.region.set("varna");
 
-  assert.deepEqual([...storage.map.keys()].sort(), [mod.LANG_KEY, mod.THEME_KEY].sort());
+  assert.deepEqual(
+    [...storage.map.keys()].sort(),
+    [mod.LANG_KEY, mod.THEME_KEY, mod.REGION_KEY].sort()
+  );
+});
+
+test("the region is not written until the reader picks one", async () => {
+  // The same ЗЕТ чл. 4а argument as lang and theme, and the one the notice's
+  // «само ако ги смениш» turns on: a preference persisted on arrival is a
+  // preference the visitor never asked for. `persistOnChange` swallows the
+  // synchronous first call Svelte makes when the subscriber registers, so
+  // merely loading the page writes nothing.
+  const storage = fakeStorage({});
+  const { mod } = await loadStores({ storage, language: "bg-BG" });
+  assert.equal(read(storage, mod.REGION_KEY), null);
+  assert.equal(mod.REGION_KEY, "vyarno_region");
+
+  // And there is no default: a reader who has chosen nothing gets no област,
+  // rather than the largest one wearing the appearance of a choice (P7).
+  let current = null;
+  mod.region.subscribe((v) => (current = v))();
+  assert.equal(current, "");
+});
+
+test("a junk saved region is ignored rather than rendered", async () => {
+  // `stores.js` knows nothing about the payloads, so it cannot check that a
+  // code is a real област — and must not start fetching them to find out. What
+  // it can refuse is a value that could not be a code at all.
+  for (const junk of ["../../etc", "<script>", "VARNA", "x".repeat(64), "1"]) {
+    const storage = fakeStorage({ vyarno_region: junk });
+    const { mod } = await loadStores({ storage, language: "bg-BG" });
+    let current = null;
+    mod.region.subscribe((v) => (current = v))();
+    assert.equal(current, "", `${junk} was accepted as a region code`);
+  }
 });

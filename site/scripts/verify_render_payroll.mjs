@@ -75,6 +75,11 @@ test("neither pay comparison is painted as a verdict", { skip }, async () => {
   // neutral «над» beside a red «под» still reads the gap as a verdict, and it
   // is the reading a reader below the average is likeliest to take personally.
   await withApp(async (page, errors) => {
+    // The wage comparison is one of the two lines this counts, and it does not
+    // exist until a reader says which област they are in — there is no default
+    // (P7). Picking is part of the scenario, not setup around it.
+    await page.selectOption("#region-select", "sofiya");
+
     const verdicts = await page.evaluate(() => {
       const resolve = (token) => {
         const probe = document.createElement("div");

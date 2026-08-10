@@ -108,14 +108,14 @@
    * different words for the same distinction.
    */
   const imotDated = $derived(
-    calc.cityPricePageDate
+    calc.refCityPriceSnapshot
       ? {
-          bg: t(COPY.srcDatedByPage, "bg", { d: calc.cityPricePageDate }),
-          en: t(COPY.srcDatedByPage, "en", { d: calc.cityPricePageDate }),
+          bg: t(COPY.srcDatedByPage, "bg", { d: calc.refCityPriceSnapshot }),
+          en: t(COPY.srcDatedByPage, "en", { d: calc.refCityPriceSnapshot }),
         }
       : {
-          bg: t(COPY.srcDatedByFetch, "bg", { d: dateShort(calc.cityPriceAsOf, "bg") }),
-          en: t(COPY.srcDatedByFetch, "en", { d: dateShort(calc.cityPriceAsOf, "en") }),
+          bg: t(COPY.srcDatedByFetch, "bg", { d: dateShort(calc.refCityPriceAsOf, "bg") }),
+          en: t(COPY.srcDatedByFetch, "en", { d: dateShort(calc.refCityPriceAsOf, "en") }),
         }
   );
   /** A period that is already language-independent — a year, an ISO effective date. */
@@ -921,7 +921,7 @@
     </p>
 
     <div class="stats">
-      {#if calc.cityPriceIsLive}
+      {#if calc.refCityPriceIsLive}
         {@render stat(
           `${fmt0(calc.cityHome.eurPerM2)} €`,
           COPY.howKEurM2,
@@ -961,7 +961,7 @@
       {/if}
     </div>
 
-    {#if calc.cityPriceIsLive}
+    {#if calc.refCityPriceIsLive}
       {@render ours()}
       <p>
         <span class="l-bg"

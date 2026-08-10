@@ -235,3 +235,47 @@ export function dateShort(value, lang = "bg") {
     year: "numeric",
   });
 }
+
+/**
+ * A fetched string, safe to interpolate into copy that carries markup.
+ *
+ * **The one value on this page that is text and comes from a publisher.**
+ * Every other substitution is a number, a date or one of our own COPY strings,
+ * which is what makes rendering the templates through `{@html}` safe at all —
+ * `verify_template_safety.mjs` holds that, and the app deliberately has no
+ * free-text input surface. An област's name breaks the pattern: it is НСИ's
+ * own string, read out of a payload at runtime, and it lands inside a sentence
+ * whose `<b>` has to survive.
+ *
+ * So it is escaped rather than trusted. Not because НСИ are expected to ship
+ * markup, but because "the upstream would never" is the assumption that makes
+ * a fetched value dangerous to interpolate — the payload is a file on a CDN,
+ * and the guarantee has to hold without knowing who wrote it.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function safeText(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * A calendar year as plain digits — never grouped.
+ *
+ * `integer()` groups by locale, so a year through it reads «2 015». Years are
+ * written without a separator in both languages, and this is the only place
+ * the page prints one out of a payload: имот.bg's per-city baseline, which is
+ * data rather than a constant.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function yearText(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? String(Math.trunc(n)) : "";
+}
