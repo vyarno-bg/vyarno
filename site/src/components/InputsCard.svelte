@@ -413,8 +413,8 @@
         <!-- Manual price input. Shown only when priceMode === "manual".
            The homePrice derived uses this when set, so the
            mortgage math immediately reflects the asking price.
-           Hint below shows the implied €/m² next to the Sofia
-           median for sanity-check. -->
+           Hint below shows the implied €/m² next to the median for
+           the reader's own град, and only when there is one. -->
         {#if calc.priceMode === "manual"}
           <div class="field" style="grid-column: span 2">
             <label for="inManualPrice">
@@ -432,17 +432,31 @@
                 aria-label={t(COPY.manualPriceLabel, $lang)}
               />
             </span>
+            <!-- The comparison in brackets names the city it is a median OF,
+                 and it is drawn only when there IS one. It read «софийската
+                 медиана» beside whichever град the reader picked, and beside
+                 `HOME.eurPerM2_offlineFallback` — a round constant имот.bg
+                 never published — for a reader who had picked none. Both are
+                 the same defect: a number wearing a provenance that is not
+                 its own, on the control where somebody is checking their own
+                 asking price against ours. -->
             <div class="hint" style="margin-top:4px">
               <span class="l-bg"
                 >при {calc.m2} м² ≈ <b>{fmt0(calc.manualEurPerM2)} €/м²</b>
-                {calc.manualEurPerM2 > 0
-                  ? `(софийската медиана е ${fmt0(calc.cityEurPerM2)} €/м²)`
+                {calc.manualEurPerM2 > 0 && calc.cityPriceIsLive
+                  ? t(COPY.manualVsMedian, "bg", {
+                      city: calc.cityNameBg,
+                      pm2: fmt0(calc.cityEurPerM2),
+                    })
                   : ""}.</span
               >
               <span class="l-en"
                 >at {calc.m2} m² ≈ <b>€{fmt0(calc.manualEurPerM2)}/m²</b>
-                {calc.manualEurPerM2 > 0
-                  ? `(Sofia median is €${fmt0(calc.cityEurPerM2)}/m²)`
+                {calc.manualEurPerM2 > 0 && calc.cityPriceIsLive
+                  ? t(COPY.manualVsMedian, "en", {
+                      city: calc.cityNameEn,
+                      pm2: fmt0(calc.cityEurPerM2),
+                    })
                   : ""}.</span
               >
             </div>

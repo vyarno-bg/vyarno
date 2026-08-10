@@ -40,7 +40,8 @@
     maxAffordM2 = 0,
     /** БНБ lending limits (DSTI/LTV/maturity) for the same period. */
     limits = {},
-    /** Sofia €/m² provenance, quoted where the default price comes from. */
+    /** The chosen city's €/m² provenance, quoted where the default price
+        comes from. */
     cityEurPerM2 = 0,
     cityNDistricts = 0,
     /** True when the €/m² came from city_price.json, not the offline constant. */
@@ -218,11 +219,15 @@
               >при този доход, лихва и срок можеш да си позволиш дом до <b
                 >{fmt0(maxAffordPrice)} €</b
               >
-              · <b>{fmt(maxAffordM2, 0)} м²</b> в София.</span
+              · <b>{fmt(maxAffordM2, 0)} м²</b>{cityNameBg
+                ? " " + t(COPY.affordWhere, "bg", { city: cityNameBg })
+                : "."}</span
             >
             <span class="l-en"
               >at this income, rate, and term you can afford up to <b>{fmt0(maxAffordPrice)} €</b>
-              · <b>{fmt(maxAffordM2, 0)} m²</b> in Sofia (at this rate and term).</span
+              · <b>{fmt(maxAffordM2, 0)} m²</b>{cityNameEn
+                ? " " + t(COPY.affordWhere, "en", { city: cityNameEn })
+                : "."}</span
             >
           </div>
         {:else if monthlyMort > 0}

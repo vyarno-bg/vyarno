@@ -25,16 +25,6 @@
     openDivisions = new Set(),
     /** Deposit share (%), quoted in the mortgage worked example. */
     downPayPct = 0,
-    /**
-     * How many Sofia districts имот.bg published a price for.
-     *
-     * A prop rather than the literal that was here: имот.bg adds and merges
-     * districts, `city_price.json` carries the count, and `/how/` already reads
-     * it from there. A number typed into this paragraph says 143 for as long as
-     * nobody re-reads the sentence, on the one page whose claim is that every
-     * figure comes from the data.
-     */
-    nDistricts = 0,
     /** The reader's within-division split, and helpers over it. */
     splitFor,
     divisionSharePct,
@@ -151,26 +141,34 @@
     </li>
     <li>
       <!-- WHAT THE €/m² ACTUALLY IS. имот.bg publishes one AVERAGE
-           asking price per Sofia district; we take the MEDIAN ACROSS
-           THOSE DISTRICTS, and the count of them comes from the payload
-           rather than from this sentence. "медианата от обявите" /
-           "the median of the listings" was wrong twice: it is not a
-           median over listings, and the underlying prices are what
-           sellers ask, not what buyers paid. Say both — this is the
-           first thing anyone who knows the market will check. -->
+           asking price per district; we take the MEDIAN ACROSS THOSE
+           DISTRICTS. "медианата от обявите" / "the median of the listings"
+           was wrong twice: it is not a median over listings, and the
+           underlying prices are what sellers ask, not what buyers paid.
+           Say both — this is the first thing anyone who knows the market
+           will check.
+
+           **Neither the city nor its district count is named here**, and
+           that is what keeps this paragraph true. It describes the METHOD,
+           which is the same in all 27 cities имот.bg publish, while the
+           figures it produces belong to whichever one the reader picked —
+           and to nowhere at all until they pick. The count and the place
+           are stated where the number is, on the housing card's own source
+           line and on `/how/`, so both travel with the figure they
+           describe rather than with the explanation of it. -->
       <span class="l-bg"
-        ><b>Домът.</b> Всеки от {fmt0(nDistricts)} софийски квартала си има средна <b>оферта</b> на
-        квадратен метър (искана цена, не цена по сделка). Подреждаме ги от евтин към скъп и взимаме
-        средния — това е медианата — по избраната квадратура, или по твоята цена, ако си въвел
-        такава. „<b>Години</b>“ значи: толкова години цялата ти заплата, до последното евро, би
-        отишла за жилището. Вноската е обичайната за банките равна месечна вноска по кредит за {fmt0(
+        ><b>Домът.</b> имот.bg публикува по една средна <b>оферта</b> на квадратен метър за всеки
+        квартал в града (искана цена, не цена по сделка). Подреждаме кварталите от евтин към скъп и
+        взимаме средния — това е медианата — по избраната квадратура, или по твоята цена, ако си
+        въвел такава. „<b>Години</b>“ значи: толкова години цялата ти заплата, до последното евро,
+        би отишла за жилището. Вноската е обичайната за банките равна месечна вноска по кредит за {fmt0(
           100 - downPayPct
         )}% от цената (останалите {fmt0(downPayPct)}% са самоучастие), с твоята лихва и твоя срок.</span
       >
       <span class="l-en"
-        ><b>A home.</b> Each of Sofia's {fmt0(nDistricts)} districts has its own average
-        <b>asking</b> price per square metre (what sellers ask, not what buyers paid). We line them
-        up cheapest to dearest and take the middle one - that is the median - times the size you
+        ><b>A home.</b> imot.bg publishes one average <b>asking</b> price per square metre for each
+        district of a city (what sellers ask, not what buyers paid). We line the districts up
+        cheapest to dearest and take the middle one - that is the median - times the size you
         picked, or your own price if you entered one. "<b>Years</b>" means: that many years of your
         entire pay, down to the last euro, would go to the home. The payment is the ordinary equal
         monthly bank instalment on a loan of {fmt0(100 - downPayPct)}% of the price (the other {fmt0(
@@ -293,7 +291,7 @@
        nothing else. A dataset that sounds like it belongs — `ilc_di01`,
        `namq_10_lp_ulc`, `prc_hpi_q` — is not in a payload and puts no
        figure on the page, and naming one here is the same defect as
-       omitting the three that carry the pay ladder, the Sofia wage
+       omitting the three that carry the pay ladder, the област wage
        and the €/m². Citing a source we do not use costs exactly what
        failing to cite one we do costs: the claim is that every number
        traces somewhere real, and it is checked one line at a time.

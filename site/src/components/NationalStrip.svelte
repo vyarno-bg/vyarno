@@ -85,7 +85,7 @@
   const cityName = (l) => safeText(l === "bg" ? cityNameBg : cityNameEn);
   const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
-  // Everything on the Sofia card's source line, built in one place so the two
+  // Everything on the wage card's source line, built in one place so the two
   // language spans cannot be handed different numbers. The gross is НСИ's own
   // published cell and the net is our conversion of it; the em dash is what a
   // missing payload renders as, because a caption reading «0 €» under their
@@ -141,7 +141,7 @@
        salary has been typed, and no fixed column count divides both. In
        a wrapping flex row every item grows, so a row is always full: the
        tail cards widen instead of leaving a hole, at every width and
-       either count. The Sofia housing card carries a 12-year sparkline,
+       either count. The housing card carries a multi-year sparkline,
        so it takes a wider basis and a heavier grow — and it goes LAST,
        because the one card that may end up alone on a row is then the
        one that reads well at full width. -->
@@ -238,16 +238,16 @@
         </div>
       </div>
     {/if}
-    <!-- Sofia comparator card: net vs net. The same bgNetSalary
+    <!-- The област comparator card: net vs net. The same bgNetSalary
          formula is applied to both sides, so the comparison is
-         apples-to-apples. No personal verdict here — this is a country
-         reference card, and the verdict lives under the salary input,
+         apples-to-apples. No personal verdict here — this is a reference
+         card, and the verdict lives under the salary input,
          next to the number it compares against. -->
     <!-- Always on, like every other card here. Gating it on a typed
          salary makes "the country at a glance" change shape with what
          the reader entered, and leaves the strip with a card count no
          column layout divides. Nothing on this card is personal:
-         `regionNet` comes from sofia_salary.json alone. The personal
+         `regionNet` comes from region_salary.json alone. The personal
          verdict against it lives under the salary input, where the
          number it compares to is. -->
     <!-- Three states, and they are three different claims. A wage, which is
@@ -343,7 +343,7 @@
          caption, which is what starved it of width. -->
     <!-- Gated on the payload being LIVE, not merely on the number being
          non-zero. The offline fallback is a round constant; this card
-         captions it «медиана за София от обявите» and cites
+         captions it «медиана за {град} от обявите» and cites
          imot.bg/sredni-ceni under it, so rendering it from the sentinel
          attributed a figure имот.bg never published to имот.bg — with «0
          квартала» as the only tell. The strip's own rule is that every card
@@ -407,10 +407,11 @@
               width="100%"
               height={_h}
               role="img"
-              aria-label={($lang === "bg"
-                ? "Медианна цена на кв. м в София, "
-                : "Sofia median €/m², ") +
-                `${cityHistorical[0].year}–${cityHistorical[_last].year}`}
+              aria-label={t(COPY.statHomeChartLabel, $lang, {
+                city: cityName($lang),
+                from: yearText(cityHistorical[0].year),
+                to: yearText(cityHistorical[_last].year),
+              })}
             >
               <polyline
                 points={cityHistorical
@@ -467,8 +468,16 @@
         {/if}
         <div class="ss">
           <div title={HOME.eurPerM2_source}>
-            <span class="l-bg">≈{fmt0(cityEurPerM2)}€/м² · медиана за София от обявите</span>
-            <span class="l-en">≈€{fmt0(cityEurPerM2)}/m² · Sofia median from public listings</span>
+            <span class="l-bg"
+              >≈{fmt0(cityEurPerM2)}€/м² · {t(COPY.statHomeMedianOf, "bg", {
+                city: cityName("bg"),
+              })}</span
+            >
+            <span class="l-en"
+              >≈€{fmt0(cityEurPerM2)}/m² · {t(COPY.statHomeMedianOf, "en", {
+                city: cityName("en"),
+              })}</span
+            >
           </div>
           <div>
             <a href="https://www.imot.bg/sredni-ceni" target="_blank" rel="noopener"
@@ -479,7 +488,7 @@
           </div>
           <!-- Three of the figures on this card are OURS, and the credit line
                above names имот.bg. They publish one average per district and
-               nothing for Sofia as a whole, so the median across the districts,
+               nothing for a city as a whole, so the median across the districts,
                the price of a 70 m² home built on it and the change since the
                baseline year are all our arithmetic over their cells. A
                publisher's name spanning our own working is the quiet way a card
@@ -629,11 +638,11 @@
     margin-top: 6px;
     line-height: 1.35;
   }
-  /* Sofia price history sparkline: a polyline of the median €/m² from 2015
-     to the current year, one marker per year and a ringed marker on the
-     latest. The axes show the year range and the baseline→current € pair;
-     the since-2015 delta is rendered in the erode colour so it reads as a
-     "this is what it costs you" figure rather than a feature. The SVG is
+  /* Price history sparkline: a polyline of the median €/m² from the city's
+     own baseline year to the current one, one marker per year and a ringed
+     marker on the latest. The axes show the year range and the
+     baseline→current € pair; the since-baseline delta is in the erode colour
+     so it reads as a "this is what it costs you" figure rather than a feature. The SVG is
      drawn at the measured pixel width (`histW`), so nothing is stretched. */
   .hist {
     margin-top: 10px;
