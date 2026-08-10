@@ -1321,17 +1321,51 @@ export function cityHomeAtAverageWage({
     // so a template gates on the figure rather than on which kind of nothing
     // it got.
     years: price > 0 && netMonthly > 0 ? homeYears(price, netMonthly) : 0,
-    nDistricts: city?.n_districts ?? 0,
-    // Both come off the city's own row rather than off the chart's ends, so a
-    // surface showing the headline and a surface showing the series cannot
-    // disagree about what the baseline was.
+    // Through `cityTrend`, so this page and the calculator cannot read
+    // different ends of the same array — or, as they did, the same end of two
+    // different cities'.
+    ...cityTrend(cityPrice, cityCode),
+  };
+}
+
+/**
+ * One city's trend line — which year it is measured from, how far it has moved
+ * since, and whether the run behind that is long enough to say so.
+ *
+ * **One selection, because the two ENDS of the array are a one-character
+ * difference.** `.at(-1)` against `[0]` is the rise since the baseline against
+ * the baseline level itself, and `docs/site.md` §"A correct formula fed the
+ * wrong number" is why that decision may not live in a `$derived`. It is here
+ * so the housing card on `/` and the country example on `/how/` cannot read
+ * different ends of the same city's history — and so neither can read a
+ * different CITY's, which is the failure it was extracted after: the
+ * calculator took these two off the country page's reference city and printed
+ * them on the reader's card, so every city but София showed София's baseline
+ * year and София's +232% beside its own €/m², under its own name, with the
+ * chart's end labels correctly its own.
+ *
+ * Both figures come off the city's own row rather than off the array beside
+ * it, and `validate_city_price` holds the two equal, so a surface showing the
+ * headline and a surface showing the series cannot disagree.
+ *
+ * @param {object|null} cityPrice  data.cityPrice (city_price.json)
+ * @param {string} code
+ * @returns {{sinceBaselinePct:number, baselineYear:number,
+ *            trendPublishable:boolean, nDistricts:number}}
+ */
+export function cityTrend(cityPrice, code) {
+  const city = cityRow(cityPrice, code);
+  return {
     sinceBaselinePct: city?.since_baseline_median_pct ?? 0,
     baselineYear: city?.baseline_year ?? 0,
     // Whether the run behind that percentage is long enough to say «since
     // YEAR» in the voice of a trend. Decided in the pipeline, over the whole
     // series, rather than by each surface counting rows and reaching its own
-    // conclusion.
+    // conclusion — `sources/imot.py#MIN_TREND_YEARS` carries the threshold and
+    // why «+4% от 2024» in that voice is the wrong claim rather than a small
+    // one.
     trendPublishable: Boolean(city?.trend_publishable),
+    nDistricts: city?.n_districts ?? 0,
   };
 }
 

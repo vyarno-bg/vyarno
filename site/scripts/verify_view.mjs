@@ -48,6 +48,7 @@ import {
   systemWedgeLadder,
   payLadder,
   cityHomeAtAverageWage,
+  cityTrend,
   seriesCells,
   quarterGrid,
   QUARTERS,
@@ -2530,6 +2531,59 @@ test("the offline ladder sentinel selects the same way the live payload does", (
     HOME.nationalWageFallback.sectors[0].series_by_period[sentinel.refPeriod],
     "the sentinel headline is not one of its own published cells"
   );
+});
+
+test("the trend on a card is the card's own city's, at both ends", () => {
+  // **The failure this exists for was on screen for twenty-six cities.** The
+  // calculator read the baseline year and the since-baseline percentage off
+  // `cityHome`, which is the country page's reference city and stays София on
+  // purpose. So the housing card printed София's 2015 and София's +232% beside
+  // Варна's €/m², under Варна's name, with the chart's own end labels
+  // correctly Варна's. Every number was real; two of them were about somewhere
+  // else, and nothing about the card looked wrong.
+  const prices = read("city_price");
+  if (!prices) return;
+  for (const city of prices.cities) {
+    const trend = cityTrend(prices, city.code);
+    assert.equal(trend.baselineYear, city.baseline_year, city.code);
+    assert.equal(trend.sinceBaselinePct, city.since_baseline_median_pct, city.code);
+    assert.equal(trend.trendPublishable, Boolean(city.trend_publishable), city.code);
+    assert.equal(trend.nDistricts, city.n_districts, city.code);
+    // The baseline year is the OLDEST published year, never the newest — the
+    // one-character difference the extraction exists to make once.
+    if (city.historical.length) {
+      assert.equal(trend.baselineYear, city.historical[0].year, city.code);
+      assert.equal(
+        trend.sinceBaselinePct,
+        city.historical.at(-1).since_baseline_median_pct,
+        city.code
+      );
+    }
+  }
+  // An unknown or absent city is zeroed, never the first row's.
+  for (const code of ["", null, undefined, "atlantis"]) {
+    assert.deepEqual(cityTrend(prices, code), {
+      sinceBaselinePct: 0,
+      baselineYear: 0,
+      trendPublishable: false,
+      nDistricts: 0,
+    });
+  }
+});
+
+test("a run too short to be a trend says no since-year at all", () => {
+  // имот.bg's coverage of a city runs from one year to two decades, and «+4%
+  // от 2024» in the voice of a two-decade series is the wrong claim rather
+  // than a small one. The pipeline decides it over the whole series
+  // (`sources/imot.py#MIN_TREND_YEARS`) and publishes the answer, so every
+  // surface reaches the same one instead of counting rows.
+  const short = { cities: [{ code: "x", baseline_year: 2024, since_baseline_median_pct: 3.7 }] };
+  assert.equal(cityTrend(short, "x").trendPublishable, false);
+  const long = { cities: [{ code: "x", baseline_year: 2003, trend_publishable: true }] };
+  assert.equal(cityTrend(long, "x").trendPublishable, true);
+  // And the percentage is still carried — the chart keeps every qualifying
+  // year, it is only the sentence that waits.
+  assert.equal(cityTrend(short, "x").sinceBaselinePct, 3.7);
 });
 
 test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () => {

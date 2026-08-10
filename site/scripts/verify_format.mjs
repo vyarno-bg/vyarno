@@ -17,7 +17,11 @@ import {
   ordinalDay,
   parseDecimal,
   decimalText,
+  bgIn,
+  safeText,
+  yearText,
 } from "../src/lib/format.js";
+import { published } from "./published-payload.mjs";
 
 test("a missing or non-finite value formats as an em dash, never NaN", () => {
   // The calculator renders continuously while someone types, so an empty or
@@ -171,4 +175,70 @@ test("every day the rent row can print is an ordinal, in both languages", () => 
   }
   assert.equal(ordinalDay(null, "bg"), "—");
   assert.equal(ordinalDay(NaN, "en"), "—");
+});
+
+test("«във» is written where Bulgarian writes it, and «в» everywhere else", () => {
+  // Four of имот.bg's twenty-seven cities and four of НСИ's twenty-eight
+  // области begin with В, so a copy string carrying a bare «в» before the slot
+  // is ungrammatical for one reader in seven — «в Варна», on the card they came
+  // for. The rule lives here rather than as four names in `content.js` because
+  // the cities are data: имот.bg add and retire them, and a list goes stale on
+  // a refresh nobody connects to it.
+  for (const word of ["Варна", "Видин", "Враца", "Велико Търново", "Франция", "фабрика"]) {
+    assert.equal(bgIn(word), "във", word);
+  }
+  for (const word of ["София", "Бургас", "Пловдив", "Русе", "Ямбол", "Хасково"]) {
+    assert.equal(bgIn(word), "в", word);
+  }
+  // The empty state is «в», which is what a sentence with no place in it would
+  // have carried anyway.
+  for (const empty of ["", null, undefined, "  "]) assert.equal(bgIn(empty), "в");
+  assert.equal(bgIn(" Варна"), "във", "a leading space defeated the rule");
+});
+
+test("every city and every област the payloads publish gets the right preposition", () => {
+  // Over the collection rather than over six names I happened to think of: a
+  // city added upstream is covered by this the day it lands, and a rule that
+  // was wrong for one of the twenty-seven would show on that city's card only.
+  const prices = published("city_price");
+  const regions = published("region_salary");
+  if (!prices || !regions) return;
+  const names = [...prices.cities.map((c) => c.bg_name), ...regions.regions.map((r) => r.bg_name)];
+  assert.ok(names.length > 0);
+  for (const name of names) {
+    assert.equal(bgIn(name), /^[ВФ]/.test(name) ? "във" : "в", name);
+  }
+});
+
+test("a fetched string cannot carry markup into a template", () => {
+  // An област's name is the one value on the page that is TEXT and comes from a
+  // publisher. Every other substitution is a number, a date or one of our own
+  // COPY strings, which is what makes rendering the templates through `{@html}`
+  // safe at all. Escaped rather than trusted: the payload is a file on a CDN,
+  // and "НСИ would never" is the assumption that makes a fetched value
+  // dangerous to interpolate.
+  assert.equal(safeText("<b>x</b>"), "&lt;b&gt;x&lt;/b&gt;");
+  assert.equal(safeText('" onload="alert(1)'), "&quot; onload=&quot;alert(1)");
+  assert.equal(safeText("A & B"), "A &amp; B");
+  assert.equal(safeText("it's"), "it&#39;s");
+  // The ampersand goes first, or the escapes escape each other.
+  assert.equal(safeText("&lt;"), "&amp;lt;");
+  assert.equal(safeText("Велико Търново"), "Велико Търново");
+  for (const empty of [null, undefined]) assert.equal(safeText(empty), "");
+});
+
+test("a year prints without a thousands separator", () => {
+  // `integer()` groups by locale, and this is the only place the page prints a
+  // year out of a payload — имот.bg's per-city baseline, which is data rather
+  // than a constant.
+  assert.equal(yearText(2015), "2015");
+  // The failure it exists for, on the locale that has it: en-GB groups four
+  // digits and bg-BG does not, so a year through `integer()` reads «2,015» to
+  // an English reader and correctly to a Bulgarian one — which is exactly the
+  // shape of bug that ships, because whoever writes it reads the other side.
+  assert.equal(integer(2015, "en"), "2,015");
+  assert.equal(yearText(2015), integer(2015, "bg"));
+  assert.equal(yearText("2003"), "2003");
+  assert.equal(yearText(2026.4), "2026");
+  for (const none of [0, -5, null, undefined, NaN, "later"]) assert.equal(yearText(none), "");
 });

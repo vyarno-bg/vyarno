@@ -1577,7 +1577,12 @@ export const COPY = {
   // the same anatomy — value, label, chart, source. Folding the place name
   // into the value slot as "София · €175 070" and pushing the rest into the
   // source caption gives this one card a shape none of its neighbours have.
-  statHomeK: { bg: "жилище в {city}", en: "a home in {city}" },
+  // «{v}» is «в» or «във», from `format.js#bgIn`. Bulgarian writes «във»
+  // before a в- or ф- word, and four of имот.bg's cities begin with В, so a
+  // bare «в» here is ungrammatical for a reader in Варна, Видин, Враца or
+  // Велико Търново. A rule rather than four names written down: the cities are
+  // data, and a list goes stale on a refresh nobody connects to it.
+  statHomeK: { bg: "жилище {v} {city}", en: "a home in {city}" },
   // What the housing card says before an област is picked. Two different
   // absences, and the copy has to tell them apart: nobody chose yet, against
   // имот.bg publishing no price for the one област whose towns are not among
@@ -1594,7 +1599,7 @@ export const COPY = {
     en: "{city} median from public listings",
   },
   statHomeChartLabel: {
-    bg: "Медианна цена на кв. м в {city}, {from}–{to}",
+    bg: "Медианна цена на кв. м {v} {city}, {from}–{to}",
     en: "Median €/m² in {city}, {from}–{to}",
   },
   // The bracket beside a hand-typed asking price. It names the city the
@@ -1611,7 +1616,7 @@ export const COPY = {
   // price for somewhere they did not name, and the template ends the sentence
   // after the area rather than reaching for a place — this key is added to a
   // sentence, never substituted for the end of one.
-  affordWhere: { bg: "в {city}.", en: "in {city}." },
+  affordWhere: { bg: "{v} {city}.", en: "in {city}." },
   // The home row with no €/m² behind it. Says what to do rather than which of
   // the three absences it is — the housing card in the strip says which, in
   // имот.bg's name or in ours as the case may be, and repeating it here would
@@ -1636,7 +1641,7 @@ export const COPY = {
     bg: "жилище · {city} · очакваме данни от имот.bg",
     en: "a home · {city} · waiting on imot.bg data",
   },
-  // The "+{pct}% от {y}" sub-caption on the stat card. Carries имот.bg's own
+  // The "{pct} от {y}" sub-caption on the stat card. Carries имот.bg's own
   // median-against-baseline-median delta (their historical pages, NOT HICP).
   //
   // **The year is a placeholder because it is per city.** How far back имот.bg's
@@ -1644,7 +1649,14 @@ export const COPY = {
   // София and Смолян, so a year written into this string would be right for one
   // city and wrong for the rest — and it is the kind of wrong nobody spots,
   // because every year in the range is a plausible one to have measured from.
-  statHomeDelta: { bg: "+{pct}% от {y} · медиана", en: "+{pct}% since {y} · median" },
+  //
+  // **The sign is the formatter's and never the string's.** «+{pct}%» fed an
+  // unsigned number renders «+-5%» for a city whose median fell, and имот.bg
+  // publish 27 of them with two decades of history each — the case is
+  // reachable in a way it was not while the card was София's alone.
+  // `percentSigned` carries the sign, the minus glyph the rest of the page
+  // uses, and no sign at all where the figure rounds to zero.
+  statHomeDelta: { bg: "{pct} от {y} · медиана", en: "{pct} since {y} · median" },
   statUnempK: { bg: "безработица · 15-74 г.", en: "unemployment · age 15-74" },
 
   // As-of banner.
@@ -1721,7 +1733,7 @@ export const COPY = {
   //   {y}     years of monthly net pay
   //   {src}   short source caption (e.g. "имоти.бг · 143 квартала · 16.7.2026")
   homeYears: {
-    bg: "{m} м² в <b>{city}</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
+    bg: "{m} м² {v} <b>{city}</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
     en: "{m} m² in <b>{city}</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
   },
   // What the €/m² in that sentence actually IS. When city_price.json is on
