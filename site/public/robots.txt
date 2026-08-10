@@ -48,11 +48,15 @@
 #    honour robots.txt and by nobody else.
 #
 #    Say the asymmetry out loud, because it is the obvious objection: we take
-#    143 district averages from imot.bg. We take them manually, in thirteen
-#    requests, only the aggregates the site itself publishes, and we name the
-#    source with a link on the page where the figure appears. We are asking for
-#    exactly what we give — cite the source — and not for a right of refusal we
-#    do not honour ourselves.
+#    imot.bg's per-district averages for every city they cover, plus one
+#    archived reading per year of each — several hundred requests, run by hand
+#    rather than on a schedule, spaced 200 ms apart. Only the aggregates the
+#    site itself publishes, and we name the source with a link on the page
+#    where the figure appears. That is a larger ask than this note used to
+#    describe and it is stated at its real size; docs/legal.md §имот.bg is the
+#    reading of what it does and does not permit. We are asking for exactly
+#    what we give — cite the source — and not for a right of refusal we do not
+#    honour ourselves.
 #
 # 4. THIS FILE IS THE WHOLE POLICY, AND IT HAS TO BE SERVED UNMODIFIED.
 #    A CDN in front of the origin can prepend its own managed robots.txt to

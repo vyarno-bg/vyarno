@@ -605,7 +605,8 @@
     flex-direction: column;
   }
   /* The one card with a chart in it takes a row of its own. Two reasons, and
-     the second is the one that bites: the 12-year sparkline needs the width
+     the second is the one that bites: the sparkline needs the width — the
+     series runs two decades for some cities
      (at a tile's 180px it was a scribble), and a card twice its neighbours'
      height sharing their row would stretch each of them to match it, which is
      how you get a stat tile with 120px of nothing under its label. */
