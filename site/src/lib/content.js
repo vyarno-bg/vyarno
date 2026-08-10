@@ -970,7 +970,7 @@ export const COPY = {
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE
   // (Eurostat SES) and the LEVEL (NSI Sofia wage). {shapeUrl}/{shapeYear} come
   // from salary_dist.json's own `shape` block; {anchorUrl}/{anchorPeriod} come
-  // from sofia_salary.json, because each publisher's provenance has to travel
+  // from the НСИ payload, because each publisher's provenance has to travel
   // in that publisher's own payload — copying НСИ's into salary_dist.json is
   // what would make one file a composite of two publishers.
   // Rendered with {@html} because it carries links.

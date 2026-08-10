@@ -97,16 +97,15 @@
   /**
    * WHICH date is on the имот.bg figures, said out loud.
    *
-   * They carry two different facts. `page_as_of_dd_mm_yyyy` is имот.bg's own
-   * «обновена на» stamp — the day the SOURCE published the number — and `as_of`
-   * is the day our pipeline fetched it. A scrape that cannot find the page date
-   * leaves the first an empty string, which is the case for the payload
-   * currently shipped, so printing whichever is available with no qualifier
-   * lets our download date read as имот.bg's publication date.
+   * They carry two different facts. `snapshot_date` is имот.bg's own newest
+   * published snapshot, read off that city's `<select name="date">` — the day
+   * the SOURCE published the number — and `as_of` is the day our pipeline
+   * fetched it. A page that serves no parseable snapshot list leaves the first
+   * null, which is the case for the payload currently shipped, so printing
+   * whichever is available with no qualifier lets our download date read as
+   * имот.bg's publication date.
    *
-   * `App.svelte` has said which one it is showing since the case first turned
-   * up; this page printed «имот.bg · 23.07.2026 г.» on all three cards and left
-   * the reader to assume. Same two strings, so the two pages cannot come to
+   * Same two strings as `App.svelte`, so the two pages cannot come to
    * different words for the same distinction.
    */
   const imotDated = $derived(

@@ -141,7 +141,7 @@ export const PAYLOADS = Object.freeze(
       // fires when nothing is wrong is worse than no banner**, because the
       // next one is read as noise too.
       //
-      // The level the reader sees is dated separately, by `sofia_salary`'s own
+      // The level the reader sees is dated separately, by the НСИ payload's own
       // quarterly row: the ladder is composed in the browser, so the two
       // vintages are judged on the two clocks they actually follow.
       //

@@ -245,7 +245,7 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
   // has to be on the card beside it and the conversion has to be ours in words.
   //
   // **Read out of the payload rather than written here**, so the assertion is
-  // the identity — the number on the card IS the one in `sofia_salary.json` —
+  // the identity — the number on the card IS the one in `region_salary.json` —
   // and not a constant that goes stale at the next quarterly refresh and gets
   // "fixed" by copying whatever the card now shows.
   //

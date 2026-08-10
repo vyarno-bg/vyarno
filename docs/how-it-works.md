@@ -178,8 +178,8 @@ linked:
   below your sector's average is not the same as being paid less than most
   people in it. The card prints how far above the middle an average sits, so
   the reader can place their own number rather than take a percentage on faith.
-  This table also covers the whole country while the област line above it covers
-  the city, and both figures are shown rather than one divided by the other.
+  This table covers the whole country while the област line above it covers one
+  district, and both figures are shown rather than one divided by the other.
 - **Mortgage rate** — the ЕЦБ's sector average for home loans actually signed
   last month. The all-in cost including fees (the APRC/ГПР) is shown as a
   sub-caption, so the cheaper headline is never the only number on screen.
@@ -190,13 +190,17 @@ linked:
 - **Salary ladder ("where you stand")** — two official numbers combined, because
   neither is enough alone. The **shape** of pay (who earns what) comes from
   Eurostat's Structure of Earnings Survey — the right unit, individual gross
-  earnings, but published only every few years. The **level** is the latest
-  average gross wage from НСИ for the reference област, refreshed each quarter;
-  we scale the shape so its average matches it. The ladder does NOT follow your
-  own област: nobody publishes how pay is spread inside one, so applying the
-  national spread to a single one would be asserting something nothing measures.
-  Then each rung is converted to net
-  and compared to the user's take-home pay.
+  earnings, but published only every few years. The **level** is НСИ's latest
+  average gross wage across all activities, refreshed each quarter; we scale the
+  shape so its average matches it. Then each rung is converted to net and
+  compared to the user's take-home pay.
+
+  **Both halves are the country's, and the ladder does not follow the област you
+  picked.** The survey measures how pay is spread across Bulgaria and nobody
+  measures it inside a single област, so setting a national spread against one
+  district's average would assert something nothing has counted. The card says
+  so, and it means the same wage places you higher in a lower-paid област than
+  the figure shows.
 
 Full provenance for each is in [`data-sources.md`](./data-sources.md).
 

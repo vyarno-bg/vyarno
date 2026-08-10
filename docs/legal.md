@@ -325,6 +325,20 @@ printed and a headline that IS one of them. Every НСИ figure this project shi
   shipped sources document, and the payload's own `source`, `source_url` and
   `dataset`. The footer guard fails if any of that stops.
 
+**Does the licence read above cover 28 области where it covered one?** Yes, and
+the reasoning is that nothing about it is quantified. §2.1.1 grants
+«възпроизвеждате, разпространявате и използвате статистическата информация,
+която Ви е била предоставена» — the information provided, without a per-series,
+per-row or per-volume limit anywhere in it — and the restriction that bites is
+on производни и сборни произведения rather than on how much is reproduced.
+Twenty-eight rows of the same table under the same grant is more of the same
+permission. What has to keep holding is the restriction, and it holds by
+construction: `validate_region_salary` fails the publish unless every row's
+`value_eur` IS the cell at the payload's own `ref_period`, so there is no
+derived figure in the file to argue about. That is a stronger position than the
+single-row version had, because it is now checked over 28 rows rather than
+asserted over one.
+
 **What remains, stated rather than implied.** The composed pay ladder is still a
 scalar multiplication of Eurostat's decile shape by an НСИ figure, displayed on
 screen. If §2.1.1's «сборни произведения» reaches a display that puts two
@@ -426,19 +440,47 @@ Directive 96/9/EC): **it does not attach to what we take.** *BHB v William Hill*
 Marketing* trio (C-46/02, C-338/02, C-444/02, same date — verified) hold that
 the right protects investment in obtaining, verifying or presenting existing
 data and expressly not in **creating** it — and Rezon's district averages are
-created by Rezon from its own listings. We take 143 computed district-level
-averages plus 12 annual snapshots: no ad, photo, address, individual property
-price, agency or phone number.
+created by Rezon from its own listings. What is taken is district-level
+averages: no ad, photo, address, individual property price, agency or phone
+number. That half of the analysis is about the KIND of data and does not move
+with how much of it there is.
 
-Supporting points, briefly: 143 aggregate cells against a corpus of millions of
-ads is not quantitatively substantial; 13 requests on a manual cadence is not
-repeated systematic extraction under Art. 7(5); *CV-Online Latvia v Melons*
-(C-762/19, Fifth Chamber, 3 June 2021 — verified) makes the controlling test
-whether re-utilisation risks the maker's ability to redeem its investment, and
-we are not a portal, host no listings and take no leads. *Innoweb v Wegener*
-(C-202/12, 19 December 2013) is the case they would cite, and it is
-distinguishable on the fact that matters — Innoweb served the *listings* in
-competition with Wegener.
+**The quantities moved by two orders of magnitude, so the paragraph that rested
+on them is restated rather than carried over.** The connector reads all 27
+cities имот.bg publish, each for the current year plus its archive years —
+around **650 requests** per refresh at 200 ms spacing, and on the order of
+**twenty thousand** district-year cells. It was 13 requests and 143 cells while
+the connector read София alone.
+
+What each supporting point is at that scale:
+
+- **Substantiality.** Twenty thousand aggregate cells is a larger claim than 143
+  was, and still small against a corpus of millions of live ads Rezon add to
+  daily — but "not quantitatively substantial" is an argument about a
+  proportion, and the proportion changed. It is a weaker point than it reads on
+  the old figures.
+- **Art. 7(5), repeated and systematic extraction of insubstantial parts.** This
+  is where the change bites hardest. 13 requests on a manual cadence was
+  comfortably outside it; 650 on the same cadence is a different fact pattern,
+  and Art. 7(5) is aimed at exactly the shape of "each read is small, the series
+  of them is not".
+- ***CV-Online Latvia v Melons*** (C-762/19, Fifth Chamber, 3 June 2021 —
+  verified) makes the controlling test whether re-utilisation risks the maker's
+  ability to redeem its investment. Volume does not move that test: we are not a
+  portal, host no listings and take no leads. It is the point the position now
+  rests on most heavily. *Innoweb v Wegener*
+  (C-202/12, 19 December 2013) is the case they would cite, and it is
+  distinguishable on the fact that matters — Innoweb served the *listings* in
+  competition with Wegener.
+
+**Nobody qualified has re-read this section against the new scale, and it does
+not assert that the conclusion survives it.** What is stated is what is checked:
+the kind of data taken, the number of requests, and which of the points above
+the volume weakened. §V.1/§V.2 means the terms themselves may have been replaced
+since 2026-07-26 in any event, and they could not be read on 2026-07-30 or since
+— `www.imot.bg` answers this repository's build and session environments with a
+403 on every path. **The next reading from an ordinary Bulgarian connection
+settles both, and it is owed before the next refresh rather than after it.**
 
 **One correction to how CV-Online is used.** It is not one-way traffic. The same
 judgment confirms that a specialised engine copying a substantial part of a
@@ -447,11 +489,13 @@ investment-risk test is what decides whether that is prohibited, not whether it
 happened. Cite it for the test, not for immunity.
 
 **What we actually do, stated for the record.** `www.imot.bg` serves datacenter
-IPs a 403, so `/sredni-ceni` is fetched from an ordinary connection, by hand, in
-a handful of requests, with a `User-Agent: Mozilla/5.0 (Vyarno.bg data pipeline)`
-that says who is asking. There is no access control on the page and no
-authentication to pass; nothing is circumvented. That is a fact about the
-practice, and the analysis above rests on it remaining true.
+IPs a 403, so the `sredni-ceni` pages are fetched from an ordinary connection,
+by hand, at 200 ms spacing, with a
+`User-Agent: Mozilla/5.0 (Vyarno.bg data pipeline)` that says who is asking.
+There is no access control on the page and no authentication to pass; nothing is
+circumvented. A full refresh is around 650 requests over about two and a half
+minutes, an arm run deliberately by a person rather than on a schedule. That is
+a fact about the practice, and the analysis above rests on it remaining true.
 
 **НК чл. 319а и сл. (computer crimes) does not reach it — and this paragraph
 used to quote a repealed text.** It asserted that the provision requires
@@ -474,8 +518,11 @@ forges no identity, and the page is fetched from an ordinary residential
 connection because that is where the person running it sits. Reaching a public
 page from a class of client the operator serves, identifying yourself while
 doing it, is use as served rather than unauthorised access. The
-«в немаловажни случаи» threshold is a second filter, and thirteen requests for
-one page of published averages is not on the wrong side of it.
+«в немаловажни случаи» threshold is a second filter. Thirteen requests for one
+page of published averages was not on the wrong side of it; around 650 across 27
+pages is the same character of act — public pages, served as published, at a
+rate a person browsing could produce — and a much bigger number, and this
+paragraph should not pretend the old one still describes it.
 
 **The honest framing of the residual risk:** this is a criminal provision and
 the conclusion rests on a reading of one adverb. It is the paragraph in this

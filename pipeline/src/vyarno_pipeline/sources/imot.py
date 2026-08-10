@@ -80,11 +80,11 @@ published per city-year as `n_dropped`, and gated — see `MAX_DROPPED_SHARE`.
 THE «обновена на» EXTRACTOR IS GONE
 -----------------------------------
 
-It matched nothing. Probed across all 27 cities for the current year plus Sofia
-back to 2000: zero pages contain the substring «обновен» in any case, and the
-last payload published under the old connector carries
-`page_as_of_dd_mm_yyyy: ""`. The `<select name="date">` list above is the anchor
-it was reaching for, and it is one имот.bg actually serve.
+There is no «обновена на» stamp on these pages to read. Probed across all 27
+cities for the current year plus Sofia back to 2000: zero pages contain the
+substring «обновен» in any case. The `<select name="date">` list above is the
+date имот.bg actually serve, and it is a stronger provenance claim than a stamp
+would have been — every option on it is a snapshot they hold.
 """
 
 from __future__ import annotations

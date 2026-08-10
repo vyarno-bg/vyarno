@@ -39,8 +39,8 @@ vyarno-pipeline refresh --source all --out ../data/published
 vyarno-pipeline refresh --source hicp --out ../data/published
 ```
 
-`--source`: `hicp`, `unemployment`, `mortgage`, `sofia-price`,
-`sofia-salary`, `sector-salary`, `salary-dist`, `payroll`, `all`. Eight arms
+`--source`: `hicp`, `unemployment`, `mortgage`, `city-price`,
+`region-salary`, `sector-salary`, `salary-dist`, `payroll`, `all`. Eight arms
 write nine files — `hicp` publishes the headline and the categories. Output is
 **committed** — the diff is the review.
 
@@ -50,7 +50,10 @@ still resolve — and those URLs are the "↗" the reader clicks.
 
 `--source mortgage` needs the БНБ TLS intermediate present; their server omits
 it (`docs/data-sources.md` §"TLS setup"). Never disable verification.
-`sofia-price` needs an ordinary Bulgarian connection rather than a cloud one.
+`city-price` needs an ordinary Bulgarian connection rather than a cloud one:
+`www.imot.bg` answers datacenter IPs with a 403 on every path, so that arm
+exits 4 from CI and from any cloud runner. A full refresh is 27 city pages plus
+one request per historical year each — around 650 requests at polite spacing.
 
 ## The seven HICP gates
 
