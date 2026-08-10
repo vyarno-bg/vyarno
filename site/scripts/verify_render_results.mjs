@@ -646,4 +646,59 @@ test("every verify link is drawn the same, in both cards", { skip }, async () =>
   });
 });
 
+test("every figure a receipt row emphasises is painted like an emphasis", { skip }, async () => {
+  // **A `<b>` the copy carries and a `<span class="b">` a component builds are
+  // the same emphasis and were not the same style.** `result-row.css` lifted
+  // the class to `--ink` at 600; the tag inherited the sentence's `--ink-2` and
+  // carried nothing but the browser's default bold. Almost every figure in a
+  // receipt row lives in the copy — «Заплатата ти купува с ≈ <b>€51</b> повече
+  // всеки месец» has its amount in `content.js` — so the rule reached the few
+  // spliced in by hand and missed the hundred that matter.
+  //
+  // Nothing caught it, and nothing could: the page renders, the figure is bold,
+  // and the only tell is that it is the same grey as the words around it. An
+  // emphasis indistinguishable in colour from its own sentence is not one.
+  //
+  // Asserted as "differs from the sentence it sits in" rather than "equals
+  // `--ink`", because the claim is about contrast rather than about a token —
+  // it stays true if the palette moves and goes red the moment either half of
+  // the selector is dropped.
+  await withApp(async (page, errors) => {
+    await page.selectOption("#region-select", "varna");
+    await page.locator("#inSalary").fill("2100");
+    await page.locator("#inRent").fill("600");
+    await page.locator("#inCash").fill("10000");
+    await page.waitForTimeout(300);
+    const raise = page.locator("#inRaise");
+    if (await raise.count()) await raise.fill("8");
+    await page.waitForTimeout(500);
+
+    const marks = await page.evaluate(() =>
+      [...document.querySelectorAll(".m-results .r-row .rr-t")].flatMap((line) => {
+        const around = getComputedStyle(line).color;
+        return [...line.querySelectorAll("b, .b")].map((el) => ({
+          tag: el.tagName,
+          text: el.innerText.replace(/\s+/g, " ").slice(0, 24),
+          own: getComputedStyle(el).color,
+          around,
+        }));
+      })
+    );
+    assert.ok(marks.length > 3, `only ${marks.length} emphasised figures found — the scan missed`);
+    // Both spellings are on the page, or one of them could be styled and the
+    // other absent and this would pass on the half that works.
+    const tags = new Set(marks.map((m) => m.tag));
+    assert.deepEqual([...tags].sort(), ["B", "SPAN"], `only ${[...tags]} reached the rows`);
+    for (const m of marks) {
+      assert.notEqual(
+        m.own,
+        m.around,
+        `<${m.tag.toLowerCase()}> «${m.text}» is painted ${m.own}, the same as the ` +
+          "sentence it sits in — bold alone at this size is not a figure standing out"
+      );
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test.after(shutdown);

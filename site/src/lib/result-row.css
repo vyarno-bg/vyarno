@@ -68,7 +68,26 @@
   line-height: 1.45;
   max-width: 54ch;
 }
-.r-row .rr-t .b {
+/* The figures inside a claim, and BOTH selectors are load-bearing.
+   `.b` is a span a component builds by hand; `<b>` is what the copy carries,
+   and the copy is where almost every figure lives — «Заплатата ти купува с ≈
+   <b>€51</b> повече всеки месец» has its amount in `content.js`, not in a
+   template. With only the class styled, a figure spliced in by a component
+   rendered at full ink while the hundred-odd in the copy inherited `--ink-2`
+   and carried nothing but the browser's default bold: the same grey as the
+   sentence around them, which is the one thing an emphasised figure may not
+   be.
+
+   600 rather than the tag's own 700 for the same reason the class says 600 —
+   it is this system's emphasis weight, and a stray 700 among them reads as a
+   tag nobody styled, which is what it was.
+
+   Scoped to `.rr-t`, so it reaches the claim and the working behind its
+   disclosure and stops there. A `<b>` in `.rr-note` is inside a source caption
+   or a regulatory aside that is deliberately quiet, and lifting those would
+   spend the contrast this rule exists to create. */
+.r-row .rr-t .b,
+.r-row .rr-t b {
   color: var(--ink);
   font-weight: 600;
 }
