@@ -104,10 +104,26 @@ test("every payload a suite opens is one this repository publishes", () => {
   // That is not hypothetical here: `sofia_salary` and `sofia_price` became
   // `region_salary` and `city_price`, and six suites read one or the other.
   // Nothing but this notices the day it happens again.
+  // **The scan has to follow the local alias, or it reads almost nothing.**
+  // Most suites here do `const read = published;` and then call `read("…")`,
+  // which is the whole of `verify_data_contracts.mjs` and `verify_view.mjs` —
+  // so a scan for the exported name alone collects a handful of stems and
+  // reports a pass over the files it was written for. `read` is NOT a reserved
+  // word here either: `verify_legal.mjs` and `verify_static_assets.mjs` bind it
+  // to a file reader, so the alias is resolved per file rather than matched by
+  // name.
   const stems = new Set();
   for (const file of onDisk) {
     const text = readFileSync(join(SITE, "scripts", file), "utf8");
-    for (const [, stem] of text.matchAll(/\bpublished\(\s*"([a-z0-9_]+)"/g)) stems.add(stem);
+    const names = new Set(["published"]);
+    for (const [, alias] of text.matchAll(/\bpublished\s+as\s+(\w+)/g)) names.add(alias);
+    for (const [, alias] of text.matchAll(/\b(?:const|let)\s+(\w+)\s*=\s*published\s*;/g)) {
+      names.add(alias);
+    }
+    for (const name of names) {
+      const call = new RegExp(String.raw`\b${name}\(\s*"([a-z0-9_]+)"`, "g");
+      for (const [, stem] of text.matchAll(call)) stems.add(stem);
+    }
   }
   assert.ok(stems.size > 3, "no suite opens a published payload — the scan found nothing");
   const unknown = [...stems].filter(
