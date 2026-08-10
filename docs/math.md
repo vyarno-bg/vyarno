@@ -396,16 +396,34 @@ because a payment a bank will approve is not a payment that leaves room to live.
 `test_mortgage.py::test_our_guidance_line_is_stricter_than_the_regulator_and_the_market`
 asserts `30 < 38.5 < 50`.
 
-Worked example at current data (Sofia median €2,501/m², 70 m², Sofia average
-gross €1,915 → net €1,486, AAR 2.43%, 25 years):
+Worked example, on the payloads published at 2026-08-10 (Sofia median
+€2,505/m², 70 m², Sofia average gross €1,915 → net €1,486, AAR 2.41%, 25
+years). **Dated, because it is a snapshot and not a claim about today** — every
+figure in it moves with the next refresh, and an example that says "current"
+goes on saying it:
 
 ```
-price          €175,070
-down payment    €26,260   (15%)
-loan           €148,810
-payment            €662/mo  = 44.6% of net → over our 30% line
-affordable      €117,814  ≈ 47 m² at the 30% line
+price          €175,350
+down payment    €26,302   (15%)
+loan           €149,048
+payment            €662/mo  = 44.5% of net → over our 30% line
+affordable      €118,098  ≈ 47 m² at the 30% line
 ```
+
+**The payment is the annuity and nothing else**, which is what the 44.5% is a
+share of. Part of what the ГПР folds in beside it is one-off — valuation, the
+mortgage itself, arrangement — and part runs monthly alongside the instalment:
+property insurance is mandatory on a mortgaged home, life cover is often
+required or required for the advertised rate, and the account the instalment is
+collected from usually carries a fee. So a reader's real monthly outgoing sits
+above this line. It is not added here because nobody publishes a figure for it
+that this project could cite, and inventing a plausible one is the failure the
+whole repository is built against — but the share on screen is a floor rather
+than the whole of it, and the copy says so.
+
+БНБ's DSTI-O is debt service too, so those costs sit outside the regulator's
+ratio as well and the comparison against 50% is like for like. The gap is
+between the ratio and the reader's month, not inside the ratio.
 
 ## Gross ↔ net (BG payroll)
 

@@ -823,8 +823,11 @@
         >
         е средното по договорите, подписани миналия месец — това е числото, с което се смята вноската.
         <b>ГПР</b> е за същите кредити, но с прибавените такси: той служи за сравняване на оферти. С
-        него не се смята вноска — таксите се плащат отделно, а месечната вноска се смята само върху
-        лихвата, така че сметка с ГПР дава вноска, каквато никоя банка не събира.
+        него не се смята вноска — месечната вноска се смята само върху лихвата, така че сметка с ГПР
+        дава вноска, каквато никоя банка не събира. Това не значи, че таксите не се плащат: част от
+        тях са еднократни в началото, а друга част върви всеки месец покрай вноската — застраховка
+        на имота, често и застраховка живот, и такса по сметката, от която се събира вноската.
+        Затова това, което реално излиза от джоба ти всеки месец, е малко повече от вноската.
         <b>Лихвата по изплащаните кредити</b> е средното по всички кредити, които се изплащат в момента,
         включително подписани преди години; то описва какво плащат хората сега, не какво би подписал новият
         кредитополучател.</span
@@ -833,9 +836,12 @@
         >Three numbers all go by "the mortgage rate" and they answer three different questions. The
         <b>rate on new loans</b> is the average across contracts signed last month — the one the
         monthly payment is computed from. The <b>APRC</b> is those same loans with the fees added
-        in: it is for comparing offers. It is not what a payment is computed from — the fees are
-        paid separately and the monthly payment is computed from the interest alone, so working it
-        out from the APRC gives an instalment no bank collects.
+        in: it is for comparing offers. It is not what a payment is computed from — the monthly
+        instalment is computed from the interest alone, so working it out from the APRC gives an
+        instalment no bank collects. That does not mean the fees go away: some are one-off at the
+        start, and some run every month alongside the instalment — insurance on the property, often
+        life cover too, and a fee on the account the instalment is collected from. So what actually
+        leaves your pocket each month is a little more than the instalment.
         <b>The rate on loans being repaid</b> averages every loan currently being paid off, including
         ones signed years ago; it describes what people are paying now, not what a new borrower would
         sign.</span
