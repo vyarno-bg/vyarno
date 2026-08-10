@@ -29,6 +29,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { PAYLOAD_FILES } from "../src/lib/payloads.js";
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -90,3 +91,38 @@ test("no suite is named by two runners", () => {
   }
   assert.deepEqual(twice, [], `${twice.join(", ")} is run by more than one npm script`);
 });
+
+test("every payload a suite opens is one this repository publishes", () => {
+  // **A suite that reads a payload by a name nothing publishes does not fail —
+  // it skips.** `published()` answers null for a file that is not there, and
+  // every caller guards on that with `if (!x) return;`, which is the right
+  // behaviour for a checkout nobody has run a refresh in and the wrong one for
+  // a stem that has been renamed. The suite reports a pass having asserted
+  // nothing, and the count barely moves because one test out of hundreds went
+  // quiet.
+  //
+  // That is not hypothetical here: `sofia_salary` and `sofia_price` became
+  // `region_salary` and `city_price`, and six suites read one or the other.
+  // Nothing but this notices the day it happens again.
+  const stems = new Set();
+  for (const file of onDisk) {
+    const text = readFileSync(join(SITE, "scripts", file), "utf8");
+    for (const [, stem] of text.matchAll(/\bpublished\(\s*"([a-z0-9_]+)"/g)) stems.add(stem);
+  }
+  assert.ok(stems.size > 3, "no suite opens a published payload — the scan found nothing");
+  const unknown = [...stems].filter(
+    (s) => !PAYLOAD_FILES.includes(s) && !SCRATCH_STEMS.includes(s)
+  );
+  assert.deepEqual(
+    unknown,
+    [],
+    `${unknown.join(", ")} is opened by a suite and published by nothing. ` +
+      `\`published()\` answers null for it and the guard clause skips, so the ` +
+      `assertions behind it stopped running without a single test going red.`
+  );
+});
+
+// The three names `verify_data_contracts.mjs` writes into a scratch directory
+// to test the reader's own behaviour — absent, malformed and fine. They are
+// deliberately not payloads.
+const SCRATCH_STEMS = ["absent", "corrupt", "fine"];
