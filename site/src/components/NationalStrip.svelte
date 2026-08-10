@@ -9,7 +9,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, HOME, t } from "$lib/content.js";
-  import { number, integer, percentSigned, period, safeText, yearText } from "$lib/format.js";
+  import { bgIn, number, integer, percentSigned, period, safeText, yearText } from "$lib/format.js";
   import { fastestRisingDivision, CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE } from "$lib/view.js";
 
   const {
@@ -74,6 +74,11 @@
     citySinceBaselinePct = 0,
     cityBaselineYear = 0,
     cityBaselineMedian = 0,
+    /** Whether имот.bg's coverage of this city runs long enough to speak of a
+        trend. Decided in the pipeline over the whole series
+        (`sources/imot.py#MIN_TREND_YEARS`), so every surface reaches the same
+        conclusion instead of counting rows and each reaching its own. */
+    cityTrendPublishable = false,
     /** Builds a category's Eurostat verify link; anchor-dependent, so it is
         passed in rather than rebuilt here. */
     estatCatUrl,
@@ -391,7 +396,9 @@
           >
         </div>
         <div class="sl">
-          <span class="l-bg">{t(COPY.statHomeK, "bg", { city: cityName("bg") })}</span>
+          <span class="l-bg"
+            >{t(COPY.statHomeK, "bg", { v: bgIn(cityNameBg), city: cityName("bg") })}</span
+          >
           <span class="l-en">{t(COPY.statHomeK, "en", { city: cityName("en") })}</span>
         </div>
         {#if cityHistorical.length > 1}
@@ -421,6 +428,7 @@
               height={_h}
               role="img"
               aria-label={t(COPY.statHomeChartLabel, $lang, {
+                v: bgIn($lang === "bg" ? cityNameBg : cityNameEn),
                 city: cityName($lang),
                 from: yearText(cityHistorical[0].year),
                 to: yearText(cityHistorical[_last].year),
@@ -459,24 +467,38 @@
                 text-anchor="end">€{fmt0(cityEurPerM2)}</text
               >
             </svg>
+            <!-- The axis reads the ends of the array it is drawn from, never
+                 the headline beside it. `cityBaselineYear` is the city's own
+                 baseline and the two agree today by a pipeline gate — but a
+                 chart labelled from anywhere but its own points is the defect
+                 this card had, and it is invisible while they do agree. -->
             <div class="hist-axes mono">
-              <span>{cityBaselineYear}</span>
-              <span>{cityHistorical[_last].year}</span>
+              <span>{yearText(cityHistorical[0].year)}</span>
+              <span>{yearText(cityHistorical[_last].year)}</span>
             </div>
-            <div class="hist-delta mono">
-              <span class="l-bg"
-                >{@html t(COPY.statHomeDelta, "bg", {
-                  pct: fmt(citySinceBaselinePct, 0),
-                  y: yearText(cityBaselineYear),
-                })}</span
-              >
-              <span class="l-en"
-                >{@html t(COPY.statHomeDelta, "en", {
-                  pct: fmt(citySinceBaselinePct, 0),
-                  y: yearText(cityBaselineYear),
-                })}</span
-              >
-            </div>
+            <!-- The «since YEAR» line, and only where имот.bg's coverage of
+                 this city runs long enough to earn it. The chart above keeps
+                 every qualifying year either way — the data is not in doubt,
+                 there is simply not enough of it to speak in the voice of a
+                 two-decade series, and «+4% от 2024» in that voice is the
+                 wrong claim rather than a small one. Three of имот.bg's cities
+                 reach 2003; a city they began covering last year does not. -->
+            {#if cityTrendPublishable}
+              <div class="hist-delta mono">
+                <span class="l-bg"
+                  >{@html t(COPY.statHomeDelta, "bg", {
+                    pct: percentSigned(citySinceBaselinePct, 0, "bg"),
+                    y: yearText(cityBaselineYear),
+                  })}</span
+                >
+                <span class="l-en"
+                  >{@html t(COPY.statHomeDelta, "en", {
+                    pct: percentSigned(citySinceBaselinePct, 0, "en"),
+                    y: yearText(cityBaselineYear),
+                  })}</span
+                >
+              </div>
+            {/if}
           </div>
         {/if}
         <div class="ss">

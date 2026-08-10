@@ -195,6 +195,14 @@ exists to make impossible rather than merely testable.
    Eurostat's own, and the sentence over them is false. The render suite asserts
    the rendered option against the payload the page fetched, because the defect
    only exists as a string on a screen.
+6. **A figure and its label have to be about the same PLACE, and one page
+   holding two is how they stop being.** `/how/` is the country's and pins a
+   reference град; `/` follows the reader's. The housing card read its baseline
+   year and its since-baseline percentage off `cityHome` — the reference one —
+   and printed София's 2015 and София's +232% beside Варна's €/m², under Варна's
+   name, with the chart's own end labels correctly Варна's. Every number was
+   real. `view.js#cityTrend` is the one selection both surfaces call, and it
+   takes the code as an argument so a caller has to say which city it means.
 
 ## Boot path
 

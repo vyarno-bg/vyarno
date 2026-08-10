@@ -247,8 +247,13 @@ test("every {@html} expression is rooted in an in-repo constant", () => {
 // instead — `format.js` says why that is the honest answer rather than
 // trusting the publisher. `yearText` exists because `fmt0` groups, and a year
 // through it reads «2 015».
+//
+// `percentSigned` is the same function `signedPct` above wraps, named directly
+// where a component renders both language spans and cannot close over `$lang`.
+// `bgIn` returns one of two literals — «в» or «във» — which is the tightest
+// constraint on this list.
 const SAFE_VALUE_SOURCES =
-  /^(fmt0?|fmtDate|signedPct|period|label|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|deltaPhrase|String|safeText|yearText)\b/;
+  /^(fmt0?|fmtDate|signedPct|percentSigned|bgIn|period|label|httpUrl|Math\.\w+|Number\.\w+|t|COPY|HOME|rateSourceLabel|deltaPhrase|String|safeText|yearText)\b/;
 
 /**
  * The `{@const NAME = …}` bindings a component declares, as name → expression.

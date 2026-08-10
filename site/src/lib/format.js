@@ -265,6 +265,34 @@ export function safeText(value) {
 }
 
 /**
+ * The Bulgarian preposition for "in", agreeing with the word after it.
+ *
+ * Bulgarian writes «във» before a word beginning with в- or ф-, and «в»
+ * everywhere else. Four of имот.bg's twenty-seven cities and four of НСИ's
+ * twenty-eight области begin with В — Варна, Велико Търново, Видин, Враца — so
+ * a copy string carrying a bare «в» before a slot is ungrammatical on one
+ * reader in seven, on the card they came to the page for.
+ *
+ * **A rule here rather than a list of exceptions in the copy**, because the
+ * cities are data: имот.bg add and retire them, НСИ could rename an област,
+ * and a table of four names in `content.js` goes stale on a refresh nobody
+ * connects to it. This is the same reasoning `ordinalDay` carries — grammar
+ * the copy cannot dodge belongs in a formatter, not in the string
+ * (`docs/writing-style.md`).
+ *
+ * The letter is the whole rule for these names, and it is the rule as taught:
+ * «във Варна», «във Видин», «във Франция». Nothing here needs the refinement
+ * about consonant clusters, and the English side needs none of it — "in" does
+ * not agree with anything.
+ *
+ * @param {unknown} word  what the preposition will sit in front of
+ * @returns {"в"|"във"}
+ */
+export function bgIn(word) {
+  return /^[вфВФ]/.test(String(word ?? "").trim()) ? "във" : "в";
+}
+
+/**
  * A calendar year as plain digits — never grouped.
  *
  * `integer()` groups by locale, so a year through it reads «2 015». Years are

@@ -10,7 +10,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer, safeText } from "$lib/format.js";
+  import { bgIn, number, integer, safeText } from "$lib/format.js";
 
   const {
     /** The row renders only when the home block is switched on. */
@@ -103,6 +103,7 @@
     <div class="rr-t">
       <span class="l-bg"
         >{@html COPY.homeYears.bg
+          .replace("{v}", bgIn(cityNameBg))
           .replace("{city}", safeText(cityNameBg))
           .replace("{m}", fmt0(m2))
           .replace("{p}", fmt0(homePrice))
@@ -251,7 +252,7 @@
                 >{fmt0(maxAffordPrice)} €</b
               >
               · <b>{fmt(maxAffordM2, 0)} м²</b>{cityNameBg
-                ? " " + t(COPY.affordWhere, "bg", { city: cityNameBg })
+                ? " " + t(COPY.affordWhere, "bg", { v: bgIn(cityNameBg), city: cityNameBg })
                 : "."}</span
             >
             <span class="l-en"

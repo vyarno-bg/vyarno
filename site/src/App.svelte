@@ -219,6 +219,7 @@
         citySinceBaselinePct={calc.citySinceBaselinePct}
         cityBaselineYear={calc.cityBaselineYear}
         cityBaselineMedian={calc.cityBaselineMedian}
+        cityTrendPublishable={calc.cityTrendPublishable}
         estatCatUrl={calc.estatCatUrl}
       />
     {/if}

@@ -90,6 +90,7 @@ import {
   regionQuarter as publishedRegionQuarter,
   nationalQuarter as publishedNationalQuarter,
   nationalRow,
+  cityTrend,
   regionNames,
   cityCoverage,
   cityRow,
@@ -472,25 +473,31 @@ export class Calculator {
   cityHistorical = $derived(
     Array.isArray(this.cityRowNow?.historical) ? this.cityRowNow.historical : []
   );
-  // The rise since this city's own baseline year, and that year. Both are the
-  // city row's own fields, and the pipeline gate holds them equal to the ends
-  // of the array beside them, so the headline and the chart cannot disagree.
+  // The rise since this city's own baseline year, that year, and whether the
+  // run behind them is long enough to be called a trend. All three off
+  // `view.js#cityTrend`, on the READER's город.
   //
   // **The baseline is per city and is not a constant.** How far back имот.bg's
   // coverage of a city supports a comparison differs by two decades between
   // София and Смолян, so a year written down here would mean a different
   // sample in every city and a wrong number in most of them.
   //
-  // **Both come off `cityHome`, which is `view.js#cityHomeAtAverageWage`.**
-  // That function picks these two cells out of the same array and is the layer
-  // a test can reach; picking them again here would be a second implementation
-  // of one selection, and only one of the two is ever rendered, so the other is
-  // free to drift. Which END of the array each figure comes from is the wiring
+  // **And it is `this.cityCode`, not `this.referenceCode`.** Taken off
+  // `cityHome` — which is `/how/`'s and stays София on purpose — the card
+  // printed София's baseline year and София's +232% beside Варна's €/m², under
+  // Варна's name, with the chart's own end labels correctly Варна's. Every
+  // figure on the card was real and two of them were about somewhere else.
+  //
+  // Which END of the array each figure comes from is the wiring
   // `docs/site.md` §"A correct formula fed the wrong number" keeps out of the
   // reactive graph: `.at(-1)` against `[0]` is a one-character difference
-  // between the rise since the baseline and the baseline level itself.
-  citySinceBaselinePct = $derived(this.cityHome.sinceBaselinePct);
-  cityBaselineYear = $derived(this.cityHome.baselineYear);
+  // between the rise since the baseline and the baseline level itself. That is
+  // what `cityTrend` is for, and it is the one implementation both surfaces
+  // call.
+  cityTrendNow = $derived(cityTrend(this.data.cityPrice, this.cityCode));
+  citySinceBaselinePct = $derived(this.cityTrendNow.sinceBaselinePct);
+  cityBaselineYear = $derived(this.cityTrendNow.baselineYear);
+  cityTrendPublishable = $derived(this.cityTrendNow.trendPublishable);
   cityBaselineMedian = $derived(this.cityHistorical[0]?.eur_per_m2_median ?? 0);
 
   // Which област every city-scoped figure below is read from — the reader's
