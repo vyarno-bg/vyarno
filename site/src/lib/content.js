@@ -1736,6 +1736,15 @@ export const COPY = {
     bg: "{m} м² {v} <b>{city}</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
     en: "{m} m² in <b>{city}</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
   },
+  // The same sentence with no place in it. A reader who typed their own price
+  // without choosing an област has told the page what a home costs and not
+  // where it is, and the version above renders «70 м² в  ≈ €200 000» — a
+  // dangling preposition round an empty <b>. There is nothing to put in the
+  // slot and nothing that needs to go there: the price is theirs.
+  homeYearsNoCity: {
+    bg: "{m} м² ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
+    en: "{m} m² ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
+  },
   // What the €/m² in that sentence actually IS. When city_price.json is on
   // the page it is имот.bg's measured median; when the payload did not load it
   // is HOME.eurPerM2_offlineFallback, a round constant with no measurement
@@ -1743,6 +1752,11 @@ export const COPY = {
   // project exists to avoid — a plausible number wearing someone else's
   // provenance. The word is a slot so the sentence cannot claim the wrong one.
   homeBasisMedian: { bg: "медиана", en: "median" },
+  // The third basis: the reader typed the price, so the €/m² beside it is
+  // theirs divided by their own square metres, and neither figure is имот.bg's
+  // to caption. «медиана» there stated that a price the reader invented came
+  // off имот.bg's districts.
+  homeBasisOwn: { bg: "твоята цена", en: "your price" },
   homeBasisPlaceholder: { bg: "ориентировъчна стойност, без данни", en: "placeholder, no data" },
   homeYearsSrc: {
     bg: "≈{pm2}€/м² · източник: <b>{src}</b>",

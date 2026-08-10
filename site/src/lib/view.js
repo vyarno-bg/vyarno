@@ -884,6 +884,31 @@ export function homePriceFor({ priceMode, manualPrice, eurPerM2, m2, eurPerM2IsR
 }
 
 /**
+ * The €/m² the price on screen is actually built from, and whose it is.
+ *
+ * **The sentence quotes a per-square-metre figure in the same breath as the
+ * total, so the two have to be the same number.** They were not in manual
+ * mode: «70 м² в София ≈ €200 000 (≈2501€/м², медиана)» over a price the
+ * reader typed, where 200 000 ÷ 70 is 2857. Both figures were real and the
+ * bracket explained the other one — имот.bg's median, captioned as the basis of
+ * a price имот.bg had nothing to do with.
+ *
+ * Same shape as `homePriceFor`, and it takes the same arguments so the two
+ * cannot answer about different prices. `isOwn` is a fact rather than a word;
+ * the component picks the words.
+ *
+ * @param {{priceMode:string, manualPrice:number, eurPerM2:number, m2:number,
+ *          eurPerM2IsReal:boolean}} args
+ * @returns {{eurPerM2:number, isOwn:boolean}}
+ */
+export function homePriceBasis({ priceMode, manualPrice, eurPerM2, m2, eurPerM2IsReal }) {
+  if (priceMode === "manual" && manualPrice > 0) {
+    return { eurPerM2: m2 > 0 ? manualPrice / m2 : 0, isOwn: true };
+  }
+  return { eurPerM2: eurPerM2IsReal ? eurPerM2 || 0 : 0, isOwn: false };
+}
+
+/**
  * Clamp the term to the BNB maturity ceiling.
  *
  * The input's `max` stops the spinner but not a typed or restored value, and

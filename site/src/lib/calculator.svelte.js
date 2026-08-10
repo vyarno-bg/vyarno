@@ -103,6 +103,7 @@ import {
   exposedSpend,
   leftoverIfHeldAsCash,
   homePriceFor,
+  homePriceBasis,
   clampTerm,
   mortgagePanel,
   verifyUrl,
@@ -1029,6 +1030,18 @@ export class Calculator {
 
   homePrice = $derived(
     homePriceFor({
+      priceMode: this.priceMode,
+      manualPrice: this.manualPrice,
+      eurPerM2: this.cityEurPerM2,
+      m2: this.m2,
+      eurPerM2IsReal: this.cityPriceIsLive,
+    })
+  );
+  /** The €/m² the price on screen is built from, and whether it is the
+      reader's own. Same arguments as `homePrice` above, so the two cannot
+      answer about different prices — see `view.js#homePriceBasis`. */
+  homeBasis = $derived(
+    homePriceBasis({
       priceMode: this.priceMode,
       manualPrice: this.manualPrice,
       eurPerM2: this.cityEurPerM2,
