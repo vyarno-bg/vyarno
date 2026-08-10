@@ -269,8 +269,8 @@ test(
 );
 
 test("the home block prices nothing before a €/m² has a source", { skip }, async () => {
-  // **The state this is for looks exactly like a working one.** With no
-  // област chosen, `cityEurPerM2` falls back to
+  // **The state this is for looks exactly like a working one.** With no place
+  // chosen, `cityEurPerM2` falls back to
   // `HOME.eurPerM2_offlineFallback` — a round constant имот.bg never published
   // — and the row printed «70 м² в  ≈ €175 000», a €661/month payment and a
   // "44% of your pay" verdict off it, with an empty <b> where the city goes.
@@ -293,7 +293,7 @@ test("the home block prices nothing before a €/m² has a source", { skip }, as
     const text = (await row.innerText()).replace(/\s+/g, " ");
     assert.doesNotMatch(text, /€\s?\d/, `the row priced a home with no €/m² behind it: ${text}`);
     assert.ok(!(await row.locator(".mort-bar").count()), "the affordability bar was drawn");
-    assert.match(text, /избери област|choose an oblast/i, `the row says nothing: ${text}`);
+    assert.match(text, /къде живееш|where you live/i, `the row says nothing: ${text}`);
 
     // The basket's € column is computed from take-home less housing. A
     // mortgage that does not exist may not be carved out of it.
@@ -304,11 +304,11 @@ test("the home block prices nothing before a €/m² has a source", { skip }, as
       `the basket carved out a mortgage the home row refused to state: ${basket}`
     );
 
-    // And it recovers: pick an област with a published €/m² and the row prices.
+    // And it recovers: pick a place with a published €/m² and the row prices.
     await page.selectOption("#region-select", "sofiya");
     await page.waitForTimeout(400);
     const priced = (await row.innerText()).replace(/\s+/g, " ");
-    assert.match(priced, /€\s?\d/, `the row stayed empty after an област was picked: ${priced}`);
+    assert.match(priced, /€\s?\d/, `the row stayed empty after a place was picked: ${priced}`);
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });

@@ -71,6 +71,7 @@ import {
   nationalQuarter,
   regionOptions,
   regionDisplayName,
+  REGION_RENAMES,
   cityCoverage,
   CITY_PRICED,
   CITY_UNREAD,
@@ -560,38 +561,69 @@ test("no two options in the picker read the same", () => {
   // wage 32% lower and told имот.bg publish no price where they live. Nothing
   // downstream can catch it — both are real области with real figures.
   //
-  // The rule is over the collection: a label another label begins with takes
-  // the word for "oblast" after it, so НСИ splitting a second област tomorrow
-  // is disambiguated with no edit here.
+  // The two are renamed by a table of two, and this is the rule over the whole
+  // collection that a table needs beside it. Three parts, and each fails on a
+  // different upstream move:
+  //
+  //   1. every name non-empty and unique — the mechanical failures;
+  //   2. every key of the table still matches a row НСИ publish, so a rename
+  //      upstream stops the rewrite LOUDLY rather than letting «София» render
+  //      for the област next to the capital;
+  //   3. no name the table did not write is a whole-word prefix of another, so
+  //      an НСИ split the table does not cover — a «Пловдив(град)» row beside
+  //      «Пловдив» — fails here instead of shipping.
+  //
+  // The pair the table wrote is exempt from (3) and has to be: «Sofia oblast»
+  // begins with «Sofia», deliberately, and there is no English name for
+  // Софийска област that does not.
   const regions = read("region_salary");
   const prices = read("city_price");
   if (!regions || !prices) return;
 
   for (const lang of ["bg", "en"]) {
-    const names = regionOptions(regions, prices, lang).map((o) => o.name);
+    const options = regionOptions(regions, prices, lang);
+    const names = options.map((o) => o.name);
+    assert.ok(
+      names.every((n) => n),
+      `${lang}: an option has no name`
+    );
     assert.equal(new Set(names).size, names.length, `${lang}: two options carry the same name`);
+
+    const raw = regions.regions.map((r) => (lang === "bg" ? r.bg_name : r.en_name));
+    for (const key of Object.keys(REGION_RENAMES[lang])) {
+      assert.ok(
+        raw.includes(key),
+        `${lang}: the rename table names "${key}" and НСИ publish no such row — ` +
+          `the rewrite has stopped applying and one of the two Софии is now ` +
+          `printing under a name that belongs to the other`
+      );
+    }
+
+    const written = new Set(Object.values(REGION_RENAMES[lang]));
     for (const a of names) {
       for (const b of names) {
+        if (a === b || (written.has(a) && written.has(b))) continue;
         assert.ok(
-          a === b || !b.startsWith(`${a} `),
+          !b.startsWith(`${a} `),
           `${lang}: "${a}" cannot be told from "${b}" at a glance in a 28-item list`
         );
       }
     }
   }
-  // And the rule, on its own, over names НСИ do not publish today.
-  const all = ["Русе", "Пловдив", "Пловдив (град)"];
-  assert.equal(regionDisplayName("Русе", all, "bg"), "Русе");
-  assert.equal(regionDisplayName("Пловдив", all, "bg"), "Пловдив (област)");
-  assert.equal(regionDisplayName("Пловдив (град)", all, "bg"), "Пловдив (град)");
-  // НСИ write no space before the bracket; Bulgarian does, and «София(столица)»
-  // beside «София (област)» reads as two different kinds of thing.
-  assert.equal(
-    regionDisplayName("София(столица)", ["София", "София(столица)"], "bg"),
-    "София (столица)"
-  );
-  assert.equal(regionDisplayName("София", ["София", "София(столица)"], "bg"), "София (област)");
-  assert.equal(regionDisplayName("Sofia", ["Sofia", "Sofia cap."], "en"), "Sofia (oblast)");
+
+  // The two the table covers, and what the picker actually prints for them.
+  // «София (столица)» and «София (област)» are both administrative vocabulary
+  // in a control asking somebody where they live.
+  assert.equal(regionDisplayName("София(столица)", "bg"), "София");
+  assert.equal(regionDisplayName("София", "bg"), "Софийска област");
+  assert.equal(regionDisplayName("Sofia cap.", "en"), "Sofia");
+  assert.equal(regionDisplayName("Sofia", "en"), "Sofia oblast");
+  // Everything else is НСИ's own label, with the bracket spaced the way
+  // Bulgarian spaces it — which is also what lets part (3) above see a split.
+  assert.equal(regionDisplayName("Русе", "bg"), "Русе");
+  assert.equal(regionDisplayName("Пловдив", "bg"), "Пловдив");
+  assert.equal(regionDisplayName("Пловдив(град)", "bg"), "Пловдив (град)");
+  assert.equal(regionDisplayName("", "bg"), "");
 });
 
 test("a city with no price is told apart from a city nobody read yet", () => {
