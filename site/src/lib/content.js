@@ -963,7 +963,7 @@ export const COPY = {
   // the card whose whole claim is that it tells you what the figure is built
   // from. Nothing on this page may state a date the data does not.
   pctCaveat: {
-    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), а нивото е днешната средна заплата за страната. Затова числото показва приблизително къде си, а не точно. Подредбата не се мени с областта ти — никой не публикува как са разпределени заплатите вътре в една област — така че в по-бедна област същата заплата те нарежда по-нагоре, отколкото пише тук.",
+    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), а нивото е днешната средна заплата за страната. Затова числото показва приблизително къде си, а не точно. Подредбата не зависи от областта ти — никой не публикува как са разпределени заплатите вътре в една област — така че в област с по-ниски заплати същата заплата те нарежда по-нагоре, отколкото пише тук.",
     en: "We compare each take-home pay with what people earn across the whole country. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), and the level is today's average wage for the country. So the figure shows roughly where you stand, not exactly. The ranking does not follow your oblast — nobody publishes how pay is spread inside one — so in a lower-paid oblast the same wage places you higher than it says here.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
@@ -1337,8 +1337,8 @@ export const COPY = {
     en: "average NET pay · choose an oblast",
   },
   statRegionUnsetHint: {
-    bg: "избери областта си, за да сравним заплатата ти с нейната средна",
-    en: "choose your oblast to compare your pay with its average",
+    bg: "избери областта си по-горе, за да сравним заплатата ти с нейната средна",
+    en: "choose your oblast above to compare your pay with its average",
   },
   // One coherent clause rather than spliced fragments: the {delta}
   // placeholder carries the whole "+28% над" / "-28% под" / "≈ на" phrase,
@@ -1622,8 +1622,8 @@ export const COPY = {
   // имот.bg's name or in ours as the case may be, and repeating it here would
   // be the same admission twice on one screen.
   homeNoPrice: {
-    bg: "Няма цена на квадратен метър, с която да сметнем — избери област по-горе или въведи своя цена.",
-    en: "There is no €/m² to price this with — choose an oblast above, or enter your own price.",
+    bg: "Още нямаме цена на квадратен метър, с която да сметнем жилището — избери област по-горе или въведи своя цена.",
+    en: "We have no €/m² to price a home with yet — choose an oblast above, or enter your own price.",
   },
   // **The sentence names имот.bg, so it has to be true of имот.bg.** It reads
   // for the one област whose towns are not among the 27 cities they publish,

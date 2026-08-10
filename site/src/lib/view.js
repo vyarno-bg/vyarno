@@ -1289,7 +1289,8 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  * @param {string} args.regionCode        which област the wage is read from
  * @param {object|null} args.payroll      data.payroll (payroll.json)
  * @param {number} args.m2                floor area the price is quoted for
- * @returns {{eurPerM2:number, m2:number, price:number, grossMonthly:number,
+ * @returns {{eurPerM2:number, eurPerM2Min:number, eurPerM2Max:number,
+ *            m2:number, price:number, grossMonthly:number,
  *            netMonthly:number, wagePeriod:string, years:number,
  *            nDistricts:number, sinceBaselinePct:number, baselineYear:number,
  *            trendPublishable:boolean}}
@@ -1304,11 +1305,20 @@ export function cityHomeAtAverageWage({
 }) {
   const city = cityRow(cityPrice, cityCode);
   const eurPerM2 = city?.eur_per_m2_median ?? 0;
+  // The cheapest and dearest district of THIS city. They are fields on the
+  // city's row, and a caller reaching for them on the envelope gets undefined
+  // — which `integer()` renders as an em dash, so the card draws «— – — €»
+  // and looks like a payload that has not loaded rather than a read that
+  // missed. That is the shape the country page shipped with.
+  const eurPerM2Min = city?.eur_per_m2_min ?? 0;
+  const eurPerM2Max = city?.eur_per_m2_max ?? 0;
   const anchor = regionQuarter(regionSalary, regionCode);
   const netMonthly = bgNetSalary(anchor.value, payrollParams(payroll)).net;
   const price = eurPerM2 > 0 && m2 > 0 ? eurPerM2 * m2 : 0;
   return {
     eurPerM2,
+    eurPerM2Min,
+    eurPerM2Max,
     m2,
     price,
     grossMonthly: anchor.value,
