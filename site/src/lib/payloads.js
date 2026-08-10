@@ -104,13 +104,13 @@ export const PAYLOADS = Object.freeze(
     },
     {
       key: "regionSalary",
-      file: "sofia_salary",
+      file: "region_salary",
       // НСИ publishes the regional wage series quarterly.
       cadenceDays: 92,
-      name: { bg: "Средна заплата в София", en: "Sofia average wage" },
+      name: { bg: "Средна заплата по области", en: "Average wage by oblast" },
       feeds: {
-        bg: "сравнението на заплатата ти със средната за София",
-        en: "the comparison of your pay with the Sofia average",
+        bg: "сравнението на заплатата ти със средната за твоята област",
+        en: "the comparison of your pay with the average for your oblast",
       },
       refPeriod: (p) => p?.ref_period ?? null,
     },

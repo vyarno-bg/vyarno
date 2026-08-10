@@ -37,7 +37,7 @@ import {
   loadAll,
 } from "../src/lib/data.js";
 import { PAYLOAD_KEYS, PAYLOADS } from "../src/lib/payloads.js";
-import { regionQuarter } from "../src/lib/view.js";
+import { regionQuarter, SOFIA_CITY_CODE } from "../src/lib/view.js";
 import { HOME, PRESETS } from "../src/lib/content.js";
 import {
   officialInflation,
@@ -360,11 +360,11 @@ test("the published salary ladder ranks the Sofia average earner mid-upper, not 
   // means BOTH files: the Eurostat shape and НСИ's monthly series, joined here
   // rather than in the pipeline.
   const dist = read("salary_dist");
-  const sofia = read("sofia_salary");
+  const regions = read("region_salary");
   const payroll = read("payroll");
-  if (!dist || !sofia) return;
+  if (!dist || !regions) return;
   const params = payrollParams(payroll);
-  const anchor = regionQuarter(sofia);
+  const anchor = regionQuarter(regions, SOFIA_CITY_CODE);
   assert.ok(anchor.value > 0, "the НСИ series yielded no complete quarter to anchor on");
   const ladder = buildLadder(dist, anchor.value, params);
   assert.equal(ladder.length, 11);
@@ -383,11 +383,11 @@ test("the composed ladder never prints a sub-minimum-wage rung", () => {
   // on the published P1 checks a figure at Eurostat's own level, which is not
   // a Bulgarian wage and cannot be compared to a Bulgarian minimum.
   const dist = read("salary_dist");
-  const sofia = read("sofia_salary");
+  const regions = read("region_salary");
   const payroll = read("payroll");
-  if (!dist || !sofia) return;
+  if (!dist || !regions) return;
   const params = payrollParams(payroll);
-  const gross = composeLadder(dist, regionQuarter(sofia).value, params);
+  const gross = composeLadder(dist, regionQuarter(regions, SOFIA_CITY_CODE).value, params);
   assert.ok(
     gross.P1 >= params.minWageGross - 0.01,
     `composed P1 = ${gross.P1} gross is below the statutory minimum wage ${params.minWageGross}`
@@ -424,7 +424,7 @@ test("no НСИ payload carries a second publisher's figures", () => {
     }
   }
 
-  // salary_dist.json is Eurostat's shape and sofia_salary.json is НСИ's monthly
+  // salary_dist.json is Eurostat's shape and region_salary.json is НСИ's quarterly
   // series; the two meet in the reader's browser. If an `anchor` block or an
   // НСИ URL reappears in salary_dist.json the property is gone, and it would go
   // silently — no number on screen would move.
@@ -442,17 +442,22 @@ test("no НСИ payload carries a second publisher's figures", () => {
     "salary_dist.json links an НСИ dataset, so it is carrying their data again"
   );
 
-  // And the other half: sofia_salary.json must publish only what НСИ published.
-  // `value` is their latest published quarter, verbatim, and view.js#regionQuarter
-  // selects it rather than deriving anything from the series beside it.
-  const sofia = read("sofia_salary");
-  if (!sofia) return;
-  assert.equal(
-    sofia.value,
-    sofia.series_by_period?.[sofia.ref_period],
-    "sofia_salary.json's headline is not one of the months НСИ published — it " +
-      "has become a derived figure again"
-  );
+  // And the other half: region_salary.json must publish only what НСИ
+  // published. Each `value_eur` is that област's latest published quarter,
+  // verbatim, and view.js#regionQuarter selects it rather than deriving
+  // anything from the series beside it. Twenty-eight rows means twenty-eight
+  // places a derived headline could hide, and none of them would look wrong on
+  // screen — every one is a plausible Bulgarian wage.
+  const regions = read("region_salary");
+  if (!regions) return;
+  for (const r of regions.regions ?? []) {
+    assert.equal(
+      r.value_eur,
+      r.series_by_period?.[regions.ref_period],
+      `region_salary.json's headline for ${r.en_name} is not the quarter НСИ published — ` +
+        "it has become a derived figure again"
+    );
+  }
 
   // The same property, activity by activity. Twenty rows means twenty places a
   // derived headline could hide, and none of them would look wrong on screen.
@@ -500,7 +505,7 @@ test("the offline sentinels in content.js still match what the pipeline publishe
   // silently, so they are checked against the live payloads with a band wide
   // enough to survive a routine refresh but tight enough to catch neglect.
   const mortgage = read("mortgage");
-  const sofia = read("sofia_salary");
+  const regions = read("region_salary");
   const price = read("sofia_price");
   if (mortgage) {
     const live = mortgageDefaultRate(mortgage).pct;
@@ -512,7 +517,7 @@ test("the offline sentinels in content.js still match what the pipeline publishe
     assert.equal(HOME.downPaymentPct, limits.minDownPaymentPct);
     assert.equal(HOME.termMaxYears, limits.maturityMaxYears);
   }
-  if (sofia) {
+  if (regions) {
     // Compare like with like: both sides go through the same function, and
     // neither side is a hardcoded constant. A sentinel holding a quarterly
     // MEAN checked against a headline that is НСИ's verbatim latest MONTH is
@@ -520,8 +525,8 @@ test("the offline sentinels in content.js still match what the pipeline publishe
     // against 2061 is 7.1% off, inside a 10% band, so the guard passes while
     // the thing it guards has moved. **A guard that survives the change it
     // exists to catch is worse than no guard.**
-    const live = regionQuarter(sofia).value;
-    const offline = regionQuarter(HOME.regionSalaryFallback).value;
+    const live = regionQuarter(regions, SOFIA_CITY_CODE).value;
+    const offline = regionQuarter(HOME.regionSalaryFallback, SOFIA_CITY_CODE).value;
     assert.ok(offline > 0, "the offline sentinel no longer yields a complete quarter");
     assert.ok(
       Math.abs(offline - live) / live <= 0.1,
@@ -534,9 +539,9 @@ test("the offline sentinels in content.js still match what the pipeline publishe
     // appears once the JSON lands shows the same wage as settled and then as
     // provisional, which reads as the number having changed.
     assert.equal(
-      regionQuarter(HOME.regionSalaryFallback).isPreliminary,
-      regionQuarter(sofia).isPreliminary,
-      "HOME.regionSalaryFallback disagrees with sofia_salary.json about whether " +
+      regionQuarter(HOME.regionSalaryFallback, SOFIA_CITY_CODE).isPreliminary,
+      regionQuarter(regions, SOFIA_CITY_CODE).isPreliminary,
+      "HOME.regionSalaryFallback disagrees with region_salary.json about whether " +
         "НСИ will still revise the quarter it mirrors"
     );
   }

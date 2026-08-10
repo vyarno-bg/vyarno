@@ -42,10 +42,10 @@ from vyarno_pipeline.publish import (
     HICP_HEADLINE_FILE,
     MORTGAGE_FILE,
     PAYROLL_FILE,
+    REGION_SALARY_FILE,
     SALARY_DIST_FILE,
     SECTOR_SALARY_FILE,
     SOFIA_PRICE_FILE,
-    SOFIA_SALARY_FILE,
     UNEMPLOYMENT_FILE,
     write_hicp_categories,
     write_hicp_headline,
@@ -54,6 +54,7 @@ from vyarno_pipeline.publish import (
     write_salary_distribution_payload,
     write_time_series,
 )
+from vyarno_pipeline.regions import REGIONS
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_SOURCE_URL
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.ecb import (
@@ -83,21 +84,24 @@ from vyarno_pipeline.sources.imot import (
 from vyarno_pipeline.sources.nsi import (
     SECTOR_SOURCE_URL_BG,
     SECTOR_SOURCE_URL_EN,
+    fetch_region_salaries_eu,
     fetch_sector_salary_eu,
-    fetch_sofia_salary_eu,
 )
 from vyarno_pipeline.sources.nsi import (
-    SOURCE_URL as NSI_SOFIA_SALARY_URL,
+    SOURCE_URL as NSI_REGION_SALARY_URL,
+)
+from vyarno_pipeline.sources.nsi import (
+    SOURCE_URL_BG as NSI_REGION_SALARY_URL_BG,
 )
 from vyarno_pipeline.transform import (
     COICOP_META,
     MissingSeriesError,
+    build_region_salary_payload,
     build_sector_salary_payload,
     build_ses_shape_ladder,
     index_fields,
     rows_to_category_observations,
     rows_to_unemployment_observation,
-    sofia_salary_observation,
 )
 from vyarno_pipeline.validate import (
     BASKET_SUM_TOLERANCE_PP,
@@ -111,6 +115,7 @@ from vyarno_pipeline.validate import (
     validate_link_status,
     validate_meta_labels_cover,
     validate_reconciliation,
+    validate_region_salary,
     validate_sector_salary,
 )
 
@@ -162,7 +167,7 @@ def _month_before(period: str) -> str:
             "unemployment",
             "mortgage",
             "sofia-price",
-            "sofia-salary",
+            "region-salary",
             "sector-salary",
             "salary-dist",
             "payroll",
@@ -175,13 +180,15 @@ def _month_before(period: str) -> str:
         "mortgage.json; both are required and it fails loud rather than "
         "publishing a partial panel. 'sofia-price' scrapes imot.bg/sredni-ceni "
         "for the per-district €/m² averages in Sofia (exit 4 on network error). "
-        "'sofia-salary' fetches the NSI regional wage XLSX for the latest "
-        "Sofia-city average gross wage reading (exit 4 on network error). "
+        "'region-salary' fetches the NSI regional wage XLSX in both language "
+        "editions for the latest published quarter in every one of the 28 "
+        "oblasti (exit 4 on network error). "
         "'sector-salary' fetches NSI's by-economic-activity wage table in both "
         "language editions for the latest published quarter per NACE Rev 2 "
         "section (exit 4 on network error). "
-        "'salary-dist' builds the fresh individual gross-earnings percentile "
-        "ladder (Eurostat SES shape re-leveled to the live NSI Sofia wage)."
+        "'salary-dist' builds the individual gross-earnings percentile ladder "
+        "shape (Eurostat SES; the browser re-levels it onto NSI's national "
+        "all-activities average)."
     ),
 )
 @click.option(
@@ -220,8 +227,8 @@ def refresh(
         _refresh_mortgage(out, as_of)
     elif source == "sofia-price":
         _refresh_sofia_price(out, as_of)
-    elif source == "sofia-salary":
-        _refresh_sofia_salary(out, as_of)
+    elif source == "region-salary":
+        _refresh_region_salary(out, as_of)
     elif source == "sector-salary":
         _refresh_sector_salary(out, as_of)
     elif source == "salary-dist":
@@ -253,7 +260,7 @@ def refresh(
             ("unemployment", lambda: _refresh_unemployment(out, geo, as_of)),
             ("mortgage", lambda: _refresh_mortgage(out, as_of)),
             ("sofia-price", lambda: _refresh_sofia_price(out, as_of)),
-            ("sofia-salary", lambda: _refresh_sofia_salary(out, as_of)),
+            ("region-salary", lambda: _refresh_region_salary(out, as_of)),
             ("sector-salary", lambda: _refresh_sector_salary(out, as_of)),
             ("salary-dist", lambda: _refresh_salary_dist(out, as_of)),
             ("payroll", lambda: _refresh_payroll(out, as_of)),
@@ -745,63 +752,66 @@ def _refresh_sofia_price(out: Path, as_of: date) -> None:
     )
 
 
-def _refresh_sofia_salary(out: Path, as_of: date) -> None:
-    """Fetch the NSI regional wage XLSX and publish sofia_salary.json.
+def _refresh_region_salary(out: Path, as_of: date) -> None:
+    """Fetch the NSI regional wage XLSX (both editions) and publish region_salary.json.
 
     Failure modes:
-    - Network/timeout/transport -> exit 4 (consistent with other
-      refresh arms; the Sofia comparator card falls back to a
-      sentinel if the JSON is missing on read).
-    - XLSX sheet missing / structure changed / cell empty →
-      exit 2 with a sample around the expected row index. The
-      regression-guard inside the connector raises `ValueError`
-      when Sofia city and Sofia province converge — that error
-      also exits 2 here.
+    - Network/timeout/transport -> exit 4 (consistent with other refresh arms;
+      the comparator card falls back to a sentinel if the JSON is missing on
+      read).
+    - XLSX sheet missing / structure changed / an oblast row renamed or added /
+      the two editions disagreeing -> exit 2. The three-part regression guard
+      inside the connector raises `ValueError`, which also exits 2 here.
+    - The payload gate -> exit 3.
 
-    There is NO canonical fallback for the Sofia average wage — the
-    comparator card falls back to the last-published sofia_salary.json if
-    available, and to a placeholder if not.
+    Both editions are fetched together because the oblast NAMES are half of
+    what this payload is for: a picker has to print them, and a run that got
+    only the English file would have to invent the Bulgarian - which is the one
+    thing this feature must not do.
+
+    There is NO canonical fallback for a regional average wage. The comparator
+    falls back to the last-published region_salary.json if available, and to a
+    placeholder if not.
     """
     try:
-        click.echo("→ fetching NSI regional wage XLSX (Sofia-city comparator)...")
-        scrape = fetch_sofia_salary_eu()
+        click.echo("\u2192 fetching NSI regional wage XLSX (EN + BG editions)...")
+        scrape = fetch_region_salaries_eu()
+        top = max(scrape["regions"], key=lambda r: r["value_eur"])
         click.echo(
-            f"  got latest reading: {scrape['value_eur']:.0f} EUR "
-            f"at {scrape['ref_period']}"
-            f"{' (preliminary)' if scrape['is_preliminary'] else ''}"
+            f"  got {len(scrape['regions'])} oblasti at {scrape['ref_period']}"
+            f"{' (preliminary)' if scrape['is_preliminary'] else ''}; "
+            f"highest {top['en_name']} {top['value_eur']:.0f} EUR"
         )
     except httpx.HTTPError as e:
-        click.echo(f"ERROR: NSI XLSX fetch failed: {e}", err=True)
+        click.echo(f"ERROR: NSI regional XLSX fetch failed: {e}", err=True)
         sys.exit(4)
     except ValueError as e:
-        click.echo(f"ERROR: NSI XLSX parse failed: {e}", err=True)
+        click.echo(f"ERROR: NSI regional XLSX parse failed: {e}", err=True)
         sys.exit(2)
 
-    obs = sofia_salary_observation(
+    try:
+        validate_region_salary(scrape["regions"], scrape["ref_period"], [r.code for r in REGIONS])
+    except ValidationError as e:
+        click.echo(f"ERROR: regional wage gate failed: {e}", err=True)
+        sys.exit(3)
+
+    payload = build_region_salary_payload(
         scrape,
         as_of=as_of,
-        source_url=NSI_SOFIA_SALARY_URL,
+        source_url=NSI_REGION_SALARY_URL,
+        source_url_bg=NSI_REGION_SALARY_URL_BG,
     )
-    write_time_series(
-        payload_name="sofia_salary",
-        series=obs,
-        target_dir=out,
-        filename=SOFIA_SALARY_FILE,
-        notes=(
-            f"BG Sofia-city statistical region (BG411) average GROSS "
-            f"monthly wage from NSI Labour_1.1.2.2_EUR_EN.xlsx, the "
-            f"'{{year}}trimes' sheets, row '-Sofia cap.'. Latest published "
-            f"quarter: {obs.value:.0f} EUR at {obs.ref_period}."
-            f"{' Preliminary.' if scrape['is_preliminary'] else ''}"
-        ),
+    write_payload(payload, target_dir=out, filename=REGION_SALARY_FILE)
+    click.echo(
+        f"OK: wrote {REGION_SALARY_FILE} "
+        f"({len(payload['regions'])} oblasti at {payload['ref_period']})"
     )
-    click.echo(f"OK: wrote {SOFIA_SALARY_FILE} (latest {obs.value:.0f} EUR at {obs.ref_period})")
 
 
 def _refresh_sector_salary(out: Path, as_of: date) -> None:
     """Fetch НСИ's by-activity wage table (both editions) and publish it.
 
-    Failure modes match `_refresh_sofia_salary`: exit 4 on network, exit 2 on a
+    Failure modes match `_refresh_region_salary`: exit 4 on network, exit 2 on a
     changed sheet structure or a tripped connector guard, exit 3 on the payload
     gate. The two editions are fetched together because the section names are
     half the payload, and a run that got only one of them would have to invent
@@ -849,9 +859,9 @@ def _refresh_salary_dist(out: Path, as_of: date) -> None:
     """Build salary_dist.json — the individual gross-earnings shape, Eurostat only.
 
     One upstream, and no cross-dependency on the НСИ arm: the shape is
-    Eurostat's and is published at Eurostat's level. The re-levelling onto the
-    current Sofia average happens in the reader's browser, against the monthly
-    figures `sofia_salary.json` publishes as НСИ published them.
+    Eurostat's and is published at Eurostat's level. The re-levelling happens in
+    the reader's browser, against НСИ's national all-activities average as
+    `sector_salary.json` publishes it.
 
     Failure modes mirror the other Eurostat arms: network → exit 4,
     transform/parse → exit 2.
@@ -878,7 +888,7 @@ def _refresh_salary_dist(out: Path, as_of: date) -> None:
     click.echo(
         f"OK: wrote {SALARY_DIST_FILE} (SES-level median €{lg['P50']:.0f} · "
         f"P10 €{lg['P10']:.0f} · P90 €{lg['P90']:.0f}; the browser re-levels "
-        f"this to the current НСИ Sofia average, which stays in sofia_salary.json)"
+        f"this to НСИ's national average, which stays in sector_salary.json)"
     )
 
 

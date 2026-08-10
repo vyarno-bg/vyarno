@@ -405,96 +405,99 @@ def rows_to_category_observations(
     return out
 
 
-def sofia_salary_observation(
+def build_region_salary_payload(
     scrape: dict,
     as_of: date,
     source_url: str,
-) -> TimeSeriesObservation:
-    """Build a TimeSeriesObservation for the Sofia-city average gross wage.
+    source_url_bg: str,
+) -> dict:
+    """Shape НСИ's regional wage scrape into the published payload.
 
-    The connector (`sources/nsi.py#fetch_sofia_salary_eu`) returns a
-    pre-shaped dict with `value_eur`, `ref_period`, `series_by_period`,
-    `is_preliminary`, and `sofia_province_value_eur` (the regression-
-    guard comparison value). This transformer wraps it into the
-    standard `TimeSeriesObservation` envelope so the CLI / publish
-    pipeline can write it with the same `write_time_series` helper
-    used by every other connector.
+    Beside `build_sector_salary_payload` because it is one publisher's two cuts
+    of one quarterly release — `1.1.2.2` by област against `1.1.2.1` by economic
+    activity — read the same way, for НСИ's own published quarter. Like that
+    one it builds a plain dict rather than a `TimeSeriesObservation`, because
+    that model carries one series and this payload carries twenty-eight.
 
-    The published JSON keeps НСИ's full quarterly series so the SPA
-    can show a trend if it wants to. The headline `value` field is
-    their latest published quarter (e.g. 1915 EUR for 2026-Q1) —
-    quarterly because a single month carries the March bonus spike,
-    and theirs because nothing here may compute one; see
-    `sources/nsi.py`.
+    **Nothing here computes.** Every figure is a cell НСИ published; the gap a
+    reader sees between their pay and their област's average is arithmetic in
+    their own tab (`mirror.js`), which is where P8 puts it and what §2.1.1 of
+    НСИ's licence needs, since it forbids distributing производни произведения
+    (docs/legal.md §НСИ).
 
-    Source URL is the canonical XLSX endpoint — the same URL the
-    connector hit. Provenance also includes the human-readable
-    landing page (`nsi.bg/en/statistical-data/179/569`) in
-    `disclaimer` so the user can click through.
+    **There is no national row and none is derived.** The workbook carries six
+    statistical regions and twenty-eight области and no Bulgaria total, so
+    averaging the области to make one would be exactly the производно
+    произведение above — and it would be wrong arithmetic besides, an unweighted
+    mean over regions of wildly different employment. The national figure the
+    salary ladder is anchored on is НСИ's own «Общо» row, published in
+    `sector_salary.json`.
     """
-    # Every value in this payload is a cell НСИ published: the headline is their
-    # latest published quarterly average for Sofia-city and the series is the
-    # rest of the same row. Nothing here is averaged, rebased or interpolated,
-    # and the browser does no arithmetic on it either — it reads the headline.
-    # That is what keeps the file a straight reproduction of one publisher's
-    # figures, which §2.1.1 of their licence requires (docs/legal.md §НСИ).
-    value_eur = float(scrape["value_eur"])
+    regions = scrape["regions"]
     ref_period = str(scrape["ref_period"])
-    series = dict(scrape.get("series_by_period", {}))
-    is_prelim = bool(scrape.get("is_preliminary", False))
-    prov_val = float(scrape.get("sofia_province_value_eur", 0.0))
-    prelim_marker = " (preliminary)" if is_prelim else ""
+    is_preliminary = bool(scrape.get("is_preliminary", False))
+    prelim_marker = " (preliminary)" if is_preliminary else ""
+    top = max(regions, key=lambda r: r["value_eur"])
+    low = min(regions, key=lambda r: r["value_eur"])
 
-    return TimeSeriesObservation(
-        dataset="Labour_1.1.2.2_EUR_EN.xlsx:sheet={year}trimes:row=-Sofia cap.",
-        source="nsi",
-        source_url=HttpUrl(source_url),
-        ref_period=ref_period,
-        published_at=as_of,
-        unit="eur_per_month",
-        value=value_eur,
-        series_by_period=series,
-        # The star on НСИ's sheet title, carried to where a reader meets the
-        # number. It reached `notes` and stopped there, and nobody reads a
-        # payload's prose — so the strip showed 1915 as settled while the sector
-        # card three rows up marked the SAME publisher's SAME quarter
-        # «(предварителни данни)». This figure also re-levels every rung of the
-        # salary ladder, so a reader placed on it is placed on a provisional
-        # number twice over.
-        is_preliminary=is_prelim,
-        notes=(
-            f"Average GROSS monthly wage in the Sofia-city statistical region "
-            f"(BG411), as published by НСИ and unmodified. `value` and "
-            f"`ref_period` are НСИ's latest published QUARTERLY average "
-            f"({value_eur:.0f} EUR at {ref_period}{prelim_marker}); "
+    return {
+        "schema_version": "1.0",
+        "as_of": as_of.isoformat(),
+        "source": "nsi",
+        "source_url": source_url,
+        "notes": (
+            f"Average GROSS monthly wage by област (BG districts), as published "
+            f"by НСИ and unmodified. Each област's `value_eur` is НСИ's latest "
+            f"published QUARTERLY average at {ref_period}{prelim_marker}; "
             f"`series_by_period` is their full quarterly series from the "
-            f"`{{year}}trimes` sheets of Labour_1.1.2.2_EUR_EN.xlsx. Nothing in "
-            f"this file is computed by us. The quarter is НСИ's own reporting "
-            f"period and avoids the March bonus spike that dominates their "
-            f"single-month readings; the Q4 column taken is `IV`, not `IV "
-            f"incl.annual bonuses`. Sofia province (excl. city) at the same "
-            f"quarter: {prov_val:.0f} EUR — Sofia-city is structurally higher "
-            f"and is the highest-wage region in BG. All values in EUR (fixed "
-            f"1.95583 BGN/EUR)."
+            f"`{{year}}trimes` sheets. {len(regions)} области, {top['en_name']} "
+            f"highest at {top['value_eur']:.0f} EUR and {low['en_name']} lowest "
+            f"at {low['value_eur']:.0f} EUR. Nothing in this file is computed by "
+            f"us — no gap, no ratio, no national average. The quarter is НСИ's "
+            f"own reporting period and avoids the March bonus spike that "
+            f"dominates their single-month readings; the Q4 column taken is "
+            f"`IV`, not `IV incl.annual bonuses`. Област names are НСИ's own in "
+            f"each language, from the English and Bulgarian editions of the same "
+            f"table. All values in EUR (fixed 1.95583 BGN/EUR)."
         ),
-        # The regional workbook carries the same two titles as the by-activity
-        # one — «ПО ТРУДОВО И СЛУЖЕБНО ПРАВООТНОШЕНИЕ» in Bulgarian against
-        # "under labour contract" in English — and the Bulgarian is what the
-        # series covers. Sofia-city is where the civil service concentrates, so
-        # the shorter reading understates what this figure is an average over.
-        disclaimer=(
-            "Sofia-city is a single statistical region (BG411). "
-            "The number is the average GROSS wage across all "
-            "employees on a labour contract or in the civil service "
-            "in the region (not "
-            "net; not specific to any industry or occupation), "
-            "reported for НСИ's own quarter. The Q4 figure excludes "
-            "annual bonuses, which НСИ publish as a separate column. "
-            "EUR figures from NSI use the fixed eurozone rate "
-            "1.95583 BGN/EUR — no FX adjustment over time. "
+        "payload_name": "region_salary",
+        "source_url_bg": source_url_bg,
+        "dataset": (
+            "Labour_1.1.2.2_EUR_EN.xlsx + Labour_1.1.2.2_EUR.xlsx:sheet={year}trimes:district rows"
+        ),
+        "ref_period": ref_period,
+        "published_at": as_of.isoformat(),
+        "unit": "eur_per_month",
+        "is_preliminary": is_preliminary,
+        "regions": [
+            {
+                "code": r["code"],
+                "en_name": r["en_name"],
+                "bg_name": r["bg_name"],
+                "value_eur": r["value_eur"],
+                "series_by_period": r["series_by_period"],
+            }
+            for r in regions
+        ],
+        # НСИ's Bulgarian edition titles the table «НАЕТИТЕ ЛИЦА ПО ТРУДОВО И
+        # СЛУЖЕБНО ПРАВООТНОШЕНИЕ» and the English one shortens that to "under
+        # labour contract", dropping the civil service. The shorter reading
+        # understates what the figure averages over, and it does so most in the
+        # област where the civil service concentrates, which is the one the
+        # ladder used to be anchored on.
+        "disclaimer": (
+            "An област is НСИ's district, not a city. The number is the average "
+            "GROSS wage across all employees on a labour contract or in the "
+            "civil service in the област (not net; not a median; not specific to "
+            "any industry or occupation), reported for НСИ's own quarter. Only "
+            "Sofia-city is both — it is its own statistical region, BG411, so "
+            "there the област and the град are the same area. The Q4 figure "
+            "excludes annual bonuses, which НСИ publish as a separate column. "
+            "EUR figures from NSI use the fixed eurozone rate 1.95583 BGN/EUR — "
+            "no FX adjustment over time. "
             "Landing page: https://www.nsi.bg/en/statistical-data/179/569"
         ),
-    )
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -675,7 +678,7 @@ def build_sector_salary_payload(
 ) -> dict:
     """Shape НСИ's by-sector wage scrape into the published payload.
 
-    Beside `sofia_salary_observation` because it is the same publisher's
+    Beside `build_region_salary_payload` because it is the same publisher's
     sibling table — `Labour_1.1.2.1` by economic activity against `1.1.2.2` by
     region — read the same way, for НСИ's own published quarter. It builds a
     plain dict rather than a `TimeSeriesObservation` because that model carries

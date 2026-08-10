@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
+import { regionRow, SOFIA_CITY_CODE } from "../src/lib/view.js";
 
 test("the housing card says which of its figures are ours", { skip }, async () => {
   // имот.bg publish one average per district and nothing for Sofia as a whole,
@@ -236,14 +237,14 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
   // the conversion, so a check on those two alone passes a card claiming their
   // Sofia average takes home every lev of it. The period is the same shape —
   // blanked to an em dash it leaves an undated wage under a dated credit.
-  const wage = published("sofia_salary");
+  const wage = regionRow(published("region_salary"), SOFIA_CITY_CODE);
   const payroll = published("payroll");
-  const gross = Math.round(wage.value);
-  assert.ok(gross > 0, "sofia_salary.json carries no value to render");
+  const gross = Math.round(wage.value_eur);
+  assert.ok(gross > 0, "region_salary.json carries no value to render for Sofia-city");
   // Our conversion, through the same function the page runs it through, so the
   // assertion is the identity rather than a second implementation of the
   // payroll that would need updating whenever the rates move.
-  const net = Math.round(bgNetSalary(wage.value, payrollParams(payroll)).net);
+  const net = Math.round(bgNetSalary(wage.value_eur, payrollParams(payroll)).net);
   assert.ok(net > 0 && net < gross, "the payroll conversion did not produce a net below the gross");
 
   await withApp(async (page, errors) => {

@@ -217,7 +217,7 @@ def test_refresh_advertises_exactly_the_supported_sources(tmp_path):
         "unemployment",
         "mortgage",
         "sofia-price",
-        "sofia-salary",
+        "region-salary",
         "sector-salary",
         "salary-dist",
         "payroll",

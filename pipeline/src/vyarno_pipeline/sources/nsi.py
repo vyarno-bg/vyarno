@@ -1,6 +1,7 @@
-"""НСИ XLSX connectors — the Sofia-city and the by-sector average gross wage.
+"""НСИ XLSX connectors — the regional and the by-sector average gross wage.
 
     https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.2_EUR_EN.xlsx
+    https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.2_EUR.xlsx
     https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.1_EUR_EN.xlsx
     https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.1_EUR.xlsx
 
@@ -10,7 +11,22 @@ averages** — never a month, and never a figure this code computed.
 
 The regional average gross wage table (BG statistical regions and districts),
 in EUR. We read the `{year}trimes` sheets — НСИ's own **published quarterly
-averages** by region — for `-Sofia cap.` (the Sofia-city statistical region).
+averages** by region — for **all 28 области**, which is every district row the
+sheet carries. Its own title says `BY STATISTICAL REGIONS AND DISTRICTS`, so the
+whole country was always inside the file a single-row read was opening.
+
+**Both language editions, for the same reason the by-sector table reads both.**
+The область names are half of what this payload is for — a picker has to print
+them — and translating НСИ's English ourselves is how «София(столица)» becomes
+something they never wrote. So each label is the one НСИ printed in that
+language, and the two editions pin each other cell for cell.
+
+**The two editions do not have the same row layout.** The Bulgarian one carries
+an extra «Общо» row above the unit marker, so its quarter headers sit one row
+lower, and its sheets are named `'2026 trimes '` where the English ones are
+`2026trimes`. Neither the header row nor the sheet name may therefore be an
+index or a literal: the header row is found by being the first row that parses
+as four quarters, and the sheets by a regex tolerant of the spacing.
 
 **Why the quarter and not the month.** BG wages have a strong seasonal shape and
 March is the annual peak, as Q1 bonus and 13th-salary payments land: the
@@ -45,10 +61,25 @@ a unit mismatch.
 headers that roll forward every quarter and break naive parsers. The XLSX has a
 stable schema — the same column layout for every year sheet.
 
-**The regression guard.** If НСИ restructures the file this connector would
-start reading the wrong cells, so it asserts that `-Sofia cap.` sits well above
-`-Sofia` (the province) in the same quarter. If the two converge, the selector
-matched the wrong row.
+**The regression guard, and what it can assert now that every row is read.**
+A single-row read could only compare that row against a neighbour, so it
+asserted `-Sofia cap.` above `-Sofia` (the province) and there was no universal
+"region X beats region Y" to generalise from. Reading the whole table affords a
+stronger guard in three parts, and all three have to hold:
+
+1. **Every one of the 28 области named in `regions.py` is present**, in both
+   editions. A renamed row fails here rather than going missing from a picker.
+2. **No district row is present that `regions.py` does not name.** Without this
+   the guard is one-directional: НСИ splitting an област would add a row nobody
+   notices, and the payload would carry 28 of 29.
+3. **Sofia-city is the maximum.** It is not a taste — it is the highest-wage
+   region in Bulgaria by a wide margin (1915 against a next-highest 1304 at
+   2026-Q1), and a selector that drifted onto the statistical-region rows above
+   the districts, or off by one row, breaks it.
+
+What the three catch together that the old one could not: an off-by-one that
+shifts every reading by one область keeps `cap > province` true while putting
+Varna's wage under Dobrich's name.
 
 THE BY-SECTOR TABLE (`Labour_1.1.2.1`)
 --------------------------------------
@@ -87,33 +118,39 @@ from typing import Any
 import httpx
 import openpyxl
 
-# Canonical URL. If НСИ moves it,
+from vyarno_pipeline.regions import REGIONS, SOFIA_CITY_CODE
+
+# Canonical URLs. If НСИ moves either,
 # `tests/test_nsi.py::test_connector_url_is_nsi_timeseries_xlsx` fails before a
 # mis-extracted number can reach production.
 SOURCE_URL = (
     "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.2_EUR_EN.xlsx"
 )
+# The Bulgarian edition of the same table carries no language suffix, exactly as
+# the by-sector pair below does.
+SOURCE_URL_BG = (
+    "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.2_EUR.xlsx"
+)
 
-# One sheet per year of published quarterly averages: "2020trimes" ..
-# "2026trimes". The workbook also carries a monthly sheet ("2019-2026") and a
-# quarterly block appended to it; the per-year sheets are the ones that label
-# their own year and carry the preliminary marker in their title, so they are
-# what we parse.
-QUARTERLY_SHEET_SUFFIX = "trimes"
+# One sheet per year of published quarterly averages. The English edition names
+# them "2026trimes"; the Bulgarian one "2026 trimes " — same table, different
+# whitespace — so the year is matched rather than the string stripped. The
+# workbook also carries a combined monthly sheet ("2019-2026"), which the
+# four-digit anchor excludes: the per-year sheets are the ones that label their
+# own year and carry the preliminary marker in their title.
+_QUARTERLY_SHEET_RE = re.compile(r"^(\d{4})\s*trimes\s*$", re.IGNORECASE)
 
-# Row layout of a `{year}trimes` sheet, identical in all seven:
-#   r0      = blank padding
-#   r1      = title, ending in "*" while the year is preliminary
-#   r2      = "(EUR)" unit marker
-#   r3      = col 0 "Statistical regions", col 1 "Quarters {year}"
-#   r4      = quarter headers: " І", "ІІ", "III", "IV", "IV incl.annual bonuses"
-#   r5..    = region rows
-# Row indices are not hardcoded below — regions are found by name and the
-# quarter columns by their header — because a single inserted row upstream
-# would otherwise shift every reading by one region silently.
-QUARTER_HEADER_ROW = 4
-SOFIA_CAP_REGION_NAME = "-Sofia cap."
-SOFIA_PROVINCE_REGION_NAME = "-Sofia"
+# How far into a sheet the quarter headers may sit before we give up. The
+# English edition puts them on row 4 and the Bulgarian one on row 5, because it
+# carries an extra «Общо» row; the search below is what absorbs that difference
+# and any further row НСИ inserts above the table.
+_MAX_HEADER_SEARCH_ROW = 12
+
+# A district row is prefixed with a hyphen in НСИ's own layout — that is how
+# their sheet distinguishes an област from the statistical region heading it
+# sits under, and it is what lets the parse notice a district row this project
+# does not know about.
+_DISTRICT_PREFIX = "-"
 
 # Q4 is published twice and the second column includes the 13th salary. Taking
 # it would step the ladder up every fourth quarter — see the module docstring.
@@ -169,52 +206,90 @@ def _quarter_columns(header_row: list) -> dict[int, int]:
     return cols
 
 
-def _region_row(rows: list, name: str) -> list | None:
-    """The first row whose col 0 is exactly `name`."""
-    for r in rows:
-        if r[0] is not None and str(r[0]).strip() == name:
-            return list(r)
-    return None
+def _quarter_header_row(rows: list, sheet_title: str) -> int:
+    """Index of the row carrying the four quarter headers.
+
+    Searched rather than indexed, because the two language editions differ: the
+    Bulgarian one has an extra «Общо» row above the unit marker, so its headers
+    sit one row lower than the English one's. An index that is right for one
+    file reads a blank row in the other and reports "no quarter columns", which
+    is a true error message about the wrong thing.
+
+    The first row that parses as exactly I..IV wins. Nothing above the table can
+    match: `_quarter_columns` needs four distinct Roman numerals in columns
+    beyond the first, and a title row is one string in column 0.
+    """
+    for i, row in enumerate(rows[:_MAX_HEADER_SEARCH_ROW]):
+        try:
+            _quarter_columns(row)
+        except ValueError:
+            continue
+        return i
+    raise ValueError(
+        f"No quarter header row (I..IV) in the first {_MAX_HEADER_SEARCH_ROW} "
+        f"rows of sheet {sheet_title!r}. НСИ may have restructured the quarterly "
+        f"sheets, or renamed the annual-bonus column so that it now parses as a "
+        f"quarter."
+    )
 
 
-def _parse_quarterly_sheet(ws) -> dict[str, Any]:
-    """One `{year}trimes` sheet -> the Sofia-city and province quarterly rows.
+def _parse_quarterly_sheet(ws, labels: dict[str, str]) -> dict[str, Any]:
+    """One `{year}trimes` sheet -> every known област's quarterly row.
 
-    Returns `{"year": int, "is_preliminary": bool, "cap": {q: eur},
-    "province": {q: eur}}`. Quarters with no value yet are absent.
+    `labels` maps НСИ's own row label, in this edition's language, to the
+    region code. Returns `{"year", "is_preliminary", "by_code": {code: {q:
+    eur}}, "unknown_districts": [label, ...]}`. Quarters with no value yet are
+    absent, which is how the current year carries only the quarters published
+    so far.
+
+    `unknown_districts` is collected rather than raised on, so the caller can
+    name every one of them at once instead of a run failing on the first.
     """
     rows = [list(r) for r in ws.iter_rows(values_only=True)]
-    if len(rows) <= QUARTER_HEADER_ROW:
-        raise ValueError(f"Sheet {ws.title!r} has {len(rows)} rows — too few to carry a table.")
+    match = _QUARTERLY_SHEET_RE.match(str(ws.title).strip())
+    if match is None:
+        raise ValueError(f"Sheet {ws.title!r} is not a per-year quarterly sheet.")
+    year = int(match.group(1))
 
-    year = int(str(ws.title).replace(QUARTERLY_SHEET_SUFFIX, "").strip())
+    header_row = _quarter_header_row(rows, str(ws.title))
+    cols = _quarter_columns(rows[header_row])
+
     # The title carries the preliminary marker for the whole year, e.g.
-    # "... IN 2026*". НСИ drop the star when the year is final.
-    title = str(rows[1][0] or "")
+    # "... IN 2026*" / "... ПРЕЗ 2026 ГОДИНА*". НСИ drop the star when the year
+    # is final. It is the first non-empty label above the header row, which is
+    # what keeps this off a fixed index in a file whose two editions differ by
+    # one row.
+    title = next(
+        (str(r[0]) for r in rows[:header_row] if r and r[0] is not None and str(r[0]).strip()),
+        "",
+    )
     is_preliminary = title.rstrip().endswith("*")
 
-    cols = _quarter_columns(rows[QUARTER_HEADER_ROW])
-    cap = _region_row(rows, SOFIA_CAP_REGION_NAME)
-    prov = _region_row(rows, SOFIA_PROVINCE_REGION_NAME)
-    if cap is None or prov is None:
-        raise ValueError(
-            f"Could not locate {SOFIA_CAP_REGION_NAME!r} or "
-            f"{SOFIA_PROVINCE_REGION_NAME!r} in sheet {ws.title!r}. НСИ may have "
-            f"renamed a region row."
-        )
-
-    def _values(row: list) -> dict[int, float]:
-        out: dict[int, float] = {}
-        for col, q in cols.items():
-            if col < len(row) and isinstance(row[col], (int, float)):
-                out[q] = float(row[col])
-        return out
+    by_code: dict[str, dict[int, float]] = {}
+    unknown: list[str] = []
+    for row in rows[header_row + 1 :]:
+        if not row or row[0] is None:
+            continue
+        label = str(row[0]).strip()
+        if not label.startswith(_DISTRICT_PREFIX):
+            # A statistical-region heading, the unit marker, or the footnote.
+            # None of them is an област and none is published.
+            continue
+        code = labels.get(label)
+        if code is None:
+            unknown.append(label)
+            continue
+        by_code[code] = {
+            q: float(row[col])
+            for col, q in cols.items()
+            if col < len(row) and isinstance(row[col], (int, float))
+        }
 
     return {
         "year": year,
         "is_preliminary": is_preliminary,
-        "cap": _values(cap),
-        "province": _values(prov),
+        "by_code": by_code,
+        "unknown_districts": unknown,
     }
 
 
@@ -235,17 +310,70 @@ def _get_xlsx(url: str, timeout: float = 30.0) -> bytes:
         return r.content
 
 
-def fetch_sofia_salary_eu(url: str = SOURCE_URL) -> dict[str, Any]:
-    """Fetch the НСИ regional wage XLSX and return Sofia-city's published
-    quarterly series plus its latest reading.
+def _parse_region_edition(raw: bytes, labels: dict[str, str], url: str) -> dict[str, Any]:
+    """One language edition -> `{code: {"YYYY-Qn": eur}}` plus the marker flags.
+
+    Raises on a district row this project does not name. Doing that here rather
+    than in the caller means the error says which file it was reading, and both
+    editions are checked rather than only the one the names are taken from.
+    """
+    import io
+
+    # NOT read_only: the quarterly sheets are small and `iter_rows` over a
+    # read-only worksheet reports dimensions unreliably on these files.
+    wb = openpyxl.load_workbook(io.BytesIO(raw), data_only=True)
+    sheets = [n for n in wb.sheetnames if _QUARTERLY_SHEET_RE.match(str(n).strip())]
+    if not sheets:
+        raise ValueError(
+            f"No per-year quarterly sheet matching {_QUARTERLY_SHEET_RE.pattern} "
+            f"found in {url}. Available sheets: {wb.sheetnames}"
+        )
+
+    series: dict[str, dict[str, float]] = {}
+    prelim_by_period: dict[str, bool] = {}
+    unknown: set[str] = set()
+    for name in sorted(sheets):
+        parsed = _parse_quarterly_sheet(wb[name], labels)
+        unknown.update(parsed["unknown_districts"])
+        year = parsed["year"]
+        for code, values in parsed["by_code"].items():
+            for q, v in values.items():
+                series.setdefault(code, {})[f"{year}-Q{q}"] = v
+                prelim_by_period[f"{year}-Q{q}"] = parsed["is_preliminary"]
+
+    if unknown:
+        raise ValueError(
+            f"{url} carries district row(s) {sorted(unknown)!r} that "
+            f"`regions.py#REGIONS` does not name. НСИ have added or renamed an "
+            f"област. Refusing to publish a table that is missing one: add the "
+            f"row to that table, with имот.bg's slug for it or None."
+        )
+
+    missing = [r.code for r in REGIONS if r.code not in series]
+    if missing:
+        raise ValueError(
+            f"{url} is missing {len(missing)} of the {len(REGIONS)} области "
+            f"`regions.py#REGIONS` names: {missing!r}. НСИ likely renamed a row "
+            f"— the label in that table has to be their exact string."
+        )
+    return {"series": series, "prelim_by_period": prelim_by_period}
+
+
+def fetch_region_salaries_eu(
+    url_en: str = SOURCE_URL,
+    url_bg: str = SOURCE_URL_BG,
+) -> dict[str, Any]:
+    """Fetch НСИ's regional wage table in both editions — every област.
 
     Returns:
         {
-            "value_eur": float,             # НСИ's latest published quarter
-            "ref_period": "YYYY-Qn",
-            "is_preliminary": bool,         # from that year's title marker
-            "sofia_province_value_eur": float,   # same quarter, for the guard
-            "series_by_period": {"YYYY-Qn": float, ...},  # every published quarter
+            "ref_period": "YYYY-Qn",        # latest quarter EVERY област carries
+            "is_preliminary": bool,
+            "regions": [
+                {"code": str, "en_name": str, "bg_name": str,
+                 "value_eur": float, "series_by_period": {"YYYY-Qn": float, ...}},
+                ...                          # `regions.py#REGIONS` order
+            ],
         }
 
     Every value returned is a cell НСИ published. Nothing here is averaged,
@@ -253,69 +381,67 @@ def fetch_sofia_salary_eu(url: str = SOURCE_URL) -> dict[str, Any]:
 
     Raises:
         httpx.HTTPError — network failure
-        ValueError      — no quarterly sheet, structure changed, or the
-                          Sofia-city/province regression guard tripped
+        ValueError      — no quarterly sheet, structure changed, the two
+                          editions disagree, or a regression guard tripped
     """
-    raw = _get_xlsx(url)
+    en = _parse_region_edition(_get_xlsx(url_en), {r.nsi_en: r.code for r in REGIONS}, url_en)
+    bg = _parse_region_edition(_get_xlsx(url_bg), {r.nsi_bg: r.code for r in REGIONS}, url_bg)
 
-    # openpyxl needs a file-like object. BytesIO works.
-    import io
+    # The two editions are joined BY LABEL rather than by position, so a
+    # reordered sheet cannot mis-pair a name with a figure the way it could in
+    # the by-sector table. This check is therefore about something else: the two
+    # files must be the same table. НСИ publish identical figures in both, so a
+    # code whose series differ means one edition has been revised and the other
+    # not, and a payload built from the pair would date half of itself wrongly.
+    for r in REGIONS:
+        if en["series"][r.code] != bg["series"][r.code]:
+            raise ValueError(
+                f"The two editions disagree for {r.code!r} ({r.nsi_en} / "
+                f"{r.nsi_bg}). НСИ publish the same figures in both files, so "
+                f"one of them has been revised without the other. Refusing to "
+                f"publish a label from one file against a figure from the other."
+            )
 
-    # NOT read_only: the quarterly sheets are small and `iter_rows` over a
-    # read-only worksheet reports dimensions unreliably on these files.
-    wb = openpyxl.load_workbook(io.BytesIO(raw), data_only=True)
-    sheets = [n for n in wb.sheetnames if n.strip().endswith(QUARTERLY_SHEET_SUFFIX)]
-    if not sheets:
-        raise ValueError(
-            f"No {QUARTERLY_SHEET_SUFFIX!r} sheet found in {url}. Available sheets: {wb.sheetnames}"
-        )
-
-    series_by_period: dict[str, float] = {}
-    province_by_period: dict[str, float] = {}
-    prelim_by_period: dict[str, bool] = {}
-    for name in sheets:
-        parsed = _parse_quarterly_sheet(wb[name])
-        year = parsed["year"]
-        for q, v in parsed["cap"].items():
-            key = f"{year}-Q{q}"
-            series_by_period[key] = v
-            prelim_by_period[key] = parsed["is_preliminary"]
-        for q, v in parsed["province"].items():
-            province_by_period[f"{year}-Q{q}"] = v
-
-    ref_period = _latest_published_quarter(series_by_period)
+    # The headline quarter is the latest one EVERY област carries. A quarter
+    # where only some are published would leave the picker with regions that
+    # render blank, and a payload whose `ref_period` is true of part of itself.
+    common = set.intersection(*(set(en["series"][r.code]) for r in REGIONS))
+    ref_period = _latest_published_quarter(dict.fromkeys(common, 0.0))
     if ref_period is None:
         raise ValueError(
-            f"Parsed {len(sheets)} quarterly sheet(s) from {url} but found no "
-            f"{SOFIA_CAP_REGION_NAME!r} value in any of them."
+            f"No quarter is published for all {len(REGIONS)} области in "
+            f"{url_en}, so there is no period the whole table describes."
         )
 
-    cap_val = series_by_period[ref_period]
-    prov_val = province_by_period.get(ref_period)
-    if prov_val is None:
+    regions = [
+        {
+            "code": r.code,
+            "en_name": r.nsi_en.lstrip(_DISTRICT_PREFIX).strip(),
+            "bg_name": r.nsi_bg.lstrip(_DISTRICT_PREFIX).strip(),
+            "value_eur": en["series"][r.code][ref_period],
+            "series_by_period": dict(en["series"][r.code]),
+        }
+        for r in REGIONS
+    ]
+
+    # The third part of the regression guard — see the module docstring for why
+    # the other two are the row set rather than a value comparison. Sofia-city
+    # is the highest-paid област in Bulgaria by a margin no revision closes
+    # (1915 against a next-highest 1304 at 2026-Q1), so a selector that slipped
+    # onto the statistical-region headings, or by one row, lands here.
+    top = max(regions, key=lambda r: r["value_eur"])
+    if top["code"] != SOFIA_CITY_CODE:
         raise ValueError(
-            f"{SOFIA_CAP_REGION_NAME!r} has a value at {ref_period} but "
-            f"{SOFIA_PROVINCE_REGION_NAME!r} does not. The two rows should be "
-            f"filled together — НСИ likely restructured the sheet."
-        )
-    if cap_val <= prov_val:
-        # Sofia city wages run 50-70% above the rest of Sofia province. If the
-        # two converge or invert, the row selector matched the wrong region.
-        raise ValueError(
-            f"Regression guard: {SOFIA_CAP_REGION_NAME} ({cap_val}) <= "
-            f"{SOFIA_PROVINCE_REGION_NAME} ({prov_val}) at {ref_period}. "
-            f"Sofia city has the highest regional wage in BG, so this means "
-            f"the wrong row was read — check the region names in the connector."
+            f"Regression guard: the highest wage at {ref_period} is "
+            f"{top['code']!r} ({top['value_eur']}), not {SOFIA_CITY_CODE!r}. "
+            f"Sofia-city has the highest regional wage in BG, so this means the "
+            f"rows were read against the wrong labels."
         )
 
     return {
-        "value_eur": cap_val,
         "ref_period": ref_period,
-        "is_preliminary": prelim_by_period[ref_period],
-        # Regression-guard evidence, kept so a status banner can show the
-        # spread if it ever starts collapsing.
-        "sofia_province_value_eur": prov_val,
-        "series_by_period": series_by_period,
+        "is_preliminary": en["prelim_by_period"].get(ref_period, False),
+        "regions": regions,
         # НСИ publish no explicit as_of on the workbook; the CLI stamps the
         # payload from the pipeline's own date.today().
         "fetched_at": None,

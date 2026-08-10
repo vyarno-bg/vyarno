@@ -67,18 +67,36 @@ export const HOME = {
   //
   // Refresh via `vyarno-pipeline refresh --source sofia-salary`, then copy
   // `value` and `ref_period` across from the payload.
+  // Offline sentinel for the wage comparator, in the shape `region_salary.json`
+  // publishes and read through the same `view.js#regionQuarter` the live payload
+  // is — one implementation, so the offline figure cannot drift from the online
+  // one.
+  //
+  // **It carries Sofia-city alone, and that is not an oversight.** A sentinel is
+  // what renders before a fetch lands; twenty-eight области of frozen wages
+  // would be twenty-eight numbers going quietly stale in a source file, each
+  // looking exactly like the live one. One is enough to keep the card from
+  // reflowing, and any other област falls back to the empty state rather than
+  // to a figure nobody refreshed.
   regionSalaryFallback: {
-    value: 1915,
     ref_period: "2026-Q1",
     // НСИ star the year until they finalise it, and the quarter this sentinel
     // mirrors is starred. A sentinel that dropped the marker would show the
     // pre-load card as settled and the loaded one as provisional, on the same
-    // figure — so it carries whatever `sofia_salary.json` carries.
+    // figure — so it carries whatever `region_salary.json` carries.
     is_preliminary: true,
-    series_by_period: { "2026-Q1": 1915 },
+    regions: [
+      {
+        code: "sofiya",
+        en_name: "Sofia cap.",
+        bg_name: "София(столица)",
+        value_eur: 1915,
+        series_by_period: { "2026-Q1": 1915 },
+      },
+    ],
   },
   regionMeanGrossSource:
-    'NSI quarterly labour survey - Sofia-city statistical region, average monthly gross wage, latest published quarter (Labour_1.1.2.2_EUR_EN.xlsx, "{year}trimes" sheets, row "-Sofia cap.")',
+    'NSI quarterly labour survey - by oblast, average monthly gross wage, latest published quarter (Labour_1.1.2.2_EUR_EN.xlsx + Labour_1.1.2.2_EUR.xlsx, "{year}trimes" sheets, district rows)',
   regionMeanGrossSourceUrl: "https://www.nsi.bg/en/statistical-data/179/569",
   // Offline sentinel for the mortgage rate, used only before mortgage.json
   // loads. Mirrors the published ECB MIR new-business AAR (2.43% at 2026-05)

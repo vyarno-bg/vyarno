@@ -36,7 +36,7 @@ ARMS = {
     "unemployment": "_refresh_unemployment",
     "mortgage": "_refresh_mortgage",
     "sofia-price": "_refresh_sofia_price",
-    "sofia-salary": "_refresh_sofia_salary",
+    "region-salary": "_refresh_region_salary",
     "salary-dist": "_refresh_salary_dist",
     "payroll": "_refresh_payroll",
 }
@@ -116,7 +116,7 @@ def test_a_failed_arm_names_what_all_already_wrote_and_keeps_its_exit_code(
             f"`{landed}` completed but the failure report does not list it"
         )
     # Never started, and named so they are not assumed current.
-    for skipped in ("sofia-salary", "salary-dist", "payroll"):
+    for skipped in ("region-salary", "salary-dist", "payroll"):
         assert skipped in out.split("not reached:")[1], (
             f"`{skipped}` never ran but the failure report does not list it"
         )

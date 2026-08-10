@@ -117,7 +117,7 @@ test("the country page marks a figure its publisher has not finalised", { skip }
   // Driven off the payload rather than pinned to today's data: when НСИ
   // finalise the quarter the flag clears, the marker goes with it, and this
   // asserts the absence instead. Either way the page and the payload agree.
-  const preliminary = Boolean(published("sofia_salary").is_preliminary);
+  const preliminary = Boolean(published("region_salary").is_preliminary);
   await withApp(async (page, errors) => {
     const captions = await page
       .locator("main.how .ss, main.how p.cap")

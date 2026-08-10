@@ -32,7 +32,7 @@ own table.
 - hicp_headline — Eurostat's all-items HICP rate for Bulgaria, and the index
 - hicp_categories — the 13 divisions, their official weights and each rate
 - payroll — the tax and social-contribution table, gross to net
-- sofia_salary — the НСИ quarterly average wage for Sofia
+- region_salary — the НСИ quarterly average wage in each of the 28 области
 - sector_salary — the НСИ quarterly average wage by economic activity, 19 NACE
   Rev 2 sections and the all-activities total. An average, not a median: nobody
   publishes how pay is spread within a Bulgarian sector, so there is no rank

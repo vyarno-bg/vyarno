@@ -33,6 +33,7 @@ import httpx
 import pytest
 
 from vyarno_pipeline import clock
+from vyarno_pipeline.regions import REGIONS, SOFIA_CITY_CODE
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.ecb import SERIES_KEYS, fetch_mir_series
 from vyarno_pipeline.sources.eurostat import (
@@ -43,7 +44,7 @@ from vyarno_pipeline.sources.eurostat import (
     group_codes_in_basket,
 )
 from vyarno_pipeline.sources.imot import fetch_sofia_avg_prices
-from vyarno_pipeline.sources.nsi import fetch_sector_salary_eu, fetch_sofia_salary_eu
+from vyarno_pipeline.sources.nsi import fetch_region_salaries_eu, fetch_sector_salary_eu
 
 pytestmark = pytest.mark.live
 
@@ -282,26 +283,39 @@ def test_every_ecb_series_key_still_resolves(name):
 
 
 # ---------------------------------------------------------------------------
-# NSI — the Sofia wage anchor
+# NSI — the regional wage table, all 28 oblasti
 # ---------------------------------------------------------------------------
 
 
-def test_nsi_workbook_still_has_the_sofia_city_row():
-    """The XLSX must download and still carry the `-Sofia cap.` row.
+def test_nsi_workbook_still_carries_every_oblast_row():
+    """Both editions must download and still carry all 28 district rows.
 
-    NSI republishes this file on its own schedule; a moved row or a renamed
-    sheet is caught by the connector's own guards, which this exercises
-    against the live workbook rather than the fixture.
+    NSI republishes these files on their own schedule; a renamed row, an added
+    oblast, a shifted header or the two editions falling out of step are all
+    caught by the connector's own guards, and this exercises them against the
+    live workbooks rather than the fixture.
+
+    The names are what the fixture cannot check. `regions.py` holds NSI's row
+    labels as literal strings, and a fixture built from that table agrees with
+    it by construction — so only a live read can tell us the labels are still
+    theirs.
     """
     try:
-        result = fetch_sofia_salary_eu()
+        result = fetch_region_salaries_eu()
     except httpx.HTTPError as e:
-        _skip_if_blocked_here(e, "NSI", "See docs/data-sources.md §Sofia wage.")
-    assert result["value_eur"] > 500, result["value_eur"]
-    assert result["sofia_province_value_eur"] < result["value_eur"], (
-        "Sofia-city must exceed Sofia province — the connector's own "
-        "wrong-row guard, re-checked live"
+        _skip_if_blocked_here(e, "NSI", "See docs/data-sources.md §NSI regional wage.")
+
+    assert [r["code"] for r in result["regions"]] == [r.code for r in REGIONS], (
+        "the live workbook no longer resolves to regions.py#REGIONS in order"
     )
+    top = max(result["regions"], key=lambda r: r["value_eur"])
+    assert top["code"] == SOFIA_CITY_CODE, (
+        f"highest live wage is {top['code']} — Sofia-city must be, or the rows "
+        f"were read against the wrong labels"
+    )
+    for r in result["regions"]:
+        assert r["value_eur"] > 500, (r["code"], r["value_eur"])
+        assert r["en_name"] and r["bg_name"], r["code"]
     assert re.fullmatch(r"\d{4}-Q[1-4]", result["ref_period"]), (
         f"NSI headline period {result['ref_period']!r} is not a quarter — the "
         "connector is reading the monthly sheet again"
