@@ -89,6 +89,7 @@ import {
   cityHomeAtAverageWage,
   regionQuarter as publishedRegionQuarter,
   regionRow,
+  cityRow,
   SOFIA_CITY_CODE,
   systemWedgeLadder,
   savingsSince2020,
@@ -452,24 +453,30 @@ export class Calculator {
   // has to ask. The fallback is a round constant with no measurement behind
   // it; presented as имот.bg's median it is a plausible number wearing someone
   // else's provenance, which is worse than showing nothing at all.
-  cityPriceIsLive = $derived(Boolean(this.data.cityPrice?.eur_per_m2_median));
+  cityRowNow = $derived(cityRow(this.data.cityPrice, this.cityCode));
+  cityPriceIsLive = $derived(Boolean(this.cityRowNow?.eur_per_m2_median));
   cityEurPerM2 = $derived(
-    this.data.cityPrice?.eur_per_m2_median || (HOME.eurPerM2_offlineFallback ?? 2500)
+    this.cityRowNow?.eur_per_m2_median || (HOME.eurPerM2_offlineFallback ?? 2500)
   );
   cityPriceAsOf = $derived(this.data.cityPrice?.as_of ?? "");
-  cityPricePageDate = $derived(this.data.cityPrice?.page_as_of_dd_mm_yyyy ?? "");
-  cityNDistricts = $derived(this.data.cityPrice?.n_districts ?? 0);
+  cityPricePageDate = $derived(this.cityRowNow?.snapshot_date ?? "");
+  cityNDistricts = $derived(this.cityRowNow?.n_districts ?? 0);
   // Sofia price history (imot.bg, 2015..current). The pipeline fetches
   // per-year snapshots on every refresh; the SPA reads this array verbatim
   // (already sorted ascending by year) and renders a small sparkline + the
   // since-2015 delta on the stat card. Empty array → the payload carries no
   // historical block.
   cityHistorical = $derived(
-    Array.isArray(this.data.cityPrice?.historical) ? this.data.cityPrice.historical : []
+    Array.isArray(this.cityRowNow?.historical) ? this.cityRowNow.historical : []
   );
-  // The current-year row's since_2015_median_pct, and the year the ladder
-  // starts from. The pipeline guarantees the delta matches current/baseline - 1
-  // by construction (see build_sofia_price_payload#consistency_invariant).
+  // The rise since this city's own baseline year, and that year. Both are the
+  // city row's own fields, and the pipeline gate holds them equal to the ends
+  // of the array beside them, so the headline and the chart cannot disagree.
+  //
+  // **The baseline is per city and is not a constant.** How far back имот.bg's
+  // coverage of a city supports a comparison differs by two decades between
+  // София and Смолян, so a year written down here would mean a different
+  // sample in every city and a wrong number in most of them.
   //
   // **Both come off `cityHome`, which is `view.js#cityHomeAtAverageWage`.**
   // That function picks these two cells out of the same array and is the layer
@@ -478,7 +485,7 @@ export class Calculator {
   // free to drift. Which END of the array each figure comes from is the wiring
   // `docs/site.md` §"A correct formula fed the wrong number" keeps out of the
   // reactive graph: `.at(-1)` against `[0]` is a one-character difference
-  // between the rise since 2015 and the 2015 level itself.
+  // between the rise since the baseline and the baseline level itself.
   citySinceBaselinePct = $derived(this.cityHome.sinceBaselinePct);
   cityBaselineYear = $derived(this.cityHome.baselineYear);
   cityBaselineMedian = $derived(this.cityHistorical[0]?.eur_per_m2_median ?? 0);
@@ -492,6 +499,12 @@ export class Calculator {
   // widening is in where the figure is read FROM, `region_salary.json`'s 28
   // rows rather than a file with one.
   regionCode = $derived(SOFIA_CITY_CODE);
+
+  // And which град the €/m² is read from. Separate from `regionCode` because
+  // the two payloads cover different sets — 28 области have a wage and 27
+  // cities have a price — so one of them is legitimately absent for a reader in
+  // Софийска област, and a single field could not express that.
+  cityCode = $derived(SOFIA_CITY_CODE);
 
   // The average monthly GROSS pay in that област — the comparator on the strip,
   // and the one number two cards and the whole percentile ladder hang off.
@@ -566,6 +579,7 @@ export class Calculator {
   cityHome = $derived(
     cityHomeAtAverageWage({
       cityPrice: this.data.cityPrice,
+      cityCode: this.cityCode,
       regionSalary: this.data.regionSalary,
       regionCode: this.regionCode,
       payroll: this.data.payroll,

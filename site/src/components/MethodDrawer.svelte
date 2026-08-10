@@ -29,7 +29,7 @@
      * How many Sofia districts имот.bg published a price for.
      *
      * A prop rather than the literal that was here: имот.bg adds and merges
-     * districts, `sofia_price.json` carries the count, and `/how/` already reads
+     * districts, `city_price.json` carries the count, and `/how/` already reads
      * it from there. A number typed into this paragraph says 143 for as long as
      * nobody re-reads the sentence, on the one page whose claim is that every
      * figure comes from the data.

@@ -37,7 +37,7 @@ import {
   loadAll,
 } from "../src/lib/data.js";
 import { PAYLOAD_KEYS, PAYLOADS } from "../src/lib/payloads.js";
-import { regionQuarter, SOFIA_CITY_CODE } from "../src/lib/view.js";
+import { cityRow, regionQuarter, SOFIA_CITY_CODE } from "../src/lib/view.js";
 import { HOME, PRESETS } from "../src/lib/content.js";
 import {
   officialInflation,
@@ -506,7 +506,7 @@ test("the offline sentinels in content.js still match what the pipeline publishe
   // enough to survive a routine refresh but tight enough to catch neglect.
   const mortgage = read("mortgage");
   const regions = read("region_salary");
-  const price = read("sofia_price");
+  const price = cityRow(read("city_price"), SOFIA_CITY_CODE);
   if (mortgage) {
     const live = mortgageDefaultRate(mortgage).pct;
     assert.ok(

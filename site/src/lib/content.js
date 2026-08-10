@@ -44,7 +44,7 @@ export const PRESETS = {
 };
 
 export const HOME = {
-  // Offline sentinel for the home block when sofia_price.json hasn't
+  // Offline sentinel for the home block when city_price.json hasn't
   // loaded yet (first paint, offline build). The live value comes from
   // data.cityPrice?.eur_per_m2_median at runtime (the imot.bg scrape).
   eurPerM2_offlineFallback: 2500,
@@ -53,7 +53,7 @@ export const HOME = {
   // reserved null. The "country average" line in the national strip
   // reads HPI cumulative instead.
   eurPerM2_country: null,
-  eurPerM2_source: "Sofia median from imot.bg/sredni-ceni (data/published/sofia_price.json)",
+  eurPerM2_source: "Sofia median from imot.bg/sredni-ceni (data/published/city_price.json)",
   m2Default: 70,
   // Offline sentinel for the Sofia comparator card, used only before
   // sofia_salary.json loads.
@@ -1504,7 +1504,7 @@ export const COPY = {
   // The "{pct}% от 2015" sub-caption on the stat card. Carries the
   // historical archive's own median-vs-2015-median delta (imot.bg
   // historical, NOT HICP). The {pct} placeholder is the current-year
-  // row's since_2015_median_pct from sofia_price.json.historical.
+  // row's since_baseline_median_pct from city_price.json.
   statHomeDelta: { bg: "+{pct}% от 2015 · медиана", en: "+{pct}% since 2015 · median" },
   statUnempK: { bg: "безработица · 15-74 г.", en: "unemployment · age 15-74" },
 
@@ -1578,14 +1578,14 @@ export const COPY = {
   // Sofia-only home row. Slots:
   //   {m}     apartment size (m²)
   //   {p}     total asking price
-  //   {pm2}   per-m² asking price (Sofia median from sofia_price.json)
+  //   {pm2}   per-m² asking price (the city median from city_price.json)
   //   {y}     years of monthly net pay
   //   {src}   short source caption (e.g. "имоти.бг · 143 квартала · 16.7.2026")
   homeYears: {
     bg: "{m} м² в <b>София</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
     en: "{m} m² in <b>Sofia</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
   },
-  // What the €/m² in that sentence actually IS. When sofia_price.json is on
+  // What the €/m² in that sentence actually IS. When city_price.json is on
   // the page it is имот.bg's measured median; when the payload did not load it
   // is HOME.eurPerM2_offlineFallback, a round constant with no measurement
   // behind it. Calling the second one «медиана» is the exact failure this

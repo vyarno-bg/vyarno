@@ -42,7 +42,7 @@
    *
    * Two shapes reach here, both normalised in `payloads.js`: a pipeline period
    * label ("2026-06", "2026-Q1", "2026") for a statistical series, and an ISO
-   * day for `sofia_price`, a listings average whose reference is the page on the
+   * day for `city_price`, a listings average whose reference is the page on the
    * day it was read. Both formatters constrain the shape and return an em dash
    * for anything else, so nothing from a payload reaches the DOM unchecked
    * (format.js, verify_template_safety.mjs).
