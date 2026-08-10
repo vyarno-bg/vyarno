@@ -534,7 +534,7 @@ test("the share card is dated by the month its two figures describe", () => {
 
 test("the Sofia comparator reads the live НСИ wage and links to it", () => {
   // The card compares the reader's net pay with Sofia's average wage. It must
-  // read the live `sofia_salary.json` rather than a hardcoded number, and link
+  // read the live `region_salary.json` rather than a hardcoded number, and link
   // to that payload's own source, so the figure on screen and the link under it
   // agree.
   assert.ok(

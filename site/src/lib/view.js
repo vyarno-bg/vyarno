@@ -2018,7 +2018,7 @@ export const SHARE_FIELDS = Object.freeze([
  * and two of them look safe:
  *
  *   - **The ladder position inverts.** `mirror.js#percentile` interpolates over
- *     rungs composed from `salary_dist.json` and `sofia_salary.json`, both
+ *     rungs composed from `salary_dist.json` and `sector_salary.json`, both
  *     committed and public, so "ahead of 34%" reconstructs the net pay to
  *     within a rung's width. It carries no currency symbol and is no safer for
  *     it.

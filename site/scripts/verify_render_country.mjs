@@ -75,9 +75,9 @@ test("every figure on the country page names a source and a period", { skip }, a
     }
 
     // **And the имот.bg captions say WHICH date they carry.** The payload holds
-    // two facts: `page_as_of_dd_mm_yyyy` is имот.bg's own «обновена на» stamp,
-    // `as_of` is the day we fetched it, and the scrape leaves the first empty
-    // when the page does not carry one — which is the case shipped today. A
+    // two facts: `snapshot_date` is имот.bg's own newest published snapshot,
+    // `as_of` is the day we fetched it, and the read leaves the first null when
+    // the page serves no parseable date list — the case shipped today. A
     // bare «имот.bg · 23.07.2026 г.» therefore lets our download date read as
     // their publication date, on a page whose whole claim is provenance. The
     // calculator has qualified it since the case first turned up.
@@ -107,7 +107,7 @@ test("every figure on the country page names a source and a period", { skip }, a
 });
 
 test("the country page marks a figure its publisher has not finalised", { skip }, async () => {
-  // НСИ star a whole year until they settle it, and `sofia_salary.json` carries
+  // НСИ star a whole year until they settle it, and `region_salary.json` carries
   // `is_preliminary` for the quarter this page reads. The calculator says so on
   // both of its НСИ credit lines; this page showed the same cell as final in
   // four places — the Sofia wage card, the years-of-pay card, the ladder's

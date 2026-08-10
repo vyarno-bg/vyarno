@@ -161,7 +161,7 @@ it as a boolean today.
 |---|---|
 | `hicp_categories.json` (68 KB) | 13 ECOICOP ver.2 divisions + ~46 groups; per code `weight_pct`, `annual_rate_pct`, `index_by_year` (year-end, since 2020), `latest_index`, BG/EN labels, two verify URLs |
 | `hicp_headline.json` | Eurostat's all-items 12-month rate, verbatim, with its reference month |
-| `salary_dist.json` | An 11-point gross ladder P1…P99 inside a `shape` block carrying Eurostat SES's own provenance. The НСИ level the ladder is re-set to is **not** copied in here — the SPA reads it from `region_salary.json`, so no payload carries a second publisher's figures |
+| `salary_dist.json` | An 11-point gross ladder P1…P99 inside a `shape` block carrying Eurostat SES's own provenance. The НСИ level the ladder is re-set to is **not** copied in here — the SPA reads it from `sector_salary.json`'s all-activities row, so no payload carries a second publisher's figures |
 | `payroll.json` | The dated BG payroll-law table + `scheduled_changes` |
 | `region_salary.json` (25 KB) | НСИ's published quarterly gross wage for each of the 28 области, with their own name for it in both languages; each row's headline is their latest quarter. Keyed by `code`, which is the join to `city_price.json` |
 | `sector_salary.json` (19 KB) | НСИ's published quarterly gross wage by economic activity — 19 NACE Rev 2 sections plus the all-activities total, each with `en_name`, `bg_name` (both НСИ's own, from their two language editions), `value_eur` and the full quarterly series. **An average, and the country's**, where `region_salary` is per област: nobody publishes a distribution by activity for BG, so there is no median and no rank in here to read |

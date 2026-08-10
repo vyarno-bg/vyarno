@@ -23,6 +23,7 @@ from vyarno_pipeline.validate import (
     CHAIN_TOLERANCE_PP,
     ValidationError,
     validate_chain_reconciliation,
+    validate_city_price,
     validate_classification_agreement,
     validate_coverage,
     validate_group_consistency,
@@ -656,3 +657,166 @@ def test_sector_gate_rejects_a_figure_that_is_not_a_monthly_wage():
 def test_sector_gate_rejects_an_empty_table():
     with pytest.raises(ValidationError, match="no activities parsed"):
         validate_sector_salary([], "2026-Q1")
+
+
+# ---------------------------------------------------------------------------
+# The per-city price gate — имот.bg, sredni-ceni
+# ---------------------------------------------------------------------------
+#
+# Every case below is a payload that is internally consistent and would render
+# without a mark on it. That is the whole reason the gate exists: the
+# connector's guards cover each PAGE, and what is left is the file — a median
+# that cannot have come from the rows under it, a series with a hole in it, a
+# headline percentage that disagrees with the chart it heads.
+
+_COVERED = ["varna", "vidin", "sofiya"]
+
+
+def _city(code="varna", **over):
+    """One `city_price.json` city block, valid unless a case breaks it."""
+    history = [
+        {
+            "year": 2022,
+            "n_districts": 60,
+            "n_dropped": 0,
+            "eur_per_m2_median": 1000.0,
+            "eur_per_m2_mean": 1020.0,
+            "since_baseline_median_pct": 0.0,
+        },
+        {
+            "year": 2023,
+            "n_districts": 62,
+            "n_dropped": 0,
+            "eur_per_m2_median": 1100.0,
+            "eur_per_m2_mean": 1120.0,
+            "since_baseline_median_pct": 10.0,
+        },
+        {
+            "year": 2024,
+            "n_districts": 65,
+            "n_dropped": 0,
+            "eur_per_m2_median": 1250.0,
+            "eur_per_m2_mean": 1270.0,
+            "since_baseline_median_pct": 25.0,
+        },
+    ]
+    row = {
+        "code": code,
+        "bg_name": "Варна",
+        "en_name": "Varna",
+        "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-varna",
+        "snapshot_date": "15.07.2026",
+        "n_districts": 65,
+        "n_dropped": 0,
+        "eur_per_m2_median": 1250.0,
+        "eur_per_m2_mean": 1270.0,
+        "eur_per_m2_min": 700.0,
+        "eur_per_m2_max": 2400.0,
+        "baseline_year": 2022,
+        "since_baseline_median_pct": 25.0,
+        "trend_publishable": False,
+        "historical": history,
+    }
+    row.update(over)
+    return row
+
+
+def test_city_gate_passes_a_well_formed_payload():
+    validate_city_price([_city(), _city("vidin", bg_name="Видин", en_name="Vidin")], _COVERED)
+
+
+def test_city_gate_rejects_an_empty_read():
+    with pytest.raises(ValidationError, match="no city was read"):
+        validate_city_price([], _COVERED)
+
+
+def test_city_gate_rejects_a_code_no_region_covers():
+    """The join to `region_salary.json` is by code, so a code with no wage
+    beside it renders a price under a place the reader cannot be told the wage
+    for — and there is no screen on which that looks wrong."""
+    with pytest.raises(ValidationError, match="not one of the"):
+        validate_city_price([_city("plovdiv")], _COVERED)
+
+
+def test_city_gate_rejects_the_same_city_twice():
+    with pytest.raises(ValidationError, match="appears twice"):
+        validate_city_price([_city(), _city()], _COVERED)
+
+
+def test_city_gate_rejects_a_city_missing_a_name_in_one_language():
+    """A missing string renders as a blank line in the picker, not a fallback."""
+    with pytest.raises(ValidationError, match="missing a name"):
+        validate_city_price([_city(bg_name="")], _COVERED)
+
+
+def test_city_gate_rejects_a_median_outside_the_per_district_bounds():
+    """Every row that built it had to clear [100, 10000] €/m², so a median
+    outside them cannot have come from rows inside them — which means the
+    summary is not describing the parse it claims to."""
+    for median in (12.5, 40000.0):
+        with pytest.raises(ValidationError, match="outside the per-district sanity bounds"):
+            validate_city_price([_city(eur_per_m2_median=median)], _COVERED)
+
+
+def test_city_gate_rejects_a_median_outside_its_own_range():
+    """min ≤ median ≤ max is arithmetic, not taste. A median above its own max
+    is a summary computed over a different set of rows from the one beside it,
+    and both figures are plausible €/m² on their own."""
+    with pytest.raises(ValidationError, match=r"outside\s+its own min-max range"):
+        validate_city_price([_city(eur_per_m2_max=1000.0)], _COVERED)
+
+
+def test_city_gate_rejects_years_out_of_order_or_repeated():
+    out_of_order = _city()
+    out_of_order["historical"] = list(reversed(out_of_order["historical"]))
+    with pytest.raises(ValidationError, match="years out of order"):
+        validate_city_price([out_of_order], _COVERED)
+
+    repeated = _city()
+    repeated["historical"] = repeated["historical"] + [dict(repeated["historical"][-1])]
+    with pytest.raises(ValidationError, match="publishes a year twice"):
+        validate_city_price([repeated], _COVERED)
+
+
+def test_city_gate_rejects_a_gap_in_the_published_years():
+    """**The since-baseline percentage spans the whole range**, so a hole in it
+    compares two coverage eras as one series. имот.bg's per-city coverage grew
+    over two decades and a thin year is not the same measurement as a full one
+    — `qualifying_years` walks the run backwards from the present for exactly
+    this reason, and this is the gate that catches it having been bypassed."""
+    gapped = _city()
+    gapped["historical"] = [gapped["historical"][0], gapped["historical"][2]]
+    gapped["historical"][-1]["since_baseline_median_pct"] = 25.0
+    with pytest.raises(ValidationError, match="gap in its published years"):
+        validate_city_price([gapped], _COVERED)
+
+
+def test_city_gate_rejects_a_baseline_year_that_is_not_the_oldest_published():
+    """`.at(-1)` against `[0]` is a one-character difference between the rise
+    since the baseline and the baseline level itself, and the SPA prints the
+    year beside the percentage."""
+    with pytest.raises(ValidationError, match="as its baseline but its oldest"):
+        validate_city_price([_city(baseline_year=2023)], _COVERED)
+
+
+def test_city_gate_rejects_a_non_zero_change_at_the_baseline_itself():
+    """A series measured from somewhere other than the year it says it is."""
+    moved = _city()
+    moved["historical"][0]["since_baseline_median_pct"] = 4.0
+    with pytest.raises(ValidationError, match="non-zero change at its own"):
+        validate_city_price([moved], _COVERED)
+
+
+def test_city_gate_rejects_a_headline_the_chart_disagrees_with():
+    """The card prints the headline and draws the series under it. Two figures
+    about the same city, from the same file, and only one of them can be right."""
+    with pytest.raises(ValidationError, match="not its newest published year"):
+        validate_city_price([_city(since_baseline_median_pct=31.0)], _COVERED)
+
+
+def test_city_gate_admits_a_city_with_no_history_at_all():
+    """имот.bg cover some cities from this year only, and a current €/m² with
+    no trend behind it is a complete answer rather than a broken one."""
+    validate_city_price(
+        [_city(historical=[], baseline_year=0, since_baseline_median_pct=0.0)], _COVERED
+    )

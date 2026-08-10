@@ -62,12 +62,12 @@
     calc.syncWithData();
   });
 
-  // WHICH date is on the Sofia €/m² figure. `page_as_of_dd_mm_yyyy` is
-  // имот.bg's own «обновена на» stamp — when the SOURCE published the figure.
-  // `as_of` is when OUR pipeline fetched it. They are different facts, so
-  // printing whichever is available with no qualifier lets our fetch date read
-  // as the source's. That is not hypothetical: a scrape that cannot find the
-  // page date leaves the field an empty string, which is the case for the
+  // WHICH date is on the €/m² figure. `snapshot_date` is имот.bg's own newest
+  // published snapshot, read off that city's own date list — when the SOURCE
+  // published the figure. `as_of` is when OUR pipeline fetched it. They are
+  // different facts, so printing whichever is available with no qualifier lets
+  // our fetch date read as the source's. That is not hypothetical: a page that
+  // serves no parseable list leaves the field null, which is the case for the
   // payload published today. Say which one is on screen.
   //
   // It is derived here rather than in the calculator because it picks WORDS,
