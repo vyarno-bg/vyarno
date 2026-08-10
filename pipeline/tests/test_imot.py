@@ -24,6 +24,7 @@ from vyarno_pipeline import clock
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS_BY_CODE, SOFIA_OBLAST_CODE
 from vyarno_pipeline.sources import imot
 from vyarno_pipeline.sources.imot import (
+    _MIN_DISTRICT_SHARE,
     MAX_DROPPED_SHARE,
     MIN_TREND_YEARS,
     SOURCE_URL,
@@ -218,6 +219,25 @@ def test_the_district_floor_passes_the_smallest_city_and_fails_a_fragment() -> N
     assert _min_districts_for(SOFIA) < SOFIA.imot_districts * 0.95
 
 
+def test_the_smallest_cities_are_held_by_the_absolute_floor_not_the_share() -> None:
+    """The floor is two rules and neither does the job alone.
+
+    A share of what the city itself publishes is what lets Ловеч's 7 districts
+    and София's 141 be judged by one rule. On its own it scales all the way
+    down: 60% of Ловеч is 4, and four rows out of seven is what a regex
+    catching a fragment returns as easily as имот.bg retiring three districts
+    would. The absolute floor under it is what refuses that page, and it binds
+    for every city small enough for the share to fall through — which the two
+    assertions below pin from either end, without writing either constant into
+    a test that would then agree with any value of it.
+    """
+    small = min(PRICED_REGIONS, key=lambda r: r.imot_districts)
+    assert _min_districts_for(small) > int(small.imot_districts * _MIN_DISTRICT_SHARE)
+    # And the share is what binds where a city is big enough for it to mean
+    # something — the absolute floor would pass a София page of five rows.
+    assert _min_districts_for(SOFIA) == int(SOFIA.imot_districts * _MIN_DISTRICT_SHARE)
+
+
 def test_every_covered_city_clears_its_own_floor_at_its_probed_count() -> None:
     """A floor no real city can clear is a feature that ships broken.
 
@@ -344,6 +364,25 @@ def test_a_thin_year_is_excluded_by_the_share_even_when_it_clears_the_count() ->
     large = dict.fromkeys(range(THIS_YEAR - 3, THIS_YEAR + 1), 69)
     large[THIS_YEAR - 3] = 7
     assert THIS_YEAR - 3 not in qualifying_years(large, THIS_YEAR)
+
+
+def test_a_thin_year_is_excluded_by_the_count_even_when_it_clears_the_share() -> None:
+    """The other half of the same pair, on the history rule this time.
+
+    The two thresholds cross at 15 districts, so for a city below that the
+    share computes to something a handful of rows would satisfy — 40% of a
+    ten-district present is four — and a median over four districts is not the
+    same measurement as one over ten. Плевен's +120% across 2003-04 is a
+    six-district reading and it is the worst move the pair currently admits;
+    everything under six is refused outright, whatever share it works out to.
+    """
+    thin = {THIS_YEAR - 1: 4, THIS_YEAR: 10}
+    assert qualifying_years(thin, THIS_YEAR) == [THIS_YEAR]
+    # Six of the same ten clears it, which is the count the rule names.
+    assert qualifying_years({THIS_YEAR - 1: 6, THIS_YEAR: 10}, THIS_YEAR) == [
+        THIS_YEAR - 1,
+        THIS_YEAR,
+    ]
 
 
 def test_a_city_whose_current_year_is_missing_publishes_no_trend() -> None:
