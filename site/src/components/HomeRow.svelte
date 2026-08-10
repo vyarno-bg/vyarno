@@ -43,7 +43,7 @@
     /** Sofia €/m² provenance, quoted where the default price comes from. */
     cityEurPerM2 = 0,
     cityNDistricts = 0,
-    /** True when the €/m² came from sofia_price.json, not the offline constant. */
+    /** True when the €/m² came from city_price.json, not the offline constant. */
     cityPriceIsLive = false,
     cityPriceDated = "",
   } = $props();

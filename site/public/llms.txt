@@ -38,7 +38,8 @@ own table.
   publishes how pay is spread within a Bulgarian sector, so there is no rank
   here to read
 - salary_dist — the pay distribution, Eurostat SES shape at a recent level
-- sofia_price — €/m² across Sofia's districts
+- city_price — €/m² across the districts of each covered city, and how far back
+  имот.bg's coverage of that city supports a comparison
 - mortgage — home-loan rates and the БНБ borrowing caps
 - unemployment — the monthly seasonally adjusted rate
 

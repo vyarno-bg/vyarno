@@ -217,6 +217,25 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
 export const SOFIA_CITY_CODE = "sofiya";
 
 /**
+ * One city's whole row out of `city_price.json`, or null.
+ *
+ * The price twin of `regionRow`, and separate from it because the two payloads
+ * cover different sets: 28 области have a wage and 27 cities have a price.
+ * Софийска област is the one with a wage and no price, so a lookup that fell
+ * back to "the region row's city" would hand a reader in Самоков София's €/m²
+ * — the exact substitution this whole change exists to end.
+ *
+ * @param {{cities?: Array<{code?: string}>} | null | undefined} payload
+ * @param {string} code
+ * @returns {object|null}
+ */
+export function cityRow(payload, code) {
+  if (!code) return null;
+  const rows = Array.isArray(payload?.cities) ? payload.cities : [];
+  return rows.find((r) => r?.code === code) ?? null;
+}
+
+/**
  * One област's whole row out of `region_salary.json`, or null.
  *
  * The single place a region code becomes a row, so "which област's figures" is
@@ -1028,7 +1047,8 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  * page print a price without saying what it is a price of.
  *
  * @param {object} args
- * @param {object|null} args.cityPrice   data.cityPrice (sofia_price.json)
+ * @param {object|null} args.cityPrice   data.cityPrice (city_price.json)
+ * @param {string} args.cityCode          which град the €/m² is read from
  * @param {object|null} args.regionSalary  data.regionSalary (region_salary.json)
  * @param {string} args.regionCode        which област the wage is read from
  * @param {object|null} args.payroll      data.payroll (payroll.json)
@@ -1037,12 +1057,19 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  *            netMonthly:number, wagePeriod:string, years:number,
  *            nDistricts:number, sinceBaselinePct:number, baselineYear:number}}
  */
-export function cityHomeAtAverageWage({ cityPrice, regionSalary, regionCode, payroll, m2 }) {
-  const eurPerM2 = cityPrice?.eur_per_m2_median ?? 0;
+export function cityHomeAtAverageWage({
+  cityPrice,
+  cityCode,
+  regionSalary,
+  regionCode,
+  payroll,
+  m2,
+}) {
+  const city = cityRow(cityPrice, cityCode);
+  const eurPerM2 = city?.eur_per_m2_median ?? 0;
   const anchor = regionQuarter(regionSalary, regionCode);
   const netMonthly = bgNetSalary(anchor.value, payrollParams(payroll)).net;
   const price = eurPerM2 > 0 && m2 > 0 ? eurPerM2 * m2 : 0;
-  const history = Array.isArray(cityPrice?.historical) ? cityPrice.historical : [];
   return {
     eurPerM2,
     m2,
@@ -1057,9 +1084,17 @@ export function cityHomeAtAverageWage({ cityPrice, regionSalary, regionCode, pay
     // so a template gates on the figure rather than on which kind of nothing
     // it got.
     years: price > 0 && netMonthly > 0 ? homeYears(price, netMonthly) : 0,
-    nDistricts: cityPrice?.n_districts ?? 0,
-    sinceBaselinePct: history.at(-1)?.since_2015_median_pct ?? 0,
-    baselineYear: history[0]?.year ?? 0,
+    nDistricts: city?.n_districts ?? 0,
+    // Both come off the city's own row rather than off the chart's ends, so a
+    // surface showing the headline and a surface showing the series cannot
+    // disagree about what the baseline was.
+    sinceBaselinePct: city?.since_baseline_median_pct ?? 0,
+    baselineYear: city?.baseline_year ?? 0,
+    // Whether the run behind that percentage is long enough to say «since
+    // YEAR» in the voice of a trend. Decided in the pipeline, over the whole
+    // series, rather than by each surface counting rows and reaching its own
+    // conclusion.
+    trendPublishable: Boolean(city?.trend_publishable),
   };
 }
 

@@ -58,6 +58,7 @@ import { periodLong } from "../src/lib/format.js";
 import { DOCS } from "../src/lib/legal.js";
 import { SUPPORT_COPY } from "../src/lib/support.js";
 import { PAYLOAD_FILES } from "../src/lib/payloads.js";
+import { cityRow, SOFIA_CITY_CODE } from "../src/lib/view.js";
 // The date a crawler reads off the JSON-LD is the same value the sitemap's
 // <lastmod> carries, so the assertion computes it the same way rather than
 // restating the rule.
@@ -205,7 +206,7 @@ test(
     // against the shipped payloads rather than pinned to today's numbers.
     const html = await servedText("how", "index.html");
     const [categories, payroll, price, mortgage] = await Promise.all(
-      ["hicp_categories", "payroll", "sofia_price", "mortgage"].map(shipped)
+      ["hicp_categories", "payroll", "city_price", "mortgage"].map(shipped)
     );
 
     for (const [what, text] of [
@@ -224,7 +225,7 @@ test(
     for (const [what, text] of [
       ["a division's official weight", `${categories.categories[0].weight_pct}`.replace(".", ",")],
       ["the insurance ceiling", bgInt(payroll.max_insurable_income_eur)],
-      ["the Sofia €/m² median", bgInt(price.eur_per_m2_median)],
+      ["the Sofia €/m² median", bgInt(cityRow(price, SOFIA_CITY_CODE).eur_per_m2_median)],
       ["the new-business mortgage rate", `${mortgage.new_business.value_pct}`.replace(".", ",")],
       ["the month the mortgage rate describes", "2026"],
     ]) {

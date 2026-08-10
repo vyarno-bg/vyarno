@@ -34,6 +34,7 @@ import {
   SHARE_DOMAIN,
   SHARE_ORIGIN,
   regionRow,
+  cityRow,
   SOFIA_CITY_CODE,
 } from "../src/lib/view.js";
 import { shareCardText, SHARE_CARD_COPY_KEYS } from "../src/lib/share-card.js";
@@ -1381,7 +1382,7 @@ test("no page writes a live figure into its prose", () => {
   // because a worked example carries no freshness claim and is what makes an
   // explanation readable.
   const headline = published("hicp_headline");
-  const price = published("sofia_price");
+  const price = cityRow(published("city_price"), SOFIA_CITY_CODE);
   const wage = regionRow(published("region_salary"), SOFIA_CITY_CODE);
   if (!headline || !price || !wage) return;
 
@@ -1442,7 +1443,7 @@ test("no prose freezes a date or a count the payloads already carry", () => {
   // a worked example that happens to contain a year («индексът в края на
   // 2020 г. е 115») carries no freshness claim and is what makes the
   // explanation readable.
-  const price = published("sofia_price");
+  const price = cityRow(published("city_price"), SOFIA_CITY_CODE);
   const dist = published("salary_dist");
 
   const frozen = [

@@ -629,3 +629,97 @@ def validate_region_salary(regions: list[dict], ref_period: str, expected_codes:
                     f"{REGION_WAGE_MIN_EUR}-{REGION_WAGE_MAX_EUR}. That is not a "
                     f"monthly wage — the parse landed on the wrong column."
                 )
+
+
+# ---------------------------------------------------------------------------
+# The per-city price gate — имот.bg, sredni-ceni
+# ---------------------------------------------------------------------------
+
+
+def validate_city_price(cities: list[dict], covered_codes: list[str]) -> None:
+    """Gate the per-city €/m² payload before it is written.
+
+    The connector's own guards cover each page: the sales-URL check, the
+    fractional-value refusal, that city's district floor and the drop ceiling.
+    This gate covers the PAYLOAD, and every property it holds is one that would
+    otherwise ship a figure looking exactly like a correct one.
+
+    `covered_codes` is passed in rather than imported so the gate states what it
+    is checking against and a run cannot pass by agreeing with itself.
+    """
+    if not cities:
+        raise ValidationError("city prices: no city was read")
+
+    known = set(covered_codes)
+    seen: set[str] = set()
+    for c in cities:
+        code = c.get("code", "")
+        if code not in known:
+            raise ValidationError(
+                f"city prices: {code!r} is not one of the {len(known)} cities "
+                f"`regions.py` covers. Every consumer joins this file to "
+                f"`region_salary.json` by code, so a code with no wage beside it "
+                f"renders a price under a place the reader cannot be told the "
+                f"wage for."
+            )
+        if code in seen:
+            raise ValidationError(f"city prices: {code!r} appears twice")
+        seen.add(code)
+
+        if not c.get("bg_name") or not c.get("en_name"):
+            raise ValidationError(
+                f"city prices: {code!r} is missing a name in one language. The "
+                f"picker renders a blank line for a missing string, not a fallback."
+            )
+
+        median = c.get("eur_per_m2_median")
+        if not isinstance(median, (int, float)) or not 100 <= median <= 10_000:
+            raise ValidationError(
+                f"city prices: {code!r} publishes a median of {median} €/m², "
+                f"outside the per-district sanity bounds every row that built it "
+                f"had to clear. A median outside them cannot have come from rows "
+                f"inside them."
+            )
+        if not (c.get("eur_per_m2_min", 0) <= median <= c.get("eur_per_m2_max", 0)):
+            raise ValidationError(
+                f"city prices: {code!r} publishes a median of {median} outside "
+                f"its own min-max range ({c.get('eur_per_m2_min')}-"
+                f"{c.get('eur_per_m2_max')}). The summary is not describing the "
+                f"rows it was computed from."
+            )
+
+        history = c.get("historical") or []
+        years = [row.get("year") for row in history]
+        if years != sorted(years):
+            raise ValidationError(f"city prices: {code!r} publishes its years out of order")
+        if len(set(years)) != len(years):
+            raise ValidationError(f"city prices: {code!r} publishes a year twice")
+        # **The run has to be unbroken, and this is where that is checked rather
+        # than assumed.** The whole reason a baseline is chosen per city is that
+        # имот.bg's coverage of it grew over two decades; a gap in the published
+        # years means two coverage eras are being compared as one series, and
+        # the percentage over them would read as a price move.
+        if years and years != list(range(years[0], years[-1] + 1)):
+            raise ValidationError(
+                f"city prices: {code!r} has a gap in its published years "
+                f"({years[0]}..{years[-1]}). The since-baseline percentage spans "
+                f"the whole range, so a gap makes it a comparison across two "
+                f"different samples."
+            )
+        if history:
+            if c.get("baseline_year") != years[0]:
+                raise ValidationError(
+                    f"city prices: {code!r} names {c.get('baseline_year')} as its "
+                    f"baseline but its oldest published year is {years[0]}."
+                )
+            if history[0].get("since_baseline_median_pct") != 0.0:
+                raise ValidationError(
+                    f"city prices: {code!r} publishes a non-zero change at its own "
+                    f"baseline year, so the series is measured from somewhere else."
+                )
+            if c.get("since_baseline_median_pct") != history[-1].get("since_baseline_median_pct"):
+                raise ValidationError(
+                    f"city prices: {code!r} headlines a since-baseline change that "
+                    f"is not its newest published year's. The headline and the "
+                    f"chart would disagree, and only one of them can be right."
+                )

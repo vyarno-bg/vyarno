@@ -179,23 +179,35 @@ export const PAYLOADS = Object.freeze(
     },
     {
       key: "cityPrice",
-      file: "sofia_price",
+      file: "city_price",
       // imot.bg publishes no release calendar, so this is our own refresh
       // expectation rather than a schedule anyone promised us. A quarter,
       // because a €/m² average moves slowly enough that a month's lag is not a
       // wrong number, only a slightly old one.
       cadenceDays: 92,
-      name: { bg: "Цени на жилищата в София", en: "Sofia home prices" },
+      name: { bg: "Цени на жилищата по градове", en: "Home prices by city" },
       feeds: {
-        bg: "цената на квадратен метър по квартали и колко струва жилище",
-        en: "the €/m² by district and what a home costs",
+        bg: "цената на квадратен метър в твоя град и колко струва жилище",
+        en: "the €/m² in your city and what a home costs",
       },
-      // imot.bg's own «обновена на» stamp when the scraper finds one, else the
-      // day we scraped. A DAY rather than a statistical period, and that is not
-      // a gap in the data: a listings average has no reference month, it is the
-      // state of the page when it was read. The page's stamp is often missing,
-      // and falling back to `as_of` states that honestly.
-      refPeriod: (p) => isoDay(p?.page_as_of_dd_mm_yyyy) ?? p?.as_of ?? null,
+      // имот.bg's own newest published snapshot, read from each page's own
+      // `<select name="date">`, else the day we read it. A DAY rather than a
+      // statistical period, and that is not a gap in the data: a listings
+      // average has no reference month, it is the state of the page when it was
+      // read.
+      //
+      // **The panel dates the whole file, so it takes the OLDEST city's
+      // snapshot.** A refresh reads 27 pages over a couple of minutes and
+      // имот.bg recompute them on their own schedule, so the newest of them
+      // would date the file by whichever city happened to be freshest and hide
+      // the one that was not.
+      refPeriod: (p) => {
+        const days = (p?.cities ?? [])
+          .map((c) => isoDay(c?.snapshot_date))
+          .filter(Boolean)
+          .sort();
+        return days[0] ?? p?.as_of ?? null;
+      },
       refPeriodIsDayDate: true,
     },
     {

@@ -35,7 +35,7 @@ ARMS = {
     "hicp": "_refresh_hicp",
     "unemployment": "_refresh_unemployment",
     "mortgage": "_refresh_mortgage",
-    "sofia-price": "_refresh_sofia_price",
+    "city-price": "_refresh_city_price",
     "region-salary": "_refresh_region_salary",
     "salary-dist": "_refresh_salary_dist",
     "payroll": "_refresh_payroll",
@@ -104,12 +104,12 @@ def test_a_failed_arm_names_what_all_already_wrote_and_keeps_its_exit_code(
     def dies(*_args, **_kwargs):
         raise SystemExit(4)
 
-    monkeypatch.setattr(cli, "_refresh_sofia_price", dies)
+    monkeypatch.setattr(cli, "_refresh_city_price", dies)
     result = _run(tmp_path, "all")
 
     assert result.exit_code == 4, f"the arm's own exit code was lost: {result.exit_code}"
     out = result.output
-    assert "stopped at 'sofia-price'" in out, out
+    assert "stopped at 'city-price'" in out, out
     # Written before the failure, and named so they are not refreshed again.
     for landed in ("hicp", "unemployment", "mortgage"):
         assert landed in out.split("written this run:")[1].split("not reached:")[0], (

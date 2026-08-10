@@ -67,6 +67,7 @@ import {
   answerLine,
   regionQuarter,
   regionRow,
+  cityRow,
   SOFIA_CITY_CODE,
   RANK_ROWS_SHOWN,
   sharePayload,
@@ -248,7 +249,7 @@ test("dataAge rows carry what the panel renders, including the period", () => {
 test("every manifest payload resolves a reference period from what it publishes", () => {
   // The panel's period column is only honest if every row can find its own
   // period, and they keep it in different places: `mortgage` per rate tier,
-  // `payroll` as an effective year, `sofia_price` as a scraped page date,
+  // `payroll` as an effective year, `city_price` as имот.bg's own snapshot day,
   // `salary_dist` as the SES wave. An accessor that silently returns null
   // renders "—" for ever and nobody notices.
   const missing = [];
@@ -2312,24 +2313,26 @@ test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () =
   // Fed the gross, the years-of-salary figure is about a fifth too flattering
   // — the direction AGENTS.md forbids by name, on the one figure the page
   // exists to state plainly.
-  const price = read("sofia_price");
+  const price = read("city_price");
   const wage = read("region_salary");
   if (!price || !wage || !PAYROLL) return;
   const home = cityHomeAtAverageWage({
     cityPrice: price,
+    cityCode: SOFIA_CITY_CODE,
     regionSalary: wage,
     regionCode: SOFIA_CITY_CODE,
     payroll: PAYROLL,
     m2: 70,
   });
-  assert.equal(home.eurPerM2, price.eur_per_m2_median);
+  const priceRow = cityRow(price, SOFIA_CITY_CODE);
+  assert.equal(home.eurPerM2, priceRow.eur_per_m2_median);
   assert.equal(home.grossMonthly, regionQuarter(wage, SOFIA_CITY_CODE).value);
   assert.equal(home.wagePeriod, wage.ref_period);
   assert.ok(
     home.netMonthly < home.grossMonthly,
     "the wage the home is priced against was not converted to net"
   );
-  assert.ok(near(home.price, price.eur_per_m2_median * 70, 1e-9));
+  assert.ok(near(home.price, priceRow.eur_per_m2_median * 70, 1e-9));
   assert.ok(
     near(home.years, home.price / (12 * home.netMonthly), 1e-9),
     "the years figure is not the price over a year of that take-home"
@@ -2339,7 +2342,9 @@ test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () =
   // picked its own would let a price be printed without saying what it prices.
   const smaller = cityHomeAtAverageWage({
     cityPrice: price,
+    cityCode: SOFIA_CITY_CODE,
     regionSalary: wage,
+    regionCode: SOFIA_CITY_CODE,
     payroll: PAYROLL,
     m2: 50,
   });
@@ -2347,22 +2352,30 @@ test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () =
 
   // The two ends of the price ladder, and which end each figure comes from.
   // The strip renders the rise BESIDE the sparkline drawn from the same array,
-  // so a swap prints the 2015 level as this year's rise and neither figure
+  // so a swap prints the baseline level as this year's rise and neither figure
   // looks wrong on its own. `.at(-1)` against `[0]` is the whole difference,
   // which is why the selection is here rather than in a `$derived` no test
   // reaches — `calculator.svelte.js#citySinceBaselinePct` reads both from this.
-  const history = price.historical ?? [];
+  //
+  // Both are read off the city's OWN row rather than off the array's ends: the
+  // baseline is per-city now, chosen from how far back имот.bg's coverage of
+  // that city holds, so the row and the chart have to agree about which year it
+  // is and this is where that is checked.
+  const row = cityRow(price, SOFIA_CITY_CODE);
+  const history = row.historical ?? [];
   if (history.length > 1) {
     assert.equal(
       home.sinceBaselinePct,
-      history.at(-1).since_2015_median_pct,
+      history.at(-1).since_baseline_median_pct,
       "the since-baseline rise came off the wrong end of the price history"
     );
+    assert.equal(home.sinceBaselinePct, row.since_baseline_median_pct);
     assert.equal(
       home.baselineYear,
       history[0].year,
       "the baseline year came off the wrong end of the price history"
     );
+    assert.equal(home.baselineYear, row.baseline_year);
     assert.ok(
       home.baselineYear < history.at(-1).year,
       "the baseline is not the oldest year in the ladder"
@@ -2394,7 +2407,8 @@ test("cityHomeAtAverageWage prints nothing when either end is missing", () => {
   assert.equal(noPrice.price, 0);
   assert.equal(noPrice.years, 0);
   const noWage = cityHomeAtAverageWage({
-    cityPrice: read("sofia_price"),
+    cityPrice: read("city_price"),
+    cityCode: SOFIA_CITY_CODE,
     regionSalary: null,
     payroll: PAYROLL,
     m2: 70,

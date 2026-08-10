@@ -19,6 +19,7 @@ Exit codes:
 from __future__ import annotations
 
 import sys
+import time
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
@@ -38,6 +39,7 @@ from vyarno_pipeline.mortgage import (
 )
 from vyarno_pipeline.payroll import build_payroll_payload
 from vyarno_pipeline.publish import (
+    CITY_PRICE_FILE,
     HICP_CATEGORIES_FILE,
     HICP_HEADLINE_FILE,
     MORTGAGE_FILE,
@@ -45,7 +47,6 @@ from vyarno_pipeline.publish import (
     REGION_SALARY_FILE,
     SALARY_DIST_FILE,
     SECTOR_SALARY_FILE,
-    SOFIA_PRICE_FILE,
     UNEMPLOYMENT_FILE,
     write_hicp_categories,
     write_hicp_headline,
@@ -54,7 +55,7 @@ from vyarno_pipeline.publish import (
     write_salary_distribution_payload,
     write_time_series,
 )
-from vyarno_pipeline.regions import REGIONS
+from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_SOURCE_URL
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.ecb import (
@@ -76,10 +77,10 @@ from vyarno_pipeline.sources.eurostat import (
     group_codes_in_basket,
 )
 from vyarno_pipeline.sources.imot import (
-    HISTORICAL_YEAR_MIN,
-    build_sofia_price_payload,
-    fetch_sofia_avg_prices,
-    fetch_sofia_avg_prices_for_year,
+    build_city_price_payload,
+    build_city_row,
+    fetch_city_prices,
+    fetch_city_prices_for_year,
 )
 from vyarno_pipeline.sources.nsi import (
     SECTOR_SOURCE_URL_BG,
@@ -108,6 +109,7 @@ from vyarno_pipeline.validate import (
     CHAIN_TOLERANCE_PP,
     ValidationError,
     validate_chain_reconciliation,
+    validate_city_price,
     validate_classification_agreement,
     validate_coverage,
     validate_group_consistency,
@@ -123,6 +125,22 @@ from vyarno_pipeline.validate import (
 @click.group()
 def main() -> None:
     """vyarno.bg data pipeline."""
+
+
+# How far back the per-city archive walk starts. имот.bg's deepest city is
+# София, whose pages answer from 2000; most others begin 2003 and five 2004.
+# The walk starts at the deepest and lets the misses fall out, because a
+# per-city start year is a second table that would have to be kept in step with
+# имот.bg's own coverage — and a year they have nothing for costs one request
+# and returns no literal, which the parse already treats as "no data" rather
+# than as a fault.
+_ARCHIVE_EARLIEST_YEAR = 2000
+
+# Politeness spacing between имот.bg requests. The probe saw no throttling at
+# all — 100 sequential requests, ~190 ms each, every one a 200 — so this buys
+# nothing technical. It is here because a full sweep is ~650 requests against
+# one publisher's public pages, and the alternative reads as a scrape.
+_IMOT_REQUEST_SPACING_S = 0.2
 
 
 # Methodology notes cited verbatim in mortgage.json, so the published JSON
@@ -166,7 +184,7 @@ def _month_before(period: str) -> str:
             "hicp",
             "unemployment",
             "mortgage",
-            "sofia-price",
+            "city-price",
             "region-salary",
             "sector-salary",
             "salary-dist",
@@ -178,8 +196,11 @@ def _month_before(period: str) -> str:
         "Which dataset to refresh. 'mortgage' pulls ECB MIR (new-business "
         "AAR + APRC) and BNB (outstanding housing stock) into one "
         "mortgage.json; both are required and it fails loud rather than "
-        "publishing a partial panel. 'sofia-price' scrapes imot.bg/sredni-ceni "
-        "for the per-district €/m² averages in Sofia (exit 4 on network error). "
+        "publishing a partial panel. 'city-price' reads imot.bg/sredni-ceni for "
+        "the per-district €/m² averages in each of the 27 covered cities, plus "
+        "their yearly archives. It needs an ordinary Bulgarian connection — "
+        "www.imot.bg answers datacenter IPs with a 403 — and exits 4 when every "
+        "city is unreachable. "
         "'region-salary' fetches the NSI regional wage XLSX in both language "
         "editions for the latest published quarter in every one of the 28 "
         "oblasti (exit 4 on network error). "
@@ -225,8 +246,8 @@ def refresh(
         _refresh_unemployment(out, geo, as_of)
     elif source == "mortgage":
         _refresh_mortgage(out, as_of)
-    elif source == "sofia-price":
-        _refresh_sofia_price(out, as_of)
+    elif source == "city-price":
+        _refresh_city_price(out, as_of)
     elif source == "region-salary":
         _refresh_region_salary(out, as_of)
     elif source == "sector-salary":
@@ -259,7 +280,7 @@ def refresh(
             ("hicp", lambda: _refresh_hicp(out, geo, since_year, skip_link_check, as_of)),
             ("unemployment", lambda: _refresh_unemployment(out, geo, as_of)),
             ("mortgage", lambda: _refresh_mortgage(out, as_of)),
-            ("sofia-price", lambda: _refresh_sofia_price(out, as_of)),
+            ("city-price", lambda: _refresh_city_price(out, as_of)),
             ("region-salary", lambda: _refresh_region_salary(out, as_of)),
             ("sector-salary", lambda: _refresh_sector_salary(out, as_of)),
             ("salary-dist", lambda: _refresh_salary_dist(out, as_of)),
@@ -675,80 +696,92 @@ def _refresh_unemployment(out: Path, geo: str, as_of: date) -> None:
     click.echo(f"OK: wrote {UNEMPLOYMENT_FILE} (latest {obs.value:.1f}% at {obs.ref_period})")
 
 
-def _refresh_sofia_price(out: Path, as_of: date) -> None:
-    """Scrape imot.bg/sredni-ceni for per-district €/m² in Sofia and
-    publish sofia_price.json. Also pulls the per-year historical
-    archive (?year=Y for Y in 2015..current_year) so the SPA can
-    render "+X% since 2015" without any cached baseline.
+def _refresh_city_price(out: Path, as_of: date) -> None:
+    """Read imot.bg's sredni-ceni pages for all 27 cities and publish city_price.json.
+
+    One current fetch plus one per historical year per city — around 650
+    requests, roughly two and a half minutes at the 200 ms spacing below.
+    imot.bg showed no throttling on a 100-request burst during the probe; the
+    spacing is politeness rather than a measured requirement.
 
     Failure modes:
-    - Network/timeout/transport on the current-year fetch -> exit 4
-      (the home block renders a fallback if the JSON is missing).
-    - Page-layout change on the current-year fetch (the
-      `var raioniAvgPrice = {...}` block absent or < 20 districts) →
-      exit 2 with a sample around the expected anchor.
-    - Anti-injection bounds [100, 10000] €/m² silently drop the
-      bad entry; < 20 surviving districts is treated as a layout
-      regression and fails loud.
-    - Per-year historical fetch fails (one year flaky) -> that year
-      is omitted from `historical`; the current-year row stays
-      mandatory. Prints a WARNING and continues. The SPA shows
-      the years that did succeed.
+    - Network/timeout/transport on a city's CURRENT fetch -> that city is
+      skipped with a WARNING, and the run continues. A 403 is the expected
+      shape of this from anywhere but an ordinary Bulgarian connection.
+    - Every city failing -> exit 4. That is the datacenter-IP case, and
+      reporting it as a partial publish would be misleading.
+    - A page-layout change, a rentals page, a fractional value or a count below
+      that city's district floor -> that city is skipped with a WARNING. These
+      are per-city because imot.bg serve 27 independent pages and one of them
+      changing shape is not a reason to withhold the other 26.
+    - The payload gate -> exit 3.
+    - A per-year historical fetch failing -> that year is omitted. A year imot.bg
+      has no data for fails exactly this way, which is why the archive walk goes
+      back to `_ARCHIVE_EARLIEST_YEAR` and lets the misses fall out rather than
+      holding a per-city start year that would go stale.
 
-    There is NO canonical fallback for €/m² — no official BG series
-    publishes an absolute level — so the home block reads
-    `data.sofia_price` and shows a placeholder if it is absent.
+    There is NO canonical fallback for a EUR/m2 level — no official BG series
+    publishes an absolute one — so a city absent from this file renders its
+    price card empty rather than borrowing another city's figure.
     """
-    try:
-        click.echo("→ scraping imot.bg/sredni-ceni (Sofia €/m² by district)...")
-        raw = fetch_sofia_avg_prices()
-    except httpx.HTTPError as e:
-        click.echo(f"ERROR: imot.bg fetch failed: {e}", err=True)
-        sys.exit(4)
-    except ValueError as e:
-        click.echo(f"ERROR: imot.bg parse failed: {e}", err=True)
-        sys.exit(2)
-
-    # The historical archive: years 2015..current_year. A single failing year
-    # is non-fatal — the SPA renders the years that succeeded.
-    historical: list[dict] = []
-    fail_count = 0
-    for year in range(HISTORICAL_YEAR_MIN, as_of.year):
+    cities: list[dict] = []
+    skipped: list[str] = []
+    blocked = 0
+    for region in PRICED_REGIONS:
         try:
-            h = fetch_sofia_avg_prices_for_year(year)
-            historical.append(h)
+            current = fetch_city_prices(region)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (403, 429):
+                blocked += 1
+            skipped.append(region.code)
+            click.echo(f"WARNING: {region.code}: {e}; skipping this city.", err=True)
+            continue
         except (httpx.HTTPError, ValueError) as e:
-            fail_count += 1
-            click.echo(
-                f"WARNING: imot.bg year={year} scrape failed ({e}); skipping that historical year.",
-                err=True,
-            )
+            skipped.append(region.code)
+            click.echo(f"WARNING: {region.code}: {e}; skipping this city.", err=True)
+            continue
 
-    # The page's own "обновена на DD.MM.YYYY" stamp is the only thing that
-    # tells us how old these prices ARE. `as_of` is the day we looked, not the
-    # day имот.bg recomputed — so with the stamp missing, a page frozen months
-    # ago would still publish under today's date and the €/m² card would read
-    # as current. Loud, not fatal: 143 districts with plausible values are
-    # still worth publishing, and this is the one field we cannot re-derive.
-    if not raw.get("page_as_of"):
+        historical: list[dict] = []
+        for year in range(_ARCHIVE_EARLIEST_YEAR, as_of.year):
+            time.sleep(_IMOT_REQUEST_SPACING_S)
+            try:
+                historical.append(fetch_city_prices_for_year(region, year))
+            except (httpx.HTTPError, ValueError):
+                # Overwhelmingly this is "imot.bg has no data for that year",
+                # which is the archive's own shape rather than a fault. Only the
+                # per-city summary below is worth an operator's attention.
+                continue
+
+        row = build_city_row(region, current, historical, as_of.year)
+        cities.append(row)
         click.echo(
-            "WARNING: imot.bg published no 'обновена на DD.MM.YYYY' stamp on "
-            "this fetch. page_as_of_dd_mm_yyyy will be empty and the SPA will "
-            "fall back to the SCRAPE date, which is not the same claim. Check "
-            "whether the page wording changed before trusting these prices as "
-            "current — see sources/imot.py#_extract_page_as_of.",
+            f"  {region.code}: {row['eur_per_m2_median']} EUR/m2, "
+            f"{row['n_districts']} districts, {len(row['historical'])} years"
+            f"{' (no trend)' if not row['trend_publishable'] else ''}"
+        )
+        time.sleep(_IMOT_REQUEST_SPACING_S)
+
+    if not cities:
+        click.echo(
+            f"ERROR: no city page could be read ({blocked} of {len(PRICED_REGIONS)} "
+            f"were blocked). www.imot.bg answers datacenter IPs with a 403, so run "
+            f"this arm from an ordinary Bulgarian connection — never through a "
+            f"proxy (docs/legal.md, AGENTS.md).",
             err=True,
         )
+        sys.exit(4)
 
-    payload = build_sofia_price_payload(as_of, raw, historical=historical)
-    write_payload(payload, target_dir=out, filename=SOFIA_PRICE_FILE)
-    n_hist = len(payload.get("historical", []))
+    try:
+        validate_city_price(cities, [r.code for r in PRICED_REGIONS])
+    except ValidationError as e:
+        click.echo(f"ERROR: city price gate failed: {e}", err=True)
+        sys.exit(3)
+
+    payload = build_city_price_payload(as_of, cities)
+    write_payload(payload, target_dir=out, filename=CITY_PRICE_FILE)
     click.echo(
-        f"OK: wrote {SOFIA_PRICE_FILE} "
-        f"(Sofia median {payload['eur_per_m2_median']} €/m², "
-        f"mean {payload['eur_per_m2_mean']}, "
-        f"{payload['n_districts']} districts, "
-        f"{n_hist} historical years; {fail_count} historical-year failures)"
+        f"OK: wrote {CITY_PRICE_FILE} ({len(cities)} cities"
+        f"{f', {len(skipped)} skipped: ' + ', '.join(skipped) if skipped else ''})"
     )
 
 

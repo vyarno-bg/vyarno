@@ -37,8 +37,8 @@ Every entry carries a provenance tag:
 | **БНБ lending limits** — dated table in `mortgage.py` | VERIFIED | `mortgage.json → lending_limits`. Borrower-based measures, not scraped. |
 | **BG payroll parameters** — dated table in `payroll.py` | VERIFIED | `payroll.json`. Legislative constants, not scraped. |
 | **Individual earnings distribution** — `earn_ses_monthly` | VERIFIED | The percentile ladder's **shape** (D1 / median / mean / D9 gross, 4-yearly). |
-| **Sofia average gross wage** — НСИ `Labour_1.1.2.2_EUR_EN.xlsx` | VERIFIED | `sofia_salary.json`, and the ladder's **level**. НСИ's published quarters from 2020-Q1. |
-| **Sofia €/m²** — `imot.bg/sredni-ceni` | VERIFIED | `sofia_price.json`. 143 districts + annual snapshots back to 2015. |
+| **Average gross wage by област** — НСИ `Labour_1.1.2.2_EUR_EN.xlsx` + `_EUR.xlsx` | VERIFIED | `region_salary.json`. All 28 области, both language editions, НСИ's published quarters from 2020-Q1. |
+| **€/m² by city** — `imot.bg/sredni-ceni` | VERIFIED | `city_price.json`. 27 cities, each with its own district count and its own year window. |
 | **Unemployment rate** — `une_rt_m` | VERIFIED | `unemployment.json`. **Monthly**, seasonally adjusted, 2020-01–. 2.9% at 2026-05. |
 
 ## Not available (do not cite as a working source)
@@ -49,6 +49,8 @@ Every entry carries a provenance tag:
 | `data.egov.bg` | WRONG | Not CKAN, no JSON API surface. Good for pointing users at datasets, useless programmatically. |
 | БНБ real-estate section | WRONG | A Site Studio shell returning identical bytes for every URL. **БНБ does not publish residential property prices machine-readably** — which is why the €/m² level comes from имот.bg. |
 | НСИ city-level housing €/m² | WRONG | PDF press releases only; not structurally machine-readable. |
+| A **city**-level average wage, for anywhere but София | WRONG | НСИ publish the wage by **област** and by statistical region, and nothing below. София-city is the exception by accident of geography: it is its own statistical region, BG411, so there the област and the град are the same area. Everywhere else the €/m² is a city's and the wage beside it is its област's, which is why the two cards name their own geographies rather than sharing a heading. |
+| **имот.bg rentals** — `/sredni-ceni/naemi-{slug}` | VERIFIED, deliberately unused | Exists for every city and serves the **same** `raioniAvgPrice` identifier, in float €/m² per **month** (1.39-32.48, every value below 100). Out of scope, and `sources/imot.py` refuses the URL and the fractional value rather than merely not asking for it. |
 | `earn_ses_pub1e` / `earn_ses_pub1t` for BG | WRONG | The SES *publication* tables 404 for BG. The main cubes `earn_ses_monthly` / `_hourly` do carry BG — use those. |
 | `prc_hicp_ctr` / `prc_hicp_ctrb` as a BG cross-check | WRONG | Euro-area aggregate cubes: `geo=BG` and `geo=DE` both return an empty `value` map with HTTP 200, while `geo=EA` returns tens of thousands of observations. They cannot cross-check a Bulgarian figure. |
 | A pay **distribution** by sector for BG (any publisher) | WRONG | Probed 2026-08-06. `earn_ses_monthly` with `nace_r2=J&geo=BG` returns HTTP 200, `"value": {}`, `nace_r2` size **0** — section J is not a category in the cube. Its five `nace_r2` categories for BG are all broad groupings and none is a NACE section: `B-S_X_O` (whole economy), `B-N`, `B-F`, `G-N`, `P-S`. At the 2022 vintage `salary_dist.json` reads, only `B-S_X_O` carries any values; the other four stop at 2018. **So no section-level median, decile or spread exists at any vintage.** НСИ's `Labour_1.1.2.1` publishes a sector **average** and nothing else, which is why the sector card compares against an average and says so. |
@@ -217,12 +219,12 @@ So the two halves stay apart all the way to the reader's browser:
 | File | What it carries | Whose terms govern it |
 |---|---|---|
 | `salary_dist.json` | The SES ladder at **Eurostat's own level**, plus `ses_mean` | Eurostat's, and it is a disclosed derivative |
-| `sofia_salary.json` | НСИ's **published quarterly series** | НСИ's, and it is a straight reproduction |
+| `region_salary.json` | НСИ's **published quarterly series**, per област | НСИ's, and it is a straight reproduction |
 
 **Method.** Steps 1–2 run in the pipeline
 (`transform.py#build_ses_shape_ladder`, restated in the JSON's `shape.method`);
 steps 3–4 run in the reader's tab (`mirror.js#composeLadder`, over the level
-`view.js#sofiaQuarter` selects out of the НСИ payload).
+`view.js#regionQuarter` selects out of the НСИ payload).
 
 1. Fill the intermediate deciles by piecewise-lognormal interpolation in the
    standard-normal quantile z, matching the D1/median/D9 anchors exactly.
@@ -400,8 +402,8 @@ knob; `test_ecb.py` asserts the splice stays gap-free and step-free.
 **Why this source.** There is no machine-readable BG €/m² **level** series
 anywhere: Eurostat's `hpi_ndh_q` and `prc_hpi_q` are rate-of-change indices, НСИ
 publishes none in API form, and БНБ publishes none at all. имот.bg's public
-`sredni-ceni` page publishes a per-district €/m² average **it computes itself**
-from current listings.
+`sredni-ceni` pages publish a per-district €/m² average **they compute
+themselves** from current listings.
 
 The data is a JavaScript object literal in `windows-1251`:
 
@@ -412,69 +414,158 @@ var raioniAvgPrice = {'Банишора': 2504, 'Борово': 3000, ...};
 We regex-extract that one literal — no JS execution — which makes the parse
 robust to layout changes in the surrounding HTML.
 
-**Sofia only:** имот.bg publishes per-district averages for Sofia (143
-districts). Other cities use the same variable name in different DOM regions.
-The JSON envelope (`city`, `city_en`, `n_districts`) is shaped so a second city
-can be added without breaking the schema.
+**27 cities**, each at `https://www.imot.bg/sredni-ceni/prodazhbi-{slug}`.
+София is the exception: her canonical page is the bare `/sredni-ceni`, and
+`prodazhbi-sofiya` 302-redirects there. The Cyrillic→slug map is a dated table
+in `regions.py` because it cannot be computed — «Търговище» is `targovishte`
+with one `г` and «Кърджали» is `kardzhali` with one `ъ`. The 28th област,
+Софийска, has no имот.bg page of any kind; a reader who picks it is told so
+rather than handed София's figure.
 
-**Anti-injection bounds:**
+**Everything below was probed on 2026-08-09** from a residential connection in
+Bulgaria, across all 27 cities and every archive year each of them serves.
 
-- Drop any value outside `[100, 10000] €/m²` — the page legitimately returns
-  ~990 to ~5,600.
-- **Refuse to ship fewer than 20 valid districts.** The real page returns 143;
-  under 20 means the regex caught a fragment.
-- **Median first:** `eur_per_m2_median` is the headline, resistant to long-tail
-  districts; the mean is kept for completeness and not surfaced prominently.
+### The four ways this connector could publish a wrong number
 
-**Output** — `sofia_price.json`, `schema_version` 1.1: the envelope, the city
-block, the summary (`eur_per_m2_median` / `_mean` / `_min` / `_max`), the page's
-own published date (`page_as_of_dd_mm_yyyy`, Bulgarian «обновена на»),
-`all_districts` (143 keys), and `historical[]` — one row per year `{year,
-n_districts, eur_per_m2_median, eur_per_m2_mean, since_2015_median_pct}`,
-ascending, 2015 (€754) → 2026 (€2501, +231.7%).
+Each looks entirely right on the page, and each has a named guard.
 
-**`page_as_of_dd_mm_yyyy` is often empty, and the currently shipped payload is
-one of those.** It is the only field here that cannot be re-derived: `as_of` is
-the day we looked, not the day имот.bg recomputed, so with the stamp missing a
-page frozen months ago publishes under today's date. The refresh warns loudly
-and publishes anyway — 143 plausible districts are worth having — and the SPA
-falls back to the scrape date via `payloads.js#refPeriod`, which is a weaker
-claim honestly stated rather than the same one. When it is empty, check
-`sources/imot.py#_extract_page_as_of` against the live page wording before
-treating the prices as current.
+| Trap | What it would publish | Guard |
+|---|---|---|
+| **Rentals** at `/sredni-ceni/naemi-{slug}` serve the SAME variable name, in float €/m² per **month** | a monthly rent as a purchase price | `_assert_sales_page` on the requested URL *and* on the final URL after redirects, plus a raise on any fractional value |
+| **`date=` is silently ignored** when invalid, future or out of range — the response is byte-identical to the no-parameter baseline | today's numbers under an old date, with every downstream gate passing because the file is internally consistent | the connector never sends `date=` at all, held by a test over every URL it can build |
+| **District counts run 141 to 7**, so no flat floor fits | a truncated parse published as a small city | a floor at 60% of that city's own count in `regions.py#imot_districts` |
+| **The sanity bounds drop rows** and nothing counted them | a thin dataset published as a complete one | `n_dropped` per city-year, and the run fails above 20% |
 
-**The historical archive** is one fetch per year for `Y` in
-`[HISTORICAL_YEAR_MIN=2015, current_year)`. If a single year fails, that year is
-omitted and the CLI prints a WARNING. `build_sofia_price_payload` recomputes the
-current-year row's `since_2015_median_pct` from the formula rather than trusting
-the per-year scraper.
+**`year=` is safe and `date=` is not, and that asymmetry is the single most
+important thing about these two parameters.** A year имот.bg has no data for
+returns 200 with **no literal at all** and a page about a quarter of the usual
+size, so the parse fails loudly. An invalid `date=` returns the current
+snapshot.
 
-**Where it is fetched from:** `www.imot.bg` answers datacenter IPs with a 403,
-so this is the one connector that needs an ordinary Bulgarian connection. That
-is why `sofia-price` is refreshed by hand while the other eight can run
-anywhere, and why a 403 from this arm is an environment result rather than a
-parser regression.
+**The page's own `<select name="date">` is the provenance anchor.** Its newest
+option — taken by date, not by position, because the order is имот.bg's to
+change — is their published snapshot date, and it is what `snapshot_date`
+carries. That is a stronger claim than the fetch date: "the day they published"
+rather than "the day we looked". When the list cannot be parsed the field is
+`null` and the SPA dates the card by `as_of`, which is a weaker claim honestly
+stated rather than the same one.
 
-**Failure modes:** network/timeout → exit 4, and the home block renders
-`HOME.eurPerM2_offlineFallback`. Page regression (literal absent, or under 20
-districts) → exit 2 with a sample around the expected anchor.
+**There is no «обновена на» field and there never was.** Probed across all 27
+cities for the current year plus София back to 2000: **zero pages contain the
+substring «обновен»** in any case. The extractor that looked for it shipped an
+empty string for the life of the payload.
 
----
+### Which years each city publishes
+
+A year qualifies when it has **at least 6 districts and at least 40% of what
+that city publishes in the current year**, and the published window is the
+**unbroken** run of qualifying years ending at the current one. All three parts
+are computed per city at refresh time; none is a constant.
+
+**The thin early years are wrong rather than merely imprecise.** имот.bg's
+coverage of a city grew over two decades, and a median over four districts is
+not the same measurement as a median over thirteen: Blagoevgrad's median moves
+**+219% year over year** inside its thin years on a four-to-six-district sample,
+and Burgas 70% in its own. Those are sampling artefacts wearing the clothes of
+price moves, and no gate downstream would catch one — the file would be
+internally consistent.
+
+**The unbroken-run clause does most of the work.** A city whose coverage
+collapses for a year and recovers has not been measured the same way throughout,
+so everything before the gap is disqualified. That is how Blagoevgrad's 2003 and
+2004 fall out on their own, its 2007 having dropped to 6 districts of a
+current 13.
+
+On the probe's data every one of the 26 non-Sofia cities keeps a trend, most
+reaching 2003 to 2007. Below **five** consecutive years the payload sets
+`trend_publishable: false` and the SPA shows the €/m² without a «since YEAR»
+sentence — the chart still carries every qualifying year, because the data is
+not in doubt, there is simply not enough of it to call a trend.
+
+### The sanity bounds, and why they do not widen
+
+Drop any value outside `[100, 10000] €/m²`. The sub-100 values in the history
+are **sentinels, not cheap flats** — Burgas 2008 carries a 0, 2010 a 5, 2004 a
+9; Blagoevgrad 2006 a 4, 2008 a 6 — so widening the band to `[10, 100_000]`
+would admit the 13 and reject the 9, which is an arbitrary line through a set of
+values that are uniformly junk. `AGENTS.md` forbids it in terms.
+
+What changed is that the drop is no longer silent: every city-year publishes
+`n_dropped`, and `_assert_drop_share` fails the run above **20%**. That
+threshold is measured rather than chosen — inside the windows this connector
+publishes, only **5 of 186** city-years drop anything at all, the worst is Ruse
+2003 at 2 of 20 = 10%, and all 27 current-year pages drop none.
+
+**Output** — `city_price.json`, `schema_version` 2.0: the envelope plus one
+block per city carrying `code` (the join to `region_salary.json`), both
+published names, that city's own `source_url`, `snapshot_date`, `n_districts`,
+`n_dropped`, the summary (`eur_per_m2_median` / `_mean` / `_min` / `_max`),
+`baseline_year`, `since_baseline_median_pct`, `trend_publishable`, and
+`historical[]` — one row per qualifying year with its own district and drop
+counts.
+
+**`all_districts` is not published.** The per-district dict was carried for
+every city and read by nothing — no component, no view function, no verify
+script — and at 27 cities it is about 120 KB raw and 40 KB gzipped on every page
+load. What goes with it is the only way to recompute a median from the file
+itself; the median, mean, range and district count stay, which is what the page
+cites.
+
+**Where it is fetched from.** `www.imot.bg` answers datacenter IPs with a
+**403**, so this is the one connector that needs an ordinary Bulgarian
+connection. That is why `city-price` is refreshed by hand while the other eight
+arms run anywhere, and why a 403 from this arm is an environment result rather
+than a parser regression. A full sweep is ~650 requests, about two and a half
+minutes at 200 ms spacing; имот.bg showed no throttling at all on a
+100-request burst, so the spacing is politeness rather than a measured need.
+**Never route it through a proxy** — `docs/legal.md`.
+
+**Failure modes:** every city unreachable → exit 4 (the datacenter-IP case). One
+city's page changed shape, served rentals, or came in under its floor → that
+city is skipped with a WARNING and the other 26 publish. The payload gate →
+exit 3. A city absent from the file renders its price card empty rather than
+borrowing another city's figure.
+
+**Fixtures are built, not saved**, for the same 403 reason —
+`tests/fixtures/make_imot_fixtures.py` says what each one encodes and which
+probe it came from. They prove the parser handles имот.bg's shapes and cannot
+prove имот.bg still serves them; `test_live_upstreams.py -m live` is the check
+that can, and it also asserts имот.bg's own city dropdown still offers exactly
+the 27 names `regions.py` carries.
 
 ## НСИ — `sources/nsi.py`
 
-### `Labour_1.1.2.2_EUR_EN.xlsx` — Sofia-city quarterly gross wage
+### `Labour_1.1.2.2` — quarterly gross wage by област, both editions
 
-The workbook carries a monthly sheet (`2019-2026`) and **one sheet per year of
-НСИ's own published quarterly averages** — `2020trimes` … `2026trimes`. We read
-the quarterly sheets, for `-Sofia cap.` (Sofia-city statistical region, BG411).
-2026-Q1 = **1915 EUR**, as published.
+The workbook's own title is `AVERAGE GROSS MONTHLY WAGES … BY STATISTICAL
+REGIONS AND DISTRICTS`, and that is what we read: **all 28 области**, from the
+`{year}trimes` sheets — НСИ's own published quarterly averages. 2026-Q1 runs
+**968 EUR** (Благоевград) to **1915 EUR** (София-столица), as published.
 
-Each `{year}trimes` sheet is laid out r1 = title (ending `*` while the year is
-preliminary), r3 = `Statistical regions` / `Quarters {year}`, r4 = the quarter
-headers, r5+ = the region rows. Rows are found by region name and columns by
-header rather than by index, so an inserted row upstream fails loudly instead of
-shifting every reading by one region.
+**Both language editions**, `_EUR_EN.xlsx` and `_EUR.xlsx`, for the reason the
+by-activity table reads both: the област names are half of what this payload is
+for, a picker has to print them, and translating НСИ's English ourselves is how
+«София(столица)» becomes something they never wrote. The two are joined by label
+and every paired cell must be equal, so one edition revised without the other
+raises rather than dating half the payload wrongly.
+
+**The two editions are not row-aligned.** The Bulgarian one carries an extra
+«Общо» row above the unit marker, so its quarter headers sit one row lower, and
+its sheets are named `'2026 trimes '` where the English ones are `2026trimes`.
+Neither the header row nor the sheet name may therefore be an index or a
+literal: the header row is found by being the first that parses as four
+quarters, and the sheets are matched by year.
+
+Each sheet holds six statistical-region headings interleaved with the 28
+district rows. **The leading hyphen is the only thing separating them** —
+`-Vidin` is an област, `Severozapaden` is the region above it — and the region
+rows carry wages of the same magnitude, so a parse that took them would publish
+six extra "places" that are not области at figures that look like wages.
+
+**There is no Bulgaria row**, and none is derived. An unweighted mean over 28
+области would be both a производно произведение and wrong arithmetic. The
+national figure the salary ladder is anchored on is НСИ's own «Общо», published
+in `sector_salary.json`.
 
 **Why the quarter, not the month.** BG wages spike every March as Q1 bonus and
 13th-salary payments land: March runs +7% to +13% above its neighbours, and the
@@ -492,21 +583,31 @@ three rounded monthly cells gives 1914.7.
 
 **Two traps in the sheet, both guarded.**
 
-- **Q4 is published twice**, as `IV` and as `IV incl.annual bonuses`, and the
-  two diverge by 6–8% (2025: 1859 against 2009) because the second folds in the
-  13th salary. We take `IV`; `_quarter_columns` refuses any column whose header
-  mentions a bonus, and `test_the_annual_bonus_column_is_never_read_as_a_quarter`
-  fails if that changes. Reading the wrong one would step the whole ladder up
-  every fourth quarter and back down in Q1, and both figures are plausible
-  Sofia wages, so no gate downstream would catch it.
+- **Q4 is published twice**, as `IV` and as `IV incl.annual bonuses`
+  («IV вкл.годишни премии»), and the two diverge by 6–8% (2025: 1859 against
+  2009) because the second folds in the 13th salary. We take `IV`;
+  `_quarter_columns` refuses any column whose header mentions a bonus in either
+  spelling, and `test_the_annual_bonus_column_is_never_read_as_a_quarter` fails
+  if that changes. Reading the wrong one would step the whole ladder up every
+  fourth quarter and back down in Q1, and both figures are plausible wages, so
+  no gate downstream would catch it.
 - **The quarter headers mix alphabets** — Q1 and Q2 are Cyrillic І (U+0406),
   Q3 and Q4 are Latin I and V. `_roman_quarter` folds the Cyrillic form onto the
   Latin one, so the parse survives НСИ normalising the encoding either way.
 
-**The regression guard:** we also read `-Sofia` (the province, excluding the
-city) at the same quarter and assert `cap > province`. The live spread is
-~50–70%, so a restructured workbook that made the selector pick the wrong row
-fails in `test_nsi.py` before the number ships. If НСИ move the URL,
+**The regression guard has three parts and all of them hold.** Reading one row
+could only compare it against a neighbour, and there is no universal "region X
+beats region Y" between any other pair. Reading the whole table affords:
+
+1. every one of the 28 области named in `regions.py` is present, in both
+   editions — a renamed row fails here rather than going missing from a picker;
+2. no district row is present that table does not name — without this the check
+   is one-directional, and НСИ splitting an област would publish 28 of 29;
+3. Sofia-city is the maximum, 1915 against a next-highest 1304.
+
+Together they catch what a `cap > province` comparison could not: an off-by-one
+that shifts every reading by one област keeps that comparison true while putting
+Варна's wage under Добрич's name. If НСИ move a URL,
 `test_connector_url_is_nsi_timeseries_xlsx` fails first.
 
 **Two deliberate choices:** EUR not BGN, because the same table exists in BGN
@@ -514,29 +615,39 @@ but lags by one quarterly release and every other number in the SPA is EUR; and
 the XLSX not the HTML landing page, because the page uses `rowspan`/`colspan`
 headers that roll forward every quarter and break naive parsers.
 
-`sofia_salary.json` carries the envelope, `dataset`
-(`…xlsx:sheet={year}trimes:row=-Sofia cap.`), `ref_period`, `unit`
-`eur_per_month`, `value`, `series_by_period` (every published quarter since
-2020-Q1), `is_preliminary` and `disclaimer`.
+`region_salary.json` carries the envelope, both `source_url`s, `dataset`,
+`ref_period` (the latest quarter EVERY област carries), `unit` `eur_per_month`,
+`is_preliminary`, `disclaimer`, and one block per област: `code` — the join to
+`city_price.json` — `en_name`, `bg_name`, `value_eur` and `series_by_period`
+(every published quarter since 2020-Q1).
+
+**`code` is this project's key, and it is имот.bg's slug wherever there is one**,
+so 27 of the 28 are a name an upstream already uses. `regions.py` is the table;
+`sofia-oblast` is the 28th, and the one with no city page.
+
+**An област is not a city, and the payload says so.** The `disclaimer` names it
+because the €/m² beside this wage on the page IS a city's: София-столица is the
+one place where the two coincide, being its own statistical region. The cards
+carry their own geographies rather than sharing a heading.
 
 **`is_preliminary` is the star on the sheet title, and it is a field rather
 than a sentence in `notes`.** НСИ mark a whole year provisional until they
 finalise it, so their newest quarter carries it for about a year — long enough
 that a reader meeting one has no reason to think it anything but settled unless
-told. The SPA renders it beside the figure on the Sofia strip card, the same
+told. The SPA renders it beside the figure on the wage strip card, the same
 marker `sector_salary.json` puts on the sector card: the two are one publisher's
 two cuts of one quarterly release, and marking one without the other leaves a
-reader unable to tell the two claims are the same claim. This figure also
-re-levels every rung of the salary ladder, so it is the provisional number a
-reader is placed against twice.
+reader unable to tell the two claims are the same claim.
 
 **Every figure in it is one НСИ published**, headline included, and nothing
-computes over it afterwards: `view.js#sofiaQuarter` selects the headline rather
-than deriving one. `no НСИ payload carries a second publisher's figures` in
-`verify_data_contracts.mjs` fails if `value` ever stops being a quarter from the
-series beside it, and `test_no_figure_is_computed_only_selected` fails if the
-connector starts averaging again — a change that would move no number a reader
-could check, so nothing else would notice it.
+computes over it afterwards: `view.js#regionQuarter` selects the headline rather
+than deriving one, and it answers for the област asked for or for none —
+never for a first row, a largest област or София.
+`no НСИ payload carries a second publisher's figures` in
+`verify_data_contracts.mjs` fails if a `value_eur` ever stops being a quarter
+from the series beside it, and `test_no_figure_is_computed_only_selected` fails
+if the connector starts averaging again — a change that would move no number a
+reader could check, so nothing else would notice it.
 
 ### `Labour_1.1.2.1_EUR_EN.xlsx` + `_EUR.xlsx` — gross wage by economic activity
 
@@ -853,7 +964,8 @@ Dated or conditional changes we already know are coming.
 | **ЕЦБ MIR revisions** | MIR is revised; the latest month or two can move | Nothing to do — each refresh re-pulls the whole series. Do not hand-edit `mortgage.json`. |
 | **A BG MIR series is recoded** | ЕЦБ recoding | `parse_mir_series` raises rather than guessing, and the CLI exits 2. Re-enumerate BG's available series; never loosen a key to a wildcard. |
 | **The HICP–CPI gap widens** | Structural, monitor | Typically within ~0.2 pp. If it grows past ~1 pp, re-word the site explainer; the app stays on HICP either way. |
-| **SES shape is national, applied to Sofia** | Structural | Sofia's dispersion is likely wider at the top, so the ladder can understate the top tail. Disclosed in the payload and the SPA. Re-examine if a Sofia-specific distribution becomes machine-readable. |
+| **SES shape is national** | Structural | The ladder's dispersion is Bulgaria's, and it is levelled onto НСИ's national all-activities average, so the rank it reports is a national one. No sub-national distribution exists at any vintage from any publisher, so the shape cannot follow the reader's област — applying the national spread to Ruse would assert Ruse's dispersion, which nothing measures. Disclosed in the payload and the SPA. |
+| **имот.bg's per-city coverage changes** | Any refresh | Two things move independently and both are data rather than constants. A district count drifting a few per cent is normal — София went 143 → 141 — and is absorbed by the 60% floor; a count below it fails that city's read and the dated `regions.py#imot_districts` is updated in the same commit as the finding. A city gaining or losing archive years moves its own `baseline_year`, which is recomputed every run. A city added or retired upstream fails the live dropdown test, which is the only witness there is. |
 
 ## What breaks and how we detect it
 

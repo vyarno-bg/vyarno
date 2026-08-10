@@ -33,7 +33,7 @@ import httpx
 import pytest
 
 from vyarno_pipeline import clock
-from vyarno_pipeline.regions import REGIONS, SOFIA_CITY_CODE
+from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS, REGIONS_BY_CODE, SOFIA_CITY_CODE
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.ecb import SERIES_KEYS, fetch_mir_series
 from vyarno_pipeline.sources.eurostat import (
@@ -43,7 +43,7 @@ from vyarno_pipeline.sources.eurostat import (
     fetch_hicp_weights_bg,
     group_codes_in_basket,
 )
-from vyarno_pipeline.sources.imot import fetch_sofia_avg_prices
+from vyarno_pipeline.sources.imot import _min_districts_for, fetch_city_prices
 from vyarno_pipeline.sources.nsi import fetch_region_salaries_eu, fetch_sector_salary_eu
 
 pytestmark = pytest.mark.live
@@ -459,44 +459,98 @@ def test_bnb_workbook_still_parses_and_agrees_with_the_ecb():
 
 
 # ---------------------------------------------------------------------------
-# imot.bg — the Sofia €/m² scrape
+# imot.bg — the per-city €/m² pages
 # ---------------------------------------------------------------------------
 
 
-def test_imot_page_still_carries_the_district_price_block():
-    """The scrape depends on one JS literal; confirm it is still served.
+def test_imot_pages_still_carry_the_district_price_block():
+    """The read depends on one JS literal and one date list; confirm both.
 
-    imot.bg blocks datacenter IPs, so a 403 here is an environment result,
-    not a layout change — it skips with that said out loud.
+    imot.bg blocks datacenter IPs, so a 403 here is an environment result rather
+    than a layout change — it skips with that said out loud. Which means this
+    test only ever runs where the refresh itself is run, and it is the only
+    thing standing between a changed page and a payload nobody checked: the
+    offline suite asserts against fixtures, and a fixture is exactly what cannot
+    go stale on its own.
+
+    Three cities rather than all 27, and these three: the largest, so the parse
+    meets the widest value range; the smallest, because it is the one a flat
+    district floor used to reject; and one in between. A full sweep belongs to
+    the refresh, not to a test.
+    """
+    for code in ("sofiya", "targovishte", "ruse"):
+        region = REGIONS_BY_CODE[code]
+        try:
+            raw = fetch_city_prices(region)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (403, 429):
+                _skip_if_blocked_here(
+                    e,
+                    "imot.bg",
+                    "It blocks datacenter IPs; run this from a normal network.",
+                )
+            raise
+        except httpx.HTTPError as e:
+            _skip_if_blocked_here(e, "imot.bg", "Network error, not a layout change.")
+
+        assert raw["n_districts"] >= _min_districts_for(region), (
+            f"{code}: {raw['n_districts']} districts parsed, below its floor"
+        )
+        assert all(100 <= v <= 10_000 for v in raw["districts"].values())
+
+        # imot.bg's own snapshot list, which is the ONLY thing that says how old
+        # these prices are — `as_of` is the day we looked, not the day they
+        # recomputed. The extractor this replaced looked for «обновена на» and
+        # matched nothing on any page ever, and only a live read can catch that
+        # class of mistake: the offline test asserts against a fixture we wrote.
+        assert re.fullmatch(r"\d{1,2}\.\d{1,2}\.\d{4}", raw["snapshot_date"] or ""), (
+            f"{code}: imot.bg served the district block but no parseable "
+            f'<select name="date"> snapshot list (got {raw["snapshot_date"]!r}). '
+            f"Without it the payload can only be dated by the day we looked. "
+            f"Check the page's own date list against "
+            f"sources/imot.py#_snapshot_dates before trusting these as current."
+        )
+
+
+def test_the_imot_city_dropdown_still_offers_exactly_the_cities_we_cover():
+    """`regions.py`'s slug table is data that cannot be computed, so it can only
+    go stale.
+
+    A city imot.bg adds would be missing from the picker with nothing to say so,
+    and one they retire would 404 on a refresh. Both are silent against the
+    fixtures, because the fixtures are built from this same table — so the
+    dropdown is the only witness.
     """
     try:
-        raw = fetch_sofia_avg_prices()
+        r = httpx.get(
+            "https://www.imot.bg/sredni-ceni",
+            timeout=30.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (Vyarno.bg data pipeline)"},
+        )
+        r.raise_for_status()
     except httpx.HTTPStatusError as e:
         if e.response.status_code in (403, 429):
-            _skip_if_blocked_here(
-                e,
-                "imot.bg",
-                "It blocks datacenter IPs; run this from a normal network.",
-            )
+            _skip_if_blocked_here(e, "imot.bg", "It blocks datacenter IPs.")
         raise
     except httpx.HTTPError as e:
         _skip_if_blocked_here(e, "imot.bg", "Network error, not a layout change.")
 
-    assert raw["n_districts"] >= 100, (
-        f"only {raw['n_districts']} districts parsed from the live page; the "
-        f"real Sofia page carries ~143"
+    html = r.content.decode("windows-1251", errors="replace")
+    select = re.search(
+        r"<select[^>]*\bname\s*=\s*[\"']?town[\"']?[^>]*>(.*?)</select>",
+        html,
+        re.DOTALL | re.IGNORECASE,
     )
-    assert all(100 <= v <= 10_000 for v in raw["districts"].values())
-
-    # The page-publication stamp, which is the ONLY thing that says how old
-    # these prices are — `as_of` is the day we looked, not the day imot.bg
-    # recomputed. The offline test can never catch a missing stamp: it asserts
-    # against the committed fixture, and the fixture is exactly what would go
-    # stale.
-    assert re.fullmatch(r"\d{1,2}\.\d{1,2}\.\d{4}", raw["page_as_of"] or ""), (
-        f"imot.bg served the district block but no parseable 'обновена на' "
-        f"date (got {raw['page_as_of']!r}). Without it we cannot tell a page "
-        f"refreshed today from one frozen for months. Fix "
-        f"sources/imot.py#_extract_page_as_of against the live wording, and "
-        f"regenerate fixtures/imot_sredni_ceni_sample.html from this fetch."
+    assert select, 'imot.bg no longer renders a <select name="town"> city list'
+    offered = {m.strip() for m in re.findall(r"<option[^>]*>([^<]+)</option>", select.group(1))}
+    ours = {r.city_bg for r in PRICED_REGIONS}
+    assert ours <= offered, (
+        f"imot.bg no longer offers {sorted(ours - offered)} — regions.py names "
+        f"cities their dropdown does not, so a refresh would 404 on them"
+    )
+    assert not (offered - ours), (
+        f"imot.bg now offers {sorted(offered - ours)}, which regions.py does not "
+        f"cover. Add the row, with the slug read from its Location header, or a "
+        f"whole city stays invisible to the picker with nothing saying so."
     )

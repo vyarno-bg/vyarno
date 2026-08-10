@@ -40,7 +40,7 @@
     /** НСИ star the year until they finalise it; the card has to say so. */
     regionWageIsPreliminary = false,
     cityNDistricts = 0,
-    /** True when the €/m² came from sofia_price.json, not the offline constant. */
+    /** True when the €/m² came from city_price.json, not the offline constant. */
     cityPriceIsLive = false,
     cityPriceDated = "",
     /** Per-year €/m² medians back to 2015, for the sparkline. */
