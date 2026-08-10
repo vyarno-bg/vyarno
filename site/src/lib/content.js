@@ -1409,8 +1409,8 @@ export const COPY = {
   // «разликата ти спрямо сектора» for the same reason. Two gaps are on screen
   // by the time this renders and only one of them is the city's.
   sectorNationwide: {
-    bg: "Дейността е за цялата страна, а сравнението със средната заплата в София по-горе е само за столицата, където се плаща повече. Затова част от разликата ти спрямо сектора идва от града, а не от работата.",
-    en: "The activity is for the whole country, while the comparison with the Sofia average above covers the capital alone, where pay is higher. So part of your gap against the sector comes from the city, not the job.",
+    bg: "Дейността е за цялата страна, а сравнението по-горе е само за твоята област. Затова част от разликата ти спрямо сектора идва от това къде живееш, а не от работата.",
+    en: "The activity is for the whole country, while the comparison above covers your oblast alone. So part of your gap against the sector comes from where you live, not from the job.",
   },
   // НСИ mark a whole year preliminary until they finalise it, and 2026 is. A
   // figure they will revise, shown as though it were settled, is the reader
@@ -1637,8 +1637,8 @@ export const COPY = {
   //   {y}     years of monthly net pay
   //   {src}   short source caption (e.g. "имоти.бг · 143 квартала · 16.7.2026")
   homeYears: {
-    bg: "{m} м² в <b>София</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
-    en: "{m} m² in <b>Sofia</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
+    bg: "{m} м² в <b>{city}</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
+    en: "{m} m² in <b>{city}</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
   },
   // What the €/m² in that sentence actually IS. When city_price.json is on
   // the page it is имот.bg's measured median; when the payload did not load it
