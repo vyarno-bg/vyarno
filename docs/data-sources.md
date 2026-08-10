@@ -508,6 +508,26 @@ so everything before the gap is disqualified. That is how Blagoevgrad's 2003 and
 2004 fall out on their own, its 2007 having dropped to 6 districts of a
 current 13.
 
+**Which of the two thresholds actually decides is a fact about city size, and
+it is worth knowing before either number is touched.** They cross at 15
+districts (6 ÷ 0.40), so for the **16 cities at or below that** — Ловеч at 7 up
+to Враца, Габрово and Ямбол at 15 — the share clause computes 2.8 to 6.0 and
+the flat 6 is what binds. The share only decides for the 11 larger ones, from
+Хасково and Видин at 19 up to София at 141. So a small city's year is admitted
+on 6 districts however few that is of its own total, and in Плевен's case 6 of
+11 is 55% — comfortably above the 40% the rule nominally asks for, which is why
+this is the rule working rather than a hole in it.
+
+What it costs is that the largest year-over-year move left inside any published
+window, Плевен's **+120% across 2003-04**, is a reading over 6 districts, and
+nothing on the card says so: `n_districts` travels on every historical row of
+`city_price.json` and appears on no screen. It is inside Плевен's window, so it
+is inside the «+X% от 2003» that card prints. Whether it is a price move or a
+composition change cannot be told from the payload, and tightening either
+threshold to exclude it is not a decision to take from the file — it needs the
+per-city-year district counts from a live probe, which this repository does not
+carry.
+
 On the probe's data every one of the 26 non-Sofia cities keeps a trend, most
 reaching 2003 to 2007. Below **five** consecutive years the payload sets
 `trend_publishable: false` and the SPA shows the €/m² without a «since YEAR»

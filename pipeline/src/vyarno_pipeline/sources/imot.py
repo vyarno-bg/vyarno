@@ -176,10 +176,21 @@ _MIN_DISTRICT_FLOOR = 5
 #
 # The thresholds are deliberately low, because the depth is the point: on the
 # 2026-08-09 probe every one of the 26 non-Sofia cities keeps a trend, most of
-# them reaching 2003 to 2007, and the worst year-over-year move left inside any
-# published window is Pleven's 120% in 2003-04. That one is published with its
-# own district count beside it rather than hidden, which is what
-# `n_districts` on every row is for.
+# them reaching 2003 to 2007.
+#
+# **The two cross at 15 districts, so which one decides depends on the city.**
+# For the 16 cities at or below that — Ловеч at 7 through Враца, Габрово and
+# Ямбол at 15 — the share computes 2.8 to 6.0 and the flat 6 binds; the share
+# only decides for the 11 larger ones. So a small city's year is admitted on 6
+# districts whatever share that is, and in Плевен's case 6 of 11 is 55%, above
+# the 40% the rule asks for.
+#
+# What it costs: the worst year-over-year move left inside any published
+# window, Плевен's 120% across 2003-04, is a reading over 6 districts. It is
+# published with its own `n_districts` on the row rather than hidden — but that
+# is in the file and on no screen, so a reader meeting «+X% от 2003» cannot see
+# it. Moving either threshold to exclude it is not a decision to take from the
+# published file: it needs the per-city-year counts from a live probe.
 _HISTORY_MIN_DISTRICTS = 6
 _HISTORY_MIN_SHARE = 0.40
 
