@@ -528,13 +528,23 @@ threshold is measured rather than chosen — inside the windows this connector
 publishes, only **5 of 186** city-years drop anything at all, the worst is Ruse
 2003 at 2 of 20 = 10%, and all 27 current-year pages drop none.
 
-**Output** — `city_price.json`, `schema_version` 2.0: the envelope plus one
-block per city carrying `code` (the join to `region_salary.json`), both
-published names, that city's own `source_url`, `snapshot_date`, `n_districts`,
-`n_dropped`, the summary (`eur_per_m2_median` / `_mean` / `_min` / `_max`),
-`baseline_year`, `since_baseline_median_pct`, `trend_publishable`, and
-`historical[]` — one row per qualifying year with its own district and drop
-counts.
+**Output** — `city_price.json`, `schema_version` 2.0: the envelope, then
+`city_pages[]`, then one block per city carrying `code` (the join to
+`region_salary.json`), both published names, that city's own `source_url`,
+`snapshot_date`, `n_districts`, `n_dropped`, the summary (`eur_per_m2_median` /
+`_mean` / `_min` / `_max`), `baseline_year`, `since_baseline_median_pct`,
+`trend_publishable`, and `historical[]` — one row per qualifying year with its
+own district and drop counts.
+
+**`city_pages[]` is имот.bg's coverage and `cities[]` is the run's result**, and
+they are separate fields because they are separate claims. `city_pages` is every
+код имот.bg serve a `sredni-ceni` page for — the 27 of `regions.py#PRICED_REGIONS`
+— and it holds whether or not a refresh reached them. Without it the two
+absences are indistinguishable in the file, and the SPA prints имот.bg's name
+over both: «имот.bg не публикува цени за Варна» is false about a publisher who
+does publish Варна, in the wording borrowed from the one област it is true of.
+`view.js#cityCoverage` is the three-way answer the cards and the picker share,
+and only its `nopage` state may be stated in имот.bg's name.
 
 **`all_districts` is not published.** The per-district dict was carried for
 every city and read by nothing — no component, no view function, no verify

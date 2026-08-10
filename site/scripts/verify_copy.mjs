@@ -171,9 +171,9 @@ test("every COPY string is written in its own alphabet", () => {
 const REACHED_BY_NAME = new Set([
   ...SHARE_COPY_KEYS,
   ...SHARE_CARD_COPY_KEYS,
-  "statSofiaAbove",
-  "statSofiaBelow",
-  "statSofiaEqual",
+  "statRegionAbove",
+  "statRegionBelow",
+  "statRegionEqual",
 ]);
 
 test("no COPY key is dead, and no rendered key is missing", () => {
@@ -1854,7 +1854,7 @@ test("an НСИ credit never spans a net figure they did not publish", () => {
 
   // Both known carriers name a net, so neither can satisfy the loop above by
   // dropping the slot the rule is about.
-  for (const key of ["sectorSrc", "statSofiaSrc"]) {
+  for (const key of ["sectorSrc", "statRegionSrc"]) {
     for (const text of pair(key)) {
       assert.ok(/\{net\}/.test(text), `COPY.${key} no longer shows the net: ${text}`);
     }
@@ -1925,7 +1925,7 @@ test("every НСИ credit line marks a preliminary quarter as preliminary", () =
   // apart. Holding the rule over the sector line alone is how the Sofia line
   // showed 1915 as settled beside a sector average marked provisional — a
   // reader with no way to tell the two claims are the same claim.
-  for (const key of ["sectorSrc", "statSofiaSrc"]) {
+  for (const key of ["sectorSrc", "statRegionSrc"]) {
     for (const text of pair(key)) {
       assert.ok(
         /\{prelim\}/.test(text),

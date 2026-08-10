@@ -44,7 +44,9 @@ own table.
   national average. It is the country's at every oblast: no publisher measures
   how pay is spread inside one
 - city_price — €/m² across the districts of each covered city, and how far back
-  имот.bg's coverage of that city supports a comparison
+  имот.bg's coverage of that city supports a comparison. `city_pages` lists
+  every city имот.bg serve a page for, so a city a refresh has not reached is
+  never reported as one they do not publish
 - mortgage — home-loan rates and the БНБ borrowing caps
 - unemployment — the monthly seasonally adjusted rate
 

@@ -553,8 +553,24 @@ def build_city_row(
     }
 
 
-def build_city_price_payload(today: date, cities: list[dict[str, Any]]) -> dict[str, Any]:
+def build_city_price_payload(
+    today: date, cities: list[dict[str, Any]], city_pages: list[str]
+) -> dict[str, Any]:
     """The JSON envelope published as data/published/city_price.json.
+
+    **`city_pages` is the coverage claim and `cities` is the run's result**, and
+    they are separate fields because they answer separate questions. `city_pages`
+    is every област имот.bg serve a `sredni-ceni` page for — 27 of the 28,
+    `regions.py#PRICED_REGIONS` — and it is a fact about имот.bg that holds
+    whether or not a refresh reached them. `cities` is what this run actually
+    read.
+
+    Nothing downstream can tell the two apart without both. A code in neither is
+    Софийска област, whose towns имот.bg do not publish, and the SPA is entitled
+    to say so in their name; a code in `city_pages` but not in `cities` is a
+    refresh that did not get there, and saying «имот.bg не публикува цени за
+    Варна» about it is simply false. One list made the second sentence
+    unavoidable — it was on screen for twenty-six cities.
 
     **`all_districts` is not in it.** The per-district dict was published for
     every city and read by nothing — no component, no view function, no verify
@@ -573,6 +589,7 @@ def build_city_price_payload(today: date, cities: list[dict[str, Any]]) -> dict[
     total_dropped = sum(int(c["n_dropped"]) for c in counted)
     with_trend = sum(1 for c in cities if c["trend_publishable"])
     undated = [c["code"] for c in cities if not c["snapshot_date"]]
+    unread = [code for code in city_pages if code not in {c["code"] for c in cities}]
 
     return {
         "schema_version": "2.0",
@@ -601,6 +618,11 @@ def build_city_price_payload(today: date, cities: list[dict[str, Any]]) -> dict[
                 if undated
                 else ""
             )
+            + (
+                f"imot.bg serve a sredni-ceni page for {len(city_pages)} cities "
+                f"(`city_pages`); this run read {len(cities)} of them"
+                + (f", leaving {', '.join(unread)} unread. " if unread else ". ")
+            )
             + f"{with_trend} of {len(cities)} cities carry enough consecutive "
             f"years of comparable coverage for a since-baseline comparison; the "
             f"rest publish a current €/m² only. Every median and every "
@@ -608,5 +630,10 @@ def build_city_price_payload(today: date, cities: list[dict[str, Any]]) -> dict[
             f"per-district averages — imot.bg publish no city median."
         ),
         "payload_name": "city_price",
+        # Every област имот.bg serve a page for, whether or not this run reached
+        # it. See the docstring: a code missing from `cities` and present here is
+        # a gap in the refresh, and a code in neither is a place имот.bg do not
+        # publish. Only the second may be said in имот.bg's name.
+        "city_pages": list(city_pages),
         "cities": cities,
     }

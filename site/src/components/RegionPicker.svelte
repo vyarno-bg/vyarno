@@ -25,19 +25,26 @@
    */
   import { lang, region } from "../lib/stores.js";
   import { COPY, t } from "../lib/content.js";
+  import { CITY_PRICED } from "../lib/view.js";
 
   /**
    * @type {{
-   *   options: Array<{code: string, name: string, hasPrice: boolean}>,
+   *   options: Array<{code: string, name: string, coverage: string}>,
    * }}
    */
   const { options = [] } = $props();
 
-  // The one option имот.bg publishes no price for. Marked in the list rather
-  // than left out of it: НСИ publish a wage for that област and a reader who
-  // lives there should get it, with the missing half named. P11 — a figure
-  // nobody publishes is uncomputed, not concealed.
-  const priced = $derived(options.filter((o) => o.hasPrice).length);
+  // The options with no €/m² are marked in the list rather than left out of
+  // it: НСИ publish a wage for every област and a reader who lives in one
+  // should get it, with the missing half named. P11 — a figure nobody
+  // publishes is uncomputed, not concealed.
+  //
+  // **Two ways to have no price, and the suffix does not tell them apart.**
+  // Which of them it is decides what the housing card may SAY — only «имот.bg
+  // publish none» may be said in имот.bg's name — but on a 28-item list at
+  // 360px both are the same fact to a reader choosing: there is no €/m² behind
+  // this one. The distinction is drawn where the sentence is.
+  const priced = $derived(options.filter((o) => o.coverage === CITY_PRICED).length);
 </script>
 
 <div class="region">
@@ -49,7 +56,9 @@
     <option value="">{$lang === "bg" ? COPY.regionNone.bg : COPY.regionNone.en}</option>
     {#each options as o (o.code)}
       <option value={o.code}
-        >{o.name}{o.hasPrice ? "" : ` ${t(COPY.regionNoPriceSuffix, $lang)}`}</option
+        >{o.name}{o.coverage === CITY_PRICED
+          ? ""
+          : ` ${t(COPY.regionNoPriceSuffix, $lang)}`}</option
       >
     {/each}
   </select>

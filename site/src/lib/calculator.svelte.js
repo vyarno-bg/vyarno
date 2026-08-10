@@ -90,7 +90,8 @@ import {
   regionQuarter as publishedRegionQuarter,
   nationalQuarter as publishedNationalQuarter,
   nationalRow,
-  regionRow,
+  regionNames,
+  cityCoverage,
   cityRow,
   SOFIA_CITY_CODE,
   systemWedgeLadder,
@@ -511,9 +512,12 @@ export class Calculator {
   // figure, which is the substitution this whole setting exists to end.
   cityCode = $derived(this.regionCode);
 
-  /** НСИ's own name for the chosen област, or "" — never a transliteration. */
-  regionNameBg = $derived(regionRow(this.data.regionSalary, this.regionCode)?.bg_name ?? "");
-  regionNameEn = $derived(regionRow(this.data.regionSalary, this.regionCode)?.en_name ?? "");
+  /** НСИ's own name for the chosen област, or "" — never a transliteration,
+      and disambiguated by `view.js#regionDisplayName` where their own label
+      cannot stand alone in a list. */
+  regionNamesNow = $derived(regionNames(this.data.regionSalary, this.regionCode));
+  regionNameBg = $derived(this.regionNamesNow.bg);
+  regionNameEn = $derived(this.regionNamesNow.en);
   /** имот.bg's own name for the chosen град. Distinct from the област's for
       София, and the same word for the other 26. */
   cityNameBg = $derived(this.cityRowNow?.bg_name ?? "");
@@ -523,10 +527,12 @@ export class Calculator {
       not chosen are different things, and the copy says different things about
       them. */
   regionChosen = $derived(Boolean(this.regionCode));
-  /** True when the chosen област has a wage and имот.bg publish no price for
-      its towns. Софийска област is the only one today, and it is a fact about
-      имот.bg's coverage rather than a gap to fill. */
-  regionHasNoCity = $derived(Boolean(this.regionCode) && !this.cityRowNow);
+  /** Which of the three coverage states the chosen област's €/m² is in —
+      имот.bg publish it and we have it, they publish it and this refresh did
+      not reach it, or they publish no page for it at all. The last is the only
+      one that may be stated in имот.bg's name, and `view.js#cityCoverage`
+      carries why. */
+  cityCoverageNow = $derived(cityCoverage(this.data.cityPrice, this.cityCode));
 
   // ---------------------------------------------------------------------
   // The reference област — `/how/`'s, and nobody's
