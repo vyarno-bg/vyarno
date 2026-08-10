@@ -512,7 +512,7 @@ than by review:
 |---|---|
 | the payslip and the gross (`payslipPanel`) | the basket and what it costs (`housingCarveOut`, `exposedSpend`) |
 | the position on the net ladder (`earnerRanks`) | rent as a share of take-home (`rentBurden`) |
-| the comparison with НСИ's Sofia average (`sofiaGap`) | the mortgage payment, the 30% line, years-to-a-home (`mortgagePanel`, `homeYears`) |
+| the comparison with НСИ's област average (`regionGap`) | the mortgage payment, the 30% line, years-to-a-home (`mortgagePanel`, `homeYears`) |
 | each point on the tax-wedge curve (`taxWedgePanel`) | the real-pay verdict in euro (`pocketPerMonth`) |
 
 The left column takes `nets` and has no scalar parameter, so a caller holding
@@ -683,7 +683,7 @@ dispersions differ from the national one and nothing published says by how much.
 | an amount never travels without its basis | both take `pay = { basis, amounts }`; `view.js#netsOf` is the only net↔gross conversion |
 | a household's raise is weighted by the earlier pay | `mirror.js#householdNetRaisePct`; a blank raise returns NaN rather than reading as 0% |
 | the earnings ladder ranks people, not households | `view.js#earnerRanks` returns one row per earner; there is no total to pass it |
-| the Sofia comparator measures a wage against a wage | `view.js#sofiaGap` compares earner by earner |
+| the wage comparator measures a wage against a wage | `view.js#regionGap` compares earner by earner |
 | both wage comparators round and dead-band alike | `mirror.js#wageGap` is the only place either computes a distance; `verify_wiring.mjs` asserts `view.js` computes none |
 | the sector card can never become a sector rank | `mirror.js#meanRungPosition` takes no anchor, so there is no parameter to hand it a sector average through |
 

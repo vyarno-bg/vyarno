@@ -269,8 +269,8 @@ detail.
 | `hicp` (full release) | 1-7 (gate 6 unless `--skip-link-check`) | The full set; writes both payloads |
 | `hicp` (flash) | 1, 5, 6 and 7 — 2, 3 and 4 have no inputs at the flash month | Writes `hicp_headline.json` only, exit 0 |
 | `mortgage` | the five mortgage gates + freshness on both tiers | No best-effort tier |
-| `sofia-price` | bounds [100, 10000] €/m²; <20 districts = exit 2 | WARNs when имот.bg publishes no «обновена на» date, so a frozen page is visible |
-| `sofia-salary` | Sofia city must exceed Sofia province, else exit 2 | Regression guard on the row selector |
+| `city-price` | bounds [100, 10000] €/m², per city; a count below 60% of that city's own is exit 2; a city-year dropping over 20% of its rows is exit 2 | Publishes `n_dropped` per city-year, so the drop is never silent, and `snapshot_date` off имот.bg's own list, so the payload is dated by them rather than by us |
+| `region-salary` | all 28 области present, no district row we do not name, София-city the maximum; any failure is exit 2 | Three-part regression guard on the row selector — an off-by-one that shifts every reading by one област passes any two of them |
 | `sector-salary` | gate 8 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
 | `salary-dist` | P1 floored at the statutory minimum wage | — |
 | `payroll` | no network; parity-checked against the SPA sentinel. `payroll.py` raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | `test_payroll.py` reads `mirror.js` |

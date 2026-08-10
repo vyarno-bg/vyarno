@@ -166,7 +166,8 @@ Two smaller rules keep this trustworthy:
 A few cards use non-Eurostat sources. Same rule — every number is sourced and
 linked:
 
-- **Sofia average wage** — НСИ's Sofia-city gross wage, converted to net for a
+- **Your област's average wage** — НСИ's gross wage for the област you pick,
+  converted to net for a
   fair net-vs-net comparison with the user's take-home pay.
 - **Average wage in your line of work** — the same НСИ quarterly release, cut by
   economic activity instead of by region: 19 sections, each carrying НСИ's own
@@ -177,20 +178,24 @@ linked:
   below your sector's average is not the same as being paid less than most
   people in it. The card prints how far above the middle an average sits, so
   the reader can place their own number rather than take a percentage on faith.
-  This table also covers the whole country while the Sofia line above it covers
+  This table also covers the whole country while the област line above it covers
   the city, and both figures are shown rather than one divided by the other.
 - **Mortgage rate** — the ЕЦБ's sector average for home loans actually signed
   last month. The all-in cost including fees (the APRC/ГПР) is shown as a
   sub-caption, so the cheaper headline is never the only number on screen.
-- **Sofia €/m² home prices** — per-district figures from имот.bg, because no
+- **Your city's €/m²** — per-district figures from имот.bg for the 27 cities
+  they cover, because no
   official machine-readable €/m² *level* series exists for Bulgaria: Eurostat
   publishes a price *change* index, not an absolute price per square metre.
 - **Salary ladder ("where you stand")** — two official numbers combined, because
   neither is enough alone. The **shape** of pay (who earns what) comes from
   Eurostat's Structure of Earnings Survey — the right unit, individual gross
   earnings, but published only every few years. The **level** is the latest
-  Sofia average gross wage from НСИ, refreshed each quarter; we scale the shape
-  so its average matches today's Sofia wage. Then each rung is converted to net
+  average gross wage from НСИ for the reference област, refreshed each quarter;
+  we scale the shape so its average matches it. The ladder does NOT follow your
+  own област: nobody publishes how pay is spread inside one, so applying the
+  national spread to a single one would be asserting something nothing measures.
+  Then each rung is converted to net
   and compared to the user's take-home pay.
 
 Full provenance for each is in [`data-sources.md`](./data-sources.md).
