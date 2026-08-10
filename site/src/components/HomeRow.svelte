@@ -205,6 +205,15 @@
         })}</span
       >
     </div>
+    <!-- What the payment above does NOT include, directly under it and above
+         the 30% bar it is measured against. `content.js#homeMortExcludes`
+         carries the reasoning; the short of it is that the annuity is what a
+         bank amortises and not what a mortgage costs per month, and the line
+         the reader is about to be graded against is drawn on the annuity. -->
+    <div class="rr-note">
+      <span class="l-bg">{COPY.homeMortExcludes.bg}</span>
+      <span class="l-en">{COPY.homeMortExcludes.en}</span>
+    </div>
     <!-- 30%-of-net affordability cap: visual bar + text + reverse afford calc. -->
     <div class="rr-note mort-cap">
       <!-- Visual cap bar: 0–100% of salary, vertical line at the

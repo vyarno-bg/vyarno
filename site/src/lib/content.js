@@ -1798,6 +1798,29 @@ export const COPY = {
     bg: "вноска при {r}% за {t} г. ({d}% самоучастие): <b>€{pm}/мес</b> = <b>{s}%</b> от заплатата ти",
     en: "payment at {r}% over {t} yrs ({d}% down): <b>€{pm}/mo</b> = <b>{s}%</b> of your pay",
   },
+  // **What that share is a share OF, said where the share is.** The figure
+  // above is the annuity — principal and interest — because that is what an
+  // annuity formula computes and what a bank's amortisation schedule collects.
+  // It is not everything a mortgage costs per month: property insurance is
+  // mandatory on a mortgaged home, life cover is often required or required for
+  // the advertised rate, and the account the instalment is collected from
+  // usually carries a fee. Those are inside the ГПР quoted under the rate field
+  // and outside this line.
+  //
+  // **No number in it, and that is not squeamishness.** Nobody publishes what
+  // those add for a Bulgarian mortgage, so any figure here would be one this
+  // project invented — and it would land on the row where a reader is deciding
+  // whether they can carry a house. What can be said honestly is the direction,
+  // and the direction is the one that matters: the share on screen is a floor.
+  //
+  // It sits on the mortgage row rather than only on `/how/` because the 30%
+  // line is drawn against this figure, and the whole argument for that line is
+  // that it is deliberately unflattering (docs/principles.md P7). A caveat that
+  // lives one page away from the verdict it qualifies protects nobody.
+  homeMortExcludes: {
+    bg: "Това е само вноската по кредита. Застраховките и таксата по сметката вървят отгоре, всеки месец — те са в ГПР, не в тази сума.",
+    en: "That is the loan instalment alone. Insurance and the account fee run on top of it every month — they are in the APRC, not in this figure.",
+  },
   // The all-in cost of the same loans (APRC / ГПР): interest plus fees.
   // Shown under the rate input so the cheaper headline number is never the
   // only one the user sees.
