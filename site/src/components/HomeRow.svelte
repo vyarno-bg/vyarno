@@ -53,6 +53,11 @@
         град, or one they typed. There is no third answer — see
         `view.js#homePriceFor`. */
     priceIsSourced = false,
+    /** The €/m² the price above is built from, and whether it is the reader's
+        own — `view.js#homePriceBasis`, so the bracket and the total cannot end
+        up describing different prices. */
+    basisEurPerM2 = 0,
+    basisIsOwn = false,
   } = $props();
 
   // The prudent line the marker sits on, from mortgage.json →
@@ -62,6 +67,12 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  // The €/m² in the bracket is the one the total beside it is built from, and
+  // the basis word says whose it is. In manual mode both are the reader's own;
+  // captioning their price with имот.bg's median stated that a number they
+  // invented came off имот.bg's districts, and the two differed — €200 000 over
+  // 70 m² is €2857, not the €2501 it printed.
 </script>
 
 <!-- HOME -->
@@ -100,59 +111,80 @@
       >
       <span class="rr-v mono">{fmt(homeYearsVal)} {$lang === "bg" ? "г." : "yrs"}</span>
     </div>
+    <!-- Through `t()` with the sentence chosen in front of it, because both the
+         SENTENCE and the basis word are choices. A reader who typed their own
+         price without picking an област told the page what a home costs and not
+         where it is, and the with-a-city form renders «70 м² в  ≈ €200 000» —
+         a dangling preposition round an empty <b>.
+
+         The €/m² in the bracket is the one the total beside it is built from,
+         and the basis word says whose it is. Captioning a price the reader
+         typed with имот.bg's median stated that a number they invented came off
+         имот.bg's districts, and the two differed: €200 000 over 70 m² is
+         €2857, not the €2501 it printed. -->
     <div class="rr-t">
       <span class="l-bg"
-        >{@html COPY.homeYears.bg
-          .replace("{v}", bgIn(cityNameBg))
-          .replace("{city}", safeText(cityNameBg))
-          .replace("{m}", fmt0(m2))
-          .replace("{p}", fmt0(homePrice))
-          .replace("{pm2}", fmt0(cityEurPerM2))
-          .replace(
-            "{basis}",
-            cityPriceIsLive ? COPY.homeBasisMedian.bg : COPY.homeBasisPlaceholder.bg
-          )
-          .replace("{y}", fmt(homeYearsVal))}</span
+        >{@html t(cityNameBg ? COPY.homeYears : COPY.homeYearsNoCity, "bg", {
+          v: bgIn(cityNameBg),
+          city: safeText(cityNameBg),
+          m: fmt0(m2),
+          p: fmt0(homePrice),
+          pm2: fmt0(basisEurPerM2),
+          basis: basisIsOwn
+            ? COPY.homeBasisOwn.bg
+            : cityPriceIsLive
+              ? COPY.homeBasisMedian.bg
+              : COPY.homeBasisPlaceholder.bg,
+          y: fmt(homeYearsVal),
+        })}</span
       >
       <span class="l-en"
-        >{@html COPY.homeYears.en
-          .replace("{city}", safeText(cityNameEn))
-          .replace("{m}", fmt0(m2))
-          .replace("{p}", fmt0(homePrice))
-          .replace("{pm2}", fmt0(cityEurPerM2))
-          .replace(
-            "{basis}",
-            cityPriceIsLive ? COPY.homeBasisMedian.en : COPY.homeBasisPlaceholder.en
-          )
-          .replace("{y}", fmt(homeYearsVal))}</span
+        >{@html t(cityNameBg ? COPY.homeYears : COPY.homeYearsNoCity, "en", {
+          city: safeText(cityNameEn),
+          m: fmt0(m2),
+          p: fmt0(homePrice),
+          pm2: fmt0(basisEurPerM2),
+          basis: basisIsOwn
+            ? COPY.homeBasisOwn.en
+            : cityPriceIsLive
+              ? COPY.homeBasisMedian.en
+              : COPY.homeBasisPlaceholder.en,
+          y: fmt(homeYearsVal),
+        })}</span
       >
     </div>
-    <div class="rr-note">
-      <span class="l-bg"
-        >{@html COPY.homeYearsSrc.bg
-          .replace("{pm2}", fmt0(cityEurPerM2))
-          .replace(
-            "{src}",
-            $lang === "bg"
-              ? cityNDistricts
-                ? `имот.bg · ${cityNDistricts} квартала · ${cityPriceDated}`
-                : "очакваме данни"
-              : ""
-          )}</span
-      >
-      <span class="l-en"
-        >{@html COPY.homeYearsSrc.en
-          .replace("{pm2}", fmt0(cityEurPerM2))
-          .replace(
-            "{src}",
-            $lang === "bg"
-              ? ""
-              : cityNDistricts
-                ? `imot.bg · ${cityNDistricts} districts · ${cityPriceDated}`
-                : "loading"
-          )}</span
-      >
-    </div>
+    <!-- имот.bg's own figure and its provenance, and only where it is what the
+         price above came from. Under a price the reader typed it sources
+         nothing on screen — the comparison against their €/m² is on the input
+         itself, beside the box they typed it into. -->
+    {#if !basisIsOwn}
+      <div class="rr-note">
+        <span class="l-bg"
+          >{@html COPY.homeYearsSrc.bg
+            .replace("{pm2}", fmt0(cityEurPerM2))
+            .replace(
+              "{src}",
+              $lang === "bg"
+                ? cityNDistricts
+                  ? `имот.bg · ${cityNDistricts} квартала · ${cityPriceDated}`
+                  : "очакваме данни"
+                : ""
+            )}</span
+        >
+        <span class="l-en"
+          >{@html COPY.homeYearsSrc.en
+            .replace("{pm2}", fmt0(cityEurPerM2))
+            .replace(
+              "{src}",
+              $lang === "bg"
+                ? ""
+                : cityNDistricts
+                  ? `imot.bg · ${cityNDistricts} districts · ${cityPriceDated}`
+                  : "loading"
+            )}</span
+        >
+      </div>
+    {/if}
     <div class="rr-t">
       <span class="l-bg"
         >{@html t(COPY.homeMort, $lang, {

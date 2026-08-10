@@ -40,6 +40,7 @@ import {
   exposedSpend,
   leftoverIfHeldAsCash,
   homePriceFor,
+  homePriceBasis,
   clampTerm,
   mortgagePanel,
   verifyUrl,
@@ -1175,6 +1176,41 @@ test("homePriceFor prices nothing off a €/m² nobody published", () => {
   // A price the reader typed is sourced whatever имот.bg publish — it is the
   // one they are asking about.
   assert.equal(homePriceFor({ priceMode: "manual", manualPrice: 150000, ...fake }), 150000);
+});
+
+test("the €/m² in the bracket is the one the total beside it was built from", () => {
+  // **The sentence quotes both in one breath, so they have to be the same
+  // price.** They were not in manual mode: «70 м² в София ≈ €200 000
+  // (≈2501€/м², медиана)» over a price the reader typed, where 200 000 ÷ 70 is
+  // 2857. Both figures were real, and the bracket explained the other one —
+  // имот.bg's median, captioned as the basis of a price имот.bg had nothing to
+  // do with.
+  const real = { eurPerM2: 2500, m2: 70, eurPerM2IsReal: true };
+  const auto = homePriceBasis({ priceMode: "auto", manualPrice: 0, ...real });
+  assert.deepEqual(auto, { eurPerM2: 2500, isOwn: false });
+
+  const own = homePriceBasis({ priceMode: "manual", manualPrice: 200000, ...real });
+  assert.equal(own.isOwn, true);
+  assert.ok(near(own.eurPerM2, 200000 / 70, 1e-9));
+  // The identity that matters: the quoted €/m² times the area IS the total in
+  // the same sentence, whichever mode produced it.
+  for (const args of [
+    { priceMode: "auto", manualPrice: 0, ...real },
+    { priceMode: "manual", manualPrice: 200000, ...real },
+    { priceMode: "manual", manualPrice: 0, ...real },
+  ]) {
+    assert.ok(
+      near(homePriceBasis(args).eurPerM2 * args.m2, homePriceFor(args), 1e-6),
+      `the bracket describes a different price from the total: ${JSON.stringify(args)}`
+    );
+  }
+  // And with no published median the auto reading is nothing rather than the
+  // offline constant, matching the zero `homePriceFor` returns there.
+  const fake = { eurPerM2: 2500, m2: 70, eurPerM2IsReal: false };
+  assert.deepEqual(homePriceBasis({ priceMode: "auto", manualPrice: 0, ...fake }), {
+    eurPerM2: 0,
+    isOwn: false,
+  });
 });
 
 test("clampTerm holds the term at the BNB maturity ceiling", () => {
