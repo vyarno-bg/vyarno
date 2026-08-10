@@ -554,3 +554,78 @@ def validate_sector_salary(sectors: list[dict], ref_period: str) -> None:
                     f"{SECTOR_WAGE_MIN_EUR}-{SECTOR_WAGE_MAX_EUR}. That is not a "
                     f"monthly wage — the parse landed on the wrong column."
                 )
+
+
+# ---------------------------------------------------------------------------
+# The regional wage gate — НСИ, Labour_1.1.2.2
+# ---------------------------------------------------------------------------
+
+# A monthly gross wage outside this band is not an област average, it is a
+# mis-parse. The same band as the by-sector gate, and for the same reason: the
+# failure it exists for is a column index landing on an index number, a count of
+# employees or a percentage, all of which miss by orders of magnitude. The
+# observed range is narrower than the sector one — 968 (Blagoevgrad) to 1915
+# (Sofia-city) at 2026-Q1, against 365 to 3176 across sectors — because
+# averaging a whole область over every activity in it is what a regional figure
+# does. Do not tighten it onto the observed range: the series runs back to 2020,
+# when Vidin was at 405.
+REGION_WAGE_MIN_EUR: float = 200.0
+REGION_WAGE_MAX_EUR: float = 20000.0
+
+
+def validate_region_salary(regions: list[dict], ref_period: str, expected_codes: list[str]) -> None:
+    """Gate the regional wage payload before it is written.
+
+    The connector's own guards cover the sheet: the full set of области present
+    and no unknown ones, the two editions agreeing cell for cell, Sofia-city as
+    the maximum. This gate covers the PAYLOAD, and the property it exists for is
+    the one nothing on screen would reveal — **`value_eur` is selected from the
+    series, never computed.** §2.1.1 of НСИ's licence forbids distributing
+    производни произведения, so a headline this pipeline calculated rather than
+    read would be a licence breach that looks exactly like a correct number
+    (docs/legal.md §НСИ).
+
+    `expected_codes` is passed in rather than imported so the gate states what
+    it is checking against and a caller cannot get a pass by publishing a table
+    that agrees with itself.
+    """
+    if not regions:
+        raise ValidationError("region wages: no области parsed")
+
+    codes = [r.get("code", "") for r in regions]
+    if codes != list(expected_codes):
+        raise ValidationError(
+            f"region wages: the payload carries {len(codes)} области in an order "
+            f"or a set that is not `regions.py#REGIONS`. Every consumer of this "
+            f"file joins it to `city_price.json` by code, so a code that is "
+            f"missing, renamed or duplicated silently unpairs a wage from a price."
+        )
+
+    for r in regions:
+        code, en, bg = r.get("code", ""), r.get("en_name", ""), r.get("bg_name", "")
+        if not en or not bg:
+            raise ValidationError(
+                f"region wages: {code!r} is missing a name in one language "
+                f"({en!r} / {bg!r}). Both editions are published by НСИ and the "
+                f"picker renders a blank line for a missing string, not a fallback."
+            )
+        series = r.get("series_by_period", {})
+        if ref_period not in series:
+            raise ValidationError(
+                f"region wages: {code!r} has no value at the payload's own ref_period {ref_period}."
+            )
+        # Selected, not computed. Identity rather than a tolerance, because
+        # there is no arithmetic here that could legitimately round.
+        if r.get("value_eur") != series[ref_period]:
+            raise ValidationError(
+                f"region wages: {code!r} publishes {r.get('value_eur')} at "
+                f"{ref_period} but its series carries {series[ref_period]}. The "
+                f"headline must BE the published cell, not a figure derived from it."
+            )
+        for period, value in series.items():
+            if not REGION_WAGE_MIN_EUR <= value <= REGION_WAGE_MAX_EUR:
+                raise ValidationError(
+                    f"region wages: {code!r} at {period} is {value} EUR, outside "
+                    f"{REGION_WAGE_MIN_EUR}-{REGION_WAGE_MAX_EUR}. That is not a "
+                    f"monthly wage — the parse landed on the wrong column."
+                )

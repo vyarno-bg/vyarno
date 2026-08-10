@@ -29,7 +29,13 @@ import { dirname, join } from "node:path";
 
 import { COPY } from "../src/lib/content.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
-import { SHARE_COPY_KEYS, SHARE_DOMAIN, SHARE_ORIGIN } from "../src/lib/view.js";
+import {
+  SHARE_COPY_KEYS,
+  SHARE_DOMAIN,
+  SHARE_ORIGIN,
+  regionRow,
+  SOFIA_CITY_CODE,
+} from "../src/lib/view.js";
 import { shareCardText, SHARE_CARD_COPY_KEYS } from "../src/lib/share-card.js";
 import { published } from "./published-payload.mjs";
 
@@ -1376,13 +1382,13 @@ test("no page writes a live figure into its prose", () => {
   // explanation readable.
   const headline = published("hicp_headline");
   const price = published("sofia_price");
-  const wage = published("sofia_salary");
+  const wage = regionRow(published("region_salary"), SOFIA_CITY_CODE);
   if (!headline || !price || !wage) return;
 
   const live = [
     ["the all-items rate", `${headline.headline_rate_pct}%`],
     ["the Sofia €/m² median", String(price.eur_per_m2_median)],
-    ["the Sofia average wage", String(wage.value)],
+    ["the Sofia average wage", String(wage.value_eur)],
   ];
   for (const [what, literal] of live) {
     for (const form of [literal, literal.replace(".", ",")]) {

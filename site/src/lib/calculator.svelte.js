@@ -88,6 +88,8 @@ import {
   regionGap,
   cityHomeAtAverageWage,
   regionQuarter as publishedRegionQuarter,
+  regionRow,
+  SOFIA_CITY_CODE,
   systemWedgeLadder,
   savingsSince2020,
   housingCarveOut,
@@ -481,17 +483,27 @@ export class Calculator {
   cityBaselineYear = $derived(this.cityHome.baselineYear);
   cityBaselineMedian = $derived(this.cityHistorical[0]?.eur_per_m2_median ?? 0);
 
-  // Sofia-city average monthly GROSS pay — the comparator on the
-  // The Sofia average, and the one number two cards and the whole percentile
-  // ladder hang off. `sofia_salary.json` publishes НСИ's own quarterly series,
-  // so `view.js#regionQuarter` selects the headline rather than computing one —
+  // Which област every wage figure below is read from.
+  //
+  // A named constant rather than a reader setting, for now: this object is
+  // wired to one область and the control that lets somebody choose theirs is a
+  // separate change. Sofia-city is the one it points at because that is the
+  // област the page has always shown, so nothing a reader sees moves — the
+  // widening is in where the figure is read FROM, `region_salary.json`'s 28
+  // rows rather than a file with one.
+  regionCode = $derived(SOFIA_CITY_CODE);
+
+  // The average monthly GROSS pay in that област — the comparator on the strip,
+  // and the one number two cards and the whole percentile ladder hang off.
+  // `region_salary.json` publishes НСИ's own quarterly series per област, so
+  // `view.js#regionQuarter` selects the headline rather than computing one —
   // that function carries why it is a quarter (the March bonus spike) and why
   // nothing here is allowed to average it (docs/legal.md §НСИ).
   // The offline sentinel goes through the same function as the live payload,
   // because it is the same shape. One implementation, so the offline figure
   // cannot drift from the online one.
   regionQuarter = $derived(
-    publishedRegionQuarter(this.data.regionSalary || HOME.regionSalaryFallback)
+    publishedRegionQuarter(this.data.regionSalary || HOME.regionSalaryFallback, this.regionCode)
   );
   // **A MEAN, and the name has to keep saying so.** НСИ publish an average
   // gross wage, and `mirror.js#composeLadder` divides it by `shape.ses_mean` —
@@ -546,6 +558,7 @@ export class Calculator {
     payLadder({
       salaryDist: this.data.salaryDist,
       regionSalary: this.data.regionSalary,
+      regionCode: this.regionCode,
       payroll: this.data.payroll,
     })
   );
@@ -554,12 +567,13 @@ export class Calculator {
     cityHomeAtAverageWage({
       cityPrice: this.data.cityPrice,
       regionSalary: this.data.regionSalary,
+      regionCode: this.regionCode,
       payroll: this.data.payroll,
       m2: HOME.m2Default,
     })
   );
-  /** НСИ's quarterly Sofia wage cells, a year to a row — selected, never averaged. */
-  regionWageGrid = $derived(quarterGrid(this.data.regionSalary));
+  /** НСИ's quarterly wage cells for the област, a year to a row — selected, never averaged. */
+  regionWageGrid = $derived(quarterGrid(regionRow(this.data.regionSalary, this.regionCode)));
 
   // ---------------------------------------------------------------------
   // Derived: the pay packet

@@ -203,29 +203,74 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
 // ---------------------------------------------------------------------------
 
 /**
- * The Sofia average gross wage the site quotes: НСИ's latest published
- * quarterly average, read out of the payload.
+ * Sofia-city's код in `region_salary.json`, and the one place the SPA names an
+ * област at all.
+ *
+ * Every other область reaches the page as data — a row in the payload, with
+ * НСИ's own name for it in both languages. This one is a constant because two
+ * things are true of Sofia-city and of nowhere else: it is its own statistical
+ * region (BG411), so имот.bg's град and НСИ's област are the same area there
+ * and only there, and it is the област the page showed before it could show any
+ * other. A second code added beside this one is the smell that a place is being
+ * special-cased; there should never be one.
+ */
+export const SOFIA_CITY_CODE = "sofiya";
+
+/**
+ * One област's whole row out of `region_salary.json`, or null.
+ *
+ * The single place a region code becomes a row, so "which област's figures" is
+ * answered once rather than by every caller doing its own `.find`. That is the
+ * `view.js` rule in `AGENTS.md` — which number feeds which formula lives here
+ * and never inside a `$derived` — applied to a lookup rather than a formula,
+ * and it is the same rule for the same reason: a second `.find` elsewhere is a
+ * second place that can silently answer with a different област.
+ *
+ * Null for an unknown or absent code, never a first row and never Sofia. See
+ * `regionQuarter` on why there is no fallback region.
+ *
+ * @param {{regions?: Array<{code?: string}>} | null | undefined} payload
+ * @param {string} code
+ * @returns {object|null}
+ */
+export function regionRow(payload, code) {
+  if (!code) return null;
+  const rows = Array.isArray(payload?.regions) ? payload.regions : [];
+  return rows.find((r) => r?.code === code) ?? null;
+}
+
+/**
+ * One област's average gross wage: НСИ's latest published quarterly average,
+ * read out of the payload's row for `code`.
  *
  * WHY A QUARTER AND NOT A MONTH
  *
  * Bulgarian wages spike in March on annual bonuses — March 2026 alone was
- * €2061 against a Q1 average of €1915 — so quoting the latest single month
- * would overstate the Sofia average by 7.6% every spring and understate it
+ * €2061 against a Sofia Q1 average of €1915 — so quoting the latest single
+ * month would overstate the average by 7.6% every spring and understate it
  * every April. НСИ report quarterly for the same reason, and the payload
  * carries their quarters.
  *
  * WHY THIS READS RATHER THAN COMPUTES
  *
- * `sofia_salary.json` carries НСИ's own published quarterly series and nothing
+ * `region_salary.json` carries НСИ's own published quarterly series and nothing
  * else, so the figure on screen is one НСИ published rather than one derived
  * from figures they published. Their licence §2.1.1 forbids distributing
  * производни и сборни произведения, and the cheapest way to stay clear of that
  * is to have no derived figure to argue about (docs/legal.md §НСИ). This
  * function therefore selects; it must never average, rebase or interpolate.
  *
- * The headline is `value`/`ref_period` when present, and otherwise the latest
- * key in the series — which is the same cell, and keeps a payload written by an
- * older envelope readable.
+ * WHY THERE IS NO FALLBACK REGION
+ *
+ * An unknown or absent `code` returns the zeroed shape rather than the largest
+ * област, the first row, or Sofia. Every one of those renders a real wage under
+ * the wrong place name — the failure this whole change exists to end — and each
+ * would look right on screen. A reader who has chosen nothing yet gets no
+ * figure, which is P7 and what the card is written to say.
+ *
+ * The headline is the row's `value_eur` when present, and otherwise the latest
+ * key in its series — the same cell, and it keeps a payload written by an older
+ * envelope readable.
  *
  * `isPreliminary` is НСИ's own marker for the year the quarter falls in, and it
  * travels with the figure because the card has to say it. They star a sheet
@@ -236,25 +281,32 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
  * into that one alone drops the marker on the older envelope the fallback is
  * there for.
  *
- * @param {{value?: number, ref_period?: string, is_preliminary?: boolean,
- *          series_by_period?: Record<string, number>}} payload
- * @returns {{value: number, refPeriod: string, isPreliminary: boolean}} zeroed when unavailable
+ * @param {{is_preliminary?: boolean, regions?: Array<{code?: string,
+ *          bg_name?: string, en_name?: string, value_eur?: number,
+ *          series_by_period?: Record<string, number>}>} | null | undefined} payload
+ * @param {string} code  a `regions.py#REGIONS` code, e.g. "sofiya"
+ * @returns {{value: number, refPeriod: string, isPreliminary: boolean,
+ *            bgName: string, enName: string}} zeroed when unavailable
  */
-export function regionQuarter(payload) {
+export function regionQuarter(payload, code) {
+  const empty = { value: 0, refPeriod: "", isPreliminary: false, bgName: "", enName: "" };
+  const row = regionRow(payload, code);
+  if (!row) return empty;
+
   const isPreliminary = Boolean(payload?.is_preliminary);
-  const empty = { value: 0, refPeriod: "", isPreliminary: false };
-  const series = payload?.series_by_period ?? {};
+  const names = { bgName: row.bg_name ?? "", enName: row.en_name ?? "" };
+  const series = row.series_by_period ?? {};
   const quarters = Object.keys(series).filter(
     (k) => /^\d{4}-Q[1-4]$/.test(k) && typeof series[k] === "number"
   );
 
-  if (typeof payload?.value === "number" && /^\d{4}-Q[1-4]$/.test(payload?.ref_period ?? "")) {
-    return { value: payload.value, refPeriod: payload.ref_period, isPreliminary };
+  if (typeof row.value_eur === "number" && /^\d{4}-Q[1-4]$/.test(payload?.ref_period ?? "")) {
+    return { value: row.value_eur, refPeriod: payload.ref_period, isPreliminary, ...names };
   }
-  if (!quarters.length) return empty;
+  if (!quarters.length) return { ...empty, ...names };
   // "YYYY-Qn" sorts lexicographically as chronologically, for any 4-digit year.
   const refPeriod = quarters.sort()[quarters.length - 1];
-  return { value: series[refPeriod], refPeriod, isPreliminary };
+  return { value: series[refPeriod], refPeriod, isPreliminary, ...names };
 }
 
 /**
@@ -926,16 +978,17 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
  *
  * @param {object} args
  * @param {object|null} args.salaryDist  data.salaryDist (salary_dist.json)
- * @param {object|null} args.regionSalary data.regionSalary (sofia_salary.json)
+ * @param {object|null} args.regionSalary data.regionSalary (region_salary.json)
+ * @param {string} args.regionCode      which област the anchor is read from
  * @param {object|null} args.payroll     data.payroll (payroll.json)
  * @returns {{anchorGross:number, anchorPeriod:string, anchorUrl:string,
  *            shapeYear:string, shapeUrl:string,
  *            rungs:Array<{cut:number, gross:number, net:number,
  *                         surveyed:boolean}>}}
  */
-export function payLadder({ salaryDist, regionSalary, payroll }) {
+export function payLadder({ salaryDist, regionSalary, regionCode, payroll }) {
   const params = payrollParams(payroll);
-  const anchor = regionQuarter(regionSalary);
+  const anchor = regionQuarter(regionSalary, regionCode);
   const gross = composeLadder(salaryDist, anchor.value, params);
   const net = buildLadder(salaryDist, anchor.value, params);
   return {
@@ -976,16 +1029,17 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  *
  * @param {object} args
  * @param {object|null} args.cityPrice   data.cityPrice (sofia_price.json)
- * @param {object|null} args.regionSalary  data.regionSalary (sofia_salary.json)
+ * @param {object|null} args.regionSalary  data.regionSalary (region_salary.json)
+ * @param {string} args.regionCode        which област the wage is read from
  * @param {object|null} args.payroll      data.payroll (payroll.json)
  * @param {number} args.m2                floor area the price is quoted for
  * @returns {{eurPerM2:number, m2:number, price:number, grossMonthly:number,
  *            netMonthly:number, wagePeriod:string, years:number,
  *            nDistricts:number, sinceBaselinePct:number, baselineYear:number}}
  */
-export function cityHomeAtAverageWage({ cityPrice, regionSalary, payroll, m2 }) {
+export function cityHomeAtAverageWage({ cityPrice, regionSalary, regionCode, payroll, m2 }) {
   const eurPerM2 = cityPrice?.eur_per_m2_median ?? 0;
-  const anchor = regionQuarter(regionSalary);
+  const anchor = regionQuarter(regionSalary, regionCode);
   const netMonthly = bgNetSalary(anchor.value, payrollParams(payroll)).net;
   const price = eurPerM2 > 0 && m2 > 0 ? eurPerM2 * m2 : 0;
   const history = Array.isArray(cityPrice?.historical) ? cityPrice.historical : [];
@@ -1012,8 +1066,8 @@ export function cityHomeAtAverageWage({ cityPrice, regionSalary, payroll, m2 }) 
 /**
  * A payload's `series_by_period` as an ordered list of cells.
  *
- * Selection and ordering, and deliberately nothing else. `sofia_salary.json`
- * is НСИ's, whose licence forbids distributing производни и сборни
+ * Selection and ordering, and deliberately nothing else. НСИ's payloads carry
+ * these series, and their licence forbids distributing производни и сборни
  * произведения (docs/legal.md §НСИ, §2.1.1), so the quarterly series may be
  * shown cell by cell and may not be averaged, rebased or differenced on the
  * way to the screen — including the innocent-looking "and that is +X% since

@@ -66,6 +66,8 @@ import {
   pocketVerdictState,
   answerLine,
   regionQuarter,
+  regionRow,
+  SOFIA_CITY_CODE,
   RANK_ROWS_SHOWN,
   sharePayload,
   shareSentence,
@@ -75,7 +77,7 @@ import {
   SHARE_ORIGIN,
   SHARE_DOMAIN,
 } from "../src/lib/view.js";
-import { COPY, SECTOR_HINTS } from "../src/lib/content.js";
+import { COPY, HOME, SECTOR_HINTS } from "../src/lib/content.js";
 import { ORIGIN as SITEMAP_ORIGIN } from "./gen-sitemap.mjs";
 import {
   officialInflation,
@@ -479,13 +481,34 @@ test("pctAhead clamps to [1,99] and returns 0 when unknown", () => {
   assert.equal(pctAhead(140), 99);
 });
 
+// Synthetic quarters for the shape tests below, positioned from the clock
+// rather than written down. НСИ publish one sheet per year and the payload's
+// newest quarter moves with the calendar, so a fixture pinned to literal years
+// stops resembling the live file the moment the year turns — and an assertion
+// built on it stops testing what its name claims. Nothing here asserts a
+// particular year; it asserts that the newest key wins.
+const THIS_YEAR = new Date().getUTCFullYear();
+const Q_NOW = `${THIS_YEAR}-Q1`;
+const Q_PREV = `${THIS_YEAR - 1}-Q4`;
+
+/** A `region_salary.json`-shaped payload carrying one област. */
+function oneRegion(series, { headline = null, isPreliminary = undefined } = {}) {
+  const row = { code: "sofiya", en_name: "Sofia cap.", bg_name: "София(столица)" };
+  if (headline !== null) row.value_eur = headline;
+  return {
+    ...(headline === null ? {} : { ref_period: Q_NOW }),
+    ...(isPreliminary === undefined ? {} : { is_preliminary: isPreliminary }),
+    regions: [{ ...row, series_by_period: series }],
+  };
+}
+
 test("a low income renders low and a high income renders high, end to end", () => {
   // The whole chain: two published files → composeLadder() → percentile() →
   // pctAhead(). An inverted percentile renders a €300/mo income as "top 1%".
   const dist = read("salary_dist");
-  const sofia = read("sofia_salary");
-  if (!dist || !sofia) return;
-  const gross = composeLadder(dist, regionQuarter(sofia).value);
+  const regions = read("region_salary");
+  if (!dist || !regions) return;
+  const gross = composeLadder(dist, regionQuarter(regions, SOFIA_CITY_CODE).value);
   const ladder = Object.values(gross);
   assert.equal(ladder.length, 11, "the two payloads no longer compose into a ladder");
   assert.ok(pctAhead(percentile(ladder[0] - 100, ladder)) <= 5);
@@ -493,53 +516,98 @@ test("a low income renders low and a high income renders high, end to end", () =
 });
 
 test("regionQuarter reads НСИ's published quarter and computes nothing", () => {
-  // The property docs/legal.md §НСИ turns on, asserted on what actually ships.
-  // An averaging step reintroduced in this function would move no number a
-  // reader could check against anything, so nothing but this would catch it.
-  const sofia = read("sofia_salary");
-  if (!sofia) return;
-  const q = regionQuarter(sofia);
-  assert.match(q.refPeriod, /^\d{4}-Q[1-4]$/);
-  // The headline is a cell in the series beside it, not a function of several.
-  assert.equal(q.value, sofia.series_by_period[q.refPeriod]);
-  assert.equal(q.value, sofia.value);
-  // And it is the NEWEST such cell — an off-by-one here would quote last
-  // quarter's level indefinitely, which no gate downstream would notice.
-  const newest = Object.keys(sofia.series_by_period)
-    .filter((k) => /^\d{4}-Q[1-4]$/.test(k))
-    .sort()
-    .at(-1);
-  assert.equal(q.refPeriod, newest);
+  // The property docs/legal.md §НСИ turns on, asserted on what actually ships,
+  // and asserted for EVERY област rather than for the one the page happens to
+  // start on — twenty-seven of the twenty-eight rows are new, and a selection
+  // bug that only bites outside Sofia is exactly the class this change adds.
+  // An averaging step reintroduced here would move no number a reader could
+  // check against anything, so nothing but this would catch it.
+  const payload = read("region_salary");
+  if (!payload) return;
+  for (const row of payload.regions) {
+    const q = regionQuarter(payload, row.code);
+    assert.match(q.refPeriod, /^\d{4}-Q[1-4]$/, row.code);
+    // The headline is a cell in that област's own series, not a function of
+    // several and not another област's.
+    assert.equal(q.value, row.series_by_period[q.refPeriod], row.code);
+    assert.equal(q.value, row.value_eur, row.code);
+    // And it is the NEWEST such cell — an off-by-one here would quote last
+    // quarter's level indefinitely, which no gate downstream would notice.
+    const newest = Object.keys(row.series_by_period)
+      .filter((k) => /^\d{4}-Q[1-4]$/.test(k))
+      .sort()
+      .at(-1);
+    assert.equal(q.refPeriod, newest, row.code);
+  }
+});
+
+test("regionQuarter answers for the област asked for, and for no other", () => {
+  // The failure this change makes possible, and the one nothing else would
+  // see: a lookup that falls back to the first row, the biggest област or
+  // Sofia renders a real НСИ wage under the wrong place name. Every figure
+  // stays plausible — they are all Bulgarian wages — so a reader in Видин
+  // would be compared against Sofia and told so in a caption naming Видин.
+  const payload = read("region_salary");
+  if (!payload) return;
+  const seen = new Set();
+  for (const row of payload.regions) {
+    const q = regionQuarter(payload, row.code);
+    assert.equal(q.bgName, row.bg_name, row.code);
+    seen.add(q.value);
+  }
+  assert.ok(seen.size > 1, "every област resolved to one figure — the lookup is not selecting");
+  // An unknown code is the empty state, never somebody else's wage.
+  for (const code of ["", null, undefined, "atlantis"]) {
+    assert.deepEqual(regionQuarter(payload, code), {
+      value: 0,
+      refPeriod: "",
+      isPreliminary: false,
+      bgName: "",
+      enName: "",
+    });
+  }
 });
 
 test("regionQuarter prefers the payload headline, and falls back to the newest key", () => {
-  // Two shapes reach this function: the live payload, which carries `value`
+  // Two shapes reach this function: the live payload, which carries `value_eur`
   // and `ref_period`, and the offline sentinel in content.js. Both must land on
   // the same quarter, because the sentinel is what a reader sees for the first
   // few hundred milliseconds and a mismatch would flash a different number.
-  const withHeadline = {
-    value: 1915,
-    ref_period: "2026-Q1",
-    is_preliminary: true,
-    series_by_period: { "2025-Q4": 1859, "2026-Q1": 1915 },
-  };
-  assert.deepEqual(regionQuarter(withHeadline), {
-    value: 1915,
-    refPeriod: "2026-Q1",
-    isPreliminary: true,
-  });
+  const series = { [Q_PREV]: 1859, [Q_NOW]: 1915 };
+  assert.deepEqual(
+    regionQuarter(oneRegion(series, { headline: 1915, isPreliminary: true }), SOFIA_CITY_CODE),
+    {
+      value: 1915,
+      refPeriod: Q_NOW,
+      isPreliminary: true,
+      bgName: "София(столица)",
+      enName: "Sofia cap.",
+    }
+  );
 
-  const seriesOnly = { series_by_period: { "2025-Q4": 1859, "2026-Q1": 1915 } };
-  assert.deepEqual(regionQuarter(seriesOnly), {
+  assert.deepEqual(regionQuarter(oneRegion(series), SOFIA_CITY_CODE), {
     value: 1915,
-    refPeriod: "2026-Q1",
+    refPeriod: Q_NOW,
     isPreliminary: false,
+    bgName: "София(столица)",
+    enName: "Sofia cap.",
   });
+});
+
+test("the offline sentinel goes through the same selection as the live payload", () => {
+  // It is the same shape on purpose, so one implementation serves both and the
+  // pre-load figure cannot drift from the loaded one.
+  const q = regionQuarter(HOME.regionSalaryFallback, SOFIA_CITY_CODE);
+  assert.ok(q.value > 0);
+  assert.match(q.refPeriod, /^\d{4}-Q[1-4]$/);
+  // And it carries Sofia-city alone — any other област falls back to the empty
+  // state rather than to a frozen number nobody refreshes.
+  assert.equal(regionQuarter(HOME.regionSalaryFallback, "varna").value, 0);
 });
 
 test("regionQuarter carries НСИ's preliminary marker down both paths", () => {
   // The marker is what the card says beside the figure, and it has to come off
-  // the same selection the figure did. Absent it, the strip shows 1915 as
+  // the same selection the figure did. Absent it, the strip shows the wage as
   // settled while the sector card three rows up marks the same publisher's same
   // quarter «(предварителни данни)» — one release, two claims about it.
   //
@@ -547,23 +615,19 @@ test("regionQuarter carries НСИ's preliminary marker down both paths", () => 
   // returns and only the first one is exercised by a live payload: a flag
   // wired into that one alone passes every test written against today's file
   // and drops the marker on the older envelope the fallback exists for.
-  const flagged = { "2026-Q1": 1915 };
+  const flagged = { [Q_NOW]: 1915 };
   assert.equal(
-    regionQuarter({
-      value: 1915,
-      ref_period: "2026-Q1",
-      is_preliminary: true,
-      series_by_period: flagged,
-    }).isPreliminary,
+    regionQuarter(oneRegion(flagged, { headline: 1915, isPreliminary: true }), SOFIA_CITY_CODE)
+      .isPreliminary,
     true
   );
   assert.equal(
-    regionQuarter({ is_preliminary: true, series_by_period: flagged }).isPreliminary,
+    regionQuarter(oneRegion(flagged, { isPreliminary: true }), SOFIA_CITY_CODE).isPreliminary,
     true
   );
   // A publisher that draws no such distinction is not the same claim as one
   // who marked the quarter final, but the card can only stay silent for both.
-  assert.equal(regionQuarter({ series_by_period: flagged }).isPreliminary, false);
+  assert.equal(regionQuarter(oneRegion(flagged), SOFIA_CITY_CODE).isPreliminary, false);
 });
 
 test("regionQuarter ignores a monthly key rather than treating it as a quarter", () => {
@@ -571,13 +635,19 @@ test("regionQuarter ignores a monthly key rather than treating it as a quarter",
   // one would quote a single month as the quarterly level — and March runs
   // ~7.6% above its own quarter on the published series, which propagates to
   // every rung of the ladder.
-  const monthly = { series_by_period: { "2026-01": 1865, "2026-02": 1818, "2026-03": 2061 } };
-  assert.deepEqual(regionQuarter(monthly), { value: 0, refPeriod: "", isPreliminary: false });
+  const monthly = oneRegion({
+    [`${THIS_YEAR}-01`]: 1865,
+    [`${THIS_YEAR}-02`]: 1818,
+    [`${THIS_YEAR}-03`]: 2061,
+  });
+  const q = regionQuarter(monthly, SOFIA_CITY_CODE);
+  assert.equal(q.value, 0);
+  assert.equal(q.refPeriod, "");
 });
 
 test("regionQuarter returns zeros rather than NaN when the payload is missing", () => {
-  for (const input of [null, undefined, {}, { series_by_period: {} }]) {
-    const q = regionQuarter(input);
+  for (const input of [null, undefined, {}, { regions: [] }, oneRegion({})]) {
+    const q = regionQuarter(input, SOFIA_CITY_CODE);
     assert.equal(q.value, 0);
     assert.equal(q.refPeriod, "");
   }
@@ -2173,9 +2243,14 @@ test("the wedge ladder's share falls above the ceiling and its parts add up", ()
 
 test("payLadder pairs each rung with its cut, and says which were surveyed", () => {
   const dist = read("salary_dist");
-  const wage = read("sofia_salary");
+  const wage = read("region_salary");
   if (!dist || !wage || !PAYROLL) return;
-  const ladder = payLadder({ salaryDist: dist, regionSalary: wage, payroll: PAYROLL });
+  const ladder = payLadder({
+    salaryDist: dist,
+    regionSalary: wage,
+    regionCode: SOFIA_CITY_CODE,
+    payroll: PAYROLL,
+  });
 
   assert.equal(ladder.rungs.length, 11, "the ladder no longer has one row per published cut");
   assert.deepEqual(
@@ -2207,12 +2282,17 @@ test("payLadder takes each provenance from the publisher that owns it", () => {
   // Eurostat figure, which is the page-side version of the defect
   // `no НСИ payload carries a second publisher's figures` prevents in the data.
   const dist = read("salary_dist");
-  const wage = read("sofia_salary");
+  const wage = read("region_salary");
   if (!dist || !wage || !PAYROLL) return;
-  const ladder = payLadder({ salaryDist: dist, regionSalary: wage, payroll: PAYROLL });
+  const ladder = payLadder({
+    salaryDist: dist,
+    regionSalary: wage,
+    regionCode: SOFIA_CITY_CODE,
+    payroll: PAYROLL,
+  });
   assert.equal(ladder.anchorUrl, wage.source_url);
   assert.equal(ladder.anchorPeriod, wage.ref_period);
-  assert.equal(ladder.anchorGross, wage.value);
+  assert.equal(ladder.anchorGross, regionQuarter(wage, SOFIA_CITY_CODE).value);
   assert.equal(ladder.shapeUrl, dist.shape.source_url);
   assert.equal(ladder.shapeYear, String(dist.shape.ref_year));
 
@@ -2233,16 +2313,17 @@ test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () =
   // — the direction AGENTS.md forbids by name, on the one figure the page
   // exists to state plainly.
   const price = read("sofia_price");
-  const wage = read("sofia_salary");
+  const wage = read("region_salary");
   if (!price || !wage || !PAYROLL) return;
   const home = cityHomeAtAverageWage({
     cityPrice: price,
     regionSalary: wage,
+    regionCode: SOFIA_CITY_CODE,
     payroll: PAYROLL,
     m2: 70,
   });
   assert.equal(home.eurPerM2, price.eur_per_m2_median);
-  assert.equal(home.grossMonthly, wage.value);
+  assert.equal(home.grossMonthly, regionQuarter(wage, SOFIA_CITY_CODE).value);
   assert.equal(home.wagePeriod, wage.ref_period);
   assert.ok(
     home.netMonthly < home.grossMonthly,
@@ -2301,11 +2382,12 @@ test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () =
 });
 
 test("cityHomeAtAverageWage prints nothing when either end is missing", () => {
-  const wage = read("sofia_salary");
+  const wage = read("region_salary");
   if (!wage || !PAYROLL) return;
   const noPrice = cityHomeAtAverageWage({
     cityPrice: null,
     regionSalary: wage,
+    regionCode: SOFIA_CITY_CODE,
     payroll: PAYROLL,
     m2: 70,
   });
@@ -2339,7 +2421,7 @@ test("seriesCells selects published cells, in order, and computes nothing", () =
 
   // Against the real payload: every cell on the page is one НСИ published,
   // unchanged.
-  const wage = read("sofia_salary");
+  const wage = regionRow(read("region_salary"), SOFIA_CITY_CODE);
   if (!wage) return;
   const published = wage.series_by_period;
   const rendered = seriesCells(wage);
@@ -2378,7 +2460,7 @@ test("quarterGrid lays the same cells out a year to a row, and combines nothing"
 
   // Against the real payload: every cell reaches its column unchanged, and
   // none is dropped on the way.
-  const wage = read("sofia_salary");
+  const wage = regionRow(read("region_salary"), SOFIA_CITY_CODE);
   if (!wage) return;
   const flat = quarterGrid(wage).flatMap((r) => r.cells.filter(Boolean));
   assert.equal(flat.length, seriesCells(wage).length, "the grid lost a published quarter");
