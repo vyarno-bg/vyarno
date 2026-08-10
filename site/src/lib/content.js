@@ -53,7 +53,8 @@ export const HOME = {
   // reserved null. The "country average" line in the national strip
   // reads HPI cumulative instead.
   eurPerM2_country: null,
-  eurPerM2_source: "Sofia median from imot.bg/sredni-ceni (data/published/city_price.json)",
+  eurPerM2_source:
+    "Per-city median across imot.bg/sredni-ceni district averages (data/published/city_price.json)",
   m2Default: 70,
   // Offline sentinel for the wage comparator, in the shape `region_salary.json`
   // publishes and read through the same `view.js#regionQuarter` the live payload
@@ -1573,6 +1574,33 @@ export const COPY = {
   // uncomputed rather than concealed, and saying which is which is the
   // difference between the two.
   statHomeUnset: { bg: "жилище · избери област", en: "a home · choose an oblast" },
+  // The €/m² caption under the housing card, and the sparkline's accessible
+  // name. Both once said «за София» beside a figure that follows the reader's
+  // own град — true for one city in twenty-seven, and the screen-reader one is
+  // the version nobody reviewing the page would ever see.
+  statHomeMedianOf: {
+    bg: "медиана за {city} от обявите",
+    en: "{city} median from public listings",
+  },
+  statHomeChartLabel: {
+    bg: "Медианна цена на кв. м в {city}, {from}–{to}",
+    en: "Median €/m² in {city}, {from}–{to}",
+  },
+  // The bracket beside a hand-typed asking price. It names the city the
+  // median belongs to, because the €/m² beside it is whichever град the reader
+  // picked — «софийската медиана» there is a real имот.bg figure under a place
+  // the reader does not live in.
+  manualVsMedian: {
+    bg: "(медианата за {city} е {pm2} €/м²)",
+    en: "(the {city} median is €{pm2}/m²)",
+  },
+  // Where the square metres a reader could afford would be. The €/m² behind
+  // them is whichever град they picked, so a sentence naming София put a real
+  // figure under the wrong place. A reader in manual price mode has typed a
+  // price for somewhere they did not name, and the template ends the sentence
+  // after the area rather than reaching for a place — this key is added to a
+  // sentence, never substituted for the end of one.
+  affordWhere: { bg: "в {city}.", en: "in {city}." },
   statHomeNoCity: {
     bg: "имот.bg не публикува цени за {region}",
     en: "imot.bg publishes no prices for {region}",
