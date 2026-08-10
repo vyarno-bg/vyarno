@@ -713,7 +713,17 @@
                 <td class="num mono">{fmt0(rung.gross)} €</td>
                 <td class="num mono">{fmt0(rung.net)} €</td>
                 <td>
-                  {#if rung.surveyed}
+                  {#if rung.atMinWage}
+                    <!-- Neither of the other two, and the difference is the
+                         column's whole point: the figure on this row came out
+                         of the ЗБДОО rather than out of Eurostat's survey or
+                         out of an interpolation between two of their points.
+                         See `mirror.js#flooredCuts`. -->
+                    <span class="soft">
+                      <span class="l-bg">{COPY.howAtMinWage.bg}</span>
+                      <span class="l-en">{COPY.howAtMinWage.en}</span>
+                    </span>
+                  {:else if rung.surveyed}
                     <span class="l-bg">{COPY.howSurveyed.bg}</span>
                     <span class="l-en">{COPY.howSurveyed.en}</span>
                   {:else}
@@ -775,6 +785,28 @@
           this month.</span
         >
       </p>
+      <!-- Only where the floor actually binds, so the paragraph is not
+           explaining a row that is not on the table. It reads off the rungs
+           rather than off a threshold of its own — a second comparison here
+           would be a second thing to keep in step with `flooredCuts`. -->
+      {#if calc.payLadderRows.rungs.some((r) => r.atMinWage)}
+        <p>
+          <span class="l-bg"
+            >Изследването е от {calc.payLadderRows.shapeYear} г., а минималната заплата оттогава се е
+            вдигнала по-бързо от средната. Затова долните стъпала, преизчислени към днешната средна, излизат
+            под минималната — а под нея не е законно да се плаща на човек на пълен работен ден. Тези стъпала
+            показват самата минимална заплата и таблицата ги отбелязва така: тя не е нито измерена от
+            Евростат, нито пресметната между техните числа.</span
+          >
+          <span class="l-en"
+            >The survey is from {calc.payLadderRows.shapeYear}, and the minimum wage has risen
+            faster than the average since. So the bottom rungs, set against today's average, come
+            out below the minimum — and below it is not a lawful wage for a full-time employee.
+            Those rungs show the minimum wage itself, and the table marks them as that: it is
+            neither measured by Eurostat nor worked out between two of their figures.</span
+          >
+        </p>
+      {/if}
     {/if}
   </section>
 

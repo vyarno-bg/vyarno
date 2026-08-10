@@ -1955,6 +1955,16 @@ export const COPY = {
   // Row markers.
   howSurveyed: { bg: "измерено", en: "surveyed" },
   howModelled: { bg: "пресметнато", en: "modelled" },
+  // **The third answer, and it exists because the other two would both be
+  // false.** A scalar re-level moves the whole SES shape by however much the
+  // MEAN moved, and Bulgaria's minimum wage has moved faster — so the bottom
+  // deciles land under a wage it is not lawful to pay a full-time employee and
+  // `mirror.js#composeLadder` floors them. The number those rungs then publish
+  // is the minimum wage out of the ЗБДОО: not Eurostat's measurement, and not
+  // interpolated between two of theirs either. «Измерено» beside it credits
+  // Eurostat with a figure from a Bulgarian budget act, on the one column whose
+  // whole job is telling a measurement from a model.
+  howAtMinWage: { bg: "минималната заплата", en: "the minimum wage" },
   howAtCeiling: { bg: "таванът", en: "the ceiling" },
 
   // Captions. `{s}` is the publisher, `{p}` the period the figure describes —

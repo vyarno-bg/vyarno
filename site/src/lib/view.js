@@ -35,6 +35,7 @@ import {
   bgTaxWedge,
   buildLadder,
   composeLadder,
+  flooredCuts,
   homeYears,
   householdNetRaisePct,
   cashErosion,
@@ -1259,6 +1260,12 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
  * measurement, which is the defect `COPY.statMedianSubModelled` exists to
  * prevent on the strip's own band.
  *
+ * **A rung the statutory floor replaced is neither, and it is one of the three
+ * surveyed ones.** D1 re-levels under the minimum wage today, so what P10
+ * publishes is the minimum wage; `mirror.js#flooredCuts` says which cuts that
+ * happened to, and such a rung carries `atMinWage` and loses `surveyed`.
+ * Leaving it surveyed credits Eurostat with a figure out of the ЗБДОО.
+ *
  * The anchor's provenance comes from the НСИ payload and the shape's from the
  * Eurostat one, never the other way round: copying НСИ's url and period into a
  * Eurostat payload is what `no НСИ payload carries a second publisher's
@@ -1273,13 +1280,14 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
  * @returns {{anchorGross:number, anchorPeriod:string, anchorUrl:string,
  *            shapeYear:string, shapeUrl:string,
  *            rungs:Array<{cut:number, gross:number, net:number,
- *                         surveyed:boolean}>}}
+ *                         surveyed:boolean, atMinWage:boolean}>}}
  */
 export function payLadder({ salaryDist, sectorSalary, payroll }) {
   const params = payrollParams(payroll);
   const anchor = nationalQuarter(sectorSalary);
   const gross = composeLadder(salaryDist, anchor.value, params);
   const net = buildLadder(salaryDist, anchor.value, params);
+  const floored = flooredCuts(salaryDist, anchor.value, params);
   return {
     anchorGross: anchor.value,
     anchorPeriod: anchor.refPeriod,
@@ -1290,7 +1298,8 @@ export function payLadder({ salaryDist, sectorSalary, payroll }) {
       cut,
       gross: gross[`P${cut}`] ?? 0,
       net: net[i] ?? 0,
-      surveyed: SES_SURVEYED_CUTS.includes(cut),
+      surveyed: SES_SURVEYED_CUTS.includes(cut) && !floored.has(cut),
+      atMinWage: floored.has(cut),
     })),
   };
 }

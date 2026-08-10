@@ -2480,11 +2480,25 @@ test("payLadder pairs each rung with its cut, and says which were surveyed", () 
   // SES publishes three points for BG. Everything else is interpolated, and
   // the page has to be able to say so per row — a table that called every rung
   // surveyed would present eight interpolations as measurements.
+  //
+  // **Minus whichever of the three the statutory floor replaced.** D1 re-levels
+  // under the minimum wage on the payloads shipped today, so what P10 publishes
+  // is the minimum wage; calling that row «измерено» credits Eurostat with a
+  // figure that came out of the ЗБДОО, on the one column whose job is telling a
+  // measurement from a model.
   assert.deepEqual(
     ladder.rungs.filter((r) => r.surveyed).map((r) => r.cut),
-    [10, 50, 90],
-    "the surveyed rungs are not D1, the median and D9"
+    [10, 50, 90].filter((cut) => !ladder.rungs.find((r) => r.cut === cut).atMinWage),
+    "the surveyed rungs are not D1, the median and D9 less the floored ones"
   );
+  // No row carries both markers, and every floored row is at the floor. The
+  // pair is what the basis column branches on, so a row that answered to both
+  // would render whichever branch happened to be written first.
+  for (const rung of ladder.rungs) {
+    assert.ok(!(rung.surveyed && rung.atMinWage), `P${rung.cut} is marked surveyed and floored`);
+    if (rung.atMinWage)
+      assert.equal(rung.gross, floor, `P${rung.cut} is marked floored but is not`);
+  }
 });
 
 test("payLadder takes each provenance from the publisher that owns it", () => {

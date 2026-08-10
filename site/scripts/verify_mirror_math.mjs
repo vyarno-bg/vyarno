@@ -38,6 +38,7 @@ import {
   personalInflationDetailed,
   buildLadder,
   composeLadder,
+  flooredCuts,
   meanRungPosition,
   wageGap,
   rentBurden,
@@ -370,6 +371,19 @@ test("no composed rung is below the statutory minimum wage", () => {
   for (const [p, v] of Object.entries(over)) {
     assert.equal(gross[p], v, `${p} was floored when it did not need to be`);
   }
+  // **And the floor says which rungs it decided.** A floored rung is not the
+  // survey's answer any more — the number is the minimum wage — so `/how/`'s
+  // "surveyed or modelled" column has to be able to say neither of those about
+  // it. Read off the SCALED rung rather than off the published one: a decile
+  // that genuinely lands on the minimum wage WAS measured there, and the two
+  // are the same figure on screen.
+  assert.deepEqual(
+    [...flooredCuts(dist, 1000)].sort((a, b) => a - b),
+    [1, 10, 20],
+    "the floor does not name the cuts it replaced"
+  );
+  assert.deepEqual([...flooredCuts(dist, 1000, { ...BG_PAYROLL_DEFAULT, minWageGross: 0 })], []);
+  assert.deepEqual([...flooredCuts(null, 1000)], [], "an absent shape names floored cuts");
   // Weakly rising, and `percentile` has to stay safe on the flat run the floor
   // makes: an interpolation across two equal rungs divides by zero.
   const ladder = buildLadder(dist, 1000);
