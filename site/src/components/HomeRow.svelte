@@ -10,7 +10,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer } from "$lib/format.js";
+  import { number, integer, safeText } from "$lib/format.js";
 
   const {
     /** The row renders only when the home block is switched on. */
@@ -46,6 +46,8 @@
     /** True when the €/m² came from city_price.json, not the offline constant. */
     cityPriceIsLive = false,
     cityPriceDated = "",
+    cityNameBg = "",
+    cityNameEn = "",
   } = $props();
 
   // The prudent line the marker sits on, from mortgage.json →
@@ -69,6 +71,7 @@
     <div class="rr-t">
       <span class="l-bg"
         >{@html COPY.homeYears.bg
+          .replace("{city}", safeText(cityNameBg))
           .replace("{m}", fmt0(m2))
           .replace("{p}", fmt0(homePrice))
           .replace("{pm2}", fmt0(cityEurPerM2))
@@ -80,6 +83,7 @@
       >
       <span class="l-en"
         >{@html COPY.homeYears.en
+          .replace("{city}", safeText(cityNameEn))
           .replace("{m}", fmt0(m2))
           .replace("{p}", fmt0(homePrice))
           .replace("{pm2}", fmt0(cityEurPerM2))

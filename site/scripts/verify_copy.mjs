@@ -1839,9 +1839,10 @@ test("an НСИ credit never spans a net figure they did not publish", () => {
 
 test("the sector figure says which geography it covers", () => {
   // НСИ's by-activity table is the COUNTRY's, and the card compares the reader
-  // with Sofia three lines above it. Sofia pay is structurally higher, so two
-  // gaps stacked with no scope on either read as one scale — and the sector one
-  // absorbs the city. A Sofia builder is shown «144% над средната за
+  // with their own област three lines above it. The two scopes differ in every
+  // област and by a lot in some — София pay is structurally higher — so two
+  // gaps stacked with no scope on either read as one scale, and the sector one
+  // absorbs the place. A София builder is shown «144% над средната за
   // „Строителство“» when most of that distance is where they work, not what
   // they do, and it flatters in nearly every section (docs/principles.md P7).
   //
@@ -1859,9 +1860,19 @@ test("the sector figure says which geography it covers", () => {
       /(цялата страна|whole country)/i.test(text),
       `sectorNationwide does not say the activity figure is national: ${text}`
     );
+    // **The other scope by what it IS, not by naming one област.** The
+    // comparison above is the reader's own now, so a sentence naming София
+    // would be right for one reader in twenty-eight and quietly wrong for the
+    // rest — which is the failure the whole setting exists to end. What the
+    // line has to carry is that the two figures cover different areas.
     assert.ok(
-      /(София|Sofia)/.test(text),
+      /(твоята област|your oblast)/i.test(text),
       `sectorNationwide does not name the comparison whose scope differs: ${text}`
+    );
+    assert.ok(
+      !/(София|Sofia)/.test(text),
+      `sectorNationwide names София, but the comparison above it is the reader's ` +
+        `own област — the sentence is true for one reader in 28: ${text}`
     );
     // **And no euro level in it.** The claim is that two scopes are stacked and
     // the sentence makes it in words; a third euro figure on a card already

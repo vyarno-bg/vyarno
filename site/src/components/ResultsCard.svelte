@@ -67,6 +67,8 @@
       mortCapEur={calc.mortCapEur}
       mortCapGap={calc.mortCapGap}
       homeYearsVal={calc.homeYearsVal}
+      cityNameBg={calc.cityNameBg}
+      cityNameEn={calc.cityNameEn}
       maxAffordPrice={calc.maxAffordPrice}
       maxAffordM2={calc.maxAffordM2}
       limits={calc.limits}
