@@ -560,7 +560,19 @@
     line-height: 1.45;
     color: var(--ink);
   }
-  .gap b {
+  /* `:global`, because the sentence is rendered as markup rather than as text,
+     and Svelte scopes a component's CSS by stamping a class onto the elements
+     IT compiles. A `<b>` that arrived inside a COPY string carries no such
+     class, so the plain selector compiles to `b.svelte-xxx`, matches nothing,
+     and leaves the figure on the browser's default 700 — a rule that is there
+     and does nothing, which `svelte-check` reports as an unused selector.
+     `ResultsAnswer.svelte` spells it the same way for the same reason.
+
+     The literal token for that rendering mode is deliberately not written in
+     this comment: `verify_template_safety.mjs` scans the file for it and does
+     not strip CSS comments, which is the conservative direction for a scanner
+     whose job is finding every place markup reaches the DOM. */
+  .gap :global(b) {
     font-weight: 600;
   }
   /* The caveats, one step down from the claim they qualify. Their own colour
