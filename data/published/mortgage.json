@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0",
-  "as_of": "2026-08-06",
+  "as_of": "2026-08-10",
   "source": "ecb+bnb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
   "notes": "BG mortgage panel. Two tiers: new_business (ECB MIR — what a home loan costs if you sign one now; AAR plus APRC with fees) and outstanding_stock (BNB — what everyone already repaying a home loan averages). Both official and monthly. No scraped offered-rate tier by design.",

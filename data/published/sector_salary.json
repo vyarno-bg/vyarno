@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-06",
+  "as_of": "2026-08-10",
   "source": "nsi",
   "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.1_EUR_EN.xlsx",
   "notes": "Average GROSS monthly wage by economic activity (NACE Rev 2 sections), as published by НСИ and unmodified. Each activity's `value_eur` is НСИ's latest published QUARTERLY average at 2026-Q1 (preliminary); `series_by_period` is their full quarterly series. All activities at 2026-Q1: 1407 EUR. Nothing in this file is computed by us — no gap, no ratio, no rank. The quarter is НСИ's own reporting period and avoids the March bonus spike that dominates their single-month readings; the Q4 column taken is `IV`, not `IV incl.annual bonuses`. Section names are НСИ's own in each language, from the English and Bulgarian editions of the same table. Covers people on a labour contract AND in the civil service. NO pay DISTRIBUTION by sector is published for Bulgaria by anyone, so these are averages and support no percentile. All values in EUR (fixed 1.95583 BGN/EUR).",
@@ -8,7 +8,7 @@
   "source_url_bg": "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.1_EUR.xlsx",
   "dataset": "Labour_1.1.2.1_EUR_EN.xlsx + Labour_1.1.2.1_EUR.xlsx:sheet={year}NaceRev2|{year}КИД2008:quarterly by-activity block",
   "ref_period": "2026-Q1",
-  "published_at": "2026-08-06",
+  "published_at": "2026-08-10",
   "unit": "eur_per_month",
   "is_preliminary": true,
   "sectors": [

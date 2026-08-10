@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-02",
+  "as_of": "2026-08-10",
   "source": "eurostat",
   "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table?lang=en",
   "notes": "Headline all-items HICP for BG (ECOICOP ver.2, TOTAL, annual rate of change). This is Eurostat's FLASH estimate: the all-items rate for ref_period, published ahead of the divisions and of that month's index, so latest_index names an earlier month than ref_period does and hicp_categories.json is a month behind this payload. Both figures are published Eurostat readings at the months they each name. index_by_year and latest_index carry Eurostat's published index values unmodified, at the unit named in each row's api_url_index — open it and the same digits come back. What is ours is the SELECTION: index_by_year takes the December reading of each year out of the monthly series (a year without a December is omitted) and starts at 2020, and latest_index is the most recent month published. The annual rate of change is Eurostat's own figure, unmodified.",
