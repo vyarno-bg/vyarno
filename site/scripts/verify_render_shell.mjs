@@ -734,9 +734,13 @@ test(
         probe.remove();
         return c;
       });
+      // Selected by `.gap`, the class that names what the line IS. It carried
+      // `.hint` too, which is the class the caveats under it carry — and a
+      // selector matching both would go on passing if the claim were ever
+      // restyled into one of them.
       const gapColour = () =>
         page
-          .locator(".m-pay .hint")
+          .locator(".m-pay .gap")
           .filter({ hasText: "средната за „" })
           .first()
           .evaluate((el) => getComputedStyle(el).color);

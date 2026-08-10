@@ -334,7 +334,7 @@
        view.js#regionGap; this picks the words. -->
     {#if calc.earnersDirty}
       {#each calc.regionGaps as gap (gap.index)}
-        <div class="hint gap">
+        <div class="gap">
           <span class="l-bg"
             >{@html t(calc.hasHousehold ? COPY.statRegionDiffEarner : COPY.statRegionDiff, "bg", {
               n: fmt0(gap.ordinal),
@@ -394,7 +394,7 @@
       {#if calc.sector}
         {#if calc.earnersDirty}
           {#each calc.sector.gaps as gap (gap.index)}
-            <div class="hint gap">
+            <div class="gap">
               <span class="l-bg"
                 >{@html t(calc.hasHousehold ? COPY.sectorDiffEarner : COPY.sectorDiff, "bg", {
                   n: fmt0(gap.ordinal),
@@ -530,12 +530,45 @@
     margin: 6px 0 0;
     color: var(--ink-2);
   }
-  /* The two comparison lines. `--ink-2` and not the dimmer `.hint` default:
-     each is the claim its caveats qualify, and a claim quieter than the
-     sentence qualifying it inverts which of the two the eye reaches first. */
+  /* The two comparison lines, and they are the loudest thing on this card
+     after the pay field itself.
+
+     **A claim may not be painted like the sentences qualifying it.** These are
+     the two second-person answers the card exists to give — «твоята нетна
+     заплата е 18% под средната за …» — and each is surrounded by three or four
+     caveats explaining how to read it. Carrying `.hint` put the claim at 13px
+     `--ink-2`, which is the caveats' own size and, after `.caveat` resolved to
+     the same token, their exact colour: a reader scanning the card met five
+     interchangeable grey lines and no answer among them. It was also smaller
+     than the payslip chip above it and the sector picker below it, so the one
+     sentence about the reader was the quietest thing in its neighbourhood.
+
+     So the claim takes `--fs-lead` and `--ink` — the size the controls either
+     side of it already use — and the caveats step down to `--muted`. The
+     figure inside carries the weight, because `{delta}` arrives already
+     wrapped in `<b>` by the copy.
+
+     **What does NOT change is the hue, and that is a rule rather than a
+     restraint.** `--real` and `--erode` mean a figure beat or lost to a
+     reference, and a distance from a mean has no good end — see the block at
+     the top of this component, and `verify_render_payroll.mjs`
+     §"neither pay comparison is painted as a verdict". Prominence and valence
+     are separate levers; this pulls the first one. */
   .gap {
-    margin-top: 4px;
-    color: var(--ink-2);
+    margin-top: 8px;
+    font-size: var(--fs-lead);
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  .gap b {
+    font-weight: 600;
+  }
+  /* The caveats, one step down from the claim they qualify. Their own colour
+     rather than the inherited `--ink-2`: the hierarchy the claim needs only
+     exists if something below it is quieter, and these are the sentences a
+     reader consults after the figure rather than before it. */
+  .caveat {
+    color: var(--muted);
   }
   .caveat-more {
     margin-top: 8px;
