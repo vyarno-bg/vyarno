@@ -1096,7 +1096,7 @@ Sofia and times out from a cloud runner is not broken, and recording which is
 which saves the next person re-probing it.
 
 So a new connector records the kind of connection it needs, the same way it
-records its endpoint. `sofia-price` needs an ordinary Bulgarian one, which is
+records its endpoint. `city-price` needs an ordinary Bulgarian one, which is
 why it is refreshed by hand rather than on a timer.
 
 ### The seven fetch plans

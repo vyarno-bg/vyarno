@@ -6,7 +6,7 @@ original language, and dated to the day they were read.
 
 **Every position on this page is settled**, and each says what it rests on.
 Where one rested on an argument rather than on a permission, the arrangement was
-changed until it did not — see §НСИ, which is why `sofia_salary.json` carries
+changed until it did not — see §НСИ, which is why `region_salary.json` carries
 their published quarters and `salary_dist.json` carries Eurostat's ladder at
 Eurostat's own level. Read this page before changing anything about licensing,
 and re-read the upstream terms on the cadence at the bottom.
@@ -289,9 +289,9 @@ happens.
 
 **What this repository does instead is have no derived figure to argue about.**
 The workbook НСИ publish carries both a monthly sheet and one sheet per year of
-their own quarterly averages, `2020trimes` … `2026trimes`. `sofia_salary.json`
+their own quarterly averages, `2020trimes` … `2026trimes`. `region_salary.json`
 carries the quarterly series, `value` and `ref_period` are НСИ's latest
-published quarter, and `view.js#sofiaQuarter` selects that headline rather than
+published quarter, and `view.js#regionQuarter` selects that headline rather than
 computing one. `sector_salary.json` is the same arrangement over their sibling
 by-activity table `Labour_1.1.2.1`: twenty rows, each carrying the quarters НСИ
 printed and a headline that IS one of them. Every НСИ figure this project ships
@@ -302,7 +302,7 @@ printed and a headline that IS one of them. Every НСИ figure this project shi
   three rounded monthly cells gives 1914.7.
 - `pctSrc` therefore attributes the level to НСИ without qualification —
   «нивото е от НСИ · средна заплата {quarter}» — which is a true statement only
-  while nothing in the chain averages anything. `sofiaQuarter reads НСИ's
+  while nothing in the chain averages anything. `regionQuarter reads НСИ's
   published quarter and computes nothing` and
   `test_no_figure_is_computed_only_selected` are what hold it, from the browser
   side and the pipeline side.
@@ -310,7 +310,7 @@ printed and a headline that IS one of them. Every НСИ figure this project shi
   `no НСИ payload carries a second publisher's figures` in
   `verify_data_contracts.mjs` asserts that across every published payload, and
   separately that each headline is one of the quarters in the series beside it —
-  for `sofia_salary.json` and for all twenty rows of `sector_salary.json`.
+  for all 28 rows of `region_salary.json` and all twenty of `sector_salary.json`.
 - **The by-activity table is read in both of НСИ's own language editions**, so
   the Bulgarian section names are theirs and not our translation of their
   English. That is an accuracy choice before it is a licence one — §2.3.3 binds
@@ -341,7 +341,7 @@ cells: the pipeline selects, and every НСИ payload is a straight reproduction
 cells they printed. What the browser does with those cells once they are on the
 reader's screen is the paragraph above — a comparison the reader asked for,
 against a figure that is still НСИ's, computed nowhere we could distribute it
-from. `view.js#sofiaGap` and `view.js#sectorComparison` are both that: a
+from. `view.js#regionGap` and `view.js#sectorComparison` are both that: a
 percentage between the reader's own pay and a published average, existing only
 in their tab.
 
@@ -370,7 +370,7 @@ therefore go unnoticed: `test_no_nsi_figure_reaches_the_transform_at_all` fixes
 the transform's signature to the Eurostat shape alone;
 `no НСИ payload carries a second publisher's figures` in
 `verify_data_contracts.mjs` asserts it on what actually ships, and separately
-that `sofia_salary.json`'s headline is still one of the months in the series
+that every `region_salary.json` headline is still one of the quarters in the series
 beside it; `test_relevelling_is_a_scalar_multiply` and
 `test_rungs_carry_four_decimals_so_the_browser_rounds_once` hold the property
 and the precision the split depends on.

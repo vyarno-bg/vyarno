@@ -225,7 +225,9 @@ Three properties hold it in place, and each has a test:
 
 - **No input, ever.** The whole page is prerendered on the basis that nothing on
   it is the reader's. The four values it reads off `Calculator` —
-  `systemWedge`, `payLadderRows`, `sofiaHome`, `sofiaWageGrid` — take payloads
+  `systemWedge`, `payLadderRows`, `cityHome`, `regionWageGrid` — take payloads
+  and the REFERENCE област rather than the reader's chosen one, so the page a
+  crawler is served is the page that hydrates
   and no scalar, so a personal figure is not expressible rather than merely
   untested (`calculator.svelte.js` §"Derived: the country, with nobody in it").
   The system wedge curve is open by name in `principles.md`'s closed list; the

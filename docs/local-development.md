@@ -260,8 +260,16 @@ gate.
 
 Fixtures live in `tests/fixtures/`: Eurostat cube snapshots, the recorded ЕЦБ
 MIR responses (`ecb_mir_bg_*.json`), the real БНБ workbook
-(`bnb_housing_loans_oa_hh_bg.xlsx`) and an имот.bg page sample
-(`imot_sredni_ceni_sample.html`, windows-1251).
+(`bnb_housing_loans_oa_hh_bg.xlsx`) and six имот.bg page samples
+(`imot_*.html`, windows-1251).
+
+**The имот.bg ones are BUILT rather than saved**, by
+`tests/fixtures/make_imot_fixtures.py`, and that is forced rather than chosen:
+имот.bg answer datacenter IPs with a 403, so neither CI nor a cloud session can
+capture a live page. That script names which probe each shape came from. What
+it means for a green run is worth being plain about — they prove the parser
+handles имот.bg's shapes and cannot prove имот.bg still serves them. Only
+`pytest -m live` from an ordinary Bulgarian connection can.
 
 ### The `live` probes
 
@@ -350,7 +358,7 @@ vyarno-pipeline refresh --source <name> --out ../data/published
 ```
 
 **`--source` values:** `hicp`, `unemployment`, `mortgage`,
-`sofia-price`, `sofia-salary`, `sector-salary`, `salary-dist`, `payroll`,
+`city-price`, `region-salary`, `sector-salary`, `salary-dist`, `payroll`,
 `all`. Eight arms and nine files — `hicp` writes both HICP payloads.
 
 `--skip-link-check` skips **gate 6** (the published-URL body inspection — 52
@@ -360,6 +368,50 @@ still resolve, and those links are the "↗" the reader clicks.
 
 **`--source mortgage` needs the БНБ TLS fix on a fresh machine** — see
 [`data-sources.md`](./data-sources.md) §"TLS setup". Never disable verification.
+
+### `--source city-price` — the one that has to be run by hand
+
+имот.bg answer datacenter IPs with a **403**, so this arm cannot run in CI, on
+a build box or from a cloud session. It needs an ordinary Bulgarian connection,
+and it must **never be routed through a proxy** —
+[`legal.md`](./legal.md) and `AGENTS.md`.
+
+```bash
+cd pipeline && source .venv/bin/activate
+vyarno-pipeline refresh --source city-price --out ../data/published
+```
+
+**What it does:** one page per city for the current figures, plus one per
+archive year per city — around 650 requests at 200 ms spacing, so **about two
+and a half minutes**. It prints a line per city as it lands, and a WARNING for
+any it skipped.
+
+**What to check before committing the payload**, in the order the failures
+actually happen:
+
+1. **The city count in the OK line.** Fewer than 27 means some pages were
+   skipped, and the WARNINGs above say which and why. A handful of 403s from a
+   flaky connection is worth re-running; a parse error is not, and the message
+   names what changed.
+2. **`git diff --stat data/published/city_price.json`.** A refresh that moved
+   nothing but `as_of` is a refresh that read a cached page.
+3. **The district counts**, per city, against the diff. имот.bg retire and
+   merge districts and a few per cent is ordinary; a double-digit percentage
+   drop is worth opening the page for. A count below 60% of the dated table in
+   `regions.py#imot_districts` fails that city outright, which is the guard
+   rather than something to check by eye.
+4. **`n_dropped`.** Zero on every current-year row is what the probe saw. A
+   non-zero one is not automatically wrong — the history carries имот.bg's own
+   sentinel values — but a current-year drop is new and worth a look.
+5. **`snapshot_date`.** Each city carries имот.bg's own newest published
+   snapshot, read from that page's date list. A `null` means the list could not
+   be parsed and the card falls back to dating by our fetch, which is a weaker
+   claim; if every city is null, their markup changed.
+6. **Any `baseline_year` that moved a lot.** It is recomputed each run from how
+   far back that city's coverage holds, so it moving by a year is ordinary and
+   moving by a decade means имот.bg's archive changed shape.
+
+Then run `make check` and commit the payload with what you saw.
 
 A successful `--source hicp` run prints its fetches, then **every gate by name,
 in order**, then the publish. **Six gate lines is the pass condition** — a run

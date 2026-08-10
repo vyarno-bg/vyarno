@@ -254,7 +254,7 @@ Three helpers on the same module:
   and mirror `mortgage.py#BNB_LENDING_LIMITS`.
 
 The Sofia-city average gross wage comparator reads `data.sofiaSalary?.value`
-through `view.js#sofiaQuarter` in `calculator.svelte.js#sofiaMeanGrossEur`,
+through `view.js#regionQuarter` in `calculator.svelte.js#regionMeanGrossEur`,
 falling back to `HOME.sofiaSalaryFallback` — which goes through that same
 function, so the offline figure cannot be selected differently from the live
 one. The name states a **mean**: `mirror.js#composeLadder` divides it by SES's
@@ -308,7 +308,7 @@ cadence here marks the row *due* three months after a refresh and raises the
 site-wide banner six weeks later, over a figure no refresh can change. **A
 banner that fires when nothing is wrong is worse than no banner**, because the
 next one is read as noise too. The level the reader sees is dated separately,
-on `sofia_salary`'s own quarterly row.
+on `region_salary`'s own quarterly row.
 
 **`cadenceDays` is here rather than in the envelope**, and that is a deliberate
 trade. It is a property of the upstream, so the connector is the natural owner;
@@ -484,7 +484,7 @@ the second lock rather than the only one.
 **Two figures the site already computes are excluded by the same rule, and
 neither carries a currency symbol.** The ladder position inverts:
 `mirror.js#percentile` interpolates over rungs composed from
-`salary_dist.json` and `sofia_salary.json`, both committed and public, so
+`salary_dist.json` and `region_salary.json`, both committed and public, so
 "ahead of 34% of Sofia" reconstructs the net pay to within a rung's width. A
 *personal* tax-wedge rate inverts above the insurance ceiling, where the
 effective rate falls with every extra euro of gross. **Check a new share
