@@ -241,10 +241,10 @@
 
 <!-- The Eurostat disclosure obligation, attached to each of the three figures
      it applies to rather than stated once at the foot: the modelled ladder,
-     the Sofia €/m² median across имот.bg's districts, and the change since
-     2015 computed from it are OURS, and Eurostat's terms permit derivation on
-     condition that it is disclosed. The link carries the reader to the full
-     wording, including the non-responsibility clause. -->
+     the €/m² median across имот.bg's districts, and the change since that
+     city's baseline year computed from it are OURS, and Eurostat's terms permit
+     derivation on condition that it is disclosed. The link carries the reader
+     to the full wording, including the non-responsibility clause. -->
 {#snippet ours()}
   <p class="ours">
     <span class="l-bg"
@@ -946,14 +946,18 @@
       <span class="l-bg"
         >Никоя институция не публикува цената на квадратен метър в България. Евростат казва само с
         колко се е променила — не и колко струва. Затова самата цена идва от обявите: имот.bg
-        публикува средна цена на квадратен метър по квартали в София. Това са <b>искани</b> цени, не цени
-        по сключени сделки, и между най-евтиния и най-скъпия квартал разликата е няколко пъти.</span
+        публикува средна цена на квадратен метър по квартали, за всеки от градовете, които покрива.
+        Тук показваме София, защото тази страница е за страната и не пита читателя къде живее;
+        калкулаторът показва града, който той е избрал. Това са <b>искани</b> цени, не цени по сключени
+        сделки, и между най-евтиния и най-скъпия квартал разликата е няколко пъти.</span
       >
       <span class="l-en"
         >No institution publishes the price of a square metre in Bulgaria. Eurostat says only how
         much it has changed — not what it costs. So the price itself comes from listings: imot.bg
-        publishes an average €/m² per Sofia district. These are <b>asking</b> prices rather than prices
-        from closed sales, and the cheapest district and the dearest are several times apart.</span
+        publishes an average €/m² per district, for each city it covers. Sofia is the one shown
+        here, because this page is the country's and asks the reader nothing; the calculator shows
+        whichever city they picked. These are <b>asking</b> prices rather than prices from closed sales,
+        and the cheapest district and the dearest are several times apart.</span
       >
     </p>
 

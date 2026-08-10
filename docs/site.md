@@ -372,8 +372,8 @@ What is in it:
   {n}%"), `composeLadder`, `buildLadder`, `rentBurden`, `rentDays`,
   `annuityPayment`, `annuityReverse`, `homeYears`.
 - **Wage comparators:** `wageGap(net, ref)` — one signed distance with one
-  rounding and one dead band, used by the Sofia comparison and the sector one
-  alike. It lives here rather than in `view.js` because two callers computing
+  rounding and one dead band, used by the област comparison and the
+  sector one alike. It lives here rather than in `view.js` because two callers computing
   their own `(a − b) / b` is two dead bands that drift apart, and the drift
   shows up as one card saying "the same" while the other says "1% below".
   `meanRungPosition(shape)` is the sector card's correction: which rung of
@@ -389,8 +389,8 @@ What is in it:
   (`BG_PAYROLL_DEFAULT`) are an **offline sentinel** for first paint only. A BG
   law change is a pipeline table edit plus a re-run, **no SPA code change**. The
   SPA collects **net** take-home (most people know that, not their contract
-  gross), back-computes the gross for the Sofia comparator, and applies the same
-  formula to Sofia's gross — so the comparison is net vs net.
+  gross), back-computes the gross for the област comparator, and applies the same
+  formula to that област's gross — so the comparison is net vs net.
 - **Net or gross:** the pay field takes either, and `view.js#netsOf` is the one
   place one becomes the other. Amounts travel as `pay = { basis, amounts }` so
   none can arrive without saying what it is; flipping the toggle converts in
@@ -466,7 +466,7 @@ are shaped to make a wrong wiring *unexpressible*:
 | `mortgagePanel({…})` | the whole home row | **the APRC amortised as if it were the interest rate** |
 | `taxWedgePanel({…})` | the effective/marginal rate curve and the cap marker | a marginal rate drawn flat across the insurance ceiling |
 | `scheduledMaxInsurable(payroll)` | the legislated next cap, from `scheduled_changes` | a future cap presented as if it were in force |
-| `sectorComparison({…})` | the chosen activity's published average, its gross and net, and one gap per earner | the country's by-activity average being drawn as if it were Sofia's, or a gap computed against a gross while the reader's figure is net |
+| `sectorComparison({…})` | the chosen activity's published average, its gross and net, and one gap per earner | the country's by-activity average being drawn as if it were the reader's own област's, or a gap computed against a gross while the reader's figure is net |
 | `sectorOptions(payload, hints)` | the picker's rows, in НСИ's classification order, each leading with the everyday words for the work and ending with НСИ's own label | «Общо» offered as somebody's industry — the all-activities row is what the sections are read *against*, and in a list headed «Твоят сектор» it collects every reader who cannot find their own line. Sorting by wage is the second one: a league table is a claim the ordering makes on its own. The third is our words *replacing* НСИ's rather than preceding them |
 | `verifyUrl(row, anchor)` | the "↗" target for one row | linking to the index cube while showing a rate |
 | `fastestRisingDivision(categories)` | the highest-rate division | advertising the *slowest*-rising division as the fastest |
@@ -482,7 +482,7 @@ are shaped to make a wrong wiring *unexpressible*:
 **`mortgagePanel` amortises the AAR, never the APRC.** The AAR is the interest
 rate, and the annuity formula needs an interest rate. The APRC folds fees into
 an annualised figure; compounding them monthly overstates the payment by
-~€24/month on the published Sofia median — plausible enough that no sanity band
+~€24/month on the published София median — plausible enough that no sanity band
 would catch it. **APRC is for comparing, AAR is for computing.**
 
 **`sharePayload` takes no salary, and that is how the € rule is kept.**
@@ -499,7 +499,7 @@ the second lock rather than the only one.
 neither carries a currency symbol.** The ladder position inverts:
 `mirror.js#percentile` interpolates over rungs composed from
 `salary_dist.json` and `region_salary.json`, both committed and public, so
-"ahead of 34% of Sofia" reconstructs the net pay to within a rung's width. A
+"ahead of 34% of the country" reconstructs the net pay to within a rung's width. A
 *personal* tax-wedge rate inverts above the insurance ceiling, where the
 effective rate falls with every extra euro of gross. **Check a new share
 surface against the inversion, not against the presence of a euro sign** — the
@@ -651,7 +651,7 @@ you spend ≈ €216/mo · it rose 11.0% · that costs you ≈ €21 more a mont
 **The source line under the table names only upstreams that put a number on
 this page.** A dataset that sounds like it belongs — `ilc_di01`,
 `namq_10_lp_ulc`, `prc_hpi_q` — is in no payload and puts no figure on the
-screen, and the three that carry the pay ladder, the Sofia wage and the €/m²
+screen, and the three that carry the pay ladder, the област wage and the €/m²
 (`earn_ses_monthly`, НСИ, имот.bg) are the ones easiest to leave out, because
 nothing on the basket table came from them.
 Citing a source we do not use breaks the traceability claim from the other
@@ -690,7 +690,8 @@ Two `writable` stores with `localStorage` persistence:
 | `theme` | `"light" \| "dark"` | `matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"` |
 
 **Why `lang` ignores the browser.** This is a calculator of Bulgarian prices,
-Bulgarian payroll law and Sofia housing, for a person living in Bulgaria today
+Bulgarian payroll law and Bulgarian housing, for a person living in Bulgaria
+today
 ([`README.md`](./README.md) §"Who this is for") — and a great many of those
 people browse on a device whose UI
 language is English. Deriving the default from `navigator.language` served them
@@ -742,7 +743,8 @@ time.
   `every_preset_covers_every_published_division_and_sums_to_100` enforces both.
 - **`HOME`** — offline sentinels. Each duplicates a published value for first
   paint only, and `verify_data_contracts.mjs` fails when one drifts past its
-  band (rate ±0.75 pp, Sofia wage ±10%, €/m² ±20%, down payment and term exact).
+  band (rate ±0.75 pp, the област wage ±10%, €/m² ±20%, down payment and term
+  exact).
 
 Three copy rules this file has to keep:
 
@@ -759,8 +761,9 @@ Three copy rules this file has to keep:
   and is not something anyone says in Bulgarian. Where a caveat is needed, say
   what the number *is* («показва приблизително къде си, а не точно»).
 - **`medianDefault` must not call the pre-filled salary typical.** We publish no
-  national median net wage; the only median in the data is the Sofia net
-  ladder's P50, and the €900 default sits at its 34th percentile (P7).
+  national median net wage; the only median in the data is the P50 of the net
+  ladder this site composes, and the placeholder sits close enough to it that
+  calling it typical would be borrowing that card's provenance (P7).
   `the_salary_default_is_never_called_a_median` fails on the words
   "median" / "медиан" / "typical" / "типичн" in that key.
 - **`presetActive` must travel with the number.** The four hand-made presets
@@ -854,9 +857,9 @@ any one of them. Decoration that belongs to one component stays with it.
 
 ### The national strip — five tiles and one feature card
 
-HICP headline · median net pay (Sofia) · average net pay (Sofia) ·
-fastest-rising category · unemployment, then the Sofia €/m² card carrying a
-12-year sparkline. Three layout rules, each of which was a visible defect
+HICP headline · median net pay (the country) · average net pay (the chosen
+област) · fastest-rising category · unemployment, then the €/m² card for the
+chosen град, carrying that city's own sparkline. Three layout rules, each of which was a visible defect
 before it was a rule, and all three are held by
 the national-strip tests in `verify_render_strip.mjs`:
 
@@ -998,7 +1001,7 @@ things about it are load-bearing:
 
 - **Two of the three clauses refuse to compute**, and the refusals are the
   point. `stand` needs a typed salary rather than merely a rank — a visitor on
-  €2,400 told on arrival that they out-earn a third of Sofia has been told
+  €2,400 told on arrival that they out-earn a third of the country has been told
   something false about themselves before typing a character, which is the rule
   `PercentileRow` keeps in its own corner. The answer block sits a screen above
   that row, so a summary that outran it would move the defect up the page rather
@@ -1058,7 +1061,8 @@ because focus is what raises the phone keyboard.
 
 **`PercentileRow` does not take that deal, and the difference is what the
 sentence claims.** A euro figure is arithmetic about prices scaled by a salary,
-and naming the salary makes it honest. «Изпреварваш 34% от работещите в София»
+and naming the salary makes it honest. «Изпреварваш 34% от работещите в
+страната»
 is a ranking *of the reader* against their neighbours in the second person, and
 a visitor who earns €2,400 has been told something false about themselves before
 touching the page. No caveat rescues that, so the row waits — corner figure and
@@ -1066,7 +1070,7 @@ sentence together, because a bare «пред 34%» over a prompt asking for a sa
 the claim with its caveat removed. It is the treatment `PocketRow` already gives
 an empty raise.
 
-`PayField` applies the same rule to the payslip and the Sofia comparator: the
+`PayField` applies the same rule to the payslip and the област comparator: the
 gross, the deductions and «твоята нетна заплата е 39% под средната» are facts
 about whoever earns the placeholder until the reader replaces it. Withholding
 them also keeps the first paint short enough that the headline figure stays on
@@ -1081,7 +1085,7 @@ The render tests that hold all of this are
 
 ### The sector card compares against an average, and has to say so
 
-Under the Sofia comparator sits a picker of НСИ's 19 NACE Rev 2 sections and,
+Under the област comparator sits a picker of НСИ's 19 NACE Rev 2 sections and,
 once one is chosen, the reader's distance from that section's published average
 — net against net, `view.js#sectorComparison` over `mirror.js#wageGap`. The
 figures are small; the copy around them is most of the work, and every line of
@@ -1100,11 +1104,11 @@ pay is spread inside a Bulgarian sector — because the absence is the reason th
 card is shaped this way and a reader is owed it whether or not they read the
 calibration.
 
-**The sector table is the country's; the line three rows above it is Sofia's.**
-`Labour_1.1.2.1` covers all of Bulgaria, so stacking the two comparisons
-silently charges the gap between the city and the country to the reader's
-industry — a Sofia builder reads «144% над средната за „Строителство“» and most
-of that is the city. So `COPY.sectorNationwide` puts НСИ's all-activities cell
+**The sector table is the country's; the line three rows above it is one
+област's.** `Labour_1.1.2.1` covers all of Bulgaria, so stacking the two
+comparisons silently charges the gap between the reader's own област and the
+country to their industry — a builder in София reads «144% над средната за
+„Строителство“» and most of that is the city. So `COPY.sectorNationwide` puts НСИ's all-activities cell
 (1407 € gross at 2026-Q1) on screen beside the section's, and the reader does
 the comparing. **Neither figure is divided by the other**: the ratio would be
 our arithmetic under НСИ's name, which is the thing `docs/legal.md` §НСИ and
@@ -1234,7 +1238,7 @@ mark the reader could not actually see.
   which also survives colour-blindness and greyscale, as two hues at this size
   would not. Every key swatch is the mark it stands for, in that mark's own
   token; a series key is a filled block, and only the ceiling's key is a rule.
-- **The Sofia sparkline** is drawn at its **measured pixel width**
+- **The €/m² sparkline** is drawn at its **measured pixel width**
   (`bind:clientWidth={histW}`, viewBox `0 0 {histW} {h}`). A fixed 110×22 box
   at `width: 100%` with `preserveAspectRatio="none"` scales the two axes
   independently: the stroke thins out and every round marker renders as an
