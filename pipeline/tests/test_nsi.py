@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import io
 import re
-from datetime import date
 
 import openpyxl
 import pytest
@@ -107,7 +106,7 @@ def _build_edition(
     # The combined monthly sheet НСИ ship, present and deliberately empty of
     # anything the connector wants: if the parser ever drifts back to it, these
     # tests fail rather than quietly reading a month.
-    wb.active.title = "2019-2026"
+    wb.active.title = f"2019-{_LATEST_YEAR}"
     wb.active.append(["Статистически райони" if bulgarian else "Statistical regions"])
 
     for year, spec in sorted(years.items()):
@@ -452,7 +451,7 @@ def test_a_workbook_with_no_quarterly_sheet_is_an_error(
     """The monthly sheet alone is not enough. Falling back to it would
     reintroduce the derived figure this connector exists to avoid."""
     wb = openpyxl.Workbook()
-    wb.active.title = "2019-2026"
+    wb.active.title = f"2019-{_LATEST_YEAR}"
     wb.active.append(["Statistical regions"])
     buf = io.BytesIO()
     wb.save(buf)
@@ -658,9 +657,9 @@ _SECTOR_NAMES_BG = [
     "Други дейности",
 ]
 
-# The quarterly figures the fixture publishes for 2026-Q1. `Total` sits inside
+# The quarterly figures the fixture publishes for the latest Q1. `Total` sits inside
 # the range of the sections, which is the connector's regression guard.
-_Q1_2026 = [
+_LATEST_Q1 = [
     1407.0,
     981.0,
     1713.0,
@@ -687,7 +686,7 @@ _Q1_2026 = [
 # different figures. If the parser ever reads the monthly table instead, the
 # assertions below land on these rather than on the published quarter.
 _MARCH_BONUS_MULTIPLE = 1.14
-_MARCH_2026 = [v * _MARCH_BONUS_MULTIPLE for v in _Q1_2026]
+_LATEST_MARCH = [v * _MARCH_BONUS_MULTIPLE for v in _LATEST_Q1]
 
 
 def _build_sector_year_sheet(
@@ -793,7 +792,9 @@ def _sector_workbook(bulgarian: bool) -> openpyxl.Workbook:
     parser reads a sheet whose columns are years rather than quarters.
     """
     wb = openpyxl.Workbook()
-    wb.active.title = "2019-2026Кид2008 " if bulgarian else "2019-2026NaceRev2"
+    wb.active.title = (
+        f"2019-{_LATEST_YEAR}Кид2008 " if bulgarian else f"2019-{_LATEST_YEAR}NaceRev2"
+    )
     wb.active.append(["Икономически дейности" if bulgarian else "Economic activity"])
     return wb
 
@@ -814,8 +815,8 @@ def _build_sector_xlsx(
     """One language edition of the by-sector workbook, both years."""
     wb = _sector_workbook(bulgarian)
     spec = {**_sector_edition_spec(bulgarian, names), **kwargs}
-    _build_sector_year_sheet(wb, 2025, quarterly=[v * 0.92 for v in _Q1_2026], **spec)
-    _build_sector_year_sheet(wb, 2026, quarterly=quarterly or _Q1_2026, **spec)
+    _build_sector_year_sheet(wb, _PRIOR_YEAR, quarterly=[v * 0.92 for v in _LATEST_Q1], **spec)
+    _build_sector_year_sheet(wb, _LATEST_YEAR, quarterly=quarterly or _LATEST_Q1, **spec)
     return _saved(wb)
 
 
@@ -847,13 +848,13 @@ def test_sector_connector_reads_the_published_quarter_not_the_month(
     _serve_sector_fixtures(monkeypatch)
     result = nsi.fetch_sector_salary_eu()
 
-    assert result["ref_period"] == "2026-Q1"
+    assert result["ref_period"] == _LATEST_PERIOD
     assert len(result["sectors"]) == 20
     by_name = {s["en_name"]: s["value_eur"] for s in result["sectors"]}
     assert by_name["Total"] == pytest.approx(1407.0)
     assert by_name["Information and communication"] == pytest.approx(3176.0)
     # And nothing from the monthly block reached the payload.
-    assert all(v not in _MARCH_2026 for v in by_name.values())
+    assert all(v not in _LATEST_MARCH for v in by_name.values())
 
 
 def test_the_ownership_block_is_never_read_as_an_activity(
@@ -897,7 +898,7 @@ def test_the_two_language_editions_must_agree_cell_for_cell(
     J's wage under section K's Bulgarian name — plausible on screen, and wrong
     in exactly the way nobody would query.
     """
-    shuffled = list(_Q1_2026)
+    shuffled = list(_LATEST_Q1)
     shuffled[10], shuffled[11] = shuffled[11], shuffled[10]
     _serve_sector_fixtures(monkeypatch, bg=_build_sector_xlsx(bulgarian=True, quarterly=shuffled))
 
@@ -926,15 +927,18 @@ def test_a_year_sheet_that_reorders_the_activities_is_an_error(
     swapped[10], swapped[11] = swapped[11], swapped[10]
 
     def _mixed_edition(bulgarian: bool = False) -> bytes:
-        """2025 in НСИ's order, 2026 with two sections transposed."""
+        """The prior year in НСИ's order, the latest with two transposed."""
         wb = _sector_workbook(bulgarian)
         ordered = _SECTOR_NAMES_BG if bulgarian else _SECTOR_NAMES_EN
         spec = _sector_edition_spec(bulgarian)
         _build_sector_year_sheet(
-            wb, 2025, **{**spec, "names": ordered}, quarterly=[v * 0.92 for v in _Q1_2026]
+            wb, _PRIOR_YEAR, **{**spec, "names": ordered}, quarterly=[v * 0.92 for v in _LATEST_Q1]
         )
         _build_sector_year_sheet(
-            wb, 2026, **{**spec, "names": ordered if bulgarian else swapped}, quarterly=_Q1_2026
+            wb,
+            _LATEST_YEAR,
+            **{**spec, "names": ordered if bulgarian else swapped},
+            quarterly=_LATEST_Q1,
         )
         return _saved(wb)
 
@@ -956,7 +960,7 @@ def test_an_activity_count_that_is_not_nineteen_plus_the_total_is_an_error(
     figure on it still looks like a wage. The count is the only thing that
     notices a section went missing.
     """
-    short_values = list(_Q1_2026)[:-1]
+    short_values = list(_LATEST_Q1)[:-1]
 
     def _short_edition(bulgarian: bool = False) -> bytes:
         """Both years one section short — «Други дейности» never published."""
@@ -964,8 +968,10 @@ def test_an_activity_count_that_is_not_nineteen_plus_the_total_is_an_error(
         spec = _sector_edition_spec(
             bulgarian, list(_SECTOR_NAMES_BG if bulgarian else _SECTOR_NAMES_EN)[:-1]
         )
-        _build_sector_year_sheet(wb, 2025, quarterly=[v * 0.92 for v in short_values], **spec)
-        _build_sector_year_sheet(wb, 2026, quarterly=short_values, **spec)
+        _build_sector_year_sheet(
+            wb, _PRIOR_YEAR, quarterly=[v * 0.92 for v in short_values], **spec
+        )
+        _build_sector_year_sheet(wb, _LATEST_YEAR, quarterly=short_values, **spec)
         return _saved(wb)
 
     _serve_sector_fixtures(monkeypatch, en=_short_edition(), bg=_short_edition(bulgarian=True))
@@ -985,19 +991,19 @@ def test_the_headline_quarter_is_one_every_activity_carries(
     part of itself: the sections that have it render, and the rest are a picker
     entry that answers with nothing.
 
-    Here 2026-Q2 exists for exactly one section, so a connector reading the union
+    Here the latest Q2 exists for exactly one section, so a connector reading the union
     would headline Q2 while eighteen sections stop at Q1.
     """
     _serve_sector_fixtures(monkeypatch)
     ragged = nsi.fetch_sector_salary_eu()
-    assert ragged["ref_period"] == "2026-Q1"
+    assert ragged["ref_period"] == _LATEST_PERIOD
 
     # Give ONE section a further quarter, in both editions so the cell-for-cell
     # check still passes and this guard is the only thing left to trip.
     def _with_extra_quarter(bulgarian: bool = False) -> bytes:
         raw = _build_sector_xlsx(bulgarian=bulgarian)
         wb = openpyxl.load_workbook(io.BytesIO(raw))
-        ws = wb["2026КИД2008" if bulgarian else "2026NaceRev2"]
+        ws = wb[f"{_LATEST_YEAR}КИД2008" if bulgarian else f"{_LATEST_YEAR}NaceRev2"]
         rows = [list(r) for r in ws.iter_rows(values_only=True)]
         header = nsi._activity_block_header(
             rows,
@@ -1016,7 +1022,7 @@ def test_the_headline_quarter_is_one_every_activity_carries(
     )
     result = nsi.fetch_sector_salary_eu()
 
-    assert result["ref_period"] == "2026-Q1", (
+    assert result["ref_period"] == _LATEST_PERIOD, (
         "the headline moved to a quarter only one activity carries, so the "
         "payload's ref_period is true of part of itself"
     )
@@ -1034,7 +1040,7 @@ def test_the_all_activities_row_must_sit_inside_the_sections(
     selector drifts onto a title row or the ownership table, the relationship
     between the total and the sections it averages is what breaks first.
     """
-    impossible = [9999.0, *_Q1_2026[1:]]
+    impossible = [9999.0, *_LATEST_Q1[1:]]
     _serve_sector_fixtures(
         monkeypatch,
         en=_build_sector_xlsx(quarterly=impossible),
@@ -1058,7 +1064,7 @@ def test_no_sector_figure_is_computed_only_selected(
     _serve_sector_fixtures(monkeypatch)
     result = nsi.fetch_sector_salary_eu()
 
-    published = set(_Q1_2026) | {v * 0.92 for v in _Q1_2026}
+    published = set(_LATEST_Q1) | {v * 0.92 for v in _LATEST_Q1}
     for sector in result["sectors"]:
         assert set(sector["series_by_period"].values()) <= published
         assert sector["value_eur"] == sector["series_by_period"][result["ref_period"]]
@@ -1131,7 +1137,7 @@ def test_the_transform_carries_the_preliminary_flag_into_the_payload(
     def _payload(flag: bool) -> dict:
         return build_sector_salary_payload(
             {**scrape, "is_preliminary": flag},
-            as_of=date(2026, 8, 6),
+            as_of=clock.today(),
             source_url=nsi.SECTOR_SOURCE_URL_EN,
             source_url_bg=nsi.SECTOR_SOURCE_URL_BG,
         )
