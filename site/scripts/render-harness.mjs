@@ -8,6 +8,28 @@
  * costs a reader who has to scroll past the strip, the basket and the payroll
  * cases to reach the one they came for.
  *
+ * **`--test-concurrency=2` in `package.json`, and the reason is Windows.** With
+ * the runner's default — one process per core — four Chromiums and four servers
+ * run at once, and every test opens a FRESH browser context (it has to; see
+ * `withApp`), so no connection is ever reused between tests. A run is therefore
+ * on the order of a hundred page loads times a dozen assets, in four processes,
+ * against four loopback servers. On a Windows CI runner that exhausts the
+ * socket pool: an asset request comes back `net::ERR_NO_BUFFER_SPACE`, the
+ * bundle never finishes, and `openApp`'s predicate times out thirty seconds
+ * later in whichever suite happened to be unlucky — twice observed, in two
+ * different files, on two different branches.
+ *
+ * The cap halves the peak rather than proving the ceiling gone, and that is the
+ * honest description of it: the failure cannot be reproduced on Linux, so what
+ * was measured is the cost (37s to 43s locally, against 78s at
+ * `--test-concurrency=1`) and not the cure. If it recurs, 1 is the next step
+ * and the argument for it is already here.
+ *
+ * It lives in the npm script rather than in the Windows job so that `make
+ * check` and CI run the identical command — and because the flag is silently
+ * IGNORED when appended after the file list, which is the shape a CI-only fix
+ * would have taken and would have looked applied without being.
+ *
  * Requires the production build (`npm run build`) and a Chromium that
  * Playwright can launch. Where no browser is available the suites SKIP rather
  * than fail, so a contributor without one is not blocked; CI installs it and
