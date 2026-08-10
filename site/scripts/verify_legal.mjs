@@ -362,15 +362,38 @@ test("the privacy notice states what is stored and what the host sees", () => {
     ])
   );
 
+  // **The key list comes off `stores.js`, not out of this file.** Hand-kept, it
+  // named two keys and went on passing when a third was added — a notice
+  // claiming to list everything the site writes, silently short by one, on the
+  // page whose whole job is that claim. Read from the source, adding a key with
+  // no disclosure fails here on the commit that adds it.
+  //
+  // Read as TEXT rather than imported: `stores.js` touches `localStorage` and
+  // `matchMedia` at module-evaluation time, and standing those up to learn four
+  // string constants is a fake browser this test would then have to keep
+  // correct.
+  const STORES = read("src", "lib", "stores.js");
+  const keys = [...STORES.matchAll(/export const \w+_KEY = "(vyarno_\w+)"/g)].map((m) => m[1]);
+  assert.ok(keys.length >= 2, `stores.js exports no storage keys this regex can see: ${keys}`);
+
   for (const lang of LANGS) {
-    for (const claim of ["vyarno_lang", "vyarno_theme", "localStorage"]) {
+    for (const claim of [...keys, "localStorage"]) {
       assert.ok(
         text[lang].includes(claim),
-        `the ${lang} privacy notice no longer names ${claim} — those two keys ` +
-          "are the only thing the site persists, so they are the only thing " +
-          "there is to disclose."
+        `the ${lang} privacy notice no longer names ${claim} — the keys ` +
+          "`stores.js` writes are the only thing the site persists, so they " +
+          "are the only thing there is to disclose."
       );
     }
+    // And nothing else: a key named here that the code does not write is a
+    // disclosure of something that is not happening, which costs the notice the
+    // same credibility as an omission.
+    const named = [...new Set([...text[lang].matchAll(/vyarno_\w+/g)].map((m) => m[0]))];
+    assert.deepEqual(
+      named.filter((k) => !keys.includes(k)),
+      [],
+      `the ${lang} privacy notice names a storage key stores.js does not write`
+    );
     assert.match(
       text[lang],
       /IP/,
@@ -1042,18 +1065,18 @@ test("the recomputed-figures disclaimer accounts for имот.bg", () => {
   // имот.bg imposes no condition either way (docs/legal.md §имот.bg), so this
   // half of the section is owed to the reader and to nobody else — which makes
   // it the half a tidying pass can drop without anything upstream objecting.
-  // The housing card prints one €/m² for Sofia beneath a link to a page that
-  // publishes 143 district figures and no city total, so a reader who follows
+  // The housing card prints one €/m² for a city beneath a link to a page that
+  // publishes per-district figures and no city total, so a reader who follows
   // the link finds nothing matching the number they arrived from. This section
   // is where they are told that the median across those districts, and the
-  // change since 2015 built on it, are ours.
+  // change since the baseline year built on it, are ours.
   const section = docById("sources").sections.find((s) => /преизчислените числа/.test(s.h.bg));
   assert.ok(section, "the sources document lost its recomputed-figures section");
 
   // Each pattern has to pin a claim rather than a keyword, because every
   // keyword here occurs twice in the paragraph. /медиана/ alone matches the
-  // clause about the 2015 comparison, so it survives the €/m² losing the word
-  // that says which statistic it is; /наши/ alone matches "тези наши
+  // clause about the baseline comparison, so it survives the €/m² losing the
+  // word that says which statistic it is; /наши/ alone matches "тези наши
   // преработки" four sentences up, which discloses a different figure for a
   // different publisher. `\w` is ASCII-only in JS, so a Cyrillic suffix
   // needs `\S*`.
@@ -1061,10 +1084,15 @@ test("the recomputed-figures disclaimer accounts for имот.bg", () => {
     bg: [
       /имот\.bg/,
       /медиана\S*\s+на[^.]*квартални цени/,
-      /промяната спрямо 2015/,
+      /промяната спрямо базовата година/,
       /числа са наши/,
     ],
-    en: [/имот\.bg/, /median across[^.]*district/, /change since 2015/, /figures are ours/],
+    en: [
+      /имот\.bg/,
+      /median across[^.]*district/,
+      /change since its baseline year/,
+      /figures are ours/,
+    ],
   };
   for (const lang of LANGS) {
     const body = section.p.map((p) => p[lang]).join("\n");
@@ -1073,11 +1101,22 @@ test("the recomputed-figures disclaimer accounts for имот.bg", () => {
         body,
         re,
         `the ${lang} recomputed-figures disclaimer no longer matches ${re}. ` +
-          "The Sofia €/m² is a median across имот.bg's per-district rows and " +
-          "the since-2015 change is computed from it; naming the four sources " +
+          "The €/m² is a median across имот.bg's per-district rows and the " +
+          "since-baseline change is computed from it; naming the four sources " +
           "shown verbatim and omitting the fifth reads as if it were one of them."
       );
     }
+    // **And no year written into either sentence.** `baseline_year` is a
+    // per-city field: имот.bg's archive reaches 2003 for three cities and last
+    // year for others, so a literal here is right for one city and wrong for
+    // the rest — and it is a claim about provenance on the page that exists to
+    // make provenance checkable.
+    assert.doesNotMatch(
+      section.p.map((p) => p[lang]).join("\n"),
+      /\b(19|20)\d{2}\b/,
+      `the ${lang} recomputed-figures disclaimer freezes a year that city_price.json ` +
+        "carries per city"
+    );
   }
 });
 
