@@ -1,9 +1,9 @@
 {
   "schema_version": "2.0",
-  "as_of": "2026-07-23",
+  "as_of": "2026-08-10",
   "source": "imot.bg",
   "source_url": "https://www.imot.bg/sredni-ceni",
-  "notes": "Per-district €/m² asking-price averages read from imot.bg's sredni-ceni pages on 2026-07-23, for 1 cities. 143 districts parsed in total after counting out 0 values outside [100, 10000] €/m² as injection sanity bounds across the 0 city page(s) that recorded a count; each city-year publishes its own `n_dropped`. The median is the headline, being resistant to long-tail districts; the mean is included for completeness. `snapshot_date` is imot.bg's own newest published snapshot, read from each page's date list — not the day we looked, which is `as_of` above. 1 city page(s) served no parseable snapshot list (sofiya), so only `as_of` dates those. imot.bg serve a sredni-ceni page for 27 cities (`city_pages`); this run read 1 of them, leaving vidin, vratsa, lovech, montana, pleven, veliko-tarnovo, gabrovo, razgrad, ruse, silistra, varna, dobrich, targovishte, shumen, burgas, sliven, stara-zagora, yambol, blagoevgrad, kyustendil, pernik, kardzhali, pazardzhik, plovdiv, smolyan, haskovo unread. 1 of 1 cities carry enough consecutive years of comparable coverage for a since-baseline comparison; the rest publish a current €/m² only. Every median and every since-baseline percentage is computed by us from imot.bg's per-district averages — imot.bg publish no city median. This file currently carries София alone: имот.bg answers datacenter IPs with a 403, so the other 26 cities land with the first refresh run from an ordinary Bulgarian connection. Every figure in it is one имот.bg published and this project already shipped; `n_dropped` is null on rows read before the counter existed, which is not the same claim as zero.",
+  "notes": "Per-district €/m² asking-price averages read from imot.bg's sredni-ceni pages on 2026-08-10, for 27 cities. 611 districts parsed in total after counting out 0 values outside [100, 10000] €/m² as injection sanity bounds across the 27 city page(s) that recorded a count; each city-year publishes its own `n_dropped`. The median is the headline, being resistant to long-tail districts; the mean is included for completeness. `snapshot_date` is imot.bg's own newest published snapshot, read from each page's date list — not the day we looked, which is `as_of` above. imot.bg serve a sredni-ceni page for 27 cities (`city_pages`); this run read 27 of them. 26 of 27 cities carry enough consecutive years of comparable coverage for a since-baseline comparison; the rest publish a current €/m² only. Every median and every since-baseline percentage is computed by us from imot.bg's per-district averages — imot.bg publish no city median.",
   "payload_name": "city_price",
   "city_pages": [
     "vidin",
@@ -36,116 +36,4576 @@
   ],
   "cities": [
     {
-      "code": "sofiya",
-      "bg_name": "София",
-      "en_name": "Sofia",
-      "source_url": "https://www.imot.bg/sredni-ceni",
-      "snapshot_date": null,
-      "n_districts": 143,
-      "n_dropped": null,
-      "eur_per_m2_median": 2501,
-      "eur_per_m2_mean": 2545.7,
-      "eur_per_m2_min": 991,
-      "eur_per_m2_max": 5567,
-      "baseline_year": 2015,
-      "since_baseline_median_pct": 231.7,
+      "code": "vidin",
+      "bg_name": "Видин",
+      "en_name": "Vidin",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-vidin",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 19,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1036,
+      "eur_per_m2_mean": 1009.8,
+      "eur_per_m2_min": 695,
+      "eur_per_m2_max": 1595,
+      "baseline_year": 2007,
+      "since_baseline_median_pct": 124.7,
       "trend_publishable": true,
       "historical": [
         {
-          "year": 2015,
-          "n_districts": 120,
-          "n_dropped": null,
-          "eur_per_m2_median": 754.0,
-          "eur_per_m2_mean": 764.9,
+          "year": 2007,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 461,
+          "eur_per_m2_mean": 488.6,
           "since_baseline_median_pct": 0.0
         },
         {
+          "year": 2008,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 525,
+          "eur_per_m2_mean": 534.6,
+          "since_baseline_median_pct": 13.9
+        },
+        {
+          "year": 2009,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 372.0,
+          "eur_per_m2_mean": 424.9,
+          "since_baseline_median_pct": -19.3
+        },
+        {
+          "year": 2010,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 341.5,
+          "eur_per_m2_mean": 359.3,
+          "since_baseline_median_pct": -25.9
+        },
+        {
+          "year": 2011,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 305.5,
+          "eur_per_m2_mean": 293.9,
+          "since_baseline_median_pct": -33.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 289,
+          "eur_per_m2_mean": 305.4,
+          "since_baseline_median_pct": -37.3
+        },
+        {
+          "year": 2013,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 298.0,
+          "eur_per_m2_mean": 303.6,
+          "since_baseline_median_pct": -35.4
+        },
+        {
+          "year": 2014,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 278.5,
+          "eur_per_m2_mean": 280.5,
+          "since_baseline_median_pct": -39.6
+        },
+        {
+          "year": 2015,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 276.5,
+          "eur_per_m2_mean": 275.0,
+          "since_baseline_median_pct": -40.0
+        },
+        {
           "year": 2016,
-          "n_districts": 116,
-          "n_dropped": null,
-          "eur_per_m2_median": 823.0,
-          "eur_per_m2_mean": 872.0,
-          "since_baseline_median_pct": 9.2
+          "n_districts": 19,
+          "n_dropped": 1,
+          "eur_per_m2_median": 302,
+          "eur_per_m2_mean": 309.9,
+          "since_baseline_median_pct": -34.5
         },
         {
           "year": 2017,
-          "n_districts": 122,
-          "n_dropped": null,
-          "eur_per_m2_median": 917.0,
-          "eur_per_m2_mean": 956.1,
-          "since_baseline_median_pct": 21.6
+          "n_districts": 20,
+          "n_dropped": 1,
+          "eur_per_m2_median": 282.0,
+          "eur_per_m2_mean": 277.7,
+          "since_baseline_median_pct": -38.8
         },
         {
           "year": 2018,
-          "n_districts": 119,
-          "n_dropped": null,
-          "eur_per_m2_median": 992,
-          "eur_per_m2_mean": 1021.4,
-          "since_baseline_median_pct": 31.6
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 325,
+          "eur_per_m2_mean": 323.1,
+          "since_baseline_median_pct": -29.5
         },
         {
           "year": 2019,
-          "n_districts": 136,
-          "n_dropped": null,
-          "eur_per_m2_median": 1033.0,
-          "eur_per_m2_mean": 1070.2,
-          "since_baseline_median_pct": 37.0
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 346,
+          "eur_per_m2_mean": 349.4,
+          "since_baseline_median_pct": -24.9
         },
         {
           "year": 2020,
-          "n_districts": 135,
-          "n_dropped": null,
-          "eur_per_m2_median": 1122,
-          "eur_per_m2_mean": 1127.1,
-          "since_baseline_median_pct": 48.8
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 360.5,
+          "eur_per_m2_mean": 364.0,
+          "since_baseline_median_pct": -21.8
         },
         {
           "year": 2021,
-          "n_districts": 127,
-          "n_dropped": null,
-          "eur_per_m2_median": 1302,
-          "eur_per_m2_mean": 1346.0,
-          "since_baseline_median_pct": 72.7
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 388.0,
+          "eur_per_m2_mean": 407.4,
+          "since_baseline_median_pct": -15.8
         },
         {
           "year": 2022,
-          "n_districts": 135,
-          "n_dropped": null,
-          "eur_per_m2_median": 1538,
-          "eur_per_m2_mean": 1616.4,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 504.5,
+          "eur_per_m2_mean": 545.2,
+          "since_baseline_median_pct": 9.4
+        },
+        {
+          "year": 2023,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 595.5,
+          "eur_per_m2_mean": 664.7,
+          "since_baseline_median_pct": 29.2
+        },
+        {
+          "year": 2024,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 799,
+          "eur_per_m2_mean": 820.8,
+          "since_baseline_median_pct": 73.3
+        },
+        {
+          "year": 2025,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 916,
+          "eur_per_m2_mean": 926.6,
+          "since_baseline_median_pct": 98.7
+        },
+        {
+          "year": 2026,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1036,
+          "eur_per_m2_mean": 1009.8,
+          "since_baseline_median_pct": 124.7
+        }
+      ]
+    },
+    {
+      "code": "vratsa",
+      "bg_name": "Враца",
+      "en_name": "Vratsa",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-vratsa",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 15,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1385,
+      "eur_per_m2_mean": 1390.7,
+      "eur_per_m2_min": 1017,
+      "eur_per_m2_max": 1767,
+      "baseline_year": 2004,
+      "since_baseline_median_pct": 648.6,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2004,
+          "n_districts": 6,
+          "n_dropped": 1,
+          "eur_per_m2_median": 185.0,
+          "eur_per_m2_mean": 199.2,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2005,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 212,
+          "eur_per_m2_mean": 233.4,
+          "since_baseline_median_pct": 14.6
+        },
+        {
+          "year": 2006,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 269,
+          "eur_per_m2_mean": 304.1,
+          "since_baseline_median_pct": 45.4
+        },
+        {
+          "year": 2007,
+          "n_districts": 8,
+          "n_dropped": 1,
+          "eur_per_m2_median": 374.5,
+          "eur_per_m2_mean": 375.5,
+          "since_baseline_median_pct": 102.4
+        },
+        {
+          "year": 2008,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 430,
+          "eur_per_m2_mean": 427.9,
+          "since_baseline_median_pct": 132.4
+        },
+        {
+          "year": 2009,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 365.0,
+          "eur_per_m2_mean": 339.6,
+          "since_baseline_median_pct": 97.3
+        },
+        {
+          "year": 2010,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 284,
+          "eur_per_m2_mean": 291.7,
+          "since_baseline_median_pct": 53.5
+        },
+        {
+          "year": 2011,
+          "n_districts": 10,
+          "n_dropped": 1,
+          "eur_per_m2_median": 299.0,
+          "eur_per_m2_mean": 298.0,
+          "since_baseline_median_pct": 61.6
+        },
+        {
+          "year": 2012,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 279.0,
+          "eur_per_m2_mean": 298.2,
+          "since_baseline_median_pct": 50.8
+        },
+        {
+          "year": 2013,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 288,
+          "eur_per_m2_mean": 308.0,
+          "since_baseline_median_pct": 55.7
+        },
+        {
+          "year": 2014,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 300,
+          "eur_per_m2_mean": 299.9,
+          "since_baseline_median_pct": 62.2
+        },
+        {
+          "year": 2015,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 323,
+          "eur_per_m2_mean": 344.3,
+          "since_baseline_median_pct": 74.6
+        },
+        {
+          "year": 2016,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 354.0,
+          "eur_per_m2_mean": 340.3,
+          "since_baseline_median_pct": 91.4
+        },
+        {
+          "year": 2017,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 374.0,
+          "eur_per_m2_mean": 364.0,
+          "since_baseline_median_pct": 102.2
+        },
+        {
+          "year": 2018,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 404.5,
+          "eur_per_m2_mean": 410.2,
+          "since_baseline_median_pct": 118.6
+        },
+        {
+          "year": 2019,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 430.5,
+          "eur_per_m2_mean": 434.5,
+          "since_baseline_median_pct": 132.7
+        },
+        {
+          "year": 2020,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 486,
+          "eur_per_m2_mean": 474.9,
+          "since_baseline_median_pct": 162.7
+        },
+        {
+          "year": 2021,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 563.5,
+          "eur_per_m2_mean": 599.7,
+          "since_baseline_median_pct": 204.6
+        },
+        {
+          "year": 2022,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 715,
+          "eur_per_m2_mean": 756.5,
+          "since_baseline_median_pct": 286.5
+        },
+        {
+          "year": 2023,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 848.5,
+          "eur_per_m2_mean": 883.2,
+          "since_baseline_median_pct": 358.6
+        },
+        {
+          "year": 2024,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1089.5,
+          "eur_per_m2_mean": 1064.1,
+          "since_baseline_median_pct": 488.9
+        },
+        {
+          "year": 2025,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1326.5,
+          "eur_per_m2_mean": 1377.6,
+          "since_baseline_median_pct": 617.0
+        },
+        {
+          "year": 2026,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1385,
+          "eur_per_m2_mean": 1390.7,
+          "since_baseline_median_pct": 648.6
+        }
+      ]
+    },
+    {
+      "code": "lovech",
+      "bg_name": "Ловеч",
+      "en_name": "Lovech",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-lovech",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 7,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1021,
+      "eur_per_m2_mean": 1051.9,
+      "eur_per_m2_min": 829,
+      "eur_per_m2_max": 1263,
+      "baseline_year": 2009,
+      "since_baseline_median_pct": 152.7,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2009,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 404.0,
+          "eur_per_m2_mean": 434.8,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2010,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 393.0,
+          "eur_per_m2_mean": 378.7,
+          "since_baseline_median_pct": -2.7
+        },
+        {
+          "year": 2011,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 318.0,
+          "eur_per_m2_mean": 323.8,
+          "since_baseline_median_pct": -21.3
+        },
+        {
+          "year": 2012,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 335,
+          "eur_per_m2_mean": 352.6,
+          "since_baseline_median_pct": -17.1
+        },
+        {
+          "year": 2013,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 342,
+          "eur_per_m2_mean": 357.7,
+          "since_baseline_median_pct": -15.3
+        },
+        {
+          "year": 2014,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 324,
+          "eur_per_m2_mean": 331.4,
+          "since_baseline_median_pct": -19.8
+        },
+        {
+          "year": 2015,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 389.0,
+          "eur_per_m2_mean": 360.2,
+          "since_baseline_median_pct": -3.7
+        },
+        {
+          "year": 2016,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 341,
+          "eur_per_m2_mean": 347.3,
+          "since_baseline_median_pct": -15.6
+        },
+        {
+          "year": 2017,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 395,
+          "eur_per_m2_mean": 359.0,
+          "since_baseline_median_pct": -2.2
+        },
+        {
+          "year": 2018,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 387.5,
+          "eur_per_m2_mean": 380.0,
+          "since_baseline_median_pct": -4.1
+        },
+        {
+          "year": 2019,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 351,
+          "eur_per_m2_mean": 378.3,
+          "since_baseline_median_pct": -13.1
+        },
+        {
+          "year": 2020,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 400,
+          "eur_per_m2_mean": 414.3,
+          "since_baseline_median_pct": -1.0
+        },
+        {
+          "year": 2021,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 463.0,
+          "eur_per_m2_mean": 448.5,
+          "since_baseline_median_pct": 14.6
+        },
+        {
+          "year": 2022,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 588,
+          "eur_per_m2_mean": 562.2,
+          "since_baseline_median_pct": 45.5
+        },
+        {
+          "year": 2023,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 633.5,
+          "eur_per_m2_mean": 699.0,
+          "since_baseline_median_pct": 56.8
+        },
+        {
+          "year": 2024,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 864,
+          "eur_per_m2_mean": 818.0,
+          "since_baseline_median_pct": 113.9
+        },
+        {
+          "year": 2025,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 962,
+          "eur_per_m2_mean": 974.0,
+          "since_baseline_median_pct": 138.1
+        },
+        {
+          "year": 2026,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1021,
+          "eur_per_m2_mean": 1051.9,
+          "since_baseline_median_pct": 152.7
+        }
+      ]
+    },
+    {
+      "code": "montana",
+      "bg_name": "Монтана",
+      "en_name": "Montana",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-montana",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 10,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1351.0,
+      "eur_per_m2_mean": 1370.4,
+      "eur_per_m2_min": 1235,
+      "eur_per_m2_max": 1695,
+      "baseline_year": 2006,
+      "since_baseline_median_pct": 291.6,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2006,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 345.0,
+          "eur_per_m2_mean": 348.8,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2007,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 396.0,
+          "eur_per_m2_mean": 416.0,
+          "since_baseline_median_pct": 14.8
+        },
+        {
+          "year": 2008,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 495.5,
+          "eur_per_m2_mean": 479.0,
+          "since_baseline_median_pct": 43.6
+        },
+        {
+          "year": 2009,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 424.5,
+          "eur_per_m2_mean": 423.8,
+          "since_baseline_median_pct": 23.0
+        },
+        {
+          "year": 2010,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 398,
+          "eur_per_m2_mean": 394.9,
+          "since_baseline_median_pct": 15.4
+        },
+        {
+          "year": 2011,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 377.5,
+          "eur_per_m2_mean": 373.0,
+          "since_baseline_median_pct": 9.4
+        },
+        {
+          "year": 2012,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 334,
+          "eur_per_m2_mean": 367.1,
+          "since_baseline_median_pct": -3.2
+        },
+        {
+          "year": 2013,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 359,
+          "eur_per_m2_mean": 379.0,
+          "since_baseline_median_pct": 4.1
+        },
+        {
+          "year": 2014,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 372,
+          "eur_per_m2_mean": 372.6,
+          "since_baseline_median_pct": 7.8
+        },
+        {
+          "year": 2015,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 352.0,
+          "eur_per_m2_mean": 352.5,
+          "since_baseline_median_pct": 2.0
+        },
+        {
+          "year": 2016,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 389.5,
+          "eur_per_m2_mean": 391.0,
+          "since_baseline_median_pct": 12.9
+        },
+        {
+          "year": 2017,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 440.0,
+          "eur_per_m2_mean": 442.0,
+          "since_baseline_median_pct": 27.5
+        },
+        {
+          "year": 2018,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 436.0,
+          "eur_per_m2_mean": 410.8,
+          "since_baseline_median_pct": 26.4
+        },
+        {
+          "year": 2019,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 487.0,
+          "eur_per_m2_mean": 434.7,
+          "since_baseline_median_pct": 41.2
+        },
+        {
+          "year": 2020,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 525.5,
+          "eur_per_m2_mean": 519.0,
+          "since_baseline_median_pct": 52.3
+        },
+        {
+          "year": 2021,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 577,
+          "eur_per_m2_mean": 563.1,
+          "since_baseline_median_pct": 67.2
+        },
+        {
+          "year": 2022,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 776,
+          "eur_per_m2_mean": 780.4,
+          "since_baseline_median_pct": 124.9
+        },
+        {
+          "year": 2023,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 964,
+          "eur_per_m2_mean": 962.0,
+          "since_baseline_median_pct": 179.4
+        },
+        {
+          "year": 2024,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1121,
+          "eur_per_m2_mean": 1089.9,
+          "since_baseline_median_pct": 224.9
+        },
+        {
+          "year": 2025,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1303.5,
+          "eur_per_m2_mean": 1313.0,
+          "since_baseline_median_pct": 277.8
+        },
+        {
+          "year": 2026,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1351.0,
+          "eur_per_m2_mean": 1370.4,
+          "since_baseline_median_pct": 291.6
+        }
+      ]
+    },
+    {
+      "code": "pleven",
+      "bg_name": "Плевен",
+      "en_name": "Pleven",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-pleven",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 11,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1324,
+      "eur_per_m2_mean": 1302.3,
+      "eur_per_m2_min": 705,
+      "eur_per_m2_max": 1588,
+      "baseline_year": 2003,
+      "since_baseline_median_pct": 732.7,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2003,
+          "n_districts": 8,
+          "n_dropped": 1,
+          "eur_per_m2_median": 159.0,
+          "eur_per_m2_mean": 167.0,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2004,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 324.5,
+          "eur_per_m2_mean": 303.5,
+          "since_baseline_median_pct": 104.1
+        },
+        {
+          "year": 2005,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 365.5,
+          "eur_per_m2_mean": 348.3,
+          "since_baseline_median_pct": 129.9
+        },
+        {
+          "year": 2006,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 411,
+          "eur_per_m2_mean": 390.3,
+          "since_baseline_median_pct": 158.5
+        },
+        {
+          "year": 2007,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 516.5,
+          "eur_per_m2_mean": 563.4,
+          "since_baseline_median_pct": 224.8
+        },
+        {
+          "year": 2008,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 604,
+          "eur_per_m2_mean": 602.8,
+          "since_baseline_median_pct": 279.9
+        },
+        {
+          "year": 2009,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 447.0,
+          "eur_per_m2_mean": 472.7,
+          "since_baseline_median_pct": 181.1
+        },
+        {
+          "year": 2010,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 382,
+          "eur_per_m2_mean": 414.6,
+          "since_baseline_median_pct": 140.3
+        },
+        {
+          "year": 2011,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 370,
+          "eur_per_m2_mean": 396.5,
+          "since_baseline_median_pct": 132.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 368,
+          "eur_per_m2_mean": 369.3,
+          "since_baseline_median_pct": 131.4
+        },
+        {
+          "year": 2013,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 358,
+          "eur_per_m2_mean": 350.8,
+          "since_baseline_median_pct": 125.2
+        },
+        {
+          "year": 2014,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 350,
+          "eur_per_m2_mean": 344.0,
+          "since_baseline_median_pct": 120.1
+        },
+        {
+          "year": 2015,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 366.0,
+          "eur_per_m2_mean": 369.7,
+          "since_baseline_median_pct": 130.2
+        },
+        {
+          "year": 2016,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 381.5,
+          "eur_per_m2_mean": 383.5,
+          "since_baseline_median_pct": 139.9
+        },
+        {
+          "year": 2017,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 410,
+          "eur_per_m2_mean": 423.5,
+          "since_baseline_median_pct": 157.9
+        },
+        {
+          "year": 2018,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 485.5,
+          "eur_per_m2_mean": 483.5,
+          "since_baseline_median_pct": 205.3
+        },
+        {
+          "year": 2019,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 570.0,
+          "eur_per_m2_mean": 552.2,
+          "since_baseline_median_pct": 258.5
+        },
+        {
+          "year": 2020,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 626,
+          "eur_per_m2_mean": 647.0,
+          "since_baseline_median_pct": 293.7
+        },
+        {
+          "year": 2021,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 732.5,
+          "eur_per_m2_mean": 711.7,
+          "since_baseline_median_pct": 360.7
+        },
+        {
+          "year": 2022,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 921,
+          "eur_per_m2_mean": 900.0,
+          "since_baseline_median_pct": 479.2
+        },
+        {
+          "year": 2023,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 997.0,
+          "eur_per_m2_mean": 974.4,
+          "since_baseline_median_pct": 527.0
+        },
+        {
+          "year": 2024,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1120,
+          "eur_per_m2_mean": 1091.8,
+          "since_baseline_median_pct": 604.4
+        },
+        {
+          "year": 2025,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1296,
+          "eur_per_m2_mean": 1240.3,
+          "since_baseline_median_pct": 715.1
+        },
+        {
+          "year": 2026,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1324,
+          "eur_per_m2_mean": 1302.3,
+          "since_baseline_median_pct": 732.7
+        }
+      ]
+    },
+    {
+      "code": "veliko-tarnovo",
+      "bg_name": "Велико Търново",
+      "en_name": "Veliko Tarnovo",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-veliko-tarnovo",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 11,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1513,
+      "eur_per_m2_mean": 1465.1,
+      "eur_per_m2_min": 1027,
+      "eur_per_m2_max": 2004,
+      "baseline_year": 2004,
+      "since_baseline_median_pct": 334.8,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2004,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 348.0,
+          "eur_per_m2_mean": 371.5,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2005,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 344,
+          "eur_per_m2_mean": 329.1,
+          "since_baseline_median_pct": -1.1
+        },
+        {
+          "year": 2006,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 382.5,
+          "eur_per_m2_mean": 382.0,
+          "since_baseline_median_pct": 9.9
+        },
+        {
+          "year": 2007,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 524.5,
+          "eur_per_m2_mean": 531.8,
+          "since_baseline_median_pct": 50.7
+        },
+        {
+          "year": 2008,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 559,
+          "eur_per_m2_mean": 595.1,
+          "since_baseline_median_pct": 60.6
+        },
+        {
+          "year": 2009,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 521,
+          "eur_per_m2_mean": 500.5,
+          "since_baseline_median_pct": 49.7
+        },
+        {
+          "year": 2010,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 450.5,
+          "eur_per_m2_mean": 496.1,
+          "since_baseline_median_pct": 29.5
+        },
+        {
+          "year": 2011,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 445.0,
+          "eur_per_m2_mean": 455.2,
+          "since_baseline_median_pct": 27.9
+        },
+        {
+          "year": 2012,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 421,
+          "eur_per_m2_mean": 426.0,
+          "since_baseline_median_pct": 21.0
+        },
+        {
+          "year": 2013,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 458.5,
+          "eur_per_m2_mean": 454.9,
+          "since_baseline_median_pct": 31.8
+        },
+        {
+          "year": 2014,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 490.5,
+          "eur_per_m2_mean": 495.2,
+          "since_baseline_median_pct": 40.9
+        },
+        {
+          "year": 2015,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 469.5,
+          "eur_per_m2_mean": 457.2,
+          "since_baseline_median_pct": 34.9
+        },
+        {
+          "year": 2016,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 502,
+          "eur_per_m2_mean": 495.5,
+          "since_baseline_median_pct": 44.3
+        },
+        {
+          "year": 2017,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 539,
+          "eur_per_m2_mean": 538.1,
+          "since_baseline_median_pct": 54.9
+        },
+        {
+          "year": 2018,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 602.5,
+          "eur_per_m2_mean": 591.6,
+          "since_baseline_median_pct": 73.1
+        },
+        {
+          "year": 2019,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 599,
+          "eur_per_m2_mean": 570.5,
+          "since_baseline_median_pct": 72.1
+        },
+        {
+          "year": 2020,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 668,
+          "eur_per_m2_mean": 653.4,
+          "since_baseline_median_pct": 92.0
+        },
+        {
+          "year": 2021,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 712,
+          "eur_per_m2_mean": 695.0,
+          "since_baseline_median_pct": 104.6
+        },
+        {
+          "year": 2022,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 954.5,
+          "eur_per_m2_mean": 900.8,
+          "since_baseline_median_pct": 174.3
+        },
+        {
+          "year": 2023,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1059.5,
+          "eur_per_m2_mean": 1061.3,
+          "since_baseline_median_pct": 204.5
+        },
+        {
+          "year": 2024,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1166,
+          "eur_per_m2_mean": 1207.7,
+          "since_baseline_median_pct": 235.1
+        },
+        {
+          "year": 2025,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1302,
+          "eur_per_m2_mean": 1370.4,
+          "since_baseline_median_pct": 274.1
+        },
+        {
+          "year": 2026,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1513,
+          "eur_per_m2_mean": 1465.1,
+          "since_baseline_median_pct": 334.8
+        }
+      ]
+    },
+    {
+      "code": "gabrovo",
+      "bg_name": "Габрово",
+      "en_name": "Gabrovo",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-gabrovo",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 15,
+      "n_dropped": 0,
+      "eur_per_m2_median": 982,
+      "eur_per_m2_mean": 960.0,
+      "eur_per_m2_min": 317,
+      "eur_per_m2_max": 1527,
+      "baseline_year": 2005,
+      "since_baseline_median_pct": 254.5,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2005,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 277.0,
+          "eur_per_m2_mean": 280.1,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2006,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 329,
+          "eur_per_m2_mean": 327.4,
+          "since_baseline_median_pct": 18.8
+        },
+        {
+          "year": 2007,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 384.0,
+          "eur_per_m2_mean": 363.2,
+          "since_baseline_median_pct": 38.6
+        },
+        {
+          "year": 2008,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 408,
+          "eur_per_m2_mean": 412.2,
+          "since_baseline_median_pct": 47.3
+        },
+        {
+          "year": 2009,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 365,
+          "eur_per_m2_mean": 361.2,
+          "since_baseline_median_pct": 31.8
+        },
+        {
+          "year": 2010,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 326,
+          "eur_per_m2_mean": 345.9,
+          "since_baseline_median_pct": 17.7
+        },
+        {
+          "year": 2011,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 315,
+          "eur_per_m2_mean": 309.7,
+          "since_baseline_median_pct": 13.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 19,
+          "n_dropped": 1,
+          "eur_per_m2_median": 287,
+          "eur_per_m2_mean": 286.9,
+          "since_baseline_median_pct": 3.6
+        },
+        {
+          "year": 2013,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 304,
+          "eur_per_m2_mean": 311.9,
+          "since_baseline_median_pct": 9.7
+        },
+        {
+          "year": 2014,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 306,
+          "eur_per_m2_mean": 292.7,
+          "since_baseline_median_pct": 10.5
+        },
+        {
+          "year": 2015,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 306,
+          "eur_per_m2_mean": 306.6,
+          "since_baseline_median_pct": 10.5
+        },
+        {
+          "year": 2016,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 281,
+          "eur_per_m2_mean": 303.7,
+          "since_baseline_median_pct": 1.4
+        },
+        {
+          "year": 2017,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 271.5,
+          "eur_per_m2_mean": 259.2,
+          "since_baseline_median_pct": -2.0
+        },
+        {
+          "year": 2018,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 332,
+          "eur_per_m2_mean": 316.7,
+          "since_baseline_median_pct": 19.9
+        },
+        {
+          "year": 2019,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 322,
+          "eur_per_m2_mean": 324.5,
+          "since_baseline_median_pct": 16.2
+        },
+        {
+          "year": 2020,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 377,
+          "eur_per_m2_mean": 371.9,
+          "since_baseline_median_pct": 36.1
+        },
+        {
+          "year": 2021,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 434,
+          "eur_per_m2_mean": 435.3,
+          "since_baseline_median_pct": 56.7
+        },
+        {
+          "year": 2022,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 565,
+          "eur_per_m2_mean": 535.8,
           "since_baseline_median_pct": 104.0
         },
         {
           "year": 2023,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 638,
+          "eur_per_m2_mean": 591.8,
+          "since_baseline_median_pct": 130.3
+        },
+        {
+          "year": 2024,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 751,
+          "eur_per_m2_mean": 790.8,
+          "since_baseline_median_pct": 171.1
+        },
+        {
+          "year": 2025,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 980,
+          "eur_per_m2_mean": 923.4,
+          "since_baseline_median_pct": 253.8
+        },
+        {
+          "year": 2026,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 982,
+          "eur_per_m2_mean": 960.0,
+          "since_baseline_median_pct": 254.5
+        }
+      ]
+    },
+    {
+      "code": "razgrad",
+      "bg_name": "Разград",
+      "en_name": "Razgrad",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-razgrad",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 11,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1503,
+      "eur_per_m2_mean": 1400.1,
+      "eur_per_m2_min": 857,
+      "eur_per_m2_max": 1762,
+      "baseline_year": 2013,
+      "since_baseline_median_pct": 419.2,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2013,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 289.5,
+          "eur_per_m2_mean": 304.8,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2014,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 287.0,
+          "eur_per_m2_mean": 309.2,
+          "since_baseline_median_pct": -0.9
+        },
+        {
+          "year": 2015,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 378.0,
+          "eur_per_m2_mean": 392.4,
+          "since_baseline_median_pct": 30.6
+        },
+        {
+          "year": 2016,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 500.5,
+          "eur_per_m2_mean": 546.2,
+          "since_baseline_median_pct": 72.9
+        },
+        {
+          "year": 2017,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 482.0,
+          "eur_per_m2_mean": 476.8,
+          "since_baseline_median_pct": 66.5
+        },
+        {
+          "year": 2018,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 560,
+          "eur_per_m2_mean": 538.9,
+          "since_baseline_median_pct": 93.4
+        },
+        {
+          "year": 2019,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 534.5,
+          "eur_per_m2_mean": 570.0,
+          "since_baseline_median_pct": 84.6
+        },
+        {
+          "year": 2020,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 611,
+          "eur_per_m2_mean": 604.2,
+          "since_baseline_median_pct": 111.1
+        },
+        {
+          "year": 2021,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 636.5,
+          "eur_per_m2_mean": 660.1,
+          "since_baseline_median_pct": 119.9
+        },
+        {
+          "year": 2022,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 861,
+          "eur_per_m2_mean": 874.5,
+          "since_baseline_median_pct": 197.4
+        },
+        {
+          "year": 2023,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1087,
+          "eur_per_m2_mean": 1021.4,
+          "since_baseline_median_pct": 275.5
+        },
+        {
+          "year": 2024,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1183.5,
+          "eur_per_m2_mean": 1124.1,
+          "since_baseline_median_pct": 308.8
+        },
+        {
+          "year": 2025,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1320,
+          "eur_per_m2_mean": 1212.1,
+          "since_baseline_median_pct": 356.0
+        },
+        {
+          "year": 2026,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1503,
+          "eur_per_m2_mean": 1400.1,
+          "since_baseline_median_pct": 419.2
+        }
+      ]
+    },
+    {
+      "code": "ruse",
+      "bg_name": "Русе",
+      "en_name": "Ruse",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-ruse",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 26,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1285.5,
+      "eur_per_m2_mean": 1242.2,
+      "eur_per_m2_min": 668,
+      "eur_per_m2_max": 1763,
+      "baseline_year": 2003,
+      "since_baseline_median_pct": 703.4,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2003,
+          "n_districts": 18,
+          "n_dropped": 2,
+          "eur_per_m2_median": 160.0,
+          "eur_per_m2_mean": 163.4,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2004,
+          "n_districts": 22,
+          "n_dropped": 1,
+          "eur_per_m2_median": 275.0,
+          "eur_per_m2_mean": 277.1,
+          "since_baseline_median_pct": 71.9
+        },
+        {
+          "year": 2005,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 308,
+          "eur_per_m2_mean": 319.7,
+          "since_baseline_median_pct": 92.5
+        },
+        {
+          "year": 2006,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 380,
+          "eur_per_m2_mean": 399.5,
+          "since_baseline_median_pct": 137.5
+        },
+        {
+          "year": 2007,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 599,
+          "eur_per_m2_mean": 603.3,
+          "since_baseline_median_pct": 274.4
+        },
+        {
+          "year": 2008,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 672,
+          "eur_per_m2_mean": 640.0,
+          "since_baseline_median_pct": 320.0
+        },
+        {
+          "year": 2009,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 420.0,
+          "eur_per_m2_mean": 452.5,
+          "since_baseline_median_pct": 162.5
+        },
+        {
+          "year": 2010,
+          "n_districts": 25,
+          "n_dropped": 0,
+          "eur_per_m2_median": 380,
+          "eur_per_m2_mean": 384.0,
+          "since_baseline_median_pct": 137.5
+        },
+        {
+          "year": 2011,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 349.5,
+          "eur_per_m2_mean": 368.4,
+          "since_baseline_median_pct": 118.4
+        },
+        {
+          "year": 2012,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 361.0,
+          "eur_per_m2_mean": 377.5,
+          "since_baseline_median_pct": 125.6
+        },
+        {
+          "year": 2013,
+          "n_districts": 29,
+          "n_dropped": 0,
+          "eur_per_m2_median": 378,
+          "eur_per_m2_mean": 362.8,
+          "since_baseline_median_pct": 136.2
+        },
+        {
+          "year": 2014,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 400.5,
+          "eur_per_m2_mean": 380.5,
+          "since_baseline_median_pct": 150.3
+        },
+        {
+          "year": 2015,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 402.0,
+          "eur_per_m2_mean": 395.5,
+          "since_baseline_median_pct": 151.3
+        },
+        {
+          "year": 2016,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 506.0,
+          "eur_per_m2_mean": 478.8,
+          "since_baseline_median_pct": 216.2
+        },
+        {
+          "year": 2017,
+          "n_districts": 29,
+          "n_dropped": 0,
+          "eur_per_m2_median": 551,
+          "eur_per_m2_mean": 515.2,
+          "since_baseline_median_pct": 244.4
+        },
+        {
+          "year": 2018,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 583.0,
+          "eur_per_m2_mean": 559.3,
+          "since_baseline_median_pct": 264.4
+        },
+        {
+          "year": 2019,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 596.5,
+          "eur_per_m2_mean": 586.6,
+          "since_baseline_median_pct": 272.8
+        },
+        {
+          "year": 2020,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 622.5,
+          "eur_per_m2_mean": 615.9,
+          "since_baseline_median_pct": 289.1
+        },
+        {
+          "year": 2021,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 696.5,
+          "eur_per_m2_mean": 677.4,
+          "since_baseline_median_pct": 335.3
+        },
+        {
+          "year": 2022,
+          "n_districts": 29,
+          "n_dropped": 0,
+          "eur_per_m2_median": 903,
+          "eur_per_m2_mean": 849.2,
+          "since_baseline_median_pct": 464.4
+        },
+        {
+          "year": 2023,
+          "n_districts": 27,
+          "n_dropped": 0,
+          "eur_per_m2_median": 958,
+          "eur_per_m2_mean": 942.0,
+          "since_baseline_median_pct": 498.8
+        },
+        {
+          "year": 2024,
+          "n_districts": 29,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1087,
+          "eur_per_m2_mean": 1049.6,
+          "since_baseline_median_pct": 579.4
+        },
+        {
+          "year": 2025,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1268.0,
+          "eur_per_m2_mean": 1225.0,
+          "since_baseline_median_pct": 692.5
+        },
+        {
+          "year": 2026,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1285.5,
+          "eur_per_m2_mean": 1242.2,
+          "since_baseline_median_pct": 703.4
+        }
+      ]
+    },
+    {
+      "code": "silistra",
+      "bg_name": "Силистра",
+      "en_name": "Silistra",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-silistra",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 9,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1038,
+      "eur_per_m2_mean": 1009.8,
+      "eur_per_m2_min": 602,
+      "eur_per_m2_max": 1326,
+      "baseline_year": 2022,
+      "since_baseline_median_pct": 75.0,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2022,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 593.0,
+          "eur_per_m2_mean": 584.2,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2023,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 638.0,
+          "eur_per_m2_mean": 654.2,
+          "since_baseline_median_pct": 7.6
+        },
+        {
+          "year": 2024,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 799,
+          "eur_per_m2_mean": 820.9,
+          "since_baseline_median_pct": 34.7
+        },
+        {
+          "year": 2025,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 826.5,
+          "eur_per_m2_mean": 857.6,
+          "since_baseline_median_pct": 39.4
+        },
+        {
+          "year": 2026,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1038,
+          "eur_per_m2_mean": 1009.8,
+          "since_baseline_median_pct": 75.0
+        }
+      ]
+    },
+    {
+      "code": "varna",
+      "bg_name": "Варна",
+      "en_name": "Varna",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-varna",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 69,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1971,
+      "eur_per_m2_mean": 2089.7,
+      "eur_per_m2_min": 1148,
+      "eur_per_m2_max": 3981,
+      "baseline_year": 2003,
+      "since_baseline_median_pct": 443.0,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2003,
+          "n_districts": 35,
+          "n_dropped": 0,
+          "eur_per_m2_median": 363,
+          "eur_per_m2_mean": 377.6,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2004,
+          "n_districts": 35,
+          "n_dropped": 1,
+          "eur_per_m2_median": 570,
+          "eur_per_m2_mean": 593.3,
+          "since_baseline_median_pct": 57.0
+        },
+        {
+          "year": 2005,
+          "n_districts": 35,
+          "n_dropped": 0,
+          "eur_per_m2_median": 615,
+          "eur_per_m2_mean": 627.6,
+          "since_baseline_median_pct": 69.4
+        },
+        {
+          "year": 2006,
+          "n_districts": 38,
+          "n_dropped": 0,
+          "eur_per_m2_median": 722.0,
+          "eur_per_m2_mean": 748.6,
+          "since_baseline_median_pct": 98.9
+        },
+        {
+          "year": 2007,
+          "n_districts": 41,
+          "n_dropped": 0,
+          "eur_per_m2_median": 908,
+          "eur_per_m2_mean": 939.8,
+          "since_baseline_median_pct": 150.1
+        },
+        {
+          "year": 2008,
+          "n_districts": 43,
+          "n_dropped": 0,
+          "eur_per_m2_median": 940,
+          "eur_per_m2_mean": 990.7,
+          "since_baseline_median_pct": 159.0
+        },
+        {
+          "year": 2009,
+          "n_districts": 41,
+          "n_dropped": 0,
+          "eur_per_m2_median": 728,
+          "eur_per_m2_mean": 770.5,
+          "since_baseline_median_pct": 100.6
+        },
+        {
+          "year": 2010,
+          "n_districts": 52,
+          "n_dropped": 0,
+          "eur_per_m2_median": 672.0,
+          "eur_per_m2_mean": 732.3,
+          "since_baseline_median_pct": 85.1
+        },
+        {
+          "year": 2011,
+          "n_districts": 55,
+          "n_dropped": 0,
+          "eur_per_m2_median": 686,
+          "eur_per_m2_mean": 707.5,
+          "since_baseline_median_pct": 89.0
+        },
+        {
+          "year": 2012,
+          "n_districts": 52,
+          "n_dropped": 0,
+          "eur_per_m2_median": 635.0,
+          "eur_per_m2_mean": 665.2,
+          "since_baseline_median_pct": 74.9
+        },
+        {
+          "year": 2013,
+          "n_districts": 47,
+          "n_dropped": 0,
+          "eur_per_m2_median": 652,
+          "eur_per_m2_mean": 697.2,
+          "since_baseline_median_pct": 79.6
+        },
+        {
+          "year": 2014,
+          "n_districts": 50,
+          "n_dropped": 0,
+          "eur_per_m2_median": 649.0,
+          "eur_per_m2_mean": 688.5,
+          "since_baseline_median_pct": 78.8
+        },
+        {
+          "year": 2015,
+          "n_districts": 50,
+          "n_dropped": 0,
+          "eur_per_m2_median": 683.5,
+          "eur_per_m2_mean": 717.9,
+          "since_baseline_median_pct": 88.3
+        },
+        {
+          "year": 2016,
+          "n_districts": 50,
+          "n_dropped": 0,
+          "eur_per_m2_median": 711.5,
+          "eur_per_m2_mean": 734.4,
+          "since_baseline_median_pct": 96.0
+        },
+        {
+          "year": 2017,
+          "n_districts": 50,
+          "n_dropped": 0,
+          "eur_per_m2_median": 734.5,
+          "eur_per_m2_mean": 767.7,
+          "since_baseline_median_pct": 102.3
+        },
+        {
+          "year": 2018,
+          "n_districts": 51,
+          "n_dropped": 0,
+          "eur_per_m2_median": 763,
+          "eur_per_m2_mean": 812.2,
+          "since_baseline_median_pct": 110.2
+        },
+        {
+          "year": 2019,
+          "n_districts": 50,
+          "n_dropped": 0,
+          "eur_per_m2_median": 817.0,
+          "eur_per_m2_mean": 851.8,
+          "since_baseline_median_pct": 125.1
+        },
+        {
+          "year": 2020,
+          "n_districts": 51,
+          "n_dropped": 0,
+          "eur_per_m2_median": 848,
+          "eur_per_m2_mean": 880.8,
+          "since_baseline_median_pct": 133.6
+        },
+        {
+          "year": 2021,
+          "n_districts": 66,
+          "n_dropped": 0,
+          "eur_per_m2_median": 920.0,
+          "eur_per_m2_mean": 990.2,
+          "since_baseline_median_pct": 153.4
+        },
+        {
+          "year": 2022,
+          "n_districts": 63,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1125,
+          "eur_per_m2_mean": 1214.9,
+          "since_baseline_median_pct": 209.9
+        },
+        {
+          "year": 2023,
+          "n_districts": 65,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1334,
+          "eur_per_m2_mean": 1482.3,
+          "since_baseline_median_pct": 267.5
+        },
+        {
+          "year": 2024,
+          "n_districts": 62,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1725.0,
+          "eur_per_m2_mean": 1760.5,
+          "since_baseline_median_pct": 375.2
+        },
+        {
+          "year": 2025,
+          "n_districts": 71,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1921,
+          "eur_per_m2_mean": 2023.9,
+          "since_baseline_median_pct": 429.2
+        },
+        {
+          "year": 2026,
+          "n_districts": 69,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1971,
+          "eur_per_m2_mean": 2089.7,
+          "since_baseline_median_pct": 443.0
+        }
+      ]
+    },
+    {
+      "code": "dobrich",
+      "bg_name": "Добрич",
+      "en_name": "Dobrich",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-dobrich",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 23,
+      "n_dropped": 0,
+      "eur_per_m2_median": 980,
+      "eur_per_m2_mean": 1007.0,
+      "eur_per_m2_min": 577,
+      "eur_per_m2_max": 1410,
+      "baseline_year": 2006,
+      "since_baseline_median_pct": 257.0,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2006,
+          "n_districts": 12,
+          "n_dropped": 1,
+          "eur_per_m2_median": 274.5,
+          "eur_per_m2_mean": 280.1,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2007,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 396.5,
+          "eur_per_m2_mean": 386.8,
+          "since_baseline_median_pct": 44.4
+        },
+        {
+          "year": 2008,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 400.0,
+          "eur_per_m2_mean": 406.2,
+          "since_baseline_median_pct": 45.7
+        },
+        {
+          "year": 2009,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 373.0,
+          "eur_per_m2_mean": 381.1,
+          "since_baseline_median_pct": 35.9
+        },
+        {
+          "year": 2010,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 343,
+          "eur_per_m2_mean": 348.7,
+          "since_baseline_median_pct": 25.0
+        },
+        {
+          "year": 2011,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 321,
+          "eur_per_m2_mean": 332.1,
+          "since_baseline_median_pct": 16.9
+        },
+        {
+          "year": 2012,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 325.0,
+          "eur_per_m2_mean": 327.3,
+          "since_baseline_median_pct": 18.4
+        },
+        {
+          "year": 2013,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 349.5,
+          "eur_per_m2_mean": 337.7,
+          "since_baseline_median_pct": 27.3
+        },
+        {
+          "year": 2014,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 342.0,
+          "eur_per_m2_mean": 342.8,
+          "since_baseline_median_pct": 24.6
+        },
+        {
+          "year": 2015,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 319,
+          "eur_per_m2_mean": 326.1,
+          "since_baseline_median_pct": 16.2
+        },
+        {
+          "year": 2016,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 341,
+          "eur_per_m2_mean": 349.3,
+          "since_baseline_median_pct": 24.2
+        },
+        {
+          "year": 2017,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 359.0,
+          "eur_per_m2_mean": 375.5,
+          "since_baseline_median_pct": 30.8
+        },
+        {
+          "year": 2018,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 389.0,
+          "eur_per_m2_mean": 399.5,
+          "since_baseline_median_pct": 41.7
+        },
+        {
+          "year": 2019,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 458.5,
+          "eur_per_m2_mean": 444.5,
+          "since_baseline_median_pct": 67.0
+        },
+        {
+          "year": 2020,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 447.0,
+          "eur_per_m2_mean": 449.3,
+          "since_baseline_median_pct": 62.8
+        },
+        {
+          "year": 2021,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 491.0,
+          "eur_per_m2_mean": 496.4,
+          "since_baseline_median_pct": 78.9
+        },
+        {
+          "year": 2022,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 607.0,
+          "eur_per_m2_mean": 602.5,
+          "since_baseline_median_pct": 121.1
+        },
+        {
+          "year": 2023,
+          "n_districts": 25,
+          "n_dropped": 0,
+          "eur_per_m2_median": 695,
+          "eur_per_m2_mean": 696.3,
+          "since_baseline_median_pct": 153.2
+        },
+        {
+          "year": 2024,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 794,
+          "eur_per_m2_mean": 799.1,
+          "since_baseline_median_pct": 189.3
+        },
+        {
+          "year": 2025,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 973.5,
+          "eur_per_m2_mean": 952.7,
+          "since_baseline_median_pct": 254.6
+        },
+        {
+          "year": 2026,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 980,
+          "eur_per_m2_mean": 1007.0,
+          "since_baseline_median_pct": 257.0
+        }
+      ]
+    },
+    {
+      "code": "targovishte",
+      "bg_name": "Търговище",
+      "en_name": "Targovishte",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-targovishte",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 8,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1232.0,
+      "eur_per_m2_mean": 1208.9,
+      "eur_per_m2_min": 1002,
+      "eur_per_m2_max": 1342,
+      "baseline_year": 2014,
+      "since_baseline_median_pct": 228.5,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2014,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 375,
+          "eur_per_m2_mean": 364.3,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2015,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 409,
+          "eur_per_m2_mean": 386.7,
+          "since_baseline_median_pct": 9.1
+        },
+        {
+          "year": 2016,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 398.0,
+          "eur_per_m2_mean": 395.1,
+          "since_baseline_median_pct": 6.1
+        },
+        {
+          "year": 2017,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 444.0,
+          "eur_per_m2_mean": 446.9,
+          "since_baseline_median_pct": 18.4
+        },
+        {
+          "year": 2018,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 499,
+          "eur_per_m2_mean": 499.6,
+          "since_baseline_median_pct": 33.1
+        },
+        {
+          "year": 2019,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 503.5,
+          "eur_per_m2_mean": 488.8,
+          "since_baseline_median_pct": 34.3
+        },
+        {
+          "year": 2020,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 514.5,
+          "eur_per_m2_mean": 505.5,
+          "since_baseline_median_pct": 37.2
+        },
+        {
+          "year": 2021,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 587.0,
+          "eur_per_m2_mean": 594.4,
+          "since_baseline_median_pct": 56.5
+        },
+        {
+          "year": 2022,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 875,
+          "eur_per_m2_mean": 903.6,
+          "since_baseline_median_pct": 133.3
+        },
+        {
+          "year": 2023,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 919,
+          "eur_per_m2_mean": 994.9,
+          "since_baseline_median_pct": 145.1
+        },
+        {
+          "year": 2024,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1002,
+          "eur_per_m2_mean": 1033.0,
+          "since_baseline_median_pct": 167.2
+        },
+        {
+          "year": 2025,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1152.5,
+          "eur_per_m2_mean": 1116.2,
+          "since_baseline_median_pct": 207.3
+        },
+        {
+          "year": 2026,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1232.0,
+          "eur_per_m2_mean": 1208.9,
+          "since_baseline_median_pct": 228.5
+        }
+      ]
+    },
+    {
+      "code": "shumen",
+      "bg_name": "Шумен",
+      "en_name": "Shumen",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-shumen",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 21,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1576,
+      "eur_per_m2_mean": 1579.5,
+      "eur_per_m2_min": 1177,
+      "eur_per_m2_max": 1998,
+      "baseline_year": 2008,
+      "since_baseline_median_pct": 210.8,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2008,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 507,
+          "eur_per_m2_mean": 508.2,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2009,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 411,
+          "eur_per_m2_mean": 417.5,
+          "since_baseline_median_pct": -18.9
+        },
+        {
+          "year": 2010,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 413,
+          "eur_per_m2_mean": 410.7,
+          "since_baseline_median_pct": -18.5
+        },
+        {
+          "year": 2011,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 416.0,
+          "eur_per_m2_mean": 395.8,
+          "since_baseline_median_pct": -17.9
+        },
+        {
+          "year": 2012,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 396.5,
+          "eur_per_m2_mean": 380.4,
+          "since_baseline_median_pct": -21.8
+        },
+        {
+          "year": 2013,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 391,
+          "eur_per_m2_mean": 391.1,
+          "since_baseline_median_pct": -22.9
+        },
+        {
+          "year": 2014,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 400,
+          "eur_per_m2_mean": 397.2,
+          "since_baseline_median_pct": -21.1
+        },
+        {
+          "year": 2015,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 418,
+          "eur_per_m2_mean": 414.1,
+          "since_baseline_median_pct": -17.6
+        },
+        {
+          "year": 2016,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 444.5,
+          "eur_per_m2_mean": 438.5,
+          "since_baseline_median_pct": -12.3
+        },
+        {
+          "year": 2017,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 490.5,
+          "eur_per_m2_mean": 487.7,
+          "since_baseline_median_pct": -3.3
+        },
+        {
+          "year": 2018,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 569,
+          "eur_per_m2_mean": 551.1,
+          "since_baseline_median_pct": 12.2
+        },
+        {
+          "year": 2019,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 624,
+          "eur_per_m2_mean": 602.2,
+          "since_baseline_median_pct": 23.1
+        },
+        {
+          "year": 2020,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 669,
+          "eur_per_m2_mean": 651.0,
+          "since_baseline_median_pct": 32.0
+        },
+        {
+          "year": 2021,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 751,
+          "eur_per_m2_mean": 758.4,
+          "since_baseline_median_pct": 48.1
+        },
+        {
+          "year": 2022,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 986.5,
+          "eur_per_m2_mean": 1006.9,
+          "since_baseline_median_pct": 94.6
+        },
+        {
+          "year": 2023,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1133.5,
+          "eur_per_m2_mean": 1128.3,
+          "since_baseline_median_pct": 123.6
+        },
+        {
+          "year": 2024,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1259,
+          "eur_per_m2_mean": 1237.3,
+          "since_baseline_median_pct": 148.3
+        },
+        {
+          "year": 2025,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1415.0,
+          "eur_per_m2_mean": 1398.0,
+          "since_baseline_median_pct": 179.1
+        },
+        {
+          "year": 2026,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1576,
+          "eur_per_m2_mean": 1579.5,
+          "since_baseline_median_pct": 210.8
+        }
+      ]
+    },
+    {
+      "code": "burgas",
+      "bg_name": "Бургас",
+      "en_name": "Burgas",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-burgas",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 27,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1529,
+      "eur_per_m2_mean": 1627.9,
+      "eur_per_m2_min": 737,
+      "eur_per_m2_max": 2733,
+      "baseline_year": 2009,
+      "since_baseline_median_pct": 144.6,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2009,
+          "n_districts": 13,
+          "n_dropped": 1,
+          "eur_per_m2_median": 625,
+          "eur_per_m2_mean": 629.2,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2010,
+          "n_districts": 14,
+          "n_dropped": 2,
+          "eur_per_m2_median": 636.5,
+          "eur_per_m2_mean": 617.1,
+          "since_baseline_median_pct": 1.8
+        },
+        {
+          "year": 2011,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 553.5,
+          "eur_per_m2_mean": 534.4,
+          "since_baseline_median_pct": -11.4
+        },
+        {
+          "year": 2012,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 548,
+          "eur_per_m2_mean": 537.5,
+          "since_baseline_median_pct": -12.3
+        },
+        {
+          "year": 2013,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 517.5,
+          "eur_per_m2_mean": 542.1,
+          "since_baseline_median_pct": -17.2
+        },
+        {
+          "year": 2014,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 606.5,
+          "eur_per_m2_mean": 585.3,
+          "since_baseline_median_pct": -3.0
+        },
+        {
+          "year": 2015,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 589,
+          "eur_per_m2_mean": 583.5,
+          "since_baseline_median_pct": -5.8
+        },
+        {
+          "year": 2016,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 641,
+          "eur_per_m2_mean": 624.5,
+          "since_baseline_median_pct": 2.6
+        },
+        {
+          "year": 2017,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 667,
+          "eur_per_m2_mean": 670.2,
+          "since_baseline_median_pct": 6.7
+        },
+        {
+          "year": 2018,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 689,
+          "eur_per_m2_mean": 725.5,
+          "since_baseline_median_pct": 10.2
+        },
+        {
+          "year": 2019,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 670.0,
+          "eur_per_m2_mean": 727.7,
+          "since_baseline_median_pct": 7.2
+        },
+        {
+          "year": 2020,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 638.0,
+          "eur_per_m2_mean": 718.3,
+          "since_baseline_median_pct": 2.1
+        },
+        {
+          "year": 2021,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 698.0,
+          "eur_per_m2_mean": 787.9,
+          "since_baseline_median_pct": 11.7
+        },
+        {
+          "year": 2022,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 964,
+          "eur_per_m2_mean": 1020.5,
+          "since_baseline_median_pct": 54.2
+        },
+        {
+          "year": 2023,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1001.0,
+          "eur_per_m2_mean": 1044.8,
+          "since_baseline_median_pct": 60.2
+        },
+        {
+          "year": 2024,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1189,
+          "eur_per_m2_mean": 1248.4,
+          "since_baseline_median_pct": 90.2
+        },
+        {
+          "year": 2025,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1470.0,
+          "eur_per_m2_mean": 1484.7,
+          "since_baseline_median_pct": 135.2
+        },
+        {
+          "year": 2026,
+          "n_districts": 27,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1529,
+          "eur_per_m2_mean": 1627.9,
+          "since_baseline_median_pct": 144.6
+        }
+      ]
+    },
+    {
+      "code": "sliven",
+      "bg_name": "Сливен",
+      "en_name": "Sliven",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-sliven",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 11,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1228,
+      "eur_per_m2_mean": 1210.4,
+      "eur_per_m2_min": 916,
+      "eur_per_m2_max": 1506,
+      "baseline_year": 2005,
+      "since_baseline_median_pct": 327.1,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2005,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 287.5,
+          "eur_per_m2_mean": 307.5,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2006,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 332,
+          "eur_per_m2_mean": 344.3,
+          "since_baseline_median_pct": 15.5
+        },
+        {
+          "year": 2007,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 382.0,
+          "eur_per_m2_mean": 399.1,
+          "since_baseline_median_pct": 32.9
+        },
+        {
+          "year": 2008,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 460.0,
+          "eur_per_m2_mean": 474.4,
+          "since_baseline_median_pct": 60.0
+        },
+        {
+          "year": 2009,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 369,
+          "eur_per_m2_mean": 379.4,
+          "since_baseline_median_pct": 28.3
+        },
+        {
+          "year": 2010,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 377,
+          "eur_per_m2_mean": 364.1,
+          "since_baseline_median_pct": 31.1
+        },
+        {
+          "year": 2011,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 318.0,
+          "eur_per_m2_mean": 333.5,
+          "since_baseline_median_pct": 10.6
+        },
+        {
+          "year": 2012,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 308.0,
+          "eur_per_m2_mean": 315.2,
+          "since_baseline_median_pct": 7.1
+        },
+        {
+          "year": 2013,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 329,
+          "eur_per_m2_mean": 321.3,
+          "since_baseline_median_pct": 14.4
+        },
+        {
+          "year": 2014,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 309.5,
+          "eur_per_m2_mean": 309.2,
+          "since_baseline_median_pct": 7.7
+        },
+        {
+          "year": 2015,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 323.0,
+          "eur_per_m2_mean": 341.8,
+          "since_baseline_median_pct": 12.3
+        },
+        {
+          "year": 2016,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 323.0,
+          "eur_per_m2_mean": 335.2,
+          "since_baseline_median_pct": 12.3
+        },
+        {
+          "year": 2017,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 336.0,
+          "eur_per_m2_mean": 335.5,
+          "since_baseline_median_pct": 16.9
+        },
+        {
+          "year": 2018,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 415.5,
+          "eur_per_m2_mean": 445.8,
+          "since_baseline_median_pct": 44.5
+        },
+        {
+          "year": 2019,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 443,
+          "eur_per_m2_mean": 453.4,
+          "since_baseline_median_pct": 54.1
+        },
+        {
+          "year": 2020,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 535.5,
+          "eur_per_m2_mean": 531.3,
+          "since_baseline_median_pct": 86.3
+        },
+        {
+          "year": 2021,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 549.0,
+          "eur_per_m2_mean": 585.4,
+          "since_baseline_median_pct": 91.0
+        },
+        {
+          "year": 2022,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 709.0,
+          "eur_per_m2_mean": 697.2,
+          "since_baseline_median_pct": 146.6
+        },
+        {
+          "year": 2023,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 853,
+          "eur_per_m2_mean": 830.4,
+          "since_baseline_median_pct": 196.7
+        },
+        {
+          "year": 2024,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 901,
+          "eur_per_m2_mean": 879.8,
+          "since_baseline_median_pct": 213.4
+        },
+        {
+          "year": 2025,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1059.5,
+          "eur_per_m2_mean": 1067.2,
+          "since_baseline_median_pct": 268.5
+        },
+        {
+          "year": 2026,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1228,
+          "eur_per_m2_mean": 1210.4,
+          "since_baseline_median_pct": 327.1
+        }
+      ]
+    },
+    {
+      "code": "stara-zagora",
+      "bg_name": "Стара Загора",
+      "en_name": "Stara Zagora",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-stara-zagora",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 26,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1319.0,
+      "eur_per_m2_mean": 1336.1,
+      "eur_per_m2_min": 937,
+      "eur_per_m2_max": 1794,
+      "baseline_year": 2004,
+      "since_baseline_median_pct": 318.7,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2004,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 315.0,
+          "eur_per_m2_mean": 343.2,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2005,
+          "n_districts": 22,
+          "n_dropped": 1,
+          "eur_per_m2_median": 393.5,
+          "eur_per_m2_mean": 399.5,
+          "since_baseline_median_pct": 24.9
+        },
+        {
+          "year": 2006,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 414.0,
+          "eur_per_m2_mean": 420.3,
+          "since_baseline_median_pct": 31.4
+        },
+        {
+          "year": 2007,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 554.0,
+          "eur_per_m2_mean": 532.6,
+          "since_baseline_median_pct": 75.9
+        },
+        {
+          "year": 2008,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 653,
+          "eur_per_m2_mean": 634.8,
+          "since_baseline_median_pct": 107.3
+        },
+        {
+          "year": 2009,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 522,
+          "eur_per_m2_mean": 504.5,
+          "since_baseline_median_pct": 65.7
+        },
+        {
+          "year": 2010,
+          "n_districts": 25,
+          "n_dropped": 0,
+          "eur_per_m2_median": 445,
+          "eur_per_m2_mean": 465.8,
+          "since_baseline_median_pct": 41.3
+        },
+        {
+          "year": 2011,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 405.0,
+          "eur_per_m2_mean": 430.9,
+          "since_baseline_median_pct": 28.6
+        },
+        {
+          "year": 2012,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 399.5,
+          "eur_per_m2_mean": 401.1,
+          "since_baseline_median_pct": 26.8
+        },
+        {
+          "year": 2013,
+          "n_districts": 27,
+          "n_dropped": 0,
+          "eur_per_m2_median": 423,
+          "eur_per_m2_mean": 422.7,
+          "since_baseline_median_pct": 34.3
+        },
+        {
+          "year": 2014,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 446.0,
+          "eur_per_m2_mean": 449.4,
+          "since_baseline_median_pct": 41.6
+        },
+        {
+          "year": 2015,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 471.5,
+          "eur_per_m2_mean": 475.3,
+          "since_baseline_median_pct": 49.7
+        },
+        {
+          "year": 2016,
+          "n_districts": 27,
+          "n_dropped": 0,
+          "eur_per_m2_median": 490,
+          "eur_per_m2_mean": 491.8,
+          "since_baseline_median_pct": 55.6
+        },
+        {
+          "year": 2017,
+          "n_districts": 27,
+          "n_dropped": 0,
+          "eur_per_m2_median": 511,
+          "eur_per_m2_mean": 491.9,
+          "since_baseline_median_pct": 62.2
+        },
+        {
+          "year": 2018,
+          "n_districts": 25,
+          "n_dropped": 0,
+          "eur_per_m2_median": 511,
+          "eur_per_m2_mean": 528.0,
+          "since_baseline_median_pct": 62.2
+        },
+        {
+          "year": 2019,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 551,
+          "eur_per_m2_mean": 575.7,
+          "since_baseline_median_pct": 74.9
+        },
+        {
+          "year": 2020,
+          "n_districts": 23,
+          "n_dropped": 0,
+          "eur_per_m2_median": 567,
+          "eur_per_m2_mean": 587.9,
+          "since_baseline_median_pct": 80.0
+        },
+        {
+          "year": 2021,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 659.0,
+          "eur_per_m2_mean": 682.5,
+          "since_baseline_median_pct": 109.2
+        },
+        {
+          "year": 2022,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 919.5,
+          "eur_per_m2_mean": 894.5,
+          "since_baseline_median_pct": 191.9
+        },
+        {
+          "year": 2023,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 878.5,
+          "eur_per_m2_mean": 903.1,
+          "since_baseline_median_pct": 178.9
+        },
+        {
+          "year": 2024,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1022.0,
+          "eur_per_m2_mean": 1004.8,
+          "since_baseline_median_pct": 224.4
+        },
+        {
+          "year": 2025,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1204.5,
+          "eur_per_m2_mean": 1180.6,
+          "since_baseline_median_pct": 282.4
+        },
+        {
+          "year": 2026,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1319.0,
+          "eur_per_m2_mean": 1336.1,
+          "since_baseline_median_pct": 318.7
+        }
+      ]
+    },
+    {
+      "code": "yambol",
+      "bg_name": "Ямбол",
+      "en_name": "Yambol",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-yambol",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 15,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1313,
+      "eur_per_m2_mean": 1285.7,
+      "eur_per_m2_min": 787,
+      "eur_per_m2_max": 1786,
+      "baseline_year": 2005,
+      "since_baseline_median_pct": 454.0,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2005,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 237,
+          "eur_per_m2_mean": 254.1,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2006,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 276.0,
+          "eur_per_m2_mean": 296.9,
+          "since_baseline_median_pct": 16.5
+        },
+        {
+          "year": 2007,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 438.5,
+          "eur_per_m2_mean": 425.3,
+          "since_baseline_median_pct": 85.0
+        },
+        {
+          "year": 2008,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 416.0,
+          "eur_per_m2_mean": 420.3,
+          "since_baseline_median_pct": 75.5
+        },
+        {
+          "year": 2009,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 384.0,
+          "eur_per_m2_mean": 391.7,
+          "since_baseline_median_pct": 62.0
+        },
+        {
+          "year": 2010,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 313,
+          "eur_per_m2_mean": 331.9,
+          "since_baseline_median_pct": 32.1
+        },
+        {
+          "year": 2011,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 333.5,
+          "eur_per_m2_mean": 345.9,
+          "since_baseline_median_pct": 40.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 329,
+          "eur_per_m2_mean": 343.2,
+          "since_baseline_median_pct": 38.8
+        },
+        {
+          "year": 2013,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 321.0,
+          "eur_per_m2_mean": 331.0,
+          "since_baseline_median_pct": 35.4
+        },
+        {
+          "year": 2014,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 325,
+          "eur_per_m2_mean": 324.1,
+          "since_baseline_median_pct": 37.1
+        },
+        {
+          "year": 2015,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 326,
+          "eur_per_m2_mean": 325.4,
+          "since_baseline_median_pct": 37.6
+        },
+        {
+          "year": 2016,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 305.5,
+          "eur_per_m2_mean": 337.9,
+          "since_baseline_median_pct": 28.9
+        },
+        {
+          "year": 2017,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 412,
+          "eur_per_m2_mean": 411.0,
+          "since_baseline_median_pct": 73.8
+        },
+        {
+          "year": 2018,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 470.5,
+          "eur_per_m2_mean": 439.8,
+          "since_baseline_median_pct": 98.5
+        },
+        {
+          "year": 2019,
+          "n_districts": 10,
+          "n_dropped": 1,
+          "eur_per_m2_median": 408.5,
+          "eur_per_m2_mean": 428.4,
+          "since_baseline_median_pct": 72.4
+        },
+        {
+          "year": 2020,
+          "n_districts": 12,
+          "n_dropped": 1,
+          "eur_per_m2_median": 495.0,
+          "eur_per_m2_mean": 451.8,
+          "since_baseline_median_pct": 108.9
+        },
+        {
+          "year": 2021,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 494,
+          "eur_per_m2_mean": 498.7,
+          "since_baseline_median_pct": 108.4
+        },
+        {
+          "year": 2022,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 785,
+          "eur_per_m2_mean": 1011.4,
+          "since_baseline_median_pct": 231.2
+        },
+        {
+          "year": 2023,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 931,
+          "eur_per_m2_mean": 912.1,
+          "since_baseline_median_pct": 292.8
+        },
+        {
+          "year": 2024,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1069,
+          "eur_per_m2_mean": 1020.3,
+          "since_baseline_median_pct": 351.1
+        },
+        {
+          "year": 2025,
+          "n_districts": 14,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1319.0,
+          "eur_per_m2_mean": 1238.1,
+          "since_baseline_median_pct": 456.5
+        },
+        {
+          "year": 2026,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1313,
+          "eur_per_m2_mean": 1285.7,
+          "since_baseline_median_pct": 454.0
+        }
+      ]
+    },
+    {
+      "code": "blagoevgrad",
+      "bg_name": "Благоевград",
+      "en_name": "Blagoevgrad",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-blagoevgrad",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 13,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1106,
+      "eur_per_m2_mean": 1150.9,
+      "eur_per_m2_min": 970,
+      "eur_per_m2_max": 1544,
+      "baseline_year": 2005,
+      "since_baseline_median_pct": 171.1,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2005,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 408,
+          "eur_per_m2_mean": 566.7,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2006,
+          "n_districts": 9,
+          "n_dropped": 1,
+          "eur_per_m2_median": 419,
+          "eur_per_m2_mean": 419.3,
+          "since_baseline_median_pct": 2.7
+        },
+        {
+          "year": 2007,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 446.0,
+          "eur_per_m2_mean": 504.0,
+          "since_baseline_median_pct": 9.3
+        },
+        {
+          "year": 2008,
+          "n_districts": 9,
+          "n_dropped": 1,
+          "eur_per_m2_median": 452,
+          "eur_per_m2_mean": 556.1,
+          "since_baseline_median_pct": 10.8
+        },
+        {
+          "year": 2009,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 456,
+          "eur_per_m2_mean": 454.7,
+          "since_baseline_median_pct": 11.8
+        },
+        {
+          "year": 2010,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 464,
+          "eur_per_m2_mean": 466.5,
+          "since_baseline_median_pct": 13.7
+        },
+        {
+          "year": 2011,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 432.0,
+          "eur_per_m2_mean": 440.8,
+          "since_baseline_median_pct": 5.9
+        },
+        {
+          "year": 2012,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 411.5,
+          "eur_per_m2_mean": 414.4,
+          "since_baseline_median_pct": 0.9
+        },
+        {
+          "year": 2013,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 460,
+          "eur_per_m2_mean": 430.5,
+          "since_baseline_median_pct": 12.7
+        },
+        {
+          "year": 2014,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 410.0,
+          "eur_per_m2_mean": 412.2,
+          "since_baseline_median_pct": 0.5
+        },
+        {
+          "year": 2015,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 420,
+          "eur_per_m2_mean": 433.4,
+          "since_baseline_median_pct": 2.9
+        },
+        {
+          "year": 2016,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 433,
+          "eur_per_m2_mean": 452.6,
+          "since_baseline_median_pct": 6.1
+        },
+        {
+          "year": 2017,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 466.0,
+          "eur_per_m2_mean": 470.6,
+          "since_baseline_median_pct": 14.2
+        },
+        {
+          "year": 2018,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 504.0,
+          "eur_per_m2_mean": 525.3,
+          "since_baseline_median_pct": 23.5
+        },
+        {
+          "year": 2019,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 529,
+          "eur_per_m2_mean": 521.8,
+          "since_baseline_median_pct": 29.7
+        },
+        {
+          "year": 2020,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 514.5,
+          "eur_per_m2_mean": 534.2,
+          "since_baseline_median_pct": 26.1
+        },
+        {
+          "year": 2021,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 579,
+          "eur_per_m2_mean": 599.2,
+          "since_baseline_median_pct": 41.9
+        },
+        {
+          "year": 2022,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 751.5,
+          "eur_per_m2_mean": 783.2,
+          "since_baseline_median_pct": 84.2
+        },
+        {
+          "year": 2023,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 854.0,
+          "eur_per_m2_mean": 904.9,
+          "since_baseline_median_pct": 109.3
+        },
+        {
+          "year": 2024,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 900.0,
+          "eur_per_m2_mean": 939.6,
+          "since_baseline_median_pct": 120.6
+        },
+        {
+          "year": 2025,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1057,
+          "eur_per_m2_mean": 1180.2,
+          "since_baseline_median_pct": 159.1
+        },
+        {
+          "year": 2026,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1106,
+          "eur_per_m2_mean": 1150.9,
+          "since_baseline_median_pct": 171.1
+        }
+      ]
+    },
+    {
+      "code": "kyustendil",
+      "bg_name": "Кюстендил",
+      "en_name": "Kyustendil",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-kyustendil",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 11,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1047,
+      "eur_per_m2_mean": 1063.1,
+      "eur_per_m2_min": 640,
+      "eur_per_m2_max": 1472,
+      "baseline_year": 2008,
+      "since_baseline_median_pct": 211.6,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2008,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 336,
+          "eur_per_m2_mean": 336.1,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2009,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 296.5,
+          "eur_per_m2_mean": 312.2,
+          "since_baseline_median_pct": -11.8
+        },
+        {
+          "year": 2010,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 354,
+          "eur_per_m2_mean": 317.8,
+          "since_baseline_median_pct": 5.4
+        },
+        {
+          "year": 2011,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 267,
+          "eur_per_m2_mean": 282.1,
+          "since_baseline_median_pct": -20.5
+        },
+        {
+          "year": 2012,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 221,
+          "eur_per_m2_mean": 233.2,
+          "since_baseline_median_pct": -34.2
+        },
+        {
+          "year": 2013,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 222,
+          "eur_per_m2_mean": 232.1,
+          "since_baseline_median_pct": -33.9
+        },
+        {
+          "year": 2014,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 200,
+          "eur_per_m2_mean": 199.2,
+          "since_baseline_median_pct": -40.5
+        },
+        {
+          "year": 2015,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 211.5,
+          "eur_per_m2_mean": 237.4,
+          "since_baseline_median_pct": -37.1
+        },
+        {
+          "year": 2016,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 231,
+          "eur_per_m2_mean": 270.6,
+          "since_baseline_median_pct": -31.2
+        },
+        {
+          "year": 2017,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 273.0,
+          "eur_per_m2_mean": 277.1,
+          "since_baseline_median_pct": -18.8
+        },
+        {
+          "year": 2018,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 351,
+          "eur_per_m2_mean": 351.8,
+          "since_baseline_median_pct": 4.5
+        },
+        {
+          "year": 2019,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 306,
+          "eur_per_m2_mean": 327.5,
+          "since_baseline_median_pct": -8.9
+        },
+        {
+          "year": 2020,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 359.0,
+          "eur_per_m2_mean": 365.5,
+          "since_baseline_median_pct": 6.8
+        },
+        {
+          "year": 2021,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 534,
+          "eur_per_m2_mean": 534.6,
+          "since_baseline_median_pct": 58.9
+        },
+        {
+          "year": 2022,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 591.5,
+          "eur_per_m2_mean": 589.7,
+          "since_baseline_median_pct": 76.0
+        },
+        {
+          "year": 2023,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 581,
+          "eur_per_m2_mean": 589.6,
+          "since_baseline_median_pct": 72.9
+        },
+        {
+          "year": 2024,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 814,
+          "eur_per_m2_mean": 811.9,
+          "since_baseline_median_pct": 142.3
+        },
+        {
+          "year": 2025,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 980.0,
+          "eur_per_m2_mean": 949.7,
+          "since_baseline_median_pct": 191.7
+        },
+        {
+          "year": 2026,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1047,
+          "eur_per_m2_mean": 1063.1,
+          "since_baseline_median_pct": 211.6
+        }
+      ]
+    },
+    {
+      "code": "pernik",
+      "bg_name": "Перник",
+      "en_name": "Pernik",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-pernik",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 22,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1401.0,
+      "eur_per_m2_mean": 1469.3,
+      "eur_per_m2_min": 972,
+      "eur_per_m2_max": 2210,
+      "baseline_year": 2004,
+      "since_baseline_median_pct": 649.2,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2004,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 187,
+          "eur_per_m2_mean": 183.0,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2005,
+          "n_districts": 13,
+          "n_dropped": 1,
+          "eur_per_m2_median": 232,
+          "eur_per_m2_mean": 237.1,
+          "since_baseline_median_pct": 24.1
+        },
+        {
+          "year": 2006,
+          "n_districts": 10,
+          "n_dropped": 0,
+          "eur_per_m2_median": 272.5,
+          "eur_per_m2_mean": 282.4,
+          "since_baseline_median_pct": 45.7
+        },
+        {
+          "year": 2007,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 392,
+          "eur_per_m2_mean": 401.4,
+          "since_baseline_median_pct": 109.6
+        },
+        {
+          "year": 2008,
+          "n_districts": 16,
+          "n_dropped": 1,
+          "eur_per_m2_median": 484.0,
+          "eur_per_m2_mean": 485.8,
+          "since_baseline_median_pct": 158.8
+        },
+        {
+          "year": 2009,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 400,
+          "eur_per_m2_mean": 419.7,
+          "since_baseline_median_pct": 113.9
+        },
+        {
+          "year": 2010,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 358,
+          "eur_per_m2_mean": 367.6,
+          "since_baseline_median_pct": 91.4
+        },
+        {
+          "year": 2011,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 328.5,
+          "eur_per_m2_mean": 323.1,
+          "since_baseline_median_pct": 75.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 276,
+          "eur_per_m2_mean": 275.7,
+          "since_baseline_median_pct": 47.6
+        },
+        {
+          "year": 2013,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 273.5,
+          "eur_per_m2_mean": 292.6,
+          "since_baseline_median_pct": 46.3
+        },
+        {
+          "year": 2014,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 272.5,
+          "eur_per_m2_mean": 283.9,
+          "since_baseline_median_pct": 45.7
+        },
+        {
+          "year": 2015,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 290,
+          "eur_per_m2_mean": 303.5,
+          "since_baseline_median_pct": 55.1
+        },
+        {
+          "year": 2016,
+          "n_districts": 20,
+          "n_dropped": 0,
+          "eur_per_m2_median": 316.0,
+          "eur_per_m2_mean": 329.6,
+          "since_baseline_median_pct": 69.0
+        },
+        {
+          "year": 2017,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 381,
+          "eur_per_m2_mean": 379.2,
+          "since_baseline_median_pct": 103.7
+        },
+        {
+          "year": 2018,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 404.5,
+          "eur_per_m2_mean": 407.3,
+          "since_baseline_median_pct": 116.3
+        },
+        {
+          "year": 2019,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 486,
+          "eur_per_m2_mean": 454.2,
+          "since_baseline_median_pct": 159.9
+        },
+        {
+          "year": 2020,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 555,
+          "eur_per_m2_mean": 558.2,
+          "since_baseline_median_pct": 196.8
+        },
+        {
+          "year": 2021,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 700.0,
+          "eur_per_m2_mean": 676.6,
+          "since_baseline_median_pct": 274.3
+        },
+        {
+          "year": 2022,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 772,
+          "eur_per_m2_mean": 755.6,
+          "since_baseline_median_pct": 312.8
+        },
+        {
+          "year": 2023,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1025.5,
+          "eur_per_m2_mean": 1033.7,
+          "since_baseline_median_pct": 448.4
+        },
+        {
+          "year": 2024,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1017.0,
+          "eur_per_m2_mean": 1067.1,
+          "since_baseline_median_pct": 443.9
+        },
+        {
+          "year": 2025,
+          "n_districts": 21,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1268,
+          "eur_per_m2_mean": 1288.8,
+          "since_baseline_median_pct": 578.1
+        },
+        {
+          "year": 2026,
+          "n_districts": 22,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1401.0,
+          "eur_per_m2_mean": 1469.3,
+          "since_baseline_median_pct": 649.2
+        }
+      ]
+    },
+    {
+      "code": "sofiya",
+      "bg_name": "София",
+      "en_name": "Sofia",
+      "source_url": "https://www.imot.bg/sredni-ceni",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 141,
+      "n_dropped": 0,
+      "eur_per_m2_median": 2505,
+      "eur_per_m2_mean": 2577.4,
+      "eur_per_m2_min": 1108,
+      "eur_per_m2_max": 5747,
+      "baseline_year": 2000,
+      "since_baseline_median_pct": 1054.4,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2000,
+          "n_districts": 85,
+          "n_dropped": 0,
+          "eur_per_m2_median": 217,
+          "eur_per_m2_mean": 238.4,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2001,
+          "n_districts": 85,
+          "n_dropped": 0,
+          "eur_per_m2_median": 255,
+          "eur_per_m2_mean": 261.1,
+          "since_baseline_median_pct": 17.5
+        },
+        {
+          "year": 2002,
+          "n_districts": 85,
+          "n_dropped": 0,
+          "eur_per_m2_median": 275,
+          "eur_per_m2_mean": 289.9,
+          "since_baseline_median_pct": 26.7
+        },
+        {
+          "year": 2003,
+          "n_districts": 87,
+          "n_dropped": 1,
+          "eur_per_m2_median": 383,
+          "eur_per_m2_mean": 397.8,
+          "since_baseline_median_pct": 76.5
+        },
+        {
+          "year": 2004,
+          "n_districts": 97,
+          "n_dropped": 1,
+          "eur_per_m2_median": 487,
+          "eur_per_m2_mean": 512.9,
+          "since_baseline_median_pct": 124.4
+        },
+        {
+          "year": 2005,
+          "n_districts": 104,
+          "n_dropped": 0,
+          "eur_per_m2_median": 515.0,
+          "eur_per_m2_mean": 538.6,
+          "since_baseline_median_pct": 137.3
+        },
+        {
+          "year": 2006,
+          "n_districts": 98,
+          "n_dropped": 0,
+          "eur_per_m2_median": 639.0,
+          "eur_per_m2_mean": 661.9,
+          "since_baseline_median_pct": 194.5
+        },
+        {
+          "year": 2007,
+          "n_districts": 103,
+          "n_dropped": 1,
+          "eur_per_m2_median": 896,
+          "eur_per_m2_mean": 899.9,
+          "since_baseline_median_pct": 312.9
+        },
+        {
+          "year": 2008,
+          "n_districts": 105,
+          "n_dropped": 2,
+          "eur_per_m2_median": 945,
+          "eur_per_m2_mean": 972.6,
+          "since_baseline_median_pct": 335.5
+        },
+        {
+          "year": 2009,
+          "n_districts": 107,
+          "n_dropped": 1,
+          "eur_per_m2_median": 721,
+          "eur_per_m2_mean": 744.3,
+          "since_baseline_median_pct": 232.3
+        },
+        {
+          "year": 2010,
+          "n_districts": 122,
+          "n_dropped": 1,
+          "eur_per_m2_median": 700.5,
+          "eur_per_m2_mean": 722.6,
+          "since_baseline_median_pct": 222.8
+        },
+        {
+          "year": 2011,
+          "n_districts": 129,
+          "n_dropped": 0,
+          "eur_per_m2_median": 646,
+          "eur_per_m2_mean": 677.4,
+          "since_baseline_median_pct": 197.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 126,
+          "n_dropped": 1,
+          "eur_per_m2_median": 616.0,
+          "eur_per_m2_mean": 650.9,
+          "since_baseline_median_pct": 183.9
+        },
+        {
+          "year": 2013,
+          "n_districts": 120,
+          "n_dropped": 0,
+          "eur_per_m2_median": 678.0,
+          "eur_per_m2_mean": 712.3,
+          "since_baseline_median_pct": 212.4
+        },
+        {
+          "year": 2014,
+          "n_districts": 122,
+          "n_dropped": 0,
+          "eur_per_m2_median": 698.5,
+          "eur_per_m2_mean": 721.5,
+          "since_baseline_median_pct": 221.9
+        },
+        {
+          "year": 2015,
+          "n_districts": 120,
+          "n_dropped": 0,
+          "eur_per_m2_median": 754.0,
+          "eur_per_m2_mean": 764.9,
+          "since_baseline_median_pct": 247.5
+        },
+        {
+          "year": 2016,
+          "n_districts": 116,
+          "n_dropped": 0,
+          "eur_per_m2_median": 823.0,
+          "eur_per_m2_mean": 872.0,
+          "since_baseline_median_pct": 279.3
+        },
+        {
+          "year": 2017,
+          "n_districts": 122,
+          "n_dropped": 0,
+          "eur_per_m2_median": 917.0,
+          "eur_per_m2_mean": 956.1,
+          "since_baseline_median_pct": 322.6
+        },
+        {
+          "year": 2018,
+          "n_districts": 119,
+          "n_dropped": 0,
+          "eur_per_m2_median": 992,
+          "eur_per_m2_mean": 1021.4,
+          "since_baseline_median_pct": 357.1
+        },
+        {
+          "year": 2019,
+          "n_districts": 136,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1033.0,
+          "eur_per_m2_mean": 1070.2,
+          "since_baseline_median_pct": 376.0
+        },
+        {
+          "year": 2020,
+          "n_districts": 135,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1122,
+          "eur_per_m2_mean": 1127.1,
+          "since_baseline_median_pct": 417.1
+        },
+        {
+          "year": 2021,
+          "n_districts": 127,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1302,
+          "eur_per_m2_mean": 1346.0,
+          "since_baseline_median_pct": 500.0
+        },
+        {
+          "year": 2022,
+          "n_districts": 135,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1538,
+          "eur_per_m2_mean": 1616.4,
+          "since_baseline_median_pct": 608.8
+        },
+        {
+          "year": 2023,
           "n_districts": 133,
-          "n_dropped": null,
+          "n_dropped": 0,
           "eur_per_m2_median": 1764,
           "eur_per_m2_mean": 1781.7,
-          "since_baseline_median_pct": 134.0
+          "since_baseline_median_pct": 712.9
         },
         {
           "year": 2024,
           "n_districts": 139,
-          "n_dropped": null,
+          "n_dropped": 0,
           "eur_per_m2_median": 2045,
           "eur_per_m2_mean": 2117.0,
-          "since_baseline_median_pct": 171.2
+          "since_baseline_median_pct": 842.4
         },
         {
           "year": 2025,
           "n_districts": 143,
-          "n_dropped": null,
+          "n_dropped": 0,
           "eur_per_m2_median": 2375,
           "eur_per_m2_mean": 2458.6,
-          "since_baseline_median_pct": 215.0
+          "since_baseline_median_pct": 994.5
         },
         {
           "year": 2026,
-          "n_districts": 143,
-          "n_dropped": null,
-          "eur_per_m2_median": 2501,
-          "eur_per_m2_mean": 2545.7,
-          "since_baseline_median_pct": 231.7
+          "n_districts": 141,
+          "n_dropped": 0,
+          "eur_per_m2_median": 2505,
+          "eur_per_m2_mean": 2577.4,
+          "since_baseline_median_pct": 1054.4
+        }
+      ]
+    },
+    {
+      "code": "kardzhali",
+      "bg_name": "Кърджали",
+      "en_name": "Kardzhali",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-kardzhali",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 8,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1086.0,
+      "eur_per_m2_mean": 1105.8,
+      "eur_per_m2_min": 752,
+      "eur_per_m2_max": 1503,
+      "baseline_year": 2016,
+      "since_baseline_median_pct": 195.1,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2016,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 368.0,
+          "eur_per_m2_mean": 369.0,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2017,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 374.5,
+          "eur_per_m2_mean": 381.5,
+          "since_baseline_median_pct": 1.8
+        },
+        {
+          "year": 2018,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 404.0,
+          "eur_per_m2_mean": 418.7,
+          "since_baseline_median_pct": 9.8
+        },
+        {
+          "year": 2019,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 488.0,
+          "eur_per_m2_mean": 480.8,
+          "since_baseline_median_pct": 32.6
+        },
+        {
+          "year": 2020,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 455.0,
+          "eur_per_m2_mean": 441.7,
+          "since_baseline_median_pct": 23.6
+        },
+        {
+          "year": 2021,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 488.5,
+          "eur_per_m2_mean": 496.7,
+          "since_baseline_median_pct": 32.7
+        },
+        {
+          "year": 2022,
+          "n_districts": 6,
+          "n_dropped": 0,
+          "eur_per_m2_median": 678.5,
+          "eur_per_m2_mean": 673.5,
+          "since_baseline_median_pct": 84.4
+        },
+        {
+          "year": 2023,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 701,
+          "eur_per_m2_mean": 707.9,
+          "since_baseline_median_pct": 90.5
+        },
+        {
+          "year": 2024,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 869,
+          "eur_per_m2_mean": 853.0,
+          "since_baseline_median_pct": 136.1
+        },
+        {
+          "year": 2025,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 913.5,
+          "eur_per_m2_mean": 894.5,
+          "since_baseline_median_pct": 148.2
+        },
+        {
+          "year": 2026,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1086.0,
+          "eur_per_m2_mean": 1105.8,
+          "since_baseline_median_pct": 195.1
+        }
+      ]
+    },
+    {
+      "code": "pazardzhik",
+      "bg_name": "Пазарджик",
+      "en_name": "Pazardzhik",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-pazardzhik",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 13,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1025,
+      "eur_per_m2_mean": 1026.5,
+      "eur_per_m2_min": 668,
+      "eur_per_m2_max": 1156,
+      "baseline_year": 2010,
+      "since_baseline_median_pct": 215.4,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2010,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 325,
+          "eur_per_m2_mean": 319.4,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2011,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 313,
+          "eur_per_m2_mean": 319.9,
+          "since_baseline_median_pct": -3.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 11,
+          "n_dropped": 0,
+          "eur_per_m2_median": 295,
+          "eur_per_m2_mean": 303.0,
+          "since_baseline_median_pct": -9.2
+        },
+        {
+          "year": 2013,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 302.5,
+          "eur_per_m2_mean": 309.8,
+          "since_baseline_median_pct": -6.9
+        },
+        {
+          "year": 2014,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 305,
+          "eur_per_m2_mean": 303.0,
+          "since_baseline_median_pct": -6.2
+        },
+        {
+          "year": 2015,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 312.5,
+          "eur_per_m2_mean": 313.3,
+          "since_baseline_median_pct": -3.8
+        },
+        {
+          "year": 2016,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 338.5,
+          "eur_per_m2_mean": 340.5,
+          "since_baseline_median_pct": 4.2
+        },
+        {
+          "year": 2017,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 358.0,
+          "eur_per_m2_mean": 364.9,
+          "since_baseline_median_pct": 10.2
+        },
+        {
+          "year": 2018,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 407.0,
+          "eur_per_m2_mean": 387.6,
+          "since_baseline_median_pct": 25.2
+        },
+        {
+          "year": 2019,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 443.0,
+          "eur_per_m2_mean": 421.8,
+          "since_baseline_median_pct": 36.3
+        },
+        {
+          "year": 2020,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 462.5,
+          "eur_per_m2_mean": 470.8,
+          "since_baseline_median_pct": 42.3
+        },
+        {
+          "year": 2021,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 561,
+          "eur_per_m2_mean": 588.8,
+          "since_baseline_median_pct": 72.6
+        },
+        {
+          "year": 2022,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 692.0,
+          "eur_per_m2_mean": 675.3,
+          "since_baseline_median_pct": 112.9
+        },
+        {
+          "year": 2023,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 801.0,
+          "eur_per_m2_mean": 819.8,
+          "since_baseline_median_pct": 146.5
+        },
+        {
+          "year": 2024,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 879,
+          "eur_per_m2_mean": 862.5,
+          "since_baseline_median_pct": 170.5
+        },
+        {
+          "year": 2025,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 967,
+          "eur_per_m2_mean": 953.8,
+          "since_baseline_median_pct": 197.5
+        },
+        {
+          "year": 2026,
+          "n_districts": 13,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1025,
+          "eur_per_m2_mean": 1026.5,
+          "since_baseline_median_pct": 215.4
+        }
+      ]
+    },
+    {
+      "code": "plovdiv",
+      "bg_name": "Пловдив",
+      "en_name": "Plovdiv",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-plovdiv",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 41,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1524,
+      "eur_per_m2_mean": 1663.4,
+      "eur_per_m2_min": 782,
+      "eur_per_m2_max": 3283,
+      "baseline_year": 2010,
+      "since_baseline_median_pct": 182.7,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2010,
+          "n_districts": 27,
+          "n_dropped": 0,
+          "eur_per_m2_median": 539,
+          "eur_per_m2_mean": 547.4,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2011,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 506.5,
+          "eur_per_m2_mean": 490.4,
+          "since_baseline_median_pct": -6.0
+        },
+        {
+          "year": 2012,
+          "n_districts": 32,
+          "n_dropped": 0,
+          "eur_per_m2_median": 475.0,
+          "eur_per_m2_mean": 470.9,
+          "since_baseline_median_pct": -11.9
+        },
+        {
+          "year": 2013,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 503.5,
+          "eur_per_m2_mean": 489.5,
+          "since_baseline_median_pct": -6.6
+        },
+        {
+          "year": 2014,
+          "n_districts": 25,
+          "n_dropped": 0,
+          "eur_per_m2_median": 499,
+          "eur_per_m2_mean": 500.3,
+          "since_baseline_median_pct": -7.4
+        },
+        {
+          "year": 2015,
+          "n_districts": 24,
+          "n_dropped": 0,
+          "eur_per_m2_median": 528.5,
+          "eur_per_m2_mean": 526.2,
+          "since_baseline_median_pct": -1.9
+        },
+        {
+          "year": 2016,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 564.5,
+          "eur_per_m2_mean": 572.0,
+          "since_baseline_median_pct": 4.7
+        },
+        {
+          "year": 2017,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 651.5,
+          "eur_per_m2_mean": 641.5,
+          "since_baseline_median_pct": 20.9
+        },
+        {
+          "year": 2018,
+          "n_districts": 26,
+          "n_dropped": 0,
+          "eur_per_m2_median": 657.0,
+          "eur_per_m2_mean": 685.4,
+          "since_baseline_median_pct": 21.9
+        },
+        {
+          "year": 2019,
+          "n_districts": 27,
+          "n_dropped": 0,
+          "eur_per_m2_median": 737,
+          "eur_per_m2_mean": 730.1,
+          "since_baseline_median_pct": 36.7
+        },
+        {
+          "year": 2020,
+          "n_districts": 28,
+          "n_dropped": 0,
+          "eur_per_m2_median": 725.5,
+          "eur_per_m2_mean": 755.0,
+          "since_baseline_median_pct": 34.6
+        },
+        {
+          "year": 2021,
+          "n_districts": 30,
+          "n_dropped": 0,
+          "eur_per_m2_median": 868.5,
+          "eur_per_m2_mean": 915.0,
+          "since_baseline_median_pct": 61.1
+        },
+        {
+          "year": 2022,
+          "n_districts": 32,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1012.0,
+          "eur_per_m2_mean": 1090.5,
+          "since_baseline_median_pct": 87.8
+        },
+        {
+          "year": 2023,
+          "n_districts": 35,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1111,
+          "eur_per_m2_mean": 1221.1,
+          "since_baseline_median_pct": 106.1
+        },
+        {
+          "year": 2024,
+          "n_districts": 37,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1252,
+          "eur_per_m2_mean": 1334.9,
+          "since_baseline_median_pct": 132.3
+        },
+        {
+          "year": 2025,
+          "n_districts": 39,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1453,
+          "eur_per_m2_mean": 1541.7,
+          "since_baseline_median_pct": 169.6
+        },
+        {
+          "year": 2026,
+          "n_districts": 41,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1524,
+          "eur_per_m2_mean": 1663.4,
+          "since_baseline_median_pct": 182.7
+        }
+      ]
+    },
+    {
+      "code": "smolyan",
+      "bg_name": "Смолян",
+      "en_name": "Smolyan",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-smolyan",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 9,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1267,
+      "eur_per_m2_mean": 1281.3,
+      "eur_per_m2_min": 1027,
+      "eur_per_m2_max": 1554,
+      "baseline_year": 2025,
+      "since_baseline_median_pct": 1.8,
+      "trend_publishable": false,
+      "historical": [
+        {
+          "year": 2025,
+          "n_districts": 7,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1245,
+          "eur_per_m2_mean": 1246.0,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2026,
+          "n_districts": 9,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1267,
+          "eur_per_m2_mean": 1281.3,
+          "since_baseline_median_pct": 1.8
+        }
+      ]
+    },
+    {
+      "code": "haskovo",
+      "bg_name": "Хасково",
+      "en_name": "Haskovo",
+      "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-haskovo",
+      "snapshot_date": "6.8.2026",
+      "n_districts": 19,
+      "n_dropped": 0,
+      "eur_per_m2_median": 1093,
+      "eur_per_m2_mean": 1048.0,
+      "eur_per_m2_min": 715,
+      "eur_per_m2_max": 1257,
+      "baseline_year": 2010,
+      "since_baseline_median_pct": 181.3,
+      "trend_publishable": true,
+      "historical": [
+        {
+          "year": 2010,
+          "n_districts": 8,
+          "n_dropped": 0,
+          "eur_per_m2_median": 388.5,
+          "eur_per_m2_mean": 410.9,
+          "since_baseline_median_pct": 0.0
+        },
+        {
+          "year": 2011,
+          "n_districts": 12,
+          "n_dropped": 0,
+          "eur_per_m2_median": 362.5,
+          "eur_per_m2_mean": 375.5,
+          "since_baseline_median_pct": -6.7
+        },
+        {
+          "year": 2012,
+          "n_districts": 15,
+          "n_dropped": 0,
+          "eur_per_m2_median": 368,
+          "eur_per_m2_mean": 390.5,
+          "since_baseline_median_pct": -5.3
+        },
+        {
+          "year": 2013,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 396.5,
+          "eur_per_m2_mean": 394.9,
+          "since_baseline_median_pct": 2.1
+        },
+        {
+          "year": 2014,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 410.5,
+          "eur_per_m2_mean": 387.8,
+          "since_baseline_median_pct": 5.7
+        },
+        {
+          "year": 2015,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 399.5,
+          "eur_per_m2_mean": 386.9,
+          "since_baseline_median_pct": 2.8
+        },
+        {
+          "year": 2016,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 402.5,
+          "eur_per_m2_mean": 401.3,
+          "since_baseline_median_pct": 3.6
+        },
+        {
+          "year": 2017,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 408,
+          "eur_per_m2_mean": 399.8,
+          "since_baseline_median_pct": 5.0
+        },
+        {
+          "year": 2018,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 441,
+          "eur_per_m2_mean": 443.2,
+          "since_baseline_median_pct": 13.5
+        },
+        {
+          "year": 2019,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 506,
+          "eur_per_m2_mean": 480.5,
+          "since_baseline_median_pct": 30.2
+        },
+        {
+          "year": 2020,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 533,
+          "eur_per_m2_mean": 530.4,
+          "since_baseline_median_pct": 37.2
+        },
+        {
+          "year": 2021,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 568.5,
+          "eur_per_m2_mean": 564.0,
+          "since_baseline_median_pct": 46.3
+        },
+        {
+          "year": 2022,
+          "n_districts": 16,
+          "n_dropped": 0,
+          "eur_per_m2_median": 689.0,
+          "eur_per_m2_mean": 705.2,
+          "since_baseline_median_pct": 77.3
+        },
+        {
+          "year": 2023,
+          "n_districts": 17,
+          "n_dropped": 0,
+          "eur_per_m2_median": 823,
+          "eur_per_m2_mean": 805.1,
+          "since_baseline_median_pct": 111.8
+        },
+        {
+          "year": 2024,
+          "n_districts": 18,
+          "n_dropped": 0,
+          "eur_per_m2_median": 866.5,
+          "eur_per_m2_mean": 863.3,
+          "since_baseline_median_pct": 123.0
+        },
+        {
+          "year": 2025,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1002,
+          "eur_per_m2_mean": 1008.0,
+          "since_baseline_median_pct": 157.9
+        },
+        {
+          "year": 2026,
+          "n_districts": 19,
+          "n_dropped": 0,
+          "eur_per_m2_median": 1093,
+          "eur_per_m2_mean": 1048.0,
+          "since_baseline_median_pct": 181.3
         }
       ]
     }

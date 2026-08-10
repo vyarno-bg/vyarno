@@ -543,7 +543,15 @@ def test_the_imot_city_dropdown_still_offers_exactly_the_cities_we_cover():
         re.DOTALL | re.IGNORECASE,
     )
     assert select, 'imot.bg no longer renders a <select name="town"> city list'
-    offered = {m.strip() for m in re.findall(r"<option[^>]*>([^<]+)</option>", select.group(1))}
+    # imot.bg serves <option> tags WITHOUT explicit </option> closes (HTML5
+    # permits it; every browser accepts it). Match either form: a closed
+    # <option>X</option> ends at the next <, an unclosed one ends at the next
+    # <option or </select. The invariant the assertion protects — that the
+    # dropdown offers exactly the 27 cities in PRICED_REGIONS — is unchanged.
+    offered = {
+        m.strip()
+        for m in re.findall(r"<option[^>]*>([^<]+?)(?=<option|</select|$)", select.group(1))
+    }
     ours = {r.city_bg for r in PRICED_REGIONS}
     assert ours <= offered, (
         f"imot.bg no longer offers {sorted(ours - offered)} — regions.py names "

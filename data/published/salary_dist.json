@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-07-24",
+  "as_of": "2026-08-10",
   "source": "eurostat",
   "source_url": "https://ec.europa.eu/eurostat/databrowser/view/earn_ses_monthly/default/table?lang=en",
   "notes": "Individual gross-earnings distribution for Bulgaria, at Eurostat's own level (SES earn_ses_monthly, 2022). DERIVED from the published D1/median/D9: the intermediate deciles are interpolated and the P1/P99 tails extrapolated (see shape.method). This file carries no figure from any other publisher. The site re-levels it to the current national average in the reader's browser; that average is НСИ's all-activities figure, published unmodified in sector_salary.json. The shape is Bulgaria's and no publisher measures one below that, so the ranking it supports is the country's rather than any one област's. GROSS EUR/month. See docs/data-sources.md.",
@@ -37,5 +37,5 @@
     },
     "method": "Eurostat SES individual gross-earnings shape (D1/median/D9). Intermediate deciles piecewise-lognormal in the normal quantile, matching D1/median/D9 exactly; P1/P99 tails extrapolated by the nearest segment's log-slope. Rungs are at SES's own level and in SES's own units — multiply by (target mean / ses_mean) to re-level. Four decimal places so that multiplication rounds once, not twice."
   },
-  "disclaimer": "Individual-employee GROSS monthly earnings, from the 4-yearly Eurostat Structure of Earnings Survey - the only official BG earnings-distribution source. The middle deciles and the tails are modelled, not directly surveyed. The shape is national and nobody publishes one for a single oblast, so a rank read off it is the country's wherever the reader lives."
+  "disclaimer": "Individual-employee GROSS monthly earnings, from the 4-yearly Eurostat Structure of Earnings Survey — the only official BG earnings-distribution source. The middle deciles and the tails are modelled, not directly surveyed, and the shape is national: using it for Sofia assumes Sofia's dispersion tracks the national one."
 }
