@@ -26,28 +26,28 @@
     /** 11-point gross earnings ladder; index 5 is the median. */
     ladder = [],
     /** Sofia's median NET wage, for the comparator card. */
-    sofiaNet = 0,
-    /** НСИ's own published gross for the same quarter, which `sofiaNet` is our
+    regionNet = 0,
+    /** НСИ's own published gross for the same quarter, which `regionNet` is our
         conversion of. Both go on the card: the credit beside them is theirs. */
-    sofiaMeanGross = 0,
+    regionMeanGross = 0,
     salaryShapeUrl = "",
     salaryShapeYear = "",
     salaryAnchorPeriod = "",
     /** Sofia €/m² median and its provenance. */
-    sofiaEurPerM2 = 0,
-    sofiaMeanGrossUrl = "",
-    sofiaWagePeriod = "",
+    cityEurPerM2 = 0,
+    regionMeanGrossUrl = "",
+    regionWagePeriod = "",
     /** НСИ star the year until they finalise it; the card has to say so. */
-    sofiaWageIsPreliminary = false,
-    sofiaNDistricts = 0,
+    regionWageIsPreliminary = false,
+    cityNDistricts = 0,
     /** True when the €/m² came from sofia_price.json, not the offline constant. */
-    sofiaPriceIsLive = false,
-    sofiaPriceDated = "",
+    cityPriceIsLive = false,
+    cityPriceDated = "",
     /** Per-year €/m² medians back to 2015, for the sparkline. */
-    sofiaHistorical = [],
-    sofiaSince2015Pct = 0,
-    sofiaBaselineYear = 0,
-    sofiaBaselineMedian = 0,
+    cityHistorical = [],
+    citySinceBaselinePct = 0,
+    cityBaselineYear = 0,
+    cityBaselineMedian = 0,
     /** Builds a category's Eurostat verify link; anchor-dependent, so it is
         passed in rather than rebuilt here. */
     estatCatUrl,
@@ -68,12 +68,12 @@
   // DOM whatever the reader chose, so a shared `$lang` lookup files
   // «(предварителни данни)» inside the English sentence for every Bulgarian
   // reader — invisible to them, and to a suite reading only what is on screen.
-  const sofiaSrcArgs = (lang) => ({
-    gross: sofiaMeanGross > 0 ? fmt0(sofiaMeanGross) : "—",
-    net: sofiaNet > 0 ? fmt0(sofiaNet) : "—",
-    period: period(sofiaWagePeriod),
+  const regionSrcArgs = (lang) => ({
+    gross: regionMeanGross > 0 ? fmt0(regionMeanGross) : "—",
+    net: regionNet > 0 ? fmt0(regionNet) : "—",
+    period: period(regionWagePeriod),
     // Empty for a settled quarter, so the marker is absent rather than negated.
-    prelim: sofiaWageIsPreliminary ? t(COPY.srcPrelim, lang) : "",
+    prelim: regionWageIsPreliminary ? t(COPY.srcPrelim, lang) : "",
   });
 
   // The sparkline is drawn in user units scaled to the card's measured width,
@@ -196,10 +196,12 @@
               >
             </div>
           {/if}
-          {#if sofiaNet > 0}
+          {#if regionNet > 0}
             <div>
-              <span class="l-bg">{COPY.statMedianVsMean.bg.replace("{mean}", fmt0(sofiaNet))}</span>
-              <span class="l-en">{COPY.statMedianVsMean.en.replace("{mean}", fmt0(sofiaNet))}</span>
+              <span class="l-bg">{COPY.statMedianVsMean.bg.replace("{mean}", fmt0(regionNet))}</span
+              >
+              <span class="l-en">{COPY.statMedianVsMean.en.replace("{mean}", fmt0(regionNet))}</span
+              >
             </div>
           {/if}
         </div>
@@ -214,22 +216,22 @@
          salary makes "the country at a glance" change shape with what
          the reader entered, and leaves the strip with a card count no
          column layout divides. Nothing on this card is personal:
-         `sofiaNet` comes from sofia_salary.json alone. The personal
+         `regionNet` comes from sofia_salary.json alone. The personal
          verdict against it lives under the salary input, where the
          number it compares to is. -->
-    {#if sofiaNet > 0}
+    {#if regionNet > 0}
       <div class="stat">
         <div class="sv mono">
-          <span>{fmt0(sofiaNet)} €</span>
+          <span>{fmt0(regionNet)} €</span>
         </div>
         <div class="sl">
           <span class="l-bg">{COPY.statSofiaK.bg}</span>
           <span class="l-en">{COPY.statSofiaK.en}</span>
         </div>
         <div class="ss">
-          <a href={sofiaMeanGrossUrl} target="_blank" rel="noopener">
-            <span class="l-bg">{t(COPY.statSofiaSrc, "bg", sofiaSrcArgs("bg"))}</span>
-            <span class="l-en">{t(COPY.statSofiaSrc, "en", sofiaSrcArgs("en"))}</span>
+          <a href={regionMeanGrossUrl} target="_blank" rel="noopener">
+            <span class="l-bg">{t(COPY.statSofiaSrc, "bg", regionSrcArgs("bg"))}</span>
+            <span class="l-en">{t(COPY.statSofiaSrc, "en", regionSrcArgs("en"))}</span>
           </a>
         </div>
       </div>
@@ -296,8 +298,8 @@
          attributed a figure имот.bg never published to имот.bg — with «0
          квартала» as the only tell. The strip's own rule is that every card
          is gated on its own payload; this restores it. -->
-    {#if categories.length > 0 && sofiaPriceIsLive && sofiaEurPerM2 > 0}
-      {@const hP = sofiaEurPerM2 * HOME.m2Default}
+    {#if categories.length > 0 && cityPriceIsLive && cityEurPerM2 > 0}
+      {@const hP = cityEurPerM2 * HOME.m2Default}
       <div class="stat wide">
         <div class="sv mono" style="color: var(--erode)">
           <span>€{fmt0(hP)}</span>
@@ -308,11 +310,11 @@
           <span class="l-bg">{COPY.statHomeK.bg}</span>
           <span class="l-en">{COPY.statHomeK.en}</span>
         </div>
-        {#if sofiaHistorical.length > 1}
-          {@const _minH = Math.min(...sofiaHistorical.map((r) => r.eur_per_m2_median))}
-          {@const _maxH = Math.max(...sofiaHistorical.map((r) => r.eur_per_m2_median))}
+        {#if cityHistorical.length > 1}
+          {@const _minH = Math.min(...cityHistorical.map((r) => r.eur_per_m2_median))}
+          {@const _maxH = Math.max(...cityHistorical.map((r) => r.eur_per_m2_median))}
           {@const _rH = _maxH - _minH || 1}
-          {@const _last = sofiaHistorical.length - 1}
+          {@const _last = cityHistorical.length - 1}
           <!-- The plot grows with the card instead of staying a 22px
                ribbon: a 12-point series across 1000px at 22px tall is a
                flat line with no shape in it. Capped so it stays a
@@ -337,10 +339,10 @@
               aria-label={($lang === "bg"
                 ? "Медианна цена на кв. м в София, "
                 : "Sofia median €/m², ") +
-                `${sofiaHistorical[0].year}–${sofiaHistorical[_last].year}`}
+                `${cityHistorical[0].year}–${cityHistorical[_last].year}`}
             >
               <polyline
-                points={sofiaHistorical
+                points={cityHistorical
                   .map((r, i) => `${_x(i).toFixed(1)},${_y(r.eur_per_m2_median).toFixed(1)}`)
                   .join(" ")}
                 fill="none"
@@ -349,7 +351,7 @@
                 stroke-linejoin="round"
                 stroke-linecap="round"
               />
-              {#each sofiaHistorical as r, i (r.year)}
+              {#each cityHistorical as r, i (r.year)}
                 <circle
                   cx={_x(i).toFixed(1)}
                   cy={_y(r.eur_per_m2_median).toFixed(1)}
@@ -362,41 +364,41 @@
               <!-- Direct end labels: the first and last observation carry
                    their own value, so the reader never has to match a
                    floating legend to a point. -->
-              <text class="hist-lbl" x={_x(0)} y={_y(sofiaHistorical[0].eur_per_m2_median) - 9}
-                >€{fmt0(sofiaBaselineMedian)}</text
+              <text class="hist-lbl" x={_x(0)} y={_y(cityHistorical[0].eur_per_m2_median) - 9}
+                >€{fmt0(cityBaselineMedian)}</text
               >
               <text
                 class="hist-lbl"
                 x={_x(_last)}
-                y={_y(sofiaHistorical[_last].eur_per_m2_median) - 11}
-                text-anchor="end">€{fmt0(sofiaEurPerM2)}</text
+                y={_y(cityHistorical[_last].eur_per_m2_median) - 11}
+                text-anchor="end">€{fmt0(cityEurPerM2)}</text
               >
             </svg>
             <div class="hist-axes mono">
-              <span>{sofiaBaselineYear}</span>
-              <span>{sofiaHistorical[_last].year}</span>
+              <span>{cityBaselineYear}</span>
+              <span>{cityHistorical[_last].year}</span>
             </div>
             <div class="hist-delta mono">
               <span class="l-bg"
-                >{@html t(COPY.statHomeDelta, "bg", { pct: fmt(sofiaSince2015Pct, 0) })}</span
+                >{@html t(COPY.statHomeDelta, "bg", { pct: fmt(citySinceBaselinePct, 0) })}</span
               >
               <span class="l-en"
-                >{@html t(COPY.statHomeDelta, "en", { pct: fmt(sofiaSince2015Pct, 0) })}</span
+                >{@html t(COPY.statHomeDelta, "en", { pct: fmt(citySinceBaselinePct, 0) })}</span
               >
             </div>
           </div>
         {/if}
         <div class="ss">
           <div title={HOME.eurPerM2_source}>
-            <span class="l-bg">≈{fmt0(sofiaEurPerM2)}€/м² · медиана за София от обявите</span>
-            <span class="l-en">≈€{fmt0(sofiaEurPerM2)}/m² · Sofia median from public listings</span>
+            <span class="l-bg">≈{fmt0(cityEurPerM2)}€/м² · медиана за София от обявите</span>
+            <span class="l-en">≈€{fmt0(cityEurPerM2)}/m² · Sofia median from public listings</span>
           </div>
           <div>
             <a href="https://www.imot.bg/sredni-ceni" target="_blank" rel="noopener"
               >imot.bg/sredni-ceni</a
             >
-            · {sofiaNDistricts}
-            {$lang === "bg" ? "квартала" : "districts"} · {sofiaPriceDated || "—"}
+            · {cityNDistricts}
+            {$lang === "bg" ? "квартала" : "districts"} · {cityPriceDated || "—"}
           </div>
           <!-- Three of the figures on this card are OURS, and the credit line
                above names имот.bg. They publish one average per district and

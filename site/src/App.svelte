@@ -72,11 +72,11 @@
   // It is derived here rather than in the calculator because it picks WORDS,
   // and the calculator is deliberately language-agnostic. Two subtrees need
   // it, which is why it is not derived inside either of them.
-  const sofiaPriceDated = $derived(
-    calc.sofiaPricePageDate
-      ? t(COPY.srcDatedByPage, $lang, { d: calc.sofiaPricePageDate })
-      : calc.sofiaPriceAsOf
-        ? t(COPY.srcDatedByFetch, $lang, { d: calc.sofiaPriceAsOf })
+  const cityPriceDated = $derived(
+    calc.cityPricePageDate
+      ? t(COPY.srcDatedByPage, $lang, { d: calc.cityPricePageDate })
+      : calc.cityPriceAsOf
+        ? t(COPY.srcDatedByFetch, $lang, { d: calc.cityPriceAsOf })
         : ""
   );
 </script>
@@ -158,7 +158,7 @@
           <PayField {calc} />
           <InputsCard {calc} />
         </div>
-        <ResultsCard {calc} {sofiaPriceDated} />
+        <ResultsCard {calc} {cityPriceDated} />
       </div>
     {/if}
 
@@ -180,22 +180,22 @@
         headline={calc.headline}
         headlineIsFlash={calc.headlineIsFlash}
         ladder={calc.ladder}
-        sofiaNet={calc.sofiaNet}
-        sofiaMeanGross={calc.sofiaMeanGrossEur}
+        regionNet={calc.regionNet}
+        regionMeanGross={calc.regionMeanGrossEur}
         salaryShapeUrl={calc.salaryShapeUrl}
         salaryShapeYear={calc.salaryShapeYear}
         salaryAnchorPeriod={calc.salaryAnchorPeriod}
-        sofiaEurPerM2={calc.sofiaEurPerM2}
-        sofiaMeanGrossUrl={calc.sofiaMeanGrossUrl}
-        sofiaWagePeriod={calc.sofiaWagePeriod}
-        sofiaWageIsPreliminary={calc.sofiaWageIsPreliminary}
-        sofiaNDistricts={calc.sofiaNDistricts}
-        sofiaPriceIsLive={calc.sofiaPriceIsLive}
-        {sofiaPriceDated}
-        sofiaHistorical={calc.sofiaHistorical}
-        sofiaSince2015Pct={calc.sofiaSince2015Pct}
-        sofiaBaselineYear={calc.sofiaBaselineYear}
-        sofiaBaselineMedian={calc.sofiaBaselineMedian}
+        cityEurPerM2={calc.cityEurPerM2}
+        regionMeanGrossUrl={calc.regionMeanGrossUrl}
+        regionWagePeriod={calc.regionWagePeriod}
+        regionWageIsPreliminary={calc.regionWageIsPreliminary}
+        cityNDistricts={calc.cityNDistricts}
+        cityPriceIsLive={calc.cityPriceIsLive}
+        {cityPriceDated}
+        cityHistorical={calc.cityHistorical}
+        citySinceBaselinePct={calc.citySinceBaselinePct}
+        cityBaselineYear={calc.cityBaselineYear}
+        cityBaselineMedian={calc.cityBaselineMedian}
         estatCatUrl={calc.estatCatUrl}
       />
     {/if}

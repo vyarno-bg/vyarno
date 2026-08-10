@@ -787,10 +787,10 @@ test("the €/m² caption says which date it is showing", () => {
   // whichever one happens to exist — unqualified — tells the reader a precision
   // the figure does not have.
   assert.ok(
-    !LIVE_SOURCES.includes("sofiaPricePageDate || sofiaPriceAsOf"),
+    !LIVE_SOURCES.includes("cityPricePageDate || cityPriceAsOf"),
     "the €/m² caption prints whichever date it has, unqualified"
   );
-  assert.ok(LIVE_SOURCES.includes("sofiaPriceDated"), "the qualified date derivation is gone");
+  assert.ok(LIVE_SOURCES.includes("cityPriceDated"), "the qualified date derivation is gone");
 });
 
 test("the modelled pay band says it is modelled", () => {

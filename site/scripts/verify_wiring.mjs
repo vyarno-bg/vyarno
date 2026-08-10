@@ -537,20 +537,23 @@ test("the Sofia comparator reads the live НСИ wage and links to it", () => {
   // read the live `sofia_salary.json` rather than a hardcoded number, and link
   // to that payload's own source, so the figure on screen and the link under it
   // agree.
-  assert.ok(LIVE.includes("data.sofiaSalary"), "the comparator card is back on a hardcoded number");
-  for (const name of ["sofiaMeanGrossEur", "sofiaMeanGrossUrl"]) {
+  assert.ok(
+    LIVE.includes("data.regionSalary"),
+    "the comparator card is back on a hardcoded number"
+  );
+  for (const name of ["regionMeanGrossEur", "regionMeanGrossUrl"]) {
     assert.ok(LIVE.includes(name), `the calculator no longer derives \`${name}\``);
   }
-  // The gap itself is decided in view.js#sofiaGap, per earner, and the
+  // The gap itself is decided in view.js#regionGap, per earner, and the
   // component only picks the word and the colour. Both halves matter: НСИ
   // publish a WAGE, so measuring a two-earner total against it reports a
   // household of two on €900 each as above the average worker.
   assert.ok(
-    LIVE.includes("sofiaGap({ nets: nets, sofiaNet: sofiaNet })"),
+    LIVE.includes("regionGap({ nets: nets, regionNet: regionNet })"),
     "the comparator no longer computes the (earner − Sofia) gap through view.js"
   );
   assert.ok(
-    !PAY.includes("householdNet - sofiaNet"),
+    !PAY.includes("householdNet - regionNet"),
     "the comparator is back on the household total instead of one earner at a time"
   );
 });
@@ -560,11 +563,11 @@ test("the home block prices m² off the live имот.bg median, and cites imot.
   // source, and the provenance link once pointed at `prc_hicp_minr` — consumer
   // prices, the wrong dataset entirely for property.
   assert.ok(
-    APP.includes("data.sofiaPrice") && APP.includes("sofiaEurPerM2"),
+    APP.includes("data.cityPrice") && APP.includes("cityEurPerM2"),
     "the home block is back on a hardcoded value"
   );
   assert.ok(
-    APP.includes("sofiaEurPerM2 * HOME.m2Default"),
+    APP.includes("cityEurPerM2 * HOME.m2Default"),
     "the national-strip home stat no longer prices m² off the live Sofia median"
   );
 
@@ -854,7 +857,7 @@ test("the Sofia comparator states the gap once, not twice", () => {
   const delta = /function deltaPhrase\([\s\S]*?\n {2}\}/.exec(PAY);
   assert.ok(delta, "the Sofia comparator no longer builds a {delta} clause");
   assert.ok(
-    !PAY.includes("sofiaSign") && !PAY.includes("signedPct"),
+    !PAY.includes("regionSign") && !PAY.includes("signedPct"),
     "the Sofia comparator emits a sign alongside the direction word again"
   );
   assert.ok(

@@ -31,8 +31,8 @@
   import ShareCard from "./ShareCard.svelte";
   import ResultsWordmark from "./ResultsWordmark.svelte";
 
-  /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator, sofiaPriceDated: string }} */
-  const { calc, sofiaPriceDated } = $props();
+  /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator, cityPriceDated: string }} */
+  const { calc, cityPriceDated } = $props();
 </script>
 
 <div class="m-card m-results">
@@ -70,10 +70,10 @@
       maxAffordPrice={calc.maxAffordPrice}
       maxAffordM2={calc.maxAffordM2}
       limits={calc.limits}
-      sofiaEurPerM2={calc.sofiaEurPerM2}
-      sofiaNDistricts={calc.sofiaNDistricts}
-      sofiaPriceIsLive={calc.sofiaPriceIsLive}
-      {sofiaPriceDated}
+      cityEurPerM2={calc.cityEurPerM2}
+      cityNDistricts={calc.cityNDistricts}
+      cityPriceIsLive={calc.cityPriceIsLive}
+      {cityPriceDated}
     />
     <LeftoverRow {calc} />
     <SavingsRow {calc} />
@@ -89,7 +89,7 @@
     divisionSharePct={calc.divisionSharePct}
     rateForDivision={calc.rateForDivision}
     downPayPct={calc.downPayPct}
-    nDistricts={calc.sofiaHome.nDistricts}
+    nDistricts={calc.cityHome.nDistricts}
     cashEroded={calc.cashEroded}
     estatCatUrl={calc.estatCatUrl}
   />
