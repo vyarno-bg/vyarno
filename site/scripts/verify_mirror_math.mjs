@@ -37,6 +37,7 @@ import {
   contributions,
   personalInflationDetailed,
   buildLadder,
+  composeLadder,
   meanRungPosition,
   wageGap,
   rentBurden,
@@ -334,6 +335,53 @@ test("buildLadder converts every published GROSS rung to NET", () => {
     ladder.every((v, i, a) => i === 0 || v > a[i - 1]),
     "net ladder must stay strictly increasing"
   );
+});
+
+test("no composed rung is below the statutory minimum wage", () => {
+  // **A scalar re-level cannot follow a minimum wage that outran the mean.**
+  // SES's 2022 vintage sits against a €363 minimum; the anchor is НСИ's newest
+  // quarter and the minimum is €620 today — +71% against the mean's +48% — so
+  // the bottom of the scaled shape lands under a wage it is not lawful to pay
+  // a full-time employee. A rung there is an artefact of the model, and it is
+  // the one part of the ladder a reader on the minimum wage would check first.
+  //
+  // Every rung, not just P1: which cuts fall under the floor depends on the
+  // anchor and on how far the minimum has moved since the survey, and a floor
+  // written for the cut that happened to need it last is one that stops
+  // working the next time either moves.
+  const under = { P1: 200, P10: 400, P20: 600 };
+  const over = {
+    P30: 700,
+    P40: 900,
+    P50: 1100,
+    P60: 1300,
+    P70: 1600,
+    P80: 2000,
+    P90: 2600,
+    P99: 5000,
+  };
+  const dist = distOf({ ...under, ...over });
+  // An anchor equal to `ses_mean` reproduces the rungs unscaled, so the three
+  // in `under` sit below the €620.20 floor and the eight in `over` clear it.
+  const gross = composeLadder(dist, 1000);
+  for (const p of Object.keys(under)) {
+    assert.equal(gross[p], BG_PAYROLL_DEFAULT.minWageGross, `${p} was published below it`);
+  }
+  for (const [p, v] of Object.entries(over)) {
+    assert.equal(gross[p], v, `${p} was floored when it did not need to be`);
+  }
+  // Weakly rising, and `percentile` has to stay safe on the flat run the floor
+  // makes: an interpolation across two equal rungs divides by zero.
+  const ladder = buildLadder(dist, 1000);
+  assert.ok(
+    ladder.every((v, i, a) => i === 0 || v >= a[i - 1]),
+    "the floored ladder is not rising"
+  );
+  for (const salary of [0, 100, ladder[0] - 1, ladder[0], ladder[0] + 1, ladder[5]]) {
+    const p = percentile(salary, ladder);
+    assert.ok(Number.isFinite(p), `percentile(${salary}) is not a number on a floored ladder`);
+    assert.ok(p >= 1 && p <= 99, `percentile(${salary}) left the 1..99 range`);
+  }
 });
 
 test("buildLadder uses the payroll params it is given, not a frozen copy", () => {

@@ -197,6 +197,7 @@
         headlineIsFlash={calc.headlineIsFlash}
         ladder={calc.ladder}
         regionNet={calc.regionNet}
+        nationalNet={calc.nationalNet}
         regionNameBg={calc.regionNameBg}
         regionNameEn={calc.regionNameEn}
         cityNameBg={calc.cityNameBg}

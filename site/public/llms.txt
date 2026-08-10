@@ -17,7 +17,9 @@ site itself answers in Bulgarian and English on every page.
   reader's browser and nothing they type is sent anywhere.
 - https://vyarno.bg/how/ — the country's figures, explained and dated:
   inflation by the 13 COICOP divisions, tax and social contributions, the pay
-  distribution, mortgage rates, Sofia €/m² and unemployment.
+  distribution, mortgage rates, Sofia €/m² and unemployment. The pay
+  distribution and the wages there are the country's; the €/m² is Sofia's,
+  because имот.bg publish by city and no national level exists.
 - https://vyarno.bg/legal/ — terms of use, privacy, the provider's identity
   under ЗЕТ чл. 4, and each upstream's own licence wording.
 - https://vyarno.bg/support/ — who pays for the project. It is free for
@@ -36,8 +38,11 @@ own table.
 - sector_salary — the НСИ quarterly average wage by economic activity, 19 NACE
   Rev 2 sections and the all-activities total. An average, not a median: nobody
   publishes how pay is spread within a Bulgarian sector, so there is no rank
-  here to read
-- salary_dist — the pay distribution, Eurostat SES shape at a recent level
+  here to read. The all-activities total is the level the pay distribution is
+  re-levelled onto
+- salary_dist — the pay distribution, Eurostat SES shape re-levelled onto that
+  national average. It is the country's at every oblast: no publisher measures
+  how pay is spread inside one
 - city_price — €/m² across the districts of each covered city, and how far back
   имот.bg's coverage of that city supports a comparison
 - mortgage — home-loan rates and the БНБ borrowing caps

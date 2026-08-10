@@ -10,6 +10,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
+import { published } from "./published-payload.mjs";
+import { buildLadder, payrollParams } from "../src/lib/mirror.js";
+import { earnerRanks, nationalQuarter } from "../src/lib/view.js";
 
 test("the placeholder's payslip and comparator wait for a salary", { skip }, async () => {
   // The gross, the deductions and the Sofia comparison are facts about
@@ -207,8 +210,27 @@ test("two incomes are taxed as two contracts, not as one salary", { skip }, asyn
 
 test("the ladder ranks each earner, and marks each of them", { skip }, async () => {
   // The rungs are individual full-time earnings. Ranking a household total on
-  // them reports two people on €900 each as out-earning 78% of Sofia — a
-  // position nobody in that household holds.
+  // them reports two people on €900 each as out-earning far more of the
+  // country than either of them does — a position nobody in that household
+  // holds.
+  //
+  // **Asserted as the identity rather than against a threshold.** A bound like
+  // "under the 50th" is calibrated to whatever the ladder's anchor happens to
+  // be, so it goes red on a re-anchor that broke nothing and green on a
+  // household total whenever the anchor moves far enough. The two ranks below
+  // are composed from the shipped payloads through the same functions the page
+  // runs, and the assertion is that the page shows the first and not the
+  // second.
+  const ladder = buildLadder(
+    published("salary_dist"),
+    nationalQuarter(published("sector_salary")).value,
+    payrollParams(published("payroll"))
+  );
+  const [one] = earnerRanks({ nets: [900, 900], ladder });
+  const [together] = earnerRanks({ nets: [1800], ladder });
+  assert.ok(one && together, "the shipped payloads no longer compose into a ladder");
+  assert.notEqual(one.ahead, together.ahead, "the two readings coincide — the test proves nothing");
+
   await withApp(async (page, errors) => {
     await page.locator("#inSalary").fill("900");
     await page.getByRole("button", { name: /добави още един доход/i }).click();
@@ -230,9 +252,11 @@ test("the ladder ranks each earner, and marks each of them", { skip }, async () 
     // rather than a range — and it is each of theirs, not their sum's.
     const alone = /доход 1[^\n]*изпреварва[^\d]*(\d+)%/i.exec(text)?.[1];
     assert.ok(alone, `no rank was rendered for the first income: ${text.replace(/\s+/g, " ")}`);
-    assert.ok(
-      Number(alone) < 50,
-      `€900 was ranked at the ${alone}th percentile — the household total was ranked instead`
+    assert.equal(
+      Number(alone),
+      one.ahead,
+      `€900 was ranked at the ${alone}th percentile, where one earner on €900 sits at ` +
+        `${one.ahead} and their €1,800 household total at ${together.ahead}`
     );
     assert.deepEqual(errors, [], errors.join(" | "));
   });

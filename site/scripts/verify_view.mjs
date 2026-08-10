@@ -66,6 +66,7 @@ import {
   pocketVerdictState,
   answerLine,
   regionQuarter,
+  nationalQuarter,
   regionRow,
   cityRow,
   SOFIA_CITY_CODE,
@@ -2244,14 +2245,9 @@ test("the wedge ladder's share falls above the ceiling and its parts add up", ()
 
 test("payLadder pairs each rung with its cut, and says which were surveyed", () => {
   const dist = read("salary_dist");
-  const wage = read("region_salary");
+  const wage = read("sector_salary");
   if (!dist || !wage || !PAYROLL) return;
-  const ladder = payLadder({
-    salaryDist: dist,
-    regionSalary: wage,
-    regionCode: SOFIA_CITY_CODE,
-    payroll: PAYROLL,
-  });
+  const ladder = payLadder({ salaryDist: dist, sectorSalary: wage, payroll: PAYROLL });
 
   assert.equal(ladder.rungs.length, 11, "the ladder no longer has one row per published cut");
   assert.deepEqual(
@@ -2259,12 +2255,29 @@ test("payLadder pairs each rung with its cut, and says which were surveyed", () 
     [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99],
     "the cuts are out of order or out of step with the published ladder"
   );
-  // Monotonic in both columns: a table where a higher rung pays less is a
+  // Rising in both columns: a table where a higher rung pays less is a
   // re-levelling that went wrong, and it looks entirely ordinary.
+  //
+  // **Weakly, and only because the statutory floor binds.** A scalar re-level
+  // moves the whole shape by however much the MEAN moved, and Bulgaria's
+  // minimum wage has moved faster, so the bottom of the scaled shape lands
+  // under a wage it is not lawful to pay — `mirror.js#composeLadder` floors
+  // every rung there. Two rungs sharing the floor are the floor doing its job;
+  // anything above it that fails to rise is the re-levelling going wrong, and
+  // the second loop is what keeps this from being a weaker test than it reads.
+  const floor = payrollParams(PAYROLL).minWageGross;
   for (let i = 1; i < ladder.rungs.length; i += 1) {
-    assert.ok(ladder.rungs[i].gross > ladder.rungs[i - 1].gross, "the gross rungs are not rising");
-    assert.ok(ladder.rungs[i].net > ladder.rungs[i - 1].net, "the net rungs are not rising");
+    assert.ok(ladder.rungs[i].gross >= floor, "a rung composes below the statutory minimum wage");
+    assert.ok(ladder.rungs[i].gross >= ladder.rungs[i - 1].gross, "the gross rungs are not rising");
+    assert.ok(ladder.rungs[i].net >= ladder.rungs[i - 1].net, "the net rungs are not rising");
     assert.ok(ladder.rungs[i].net < ladder.rungs[i].gross, "a net rung is not below its gross");
+  }
+  const abovefloor = ladder.rungs.filter((r) => r.gross > floor);
+  for (let i = 1; i < abovefloor.length; i += 1) {
+    assert.ok(
+      abovefloor[i].gross > abovefloor[i - 1].gross,
+      "two rungs clear of the minimum wage carry the same gross"
+    );
   }
 
   // SES publishes three points for BG. Everything else is interpolated, and
@@ -2283,29 +2296,111 @@ test("payLadder takes each provenance from the publisher that owns it", () => {
   // Eurostat figure, which is the page-side version of the defect
   // `no НСИ payload carries a second publisher's figures` prevents in the data.
   const dist = read("salary_dist");
-  const wage = read("region_salary");
+  const wage = read("sector_salary");
   if (!dist || !wage || !PAYROLL) return;
-  const ladder = payLadder({
-    salaryDist: dist,
-    regionSalary: wage,
-    regionCode: SOFIA_CITY_CODE,
-    payroll: PAYROLL,
-  });
+  const ladder = payLadder({ salaryDist: dist, sectorSalary: wage, payroll: PAYROLL });
   assert.equal(ladder.anchorUrl, wage.source_url);
   assert.equal(ladder.anchorPeriod, wage.ref_period);
-  assert.equal(ladder.anchorGross, regionQuarter(wage, SOFIA_CITY_CODE).value);
+  assert.equal(ladder.anchorGross, nationalQuarter(wage).value);
   assert.equal(ladder.shapeUrl, dist.shape.source_url);
   assert.equal(ladder.shapeYear, String(dist.shape.ref_year));
 
   // Nothing at all rather than a ladder standing on a zero anchor: without the
   // НСИ level the rungs would be SES's 2022 euro amounts wearing this
   // quarter's date.
-  const orphaned = payLadder({ salaryDist: dist, regionSalary: null, payroll: PAYROLL });
+  const orphaned = payLadder({ salaryDist: dist, sectorSalary: null, payroll: PAYROLL });
   assert.equal(orphaned.anchorGross, 0);
   assert.deepEqual(
     orphaned.rungs.map((r) => r.gross),
     new Array(11).fill(0),
     "the ladder was re-levelled onto nothing and printed numbers anyway"
+  );
+});
+
+test("the ladder is anchored on the country's average and never on one област's", () => {
+  // **The failure this catches is invisible on screen.** Re-levelling
+  // Eurostat's national spread onto София's mean rescales every rung by
+  // 1915/1407 — the ladder stays monotonic, every rung stays a plausible
+  // Bulgarian wage, and a reader in Видин is told they are ahead of 27% of
+  // earners when the country's own ladder puts them at 49%. No gate, no
+  // formula test and no render test can see it; only the identity below can.
+  //
+  // SES publish D1, the median and D9 for Bulgaria and nothing below that, at
+  // any vintage, from any publisher, so a national spread times a national
+  // mean is the only pair that describes one population.
+  const dist = read("salary_dist");
+  const sectors = read("sector_salary");
+  const regions = read("region_salary");
+  if (!dist || !sectors || !regions || !PAYROLL) return;
+
+  const ladder = payLadder({ salaryDist: dist, sectorSalary: sectors, payroll: PAYROLL });
+  const national = nationalQuarter(sectors);
+  assert.equal(ladder.anchorGross, national.value);
+
+  // And it is a DIFFERENT figure from every област's, which is what makes the
+  // assertion above a real one rather than a coincidence of today's data.
+  for (const row of regions.regions) {
+    assert.notEqual(
+      ladder.anchorGross,
+      regionQuarter(regions, row.code).value,
+      `the ladder is anchored on ${row.code}'s average rather than the country's`
+    );
+  }
+  // The all-activities row is not a sector, and the picker must keep refusing
+  // it — this function is the one place the app wants it.
+  assert.ok(
+    !sectorOptions(sectors).some((o) => o.key === SECTOR_TOTAL_KEY),
+    "the all-activities row the ladder is anchored on is offered as a sector"
+  );
+});
+
+test("nationalQuarter reads НСИ's published quarter and computes nothing", () => {
+  // The same property `regionQuarter` holds, on the row the ladder's level now
+  // comes from: §2.1.1 of НСИ's licence forbids distributing производни
+  // произведения, so the level has to BE a cell they printed (docs/legal.md
+  // §НСИ). An averaging step here would move no figure a reader could check
+  // against anything.
+  const payload = read("sector_salary");
+  if (!payload) return;
+  const total = payload.sectors.find((s) => s.en_name === SECTOR_TOTAL_KEY);
+  assert.ok(total, "sector_salary.json carries no all-activities row to anchor on");
+
+  const q = nationalQuarter(payload);
+  assert.match(q.refPeriod, /^\d{4}-Q[1-4]$/);
+  assert.equal(q.value, total.value_eur);
+  assert.equal(q.value, total.series_by_period[q.refPeriod]);
+  const newest = Object.keys(total.series_by_period)
+    .filter((k) => /^\d{4}-Q[1-4]$/.test(k))
+    .sort()
+    .at(-1);
+  assert.equal(q.refPeriod, newest, "the level is not НСИ's newest published quarter");
+
+  // A payload with no «Общо» row is the empty state, never the first sector:
+  // «Добивна промишленост» in that position would re-level the whole ladder
+  // onto mining pay and look exactly as ordinary.
+  assert.deepEqual(nationalQuarter({ sectors: payload.sectors.filter((s) => s !== total) }), {
+    value: 0,
+    refPeriod: "",
+    isPreliminary: false,
+  });
+  for (const junk of [null, undefined, {}, { sectors: [] }]) {
+    assert.deepEqual(nationalQuarter(junk), { value: 0, refPeriod: "", isPreliminary: false });
+  }
+});
+
+test("the offline ladder sentinel selects the same way the live payload does", () => {
+  // `HOME.nationalWageFallback` is what composes the rungs for the few hundred
+  // milliseconds before `sector_salary.json` lands. It goes through the same
+  // selector, so the pre-load ladder cannot be built differently from the
+  // loaded one — and it carries НСИ's own quarter, because a sentinel is a
+  // shipped figure like any other (docs/legal.md §НСИ).
+  const sentinel = nationalQuarter(HOME.nationalWageFallback);
+  assert.match(sentinel.refPeriod, /^\d{4}-Q[1-4]$/);
+  assert.ok(sentinel.value > 0);
+  assert.equal(
+    sentinel.value,
+    HOME.nationalWageFallback.sectors[0].series_by_period[sentinel.refPeriod],
+    "the sentinel headline is not one of its own published cells"
   );
 });
 

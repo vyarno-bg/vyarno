@@ -55,22 +55,14 @@ export const HOME = {
   eurPerM2_country: null,
   eurPerM2_source: "Sofia median from imot.bg/sredni-ceni (data/published/city_price.json)",
   m2Default: 70,
-  // Offline sentinel for the Sofia comparator card, used only before
-  // sofia_salary.json loads.
-  //
-  // **It is НСИ's own published quarter**, in the same envelope shape as the
-  // payload, because a sentinel is a shipped file like any other and the rule
-  // holds for it too: every НСИ figure this project ships is one НСИ published
-  // (docs/legal.md §НСИ). It goes through `view.js#regionQuarter` like the live
-  // payload, so there is one implementation and the offline figure cannot drift
-  // from the online one.
-  //
-  // Refresh via `vyarno-pipeline refresh --source sofia-salary`, then copy
-  // `value` and `ref_period` across from the payload.
   // Offline sentinel for the wage comparator, in the shape `region_salary.json`
   // publishes and read through the same `view.js#regionQuarter` the live payload
   // is — one implementation, so the offline figure cannot drift from the online
   // one.
+  //
+  // **It is НСИ's own published quarter**, because a sentinel is a shipped
+  // figure like any other and the rule holds for it too: every НСИ figure this
+  // project ships is one НСИ published (docs/legal.md §НСИ).
   //
   // **It carries Sofia-city alone, and that is not an oversight.** A sentinel is
   // what renders before a fetch lands; twenty-eight области of frozen wages
@@ -78,6 +70,9 @@ export const HOME = {
   // looking exactly like the live one. One is enough to keep the card from
   // reflowing, and any other област falls back to the empty state rather than
   // to a figure nobody refreshed.
+  //
+  // Refresh via `vyarno-pipeline refresh --source region-salary`, then copy
+  // `value_eur` and `ref_period` across from the payload.
   regionSalaryFallback: {
     ref_period: "2026-Q1",
     // НСИ star the year until they finalise it, and the quarter this sentinel
@@ -98,6 +93,32 @@ export const HOME = {
   regionMeanGrossSource:
     'NSI quarterly labour survey - by oblast, average monthly gross wage, latest published quarter (Labour_1.1.2.2_EUR_EN.xlsx + Labour_1.1.2.2_EUR.xlsx, "{year}trimes" sheets, district rows)',
   regionMeanGrossSourceUrl: "https://www.nsi.bg/en/statistical-data/179/569",
+  // Offline sentinel for the LEVEL the percentile ladder is re-levelled onto —
+  // НСИ's all-activities «Общо» row, in the shape `sector_salary.json`
+  // publishes and read through the same `view.js#nationalQuarter` the live
+  // payload is. One implementation, so the pre-load rungs cannot be composed
+  // differently from the loaded ones.
+  //
+  // A DIFFERENT figure from `regionSalaryFallback` above, and the difference is
+  // the point: that one is one област's mean and this one is the country's, and
+  // the ladder may only ever take the second (view.js#payLadder).
+  //
+  // Refresh via `vyarno-pipeline refresh --source sector-salary`, then copy
+  // `value_eur` and `ref_period` across from the payload's «Total» row.
+  nationalWageFallback: {
+    ref_period: "2026-Q1",
+    // НСИ star the year until they finalise it, and the quarter this mirrors is
+    // starred — same reasoning as the region sentinel above.
+    is_preliminary: true,
+    sectors: [
+      {
+        en_name: "Total",
+        bg_name: "Общо",
+        value_eur: 1407,
+        series_by_period: { "2026-Q1": 1407 },
+      },
+    ],
+  },
   // Offline sentinel for the mortgage rate, used only before mortgage.json
   // loads. Mirrors the published ECB MIR new-business AAR (2.43% at 2026-05)
   // — the average interest rate on BG home loans signed that month.
@@ -146,7 +167,7 @@ export const COPY = {
     bg: "данък и осигуровки по нива на брутната заплата",
     en: "tax and contributions by gross pay level",
   },
-  howTblLadder: { bg: "стъпалата на заплатите в София", en: "the Sofia pay rungs" },
+  howTblLadder: { bg: "стъпалата на заплатите в страната", en: "the pay rungs, nationwide" },
   // The header's two buttons carry a glyph and nothing else, so the accessible
   // name is the only thing that says what they do — and it has to arrive in the
   // language the reader is being served. BG is the primary language here; an
@@ -759,15 +780,15 @@ export const COPY = {
     en: "Say what your raise was, to see whether you are outrunning your prices.",
   },
   answerStandOne: {
-    bg: "По чиста заплата си пред <b>{r}%</b> от работещите в София — приблизително, не точно.",
-    en: "By take-home pay you are ahead of <b>{r}%</b> of Sofia earners - roughly, not exactly.",
+    bg: "По чиста заплата си пред <b>{r}%</b> от работещите в страната — приблизително, не точно.",
+    en: "By take-home pay you are ahead of <b>{r}%</b> of earners in the country - roughly, not exactly.",
   },
   // The household form states a range and says why it is one: the rungs are
   // individual earnings, so two wages of €900 are two people at the 34th
   // percentile rather than one person at the 78th.
   answerStandMany: {
-    bg: "Заплатите в домакинството са пред <b>{low}%</b> до <b>{high}%</b> от работещите в София — всяка поотделно, приблизително.",
-    en: "The household's wages are ahead of <b>{low}%</b> to <b>{high}%</b> of Sofia earners - each on its own, roughly.",
+    bg: "Заплатите в домакинството са пред <b>{low}%</b> до <b>{high}%</b> от работещите в страната — всяка поотделно, приблизително.",
+    en: "The household's wages are ahead of <b>{low}%</b> to <b>{high}%</b> of earners in the country - each on its own, roughly.",
   },
   answerStandAsk: {
     bg: "Въведи своята заплата, за да видиш къде си спрямо останалите.",
@@ -870,8 +891,8 @@ export const COPY = {
   // to the live NSI Sofia average and converted to net — same unit as the
   // input. {m} is the net median (ladder[5]), already monthly (no ÷12).
   pctTopTxt: {
-    bg: "По нетна заплата изпреварваш <b>{r}%</b> от работещите в София. Медианната нетна заплата е <b>€{m}/мес</b>.",
-    en: "By net pay you're ahead of <b>{r}%</b> of Sofia earners - the median net pay is <b>€{m}/mo</b>.",
+    bg: "По нетна заплата изпреварваш <b>{r}%</b> от работещите в страната. Медианната нетна заплата е <b>€{m}/мес</b>.",
+    en: "By net pay you're ahead of <b>{r}%</b> of earners in the country - the median net pay is <b>€{m}/mo</b>.",
   },
   // With several incomes the sentence stops being second person, because the
   // ladder ranks PEOPLE. «Изпреварвате 61%» addressed to a household is a claim
@@ -880,22 +901,21 @@ export const COPY = {
   // once put every Sofia salary in the 99th percentile. So each income gets its
   // own line and the median is stated once underneath.
   pctEarnerLine: {
-    bg: "Доход {n} — <b>€{s}</b> — изпреварва <b>{r}%</b> от работещите в София.",
-    en: "Income {n} - <b>€{s}</b> - is ahead of <b>{r}%</b> of Sofia earners.",
+    bg: "Доход {n} — <b>€{s}</b> — изпреварва <b>{r}%</b> от работещите в страната.",
+    en: "Income {n} - <b>€{s}</b> - is ahead of <b>{r}%</b> of earners in the country.",
   },
   pctMedian: {
-    bg: "Медианната нетна заплата в София е <b>€{m}/мес</b>.",
-    en: "The median net pay in Sofia is <b>€{m}/mo</b>.",
+    bg: "Медианната нетна заплата в страната е <b>€{m}/мес</b>.",
+    en: "The median net pay in the country is <b>€{m}/mo</b>.",
   },
   pctHouseholdNote: {
     bg: "Класираме всяка заплата поотделно — подредбата показва какво изкарват отделните хора, а не домакинствата. Две заплати по €900 не са един човек с €1800.",
     en: "Each wage is ranked on its own - the ladder is what individual people earn, not what households do. Two wages of €900 are not one person on €1,800.",
   },
-  // The comparison is now net-vs-net (individual), so it's a direct rank, not
-  // a cross-unit approximation. The remaining caveat: the distribution SHAPE
-  // is from the 4-yearly Eurostat earnings survey, re-leveled to today's Sofia
-  // average — the level is live, the spread is modelled. And it's Sofia, the
-  // highest-wage region, so a national rank would be a few points higher.
+  // The comparison is net-vs-net (individual), so it's a direct rank, not a
+  // cross-unit approximation. The remaining caveat: the distribution SHAPE is
+  // from the 4-yearly Eurostat earnings survey, re-levelled onto НСИ's newest
+  // national average — the level is live, the spread is modelled.
   // "Ориентир, не присъда" was a word-for-word calque of "a guide, not a
   // verdict". «Присъда» in Bulgarian is what a court hands down; nobody says it
   // about a number, and the sentence read as translated English. The same goes
@@ -910,14 +930,19 @@ export const COPY = {
   // the number is built. «преизчисляваме» states the same operation and
   // carries no such reading. It binds every place that describes the
   // re-levelling: the explainer band, `legal.js` and the two READMEs.
-  // **The survey is national, and the sentence has to say so.**
-  // `salary_dist.json` carries the admission in its own `disclaimer` field —
-  // "the shape is national: using it for Sofia assumes Sofia's dispersion
-  // tracks the national one" — and a payload field is read by nobody the card
-  // is for. Every other clause here names a limit the reader can weigh (the
-  // survey year, who it leaves out, that Sofia flatters them); leaving out the
-  // one assumption that the ladder's SHAPE is borrowed from the country made
-  // the list read as complete when it was not.
+  // **Both halves are the country's, and the sentence has to say so**, because
+  // the picker two cards up moves other figures by область and this one it
+  // does not. A reader who has just told the page where they live will read
+  // any rank on it as local unless told otherwise — and in Благоевград, whose
+  // average is half София's, that reading is out by tens of percentile points
+  // in the direction that flatters nobody.
+  //
+  // **What may not be said is that the ladder is their област's**, and no
+  // wording gets around it: nobody publishes a pay distribution below the
+  // national level for Bulgaria, at any vintage, from any publisher
+  // (`docs/data-sources.md` §"Salary distribution"). So the limit is named
+  // instead of hidden — P11, a figure nobody publishes is uncomputed rather
+  // than concealed.
   //
   // **Where the LEVEL comes from is `pctSrc`'s to say, not this sentence's.**
   // «нивото е от НСИ · средна заплата {anchorPeriod}» is the line directly
@@ -937,8 +962,8 @@ export const COPY = {
   // the card whose whole claim is that it tells you what the figure is built
   // from. Nothing on this page may state a date the data does not.
   pctCaveat: {
-    bg: "Сравняваме всяка чиста заплата с това, което изкарват останалите в София. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), но то е за цялата страна, а не отделно за София, така че приемаме, че разликата между ниските и високите заплати в София е като в останалата страна. Затова числото показва приблизително къде си, а не точно. Извън София същата заплата те нарежда по-нагоре.",
-    en: "We compare each take-home pay with what other people in Sofia earn. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), but that survey covers the whole country rather than Sofia alone, so we assume the gap between low and high pay in Sofia looks like the national one. So the figure shows roughly where you stand, not exactly. Outside Sofia the same pay places you higher.",
+    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), а нивото е днешната средна заплата за страната. Затова числото показва приблизително къде си, а не точно. Подредбата не се мени с областта ти — никой не публикува как са разпределени заплатите вътре в една област — така че в по-бедна област същата заплата те нарежда по-нагоре, отколкото пише тук.",
+    en: "We compare each take-home pay with what people earn across the whole country. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), and the level is today's average wage for the country. So the figure shows roughly where you stand, not exactly. The ranking does not follow your oblast — nobody publishes how pay is spread inside one — so in a lower-paid oblast the same wage places you higher than it says here.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE
@@ -1261,7 +1286,7 @@ export const COPY = {
   // «нетна заплата» in the input label, the payslip and the percentile row —
   // one thing under two names makes a reader stop and check whether they are
   // the same number.
-  statMedianK: { bg: "медианна нетна заплата · София", en: "median NET pay · Sofia" },
+  statMedianK: { bg: "медианна нетна заплата · страната", en: "median NET pay · nationwide" },
   statMedianSub: {
     bg: "средните 60% взимат €{lo}–€{hi}/мес",
     en: "the middle 60% take €{lo}–€{hi}/mo",
@@ -1752,7 +1777,10 @@ export const COPY = {
   howKTax: { bg: "данък върху дохода", en: "income tax" },
   howKCeiling: { bg: "максимален осигурителен доход", en: "maximum insurable income" },
   howKMinWage: { bg: "минимална брутна заплата", en: "minimum gross wage" },
-  howKSofiaWage: { bg: "средна брутна заплата в София", en: "average gross wage in Sofia" },
+  howKNationalWage: {
+    bg: "средна брутна заплата в страната",
+    en: "average gross wage, nationwide",
+  },
   howKAar: { bg: "лихва по нови жилищни кредити", en: "rate on new home loans" },
   howKAprc: { bg: "ГПР по същите кредити", en: "APRC on the same loans" },
   howKStock: {

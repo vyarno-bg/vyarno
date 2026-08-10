@@ -290,16 +290,19 @@ happens.
 **What this repository does instead is have no derived figure to argue about.**
 The workbook НСИ publish carries both a monthly sheet and one sheet per year of
 their own quarterly averages, `2020trimes` … `2026trimes`. `region_salary.json`
-carries the quarterly series, `value` and `ref_period` are НСИ's latest
-published quarter, and `view.js#regionQuarter` selects that headline rather than
-computing one. `sector_salary.json` is the same arrangement over their sibling
+carries each област's quarterly series, every row's `value_eur` is НСИ's cell at
+the payload's own `ref_period`, and `view.js#regionQuarter` selects that
+headline rather than computing one. `sector_salary.json` is the same arrangement over their sibling
 by-activity table `Labour_1.1.2.1`: twenty rows, each carrying the quarters НСИ
 printed and a headline that IS one of them. Every НСИ figure this project ships
 — payload, offline sentinel, screen — is a cell НСИ published.
 
 - The Sofia level the site quotes is 1915 EUR at 2026-Q1 because that is what
   НСИ print. It is also more accurate than the alternative: the mean of their
-  three rounded monthly cells gives 1914.7.
+  three rounded monthly cells gives 1914.7. The level the percentile ladder is
+  re-levelled onto — 1407 EUR at the same quarter — is their all-activities
+  «Общо» cell from the sibling table, selected by `view.js#nationalQuarter` for
+  the same reason and under the same rule.
 - `pctSrc` therefore attributes the level to НСИ without qualification —
   «нивото е от НСИ · средна заплата {quarter}» — which is a true statement only
   while nothing in the chain averages anything. `regionQuarter reads НСИ's
@@ -310,7 +313,8 @@ printed and a headline that IS one of them. Every НСИ figure this project shi
   `no НСИ payload carries a second publisher's figures` in
   `verify_data_contracts.mjs` asserts that across every published payload, and
   separately that each headline is one of the quarters in the series beside it —
-  for all 28 rows of `region_salary.json` and all twenty of `sector_salary.json`.
+  for all 28 rows of `region_salary.json` and all twenty of `sector_salary.json`,
+  the all-activities row the ladder's level comes from included.
 - **The by-activity table is read in both of НСИ's own language editions**, so
   the Bulgarian section names are theirs and not our translation of their
   English. That is an accuracy choice before it is a licence one — §2.3.3 binds

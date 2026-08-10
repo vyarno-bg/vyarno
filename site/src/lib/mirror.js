@@ -414,13 +414,13 @@ export function percentile(monthlySalary, ladder) {
 }
 
 /**
- * Re-level the published Eurostat shape onto today's Sofia average.
+ * Re-level the published Eurostat shape onto НСИ's newest national average.
  *
  * WHY THIS ARITHMETIC IS HERE AND NOT IN THE PIPELINE
  *
  * One publisher per file, joined at the last possible moment.
  * `salary_dist.json` is Eurostat's shape at Eurostat's own level;
- * `sofia_salary.json` is НСИ's monthly figures as НСИ published them. Each
+ * `sector_salary.json` is НСИ's quarterly figures as НСИ published them. Each
  * carries one publisher's data and travels under that publisher's terms, which
  * is what makes both of them straightforward to redistribute — including by
  * anyone who forks this.
@@ -435,11 +435,22 @@ export function percentile(monthlySalary, ladder) {
  * rungs carry four decimals precisely so this multiplication rounds once —
  * rounding at 1 dp on both sides moves three of the eleven rungs by €0.10.
  *
- * The statutory minimum wage floors P1 *after* scaling, which is the only
- * place it means anything: an unlevelled rung is not a wage anyone earns.
+ * **The statutory minimum wage floors EVERY rung, after scaling.** A scalar
+ * re-level moves the whole distribution by however much the MEAN moved, and
+ * Bulgaria's minimum wage has moved faster: €363/month in SES's 2022 vintage
+ * against €620 today, +71%, where the mean went 949 → 1407, +48%. So the
+ * bottom of the scaled shape lands under a wage it is not lawful to pay a
+ * full-time employee — P10 composes to €558 — and a rung below the legal floor
+ * is an artefact of the model rather than a wage anybody is on.
+ *
+ * The floor is applied after scaling, which is the only place it means
+ * anything: an unlevelled rung is not a wage anyone earns. It leaves the ladder
+ * weakly rising rather than strictly, and `percentile` is safe on that — a flat
+ * pair at the bottom is behind the `salary <= ladder[0]` branch, so the
+ * interpolation never divides by a zero span.
  *
  * @param {{shape?: {ladder_ses?: Record<string, number>, ses_mean?: number}}} dist
- * @param {number} anchorGrossMean  today's Sofia mean gross, EUR/month
+ * @param {number} anchorGrossMean  today's national mean gross, EUR/month
  * @param {object} [params]  payroll params (from `payrollParams(data.payroll)`)
  * @returns {Record<string, number>} GROSS EUR/month per cut, or {} if unusable
  */
@@ -453,7 +464,7 @@ export function composeLadder(dist, anchorGrossMean, params = BG_PAYROLL_DEFAULT
   for (const p of SALARY_LADDER_CUTS) {
     const base = rungs[`P${p}`];
     if (base == null) continue;
-    const scaled = p <= 1 ? Math.max(base * f, params.minWageGross) : base * f;
+    const scaled = Math.max(base * f, params.minWageGross);
     out[`P${p}`] = Math.round(scaled * 10) / 10;
   }
   return out;
@@ -469,7 +480,7 @@ export function composeLadder(dist, anchorGrossMean, params = BG_PAYROLL_DEFAULT
  * Comparing net-to-net is what makes the percentile honest.
  *
  * @param {object} dist  salary_dist.json payload
- * @param {number} anchorGrossMean  today's Sofia mean gross, EUR/month
+ * @param {number} anchorGrossMean  today's national mean gross, EUR/month
  * @param {object} [params]  payroll params (from `payrollParams(data.payroll)`)
  * @returns {number[]} 11 NET monthly EUR values at cuts 1,10,...,90,99
  */

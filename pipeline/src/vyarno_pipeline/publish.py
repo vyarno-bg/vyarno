@@ -303,9 +303,11 @@ def write_salary_distribution_payload(
 
     **Every figure in this file is Eurostat's**, which keeps it to one
     publisher's data and one publisher's terms. The ladder the reader sees is
-    this shape multiplied by (НСИ Sofia average / SES mean), and that
+    this shape multiplied by (НСИ national average / SES mean), and that
     multiplication happens in their browser — `mirror.js#composeLadder` — over
-    НСИ's own published quarter in `sofia_salary.json`.
+    НСИ's own published quarter in `sector_salary.json`. The spread here is
+    Bulgaria's and nobody publishes one below that, so the level it meets has to
+    be Bulgaria's too (docs/data-sources.md §"Salary distribution").
 
     Splitting it costs nothing in accuracy: the re-level is a scalar multiply,
     so `rung(f) == f * rung(1)` exactly, which is why the rungs below carry
@@ -325,8 +327,11 @@ def write_salary_distribution_payload(
             "the published D1/median/D9: the intermediate deciles are "
             "interpolated and the P1/P99 tails extrapolated (see shape.method). "
             "This file carries no figure from any other publisher. The site "
-            "re-levels it to the current Sofia average in the reader's browser; "
-            "that average is НСИ's, published unmodified in sofia_salary.json. "
+            "re-levels it to the current national average in the reader's "
+            "browser; that average is НСИ's all-activities figure, published "
+            "unmodified in sector_salary.json. The shape is Bulgaria's and no "
+            "publisher measures one below that, so the ranking it supports is "
+            "the country's rather than any one област's. "
             "GROSS EUR/month. See docs/data-sources.md."
         ),
     )

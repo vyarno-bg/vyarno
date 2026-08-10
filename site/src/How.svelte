@@ -14,7 +14,7 @@
    * **Every number here is the country's and none is the reader's.** There is
    * no input on this page and there must never be one: the four values it
    * reads off `Calculator` — `systemWedge`, `payLadderRows`, `cityHome`,
-   * `regionWageGrid` — are functions of the published payloads alone, and each
+   * `nationalWageGrid` — are functions of the published payloads alone, and each
    * takes payloads rather than scalars precisely so a reader's figure cannot be
    * threaded into one (calculator.svelte.js §"Derived: the country, with nobody
    * in it"). The tax
@@ -76,7 +76,7 @@
    * НСИ star a whole year until they finalise it, and 2026 is starred. The
    * calculator says so on both of its НСИ credit lines — «… · 2026-Q1
    * (предварителни данни)» — and this page, whose entire job is provenance, was
-   * showing the same cell as settled in four places: the Sofia wage card, the
+   * showing the same cell as settled in four places: the wage card, the
    * years-of-pay card, the ladder's caption and the quarterly wage table. A
    * figure the publisher will revise, shown as final, tells the reader more
    * certainty than exists (P4).
@@ -89,8 +89,10 @@
     bg: periodLong(p, "bg") + (preliminary ? t(COPY.srcPrelim, "bg") : ""),
     en: periodLong(p, "en") + (preliminary ? t(COPY.srcPrelim, "en") : ""),
   });
-  /** True while НСИ have not finalised the quarter the wage figures come from. */
-  const wagesArePreliminary = $derived(Boolean(calc.data.regionSalary?.is_preliminary));
+  /** True while НСИ have not finalised the quarter the wage figures come from.
+      Both НСИ payloads carry the same quarter under the same marker, and the
+      by-activity one is where every wage on this page comes from. */
+  const wagesArePreliminary = $derived(Boolean(calc.data.sectorSalary?.is_preliminary));
   const onDay = (d) => ({ bg: dateShort(d, "bg"), en: dateShort(d, "en") });
   /**
    * WHICH date is on the имот.bg figures, said out loud.
@@ -636,8 +638,8 @@
   <!-- 4 ------------------------------------------------------------------ -->
   <section id="ladder">
     <h2>
-      <span class="l-bg">Къде сяда една заплата в София</span>
-      <span class="l-en">Where a salary sits in Sofia</span>
+      <span class="l-bg">Къде сяда една заплата в страната</span>
+      <span class="l-en">Where a salary sits in the country</span>
     </h2>
     <p>
       <span class="l-bg"
@@ -645,26 +647,30 @@
         <b>колко са разпънати заплатите</b> — с колко човек в горния край изкарва повече от човек в
         долния. То е от изследването на Евростат за заплатите, мери един човек с една заплата, но
         излиза веднъж на четири години, тоест сумите в него са остарели. Второто е
-        <b>днешната средна заплата в София</b>, която НСИ публикува всяко тримесечие. Взимаме
+        <b>днешната средна заплата за страната</b>, която НСИ публикува всяко тримесечие. Взимаме
         разпъването от първото и го прилагаме върху днешната средна от второто, за да носят
-        стъпалата днешни суми. После всяко стъпало се превръща от бруто в нето.</span
+        стъпалата днешни суми. После всяко стъпало се превръща от бруто в нето. И двете числа са за
+        цялата страна — как са разпределени заплатите вътре в една област не се публикува от никого,
+        затова тази подредба не се мени с областта.</span
       >
       <span class="l-en"
         >This needs two official numbers, because neither is enough on its own. The first says
         <b>how far apart wages are</b> — how much more someone near the top earns than someone near
         the bottom. It comes from Eurostat's earnings survey, counts one person and one wage at a
         time, but is published once every four years, so its amounts are out of date. The second is
-        <b>today's average wage in Sofia</b>, which NSI publishes every quarter. We take the spread
-        from the first and set it against today's average from the second, so the rungs carry
-        today's amounts. Each rung is then converted from gross to net.</span
+        <b>today's average wage for the country</b>, which NSI publishes every quarter. We take the
+        spread from the first and set it against today's average from the second, so the rungs carry
+        today's amounts. Each rung is then converted from gross to net. Both figures are the whole
+        country's — nobody publishes how wages are spread inside one oblast, so this ladder does not
+        change with the oblast.</span
       >
     </p>
 
     <div class="stats">
-      {#if calc.data.regionSalary}
+      {#if calc.data.sectorSalary}
         {@render stat(
           `${fmt0(calc.payLadderRows.anchorGross)} €`,
-          COPY.howKSofiaWage,
+          COPY.howKNationalWage,
           COPY.srcNsiWages,
           calc.payLadderRows.anchorUrl,
           when(calc.payLadderRows.anchorPeriod, wagesArePreliminary)
@@ -760,14 +766,14 @@
           изкарва човекът точно по средата и колко — най-високо платените 10%. Всички стъпала между
           тях са пресметнати, а не преброени, и таблицата казва кое кое е. Затова числото показва
           приблизително къде се нарежда една заплата, а не точно: никой не е обиколил всички
-          работещи в София този месец.</span
+          работещи в страната този месец.</span
         >
         <span class="l-en"
           >The survey gives three figures for Bulgaria: what the lowest-paid 10% earn, what the
           person exactly in the middle earns, and what the highest-paid 10% earn. Every rung between
           them is worked out rather than counted, and the table says which is which. So the figure
-          shows roughly where a salary sits, not exactly: nobody polled every worker in Sofia this
-          month.</span
+          shows roughly where a salary sits, not exactly: nobody polled every worker in the country
+          this month.</span
         >
       </p>
     {/if}
@@ -994,14 +1000,14 @@
       <span class="l-bg"
         >Безработицата е сезонно изгладена — месечните ѝ колебания от селското стопанство, туризма и
         строителството са извадени, за да се вижда посоката, а не сезонът. Заплатите под нея са
-        тримесечните числа на НСИ за София, така както са публикувани: избираме клетка, не смятаме
-        средни от техните числа.</span
+        тримесечните числа на НСИ за страната, така както са публикувани: избираме клетка, не
+        смятаме средни от техните числа.</span
       >
       <span class="l-en"
         >Unemployment is seasonally adjusted — the month-to-month swings from farming, tourism and
         construction are taken out so the direction shows rather than the season. The wages below
-        are NSI's own quarterly figures for Sofia, exactly as published: a cell is selected, never
-        averaged.</span
+        are NSI's own quarterly figures for the country, exactly as published: a cell is selected,
+        never averaged.</span
       >
     </p>
 
@@ -1027,7 +1033,7 @@
          a year row is four cells НСИ published, side by side, and the column a
          reader would expect at the end of it — the year's average — is exactly
          what their licence does not allow us to distribute. -->
-    {#if calc.regionWageGrid.length > 0}
+    {#if calc.nationalWageGrid.length > 0}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <!-- A scroll container IS interactive to a keyboard, and the rule cannot
            see that: without the attribute the arrow keys reach nothing, which
@@ -1057,7 +1063,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each calc.regionWageGrid as row (row.year)}
+            {#each calc.nationalWageGrid as row (row.year)}
               <tr>
                 <th scope="row" class="mono">{row.year}</th>
                 {#each row.cells as cell, i (QUARTERS[i])}

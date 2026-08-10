@@ -234,7 +234,7 @@ def test_published_payload_carries_no_second_publisher(tmp_path):
     blob = json.dumps(payload, ensure_ascii=False).lower()
     assert "anchor" not in payload
     assert "nsi.bg" not in blob
-    assert "нси" not in blob or "sofia_salary.json" in blob, (
+    assert "нси" not in blob or "sector_salary.json" in blob, (
         "the payload may mention НСИ only to point at where their data actually "
         "lives; it must not carry any of it"
     )

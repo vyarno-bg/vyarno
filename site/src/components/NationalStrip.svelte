@@ -27,6 +27,11 @@
     ladder = [],
     /** The chosen област's average NET wage, for the comparator card. */
     regionNet = 0,
+    /** The COUNTRY's average NET wage. The median card's foot line sets the
+        modelled median beside a mean, and both have to describe the same
+        people: a national median against an област's mean says «средната е
+        по-висока» where НСИ publish a lower one, and in Видин it is. */
+    nationalNet = 0,
     /** НСИ's own name for that област, in each language, or "" before a reader
         has picked one. Both languages arrive because the strip renders both
         and lets CSS pick — a single string would put a Bulgarian name in the
@@ -162,8 +167,8 @@
       </div>
     {/if}
     <!-- Median NET pay card — ALWAYS ON (no salary needed). The median
-         is the honest "what people actually earn" figure: half of Sofia
-         earners take less, half take more. Unlike the average it isn't
+         is the honest "what people actually earn" figure: half of the
+         country's earners take less, half take more. Unlike the average it isn't
          pulled up by a handful of very high salaries — the foot line
          spells out that gap. {ladder} is the net rung array from
          buildLadder: [5]=P50 (median), [2]=P20, [8]=P80. -->
@@ -220,11 +225,13 @@
               >
             </div>
           {/if}
-          {#if regionNet > 0}
+          {#if nationalNet > 0}
             <div>
-              <span class="l-bg">{COPY.statMedianVsMean.bg.replace("{mean}", fmt0(regionNet))}</span
+              <span class="l-bg"
+                >{COPY.statMedianVsMean.bg.replace("{mean}", fmt0(nationalNet))}</span
               >
-              <span class="l-en">{COPY.statMedianVsMean.en.replace("{mean}", fmt0(regionNet))}</span
+              <span class="l-en"
+                >{COPY.statMedianVsMean.en.replace("{mean}", fmt0(nationalNet))}</span
               >
             </div>
           {/if}
