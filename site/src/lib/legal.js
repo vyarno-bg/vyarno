@@ -868,8 +868,8 @@ const DOC_BODIES = [
         //
         // имот.bg is in here on the reader's account rather than a publisher's.
         // They impose no condition at all (docs/legal.md §имот.bg), so nothing
-        // obliges this sentence — but the housing card prints one €/m² for
-        // Sofia under a link to a page that publishes 143 district figures and
+        // obliges this sentence — but the housing card prints one €/m² for a
+        // city under a link to a page that publishes a figure per district and
         // no city total, and a reader who follows that link has to be able to
         // find out where the single number came from. Naming the four sources
         // whose figures are verbatim and leaving the fifth unmentioned reads as
