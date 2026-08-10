@@ -1,7 +1,16 @@
 <script>
   /**
-   * Which област the reader lives in — the one control that moves the wage
-   * comparator and the €/m² and moves nothing else.
+   * Where the reader lives — the one control that moves the wage comparator and
+   * the €/m² and moves nothing else.
+   *
+   * **It asks «Къде живееш?» over a list of place names, and that is not a
+   * cosmetic choice about a control that reads НСИ's области.** For 26 of the
+   * 28 НСИ's област name and имот.bg's град name are the same string character
+   * for character, and every имот.bg city is an областен център — so the two
+   * pickers are the same 28 entries and not one figure moves between them. What
+   * the vocabulary changed is whether a person can answer. The scope the names
+   * hide is stated where each figure is: the wage card says it covers the whole
+   * област, the housing card names the град.
    *
    * **A native `<select>`, and inline rather than a modal.** Three reasons, and
    * the first two are not preferences. `docs/seo.md` prerenders every indexable
@@ -44,7 +53,6 @@
   // publish none» may be said in имот.bg's name — but on a 28-item list at
   // 360px both are the same fact to a reader choosing: there is no €/m² behind
   // this one. The distinction is drawn where the sentence is.
-  const priced = $derived(options.filter((o) => o.coverage === CITY_PRICED).length);
 </script>
 
 <div class="region">
@@ -63,8 +71,8 @@
     {/each}
   </select>
   <p class="hint">
-    <span class="l-bg">{t(COPY.regionHint, "bg", { n: options.length, p: priced })}</span>
-    <span class="l-en">{t(COPY.regionHint, "en", { n: options.length, p: priced })}</span>
+    <span class="l-bg">{COPY.regionHint.bg}</span>
+    <span class="l-en">{COPY.regionHint.en}</span>
   </p>
 </div>
 

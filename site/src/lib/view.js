@@ -234,38 +234,56 @@ export const CITY_UNREAD = "unread";
 export const CITY_NO_PAGE = "nopage";
 
 /**
+ * The two НСИ labels that cannot stand alone in a list, and what a person calls
+ * them instead.
+ *
+ * НСИ name BG411 «София(столица)» and the област around it «София», because in
+ * their table both are области. In a control asking somebody where they live,
+ * one of those is the capital and the other is the only entry on the list that
+ * is not a town — and «София (столица)» beside «София (област)», which is what
+ * a mechanical bracket rule produces from the same pair, is administrative
+ * vocabulary in both halves. «София» and «Софийска област» are what a Bulgarian
+ * says out loud.
+ *
+ * Exported so `verify_view.mjs` can hold the keys against the live payload:
+ * a key that matches no row is НСИ having renamed one, and the rename then
+ * stops applying silently — «София» would render for the ОБЛАСТ, adjacent to
+ * the capital in the same list, with a wage 32% lower behind it.
+ */
+export const REGION_RENAMES = Object.freeze({
+  bg: Object.freeze({ "София(столица)": "София", София: "Софийска област" }),
+  en: Object.freeze({ "Sofia cap.": "Sofia", Sofia: "Sofia oblast" }),
+});
+
+/**
  * The name the picker, the cards and every caption print for one област.
  *
- * НСИ's own label is the base and stays the base. Two of theirs cannot stand
- * alone in a list, and it is the pair that costs most: «София» is the област
- * around the capital, «София(столица)» is the capital, the picker sorts them
- * adjacent, and a reader who takes the first gets a wage 32% lower and no €/m²
- * at all.
+ * НСИ's own label is the base and stays the base for twenty-six of the
+ * twenty-eight; the pair above is renamed, and it is the pair that costs most.
+ * The picker sorts the two Софии adjacent, and a reader who takes the wrong one
+ * is compared against a wage 32% lower and told nobody publishes a €/m² where
+ * they live.
  *
- * **The rule is over the collection, not over those two names.** A label that
- * another label in the same payload starts with cannot be told from the longer
- * one at a glance, so it takes the word for "oblast" after it. НСИ splitting
- * «Пловдив» into a city row tomorrow disambiguates «Пловдив» the same way, with
- * no edit here — which is the difference between a rule and a table of two
- * exceptions that stops working the next time НСИ change something.
+ * **A table of two needs a rule over the whole collection beside it, and that
+ * rule is a test rather than a branch in here.** `verify_view.mjs` asserts over
+ * the published payload that every option name is non-empty and unique, that
+ * both keys above still match a row НСИ publish, and that no name the table did
+ * not write is a whole-word prefix of another. So an НСИ split this table does
+ * not cover — a «Пловдив(град)» row appearing beside «Пловдив» — fails a run
+ * instead of shipping two entries a reader cannot tell apart.
  *
- * The space before «(столица)» is the other half, and it is typography rather
- * than a rename: Bulgarian writes one, НСИ's sheet omits it, and «София(столица)»
- * beside «София (област)» reads as two different kinds of thing.
+ * The bracket spacing below is the other half of that rule and not decoration:
+ * НСИ write no space before the bracket, Bulgarian writes one, and normalising
+ * it is what lets the prefix test see such a split at all.
  *
  * @param {string} name   НСИ's own label for this row, in one language
- * @param {ReadonlyArray<string>} all  every label in that language, this one included
  * @param {"bg"|"en"} lang
  * @returns {string}
  */
-export function regionDisplayName(name, all, lang) {
-  const base = String(name ?? "").replace(/(\S)\(/g, "$1 (");
-  if (!base) return "";
-  const ambiguous = (all ?? []).some((other) => {
-    const o = String(other ?? "").replace(/(\S)\(/g, "$1 (");
-    return o !== base && o.startsWith(`${base} `);
-  });
-  return ambiguous ? `${base} (${lang === "bg" ? "област" : "oblast"})` : base;
+export function regionDisplayName(name, lang) {
+  const raw = String(name ?? "").trim();
+  if (!raw) return "";
+  return REGION_RENAMES[lang === "bg" ? "bg" : "en"][raw] ?? raw.replace(/(\S)\(/g, "$1 (");
 }
 
 /**
@@ -278,8 +296,9 @@ export function regionDisplayName(name, all, lang) {
  * ranking. Bulgarian sorts with the BG collator, which orders Cyrillic
  * correctly where a plain `<` does not.
  *
- * The names are НСИ's own in each language, straight from the payload, through
- * `regionDisplayName` — nothing here transliterates: their Bulgarian for BG411
+ * The names come out of the payload in each language through
+ * `regionDisplayName`, which passes twenty-six of them through unchanged and
+ * renames the two Софии. Nothing here transliterates: their Bulgarian for BG411
  * is «София(столица)», which is not a string anybody would arrive at from
  * "Sofia cap.".
  *
@@ -298,11 +317,10 @@ export function regionOptions(regionSalary, cityPrice, lang) {
   const priced = new Set((cityPrice?.cities ?? []).map((c) => c?.code).filter(Boolean));
   const pages = new Set(cityPrice?.city_pages ?? []);
   const collator = new Intl.Collator(lang === "bg" ? "bg" : "en");
-  const labels = rows.map((r) => (lang === "bg" ? r?.bg_name : r?.en_name) ?? "");
   return rows
     .map((r) => ({
       code: r?.code ?? "",
-      name: regionDisplayName(lang === "bg" ? r?.bg_name : r?.en_name, labels, lang),
+      name: regionDisplayName(lang === "bg" ? r?.bg_name : r?.en_name, lang),
       coverage: priced.has(r?.code) ? CITY_PRICED : pages.has(r?.code) ? CITY_UNREAD : CITY_NO_PAGE,
     }))
     .filter((o) => o.code && o.name)
@@ -313,9 +331,8 @@ export function regionOptions(regionSalary, cityPrice, lang) {
  * One област's display name in both languages, or "" for each.
  *
  * Both, because `calculator.svelte.js` is language-agnostic and the components
- * pick — and because the disambiguation rule needs every label in the language
- * it is disambiguating within, which is a fact about the payload rather than
- * about the row.
+ * pick. One implementation with the picker's, so a card cannot print a name the
+ * option the reader chose it with did not carry.
  *
  * @param {object|null} regionSalary  data.regionSalary (region_salary.json)
  * @param {string} code
@@ -326,16 +343,8 @@ export function regionNames(regionSalary, code) {
   const row = rows.find((r) => r?.code === code);
   if (!row) return { bg: "", en: "" };
   return {
-    bg: regionDisplayName(
-      row.bg_name,
-      rows.map((r) => r?.bg_name),
-      "bg"
-    ),
-    en: regionDisplayName(
-      row.en_name,
-      rows.map((r) => r?.en_name),
-      "en"
-    ),
+    bg: regionDisplayName(row.bg_name, "bg"),
+    en: regionDisplayName(row.en_name, "en"),
   };
 }
 

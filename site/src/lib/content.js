@@ -963,8 +963,8 @@ export const COPY = {
   // the card whose whole claim is that it tells you what the figure is built
   // from. Nothing on this page may state a date the data does not.
   pctCaveat: {
-    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), а нивото е днешната средна заплата за страната. Затова числото показва приблизително къде си, а не точно. Подредбата не зависи от областта ти — никой не публикува как са разпределени заплатите вътре в една област — така че в област с по-ниски заплати същата заплата те нарежда по-нагоре, отколкото пише тук.",
-    en: "We compare each take-home pay with what people earn across the whole country. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), and the level is today's average wage for the country. So the figure shows roughly where you stand, not exactly. The ranking does not follow your oblast — nobody publishes how pay is spread inside one — so in a lower-paid oblast the same wage places you higher than it says here.",
+    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, без държавната администрация), а нивото е днешната средна заплата за страната. Затова числото показва приблизително къде си, а не точно. Подредбата не се мести с това къде живееш — никой не публикува как са разпределени заплатите вътре в една област — така че там, където заплатите са по-ниски, същата заплата те нарежда по-нагоре, отколкото пише тук.",
+    en: "We compare each take-home pay with what people earn across the whole country. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, public administration excluded), and the level is today's average wage for the country. So the figure shows roughly where you stand, not exactly. The ranking does not move with where you live — nobody publishes how pay is spread inside one oblast — so where wages are lower the same pay places you higher than it says here.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE
@@ -1328,17 +1328,22 @@ export const COPY = {
     bg: "средна нетна заплата · {region}",
     en: "average NET pay · {region}",
   },
-  // What the card says before a reader has picked an област. There is no
-  // default (P7): Sofia-by-default would hand a Бургас reader Sofia's average
-  // wearing the appearance of a choice they made, which is the same defect the
-  // blank raise field exists to avoid.
+  // What the card says before a reader has picked. There is no default (P7):
+  // Sofia-by-default would hand a Бургас reader Sofia's average wearing the
+  // appearance of a choice they made, which is the same defect the blank raise
+  // field exists to avoid.
+  //
+  // **It asks for a place, not for an «област».** The control above it asks
+  // «Къде живееш?» and the two empty states are the only other place the reader
+  // is told what is missing — a prompt naming an administrative unit sends them
+  // looking for a control that is not there.
   statRegionUnset: {
-    bg: "средна нетна заплата · избери област",
-    en: "average NET pay · choose an oblast",
+    bg: "средна нетна заплата · избери къде живееш",
+    en: "average NET pay · choose where you live",
   },
   statRegionUnsetHint: {
-    bg: "избери областта си по-горе, за да сравним заплатата ти с нейната средна",
-    en: "choose your oblast above to compare your pay with its average",
+    bg: "кажи по-горе къде живееш, за да сравним заплатата ти със средната там",
+    en: "say above where you live, to compare your pay with the average there",
   },
   // One coherent clause rather than spliced fragments: the {delta}
   // placeholder carries the whole "+28% над" / "-28% под" / "≈ на" phrase,
@@ -1361,29 +1366,41 @@ export const COPY = {
   // the same reason: {delta} carries the whole "+28% над" phrase so the
   // Bulgarian stays grammatical, and {sector} is НСИ's own section name in the
   // reader's language — never our translation of the other edition's.
-  // The област picker. Its own block rather than beside the sector one,
-  // because the two answer different questions and only this one moves which
-  // published figures the page reads.
-  regionLabel: { bg: "Твоята област", en: "Your oblast" },
-  regionNone: { bg: "— избери област —", en: "— choose an oblast —" },
+  // The place picker. Its own block rather than beside the sector one, because
+  // the two answer different questions and only this one moves which published
+  // figures the page reads.
+  //
+  // **IT ASKS A QUESTION AND THE QUESTION IS NOT «КОЯ Е ТВОЯТА ОБЛАСТ».**
+  // «Област» is what НСИ call the row the wage comes from; a person knows the
+  // town they live in, and for twenty-six of the twenty-eight the two are the
+  // same word anyway — Варна, Пловдив, Бургас, Русе. What the vocabulary bought
+  // was nothing: every имот.bg city is an областен център, so an «област»
+  // picker and a place picker are the same 28 entries and not one number
+  // changes. What it cost was a reader looking for a control they had no name
+  // for. The word survives only where it says what a figure COVERS —
+  // `statRegionSrc` and `sectorNationwide` — never as the thing being asked.
+  regionLabel: { bg: "Къде живееш?", en: "Where do you live?" },
+  regionNone: { bg: "— избери —", en: "— choose —" },
   // The suffix on the one option имот.bg publishes no price for. In the list
   // rather than out of it: НСИ publish a wage for Софийска област and a reader
   // who lives there should get it, with the missing half named rather than
   // silently absent.
   regionNoPriceSuffix: { bg: "(без цени на жилища)", en: "(no home prices)" },
-  // **The counts are placeholders because the coverage is data.** имот.bg add
-  // and retire cities and НСИ could split an област; a sentence with "28" and
-  // "27" written into it would go quietly wrong on the refresh that changed
-  // either, and the wrongness would be a claim about how much of the country
-  // this page covers.
-  // **«имаме» rather than «има», and that is the whole of it.** имот.bg serve
-  // a page for 27 of the 28 and the count here is how many this refresh
-  // actually carries — a sentence saying prices «има за {p}» hands their
-  // coverage a number that is ours, and it reads as имот.bg covering one city
-  // on a run that reached one city.
+  // **The one thing a reader has to know about the choice they just made**, and
+  // the whole of it: the two cards it moves are drawn at two different scales.
+  // The wage is НСИ's for the whole област — Варна's figure includes Девня,
+  // Провадия and Белослав — while имот.bg publish nothing outside the town
+  // itself, so a reader in Девня gets a correct wage and the city's price. A
+  // picker labelled by place name is the framing that could hide that, which is
+  // why the line is here rather than dropped with the vocabulary.
+  //
+  // **No counts in it.** «имот.bg публикува цени за 27 от 28-те» is a sentence
+  // about our own last refresh wearing имот.bg's name, and the number stops
+  // moving the day somebody forgets to re-read it. The two cards state their own
+  // coverage, each beside its own figure.
   regionHint: {
-    bg: "НСИ публикуват средна заплата за всичките {n} области. имот.bg публикува цени на жилища по градове, а не по области, и засега ги имаме за {p} от тях.",
-    en: "NSI publish an average wage for all {n} oblasts. imot.bg publish home prices by city rather than by oblast, and we have them for {p} of those so far.",
+    bg: "Заплатата е средната за цялата област, а цените на жилищата — само за самия град.",
+    en: "The wage is the average for the whole oblast; the home prices are the town's alone.",
   },
   sectorLabel: { bg: "Твоят сектор", en: "Your sector" },
   sectorNone: { bg: "— избери дейност —", en: "— choose an activity —" },
@@ -1556,21 +1573,27 @@ export const COPY = {
     bg: "какво още казва тази средна",
     en: "what else that average says",
   },
-  // The sector card's rule, on the card it is the twin of. НСИ publish 1915
-  // gross for Sofia-city at 2026-Q1; the value this card leads with is our
-  // payroll conversion of it, so the line carries НСИ's own cell as well and
-  // says which step is ours. Their name over a figure only we computed leaves
-  // a reader who opens the linked workbook nothing to match against — the
-  // whole point of the link.
-  // **The place is a slot and the word «област» is not beside it.** Which
-  // област the reader picked is already the card's label, and НСИ's own name
-  // for two of the twenty-eight carries a bracket that says which kind of
-  // place it is — «в област София (столица)» reads as a nesting that does not
-  // exist. The scope the reader needs is on the label above; this line dates
-  // and attributes the figure.
+  // The sector card's rule, on the card it is the twin of. НСИ publish a gross
+  // per област; the value this card leads with is our payroll conversion of one
+  // of those cells, so the line carries НСИ's own figure as well and says which
+  // step is ours. Their name over a figure only we computed leaves a reader who
+  // opens the linked workbook nothing to match against — the whole point of the
+  // link.
+  // **This is where the wage's SCOPE belongs, and it is load-bearing.** The
+  // label above it is a bare place name — «средна нетна заплата · Варна» — and
+  // the housing card two positions along says «жилище във Варна» about a figure
+  // that really is the town's. Read together with nothing else, the two invite
+  // one reading of «Варна», and only one of them is drawn at that scale: НСИ's
+  // wage covers the whole област, Девня and Провадия and Белослав included. A
+  // reader in Девня is getting a correct wage and somebody else's town's price,
+  // and the difference has to be stated somewhere they will actually be looking.
+  //
+  // The word stays away from the name — «за областта · {region}» rather than «в
+  // област {region}» — because «в област София» reads as a nesting that does
+  // not exist. It states the scope; the slot states the place.
   statRegionSrc: {
-    bg: "НСИ · средна брутна заплата · {region} · {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
-    en: "NSI · average GROSS pay · {region} · {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
+    bg: "НСИ · средна брутна заплата за цялата област · {region} · {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
+    en: "NSI · average GROSS pay for the whole oblast · {region} · {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
   },
   statFastK: { bg: "— най-бързо поскъпващата група", en: "- the fastest-rising group" },
   // The housing card's label, and it needs one: every card in the strip has
@@ -1589,7 +1612,7 @@ export const COPY = {
   // their 27 cities. The second is P11 — a figure nobody publishes is
   // uncomputed rather than concealed, and saying which is which is the
   // difference between the two.
-  statHomeUnset: { bg: "жилище · избери област", en: "a home · choose an oblast" },
+  statHomeUnset: { bg: "жилище · избери къде живееш", en: "a home · choose where you live" },
   // The €/m² caption under the housing card, and the sparkline's accessible
   // name. Both once said «за София» beside a figure that follows the reader's
   // own град — true for one city in twenty-seven, and the screen-reader one is
@@ -1622,8 +1645,8 @@ export const COPY = {
   // имот.bg's name or in ours as the case may be, and repeating it here would
   // be the same admission twice on one screen.
   homeNoPrice: {
-    bg: "Още нямаме цена на квадратен метър, с която да сметнем жилището — избери област по-горе или въведи своя цена.",
-    en: "We have no €/m² to price a home with yet — choose an oblast above, or enter your own price.",
+    bg: "Още нямаме цена на квадратен метър, с която да сметнем жилището — кажи по-горе къде живееш или въведи своя цена.",
+    en: "We have no €/m² to price a home with yet — say above where you live, or enter your own price.",
   },
   // **The sentence names имот.bg, so it has to be true of имот.bg.** It reads
   // for the one област whose towns are not among the 27 cities they publish,

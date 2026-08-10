@@ -22,7 +22,7 @@
   /**
    * @type {{
    *   calc: import("../lib/calculator.svelte.js").Calculator,
-   *   regionChoices?: Array<{code: string, name: string, hasPrice: boolean}>,
+   *   regionChoices?: Array<{code: string, name: string, coverage: string}>,
    * }}
    */
   const { calc, regionChoices = [] } = $props();
@@ -95,10 +95,10 @@
     <span class="l-en">{COPY.restOfNumbers.en}</span>
   </h4>
 
-  <!-- The област picker leads, because it is the one control here that
-     changes WHICH published figures the page reads rather than what is done
-     with them — and it governs two cards in the strip that render an explicit
-     "choose one" state until it is answered.
+  <!-- The place picker leads, because it is the one control here that changes
+     WHICH published figures the page reads rather than what is done with them
+     — and it governs two cards in the strip that render an explicit "say where
+     you live" state until it is answered.
 
      Inside this card rather than between the two, which is where it first
      went: `card.css` closes the seam between the pay field and this one on a
