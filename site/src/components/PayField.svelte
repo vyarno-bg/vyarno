@@ -87,7 +87,7 @@
   // grammatical. Assembling it out of separate {sign}{n}{word} holes in the
   // template is what produced «-39% под средната»: a magnitude carrying a sign
   // beside a word that already carries one, which reads as 39% less far below.
-  // The magnitude arrives unsigned from view.js#sofiaGap and is formatted here,
+  // The magnitude arrives unsigned from view.js#regionGap and is formatted here,
   // so nothing reaches the markup that a formatter has not been through.
   // The field's own name and hint follow the toggle. A box holding a gross
   // under «Нетна заплата» is a right number with a wrong name on it, and the
@@ -331,9 +331,9 @@
        two-earner total against it would report a household of two on
        €900 each as 21% above the average worker. The magnitude, the
        direction word and the dead zone are decided in
-       view.js#sofiaGap; this picks the words. -->
+       view.js#regionGap; this picks the words. -->
     {#if calc.earnersDirty}
-      {#each calc.sofiaGaps as gap (gap.index)}
+      {#each calc.regionGaps as gap (gap.index)}
         <div class="hint gap">
           <span class="l-bg"
             >{@html t(calc.hasHousehold ? COPY.statSofiaDiffEarner : COPY.statSofiaDiff, "bg", {

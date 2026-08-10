@@ -41,11 +41,11 @@
     /** БНБ lending limits (DSTI/LTV/maturity) for the same period. */
     limits = {},
     /** Sofia €/m² provenance, quoted where the default price comes from. */
-    sofiaEurPerM2 = 0,
-    sofiaNDistricts = 0,
+    cityEurPerM2 = 0,
+    cityNDistricts = 0,
     /** True when the €/m² came from sofia_price.json, not the offline constant. */
-    sofiaPriceIsLive = false,
-    sofiaPriceDated = "",
+    cityPriceIsLive = false,
+    cityPriceDated = "",
   } = $props();
 
   // The prudent line the marker sits on, from mortgage.json →
@@ -71,10 +71,10 @@
         >{@html COPY.homeYears.bg
           .replace("{m}", fmt0(m2))
           .replace("{p}", fmt0(homePrice))
-          .replace("{pm2}", fmt0(sofiaEurPerM2))
+          .replace("{pm2}", fmt0(cityEurPerM2))
           .replace(
             "{basis}",
-            sofiaPriceIsLive ? COPY.homeBasisMedian.bg : COPY.homeBasisPlaceholder.bg
+            cityPriceIsLive ? COPY.homeBasisMedian.bg : COPY.homeBasisPlaceholder.bg
           )
           .replace("{y}", fmt(homeYearsVal))}</span
       >
@@ -82,10 +82,10 @@
         >{@html COPY.homeYears.en
           .replace("{m}", fmt0(m2))
           .replace("{p}", fmt0(homePrice))
-          .replace("{pm2}", fmt0(sofiaEurPerM2))
+          .replace("{pm2}", fmt0(cityEurPerM2))
           .replace(
             "{basis}",
-            sofiaPriceIsLive ? COPY.homeBasisMedian.en : COPY.homeBasisPlaceholder.en
+            cityPriceIsLive ? COPY.homeBasisMedian.en : COPY.homeBasisPlaceholder.en
           )
           .replace("{y}", fmt(homeYearsVal))}</span
       >
@@ -93,25 +93,25 @@
     <div class="rr-note">
       <span class="l-bg"
         >{@html COPY.homeYearsSrc.bg
-          .replace("{pm2}", fmt0(sofiaEurPerM2))
+          .replace("{pm2}", fmt0(cityEurPerM2))
           .replace(
             "{src}",
             $lang === "bg"
-              ? sofiaNDistricts
-                ? `имот.bg · ${sofiaNDistricts} квартала · ${sofiaPriceDated}`
+              ? cityNDistricts
+                ? `имот.bg · ${cityNDistricts} квартала · ${cityPriceDated}`
                 : "очакваме данни"
               : ""
           )}</span
       >
       <span class="l-en"
         >{@html COPY.homeYearsSrc.en
-          .replace("{pm2}", fmt0(sofiaEurPerM2))
+          .replace("{pm2}", fmt0(cityEurPerM2))
           .replace(
             "{src}",
             $lang === "bg"
               ? ""
-              : sofiaNDistricts
-                ? `imot.bg · ${sofiaNDistricts} districts · ${sofiaPriceDated}`
+              : cityNDistricts
+                ? `imot.bg · ${cityNDistricts} districts · ${cityPriceDated}`
                 : "loading"
           )}</span
       >

@@ -286,7 +286,7 @@
             checked={calc.priceMode === "manual"}
             onchange={() => {
               if (calc.manualPrice === 0)
-                calc.manualPrice = Math.round(calc.sofiaEurPerM2 * calc.m2);
+                calc.manualPrice = Math.round(calc.cityEurPerM2 * calc.m2);
               calc.priceMode = "manual";
             }}
           />
@@ -409,13 +409,13 @@
               <span class="l-bg"
                 >при {calc.m2} м² ≈ <b>{fmt0(calc.manualEurPerM2)} €/м²</b>
                 {calc.manualEurPerM2 > 0
-                  ? `(софийската медиана е ${fmt0(calc.sofiaEurPerM2)} €/м²)`
+                  ? `(софийската медиана е ${fmt0(calc.cityEurPerM2)} €/м²)`
                   : ""}.</span
               >
               <span class="l-en"
                 >at {calc.m2} m² ≈ <b>€{fmt0(calc.manualEurPerM2)}/m²</b>
                 {calc.manualEurPerM2 > 0
-                  ? `(Sofia median is €${fmt0(calc.sofiaEurPerM2)}/m²)`
+                  ? `(Sofia median is €${fmt0(calc.cityEurPerM2)}/m²)`
                   : ""}.</span
               >
             </div>

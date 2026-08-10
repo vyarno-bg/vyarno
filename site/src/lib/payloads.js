@@ -103,7 +103,7 @@ export const PAYLOADS = Object.freeze(
       refPeriod: (p) => (p?.effective_year ? String(p.effective_year) : null),
     },
     {
-      key: "sofiaSalary",
+      key: "regionSalary",
       file: "sofia_salary",
       // НСИ publishes the regional wage series quarterly.
       cadenceDays: 92,
@@ -117,7 +117,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "sectorSalary",
       file: "sector_salary",
-      // The same НСИ quarterly release as `sofiaSalary` — one publisher, two
+      // The same НСИ quarterly release as `regionSalary` — one publisher, two
       // cuts of the same labour statistic, so they go stale together.
       cadenceDays: 92,
       name: { bg: "Средна заплата по дейности", en: "Average wage by activity" },
@@ -178,7 +178,7 @@ export const PAYLOADS = Object.freeze(
       },
     },
     {
-      key: "sofiaPrice",
+      key: "cityPrice",
       file: "sofia_price",
       // imot.bg publishes no release calendar, so this is our own refresh
       // expectation rather than a schedule anyone promised us. A quarter,

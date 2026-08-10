@@ -37,7 +37,7 @@ import {
   loadAll,
 } from "../src/lib/data.js";
 import { PAYLOAD_KEYS, PAYLOADS } from "../src/lib/payloads.js";
-import { sofiaQuarter } from "../src/lib/view.js";
+import { regionQuarter } from "../src/lib/view.js";
 import { HOME, PRESETS } from "../src/lib/content.js";
 import {
   officialInflation,
@@ -364,7 +364,7 @@ test("the published salary ladder ranks the Sofia average earner mid-upper, not 
   const payroll = read("payroll");
   if (!dist || !sofia) return;
   const params = payrollParams(payroll);
-  const anchor = sofiaQuarter(sofia);
+  const anchor = regionQuarter(sofia);
   assert.ok(anchor.value > 0, "the НСИ series yielded no complete quarter to anchor on");
   const ladder = buildLadder(dist, anchor.value, params);
   assert.equal(ladder.length, 11);
@@ -372,8 +372,8 @@ test("the published salary ladder ranks the Sofia average earner mid-upper, not 
     ladder.every((v, i, a) => i === 0 || v > a[i - 1]),
     "ladder must increase"
   );
-  const sofiaNet = bgNetSalary(anchor.value, params).net;
-  const rank = percentile(sofiaNet, ladder);
+  const regionNet = bgNetSalary(anchor.value, params).net;
+  const rank = percentile(regionNet, ladder);
   assert.ok(rank > 45 && rank < 85, `Sofia average earner ranked ${rank}, expected mid-upper`);
 });
 
@@ -387,7 +387,7 @@ test("the composed ladder never prints a sub-minimum-wage rung", () => {
   const payroll = read("payroll");
   if (!dist || !sofia) return;
   const params = payrollParams(payroll);
-  const gross = composeLadder(dist, sofiaQuarter(sofia).value, params);
+  const gross = composeLadder(dist, regionQuarter(sofia).value, params);
   assert.ok(
     gross.P1 >= params.minWageGross - 0.01,
     `composed P1 = ${gross.P1} gross is below the statutory minimum wage ${params.minWageGross}`
@@ -443,7 +443,7 @@ test("no НСИ payload carries a second publisher's figures", () => {
   );
 
   // And the other half: sofia_salary.json must publish only what НСИ published.
-  // `value` is their latest published quarter, verbatim, and view.js#sofiaQuarter
+  // `value` is their latest published quarter, verbatim, and view.js#regionQuarter
   // selects it rather than deriving anything from the series beside it.
   const sofia = read("sofia_salary");
   if (!sofia) return;
@@ -520,23 +520,23 @@ test("the offline sentinels in content.js still match what the pipeline publishe
     // against 2061 is 7.1% off, inside a 10% band, so the guard passes while
     // the thing it guards has moved. **A guard that survives the change it
     // exists to catch is worse than no guard.**
-    const live = sofiaQuarter(sofia).value;
-    const offline = sofiaQuarter(HOME.sofiaSalaryFallback).value;
+    const live = regionQuarter(sofia).value;
+    const offline = regionQuarter(HOME.regionSalaryFallback).value;
     assert.ok(offline > 0, "the offline sentinel no longer yields a complete quarter");
     assert.ok(
       Math.abs(offline - live) / live <= 0.1,
       `the offline sentinel averages ${offline} but the published series averages ` +
-        `${live} — copy the newest complete quarter into HOME.sofiaSalaryFallback`
+        `${live} — copy the newest complete quarter into HOME.regionSalaryFallback`
     );
     // The marker travels with the quarter, not only the figure. Both go through
-    // `sofiaQuarter` for the same reason the values do — the sentinel is what
+    // `regionQuarter` for the same reason the values do — the sentinel is what
     // the card renders for the first few hundred milliseconds, and a marker that
     // appears once the JSON lands shows the same wage as settled and then as
     // provisional, which reads as the number having changed.
     assert.equal(
-      sofiaQuarter(HOME.sofiaSalaryFallback).isPreliminary,
-      sofiaQuarter(sofia).isPreliminary,
-      "HOME.sofiaSalaryFallback disagrees with sofia_salary.json about whether " +
+      regionQuarter(HOME.regionSalaryFallback).isPreliminary,
+      regionQuarter(sofia).isPreliminary,
+      "HOME.regionSalaryFallback disagrees with sofia_salary.json about whether " +
         "НСИ will still revise the quarter it mirrors"
     );
   }

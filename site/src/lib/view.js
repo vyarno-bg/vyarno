@@ -240,7 +240,7 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
  *          series_by_period?: Record<string, number>}} payload
  * @returns {{value: number, refPeriod: string, isPreliminary: boolean}} zeroed when unavailable
  */
-export function sofiaQuarter(payload) {
+export function regionQuarter(payload) {
   const isPreliminary = Boolean(payload?.is_preliminary);
   const empty = { value: 0, refPeriod: "", isPreliminary: false };
   const series = payload?.series_by_period ?? {};
@@ -926,22 +926,22 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
  *
  * @param {object} args
  * @param {object|null} args.salaryDist  data.salaryDist (salary_dist.json)
- * @param {object|null} args.sofiaSalary data.sofiaSalary (sofia_salary.json)
+ * @param {object|null} args.regionSalary data.regionSalary (sofia_salary.json)
  * @param {object|null} args.payroll     data.payroll (payroll.json)
  * @returns {{anchorGross:number, anchorPeriod:string, anchorUrl:string,
  *            shapeYear:string, shapeUrl:string,
  *            rungs:Array<{cut:number, gross:number, net:number,
  *                         surveyed:boolean}>}}
  */
-export function payLadder({ salaryDist, sofiaSalary, payroll }) {
+export function payLadder({ salaryDist, regionSalary, payroll }) {
   const params = payrollParams(payroll);
-  const anchor = sofiaQuarter(sofiaSalary);
+  const anchor = regionQuarter(regionSalary);
   const gross = composeLadder(salaryDist, anchor.value, params);
   const net = buildLadder(salaryDist, anchor.value, params);
   return {
     anchorGross: anchor.value,
     anchorPeriod: anchor.refPeriod,
-    anchorUrl: sofiaSalary?.source_url ?? "",
+    anchorUrl: regionSalary?.source_url ?? "",
     shapeYear: String(salaryDist?.shape?.ref_year ?? ""),
     shapeUrl: salaryDist?.shape?.source_url ?? "",
     rungs: SALARY_LADDER_CUTS.map((cut, i) => ({
@@ -965,7 +965,7 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  * no inputs must not grow one by accident, and the same sentence built from
  * `householdNet` would be a claim about somebody.
  *
- * The wage goes through `sofiaQuarter` — НСИ's own published quarter, selected
+ * The wage goes through `regionQuarter` — НСИ's own published quarter, selected
  * rather than derived (docs/legal.md §НСИ) — and then through `bgNetSalary`,
  * because `homeYears` is a statement about take-home and a gross would flatter
  * it by about a fifth.
@@ -975,20 +975,20 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  * page print a price without saying what it is a price of.
  *
  * @param {object} args
- * @param {object|null} args.sofiaPrice   data.sofiaPrice (sofia_price.json)
- * @param {object|null} args.sofiaSalary  data.sofiaSalary (sofia_salary.json)
+ * @param {object|null} args.cityPrice   data.cityPrice (sofia_price.json)
+ * @param {object|null} args.regionSalary  data.regionSalary (sofia_salary.json)
  * @param {object|null} args.payroll      data.payroll (payroll.json)
  * @param {number} args.m2                floor area the price is quoted for
  * @returns {{eurPerM2:number, m2:number, price:number, grossMonthly:number,
  *            netMonthly:number, wagePeriod:string, years:number,
  *            nDistricts:number, sinceBaselinePct:number, baselineYear:number}}
  */
-export function sofiaHomeAtAverageWage({ sofiaPrice, sofiaSalary, payroll, m2 }) {
-  const eurPerM2 = sofiaPrice?.eur_per_m2_median ?? 0;
-  const anchor = sofiaQuarter(sofiaSalary);
+export function cityHomeAtAverageWage({ cityPrice, regionSalary, payroll, m2 }) {
+  const eurPerM2 = cityPrice?.eur_per_m2_median ?? 0;
+  const anchor = regionQuarter(regionSalary);
   const netMonthly = bgNetSalary(anchor.value, payrollParams(payroll)).net;
   const price = eurPerM2 > 0 && m2 > 0 ? eurPerM2 * m2 : 0;
-  const history = Array.isArray(sofiaPrice?.historical) ? sofiaPrice.historical : [];
+  const history = Array.isArray(cityPrice?.historical) ? cityPrice.historical : [];
   return {
     eurPerM2,
     m2,
@@ -1003,7 +1003,7 @@ export function sofiaHomeAtAverageWage({ sofiaPrice, sofiaSalary, payroll, m2 })
     // so a template gates on the figure rather than on which kind of nothing
     // it got.
     years: price > 0 && netMonthly > 0 ? homeYears(price, netMonthly) : 0,
-    nDistricts: sofiaPrice?.n_districts ?? 0,
+    nDistricts: cityPrice?.n_districts ?? 0,
     sinceBaselinePct: history.at(-1)?.since_2015_median_pct ?? 0,
     baselineYear: history[0]?.year ?? 0,
   };
@@ -1224,12 +1224,12 @@ export function earnerRanks({ nets, ladder }) {
  *
  * @param {object} args
  * @param {Array<number|null|undefined>} args.nets  monthly NET take-home per earner
- * @param {number} args.sofiaNet  the Sofia average wage, net, EUR/month
+ * @param {number} args.regionNet  the Sofia average wage, net, EUR/month
  * @returns {Array<{index:number, net:number, diffPct:number, magnitudePct:number,
  *                  direction:'above'|'below'|'equal'}>}
  */
-export function sofiaGap({ nets, sofiaNet }) {
-  const ref = Number(sofiaNet);
+export function regionGap({ nets, regionNet }) {
+  const ref = Number(regionNet);
   if (!Number.isFinite(ref) || ref <= 0) return [];
   const out = [];
   (nets ?? []).forEach((n, index) => {

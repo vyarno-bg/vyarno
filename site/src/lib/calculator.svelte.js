@@ -31,7 +31,7 @@
  * Arithmetic that appears here is arithmetic no test can reach — the rule
  * `view.js` was extracted to enforce, and moving the graph does not relax it.
  *
- * Language does not belong here either. `sofiaPriceDated`, the preset label
+ * Language does not belong here either. `cityPriceDated`, the preset label
  * and the share sentence all pick words, so they stay in the components that
  * render them, where `$lang` auto-subscription actually works. What is left is
  * language-agnostic: numbers, and the payloads they came from.
@@ -85,9 +85,9 @@ import {
   quarterGrid,
   sectorComparison,
   sectorOptions as publishedSectorOptions,
-  sofiaGap,
-  sofiaHomeAtAverageWage,
-  sofiaQuarter as publishedSofiaQuarter,
+  regionGap,
+  cityHomeAtAverageWage,
+  regionQuarter as publishedRegionQuarter,
   systemWedgeLadder,
   savingsSince2020,
   housingCarveOut,
@@ -442,34 +442,34 @@ export class Calculator {
   // not a code edit. Falls back to the same literals offline.
   limits = $derived(mortgageLendingLimits(this.data.mortgage));
 
-  // €/m² reading for the home block: prefers data.sofiaPrice.eur_per_m2_median
+  // €/m² reading for the home block: prefers data.cityPrice.eur_per_m2_median
   // (live, 143 districts), falls back to HOME.eurPerM2_offlineFallback when
   // the JSON hasn't loaded yet (first paint, offline build).
   //
-  // `sofiaPriceIsLive` says WHICH of the two is on screen, and every consumer
+  // `cityPriceIsLive` says WHICH of the two is on screen, and every consumer
   // has to ask. The fallback is a round constant with no measurement behind
   // it; presented as имот.bg's median it is a plausible number wearing someone
   // else's provenance, which is worse than showing nothing at all.
-  sofiaPriceIsLive = $derived(Boolean(this.data.sofiaPrice?.eur_per_m2_median));
-  sofiaEurPerM2 = $derived(
-    this.data.sofiaPrice?.eur_per_m2_median || (HOME.eurPerM2_offlineFallback ?? 2500)
+  cityPriceIsLive = $derived(Boolean(this.data.cityPrice?.eur_per_m2_median));
+  cityEurPerM2 = $derived(
+    this.data.cityPrice?.eur_per_m2_median || (HOME.eurPerM2_offlineFallback ?? 2500)
   );
-  sofiaPriceAsOf = $derived(this.data.sofiaPrice?.as_of ?? "");
-  sofiaPricePageDate = $derived(this.data.sofiaPrice?.page_as_of_dd_mm_yyyy ?? "");
-  sofiaNDistricts = $derived(this.data.sofiaPrice?.n_districts ?? 0);
+  cityPriceAsOf = $derived(this.data.cityPrice?.as_of ?? "");
+  cityPricePageDate = $derived(this.data.cityPrice?.page_as_of_dd_mm_yyyy ?? "");
+  cityNDistricts = $derived(this.data.cityPrice?.n_districts ?? 0);
   // Sofia price history (imot.bg, 2015..current). The pipeline fetches
   // per-year snapshots on every refresh; the SPA reads this array verbatim
   // (already sorted ascending by year) and renders a small sparkline + the
   // since-2015 delta on the stat card. Empty array → the payload carries no
   // historical block.
-  sofiaHistorical = $derived(
-    Array.isArray(this.data.sofiaPrice?.historical) ? this.data.sofiaPrice.historical : []
+  cityHistorical = $derived(
+    Array.isArray(this.data.cityPrice?.historical) ? this.data.cityPrice.historical : []
   );
   // The current-year row's since_2015_median_pct, and the year the ladder
   // starts from. The pipeline guarantees the delta matches current/baseline - 1
   // by construction (see build_sofia_price_payload#consistency_invariant).
   //
-  // **Both come off `sofiaHome`, which is `view.js#sofiaHomeAtAverageWage`.**
+  // **Both come off `cityHome`, which is `view.js#cityHomeAtAverageWage`.**
   // That function picks these two cells out of the same array and is the layer
   // a test can reach; picking them again here would be a second implementation
   // of one selection, and only one of the two is ever rendered, so the other is
@@ -477,20 +477,22 @@ export class Calculator {
   // `docs/site.md` §"A correct formula fed the wrong number" keeps out of the
   // reactive graph: `.at(-1)` against `[0]` is a one-character difference
   // between the rise since 2015 and the 2015 level itself.
-  sofiaSince2015Pct = $derived(this.sofiaHome.sinceBaselinePct);
-  sofiaBaselineYear = $derived(this.sofiaHome.baselineYear);
-  sofiaBaselineMedian = $derived(this.sofiaHistorical[0]?.eur_per_m2_median ?? 0);
+  citySinceBaselinePct = $derived(this.cityHome.sinceBaselinePct);
+  cityBaselineYear = $derived(this.cityHome.baselineYear);
+  cityBaselineMedian = $derived(this.cityHistorical[0]?.eur_per_m2_median ?? 0);
 
   // Sofia-city average monthly GROSS pay — the comparator on the
   // The Sofia average, and the one number two cards and the whole percentile
   // ladder hang off. `sofia_salary.json` publishes НСИ's own quarterly series,
-  // so `view.js#sofiaQuarter` selects the headline rather than computing one —
+  // so `view.js#regionQuarter` selects the headline rather than computing one —
   // that function carries why it is a quarter (the March bonus spike) and why
   // nothing here is allowed to average it (docs/legal.md §НСИ).
   // The offline sentinel goes through the same function as the live payload,
   // because it is the same shape. One implementation, so the offline figure
   // cannot drift from the online one.
-  sofiaQuarter = $derived(publishedSofiaQuarter(this.data.sofiaSalary || HOME.sofiaSalaryFallback));
+  regionQuarter = $derived(
+    publishedRegionQuarter(this.data.regionSalary || HOME.regionSalaryFallback)
+  );
   // **A MEAN, and the name has to keep saying so.** НСИ publish an average
   // gross wage, and `mirror.js#composeLadder` divides it by `shape.ses_mean` —
   // Eurostat's own mean — to get the scalar every rung is multiplied by. Feed
@@ -500,11 +502,13 @@ export class Calculator {
   // page reports without moving anything that looks wrong. Nothing downstream
   // can detect the swap, because a rescaled ladder is still a monotonic
   // ladder — so the guard is that the two ends agree by name.
-  sofiaMeanGrossEur = $derived(this.sofiaQuarter?.value || 0);
+  regionMeanGrossEur = $derived(this.regionQuarter?.value || 0);
   // The provenance URL for the comparator card. When the live JSON is loaded,
   // link to its source_url (the NSI XLSX endpoint — same place the connector
   // fetched from). Otherwise fall back to the human-readable landing page.
-  sofiaMeanGrossUrl = $derived(this.data.sofiaSalary?.source_url || HOME.sofiaMeanGrossSourceUrl);
+  regionMeanGrossUrl = $derived(
+    this.data.regionSalary?.source_url || HOME.regionMeanGrossSourceUrl
+  );
   // The quarter the figure describes ("2026-Q1"), not НСИ's latest single
   // month — the caption has to date the number actually shown.
   //
@@ -512,11 +516,11 @@ export class Calculator {
   // payload also carries and which means the day we fetched the file. The two
   // are weeks apart, and a caption reading «≈ 1486 нето · 2026-07-30» dates
   // Q1's average to a day in July.
-  sofiaWagePeriod = $derived(this.sofiaQuarter?.refPeriod ?? "");
+  regionWagePeriod = $derived(this.regionQuarter?.refPeriod ?? "");
   // Whether НСИ will still revise that quarter. Read off the same selection as
   // the value and the period, so a card cannot show one quarter's figure under
   // another quarter's marker.
-  sofiaWageIsPreliminary = $derived(Boolean(this.sofiaQuarter?.isPreliminary));
+  regionWageIsPreliminary = $derived(Boolean(this.regionQuarter?.isPreliminary));
 
   // Payroll parameters — live from the pipeline-published payroll.json when
   // loaded, else the frozen offline sentinel (BG_PAYROLL_DEFAULT). All
@@ -531,7 +535,7 @@ export class Calculator {
   // function of the published payloads alone — no field on this object that a
   // reader can type into appears in any of their arguments. That is what makes
   // them safe to freeze into served HTML (docs/seo.md) and what keeps a page
-  // with no inputs from acquiring one: `sofiaHome` takes `HOME.m2Default` and
+  // with no inputs from acquiring one: `cityHome` takes `HOME.m2Default` and
   // NOT `this.m2`, which is the reader's slider and would put their number
   // into a sentence about Sofia.
   // ---------------------------------------------------------------------
@@ -541,21 +545,21 @@ export class Calculator {
   payLadderRows = $derived(
     payLadder({
       salaryDist: this.data.salaryDist,
-      sofiaSalary: this.data.sofiaSalary,
+      regionSalary: this.data.regionSalary,
       payroll: this.data.payroll,
     })
   );
   /** A median Sofia flat priced against the Sofia average wage, in years of it. */
-  sofiaHome = $derived(
-    sofiaHomeAtAverageWage({
-      sofiaPrice: this.data.sofiaPrice,
-      sofiaSalary: this.data.sofiaSalary,
+  cityHome = $derived(
+    cityHomeAtAverageWage({
+      cityPrice: this.data.cityPrice,
+      regionSalary: this.data.regionSalary,
       payroll: this.data.payroll,
       m2: HOME.m2Default,
     })
   );
   /** НСИ's quarterly Sofia wage cells, a year to a row — selected, never averaged. */
-  sofiaWageGrid = $derived(quarterGrid(this.data.sofiaSalary));
+  regionWageGrid = $derived(quarterGrid(this.data.regionSalary));
 
   // ---------------------------------------------------------------------
   // Derived: the pay packet
@@ -598,7 +602,7 @@ export class Calculator {
   // ceiling, then the columns are added. The panel takes no scalar, so the
   // total cannot be passed here even by accident.
   payslip = $derived(payslipPanel({ payroll: this.data.payroll, pay: this.pay }));
-  sofiaNet = $derived(bgNetSalary(this.sofiaMeanGrossEur, this.payroll).net);
+  regionNet = $derived(bgNetSalary(this.regionMeanGrossEur, this.payroll).net);
 
   // "The flat tax is not flat" — the tax wedge. Takes the PUBLISHED payroll
   // payload (not `payroll`, the already-mapped params) so the panel derives
@@ -640,8 +644,8 @@ export class Calculator {
   wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, pay: this.wedgePay }));
 
   // How each earner compares with the Sofia average wage — per earner, because
-  // НСИ publish a wage rather than a household income. See view.js#sofiaGap.
-  sofiaGaps = $derived(sofiaGap({ nets: this.nets, sofiaNet: this.sofiaNet }));
+  // НСИ publish a wage rather than a household income. See view.js#regionGap.
+  regionGaps = $derived(regionGap({ nets: this.nets, regionNet: this.regionNet }));
 
   /** The reader's chosen NACE Rev 2 section, by НСИ's own English row name. */
   sectorKey = $state("");
@@ -866,12 +870,12 @@ export class Calculator {
 
   // Fresh individual-earnings ladder. `salary_dist.json` carries the Eurostat
   // SES shape at SES's own level and nothing else; `buildLadder` re-levels it
-  // onto `sofiaMeanGrossEur` and converts each rung to NET. The two publishers'
+  // onto `regionMeanGrossEur` and converts each rung to NET. The two publishers'
   // figures meet here, in the reader's tab — see `mirror.js#composeLadder`.
   // `salary` is net take-home, so this is a net-vs-net rank.
   ladder = $derived(
     this.data.salaryDist
-      ? buildLadder(this.data.salaryDist, this.sofiaMeanGrossEur, this.payroll)
+      ? buildLadder(this.data.salaryDist, this.regionMeanGrossEur, this.payroll)
       : []
   );
   // ONE RANK PER EARNER. The rungs are individual full-time earnings, so a
@@ -899,14 +903,14 @@ export class Calculator {
   // read from salary_dist.json: copying НСИ's url and period into a Eurostat
   // payload makes that one file a composite of two publishers, which is the
   // thing `no НСИ payload carries a second publisher's figures` forbids.
-  salaryAnchorUrl = $derived(this.data.sofiaSalary?.source_url ?? "");
-  salaryAnchorPeriod = $derived(this.sofiaQuarter?.refPeriod ?? "");
+  salaryAnchorUrl = $derived(this.data.regionSalary?.source_url ?? "");
+  salaryAnchorPeriod = $derived(this.regionQuarter?.refPeriod ?? "");
 
   homePrice = $derived(
     homePriceFor({
       priceMode: this.priceMode,
       manualPrice: this.manualPrice,
-      eurPerM2: this.sofiaEurPerM2,
+      eurPerM2: this.cityEurPerM2,
       m2: this.m2,
     })
   );
@@ -932,7 +936,7 @@ export class Calculator {
       // denominator raises the cap, so the alternative would understate what a
       // couple can carry rather than overstate it.
       netSalary: this.householdNet,
-      eurPerM2: this.sofiaEurPerM2,
+      eurPerM2: this.cityEurPerM2,
       limits: this.limits,
     })
   );
@@ -1267,7 +1271,7 @@ export class Calculator {
 
   /** Switch the home block to a hand-typed asking price, seeding it once. */
   useManualPrice = () => {
-    if (this.manualPrice === 0) this.manualPrice = Math.round(this.sofiaEurPerM2 * this.m2);
+    if (this.manualPrice === 0) this.manualPrice = Math.round(this.cityEurPerM2 * this.m2);
     this.priceMode = "manual";
   };
 

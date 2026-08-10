@@ -205,7 +205,7 @@ test("a rooted head does not launder an unrooted value concatenated after it", (
   assert.equal(isRooted("COPY.homeYearsSrc.bg"), true);
   assert.equal(isRooted('COPY.statSofiaDiff.bg.replace("{delta}", `<b>${d}</b>`)'), true);
   assert.equal(isRooted("COPY.a.bg + COPY.b.bg"), true);
-  assert.equal(isRooted("COPY.x.bg + (data.sofiaPrice?.source_url ?? '')"), false);
+  assert.equal(isRooted("COPY.x.bg + (data.cityPrice?.source_url ?? '')"), false);
   assert.equal(isRooted("COPY.x.bg + fetchedMarkup"), false);
 });
 

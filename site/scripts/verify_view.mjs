@@ -47,7 +47,7 @@ import {
   taxWedgePanel,
   systemWedgeLadder,
   payLadder,
-  sofiaHomeAtAverageWage,
+  cityHomeAtAverageWage,
   seriesCells,
   quarterGrid,
   QUARTERS,
@@ -56,7 +56,7 @@ import {
   sectorComparison,
   sectorOptions,
   SECTOR_TOTAL_KEY,
-  sofiaGap,
+  regionGap,
   netsOf,
   convertPay,
   householdRaise,
@@ -65,7 +65,7 @@ import {
   rankedSplit,
   pocketVerdictState,
   answerLine,
-  sofiaQuarter,
+  regionQuarter,
   RANK_ROWS_SHOWN,
   sharePayload,
   shareSentence,
@@ -485,20 +485,20 @@ test("a low income renders low and a high income renders high, end to end", () =
   const dist = read("salary_dist");
   const sofia = read("sofia_salary");
   if (!dist || !sofia) return;
-  const gross = composeLadder(dist, sofiaQuarter(sofia).value);
+  const gross = composeLadder(dist, regionQuarter(sofia).value);
   const ladder = Object.values(gross);
   assert.equal(ladder.length, 11, "the two payloads no longer compose into a ladder");
   assert.ok(pctAhead(percentile(ladder[0] - 100, ladder)) <= 5);
   assert.ok(pctAhead(percentile(ladder[ladder.length - 1] + 1000, ladder)) >= 95);
 });
 
-test("sofiaQuarter reads НСИ's published quarter and computes nothing", () => {
+test("regionQuarter reads НСИ's published quarter and computes nothing", () => {
   // The property docs/legal.md §НСИ turns on, asserted on what actually ships.
   // An averaging step reintroduced in this function would move no number a
   // reader could check against anything, so nothing but this would catch it.
   const sofia = read("sofia_salary");
   if (!sofia) return;
-  const q = sofiaQuarter(sofia);
+  const q = regionQuarter(sofia);
   assert.match(q.refPeriod, /^\d{4}-Q[1-4]$/);
   // The headline is a cell in the series beside it, not a function of several.
   assert.equal(q.value, sofia.series_by_period[q.refPeriod]);
@@ -512,7 +512,7 @@ test("sofiaQuarter reads НСИ's published quarter and computes nothing", () =>
   assert.equal(q.refPeriod, newest);
 });
 
-test("sofiaQuarter prefers the payload headline, and falls back to the newest key", () => {
+test("regionQuarter prefers the payload headline, and falls back to the newest key", () => {
   // Two shapes reach this function: the live payload, which carries `value`
   // and `ref_period`, and the offline sentinel in content.js. Both must land on
   // the same quarter, because the sentinel is what a reader sees for the first
@@ -523,21 +523,21 @@ test("sofiaQuarter prefers the payload headline, and falls back to the newest ke
     is_preliminary: true,
     series_by_period: { "2025-Q4": 1859, "2026-Q1": 1915 },
   };
-  assert.deepEqual(sofiaQuarter(withHeadline), {
+  assert.deepEqual(regionQuarter(withHeadline), {
     value: 1915,
     refPeriod: "2026-Q1",
     isPreliminary: true,
   });
 
   const seriesOnly = { series_by_period: { "2025-Q4": 1859, "2026-Q1": 1915 } };
-  assert.deepEqual(sofiaQuarter(seriesOnly), {
+  assert.deepEqual(regionQuarter(seriesOnly), {
     value: 1915,
     refPeriod: "2026-Q1",
     isPreliminary: false,
   });
 });
 
-test("sofiaQuarter carries НСИ's preliminary marker down both paths", () => {
+test("regionQuarter carries НСИ's preliminary marker down both paths", () => {
   // The marker is what the card says beside the figure, and it has to come off
   // the same selection the figure did. Absent it, the strip shows 1915 as
   // settled while the sector card three rows up marks the same publisher's same
@@ -549,7 +549,7 @@ test("sofiaQuarter carries НСИ's preliminary marker down both paths", () => {
   // and drops the marker on the older envelope the fallback exists for.
   const flagged = { "2026-Q1": 1915 };
   assert.equal(
-    sofiaQuarter({
+    regionQuarter({
       value: 1915,
       ref_period: "2026-Q1",
       is_preliminary: true,
@@ -558,26 +558,26 @@ test("sofiaQuarter carries НСИ's preliminary marker down both paths", () => {
     true
   );
   assert.equal(
-    sofiaQuarter({ is_preliminary: true, series_by_period: flagged }).isPreliminary,
+    regionQuarter({ is_preliminary: true, series_by_period: flagged }).isPreliminary,
     true
   );
   // A publisher that draws no such distinction is not the same claim as one
   // who marked the quarter final, but the card can only stay silent for both.
-  assert.equal(sofiaQuarter({ series_by_period: flagged }).isPreliminary, false);
+  assert.equal(regionQuarter({ series_by_period: flagged }).isPreliminary, false);
 });
 
-test("sofiaQuarter ignores a monthly key rather than treating it as a quarter", () => {
+test("regionQuarter ignores a monthly key rather than treating it as a quarter", () => {
   // A payload written by an older envelope carries "YYYY-MM" keys. Selecting
   // one would quote a single month as the quarterly level — and March runs
   // ~7.6% above its own quarter on the published series, which propagates to
   // every rung of the ladder.
   const monthly = { series_by_period: { "2026-01": 1865, "2026-02": 1818, "2026-03": 2061 } };
-  assert.deepEqual(sofiaQuarter(monthly), { value: 0, refPeriod: "", isPreliminary: false });
+  assert.deepEqual(regionQuarter(monthly), { value: 0, refPeriod: "", isPreliminary: false });
 });
 
-test("sofiaQuarter returns zeros rather than NaN when the payload is missing", () => {
+test("regionQuarter returns zeros rather than NaN when the payload is missing", () => {
   for (const input of [null, undefined, {}, { series_by_period: {} }]) {
-    const q = sofiaQuarter(input);
+    const q = regionQuarter(input);
     assert.equal(q.value, 0);
     assert.equal(q.refPeriod, "");
   }
@@ -1801,26 +1801,26 @@ test("earnerRanks ranks PEOPLE, never the household total", () => {
   assert.deepEqual(earnerRanks({ nets: [900], ladder: [] }), [], "ranked against no ladder");
 });
 
-test("sofiaGap compares each earner with the average WAGE, one at a time", () => {
-  const sofiaNet = 1486;
-  const both = sofiaGap({ nets: [900, 900], sofiaNet });
+test("regionGap compares each earner with the average WAGE, one at a time", () => {
+  const regionNet = 1486;
+  const both = regionGap({ nets: [900, 900], regionNet });
   assert.equal(both.length, 2);
   assert.equal(both[0].direction, "below");
   assert.equal(both[0].magnitudePct, 39);
   // The claim this prevents: two people on €900 each reported as above the
   // average worker, which is what measuring their €1,800 against a wage says.
-  const asOne = sofiaGap({ nets: [1800], sofiaNet })[0];
+  const asOne = regionGap({ nets: [1800], regionNet })[0];
   assert.equal(asOne.direction, "above");
 
   // The magnitude is rounded BEFORE the direction is chosen, so the word and
   // the figure cannot disagree. At +1.4% the rounded figure is 1%, which is
   // inside the dead zone the direction words exist to stay quiet about.
-  const edge = sofiaGap({ nets: [sofiaNet * 1.014], sofiaNet })[0];
+  const edge = regionGap({ nets: [regionNet * 1.014], regionNet })[0];
   assert.equal(edge.magnitudePct, 1);
   assert.equal(edge.direction, "equal", "«над» printed beside a figure inside the dead zone");
 
-  assert.deepEqual(sofiaGap({ nets: [900], sofiaNet: 0 }), [], "compared against no average");
-  assert.deepEqual(sofiaGap({ nets: [0, null], sofiaNet }), []);
+  assert.deepEqual(regionGap({ nets: [900], regionNet: 0 }), [], "compared against no average");
+  assert.deepEqual(regionGap({ nets: [0, null], regionNet }), []);
 });
 
 // ---------------------------------------------------------------------------
@@ -2175,7 +2175,7 @@ test("payLadder pairs each rung with its cut, and says which were surveyed", () 
   const dist = read("salary_dist");
   const wage = read("sofia_salary");
   if (!dist || !wage || !PAYROLL) return;
-  const ladder = payLadder({ salaryDist: dist, sofiaSalary: wage, payroll: PAYROLL });
+  const ladder = payLadder({ salaryDist: dist, regionSalary: wage, payroll: PAYROLL });
 
   assert.equal(ladder.rungs.length, 11, "the ladder no longer has one row per published cut");
   assert.deepEqual(
@@ -2209,7 +2209,7 @@ test("payLadder takes each provenance from the publisher that owns it", () => {
   const dist = read("salary_dist");
   const wage = read("sofia_salary");
   if (!dist || !wage || !PAYROLL) return;
-  const ladder = payLadder({ salaryDist: dist, sofiaSalary: wage, payroll: PAYROLL });
+  const ladder = payLadder({ salaryDist: dist, regionSalary: wage, payroll: PAYROLL });
   assert.equal(ladder.anchorUrl, wage.source_url);
   assert.equal(ladder.anchorPeriod, wage.ref_period);
   assert.equal(ladder.anchorGross, wage.value);
@@ -2219,7 +2219,7 @@ test("payLadder takes each provenance from the publisher that owns it", () => {
   // Nothing at all rather than a ladder standing on a zero anchor: without the
   // НСИ level the rungs would be SES's 2022 euro amounts wearing this
   // quarter's date.
-  const orphaned = payLadder({ salaryDist: dist, sofiaSalary: null, payroll: PAYROLL });
+  const orphaned = payLadder({ salaryDist: dist, regionSalary: null, payroll: PAYROLL });
   assert.equal(orphaned.anchorGross, 0);
   assert.deepEqual(
     orphaned.rungs.map((r) => r.gross),
@@ -2228,16 +2228,16 @@ test("payLadder takes each provenance from the publisher that owns it", () => {
   );
 });
 
-test("sofiaHomeAtAverageWage prices a home against a NET wage, not a gross", () => {
+test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () => {
   // Fed the gross, the years-of-salary figure is about a fifth too flattering
   // — the direction AGENTS.md forbids by name, on the one figure the page
   // exists to state plainly.
   const price = read("sofia_price");
   const wage = read("sofia_salary");
   if (!price || !wage || !PAYROLL) return;
-  const home = sofiaHomeAtAverageWage({
-    sofiaPrice: price,
-    sofiaSalary: wage,
+  const home = cityHomeAtAverageWage({
+    cityPrice: price,
+    regionSalary: wage,
     payroll: PAYROLL,
     m2: 70,
   });
@@ -2256,9 +2256,9 @@ test("sofiaHomeAtAverageWage prices a home against a NET wage, not a gross", () 
 
   // The size is the caller's, so the page has to state it — a function that
   // picked its own would let a price be printed without saying what it prices.
-  const smaller = sofiaHomeAtAverageWage({
-    sofiaPrice: price,
-    sofiaSalary: wage,
+  const smaller = cityHomeAtAverageWage({
+    cityPrice: price,
+    regionSalary: wage,
     payroll: PAYROLL,
     m2: 50,
   });
@@ -2269,7 +2269,7 @@ test("sofiaHomeAtAverageWage prices a home against a NET wage, not a gross", () 
   // so a swap prints the 2015 level as this year's rise and neither figure
   // looks wrong on its own. `.at(-1)` against `[0]` is the whole difference,
   // which is why the selection is here rather than in a `$derived` no test
-  // reaches — `calculator.svelte.js#sofiaSince2015Pct` reads both from this.
+  // reaches — `calculator.svelte.js#citySinceBaselinePct` reads both from this.
   const history = price.historical ?? [];
   if (history.length > 1) {
     assert.equal(
@@ -2290,9 +2290,9 @@ test("sofiaHomeAtAverageWage prices a home against a NET wage, not a gross", () 
 
   // A payload with no historical block must report nothing rather than a zero
   // rise, which would render as «+0% от 2015 г.» over a year nobody published.
-  const flat = sofiaHomeAtAverageWage({
-    sofiaPrice: { ...price, historical: [] },
-    sofiaSalary: wage,
+  const flat = cityHomeAtAverageWage({
+    cityPrice: { ...price, historical: [] },
+    regionSalary: wage,
     payroll: PAYROLL,
     m2: 70,
   });
@@ -2300,20 +2300,20 @@ test("sofiaHomeAtAverageWage prices a home against a NET wage, not a gross", () 
   assert.equal(flat.baselineYear, 0);
 });
 
-test("sofiaHomeAtAverageWage prints nothing when either end is missing", () => {
+test("cityHomeAtAverageWage prints nothing when either end is missing", () => {
   const wage = read("sofia_salary");
   if (!wage || !PAYROLL) return;
-  const noPrice = sofiaHomeAtAverageWage({
-    sofiaPrice: null,
-    sofiaSalary: wage,
+  const noPrice = cityHomeAtAverageWage({
+    cityPrice: null,
+    regionSalary: wage,
     payroll: PAYROLL,
     m2: 70,
   });
   assert.equal(noPrice.price, 0);
   assert.equal(noPrice.years, 0);
-  const noWage = sofiaHomeAtAverageWage({
-    sofiaPrice: read("sofia_price"),
-    sofiaSalary: null,
+  const noWage = cityHomeAtAverageWage({
+    cityPrice: read("sofia_price"),
+    regionSalary: null,
     payroll: PAYROLL,
     m2: 70,
   });

@@ -13,8 +13,8 @@
    *
    * **Every number here is the country's and none is the reader's.** There is
    * no input on this page and there must never be one: the four values it
-   * reads off `Calculator` — `systemWedge`, `payLadderRows`, `sofiaHome`,
-   * `sofiaWageGrid` — are functions of the published payloads alone, and each
+   * reads off `Calculator` — `systemWedge`, `payLadderRows`, `cityHome`,
+   * `regionWageGrid` — are functions of the published payloads alone, and each
    * takes payloads rather than scalars precisely so a reader's figure cannot be
    * threaded into one (calculator.svelte.js §"Derived: the country, with nobody
    * in it"). The tax
@@ -90,7 +90,7 @@
     en: periodLong(p, "en") + (preliminary ? t(COPY.srcPrelim, "en") : ""),
   });
   /** True while НСИ have not finalised the quarter the wage figures come from. */
-  const wagesArePreliminary = $derived(Boolean(calc.data.sofiaSalary?.is_preliminary));
+  const wagesArePreliminary = $derived(Boolean(calc.data.regionSalary?.is_preliminary));
   const onDay = (d) => ({ bg: dateShort(d, "bg"), en: dateShort(d, "en") });
   /**
    * WHICH date is on the имот.bg figures, said out loud.
@@ -108,14 +108,14 @@
    * different words for the same distinction.
    */
   const imotDated = $derived(
-    calc.sofiaPricePageDate
+    calc.cityPricePageDate
       ? {
-          bg: t(COPY.srcDatedByPage, "bg", { d: calc.sofiaPricePageDate }),
-          en: t(COPY.srcDatedByPage, "en", { d: calc.sofiaPricePageDate }),
+          bg: t(COPY.srcDatedByPage, "bg", { d: calc.cityPricePageDate }),
+          en: t(COPY.srcDatedByPage, "en", { d: calc.cityPricePageDate }),
         }
       : {
-          bg: t(COPY.srcDatedByFetch, "bg", { d: dateShort(calc.sofiaPriceAsOf, "bg") }),
-          en: t(COPY.srcDatedByFetch, "en", { d: dateShort(calc.sofiaPriceAsOf, "en") }),
+          bg: t(COPY.srcDatedByFetch, "bg", { d: dateShort(calc.cityPriceAsOf, "bg") }),
+          en: t(COPY.srcDatedByFetch, "en", { d: dateShort(calc.cityPriceAsOf, "en") }),
         }
   );
   /** A period that is already language-independent — a year, an ISO effective date. */
@@ -661,7 +661,7 @@
     </p>
 
     <div class="stats">
-      {#if calc.data.sofiaSalary}
+      {#if calc.data.regionSalary}
         {@render stat(
           `${fmt0(calc.payLadderRows.anchorGross)} €`,
           COPY.howKSofiaWage,
@@ -921,26 +921,26 @@
     </p>
 
     <div class="stats">
-      {#if calc.sofiaPriceIsLive}
+      {#if calc.cityPriceIsLive}
         {@render stat(
-          `${fmt0(calc.sofiaHome.eurPerM2)} €`,
+          `${fmt0(calc.cityHome.eurPerM2)} €`,
           COPY.howKEurM2,
           COPY.howSrcImot,
           IMOT_URL,
           imotDated
         )}
         {@render stat(
-          `${fmt0(calc.data.sofiaPrice.eur_per_m2_min)}–${fmt0(calc.data.sofiaPrice.eur_per_m2_max)} €`,
+          `${fmt0(calc.data.cityPrice.eur_per_m2_min)}–${fmt0(calc.data.cityPrice.eur_per_m2_max)} €`,
           {
-            bg: t(COPY.howKEurM2Range, "bg", { n: fmt0(calc.sofiaHome.nDistricts) }),
-            en: t(COPY.howKEurM2Range, "en", { n: fmt0(calc.sofiaHome.nDistricts) }),
+            bg: t(COPY.howKEurM2Range, "bg", { n: fmt0(calc.cityHome.nDistricts) }),
+            en: t(COPY.howKEurM2Range, "en", { n: fmt0(calc.cityHome.nDistricts) }),
           },
           COPY.howSrcImot,
           IMOT_URL,
           imotDated
         )}
         {@render stat(
-          `${fmt0(calc.sofiaHome.price)} €`,
+          `${fmt0(calc.cityHome.price)} €`,
           {
             bg: t(COPY.howKHomePrice, "bg", { m2: fmt0(HOME.m2Default) }),
             en: t(COPY.howKHomePrice, "en", { m2: fmt0(HOME.m2Default) }),
@@ -949,32 +949,32 @@
           IMOT_URL,
           imotDated
         )}
-        {#if calc.sofiaHome.netMonthly > 0}
+        {#if calc.cityHome.netMonthly > 0}
           {@render stat(
-            fmt(calc.sofiaHome.years),
+            fmt(calc.cityHome.years),
             COPY.howKHomeYears,
             COPY.srcNsiWages,
             calc.payLadderRows.anchorUrl,
-            when(calc.sofiaHome.wagePeriod, wagesArePreliminary)
+            when(calc.cityHome.wagePeriod, wagesArePreliminary)
           )}
         {/if}
       {/if}
     </div>
 
-    {#if calc.sofiaPriceIsLive}
+    {#if calc.cityPriceIsLive}
       {@render ours()}
       <p>
         <span class="l-bg"
           >имот.bg публикува по едно число на квартал и нито едно за София като цяло. Медианата на
-          {fmt0(calc.sofiaHome.nDistricts)} квартала и сравнението с {calc.sofiaHome.baselineYear} г.
-          са наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. „Години заплата“
+          {fmt0(calc.cityHome.nDistricts)} квартала и сравнението с {calc.cityHome.baselineYear} г. са
+          наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. „Години заплата“
           значи цената, разделена на дванадесет средни нетни заплати за София: сравнение на едно цяло
           жилище с една цяла заплата, без спестявания, без лихва и без нищо друго в живота.</span
         >
         <span class="l-en"
           >imot.bg publishes one figure per district and none for Sofia as a whole. The median
           across
-          {fmt0(calc.sofiaHome.nDistricts)} districts, and the comparison with {calc.sofiaHome
+          {fmt0(calc.cityHome.nDistricts)} districts, and the comparison with {calc.cityHome
             .baselineYear}, are our arithmetic over their figures — which is why they are named here
           rather than attributed to them. "Years of pay" means the price divided by twelve average
           net Sofia monthly wages: a whole home against a whole salary, with no savings, no interest
@@ -1027,7 +1027,7 @@
          a year row is four cells НСИ published, side by side, and the column a
          reader would expect at the end of it — the year's average — is exactly
          what their licence does not allow us to distribute. -->
-    {#if calc.sofiaWageGrid.length > 0}
+    {#if calc.regionWageGrid.length > 0}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <!-- A scroll container IS interactive to a keyboard, and the rule cannot
            see that: without the attribute the arrow keys reach nothing, which
@@ -1057,7 +1057,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each calc.sofiaWageGrid as row (row.year)}
+            {#each calc.regionWageGrid as row (row.year)}
               <tr>
                 <th scope="row" class="mono">{row.year}</th>
                 {#each row.cells as cell, i (QUARTERS[i])}

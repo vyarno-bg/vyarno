@@ -46,7 +46,7 @@ export const PRESETS = {
 export const HOME = {
   // Offline sentinel for the home block when sofia_price.json hasn't
   // loaded yet (first paint, offline build). The live value comes from
-  // data.sofiaPrice?.eur_per_m2_median at runtime (the imot.bg scrape).
+  // data.cityPrice?.eur_per_m2_median at runtime (the imot.bg scrape).
   eurPerM2_offlineFallback: 2500,
   // Country-average €/m²: no official BG €/m² level series exists
   // (Eurostat hpi_ndh_q is a rate-of-change index only), so this is
@@ -61,13 +61,13 @@ export const HOME = {
   // **It is НСИ's own published quarter**, in the same envelope shape as the
   // payload, because a sentinel is a shipped file like any other and the rule
   // holds for it too: every НСИ figure this project ships is one НСИ published
-  // (docs/legal.md §НСИ). It goes through `view.js#sofiaQuarter` like the live
+  // (docs/legal.md §НСИ). It goes through `view.js#regionQuarter` like the live
   // payload, so there is one implementation and the offline figure cannot drift
   // from the online one.
   //
   // Refresh via `vyarno-pipeline refresh --source sofia-salary`, then copy
   // `value` and `ref_period` across from the payload.
-  sofiaSalaryFallback: {
+  regionSalaryFallback: {
     value: 1915,
     ref_period: "2026-Q1",
     // НСИ star the year until they finalise it, and the quarter this sentinel
@@ -77,9 +77,9 @@ export const HOME = {
     is_preliminary: true,
     series_by_period: { "2026-Q1": 1915 },
   },
-  sofiaMeanGrossSource:
+  regionMeanGrossSource:
     'NSI quarterly labour survey - Sofia-city statistical region, average monthly gross wage, latest published quarter (Labour_1.1.2.2_EUR_EN.xlsx, "{year}trimes" sheets, row "-Sofia cap.")',
-  sofiaMeanGrossSourceUrl: "https://www.nsi.bg/en/statistical-data/179/569",
+  regionMeanGrossSourceUrl: "https://www.nsi.bg/en/statistical-data/179/569",
   // Offline sentinel for the mortgage rate, used only before mortgage.json
   // loads. Mirrors the published ECB MIR new-business AAR (2.43% at 2026-05)
   // — the average interest rate on BG home loans signed that month.
@@ -932,7 +932,7 @@ export const COPY = {
   // Rendered with {@html} because it carries links.
   //
   // The level is НСИ's own published quarterly average, selected by
-  // view.js#sofiaQuarter — so this line attributes it to them without
+  // view.js#regionQuarter — so this line attributes it to them without
   // qualification, which is only true while nothing here averages anything.
   pctSrc: {
     bg: 'източник: <a href="{shapeUrl}" target="_blank" rel="noopener">Евростат · структура на заплатите {shapeYear}</a> · нивото е от <a href="{anchorUrl}" target="_blank" rel="noopener">НСИ · средна заплата {anchorPeriod}</a>',

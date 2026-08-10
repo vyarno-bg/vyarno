@@ -41,11 +41,11 @@ async function fetchJson(name) {
  * What the less obvious payloads are, since the manifest names them only for the
  * reader:
  *
- * - `sofiaPrice` — per-district €/m² scraped from imot.bg/sredni-ceni. On a
+ * - `cityPrice` — per-district €/m² scraped from imot.bg/sredni-ceni. On a
  *   miss the home block falls back to a placeholder pill; there is no canonical
  *   Eurostat €/m² to fall back to (it publishes an hpi_ndh_q RATE-OF-CHANGE
  *   index, no absolute level).
- * - `sofiaSalary` — Sofia-city average monthly GROSS wage, by quarter (НСИ
+ * - `regionSalary` — Sofia-city average monthly GROSS wage, by quarter (НСИ
  *   Labour_1.1.2.2_EUR_EN.xlsx, the "{year}trimes" sheets, row "-Sofia cap.").
  *   On a miss
  *   the comparator falls back to a sentinel, as `HOME.eurPerM2_offlineFallback`
