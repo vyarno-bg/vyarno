@@ -454,20 +454,58 @@ export function percentile(monthlySalary, ladder) {
  * @param {object} [params]  payroll params (from `payrollParams(data.payroll)`)
  * @returns {Record<string, number>} GROSS EUR/month per cut, or {} if unusable
  */
-export function composeLadder(dist, anchorGrossMean, params = BG_PAYROLL_DEFAULT) {
+function scaledRungs(dist, anchorGrossMean) {
   const shape = dist?.shape;
   const sesMean = shape?.ses_mean;
   const rungs = shape?.ladder_ses;
-  if (!rungs || !(sesMean > 0) || !(anchorGrossMean > 0)) return {};
+  if (!rungs || !(sesMean > 0) || !(anchorGrossMean > 0)) return null;
   const f = anchorGrossMean / sesMean;
   const out = {};
   for (const p of SALARY_LADDER_CUTS) {
     const base = rungs[`P${p}`];
-    if (base == null) continue;
-    const scaled = Math.max(base * f, params.minWageGross);
-    out[`P${p}`] = Math.round(scaled * 10) / 10;
+    if (base != null) out[`P${p}`] = base * f;
   }
   return out;
+}
+
+export function composeLadder(dist, anchorGrossMean, params = BG_PAYROLL_DEFAULT) {
+  const scaled = scaledRungs(dist, anchorGrossMean);
+  if (!scaled) return {};
+  const out = {};
+  for (const [cut, value] of Object.entries(scaled)) {
+    out[cut] = Math.round(Math.max(value, params.minWageGross) * 10) / 10;
+  }
+  return out;
+}
+
+/**
+ * Which cuts the statutory floor DECIDED rather than the survey.
+ *
+ * **A floored rung is no longer the survey's answer, and the table that says
+ * which rungs were surveyed has to know.** SES measure D1 for Bulgaria; today
+ * that decile re-levels to €558, under a €620 minimum, so the number the ladder
+ * publishes at P10 is the minimum wage. Marking it «измерено» credits Eurostat
+ * with a figure that came out of the ЗБДОО instead — on the one column whose
+ * whole job is telling a measurement from a model.
+ *
+ * It answers about the SCALED rung rather than the published one, which is why
+ * this is not a caller comparing `gross` against `minWageGross`: a rung that
+ * genuinely lands on the minimum wage was measured there, and the two are the
+ * same number on screen.
+ *
+ * @param {object} dist  salary_dist.json payload
+ * @param {number} anchorGrossMean  today's national mean gross, EUR/month
+ * @param {object} [params]  payroll params
+ * @returns {Set<number>} the cuts in SALARY_LADDER_CUTS the floor replaced
+ */
+export function flooredCuts(dist, anchorGrossMean, params = BG_PAYROLL_DEFAULT) {
+  const scaled = scaledRungs(dist, anchorGrossMean) ?? {};
+  return new Set(
+    SALARY_LADDER_CUTS.filter((p) => {
+      const value = scaled[`P${p}`];
+      return value != null && value < params.minWageGross;
+    })
+  );
 }
 
 /**
