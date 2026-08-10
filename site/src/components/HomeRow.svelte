@@ -49,6 +49,10 @@
     cityPriceDated = "",
     cityNameBg = "",
     cityNameEn = "",
+    /** Whether the price has a source: имот.bg's median for the reader's own
+        град, or one they typed. There is no third answer — see
+        `view.js#homePriceFor`. */
+    priceIsSourced = false,
   } = $props();
 
   // The prudent line the marker sits on, from mortgage.json →
@@ -61,7 +65,34 @@
 </script>
 
 <!-- HOME -->
-{#if homeOn && householdNet > 0}
+{#if homeOn && householdNet > 0 && !priceIsSourced}
+  <!-- **Nothing here is priced until a €/m² comes from somewhere.** With no
+       median for the reader's own град the block ran on
+       `HOME.eurPerM2_offlineFallback` — a round constant имот.bg never
+       published — and printed a €175,000 home, a €661/month payment and a
+       "44% of your pay" verdict off it. It did not stop at this row either:
+       `monthlyMort` is carved out of the money the basket's € column is
+       computed from, so an invented mortgage moved thirteen category figures
+       the reader would never have connected to it.
+
+       One sentence for all three ways to get here — nobody has chosen an
+       област, имот.bg publish no city for the one they chose, or this refresh
+       has not read theirs. WHICH of them it is is on the housing card in the
+       strip, in имот.bg's name or in ours as the case may be; what this row
+       owes the reader is what to do about it. -->
+  <div class="r-row">
+    <div class="rr-top">
+      <span class="rr-k"
+        ><span class="l-bg">{COPY.homeK.bg}</span><span class="l-en">{COPY.homeK.en}</span></span
+      >
+      <span class="rr-v mono">—</span>
+    </div>
+    <div class="rr-note">
+      <span class="l-bg">{COPY.homeNoPrice.bg}</span>
+      <span class="l-en">{COPY.homeNoPrice.en}</span>
+    </div>
+  </div>
+{:else if homeOn && householdNet > 0}
   <div class="r-row">
     <div class="rr-top">
       <span class="rr-k"

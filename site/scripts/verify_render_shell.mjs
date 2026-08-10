@@ -212,6 +212,11 @@ test("typing a salary moves the euro figures", { skip }, async () => {
 
 test("the home block draws its mortgage bar and the wedge chart", { skip }, async () => {
   await withApp(async (page, errors) => {
+    // The home block prices nothing until a €/m² comes from somewhere, and
+    // there is no default област (P7) — so picking one is part of the
+    // scenario rather than setup around it. Without it the row renders what
+    // it is waiting for, and every assertion below would be about that.
+    await page.selectOption("#region-select", "sofiya");
     await page.locator("input[type=number]").first().fill("2500");
     await page.waitForTimeout(300);
     assert.ok(await page.locator(".wedge").count(), "the tax-wedge chart is not drawn");
@@ -239,6 +244,11 @@ test(
   },
   async () => {
     await withApp(async (page, errors) => {
+      // The home block prices nothing until a €/m² comes from somewhere, and
+      // there is no default област (P7) — so picking one is part of the
+      // scenario rather than setup around it. Without it the row renders what
+      // it is waiting for, and every assertion below would be about that.
+      await page.selectOption("#region-select", "sofiya");
       await page.locator("input[type=number]").first().fill("2500");
       const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
       if (await homeToggle.count()) await homeToggle.check();
@@ -257,6 +267,51 @@ test(
     });
   }
 );
+
+test("the home block prices nothing before a €/m² has a source", { skip }, async () => {
+  // **The state this is for looks exactly like a working one.** With no
+  // област chosen, `cityEurPerM2` falls back to
+  // `HOME.eurPerM2_offlineFallback` — a round constant имот.bg never published
+  // — and the row printed «70 м² в  ≈ €175 000», a €661/month payment and a
+  // "44% of your pay" verdict off it, with an empty <b> where the city goes.
+  // Every figure was internally consistent, which is why nothing else here
+  // caught it.
+  //
+  // It also reached past the row: `monthlyMort` is carved out of the money the
+  // basket's € column is computed from, so an invented mortgage moved thirteen
+  // category figures the reader would never have connected to it. Hence the
+  // second half — the carve-out sentence has to be absent too.
+  await withApp(async (page, errors) => {
+    await page.locator("input[type=number]").first().fill("2500");
+    const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
+    assert.ok(await homeToggle.count(), "the home toggle is missing");
+    await homeToggle.check();
+    await page.waitForTimeout(400);
+
+    const row = page.locator(".r-row", { hasText: "домът" }).first();
+    assert.ok(await row.count(), "the home row is not on the card");
+    const text = (await row.innerText()).replace(/\s+/g, " ");
+    assert.doesNotMatch(text, /€\s?\d/, `the row priced a home with no €/m² behind it: ${text}`);
+    assert.ok(!(await row.locator(".mort-bar").count()), "the affordability bar was drawn");
+    assert.match(text, /избери област|choose an oblast/i, `the row says nothing: ${text}`);
+
+    // The basket's € column is computed from take-home less housing. A
+    // mortgage that does not exist may not be carved out of it.
+    const basket = (await page.locator(".m-card").first().innerText()).replace(/\s+/g, " ");
+    assert.doesNotMatch(
+      basket,
+      /вноската|the payment/i,
+      `the basket carved out a mortgage the home row refused to state: ${basket}`
+    );
+
+    // And it recovers: pick an област with a published €/m² and the row prices.
+    await page.selectOption("#region-select", "sofiya");
+    await page.waitForTimeout(400);
+    const priced = (await row.innerText()).replace(/\s+/g, " ");
+    assert.match(priced, /€\s?\d/, `the row stayed empty after an област was picked: ${priced}`);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
 
 test("every decimal field takes the separator this page writes", { skip }, async () => {
   // `<input type="number">` sanitises its value to a valid floating-point

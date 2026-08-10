@@ -300,7 +300,7 @@
             name="priceMode"
             value="auto"
             checked={calc.priceMode === "auto"}
-            onchange={() => (calc.priceMode = "auto")}
+            onchange={calc.useMarketPrice}
           />
           <span class="l-bg">{COPY.priceModeAuto.bg}</span>
           <span class="l-en">{COPY.priceModeAuto.en}</span>
@@ -311,11 +311,7 @@
             name="priceMode"
             value="manual"
             checked={calc.priceMode === "manual"}
-            onchange={() => {
-              if (calc.manualPrice === 0)
-                calc.manualPrice = Math.round(calc.cityEurPerM2 * calc.m2);
-              calc.priceMode = "manual";
-            }}
+            onchange={calc.useManualPrice}
           />
           <span class="l-bg">{COPY.priceModeManual.bg}</span>
           <span class="l-en">{COPY.priceModeManual.en}</span>
