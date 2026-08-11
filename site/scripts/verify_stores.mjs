@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 /**
- * Behaviour verification for `src/lib/stores.js` — the language and theme
- * preferences, their fallbacks, and what happens when localStorage refuses.
+ * Behaviour verification for `src/lib/stores.js` — the three preferences, the
+ * figures a reader can ask this device to keep, their fallbacks, and what
+ * happens when localStorage refuses.
+ *
+ * Two claims run through the whole file and both are shipped sentences rather
+ * than taste. **Nothing is written before the visitor asks** — ЗЕТ чл. 4а,
+ * ал. 4, т. 2 exempts storage for a service «изрично поискана», and the privacy
+ * notice says «само ако ги смениш». And **what is stored is exactly the keys the
+ * notice names**, which `verify_legal.mjs` holds from the other end by reading
+ * them out of `stores.js` itself.
  *
  * `stores.js` reads localStorage at module-evaluation time, so each case
  * installs its own fake `localStorage` / `document` / `navigator` /
@@ -69,6 +77,45 @@ async function loadStores({ storage, language = "bg-BG", prefersDark = false }) 
 }
 
 const read = (s, k) => (s.map.has(k) ? s.map.get(k) : null);
+
+/**
+ * A snapshot in the shape `Calculator#snapshot` writes — every field, because
+ * every field is required and the point of several cases below is what happens
+ * when one of them is not what it says it is.
+ *
+ * Two divisions rather than thirteen: `stores.js` validates the shape and never
+ * the sizes, so the number here says nothing and a shorter fixture is a shorter
+ * diff to read. The size check lives in `Calculator#restore`, against the
+ * divisions actually published.
+ */
+const SAVED = {
+  earners: [{ amount: 1500, raiseText: "3,5" }],
+  earnersDirty: true,
+  raiseDirty: true,
+  payBasis: "net",
+  anchor: "y1",
+  rent: 600,
+  cash: 4000,
+  homeOn: true,
+  m2: 65,
+  rate: 2.75,
+  rateTouched: true,
+  term: 25,
+  priceMode: "manual",
+  manualPrice: 180000,
+  weights: [40, 60],
+  splits: [null, [30, 30]],
+  activePreset: null,
+  spendMode: "eur",
+  spendSharePct: 80,
+  detailMode: true,
+  sectorKey: "Information and communication",
+};
+
+/** `SAVED` as it sits on the device, version stamp and all. */
+const storedInputs = (over = {}) => ({
+  vyarno_inputs: JSON.stringify({ ...SAVED, v: 1, ...over }),
+});
 
 // --------------------------------------------------------------------------
 // A saved preference wins over the browser
@@ -213,19 +260,24 @@ test("a stored preference is not rewritten just by being read", async () => {
   assert.deepEqual(seen, [], `loading rewrote ${seen.join(", ")}`);
 });
 
-test("nothing but the three documented keys is ever written", async () => {
-  // The privacy notice names exactly three keys, and names them. A fourth
-  // would make the shipped sentence untrue — which is why the count is held
-  // here rather than left to review.
+test("nothing but the documented keys is ever written", async () => {
+  // The privacy notice names the keys one by one, so a key written here and
+  // absent there makes a shipped sentence untrue. The set is the guard, and it
+  // widens only alongside the notice — `verify_legal.mjs` §"the privacy notice
+  // states what is stored and what the host sees" reads the names straight out
+  // of `stores.js` and fails on a key the notice does not carry, in either
+  // language, on the commit that adds it.
   const storage = fakeStorage({});
   const { mod } = await loadStores({ storage, language: "bg-BG" });
   mod.toggleLang();
   mod.toggleTheme();
   mod.region.set("varna");
+  mod.setRememberInputs(true);
+  mod.writeInputs(SAVED);
 
   assert.deepEqual(
     [...storage.map.keys()].sort(),
-    [mod.LANG_KEY, mod.THEME_KEY, mod.REGION_KEY].sort()
+    [mod.LANG_KEY, mod.THEME_KEY, mod.REGION_KEY, mod.INPUTS_KEY].sort()
   );
 });
 
@@ -245,6 +297,145 @@ test("the region is not written until the reader picks one", async () => {
   let current = null;
   mod.region.subscribe((v) => (current = v))();
   assert.equal(current, "");
+});
+
+// --------------------------------------------------------------------------
+// The reader's own figures
+// --------------------------------------------------------------------------
+
+test("a device nobody has opted in on holds no figures", async () => {
+  // The load-bearing one for this feature, and the same argument as «arriving
+  // at the page writes nothing at all» one screen up: ЗЕТ чл. 4а, ал. 4, т. 2
+  // exempts storage for a service «изрично поискана», and a salary kept because
+  // the site felt like keeping it is not that. The switch is what the reader
+  // asks with, so it starts off and the module writes nothing on the way past.
+  //
+  // Default `rememberInputs` to `true` and this goes red on its first line;
+  // write the snapshot from the module rather than from the effect that reads
+  // the switch and it goes red on the second.
+  const storage = fakeStorage({});
+  const { mod } = await loadStores({ storage, language: "bg-BG" });
+
+  assert.equal(get(mod.rememberInputs), false, "this device is remembering by default");
+  assert.deepEqual([...storage.map.keys()], [], "loading the page wrote something");
+  assert.equal(mod.readInputs(), null);
+});
+
+test("the figures come back exactly as they went in", async () => {
+  const storage = fakeStorage({});
+  const { mod } = await loadStores({ storage, language: "bg-BG" });
+
+  mod.setRememberInputs(true);
+  mod.writeInputs(SAVED);
+
+  assert.equal(get(mod.rememberInputs), true);
+  assert.deepEqual(mod.readInputs(), SAVED, "what came back is not what was saved");
+});
+
+test("a stored blob is what says this device is remembering", async () => {
+  // There is no second «is it on» flag: the switch reads the presence of the
+  // key. Give it its own flag and this stays green while the two can disagree —
+  // which is the state where the switch says off over a stored salary.
+  const storage = fakeStorage(storedInputs());
+  const { mod } = await loadStores({ storage, language: "bg-BG" });
+  assert.equal(get(mod.rememberInputs), true);
+});
+
+test("switching off deletes the figures, it does not merely stop writing", async () => {
+  // A switch that stops writing and leaves yesterday's salary on the disk is
+  // the worst state this feature has: the reader has been told it is off, and
+  // the next person to open the browser is looking at their pay.
+  for (const stop of ["setRememberInputs", "forgetInputs"]) {
+    const storage = fakeStorage(storedInputs());
+    const { mod } = await loadStores({ storage, language: "bg-BG" });
+    assert.equal(get(mod.rememberInputs), true);
+
+    if (stop === "forgetInputs") mod.forgetInputs();
+    else mod.setRememberInputs(false);
+
+    assert.equal(read(storage, mod.INPUTS_KEY), null, `${stop} left the figures on the device`);
+    assert.equal(get(mod.rememberInputs), false, `${stop} left the switch on`);
+  }
+});
+
+test("a snapshot from another shape is dropped, and not left lying there", async () => {
+  // A basket saved against thirteen divisions and read back against fourteen is
+  // a wrong personal inflation wearing the appearance of the reader's own
+  // choice, so a version this build cannot read is refused whole — and the key
+  // goes with it, because it holds the reader's figures whether or not anything
+  // here can still use them.
+  for (const raw of [
+    JSON.stringify({ ...SAVED, v: 2 }),
+    JSON.stringify({ ...SAVED }),
+    JSON.stringify([SAVED]),
+    "null",
+    "{",
+    "",
+  ]) {
+    const storage = fakeStorage({ vyarno_inputs: raw });
+    const { mod } = await loadStores({ storage, language: "bg-BG" });
+    assert.equal(mod.readInputs(), null, `${raw.slice(0, 24)} was accepted`);
+    assert.equal(read(storage, mod.INPUTS_KEY), null, `${raw.slice(0, 24)} survived on the device`);
+    assert.equal(get(mod.rememberInputs), false);
+  }
+});
+
+test("one junk field is enough to refuse the whole snapshot", async () => {
+  // Field by field would leave a page half describing the reader with nothing
+  // saying which half — so every field is checked and any failure drops all of
+  // them. The loop covers whatever `INPUT_FIELDS` holds today: drop a field
+  // from the validator and its case here stops being refused.
+  const junk = {
+    earners: [{ amount: "1500", raiseText: "3" }],
+    earnersDirty: "yes",
+    raiseDirty: 1,
+    payBasis: "brutto",
+    anchor: 1999,
+    rent: "600",
+    // Not `NaN`: `JSON.stringify` writes it as `null`, which is a legitimate
+    // value for a field the reader can empty, so the fixture would be testing
+    // that an empty savings box is accepted.
+    cash: true,
+    homeOn: "true",
+    m2: [],
+    rate: null,
+    rateTouched: null,
+    term: {},
+    priceMode: "market",
+    manualPrice: "180000",
+    weights: [40, "60"],
+    splits: [null, [30, null]],
+    activePreset: 3,
+    spendMode: "percent",
+    spendSharePct: 140,
+    detailMode: "on",
+    sectorKey: 7,
+  };
+  assert.deepEqual(
+    Object.keys(junk).sort(),
+    Object.keys(SAVED).sort(),
+    "the junk table and the snapshot describe different shapes"
+  );
+
+  for (const [field, bad] of Object.entries(junk)) {
+    const storage = fakeStorage(storedInputs({ [field]: bad }));
+    const { mod } = await loadStores({ storage, language: "bg-BG" });
+    assert.equal(mod.readInputs(), null, `a junk ${field} was accepted`);
+  }
+});
+
+test("a browser that refuses to store costs the memory, never the page", async () => {
+  // Private mode, quota exhausted, storage disabled by policy. Every accessor
+  // throws, and the switch, the write and the wipe all have to be no-ops rather
+  // than an error in an event handler.
+  const storage = fakeStorage({}, { throwing: true });
+  const { mod } = await loadStores({ storage, language: "bg-BG" });
+
+  assert.equal(get(mod.rememberInputs), false);
+  assert.doesNotThrow(() => mod.setRememberInputs(true));
+  assert.doesNotThrow(() => mod.writeInputs(SAVED));
+  assert.doesNotThrow(() => mod.forgetInputs());
+  assert.equal(mod.readInputs(), null);
 });
 
 test("a junk saved region is ignored rather than rendered", async () => {

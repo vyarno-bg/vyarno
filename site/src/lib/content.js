@@ -145,6 +145,27 @@ export const COPY = {
     en: "Everything is anonymous, we don't collect personal data",
   },
   brandSmall: { bg: "икономиката, честно", en: "the economy, honestly" },
+  // The switch that keeps the reader's figures on this device, and the line
+  // under it. The label has to carry the device in it — «запомни числата ми»
+  // on its own is the sentence a reader would read as an account, on a page
+  // whose first promise is that there is no server to hold one.
+  rememberToggle: {
+    bg: "Помни числата ми на това устройство",
+    en: "Remember my figures on this device",
+  },
+  // Both halves of what saying yes means, in one line, because a reader decides
+  // here and nowhere else: the promise that holds (nothing is sent), and the
+  // risk that opens (whoever picks up the same device next). The privacy notice
+  // says the same thing at length; this is the version that arrives in time to
+  // change the answer.
+  rememberHint: {
+    bg: "Числата остават в този браузър и пак не се изпращат никъде. На общо устройство ги вижда и следващият, който отвори сайта.",
+    en: "The figures stay in this browser and are still sent nowhere. On a shared device the next person to open the site sees them too.",
+  },
+  rememberForget: {
+    bg: "Изтрий запазеното от това устройство",
+    en: "Forget everything on this device",
+  },
   // The first tab stop on every page that has a sticky header, and the same
   // string on each: a reader who has learnt where it goes on the calculator
   // meets the identical control on `/how/`. One key rather than a literal per

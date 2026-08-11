@@ -1,9 +1,10 @@
 /**
- * Lang + theme stores. Persisted to localStorage; `theme` falls back to
- * prefers-color-scheme, `lang` does not consult the browser at all. Every
- * storage accessor swallows its errors: private mode, an exhausted quota or a
- * policy-disabled store must cost the visitor a persisted preference, never
- * the page.
+ * What this device is allowed to keep: the language, the theme, the област,
+ * and — only if the reader asks for it — the figures they typed. Persisted to
+ * localStorage; `theme` falls back to prefers-color-scheme, `lang` does not
+ * consult the browser at all. Every storage accessor swallows its errors:
+ * private mode, an exhausted quota or a policy-disabled store must cost the
+ * visitor a persisted preference, never the page.
  *
  * NOTHING IS WRITTEN UNTIL THE VISITOR CHOOSES SOMETHING, AND THAT IS A LEGAL
  * CONSTRAINT RATHER THAN A TASTE ONE
@@ -30,6 +31,14 @@ import { writable } from "svelte/store";
 function writeLocalStorage(key, value) {
   try {
     localStorage.setItem(key, value);
+  } catch {
+    /* private mode */
+  }
+}
+
+function removeLocalStorage(key) {
+  try {
+    localStorage.removeItem(key);
   } catch {
     /* private mode */
   }
@@ -157,6 +166,188 @@ if (typeof document !== "undefined") {
   // true of it. There is no DOM side effect — the region changes figures, not
   // presentation — so `apply` is a no-op.
   persistOnChange(region, REGION_KEY, () => {});
+}
+
+// ---------------------------------------------------------------------------
+// The figures the reader typed — kept only if they ask, on this device only
+//
+// Everything above is a preference. This one is the salary, the rent, the
+// savings and the basket, so it is the one entry in this file where the thing
+// stored is the reader themselves.
+//
+// **P1 protects the reader from US, and this is a different risk with the same
+// shape.** «Числата ти остават при теб» is about the network, and it is
+// untouched here: nothing below reaches a server, and the calculator still
+// computes in the tab. What a stored salary is exposed to is the NEXT PERSON
+// ON THIS DEVICE — the shared laptop, the family tablet, the machine in a
+// library. That is not a hypothetical the code can price, so the reader prices
+// it: the switch is OFF until they turn it on, and the label beside it says
+// what turning it on means (`COPY.rememberHint`). A pre-ticked box would be
+// this project deciding somebody's living room for them, and P7's rule about
+// flattering defaults is the same rule.
+//
+// **The opt-in is also what the ЗЕТ чл. 4а argument rests on.** The module
+// header's «изрично поискана» reading is thin for a preference the visitor set
+// and thinner still for one they did not; a figure kept because somebody
+// pressed a switch that says «помни числата ми» is the strongest form of it
+// this file has.
+//
+// **ONE KEY, AND NO SEPARATE "IS IT ON" FLAG.** Remembering is on exactly when
+// the blob is on disk: the switch writes a snapshot the moment it is turned on,
+// and turning it off deletes the key in the same action. A flag beside the data
+// is a second thing that can disagree with it, and the disagreement that
+// matters is the one where the switch reads off and yesterday's salary is still
+// there — the worst state this feature has, and the one it cannot reach.
+// ---------------------------------------------------------------------------
+
+export const INPUTS_KEY = "vyarno_inputs";
+
+/**
+ * The saved shape's version, and a blob carrying any other number is dropped
+ * unread.
+ *
+ * The failure it exists for is not a crash. A basket of thirteen weights read
+ * back after a payload has gained a division lands one number short, and every
+ * figure derived from it is wrong while wearing the appearance of a choice the
+ * reader made — which is worse than an empty basket, because nothing on screen
+ * says a stale shape was involved. Bump this whenever a field below changes
+ * meaning, changes name or disappears.
+ */
+const INPUTS_VERSION = 1;
+
+const isBool = (v) => typeof v === "boolean";
+const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+/** A number field the reader can empty: `bind:value` on an empty number input is `null`. */
+const isAmount = (v) => v === null || isNum(v);
+const isText = (v) => typeof v === "string";
+const isList = (v, ok) => Array.isArray(v) && v.every(ok);
+
+/**
+ * Every field the blob carries, and what it has to look like.
+ *
+ * **All of them are required.** The writer is `Calculator#snapshot`, so a blob
+ * missing one is a blob this version did not write, whatever its `v` says —
+ * and «липсва, значи по подразбиране» is how a half-read basket gets onto the
+ * page. Junk is absent, never trusted, exactly as `readPreference` treats a
+ * language it does not recognise.
+ *
+ * **What is NOT checked here, deliberately: the sizes.** How many divisions a
+ * basket has and how many incomes a household may hold are facts about the
+ * published payloads and about the pay card, and `stores.js` knows nothing
+ * about either — the same line the region store draws when it declines to ask
+ * whether a saved code is a real област. `Calculator#restore` owns those, and
+ * drops the blob when they do not match.
+ */
+const INPUT_FIELDS = {
+  earners: (v) =>
+    isList(v, (e) => !!e && typeof e === "object" && isAmount(e.amount) && isText(e.raiseText)),
+  // The two "has a human been here" flags. They travel with the amounts
+  // because the amounts alone cannot say what they mean: restored without
+  // them, a reader's own €1,500 is treated as the €900 placeholder and the
+  // pocket row, the ladder row and the wedge all decline to answer about
+  // figures the reader typed themselves. Set them the other way and the page
+  // makes second-person claims about a placeholder (P7). `rateTouched` below
+  // is the same kind of field and travels for the same reason: without it the
+  // published ECB rate wins on the next load and the reader's own rate is the
+  // one thing the home block forgets.
+  earnersDirty: isBool,
+  raiseDirty: isBool,
+  payBasis: (v) => v === "net" || v === "gross",
+  anchor: (v) => v === "y1" || (isNum(v) && v >= 2000 && v <= 2100),
+  rent: isAmount,
+  cash: isAmount,
+  homeOn: isBool,
+  m2: isAmount,
+  rate: isNum,
+  rateTouched: isBool,
+  term: isAmount,
+  priceMode: (v) => v === "auto" || v === "manual",
+  manualPrice: isAmount,
+  weights: (v) => isList(v, isNum),
+  splits: (v) => isList(v, (s) => s === null || isList(s, isNum)),
+  activePreset: (v) => v === null || isText(v),
+  spendMode: (v) => v === "pct" || v === "eur",
+  spendSharePct: (v) => isNum(v) && v >= 0 && v <= 100,
+  detailMode: isBool,
+  sectorKey: isText,
+};
+
+/** The saved fields `INPUT_FIELDS` accepts in full, or `null`. */
+function parseInputs(raw) {
+  let blob;
+  try {
+    blob = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!blob || typeof blob !== "object" || blob.v !== INPUTS_VERSION) return null;
+  const saved = {};
+  for (const [field, isValid] of Object.entries(INPUT_FIELDS)) {
+    if (!isValid(blob[field])) return null;
+    // Rebuilt field by field rather than handed back as parsed, so anything
+    // else the blob carries stops at this line instead of reaching the state
+    // object the whole page is derived from.
+    saved[field] = blob[field];
+  }
+  return saved;
+}
+
+/**
+ * What the reader asked us to keep, or `null` — absent, unreadable, junk, or
+ * written by a version whose shape this one cannot read.
+ *
+ * **A blob we refuse to read is deleted rather than left lying there.** It
+ * holds the reader's own figures whether or not this build can use them, and a
+ * switch reading "off" over a salary still on the disk is the state this whole
+ * design exists to make unreachable.
+ */
+export function readInputs() {
+  let raw;
+  try {
+    raw = localStorage.getItem(INPUTS_KEY);
+  } catch {
+    /* private mode, exhausted quota, storage disabled by policy */
+    return null;
+  }
+  if (raw === null) return null;
+  const saved = parseInputs(raw);
+  if (!saved) removeLocalStorage(INPUTS_KEY);
+  return saved;
+}
+
+/** Whether this device is keeping the reader's figures. Off until they say so. */
+export const rememberInputs = writable(readInputs() !== null);
+
+/** @param {Record<string, unknown>} state  a `Calculator#snapshot` */
+export function writeInputs(state) {
+  writeLocalStorage(INPUTS_KEY, JSON.stringify({ ...state, v: INPUTS_VERSION }));
+}
+
+/**
+ * Delete what is stored and stop storing, in one action.
+ *
+ * The two halves are not separable. Clearing the key while the switch stays on
+ * writes the same figures back on the reader's next keystroke, so a "forget"
+ * that leaves it on is a button that does nothing — and a switch turned off
+ * over a stored salary is the same failure from the other side.
+ */
+export function forgetInputs() {
+  removeLocalStorage(INPUTS_KEY);
+  rememberInputs.set(false);
+}
+
+/**
+ * The switch itself.
+ *
+ * Turning it ON writes nothing here: `App.svelte`'s effect has the reader's
+ * current state and persists it as soon as this flips, which keeps one writer
+ * rather than two that can disagree about what is on the device.
+ *
+ * @param {boolean} on
+ */
+export function setRememberInputs(on) {
+  if (on) rememberInputs.set(true);
+  else forgetInputs();
 }
 
 // ---------------------------------------------------------------------------

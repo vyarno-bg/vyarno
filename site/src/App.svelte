@@ -12,7 +12,14 @@
    * `$lib/view`, BG/EN copy in `$lib/content`, and the fetch in `$lib/data`.
    */
   import { onMount } from "svelte";
-  import { lang, region } from "./lib/stores.js";
+  import {
+    lang,
+    region,
+    rememberInputs,
+    readInputs,
+    writeInputs,
+    forgetInputs,
+  } from "./lib/stores.js";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { regionOptions } from "./lib/view.js";
   // The footer is shared with /legal/ and /404.html so the upstream
@@ -25,6 +32,7 @@
   import ExplainerBand from "./components/ExplainerBand.svelte";
   import PayField from "./components/PayField.svelte";
   import InputsCard from "./components/InputsCard.svelte";
+  import RememberInputs from "./components/RememberInputs.svelte";
   import ResultsCard from "./components/ResultsCard.svelte";
   import { COPY, t } from "./lib/content.js";
   import { CONTACT } from "./lib/legal-nav.js";
@@ -55,11 +63,60 @@
 
   onMount(calc.load);
 
+  /**
+   * What a previous visit left on this device, read once, before any effect
+   * runs — so the write-through below cannot overwrite it with the defaults it
+   * is looking at while the payloads are still in flight.
+   *
+   * `null` covers every reason there is nothing to put back: a reader who never
+   * asked, a private-mode browser, and a blob written by a shape this build
+   * cannot read (`stores.js#readInputs` deletes that one rather than leaving
+   * the reader's figures on a device where nothing will ever pick them up).
+   */
+  let saved = readInputs();
+
   // Not folded into `load()`: the term clamp has to re-run when the *reader*
   // types a term past the BNB maturity cap, not only when a payload arrives.
   // See Calculator#syncWithData.
   $effect(() => {
     calc.syncWithData();
+    // AFTER the seeding, and only once there are divisions to measure against:
+    // `restore` judges a saved basket by the payload published today, and it is
+    // the seeding it has to land on top of. A snapshot this build cannot fit —
+    // a division added, a group added, more incomes than the card holds — is
+    // refused whole and the device is cleared, because what is on it then is
+    // the reader's figures under a shape nothing here will ever read again.
+    //
+    // **`categories.length`, not `dataReady`.** A fetch that failed leaves the
+    // page in its failure state with `dataReady` true and no divisions at all,
+    // and measuring a saved basket against nothing refuses every snapshot —
+    // which would erase the reader's own figures to report OUR network problem.
+    // Held instead, so the retry that fixes the fetch also restores them.
+    if (saved && calc.categories.length > 0) {
+      if (!calc.restore(saved)) forgetInputs();
+      saved = null;
+    }
+  });
+
+  /**
+   * Write-through, and the ONE place anything the reader typed reaches storage.
+   *
+   * The snapshot is taken unconditionally so this effect depends on every field
+   * in it; the write is what the switch gates. With the switch off — which is
+   * where every visitor starts — this runs, reads state, and writes nothing, so
+   * a first visit leaves the device exactly as it found it (ЗЕТ чл. 4а, ал. 4,
+   * т. 2, and `stores.js`'s header carries the argument).
+   *
+   * **A pending restore holds the write off, and that is not an optimisation.**
+   * Until `saved` has been applied, this object is the app's defaults — the €900
+   * placeholder, the official basket — and writing them over the reader's own
+   * figures loses those figures to the very state they were kept for: a fetch
+   * that failed renders no calculator, so nothing can restore them and nobody
+   * can retype them.
+   */
+  $effect(() => {
+    const inputs = calc.snapshot();
+    if ($rememberInputs && !saved) writeInputs(inputs);
   });
 
   // WHICH date is on the €/m² figure. `snapshot_date` is имот.bg's own newest
@@ -131,6 +188,15 @@
       <span class="l-bg">{COPY.privacy.bg}</span>
       <span class="l-en">{COPY.privacy.en}</span>
     </div>
+
+    <!-- Under the privacy line because it qualifies it, and out of the build's
+         output because it is a control whose state is this device's. A
+         prerendered switch is drawn unticked for everybody, including the
+         reader who turned it on — and it would be frozen at build time on the
+         one page a crawler reads. -->
+    {#if !prerender}
+      <RememberInputs />
+    {/if}
 
     {#if prerender}
       <!-- Nothing. Every branch below is a statement about the reader, and the

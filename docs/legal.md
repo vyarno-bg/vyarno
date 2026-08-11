@@ -647,14 +647,32 @@ Verified against the code on 2026-07-30 and corrected where it did not hold.
   `site/src/` is `data.js:22`. No beacon, no XHR, no WebSocket, no image ping,
   no dynamic import. `connect-src 'self'` in `_headers` is what makes that
   checkable rather than promised.
-- **The two `localStorage` keys are now written only on a real change.** They
-  used to be written on first paint, with defaults, because a Svelte `writable`
-  calls a new subscriber synchronously — so the privacy notice's «избраният
-  език» was not true of a first visit, and **ЗЕТ чл. 4а, ал. 4, т. 2** (the
-  ePrivacy storage rule, and it is in ЗЕТ, not ЗЕС) exempts only storage
-  necessary for a service «изрично поискана» by the recipient. A default nobody
-  asked for is the weakest form of that argument. Fixed; `verify_stores.mjs`
-  holds it.
+- **No `localStorage` key is written before the visitor has chosen something.**
+  A Svelte `writable` calls a new subscriber synchronously with the current
+  value, so a subscriber that persists on every value writes on first paint —
+  with defaults, for a visitor who has touched nothing — which would make the
+  privacy notice's «избраният език» untrue of a first visit and leave the
+  storage itself on the weakest available footing: **ЗЕТ чл. 4а, ал. 4, т. 2**
+  (the ePrivacy storage rule, and it is in ЗЕТ, not ЗЕС) exempts only storage
+  necessary for a service «изрично поискана» by the recipient, and a default
+  nobody asked for is not that. `verify_stores.mjs` holds it, and
+  `verify_legal.mjs` holds the other half — every key `stores.js` exports has to
+  be named in the notice, in both languages, on the commit that adds it.
+- **`vyarno_inputs` is the reader's own figures, and it is off until they
+  switch it on.** The other three keys are preferences and carry nothing
+  personal; this one holds the pay, the rent, the savings and the basket they
+  typed. Nothing about the чл. 4а analysis is strained by it — a switch labelled
+  «Помни числата ми на това устройство» is the clearest «изрично поискана» this
+  codebase has — and no personal data reaches a controller, because the record
+  is written in the reader's own browser and never sent: **GDPR art. 4(2) is not
+  engaged by us at all**, which is why this bullet is about чл. 4а and not about
+  a lawful basis. What the opt-in is really pricing is a risk the site cannot
+  see: on a shared device the next person to open the browser reads the figures.
+  So the switch starts off (P7), the label states both halves in one line, the
+  «forget everything on this device» button sits beside it, and switching off
+  deletes the key in the same action. Notice version 1.4 carries it in its own
+  section, per the notice's own rule that anything leaving something in the
+  reader's browser changes the version in the same release.
 - **There is a processor and there is a contract.** The site runs on a rented
   Hetzner VPS, so the host processes the request log on the controller's behalf
   and **GDPR art. 28(3) needs a written contract**. Concluded 2026-07-30. It did
