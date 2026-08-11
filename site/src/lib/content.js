@@ -2180,6 +2180,28 @@ export const COPY = {
   shareCopy: { bg: "Копирай текста", en: "Copy the text" },
   shareCopied: { bg: "Копирано", en: "Copied" },
   shareDownload: { bg: "Свали картинката", en: "Download the image" },
+  // The chat links, shown where the browser has no share sheet — which is most
+  // desktops, and where a reader was previously left with copy and download.
+  //
+  // **The note says what does NOT travel, and that is the whole reason it is
+  // here.** A `viber://`, `t.me` or `wa.me` address carries text and cannot
+  // attach a file, so the picture the block is showing stays behind. The block
+  // claims to render the whole of what leaves (`shareNote` below); three links
+  // that looked like the button beside them while sending half of it would make
+  // that claim false on the surface it is written on. Naming the absence is the
+  // same move `shareNote` makes about the salary.
+  //
+  // «Изпрати» here where `shareSend` above deliberately avoids it: the share
+  // sheet asks for no recipient, so «изпрати» would promise one it never
+  // requests. Each of these three opens its app on a chat picker, so one named
+  // recipient is exactly what the reader is about to choose.
+  shareChatNote: {
+    bg: "Връзките отдолу пращат само изречението — картинката не тръгва с тях. Свали я и я прикачи, ако искаш да пътува и тя.",
+    en: "The links below send the sentence only - the picture does not travel with them. Download it and attach it yourself if you want it to go too.",
+  },
+  shareChatViber: { bg: "Изпрати във Viber", en: "Send to Viber" },
+  shareChatTelegram: { bg: "Изпрати в Telegram", en: "Send to Telegram" },
+  shareChatWhatsApp: { bg: "Изпрати в WhatsApp", en: "Send to WhatsApp" },
   // The alt text describes the picture, so it names the second figure the way
   // the picture does. A screen-reader user is the one reader who gets this
   // sentence INSTEAD of the bars, not alongside them.

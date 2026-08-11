@@ -1338,6 +1338,46 @@ test("the share surfaces call the comparison figure a basket", () => {
   );
 });
 
+test("the chat links say the picture stays behind", () => {
+  // The block's claim is that it shows the whole of what leaves the device.
+  // A `viber://`, `t.me` or `wa.me` address carries text and cannot attach a
+  // file, so the picture rendered right above the row does NOT go with it —
+  // and the row sits one line under the buttons that send both. The line
+  // between them is the only thing telling those two apart, which is why the
+  // wording is a commitment here rather than a preference.
+  //
+  // Matched on the two nouns rather than on a phrase: what has to be said is
+  // which of the two things on the block travels, and the sentence is free
+  // otherwise. Bulgarian inflects, so the stems are what is matched.
+  //
+  // Not checked here: that both languages exist and are non-empty. The loop
+  // over every COPY entry at the top of this file already fails on that, for
+  // these keys and for every key added after them.
+  const travels = { bg: /изречени/i, en: /sentence/i };
+  const stays = { bg: /картинк/i, en: /picture|image/i };
+  for (const lang of ["bg", "en"]) {
+    const note = COPY.shareChatNote[lang];
+    assert.match(note, travels[lang], `the chat note does not say what is sent: ${note}`);
+    assert.match(note, stays[lang], `the chat note does not say what stays behind: ${note}`);
+  }
+
+  // And the labels name their destination, so a reader can tell the three
+  // apart before pressing one. A brand name is the same word in both
+  // languages, which is what makes this one list rather than two.
+  for (const [key, app] of [
+    ["shareChatViber", "Viber"],
+    ["shareChatTelegram", "Telegram"],
+    ["shareChatWhatsApp", "WhatsApp"],
+  ]) {
+    for (const lang of ["bg", "en"]) {
+      assert.ok(
+        COPY[key][lang].includes(app),
+        `COPY.${key}.${lang} names no app: ${COPY[key][lang]}`
+      );
+    }
+  }
+});
+
 test("the share note states the boundary rather than advertising it", () => {
   // The line under the preview is the one place the app claims something about
   // its own privacy, so it has to be a description of what is on the picture —
