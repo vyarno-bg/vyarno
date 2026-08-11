@@ -5,6 +5,11 @@
  * it the one surface where a personal figure could leave the tab as a picture.
  * P2 and P9: the drawing carries the rates and no euro figure, and it follows
  * the theme and language the reader is actually looking at.
+ *
+ * The chat links are checked here too, because what they send is decided by
+ * what is on the page: the href is built from the rendered sentence, and the
+ * rule that it carries nothing else is a rule about the finished attribute
+ * rather than about the expression that produced it.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -94,6 +99,83 @@ test("the share text names both rates and a way back to the site", { skip }, asy
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
+
+test(
+  "with no share sheet the sentence gets chat links, carrying nothing else",
+  { skip },
+  async () => {
+    await withApp(async (page, errors) => {
+      // Scoped to the basket's own rows. An unscoped `input[type="range"]` counts
+      // every rail on the page, so the index means "the seventh division" only
+      // for as long as nothing else on the card is a slider — and the
+      // spend-share control above the list is one.
+      await page.locator("#sliders .cat > input[type=range]").nth(6).fill("40");
+      await page.waitForTimeout(600);
+
+      // The premise, stated rather than assumed: the row exists BECAUSE there is
+      // no share sheet, and headless Chromium is the desktop case. If a future
+      // browser here grows one, the links are correctly absent and this says so
+      // instead of reporting three missing buttons.
+      assert.equal(
+        await page.evaluate(() => typeof navigator.share),
+        "undefined",
+        "this browser has a share sheet, so the chat links are hidden by design"
+      );
+
+      const message = await page.locator("section.share .sh-msg").innerText();
+      const links = await page
+        .locator("section.share a[href]")
+        .evaluateAll((nodes) =>
+          nodes.map((a) => ({ href: a.getAttribute("href"), name: a.innerText }))
+        );
+      assert.equal(links.length, 3, `expected three chat links, got ${links.length}`);
+      assert.deepEqual(
+        links.map(({ href }) => href.split("?")[0]).sort(),
+        ["https://t.me/share/url", "https://wa.me/", "viber://forward"],
+        `not the three chat destinations: ${links.map((l) => l.href).join(" | ")}`
+      );
+
+      // A rule over every outgoing href rather than one assertion per link, so a
+      // fourth destination is covered the day it is added:
+      //
+      //   - it sends the sentence the reader can read above, not some other one;
+      //   - it carries only parameters the platform requires — «a share count, a
+      //     click event or a campaign parameter on an outgoing share» is on the
+      //     closed list in docs/principles.md without qualification;
+      //   - and no value has anything appended to the site's own address, which
+      //     is what a campaign parameter would look like once it was encoded out
+      //     of sight inside a `text=`.
+      const collapse = (text) => text.replace(/\s+/g, " ").trim();
+      for (const { href, name } of links) {
+        assert.ok(name.trim(), `a chat link renders no label: ${href}`);
+        const params = new URLSearchParams(href.slice(href.indexOf("?") + 1));
+        assert.equal(
+          collapse(params.get("text") ?? ""),
+          collapse(message),
+          `${href} does not send the sentence the reader was shown`
+        );
+        assert.deepEqual(
+          [...params.keys()].filter((key) => !["text", "url"].includes(key)),
+          [],
+          `${href} carries a parameter beyond the message and the address`
+        );
+        for (const [key, value] of params) {
+          assert.doesNotMatch(
+            value,
+            /vyarno\.bg\S/,
+            `${key} appends something to the address: ${value}`
+          );
+          assert.doesNotMatch(
+            value,
+            /utm_|(?<![\w-])ref=|fbclid|gclid/i,
+            `${key} carries a tag: ${value}`
+          );
+        }
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
 
 test("the shared picture follows the reader's theme and language", { skip }, async () => {
   await withApp(async (page, errors) => {

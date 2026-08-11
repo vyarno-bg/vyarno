@@ -909,6 +909,27 @@ means base64-ing four woff2 files into every card. A canvas draws with the
 fonts the page already has, and it is still zero dependencies and still nothing
 third-party, which is what the SVG rule was protecting.
 
+**Where the sentence can go, and what it loses on the way.** `navigator.share`
+is absent on most desktops, so the block also offers `viber://`, `t.me` and
+`wa.me` links built from the same `shareSentence` the clipboard button copies.
+A URL scheme carries text and cannot attach a file, so **the picture stays
+behind** — which is why that row sits under a line of its own saying so
+(`COPY.shareChatNote`) rather than beside the share-sheet button that sends
+both. The sentence ends in the full `https://vyarno.bg`, so travelling alone
+costs a recipient nothing they could not check; P9's fallback to the source
+name and the date is for the image, which physically cannot carry a link.
+Facebook Messenger is deliberately absent: its web dialog needs a registered
+`app_id` and the `fb-messenger://` scheme reaches only a device that has the
+app, which is the case the share sheet already covers.
+
+Every one of those hrefs is the message and nothing else. No `utm_`, no `ref=`,
+no click handler, and the address handed to Telegram is the bare origin — «a
+share count, a click event or a campaign parameter on an outgoing share» is on
+the closed list in [`principles.md`](./principles.md) without qualification.
+`verify_render_share.mjs` reads the rendered attributes and holds every
+parameter of every outgoing link to that, as a rule rather than per link, so a
+fourth destination is covered on the day somebody adds it.
+
 Their shared anatomy is in `$lib/card.css` (the grid, the two cards, the field,
 the `.vlink` verify arrow) and `$lib/result-row.css` (the row itself). Both
 exist because Svelte scopes a
