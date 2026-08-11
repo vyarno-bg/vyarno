@@ -54,7 +54,13 @@ let caseId = 0;
  * Install the browser globals `stores.js` reads, import a fresh copy of it,
  * and hand back the module plus the storage it wrote through.
  */
-async function loadStores({ storage, language = "bg-BG", prefersDark = false }) {
+async function loadStores({
+  storage,
+  language = "bg-BG",
+  prefersDark = false,
+  declared = "bg",
+  path = "/",
+}) {
   globalThis.localStorage = storage;
   globalThis.matchMedia = (q) => ({ matches: prefersDark && q.includes("dark") });
   Object.defineProperty(globalThis, "navigator", {
@@ -64,14 +70,25 @@ async function loadStores({ storage, language = "bg-BG", prefersDark = false }) 
   });
   // The subscribers only run when a `document` exists, and they are the half
   // of the module that writes the key back, so the fake has to be present.
+  //
+  // `dataset.lang` and `location.pathname` are the two facts about the DOCUMENT
+  // the module now reads: which language this entry declares, and whether the
+  // address is the site root. The defaults model the Bulgarian calculator at
+  // `/`, which is what every case that says nothing about either is about.
   globalThis.document = {
     documentElement: {
       attrs: {},
+      dataset: { lang: declared },
       setAttribute(k, v) {
         this.attrs[k] = v;
       },
     },
   };
+  Object.defineProperty(globalThis, "location", {
+    value: { pathname: path },
+    configurable: true,
+    writable: true,
+  });
   const mod = await import(`../src/lib/stores.js?case=${++caseId}`);
   return { mod, storage, docEl: globalThis.document.documentElement };
 }
@@ -191,14 +208,108 @@ test("a visitor who chose EN keeps EN, browser language notwithstanding", async 
 
 test("a localStorage that throws does not break the page", async () => {
   // Private mode, quota exhausted, storage disabled by policy: every accessor
-  // throws. The stores must still resolve and the toggles must still work.
+  // throws. The stores must still resolve and the controls must still work —
+  // and for the language that means the navigation happens and nothing is
+  // recorded, which is the right side of the trade.
   const storage = fakeStorage({}, { throwing: true });
   const { mod } = await loadStores({ storage, language: "en-GB", prefersDark: true });
 
   assert.equal(get(mod.lang), "bg");
   assert.equal(get(mod.theme), "dark");
-  assert.doesNotThrow(() => mod.toggleLang());
+  assert.doesNotThrow(() => mod.chooseLang("en"));
+  assert.doesNotThrow(() => mod.toggleTheme());
+});
+
+// --------------------------------------------------------------------------
+// The URL decides the language; the root's default is what is stored
+// --------------------------------------------------------------------------
+
+test("the document a reader was served decides the language, not this device", async () => {
+  // The rule the `/en/` tree rests on. Every page is served at two addresses
+  // and each entry hardcodes the language it declares, so a reader who reached
+  // `/en/legal/` from a search result has been handed an English document —
+  // told so by its `lang`, its canonical and its `hreflang` set. Rendering it
+  // in Bulgarian because this device once stored `bg` makes the page contradict
+  // the document it arrived as, and leaves the English text in the DOM where
+  // only the stylesheet can reach it.
+  //
+  // Both directions, because a check in one is satisfied by a module that
+  // ignored the preference outright.
+  for (const [declared, saved] of [
+    ["en", "bg"],
+    ["bg", "en"],
+  ]) {
+    const storage = fakeStorage({ vyarno_lang: saved });
+    const { mod, docEl } = await loadStores({ storage, declared, path: "/how/" });
+    assert.equal(
+      get(mod.lang),
+      declared,
+      `a stored ${saved} overrode a document that declares ${declared}`
+    );
+    // ...and the attribute `tokens.css` hides a language by agrees with it, or
+    // the page is in one language and styled for the other.
+    assert.equal(docEl.attrs["data-lang"], declared);
+  }
+});
+
+test("the root is where a stored choice still decides", async () => {
+  // `/` is the one address that names no language: it is what a person types,
+  // what a bookmark holds and what a link to «vyarno.bg» resolves to. Its entry
+  // declares `bg` because a document has to declare something, and that is the
+  // one declaration a reader's own earlier choice is allowed to answer instead.
+  //
+  // Drop the root exception and this goes red while every case above stays
+  // green — which is why it is separate: `vyarno_lang` would then be a key this
+  // module writes and never reads, and the privacy notice's «избраният език»
+  // would be describing nothing.
+  for (const path of ["/", "/index.html"]) {
+    const storage = fakeStorage({ vyarno_lang: "en" });
+    const { mod, docEl } = await loadStores({ storage, declared: "bg", path });
+    assert.equal(get(mod.lang), "en", `a stored choice was ignored at ${path}`);
+    assert.equal(docEl.attrs["data-lang"], "en");
+  }
+});
+
+test("the English tree is a path away, and the Bulgarian one is the bare path", async () => {
+  // Where the header's two anchors point. Pure, so the pair in five different
+  // headers cannot each invent its own prefix — and so the counterpart of a
+  // page is decided in one place rather than written out per template, which is
+  // how `/en/how/` becomes `/en/how` on one page and nowhere else.
+  const storage = fakeStorage({});
+  const { mod } = await loadStores({ storage });
+  for (const page of ["/", "/how/", "/legal/", "/support/"]) {
+    assert.equal(mod.langHref(page, "bg"), page);
+    assert.equal(mod.langHref(page, "en"), `/en${page}`);
+  }
+  assert.equal(mod.EN_PREFIX, "/en");
+});
+
+test("choosing a language records it; being served one does not", async () => {
+  // Navigating IS choosing, so the control that navigates may write — the
+  // module header's ЗЕТ чл. 4а argument turns on storage being «изрично
+  // поискана», and pressing the language link is that act. Arriving at an
+  // English document is not: a reader who followed a search result asked a
+  // search engine for something, not this site.
+  const storage = fakeStorage({});
+  const { mod } = await loadStores({ storage, declared: "en", path: "/en/how/" });
   assert.equal(get(mod.lang), "en");
+  assert.deepEqual([...storage.map.keys()], [], "being served English persisted a choice");
+
+  mod.chooseLang("bg");
+  assert.equal(read(storage, mod.LANG_KEY), "bg");
+
+  // And the store is deliberately left alone: the counterpart document declares
+  // its own language and this one is being navigated away from. Repainting it
+  // would put the page into a language its `<html lang>` no longer matches for
+  // as long as the next document takes to load.
+  assert.equal(get(mod.lang), "en", "choosing repainted the page a reader is leaving");
+
+  // A value that is not a language is refused rather than stored: the key is
+  // read back through `readPreference`, so junk here would simply be dropped on
+  // the next load — but it would still be on the device, which is a preference
+  // this site invented.
+  mod.chooseLang("de");
+  assert.equal(read(storage, mod.LANG_KEY), "bg");
 });
 
 // --------------------------------------------------------------------------
@@ -209,12 +320,14 @@ test("the toggles write through to storage and to the DOM attributes", async () 
   const storage = fakeStorage({});
   const { mod, docEl } = await loadStores({ storage, language: "bg-BG" });
 
-  mod.toggleLang();
+  mod.chooseLang("en");
   mod.toggleTheme();
   assert.equal(read(storage, mod.LANG_KEY), "en");
   assert.equal(read(storage, mod.THEME_KEY), "dark");
-  // ...and through to the attributes tokens.css switches on.
-  assert.equal(docEl.attrs["data-lang"], "en");
+  // The theme is applied to the attribute `tokens.css` switches on, because it
+  // changes this page. The language does not, because it changes which page:
+  // the control is a link and the counterpart document declares its own.
+  assert.equal(docEl.attrs["data-lang"], "bg");
   assert.equal(docEl.attrs["data-theme"], "dark");
 });
 
@@ -269,7 +382,7 @@ test("nothing but the documented keys is ever written", async () => {
   // language, on the commit that adds it.
   const storage = fakeStorage({});
   const { mod } = await loadStores({ storage, language: "bg-BG" });
-  mod.toggleLang();
+  mod.chooseLang("en");
   mod.toggleTheme();
   mod.region.set("varna");
   mod.setRememberInputs(true);

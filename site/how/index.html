@@ -15,6 +15,25 @@
     />
     <link rel="canonical" href="https://vyarno.bg/how/" />
     <!--
+      The same page in the other language, and itself. `hreflang` is reciprocal
+      by definition — Google discards a set where a page names an alternate that
+      does not name it back — so all eight entries carry all three lines and
+      each one names ITSELF among them. `verify_static_assets.mjs` holds the
+      whole collection to that rather than checking this file alone, because a
+      one-sided set fails silently: both pages keep serving, and the pair is
+      simply never treated as a pair.
+
+      x-default is the Bulgarian page. It is what a search engine serves a
+      reader whose language it cannot place, and this is a calculator of
+      Bulgarian prices, Bulgarian payroll law and Sofia housing written for a
+      person living in Bulgaria (docs/README.md §"Who this is for") — the same
+      reasoning that makes BG the default in `stores.js` and keeps
+      `navigator.language` out of it.
+    -->
+    <link rel="alternate" hreflang="bg" href="https://vyarno.bg/how/" />
+    <link rel="alternate" hreflang="en" href="https://vyarno.bg/en/how/" />
+    <link rel="alternate" hreflang="x-default" href="https://vyarno.bg/how/" />
+    <!--
       EU snippet opt-in. Google truncates snippets and image previews in the EU
       for publishers who have not asked otherwise, and that limit governs how
       much of a page can appear in a result AND in an AI Overview. Both
@@ -42,10 +61,10 @@
     <meta property="og:site_name" content="Вярно · vyarno.bg" />
     <meta property="og:locale" content="bg_BG" />
     <!--
-    Same as the calculator's, and for the same reason: one URL serves both
-    languages, so bg_BG is what the page declares and en_US is what it also
-    answers in. It buys an unfurler a language it can read; it is not an
-    hreflang pair, because there is no second URL to point at.
+    Same as the calculator's, and for the same reason: bg_BG is this document's
+    locale and en_US is the one its counterpart is in. Open Graph is what an
+    unfurler reads and `hreflang` is what a search engine reads, so the pair of
+    URLs is stated in both vocabularies rather than in whichever came first.
   -->
     <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:url" content="https://vyarno.bg/how/" />
@@ -102,7 +121,7 @@
         "@type": "WebPage",
         "name": "Числата за България, обяснени",
         "url": "https://vyarno.bg/how/",
-        "inLanguage": ["bg", "en"],
+        "inLanguage": "bg",
         "dateModified": "__DATA_LASTMOD__",
         "isPartOf": {
           "@type": "WebApplication",
@@ -130,10 +149,10 @@
       <!--
         `scripts/prerender.mjs` writes this page — figures and all — into #app
         at build time, so a reader with JavaScript off already has the numbers.
-        What they lose is the language toggle and the calculator behind the
-        link, which is what these two sentences say. The upstream attribution
-        is a licence condition that must appear on every page including this
-        one, whether the bundle runs or the prerender step ever stops running.
+        What they lose is the calculator behind the link, which is what these
+        two sentences say. The upstream attribution is a licence condition that
+        must appear on every page including this one, whether the bundle runs or
+        the prerender step ever stops running.
       -->
       <div
         style="

@@ -1,29 +1,23 @@
 <!doctype html>
-<html lang="bg" data-lang="bg" data-theme="light">
+<html lang="en" data-lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Вярно — кой плаща за проекта</title>
+    <title>Vyarno — who pays for the project</title>
     <meta
       name="description"
-      content="Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от дарения, които не купуват нищо."
+      content="Vyarno is free for everyone and has no paid version. The domain and the server are paid for by donations, which buy nothing."
     />
-    <link rel="canonical" href="https://vyarno.bg/support/" />
+    <link rel="canonical" href="https://vyarno.bg/en/support/" />
     <!--
       The same page in the other language, and itself. `hreflang` is reciprocal
       by definition — Google discards a set where a page names an alternate that
       does not name it back — so all eight entries carry all three lines and
       each one names ITSELF among them. `verify_static_assets.mjs` holds the
-      whole collection to that rather than checking this file alone, because a
-      one-sided set fails silently: both pages keep serving, and the pair is
-      simply never treated as a pair.
+      whole collection to that rather than checking this file alone.
 
-      x-default is the Bulgarian page. It is what a search engine serves a
-      reader whose language it cannot place, and this is a calculator of
-      Bulgarian prices, Bulgarian payroll law and Sofia housing written for a
-      person living in Bulgaria (docs/README.md §"Who this is for") — the same
-      reasoning that makes BG the default in `stores.js` and keeps
-      `navigator.language` out of it.
+      x-default is the Bulgarian page, on this page as on every other
+      (docs/README.md §"Who this is for").
     -->
     <link rel="alternate" hreflang="bg" href="https://vyarno.bg/support/" />
     <link rel="alternate" hreflang="en" href="https://vyarno.bg/en/support/" />
@@ -51,17 +45,15 @@
   -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Вярно · vyarno.bg" />
-    <meta property="og:locale" content="bg_BG" />
-    <meta property="og:locale:alternate" content="en_US" />
-    <meta property="og:url" content="https://vyarno.bg/support/" />
-    <meta property="og:title" content="Вярно — кой плаща за проекта" />
-    <meta property="og:description" content="Какво покриват даренията и какво не купуват." />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="bg_BG" />
+    <meta property="og:url" content="https://vyarno.bg/en/support/" />
+    <meta property="og:title" content="Vyarno — who pays for the project" />
+    <meta property="og:description" content="What donations cover, and what they do not buy." />
 
     <!--
     A WebPage, so the page a person is given as the funding answer is one a
-    machine can also place. Prerendered, indexable and in the sitemap like the
-    other three; without a node it was the only one an agent had to infer from
-    prose.
+    machine can also place.
 
     NO dateModified. Its content changes when a channel opens or the copy is
     edited, and neither is a date anything in this build can read — the same
@@ -76,16 +68,17 @@
       {
         "@context": "https://schema.org",
         "@type": "WebPage",
-        "name": "Кой плаща за проекта",
-        "url": "https://vyarno.bg/support/",
-        "inLanguage": "bg",
+        "name": "Who pays for the project",
+        "url": "https://vyarno.bg/en/support/",
+        "inLanguage": "en",
         "isPartOf": {
           "@type": "WebApplication",
           "name": "Вярно",
+          "alternateName": "Vyarno",
           "url": "https://vyarno.bg/",
           "license": "https://www.apache.org/licenses/LICENSE-2.0"
         },
-        "description": "Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от дарения, които не купуват нищо."
+        "description": "Vyarno is free for everyone and has no paid version. The domain and the server are paid for by donations, which buy nothing."
       }
     </script>
 
@@ -119,15 +112,15 @@
           line-height: 1.55;
         "
       >
-        <p lang="bg">
-          Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от
-          дарения. Страницата се чете и без JavaScript; без него не работи превключвателят за тема,
-          нито калкулаторът зад връзката.
-        </p>
         <p lang="en">
           Vyarno is free for everyone and has no paid version. The domain and the server are paid
           for by donations. This page reads without JavaScript; without it the theme toggle does not
           work, and neither does the calculator behind the link.
+        </p>
+        <p lang="bg">
+          Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от
+          дарения. Страницата се чете и без JavaScript; без него не работи превключвателят за тема,
+          нито калкулаторът зад връзката.
         </p>
         <p>
           <small

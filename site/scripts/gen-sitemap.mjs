@@ -9,22 +9,28 @@
  * payloads, which is genuinely when the page's content last changed; the legal
  * page's is its effective date.
  *
- * Four pages, and that is the whole site: `/`, `/how/`, `/legal/` and
- * `/support/`. `/404.html` is deliberately absent (it is `noindex`, and listing
- * an error page is a crawl-budget bug), and `/data/published/*` is absent
- * because `robots.txt` disallows it — a sitemap that lists a disallowed path is
- * a contradiction a crawler reports back as an error.
+ * Eight pages, and that is the whole site: four routes, each at a Bulgarian and
+ * an English address. `/404.html` is deliberately absent (it is `noindex`, and
+ * listing an error page is a crawl-budget bug), and `/data/published/*` is
+ * absent because `robots.txt` disallows it — a sitemap that lists a disallowed
+ * path is a contradiction a crawler reports back as an error.
  *
- * `/how/` takes the SAME `lastmod` as the calculator, and that is a statement
- * about the page rather than a convenience: both are prerendered from the
- * published payloads in this build, so a refreshed payload genuinely changes
- * what a visitor sees on either.
+ * **Both languages are listed, and neither is a duplicate of the other.** They
+ * are separate documents with separate canonicals, each declaring the other as
+ * its `hreflang` alternate; a sitemap naming only the Bulgarian half would
+ * leave the English one discoverable by link alone, which is what the whole
+ * `/en/` tree exists to stop being true (docs/seo.md).
  *
- * `/support/` carries no `lastmod`. Its content changes when a channel opens
- * or the copy is edited, and neither is a date anything in this build can
- * read; a hand-maintained constant beside `LEGAL_LASTMOD` would be wrong from
- * the first commit that forgot it. The field is optional, and an omitted
- * `lastmod` costs a crawler nothing next to a false one.
+ * A page and its counterpart take the SAME `lastmod`, and that is a statement
+ * about the pair rather than a convenience: they are one component prerendered
+ * from one set of payloads in one build, so nothing can move on one and not the
+ * other. `/how/` takes the calculator's for the same reason.
+ *
+ * `/support/` carries no `lastmod`, in either language. Its content changes
+ * when a channel opens or the copy is edited, and neither is a date anything in
+ * this build can read; a hand-maintained constant beside `LEGAL_LASTMOD` would
+ * be wrong from the first commit that forgot it. The field is optional, and an
+ * omitted `lastmod` costs a crawler nothing next to a false one.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -118,6 +124,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     { loc: "/how/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/legal/", lastmod: LEGAL_LASTMOD, changefreq: "yearly" },
     { loc: "/support/", changefreq: "yearly" },
+    { loc: "/en/", lastmod: dataLastmod, changefreq: "monthly" },
+    { loc: "/en/how/", lastmod: dataLastmod, changefreq: "monthly" },
+    { loc: "/en/legal/", lastmod: LEGAL_LASTMOD, changefreq: "yearly" },
+    { loc: "/en/support/", changefreq: "yearly" },
   ];
 
   await writeFile(join(DIST, "sitemap.xml"), sitemapXml(pages), "utf8");

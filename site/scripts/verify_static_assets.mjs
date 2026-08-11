@@ -356,9 +356,12 @@ test("the generated sitemap carries every indexable page, /how/ included", () =>
   const listed = [...src.matchAll(/\{\s*loc:\s*"([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(
     listed,
-    ["/", "/how/", "/legal/", "/support/"],
+    ["/", "/how/", "/legal/", "/support/", "/en/", "/en/how/", "/en/legal/", "/en/support/"],
     `gen-sitemap.mjs writes ${listed.join(", ")}. Every page that is not ` +
-      "noindex belongs in it, and nothing robots.txt disallows does."
+      "noindex belongs in it, and nothing robots.txt disallows does. Both " +
+      "languages of a page are listed: they are separate documents with " +
+      "separate canonicals, and a sitemap naming one half leaves the other " +
+      "discoverable by link alone."
   );
 });
 
@@ -380,8 +383,22 @@ const ENTRIES = [
   { file: ["how", "index.html"], url: "/how/index.html" },
   { file: ["legal", "index.html"], url: "/legal/index.html" },
   { file: ["support", "index.html"], url: "/support/index.html" },
+  { file: ["en", "index.html"], url: "/en/index.html" },
+  { file: ["en", "how", "index.html"], url: "/en/how/index.html" },
+  { file: ["en", "legal", "index.html"], url: "/en/legal/index.html" },
+  { file: ["en", "support", "index.html"], url: "/en/support/index.html" },
   { file: ["404.html"], url: "/404.html" },
 ];
+
+/**
+ * The entries a crawler is meant to hold, which is every one but the 404.
+ *
+ * `404.html` carries a bare `noindex` and no canonical, so the head rules
+ * below — one canonical, a complete `hreflang` set — are about a page it is
+ * not. Filtered out of the list rather than named separately, so an entry
+ * added to `ENTRIES` is covered by both without anybody remembering.
+ */
+const INDEXABLE = ENTRIES.filter(({ url }) => url !== "/404.html");
 
 test("every build entry exists where vite.config.js expects it", () => {
   const cfg = read("vite.config.js");
@@ -393,6 +410,96 @@ test("every build entry exists where vite.config.js expects it", () => {
       `vite.config.js no longer builds ${name}; it would silently stop being ` +
         "deployed while the build stays green."
     );
+  }
+});
+
+/** The `hreflang` set and the canonical of a built entry, as a crawler reads them. */
+function headLinks(html) {
+  const alternates = {};
+  for (const [, tag, href] of html.matchAll(
+    /<link\s+rel="alternate"\s+hreflang="([^"]+)"\s+href="([^"]+)"\s*\/?>/g
+  )) {
+    alternates[tag] = href;
+  }
+  const canonicals = [...html.matchAll(/<link\s+rel="canonical"\s+href="([^"]+)"\s*\/?>/g)].map(
+    (m) => m[1]
+  );
+  return { alternates, canonicals };
+}
+
+test("every page names both languages of itself, and each one names it back", () => {
+  // **`hreflang` is reciprocal or it is nothing.** Google discards a set where
+  // A names B and B does not name A — both documents keep serving and the pair
+  // is simply never treated as a pair, which is the failure mode a reader of
+  // either page cannot see and no other check in this repository can either.
+  // The English tree exists so an English query has a document to rank, and an
+  // unreciprocated set is that tree ranking against its own Bulgarian
+  // counterpart instead of beside it.
+  //
+  // Written as ONE rule over the collection rather than as an assertion per
+  // page: eight hand-written sets is eight chances for one of them to name
+  // seven pages, and the one it forgets is the one nobody opens. A page added
+  // to `ENTRIES` is checked by this the moment it is added.
+  //
+  // Each set names ITSELF too. A page's own canonical among its alternates is
+  // what tells a crawler which member of the group this document is; a set that
+  // lists only the other language leaves the group with a member it cannot
+  // place.
+  const published = new Map();
+  for (const { file } of INDEXABLE) {
+    const name = file.join("/");
+    const { alternates, canonicals } = headLinks(read(...file));
+    assert.equal(
+      canonicals.length,
+      1,
+      `${name} carries ${canonicals.length} canonical links, and a crawler reads ` +
+        "the first — two of them is a page whose own address is a guess"
+    );
+    assert.deepEqual(
+      Object.keys(alternates).sort(),
+      ["bg", "en", "x-default"],
+      `${name} publishes hreflang ${Object.keys(alternates).join(", ") || "(none)"}. ` +
+        "Every indexable page is served in two languages and has to name both " +
+        "plus the x-default, or a search engine has no group to put it in."
+    );
+    published.set(canonicals[0], alternates);
+  }
+  assert.equal(
+    published.size,
+    INDEXABLE.length,
+    "two entries claim the same canonical URL, so one of them is telling every " +
+      "crawler it is the other page"
+  );
+
+  for (const [canonical, set] of published) {
+    assert.ok(
+      Object.values(set).includes(canonical),
+      `${canonical} does not name itself among its own alternates`
+    );
+    assert.equal(
+      set["x-default"],
+      set.bg,
+      `${canonical}'s x-default is ${set["x-default"]} rather than the Bulgarian ` +
+        "page. It is what a search engine serves a reader whose language it " +
+        "cannot place, and this is a calculator of Bulgarian prices written " +
+        "for a person living in Bulgaria (docs/README.md)."
+    );
+    for (const tag of ["bg", "en"]) {
+      const other = published.get(set[tag]);
+      assert.ok(
+        other,
+        `${canonical} names ${set[tag]} as its ${tag} alternate and no entry is ` +
+          "canonical at that URL — the alternate points at a page that does not " +
+          "claim to be one"
+      );
+      assert.deepEqual(
+        other,
+        set,
+        `${canonical} and ${set[tag]} publish different hreflang sets. A set that ` +
+          "is not reciprocal is discarded whole, so both pages keep serving and " +
+          "neither is ever treated as the other's alternate."
+      );
+    }
   }
 });
 
@@ -417,14 +524,19 @@ test("every prerendered page has a mount point, and one place that empties it", 
     legal: "legal-main.js",
     support: "support-main.js",
   };
-  for (const { name, page } of PRERENDERED) {
-    const entry = read(...page);
-    assert.ok(
-      entry.includes(MOUNT_POINT),
-      `${page.join("/")} no longer carries ${MOUNT_POINT} verbatim, so the ` +
-        "prerender step has nowhere to write the page. The marker, the " +
-        "injection and the mount target move together."
-    );
+  for (const { name, pages } of PRERENDERED) {
+    // Both addresses a component answers at. A row whose English entry lost its
+    // mount point fails the build, and the Bulgarian one beside it would have
+    // gone on passing this while `/en/…` shipped an empty div.
+    for (const page of pages) {
+      const entry = read(...page);
+      assert.ok(
+        entry.includes(MOUNT_POINT),
+        `${page.join("/")} no longer carries ${MOUNT_POINT} verbatim, so the ` +
+          "prerender step has nowhere to write the page. The marker, the " +
+          "injection and the mount target move together."
+      );
+    }
     const bootstrap = MAINS[name];
     assert.ok(bootstrap, `${name} is prerendered and this test does not know its entry point`);
     assert.match(

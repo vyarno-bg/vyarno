@@ -5,7 +5,7 @@ calculator. The user's browser never calls an upstream API.
 
 ## Layout
 
-**Five build entries, five real URLs**, so each resolves on a static host with
+**Nine build entries, nine real URLs**, so each resolves on a static host with
 no router and no rewrite rules (`vite.config.js#rollupOptions.input`):
 
 | Entry | URL | What it is |
@@ -14,7 +14,22 @@ no router and no rewrite rules (`vite.config.js#rollupOptions.input`):
 | `how/index.html` → `src/how-main.js` → `How.svelte` | `/how/` | the country's figures, with their sources |
 | `legal/index.html` → `src/legal-main.js` → `Legal.svelte` | `/legal/` | terms, privacy, ЗЕТ чл. 4 identity, sources |
 | `support/index.html` → `src/support-main.js` → `Support.svelte` | `/support/` | how the project is paid for |
+| `en/index.html`, `en/how/…`, `en/legal/…`, `en/support/…` | `/en/…` | those four again, declaring `en` |
 | `404.html` → `src/notfound-main.js` → `NotFound.svelte` | `/404.html` | served for any unmatched path by name |
+
+**The `en/` four name the same bootstraps and the same components as their
+Bulgarian counterparts.** What separates a pair is the `data-lang` on `<html>`,
+the head tags, and which half of every `.l-bg` / `.l-en` string survives
+`prerender.mjs` — so an English entry is four kilobytes of head and no second
+implementation of anything. They exist because a page ranks as a DOCUMENT and
+the served document carries one language: `/` put no English in front of a
+search engine at all, and an `hreflang` alternate had no address to point at
+([`seo.md`](./seo.md) §"Eight pages, four routes, two languages").
+
+Which language a reader gets is decided by the URL, and the preference in
+`stores.js` supplies the default at `/` alone. The header's language control is
+a pair of anchors rather than a button, so it works with the bundle off — see
+§`src/lib/stores.js` below.
 
 `/how/` is a page rather than a section of the calculator because one page
 ranks for one cluster of queries, and `/` is answering «сметни моята инфлация».
@@ -686,7 +701,7 @@ Four `writable` stores with `localStorage` persistence:
 
 | Store | Values | Default with no saved preference |
 |---|---|---|
-| `lang` | `"bg" \| "en"` | `"bg"`, exported as `DEFAULT_LANG`. `navigator.language` is deliberately **not** consulted |
+| `lang` | `"bg" \| "en"` | the language `<html data-lang>` declares; at `/` alone, the saved preference, then `"bg"` (`DEFAULT_LANG`). `navigator.language` is deliberately **not** consulted |
 | `theme` | `"light" \| "dark"` | `matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"` |
 | `region` | an `region_salary.json` code, or `""` | `""` — no default at all, and that is P7: a preselected София hands a Бургас reader Sofia's wage and Sofia's €/m² wearing the appearance of a choice they made |
 | `rememberInputs` | `boolean` | `false`, and the reader is the only thing that turns it on |
@@ -698,17 +713,34 @@ today
 people browse on a device whose UI
 language is English. Deriving the default from `navigator.language` served them
 the English site on first paint, which is the one guess we can be wrong about
-before the reader has told us anything. EN is one tap away in the header and,
-once chosen, is read back on every later visit: the saved preference is still
-checked first, so the default never overwrites a choice. `theme` keeps its OS
-fallback, because `prefers-color-scheme` is a statement about the device rather
-than a guess about who is holding it.
+before the reader has told us anything. `theme` keeps its OS fallback, because
+`prefers-color-scheme` is a statement about the device rather than a guess about
+who is holding it.
 
-Each store pushes its value into `document.documentElement` as a `data-lang` /
-`data-theme` attribute, which `tokens.css` reads to switch palettes and
-language-scoped typography. One toggle helper each: `toggleLang()`,
-`toggleTheme()`. Both swallow `localStorage` errors silently — private mode,
-quota exhausted, no DOM — they simply do not persist.
+**The URL outranks the saved preference, and the root is the exception.** Every
+page is served at two addresses and each entry hardcodes the language it
+declares, so `initialLang()` reads `document.documentElement.dataset.lang`:
+rendering `/en/legal/` in Bulgarian because this device once stored `bg` makes
+the page contradict the document a reader and a crawler were both handed. `/` is
+where a stored choice still decides, because it is the one address that names no
+language — what a person types, and what a bookmark holds.
+
+**Switching language is a navigation.** `langHref(page, to)` says where a route
+lives in a language, and each header renders one anchor per language so the pair
+is stripped by the same rule as every other pair. `chooseLang(to)` records the
+choice on the click and does not touch the store — the counterpart document
+declares its own language, and repainting a page a reader is leaving would put
+it in a language its `<html lang>` no longer matches. Navigating IS choosing, so
+that write is inside the ЗЕТ чл. 4а exemption below; being SERVED a language is
+not, and nothing is written on arrival. With the bundle off the anchor still
+works, which a handler could not: the entry's `data-lang` is fixed and nothing
+on the served page can change it.
+
+`theme` and `lang` push their value into `document.documentElement` as a
+`data-theme` / `data-lang` attribute, which `tokens.css` reads to switch
+palettes and hide the language the page is not in. `toggleTheme()` is the one
+toggle helper left. Everything here swallows `localStorage` errors silently —
+private mode, quota exhausted, no DOM — it simply does not persist.
 
 The persisted keys are `vyarno_lang`, `vyarno_theme`, `vyarno_region` and
 `vyarno_inputs`, exported as `LANG_KEY` / `THEME_KEY` / `REGION_KEY` /
@@ -717,8 +749,9 @@ The persisted keys are `vyarno_lang`, `vyarno_theme`, `vyarno_region` and
 names are read straight out of this file by `verify_legal.mjs`, which fails when
 the privacy notice does not name one of them in both languages. Tested in
 `verify_stores.mjs`, which installs a fake `localStorage` / `document` /
-`navigator` / `matchMedia` per case and re-imports the module under a unique
-query string, because `stores.js` reads storage at module-evaluation time.
+`location` / `navigator` / `matchMedia` per case and re-imports the module under
+a unique query string, because `stores.js` reads storage — and the document's
+declared language — at module-evaluation time.
 
 **Nothing is written until the visitor chooses something, and that is a legal
 constraint rather than a taste one.** A Svelte `writable` calls a new subscriber

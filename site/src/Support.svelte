@@ -17,7 +17,7 @@
    * places may say it. This page is the one place any of it is explained at
    * length; the footer line and the explainer item are prose with a link.
    */
-  import { lang, theme, toggleLang, toggleTheme } from "./lib/stores.js";
+  import { theme, chooseLang, langHref, toggleTheme } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
   import { REPO_ISSUES_URL } from "./lib/legal-nav.js";
   import { SUPPORT_COPY, livePlatforms } from "./lib/support.js";
@@ -52,16 +52,31 @@
       </span>
     </a>
     <div class="controls">
-      <a class="pill back" href="/">
-        <span class="l-bg">← към калкулатора</span>
-        <span class="l-en">← to the calculator</span>
-      </a>
+      <a class="pill back l-bg" href={langHref("/", "bg")}>← към калкулатора</a>
+      <a class="pill back l-en" href={langHref("/", "en")}>← to the calculator</a>
       <button class="pill" onclick={toggleTheme} aria-label="Toggle theme">
         {$theme === "dark" ? "☀" : "☾"}
       </button>
-      <button class="pill" onclick={toggleLang} aria-label="Toggle language">
-        {$lang === "bg" ? "EN" : "BG"}
-      </button>
+      <!-- The language control is a LINK, not a button, and there is one per
+           language: the two languages are two URLs now, and a handler that
+           flipped a store would be unreachable with JavaScript off — this entry
+           hardcodes its own `data-lang` and nothing on the served page can
+           change it. `chooseLang` records the choice on the way out; the
+           navigation happens whether or not it runs. -->
+      <a
+        class="pill l-bg"
+        href={langHref("/support/", "en")}
+        hreflang="en"
+        aria-label="смени езика"
+        onclick={() => chooseLang("en")}>EN</a
+      >
+      <a
+        class="pill l-en"
+        href={langHref("/support/", "bg")}
+        hreflang="bg"
+        aria-label="toggle language"
+        onclick={() => chooseLang("bg")}>BG</a
+      >
     </div>
   </div>
 </header>

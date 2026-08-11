@@ -133,6 +133,35 @@
 /support/index.html
   Cache-Control: public, max-age=0, must-revalidate
 
+# The English tree. Four more documents rather than four renderings of the four
+# above: each is a separate entry with its own canonical, and `/en/` and
+# `/en/how/` carry the published figures in their markup exactly as their
+# Bulgarian counterparts do, so the same pairing with the 300 s on
+# `/data/published/*` applies to them.
+/en/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/how/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/how/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/legal/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/legal/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/support/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/support/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
 /404.html
   Cache-Control: public, max-age=0, must-revalidate
 

@@ -62,11 +62,14 @@
  * drops the other. **This is the crawler's copy and no reader's**, in either
  * state a reader can be in: the bundle calls `replaceChildren()` before
  * `mount()`, so anyone running JavaScript never sees this markup, and with
- * JavaScript off `toggleLang()` cannot run — every entry hardcodes its
- * `data-lang`, so the hidden half is unreachable for as long as the page is
- * served. The live DOM still carries both and the toggle still works; what the
- * step decides is only what a crawler is handed (docs/seo.md §"The bilingual
- * DOM, and the copy a crawler gets").
+ * JavaScript off the half this step dropped is not what a reader is missing —
+ * the counterpart page is a URL, and the header's language control is an
+ * anchor pointing at it. The live DOM still carries both, because every string
+ * in the tree is authored as a pair; what the step decides is only which half
+ * is SERVED (docs/seo.md §"The bilingual DOM, and the copy a crawler gets").
+ *
+ * Each page is written twice — once per language, into the two entries that
+ * declare them — from one rendered body. See `PRERENDERED`.
  *
  * ## Why a second build rather than hydration
  *
@@ -138,13 +141,42 @@ export const MOUNT_POINT = '<div id="app"></div>';
  * this list against those bootstraps, and `verify_render_prerender.mjs` reads
  * each written file back, because a post-build step that quietly does nothing
  * looks exactly like a build that worked.
+ *
+ * **`pages` is a LIST because one component answers at two addresses.** The
+ * Bulgarian and the English entry for a page are the same component and the
+ * same rendered body; what separates them is the `data-lang` each declares and
+ * therefore which half of every string survives `dropOtherLanguages`. Rendering
+ * per component rather than per URL is what keeps eight served pages at four
+ * SSR builds — the compile is the expensive half, and the language is decided
+ * after it.
  */
 export const PRERENDERED = Object.freeze(
   [
-    { name: "app", source: "src/App.svelte", page: ["index.html"] },
-    { name: "how", source: "src/How.svelte", page: ["how", "index.html"] },
-    { name: "legal", source: "src/Legal.svelte", page: ["legal", "index.html"] },
-    { name: "support", source: "src/Support.svelte", page: ["support", "index.html"] },
+    { name: "app", source: "src/App.svelte", pages: [["index.html"], ["en", "index.html"]] },
+    {
+      name: "how",
+      source: "src/How.svelte",
+      pages: [
+        ["how", "index.html"],
+        ["en", "how", "index.html"],
+      ],
+    },
+    {
+      name: "legal",
+      source: "src/Legal.svelte",
+      pages: [
+        ["legal", "index.html"],
+        ["en", "legal", "index.html"],
+      ],
+    },
+    {
+      name: "support",
+      source: "src/Support.svelte",
+      pages: [
+        ["support", "index.html"],
+        ["en", "support", "index.html"],
+      ],
+    },
   ].map(Object.freeze)
 );
 
@@ -337,13 +369,24 @@ export async function readPayloads(dir = DATA) {
 /**
  * Compile each page for the server and return its rendered body.
  *
+ * **Once per language, from one compile.** The words are a `.l-bg` / `.l-en`
+ * pair and the strip below picks between them, but a number is not a pair:
+ * `format.js` writes «22,323%» for a Bulgarian reader and "22.323%" for an
+ * English one, off the `lang` store. That store has no document to read in a
+ * Node build, so a single render writes Bulgarian decimals into the English
+ * entry — a comma an English reader takes for a thousands separator, in a
+ * document served to the consumer that executes nothing and can never be
+ * corrected by the bundle. So the served language is handed to the root
+ * component, which sets the store before the tree is rendered. The Vite compile
+ * is the expensive half and it still happens once.
+ *
  * @param {Record<string, object>} payloads  the `readPayloads()` result
- * @returns {Promise<Array<{page: string[], body: string}>>}
+ * @returns {Promise<Array<{pages: string[][], bodies: Record<string, string>}>>}
  */
 export async function renderPages(payloads) {
   const { render } = await import("svelte/server");
   const out = [];
-  for (const { name, source, page } of PRERENDERED) {
+  for (const { name, source, pages } of PRERENDERED) {
     // One `build()` per page rather than one multi-entry SSR build. Vite's
     // multi-input SSR mode routes the components' CSS through the asset
     // pipeline, which then warns about every `url(/fonts/…)` it cannot resolve
@@ -378,7 +421,13 @@ export async function renderPages(payloads) {
     // and the entry `.html` already has one; two title tags leave a crawler
     // reading whichever comes first, which is the same defect the description
     // comment in `App.svelte` names.
-    out.push({ page, body: render(Component, { props: { prerender: true, payloads } }).body });
+    const bodies = {};
+    for (const servedLang of LANGS) {
+      bodies[servedLang] = render(Component, {
+        props: { prerender: true, payloads, servedLang },
+      }).body;
+    }
+    out.push({ pages, bodies });
   }
   return out;
 }
@@ -394,15 +443,18 @@ export async function renderPages(payloads) {
 // the artefact afterwards.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const rendered = await renderPages(await readPayloads());
-  for (const { page, body } of rendered) {
-    const file = join(SITE, "dist", ...page);
-    const html = await readFile(file, "utf8");
-    const lang = entryLang(html);
-    const one = dropOtherLanguages(body, lang);
-    await writeFile(file, injectPrerender(html, one), "utf8");
-    console.log(
-      `[prerender] wrote dist/${page.join("/")} — ${one.length} bytes, ` +
-        `${lang} only, from ${body.length} rendered`
-    );
+  for (const { pages, bodies } of rendered) {
+    for (const page of pages) {
+      const file = join(SITE, "dist", ...page);
+      const html = await readFile(file, "utf8");
+      const lang = entryLang(html);
+      const body = bodies[lang];
+      const one = dropOtherLanguages(body, lang);
+      await writeFile(file, injectPrerender(html, one), "utf8");
+      console.log(
+        `[prerender] wrote dist/${page.join("/")} — ${one.length} bytes, ` +
+          `${lang} only, from ${body.length} rendered`
+      );
+    }
   }
 }

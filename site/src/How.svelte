@@ -29,7 +29,7 @@
    * on a page that renders no inputs is where an input eventually gets added.
    */
   import { onMount } from "svelte";
-  import { lang, theme, toggleLang, toggleTheme } from "./lib/stores.js";
+  import { lang, theme, chooseLang, langHref, toggleTheme } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
@@ -44,7 +44,23 @@
    * as a prop and the served HTML carries the figures a crawler — and an agent
    * citing them — would otherwise have to run the bundle to see.
    */
-  const { payloads = null } = $props();
+  const { payloads = null, servedLang = null } = $props();
+
+  /**
+   * The language the build is writing this render into, or `null` in a browser.
+   *
+   * A word is a `.l-bg` / `.l-en` pair and the prerender strips the half the
+   * entry does not declare. A NUMBER is not a pair: `format.js` writes «22,323%»
+   * for a Bulgarian reader and "22.323%" for an English one, off the `lang`
+   * store — and that store has no `<html data-lang>` to read in a Node build.
+   * Without this the English entry ships Bulgarian decimals to the one consumer
+   * that executes nothing, where a comma reads as a thousands separator.
+   *
+   * Setting a module-global store from component setup is safe exactly here:
+   * the server render is synchronous and single-threaded, and the client never
+   * passes the prop — there `initialLang()` reads the document instead.
+   */
+  if (servedLang) lang.set(servedLang);
 
   // svelte-ignore state_referenced_locally
   // Reading the initial value is the whole intent: `payloads` is set once by
@@ -194,16 +210,31 @@
       </span>
     </a>
     <div class="controls">
-      <a class="pill back" href="/">
-        <span class="l-bg">← към калкулатора</span>
-        <span class="l-en">← to the calculator</span>
-      </a>
+      <a class="pill back l-bg" href={langHref("/", "bg")}>← към калкулатора</a>
+      <a class="pill back l-en" href={langHref("/", "en")}>← to the calculator</a>
       <button class="pill" onclick={toggleTheme} aria-label="Toggle theme">
         {$theme === "dark" ? "☀" : "☾"}
       </button>
-      <button class="pill" onclick={toggleLang} aria-label="Toggle language">
-        {$lang === "bg" ? "EN" : "BG"}
-      </button>
+      <!-- The language control is a LINK, not a button, and there is one per
+           language: the two languages are two URLs now, and a handler that
+           flipped a store would be unreachable with JavaScript off — this entry
+           hardcodes its own `data-lang` and nothing on the served page can
+           change it. `chooseLang` records the choice on the way out; the
+           navigation happens whether or not it runs. -->
+      <a
+        class="pill l-bg"
+        href={langHref("/how/", "en")}
+        hreflang="en"
+        aria-label="смени езика"
+        onclick={() => chooseLang("en")}>EN</a
+      >
+      <a
+        class="pill l-en"
+        href={langHref("/how/", "bg")}
+        hreflang="bg"
+        aria-label="toggle language"
+        onclick={() => chooseLang("bg")}>BG</a
+      >
     </div>
   </div>
 </header>

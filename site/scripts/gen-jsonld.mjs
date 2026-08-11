@@ -60,12 +60,19 @@ const SITE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
  * `dateModified`, which is the correct answer for `/support/` and the wrong one
  * for anything a payload dates. `verify_render_prerender.mjs` reads the served
  * value back against the payloads shipped in the same `dist/`.
+ *
+ * A page and its English counterpart take the same date from the same slot.
+ * They are one component rendered from one set of payloads in one build, so a
+ * pair whose dates could differ would be two answers to a question with one.
  */
 export const DATED = Object.freeze(
   [
     { page: ["index.html"], slot: "__DATA_LASTMOD__" },
     { page: ["how", "index.html"], slot: "__DATA_LASTMOD__" },
     { page: ["legal", "index.html"], slot: "__LEGAL_LASTMOD__" },
+    { page: ["en", "index.html"], slot: "__DATA_LASTMOD__" },
+    { page: ["en", "how", "index.html"], slot: "__DATA_LASTMOD__" },
+    { page: ["en", "legal", "index.html"], slot: "__LEGAL_LASTMOD__" },
   ].map(Object.freeze)
 );
 

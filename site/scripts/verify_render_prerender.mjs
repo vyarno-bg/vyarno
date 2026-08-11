@@ -65,6 +65,29 @@ import { cityRow, SOFIA_CITY_CODE } from "../src/lib/view.js";
 import { LEGAL_LASTMOD, newestAsOf } from "./gen-sitemap.mjs";
 import { COPY, DIST, attribution, needsBuild, servedText, shipped } from "./render-dist.mjs";
 
+/**
+ * The smallest `#app` this build could plausibly have written a page into.
+ *
+ * A round number, and it is a floor rather than a measurement: the smallest
+ * page here is `/support/` and it runs to tens of kilobytes, so anything near
+ * this is a mount point plus a stray attribute. What it catches is the
+ * prerender writing SOMETHING and writing nothing useful, which the substring
+ * assertions below cannot distinguish from a page that lost one string.
+ */
+const MIN_PRERENDERED = 500;
+
+/** Every page the build serves, Bulgarian first, as `join()` segments. */
+const SERVED_PAGES = [
+  ["index.html"],
+  ["how", "index.html"],
+  ["legal", "index.html"],
+  ["support", "index.html"],
+  ["en", "index.html"],
+  ["en", "how", "index.html"],
+  ["en", "legal", "index.html"],
+  ["en", "support", "index.html"],
+];
+
 test(
   "the built page carries its prose without running any JavaScript",
   { skip: needsBuild },
@@ -354,12 +377,7 @@ test(
     // one next to an og:description they were already editing. The runtime half
     // of the same rule is a browser test further down, because `<svelte:head>`
     // reaches the head only once the bundle runs.
-    for (const page of [
-      ["index.html"],
-      ["how", "index.html"],
-      ["legal", "index.html"],
-      ["support", "index.html"],
-    ]) {
+    for (const page of SERVED_PAGES) {
       const html = await readFile(join(DIST, ...page), "utf8");
       const where = page.join("/");
       for (const [what, pattern] of [
@@ -394,7 +412,7 @@ test("the second page has no input on it at all", { skip: needsBuild }, async ()
 });
 
 test("the served pages carry one language, not two", { skip: needsBuild }, async () => {
-  // The class, counted over the raw file, on all four entries. A crawler that
+  // The class, counted over the raw file, on all eight entries. A crawler that
   // strips tags reads a `.l-bg` / `.l-en` pair as one run of text — «Твоите
   // числа. Твоята реалност. Your numbers. Your reality.» is the `<h1>` of `/`
   // and every heading under it doubles the same way. The six agents
@@ -407,25 +425,121 @@ test("the served pages carry one language, not two", { skip: needsBuild }, async
   // `<a class="how-more l-en">`, one element in the tree out of several
   // hundred. The class is what `tokens.css` keys on, so this holds whatever
   // container a future pair is written in.
-  for (const page of [
-    ["index.html"],
-    ["how", "index.html"],
-    ["legal", "index.html"],
-    ["support", "index.html"],
+  //
+  // **Both directions, and the English half is the one that can fail
+  // quietly.** `dropOtherLanguages` takes the language off `<html data-lang>`
+  // rather than a constant, so an `/en/` entry that lost the attribute — or a
+  // `PRERENDERED` row pointing two addresses at the same language — serves the
+  // Bulgarian body under an English canonical, with every Bulgarian assertion
+  // above still green.
+  for (const [page, served, dropped] of [
+    [["index.html"], "bg", "l-en"],
+    [["how", "index.html"], "bg", "l-en"],
+    [["legal", "index.html"], "bg", "l-en"],
+    [["support", "index.html"], "bg", "l-en"],
+    [["en", "index.html"], "en", "l-bg"],
+    [["en", "how", "index.html"], "en", "l-bg"],
+    [["en", "legal", "index.html"], "en", "l-bg"],
+    [["en", "support", "index.html"], "en", "l-bg"],
   ]) {
     const html = await readFile(join(DIST, ...page), "utf8");
-    const left = (html.match(/l-en/g) ?? []).length;
+    const mounted = html.slice(html.indexOf('<div id="app">'));
+    const left = (mounted.match(new RegExp(dropped, "g")) ?? []).length;
     assert.equal(
       left,
       0,
-      `${page.join("/")} serves ${left} English elements. The entry declares ` +
-        'data-lang="bg" and nothing in the served page can change it — ' +
-        "`toggleLang()` needs the bundle, and the bundle empties #app before " +
-        "it mounts. So this copy is the crawler's and its second language " +
-        "reaches no reader in either state."
+      `${page.join("/")} serves ${left} elements of the language it does not ` +
+        `declare. The entry declares data-lang="${served}" and nothing in the ` +
+        "served page can change it — the language control is a link to the " +
+        "counterpart URL, and the bundle empties #app before it mounts. So " +
+        "this copy is the crawler's and its second language reaches no reader " +
+        "in either state."
+    );
+    // And the language it DOES declare is still there. An over-eager strip
+    // that took both halves leaves a page whose every assertion about what is
+    // absent passes.
+    assert.ok(
+      new RegExp(`l-${served}`).test(mounted),
+      `${page.join("/")} carries no .l-${served} element at all — the strip took ` +
+        "the language the entry declares as well as the one it does not"
     );
   }
 });
+
+test(
+  "the English tree is written, and it is written in English",
+  { skip: needsBuild },
+  async () => {
+    // The four entries the `/en/` tree adds, read back one by one. The step
+    // that fills them is a loop over `PRERENDERED[].pages`, and a loop that
+    // wrote only the first address of each row would leave four documents
+    // shipping `<div id="app"></div>` and a `<noscript>` — a page whose `<h1>`
+    // Bing reports as missing, at the four URLs the whole change exists to
+    // create. `npm run build` exits 0 either way.
+    //
+    // Asserted against `COPY` and the shipped payloads rather than against
+    // quoted sentences, the way the Bulgarian assertions above are: the rule is
+    // that the page carries its own copy in the language its entry declares,
+    // not that it still says any particular thing.
+    const html = await servedText("en", "index.html");
+    const mounted = html.slice(html.indexOf('<div id="app">'));
+    assert.ok(
+      mounted.length > MIN_PRERENDERED,
+      `dist/en/index.html has ${mounted.length} bytes inside #app, which is a ` +
+        "mount point and not a page — the prerender step skipped it"
+    );
+    for (const [what, text] of [
+      ["the headline", COPY.h1.en],
+      ["the privacy line", COPY.privacy.en],
+      ["the explainer's lead", COPY.explainLead.en],
+      ["the upstream attribution", attribution("en")],
+    ]) {
+      assert.ok(
+        mounted.includes(text),
+        `${what} is not in the served HTML of /en/. The entry declares ` +
+          'data-lang="en" and the strip keeps that half, so an English string ' +
+          "missing here is a page served with nothing an English query can match."
+      );
+    }
+
+    // The figures too, on the two pages that read payloads. The English entry
+    // is the same component over the same payloads, so a number present on `/`
+    // and absent here is the strip taking prose it should have kept.
+    const [headline, categories] = await Promise.all(
+      ["hicp_headline", "hicp_categories"].map(shipped)
+    );
+    const enDecimal = (x) => x.toFixed(1);
+    assert.ok(
+      mounted.includes(`${enDecimal(headline.headline_rate_pct)}%`),
+      "the headline inflation rate is not in the served HTML of /en/"
+    );
+    const country = await servedText("en", "how", "index.html");
+    for (const [what, text] of [
+      ["the wedge table's heading", COPY.howColEffective.en],
+      ["the ladder's modelled marker", COPY.howModelled.en],
+      ["the Eurostat derivation disclosure", COPY.oursNote.en],
+      ["a division's official weight", `${categories.categories[0].weight_pct}`],
+    ]) {
+      assert.ok(text && country.includes(text), `${what} is not in the served HTML of /en/how/`);
+    }
+
+    // And the two documentary pages, whose prose comes from in-repo constants
+    // rather than from a payload — which changes nothing about whether it is
+    // SERVED.
+    const legal = await servedText("en", "legal", "index.html");
+    for (const doc of DOCS) {
+      assert.ok(
+        legal.includes(doc.title.en),
+        `/en/legal/ does not carry "${doc.title.en}" — the page ЗЕТ чл. 4 wants ` +
+          "findable is serving a mount point at its English address"
+      );
+    }
+    const support = await servedText("en", "support", "index.html");
+    for (const text of [SUPPORT_COPY.head.en, SUPPORT_COPY.body.en]) {
+      assert.ok(support.includes(text), `/en/support/ does not carry "${text.slice(0, 40)}…"`);
+    }
+  }
+);
 
 test(
   "the served dateModified is the newest as_of shipped beside it",
@@ -459,7 +573,12 @@ test(
       return found[0];
     };
 
-    for (const page of [["index.html"], ["how", "index.html"]]) {
+    for (const page of [
+      ["index.html"],
+      ["how", "index.html"],
+      ["en", "index.html"],
+      ["en", "how", "index.html"],
+    ]) {
       assert.equal(
         await dated(...page),
         newest,
@@ -470,34 +589,40 @@ test(
       );
     }
 
-    assert.equal(
-      await dated("legal", "index.html"),
-      LEGAL_LASTMOD,
-      "/legal/ does not state the documents' effective date. Its content is " +
-        "the four documents and the identity table, and neither moves when a " +
-        "payload refreshes — a data date here would claim the terms changed."
-    );
+    for (const page of [
+      ["legal", "index.html"],
+      ["en", "legal", "index.html"],
+    ]) {
+      assert.equal(
+        await dated(...page),
+        LEGAL_LASTMOD,
+        `${page.join("/")} does not state the documents' effective date. Its ` +
+          "content is the four documents and the identity table, and neither " +
+          "moves when a payload refreshes — a data date here would claim the " +
+          "terms changed."
+      );
+    }
 
     // /support/ is left undated on purpose: its content changes when a channel
     // opens or the copy is edited, and neither is a date this build can read.
     // The failure is somebody filling the gap with the clock, which would then
     // report the page as edited on every deploy.
-    assert.equal(
-      await dated("support", "index.html"),
-      null,
-      "/support/ carries a dateModified, and nothing in the build knows when " +
-        "that page last changed — see gen-sitemap.mjs on why it has no lastmod " +
-        "either"
-    );
+    for (const page of [
+      ["support", "index.html"],
+      ["en", "support", "index.html"],
+    ]) {
+      assert.equal(
+        await dated(...page),
+        null,
+        `${page.join("/")} carries a dateModified, and nothing in the build knows ` +
+          "when that page last changed — see gen-sitemap.mjs on why it has no " +
+          "lastmod either"
+      );
+    }
 
     // A token reaching a served page states a date of "__DATA_LASTMOD__" to
     // every parser that reads the node, and `npm run dev` serves exactly that.
-    for (const page of [
-      ["index.html"],
-      ["how", "index.html"],
-      ["legal", "index.html"],
-      ["support", "index.html"],
-    ]) {
+    for (const page of SERVED_PAGES) {
       const html = await readFile(join(DIST, ...page), "utf8");
       assert.ok(
         !/__[A-Z_]+__/.test(html),

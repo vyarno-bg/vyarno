@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en" data-lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vyarno — the figures for Bulgaria</title>
+    <!--
+    The description names the questions this page answers and the calculator
+    does not: what inflation is, what the tax takes, what a square metre costs.
+    Kept under ~160 characters so a search result does not truncate mid-clause.
+  -->
+    <meta
+      name="description"
+      content="Inflation by the 13 divisions, tax and social contributions, how pay is spread, mortgage rates and Sofia's price per square metre — a source and a date on each."
+    />
+    <link rel="canonical" href="https://vyarno.bg/en/how/" />
+    <!--
+      The same page in the other language, and itself. `hreflang` is reciprocal
+      by definition — Google discards a set where a page names an alternate that
+      does not name it back — so all eight entries carry all three lines and
+      each one names ITSELF among them. `verify_static_assets.mjs` holds the
+      whole collection to that rather than checking this file alone.
+
+      x-default is the Bulgarian page, on this page as on every other
+      (docs/README.md §"Who this is for").
+    -->
+    <link rel="alternate" hreflang="bg" href="https://vyarno.bg/how/" />
+    <link rel="alternate" hreflang="en" href="https://vyarno.bg/en/how/" />
+    <link rel="alternate" hreflang="x-default" href="https://vyarno.bg/how/" />
+    <!--
+      EU snippet opt-in. Google truncates snippets and image previews in the EU
+      for publishers who have not asked otherwise, and that limit governs how
+      much of a page can appear in a result AND in an AI Overview. Both
+      directives are the maximum: this is a public good whose whole purpose is
+      that the number reaches the person with its source attached, so a longer
+      quotation of it is the outcome we want.
+
+      Consistent with robots.txt rather than in tension with it — the note on
+      the allowed agents already records that Googlebot and Bingbot are allowed
+      and that AI Overviews are built on those same indexes. 404.html keeps its
+      bare noindex and must never gain these.
+    -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+
+    <!--
+    `website`, the same as the calculator's, and NOT `article`. OGP's article
+    type is for a dated piece by someone, and its whole vocabulary —
+    published_time, modified_time, author — is metadata this page has none of
+    and must not invent (P7). It is deliberately undated: every FIGURE on it
+    carries the period it describes, and the page carries no moment of its own
+    because it has none.
+  -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Вярно · vyarno.bg" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="bg_BG" />
+    <meta property="og:url" content="https://vyarno.bg/en/how/" />
+    <meta property="og:title" content="Vyarno — the figures for Bulgaria" />
+    <meta
+      property="og:description"
+      content="Bulgaria's official figures, each with the institution, the period and the link to the table it came from."
+    />
+    <!--
+    No og:image. The calculator's card carries the wordmark and a strapline
+    about working out your own inflation, and reusing it here would unfurl a
+    reference page as the calculator.
+  -->
+
+    <!--
+    A WebPage, and NOT a Dataset or an FAQPage, for the two reasons the
+    Bulgarian entry spells out: a Dataset node would describe data/published/ as
+    ours to offer for reuse, which НСИ's licence forbids outright; an FAQ node
+    has to carry its answers as TEXT, which means writing today's figures into
+    strings that nothing recomputes.
+
+    THE LICENCE SITS ON THE APPLICATION, NEVER ON THE PAGE. This page's content
+    is five publishers' figures under five sets of terms, and Apache-2.0 on the
+    WebPage would tell a citing agent that a table of НСИ's quarterly wages is
+    ours to give away — the one claim AGENTS.md forbids by name, said to the
+    reader least able to check it, on the page built for exactly that reader.
+
+    `dateModified` is a SLOT filled by scripts/gen-jsonld.mjs and takes the same
+    value as every other payload-dated entry: they are prerendered from the same
+    payloads in one build.
+  -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "The figures for Bulgaria, explained",
+        "url": "https://vyarno.bg/en/how/",
+        "inLanguage": "en",
+        "dateModified": "__DATA_LASTMOD__",
+        "isPartOf": {
+          "@type": "WebApplication",
+          "name": "Вярно",
+          "alternateName": "Vyarno",
+          "url": "https://vyarno.bg/",
+          "license": "https://www.apache.org/licenses/LICENSE-2.0"
+        },
+        "description": "Bulgaria's official figures — inflation by division, taxes and social contributions, how pay is spread, mortgage rates, housing prices and unemployment — each with its source, its period and a link to check it."
+      }
+    </script>
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#E8ECEF" />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <!--
+        `scripts/prerender.mjs` writes this page — figures and all — into #app
+        at build time, so a reader with JavaScript off already has the numbers.
+        What they lose is the calculator behind the link. The upstream
+        attribution is a licence condition that must appear on every page
+        including this one, whether the bundle runs or the prerender step ever
+        stops running.
+      -->
+      <div
+        style="
+          max-width: 40rem;
+          margin: 3rem auto;
+          padding: 0 1.25rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.55;
+        "
+      >
+        <p lang="en">
+          The figures on this page read without JavaScript. Working out your own inflation happens
+          in your browser and needs it — turn it on and open the calculator.
+        </p>
+        <p lang="bg">
+          Числата на тази страница се четат и без JavaScript. Смятането на твоята инфлация става в
+          браузъра ти и има нужда от него — включи го и отвори калкулатора.
+        </p>
+        <p>
+          <small
+            >Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg · Data from Eurostat / ECB / NSI / BNB /
+            imot.bg</small
+          >
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/how-main.js"></script>
+  </body>
+</html>

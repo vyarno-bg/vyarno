@@ -54,7 +54,23 @@
    * answer to a question nobody asked, served to whoever reads the HTML.
    * `docs/seo.md` §"The rule" is the whole reasoning.
    */
-  const { prerender = false, payloads = null } = $props();
+  const { prerender = false, payloads = null, servedLang = null } = $props();
+
+  /**
+   * The language the build is writing this render into, or `null` in a browser.
+   *
+   * A word is a `.l-bg` / `.l-en` pair and the prerender strips the half the
+   * entry does not declare. A NUMBER is not a pair: `format.js` writes «22,323%»
+   * for a Bulgarian reader and "22.323%" for an English one, off the `lang`
+   * store — and that store has no `<html data-lang>` to read in a Node build.
+   * Without this the English entry ships Bulgarian decimals to the one consumer
+   * that executes nothing, where a comma reads as a thousands separator.
+   *
+   * Setting a module-global store from component setup is safe exactly here:
+   * the server render is synchronous and single-threaded, and the client never
+   * passes the prop — there `initialLang()` reads the document instead.
+   */
+  if (servedLang) lang.set(servedLang);
 
   // svelte-ignore state_referenced_locally
   // Reading the initial value is the whole intent: `payloads` is set once by

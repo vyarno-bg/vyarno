@@ -93,15 +93,78 @@ export const THEME_KEY = "vyarno_theme";
 // browse on a phone or a laptop whose UI language is English. Deriving the
 // default from the browser handed those people the English site on a product
 // whose primary audience is Bulgarian, which is the one guess we can be wrong
-// about on first paint. EN remains one tap away in the header and, once
-// chosen, wins for good — a saved preference is still read first.
+// about on first paint.
+//
+// **THE URL DECIDES, AND THE SAVED PREFERENCE ONLY SUPPLIES THE ROOT'S
+// DEFAULT.** Every page is served at two addresses — `/how/` and `/en/how/` —
+// and each entry hardcodes the language it declares in `<html data-lang>`. A
+// reader who reaches `/en/legal/` from a search result has been served an
+// English document, told so by its `lang`, its canonical and its `hreflang`
+// set; rendering it in Bulgarian because this device once stored `bg` would
+// make the page contradict the document it arrived as, and would leave the
+// English text in the DOM hidden by `tokens.css` where nothing but the
+// stylesheet can reach it.
+//
+// The site root is the one address that names no language: it is what a person
+// types, what a bookmark holds, and what a link to «vyarno.bg» resolves to. So
+// `/` is where a stored choice still decides, and everywhere else the document
+// does.
 // ---------------------------------------------------------------------------
 const isLang = (v) => v === "bg" || v === "en";
 
 /** The language a visitor with no saved preference gets. */
 export const DEFAULT_LANG = "bg";
 
-export const lang = writable(readPreference(LANG_KEY, isLang) ?? DEFAULT_LANG);
+/** The path prefix the English tree is served under. */
+export const EN_PREFIX = "/en";
+
+/**
+ * Where `page` is served in `to`.
+ *
+ * `page` is the Bulgarian path, which is the canonical form of a route here:
+ * the site was one tree before it was two, and every link in the app is written
+ * as one. Pure and exported so the header's two anchors and
+ * `verify_stores.mjs` agree about where a language lives without either of them
+ * restating the prefix.
+ *
+ * @param {string} page  a Bulgarian path, leading and trailing slash
+ * @param {"bg" | "en"} to
+ * @returns {string}
+ */
+export function langHref(page, to) {
+  return to === DEFAULT_LANG ? page : `${EN_PREFIX}${page}`;
+}
+
+/**
+ * The language of the document being read, or `null` where nothing declares one.
+ *
+ * `data-lang` rather than `lang`: it is the attribute `tokens.css` hides a
+ * language by and the attribute `prerender.mjs` strips a language by, so a
+ * third reader of the same fact would be a third thing that can disagree with
+ * the other two.
+ */
+function declaredLang() {
+  if (typeof document === "undefined") return null;
+  const found = document.documentElement?.dataset?.lang;
+  return isLang(found) ? found : null;
+}
+
+/** Whether this address is the site root — the one URL that names no language. */
+function atRoot() {
+  if (typeof location === "undefined") return false;
+  return /^\/(?:index\.html)?$/.test(location.pathname);
+}
+
+function initialLang() {
+  const declared = declaredLang();
+  // The root's declaration is `bg` because a document has to say something, and
+  // that is the case a stored choice is allowed to answer instead. Everywhere
+  // else the declaration is the reader's own URL.
+  if (declared && !atRoot()) return declared;
+  return readPreference(LANG_KEY, isLang) ?? declared ?? DEFAULT_LANG;
+}
+
+export const lang = writable(initialLang());
 
 if (typeof document !== "undefined") {
   persistOnChange(lang, LANG_KEY, (v) => {
@@ -352,9 +415,42 @@ export function setRememberInputs(on) {
 
 // ---------------------------------------------------------------------------
 // Toggle helpers
+//
+// THE LANGUAGE CONTROL IS A LINK, AND THIS IS WHAT IT RECORDS RATHER THAN WHAT
+// IT DOES. Switching language is a navigation to the counterpart URL — the
+// header renders one anchor per language, `.l-bg` beside `.l-en`, so the pair
+// is stripped by the same rule as every other pair and the one a reader sees
+// points at the other tree. That is what makes it work with JavaScript off:
+// every entry hardcodes its `data-lang`, so a handler that flipped a store
+// would be unreachable on a page whose bundle never ran, and the reader would
+// be left on the one language their document declares with no way out.
+//
+// **Navigating IS choosing, so this may write.** The module header's ЗЕТ
+// чл. 4а argument turns on storage being «изрично поискана» — a preference the
+// visitor set rather than one this site felt like keeping — and pressing the
+// language control is exactly that act. The write happens here, on the click,
+// and not on arrival: being SERVED an English document is not a choice a
+// reader made, and persisting it would put the weakest version of that
+// argument back.
+//
+// With JavaScript off nothing is recorded and the navigation still happens,
+// which is the right side of that trade: a reader gets the language they asked
+// for and this device keeps nothing about them.
 // ---------------------------------------------------------------------------
-export function toggleLang() {
-  lang.update((v) => (v === "bg" ? "en" : "bg"));
+
+/**
+ * Record the language the reader is navigating to.
+ *
+ * The store is deliberately NOT set: the counterpart document declares its own
+ * language and `initialLang()` reads it there. Flipping it here would repaint
+ * the page a reader is already leaving, and it would make the DOM disagree with
+ * the `<html lang>` that is still on screen while the next document loads.
+ *
+ * @param {"bg" | "en"} to
+ */
+export function chooseLang(to) {
+  if (!isLang(to)) return;
+  writeLocalStorage(LANG_KEY, to);
 }
 
 export function toggleTheme() {
