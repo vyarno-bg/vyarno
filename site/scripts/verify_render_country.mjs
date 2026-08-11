@@ -209,24 +209,41 @@ test("the country page answers in the reader's language, both ways", { skip }, a
   // Both languages ship in the DOM at once and one is hidden by CSS, which is
   // exactly why a missing string is invisible in review: the person editing
   // only ever sees one of the two. Here the page is read in both.
-  await withApp(async (page, errors) => {
-    const empty = await page.evaluate(() => {
-      const out = [];
-      for (const el of document.querySelectorAll("main.how .l-bg, main.how .l-en")) {
-        if (!el.textContent.trim()) out.push(el.className);
-      }
-      return out;
-    });
-    assert.deepEqual(empty, [], `blank language spans on /how/: ${empty.join(", ")}`);
-
-    const bg = (await page.locator("main.how h1").innerText()).trim();
-    await page.locator("header.site .pill").last().click();
-    await page.waitForTimeout(300);
-    const en = (await page.locator("main.how h1").innerText()).trim();
-    assert.ok(bg && en, "the country page's heading is empty in one language");
-    assert.notEqual(en, bg, "the heading is the same string in both languages");
-    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
-  }, "/how/");
+  //
+  // The English half is read at its OWN URL rather than by switching this page,
+  // because that is where a reader meets it: `/how/` and `/en/how/` are two
+  // documents mounting one component, and each is served with the other
+  // language stripped out of its markup. Reading both is also what catches the
+  // entry pair going wrong — a second entry declaring `bg` renders the same
+  // heading at both addresses and every count on this page stays right.
+  const headings = {};
+  for (const [path, where] of [
+    ["/how/", "main.how .l-bg, main.how .l-en"],
+    ["/en/how/", "main.how .l-bg, main.how .l-en"],
+  ]) {
+    await withApp(async (page, errors) => {
+      const empty = await page.evaluate(
+        (sel) =>
+          [...document.querySelectorAll(sel)]
+            .filter((el) => !el.textContent.trim())
+            .map((el) => el.className),
+        where
+      );
+      assert.deepEqual(empty, [], `blank language spans on ${path}: ${empty.join(", ")}`);
+      headings[path] = (await page.locator("main.how h1").innerText()).trim();
+      assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+    }, path);
+  }
+  assert.ok(
+    headings["/how/"] && headings["/en/how/"],
+    "the country page's heading is empty in one language"
+  );
+  assert.notEqual(
+    headings["/en/how/"],
+    headings["/how/"],
+    "/en/how/ renders the same heading as /how/ — the two entries declare the " +
+      "same language, so the English tree is the Bulgarian one at a second URL"
+  );
 });
 
 test("the country page fits a phone, and its wide tables scroll inside it", { skip }, async () => {

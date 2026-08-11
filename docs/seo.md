@@ -18,8 +18,10 @@ point somebody would edit it. Everything else is here.
 | Canonical, OG, Twitter card, JSON-LD | each `.html` entry | one canonical URL per entry, a static 1200×630 preview carrying no figure, and a `WebApplication` / `WebPage` node that describes the code rather than the data — **`license` sits on the `WebApplication` and nowhere else**, because on a `WebPage` full of Eurostat's, БНБ's and НСИ's figures it states that those are Apache-2.0 (`verify_legal.mjs`, `docs/legal.md`) |
 | `noindex` on the error page | `site/404.html` | an indexed 404 is a search result that wastes a reader's click |
 | `X-Robots-Tag` on the payloads | `site/public/_headers` | the `robots.txt` rule again, in a header, for anything that reaches a JSON directly |
-| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all four, the published figures on the two that read payloads, in the one language the entry declares — below |
+| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all eight, the published figures on the four that read payloads, in the one language the entry declares — below |
 | A second content page | `site/how/index.html` → `src/How.svelte` | the informational queries the calculator cannot rank for — below |
+| The English tree | `site/en/*/index.html` | each of the four routes at a second address, declaring `en`, so a document exists for an English query to rank — below |
+| `hreflang`, reciprocal | each `.html` entry | `bg`, `en` and `x-default` on all eight, each set naming itself; `x-default` is the Bulgarian page. `verify_static_assets.mjs` checks the whole collection, because a one-sided set is discarded silently |
 
 Core Web Vitals need nothing: a static bundle, no third-party request at all
 (the CSP in `_headers` is what keeps that true), and self-hosted subsetted
@@ -53,7 +55,8 @@ not if the address serves an empty div. The one entry that stays out is the 404,
 on its own grounds — it is `noindex`, so there is no crawler to serve.
 
 `scripts/prerender.mjs` runs after `vite build`, compiles each page's component
-for the server, and writes each result into the mount point of its entry. It
+for the server, renders it once per language, and writes each result into the
+mount point of the entry that declares that language. It
 adds no dependency: Svelte 5 ships `svelte/server`, and the SSR compile reuses
 `vite.config.js` so the `$lib` alias, the plugin and the `__BUILD_ID__` define
 cannot drift from the client build's.
@@ -71,6 +74,57 @@ It reads the nine published payloads off disk — `PAYLOADS` from
 component as a prop. `data.js` is not imported and must not be: that layer is
 `fetch`, and there is no fetch in a Node build step. A payload that will not
 parse fails the build rather than being rendered around.
+
+### Eight pages, four routes, two languages
+
+**Every route is served at two addresses: `/how/` and `/en/how/`, and so on for
+all four.** The entries are nine files in `site/` — four Bulgarian, four
+English, plus the 404 — and each hardcodes the language it declares in
+`<html data-lang>`.
+
+The reason is the section below taken to its conclusion. `prerender.mjs` writes
+the language its entry declares and drops the other, and all four entries
+declared `bg`, so the English half of every string was stripped out of every
+served document. It was not weakly indexed; it was not served at all, at any
+URL. There was no page an English query could rank for, and no second address
+for an `hreflang` alternate to point at — which is why the pairing could only be
+stated to an unfurler, in Open Graph, and never to a search engine.
+
+**Who this reaches.** Expatriates living in Bulgaria, foreign correspondents,
+EU-policy readers: people for whom Bulgarian payroll law, Sofia rents and the
+national inflation basket are the subject rather than a curiosity. That is a
+real readership for a site whose whole subject is Bulgaria's official
+statistics, and it had no document to find.
+
+Two decisions hold the tree up, and neither is a preference.
+
+**The URL decides the language; the saved preference decides only the root.**
+A reader who reaches `/en/legal/` from a search result was served an English
+document — its `lang`, its canonical and its `hreflang` set all say so — and
+rendering it in Bulgarian because this device once stored `bg` makes the page
+contradict the document it arrived as. So `stores.js#initialLang` reads
+`<html data-lang>` and the stored preference answers at `/` alone: the site root
+is the one address that names no language, being what a person types and what a
+bookmark holds. `verify_stores.mjs` holds both halves.
+
+**The language control is a link, not a switch.** Each header renders one
+anchor per language — the Bulgarian reader's points at the English tree and the
+English reader's points back — so the pair is stripped by the same rule as every
+other pair and the one a reader sees goes to the counterpart of the page they
+are on, path and all. It has to be a link rather than a handler: with JavaScript
+off, every entry hardcodes its `data-lang` and nothing on the served page can
+change it, so a scripted toggle would leave that reader on one language with no
+way out. Pressing it writes the preference, and being served a document does
+not — navigating is the «изрично поискана» act ЗЕТ чл. 4а's exemption turns on
+(`stores.js` header), and arriving from a search result is not.
+
+**What is not language-aware yet.** The footer's legal links, its route to
+`/support/` and the explainer's route into `/how/` are written as bare
+Bulgarian paths, so following one from an English page lands on the Bulgarian
+tree with the header's language link one tap away. Making them follow the
+reader's tree is the same pair authored in six more templates and belongs in its
+own change; the header's routes are done because the language control had to be
+a pair anyway.
 
 ### The bilingual DOM, and the copy a crawler gets
 
@@ -91,24 +145,29 @@ So `prerender.mjs` writes the language its entry declares and drops the other,
 reading `data-lang` off `<html>` rather than assuming `bg`, because that
 attribute is what `tokens.css` hides by and the two have to agree.
 `verify_render_prerender.mjs` §"the served pages carry one language, not two"
-counts the class over the raw file for all four entries, which holds however a
-future pair is written — one of them is an `<a class="how-more l-en">` rather
-than a span today.
+counts the class over the raw file for all eight entries, in both directions —
+the Bulgarian pages must carry no `.l-en` and the English ones no `.l-bg`, and
+each must still carry its own. It holds however a future pair is written: one of
+them is an `<a class="how-more l-en">` rather than a span today.
+
+**A word is a pair and a number is not**, which is why the step renders each
+component once per language rather than once. `format.js` writes «22,323%» for a
+Bulgarian reader and "22.323%" for an English one off the `lang` store, and that
+store has no document to read in a Node build — so a single render put Bulgarian
+decimals into the English entry, a comma an English reader takes for a thousands
+separator, in the copy served to the consumer that executes nothing. The served
+language reaches the root component as a prop and it sets the store; the Vite
+compile, which is the expensive half, still happens once per component.
 
 **This costs a reader nothing, in either state a reader can be in.** With
 JavaScript, `main.js` and its three siblings call `target.replaceChildren()`
 before `mount()`, so the prerendered markup is discarded wholesale and the
 client renders both languages from scratch — §"Why not hydration" is why the
-build renders a second time rather than hydrating. Without JavaScript,
-`toggleLang()` is a button handler in `stores.js` that never runs, and all four
-entries hardcode `data-lang="bg"`, so the English half is unreachable for as
-long as the page is served. A reader with the stylesheet off and the bundle
-running is unaffected; one with neither gets less doubled text than before.
-
-What is left of the topical-signal cost is paid by the toggle rather than by the
-served page: the document a crawler indexes is now monolingual, and it is the
-live DOM that still holds two. `hreflang` stays impossible for the same reason
-as ever — one URL.
+build renders a second time rather than hydrating. Without JavaScript, the half
+this step dropped is not what a reader is missing: the other language is a URL,
+and the header's language control is an anchor pointing at it. A reader with the
+stylesheet off and the bundle running is unaffected; one with neither gets a
+page in one language and a link to the same page in the other.
 
 ### The rule: what the payloads decide, and nothing else
 
@@ -291,17 +350,29 @@ measurement that can see what a consumer typed, and a share count, a click
 event or a campaign parameter on an outgoing share. We do not find out whether
 sharing works, and that is the trade rather than an oversight.
 
-**The bilingual DOM stays.** The live page carries both languages at once, as
-`<span class="l-bg">` / `<span class="l-en">` hidden by the rule in
-`tokens.css`, and the toggle switches between them without a navigation. That
-is one URL answering in two languages, so `hreflang` is not expressible — there
-is no second URL to point at, which is why `index.html`'s comment above
-`og:locale:alternate` says the alternate locale buys an unfurler a language it
-can read and is not an `hreflang` pair. It still splits the page's topical
-signal, and undoing it is an architecture decision rather than an SEO one.
+**One URL per language is no longer the trade being made.** This section
+recorded the opposite: that the live page answered in two languages off one
+address, that `hreflang` was therefore not expressible, and that undoing it was
+an architecture decision rather than an SEO one. It was taken, and the argument
+is above in §"Eight pages, four routes, two languages" — the short form is that
+the door this paragraph left open turned out to lead somewhere. The half a
+crawler never saw was not weakly indexed, it was never served: all four entries
+declared `data-lang="bg"` and `prerender.mjs` strips the language the entry does
+not declare, so no document existed that an English query could rank for. What
+stays is the bilingual DOM itself, which is a different question and answered
+below.
 
-What the cost is now paid by is the toggle rather than the served document —
-see the section below.
+**The bilingual DOM stays, and the toggle no longer switches it.** Every string
+in the tree is authored as a `<span class="l-bg">` / `<span class="l-en">` pair
+— `verify_copy.mjs` holds every `COPY` entry to both, and a missing one renders
+as a blank line rather than a fallback — so removing the hidden half means
+selecting a language inside every component that renders one. That trades a
+DOM a reader never sees for the one failure this project cannot detect in
+review: the person editing a string only ever looks at one of the two, and a
+selector makes the other one's absence invisible instead of blank. The cost the
+pair used to carry was paid by the crawler, and it is not any more: the served
+document is one language, at an address of its own, with the other named as its
+`hreflang` alternate.
 
 ## Open questions
 
@@ -315,7 +386,7 @@ question for whoever runs the deployment.
 
 ## Cross-references
 
-- [`site.md`](./site.md) — the SPA module by module, and the five build entries
+- [`site.md`](./site.md) — the SPA module by module, and the nine build entries
 - [`principles.md`](./principles.md) — P3, P4 and the closed list
 - `site/public/robots.txt` — the crawler policy, with its reasoning inline
 - `site/scripts/prerender.mjs` — the build step, what it reads and what it refuses to emit

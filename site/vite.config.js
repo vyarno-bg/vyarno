@@ -95,25 +95,44 @@ export default defineConfig({
     target: "es2022",
     outDir: "dist",
     emptyOutDir: true,
-    // Five entries, five real URLs on a static host with no rewrite rules:
-    //   index.html        → /            the calculator
-    //   how/index.html    → /how/        the country's figures, with their sources
-    //   legal/index.html  → /legal/      terms, privacy, ЗЕТ чл. 4 identity, sources
-    //   support/index.html → /support/   how the project is paid for
-    //   404.html          → /404.html    served by name for any unmatched path,
-    //                                    which every static host does unconfigured
+    // Nine entries, nine real URLs on a static host with no rewrite rules:
+    //   index.html         → /            the calculator
+    //   how/index.html     → /how/        the country's figures, with their sources
+    //   legal/index.html   → /legal/      terms, privacy, ЗЕТ чл. 4 identity, sources
+    //   support/index.html → /support/    how the project is paid for
+    //   en/…               → /en/…        each of those four again, in English
+    //   404.html           → /404.html    served by name for any unmatched path,
+    //                                     which every static host does unconfigured
+    //
     // Each is a separate entry rather than a route inside the SPA so it
     // resolves without a client-side router or a host rewrite, and so someone
     // who came to read the terms — or to find out who pays for this — does not
     // download the calculator to do it. `/how/` is also the entry that has to
     // be separate for a second reason: one page ranks for one cluster of
     // queries, and the calculator is answering a different one (docs/seo.md).
+    //
+    // **The `en/` four are that same argument applied to language.** A page
+    // that ranks does so as a DOCUMENT, and the document a crawler is served
+    // carries one language: `prerender.mjs` writes the language its entry
+    // declares and drops the other, so a single URL answering in two languages
+    // put only one of them in front of a search engine. Two URLs is also what
+    // makes the pair expressible at all — an `hreflang` alternate needs
+    // somewhere to point, and the English half had no address of its own.
+    //
+    // They cost no second Svelte build and no second component: each entry
+    // names the same bootstrap as its Bulgarian counterpart, and the difference
+    // between the pair is the `data-lang` on `<html>`, the head tags, and which
+    // half of every string survives the prerender.
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
         how: resolve(__dirname, "how/index.html"),
         legal: resolve(__dirname, "legal/index.html"),
         support: resolve(__dirname, "support/index.html"),
+        enMain: resolve(__dirname, "en/index.html"),
+        enHow: resolve(__dirname, "en/how/index.html"),
+        enLegal: resolve(__dirname, "en/legal/index.html"),
+        enSupport: resolve(__dirname, "en/support/index.html"),
         notFound: resolve(__dirname, "404.html"),
       },
     },

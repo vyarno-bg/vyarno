@@ -13,7 +13,7 @@
    * from the same `.l-bg` / `.l-en` mechanism the calculator uses, driven by
    * the shared `lang` store, so the toggle carries across pages.
    */
-  import { lang, theme, toggleLang, toggleTheme } from "./lib/stores.js";
+  import { theme, chooseLang, langHref, toggleTheme } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
   import {
     CONTACT,
@@ -58,16 +58,31 @@
       </span>
     </a>
     <div class="controls">
-      <a class="pill back" href="/">
-        <span class="l-bg">← към калкулатора</span>
-        <span class="l-en">← to the calculator</span>
-      </a>
+      <a class="pill back l-bg" href={langHref("/", "bg")}>← към калкулатора</a>
+      <a class="pill back l-en" href={langHref("/", "en")}>← to the calculator</a>
       <button class="pill" onclick={toggleTheme} aria-label="Toggle theme">
         {$theme === "dark" ? "☀" : "☾"}
       </button>
-      <button class="pill" onclick={toggleLang} aria-label="Toggle language">
-        {$lang === "bg" ? "EN" : "BG"}
-      </button>
+      <!-- The language control is a LINK, not a button, and there is one per
+           language: the two languages are two URLs now, and a handler that
+           flipped a store would be unreachable with JavaScript off — this entry
+           hardcodes its own `data-lang` and nothing on the served page can
+           change it. `chooseLang` records the choice on the way out; the
+           navigation happens whether or not it runs. -->
+      <a
+        class="pill l-bg"
+        href={langHref("/legal/", "en")}
+        hreflang="en"
+        aria-label="смени езика"
+        onclick={() => chooseLang("en")}>EN</a
+      >
+      <a
+        class="pill l-en"
+        href={langHref("/legal/", "bg")}
+        hreflang="bg"
+        aria-label="toggle language"
+        onclick={() => chooseLang("bg")}>BG</a
+      >
     </div>
   </div>
 </header>

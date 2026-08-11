@@ -917,11 +917,18 @@ test("no entry's structured data licenses a page of somebody else's figures", ()
   // Nested nodes are walked, because moving the property one level down is both
   // the fix and the way to reintroduce the bug while looking like the fix.
   const CODE_TYPES = ["WebApplication", "SoftwareApplication", "SoftwareSourceCode"];
+  // Both languages of every page. The English entries carry their own nodes
+  // and their own `isPartOf`, so the scope rule has to reach them — and the
+  // easy place to put a licence on a WebPage is the one nobody re-reads.
   const entries = [
     "index.html",
     join("how", "index.html"),
     join("legal", "index.html"),
     join("support", "index.html"),
+    join("en", "index.html"),
+    join("en", "how", "index.html"),
+    join("en", "legal", "index.html"),
+    join("en", "support", "index.html"),
   ];
 
   const offences = [];

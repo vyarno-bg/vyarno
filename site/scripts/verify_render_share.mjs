@@ -8,7 +8,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { shutdown, skip, withApp } from "./render-harness.mjs";
+import { READY, shutdown, skip, withApp } from "./render-harness.mjs";
 
 test("the share card draws the reader's own comparison, and no euro figure", { skip }, async () => {
   await withApp(async (page, errors) => {
@@ -148,13 +148,20 @@ test("the shared picture follows the reader's theme and language", { skip }, asy
     // A picture carries one language, so it is drawn in the one the reader is
     // looking at rather than left to the .l-bg/.l-en CSS the rest of the app
     // switches with.
+    //
+    // Reached by following the language link rather than by flipping a store:
+    // the two languages are two documents, so what has to be checked is that
+    // the card drawn on the English one is the English card. The theme chosen
+    // above rides along in `localStorage`, which keeps this a comparison of the
+    // language and nothing else.
     const before = await page.evaluate(() =>
       document.querySelector("section.share canvas").toDataURL()
     );
-    await page.locator("header.site .controls button").nth(1).click();
-    await redrawn(before);
-    const after = await page.evaluate(() =>
-      document.querySelector("section.share canvas").toDataURL()
+    await page.locator("header.site .controls a.pill[hreflang]").locator("visible=true").click();
+    await page.waitForURL((url) => url.pathname === "/en/");
+    await page.waitForFunction(READY["/en/"]);
+    const after = await corner().then(() =>
+      page.evaluate(() => document.querySelector("section.share canvas").toDataURL())
     );
     assert.notEqual(before, after, "the card stayed in the same language as the page changed");
     assert.deepEqual(errors, [], errors.join(" | "));

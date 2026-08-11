@@ -11,7 +11,7 @@
    * No data fetch, no calculator bundle: a 404 should not cost nine JSON
    * requests.
    */
-  import { lang, theme, toggleLang, toggleTheme } from "./lib/stores.js";
+  import { theme, chooseLang, langHref, toggleTheme } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
   import { CONTACT } from "./lib/legal-nav.js";
 </script>
@@ -43,9 +43,30 @@
       <button class="pill" onclick={toggleTheme} aria-label="Toggle theme">
         {$theme === "dark" ? "☀" : "☾"}
       </button>
-      <button class="pill" onclick={toggleLang} aria-label="Toggle language">
-        {$lang === "bg" ? "EN" : "BG"}
-      </button>
+      <!-- The language control is a LINK, not a button, and there is one per
+           language: the two languages are two URLs now, and a handler that
+           flipped a store would be unreachable with JavaScript off — this entry
+           hardcodes its own `data-lang` and nothing on the served page can
+           change it. `chooseLang` records the choice on the way out; the
+           navigation happens whether or not it runs.
+
+           It points at the other tree's ROOT rather than at a counterpart of
+           this address, because this page is served for whatever path did not
+           match and there is no counterpart of a path that does not exist. -->
+      <a
+        class="pill l-bg"
+        href={langHref("/", "en")}
+        hreflang="en"
+        aria-label="смени езика"
+        onclick={() => chooseLang("en")}>EN</a
+      >
+      <a
+        class="pill l-en"
+        href={langHref("/", "bg")}
+        hreflang="bg"
+        aria-label="toggle language"
+        onclick={() => chooseLang("bg")}>BG</a
+      >
     </div>
   </div>
 </header>
@@ -140,6 +161,10 @@
     background: var(--surface);
     color: var(--ink-2);
     cursor: pointer;
+    /* The language control is an anchor here as it is on every other page, so
+       the pill needs the link reset the buttons beside it do not. */
+    text-decoration: none;
+    white-space: nowrap;
   }
   .pill:hover {
     border-color: var(--muted);

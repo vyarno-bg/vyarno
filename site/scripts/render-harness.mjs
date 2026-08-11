@@ -163,7 +163,7 @@ const origin = site ? `http://127.0.0.1:${site.port}` : "";
  *   no prerender (the `noindex` 404) or has just been added without its
  *   predicate.
  */
-export const READY = {
+const READY_BY_ROUTE = {
   "/": () => document.querySelector(".m-grid, .load-fail") !== null,
   "/how/": () =>
     document.readyState === "complete" && document.querySelector("#basket table") !== null,
@@ -172,6 +172,24 @@ export const READY = {
   "/support/": () =>
     document.readyState === "complete" && document.querySelector("main.support h1") !== null,
 };
+
+/**
+ * The predicates above, at both addresses each route is served at.
+ *
+ * A route's English entry mounts the same component over the same payloads, so
+ * what proves it ready is the same element — the two differ in the head tags,
+ * the `data-lang` and which half of every string the build left in. Deriving
+ * the `/en/` half rather than restating it is what keeps a predicate from being
+ * updated on one page and forgotten on the other, which would leave a suite
+ * waiting on an element the component stopped rendering and reporting it as a
+ * page that never became ready.
+ */
+export const READY = Object.fromEntries(
+  Object.entries(READY_BY_ROUTE).flatMap(([route, ready]) => [
+    [route, ready],
+    [`/en${route}`, ready],
+  ])
+);
 
 /** The default: the client put something where the entry left an empty mount. */
 const MOUNTED = () => document.querySelector("#app > *") !== null;

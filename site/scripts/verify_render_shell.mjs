@@ -496,18 +496,110 @@ test(
   }
 );
 
-test("the language and theme toggles change the page", { skip }, async () => {
+/** The one language control a reader can see, whichever half of the pair it is. */
+const langLink = (page) =>
+  page.locator("header.site .controls a.pill[hreflang]").locator("visible=true");
+
+test("the language control navigates, and the path survives it", { skip }, async () => {
+  // **The toggle is a navigation now, and that is the whole of this change.**
+  // A CSS switch could only ever serve one document in two languages: the
+  // prerender writes the language the entry declares and drops the other, so
+  // the English half reached no crawler at any URL, and an `hreflang` pair had
+  // no second address to point at (docs/seo.md).
+  //
+  // Asserted as a round trip because a one-way check passes on a control that
+  // sends every page to `/en/`. The path is what has to survive: a reader who
+  // came for the country's figures and pressed EN wants the country's figures
+  // in English, not the calculator.
+  for (const [from, to] of [
+    ["/", "/en/"],
+    ["/how/", "/en/how/"],
+  ]) {
+    await withApp(async (page, errors) => {
+      assert.equal(
+        await page.locator("html").getAttribute("data-lang"),
+        "bg",
+        `${from} is not served in Bulgarian`
+      );
+      // An anchor, not a button: with JavaScript off nothing on this page can
+      // change `data-lang`, so a handler would leave a reader on the one
+      // language their document declares with no way out. `href` is what
+      // degrades, and this is the assertion that fails if it goes back to
+      // being a control that only scripts can operate.
+      assert.equal(
+        await langLink(page).getAttribute("href"),
+        to,
+        `the language control on ${from} does not point at ${to}`
+      );
+
+      await langLink(page).click();
+      await page.waitForURL((url) => url.pathname === to);
+      await page.waitForFunction(READY[to]);
+      assert.equal(
+        await page.locator("html").getAttribute("data-lang"),
+        "en",
+        `${to} was served in Bulgarian — the URL is what decides the language`
+      );
+      // And navigating IS choosing, so the preference is on the device: the
+      // ЗЕТ чл. 4а argument in stores.js turns on storage the visitor asked
+      // for, and pressing this is the asking.
+      assert.equal(await page.evaluate(() => localStorage.getItem("vyarno_lang")), "en");
+
+      await langLink(page).click();
+      await page.waitForURL((url) => url.pathname === from);
+      await page.waitForFunction(READY[from]);
+      assert.equal(
+        await page.locator("html").getAttribute("data-lang"),
+        "bg",
+        `the way back from ${to} did not land on a Bulgarian document`
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, from);
+  }
+});
+
+test("a stored language decides the root, and no other address", { skip }, async () => {
+  // The two halves of the rule, in a browser, because neither is visible from
+  // `stores.js` alone: what a document DECLARES is written into the entry file
+  // and read off `<html data-lang>` at runtime.
+  //
+  // `/how/` with `en` on the device is the case that matters. It was served as
+  // a Bulgarian document — its `lang`, its canonical and its `hreflang` set all
+  // say so — and rendering it in English because this device once stored a
+  // preference makes the page contradict the document a crawler and a reader
+  // were both handed. The root is the exception because it is the one address
+  // that names no language: it is what a person types.
+  await withApp(async (page, errors) => {
+    await page.evaluate(() => localStorage.setItem("vyarno_lang", "en"));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(READY["/"]);
+    assert.equal(
+      await page.locator("html").getAttribute("data-lang"),
+      "en",
+      "a stored choice no longer decides the root, which is the one URL a " +
+        "reader reaches without naming a language"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+
+  await withApp(async (page, errors) => {
+    await page.evaluate(() => localStorage.setItem("vyarno_lang", "en"));
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(READY["/how/"]);
+    assert.equal(
+      await page.locator("html").getAttribute("data-lang"),
+      "bg",
+      "a stored preference overrode the language /how/ was served as. The " +
+        "English half of this page has its own URL now, and the reader is one " +
+        "link from it."
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/how/");
+});
+
+test("the theme toggle changes the page", { skip }, async () => {
   await withApp(async (page, errors) => {
     const root = page.locator("html");
-    assert.equal(
-      await root.getAttribute("data-lang"),
-      "bg",
-      "the default language is not Bulgarian"
-    );
-    await page.locator("header.site .controls button").nth(1).click();
-    await page.waitForTimeout(200);
-    assert.equal(await root.getAttribute("data-lang"), "en");
-
     const before = await root.getAttribute("data-theme");
     await page.locator("header.site .controls button").first().click();
     await page.waitForTimeout(200);
@@ -677,14 +769,21 @@ test(
     // screen-reader user with the controls they cannot guess at from content.
     // The basket's chip row is the same case: five buttons after thirteen
     // sliders, announced as a group or as nothing.
+    //
+    // Counted over what a reader can SEE. The language control is a pair of
+    // anchors, one per language, and the hidden half carries the other
+    // language's label by design — a count over the DOM would report the
+    // English name as a Bulgarian control's, on the page where it is
+    // `display: none`.
+    const names = (page) =>
+      page.evaluate(() =>
+        [...document.querySelectorAll("header .controls [aria-label], .presets")]
+          .filter((el) => el.offsetParent !== null)
+          .map((el) => el.getAttribute("aria-label") ?? "")
+      );
+
     await withApp(async (page, errors) => {
-      const names = () =>
-        page.evaluate(() =>
-          [...document.querySelectorAll("header .controls button, .presets")].map(
-            (el) => el.getAttribute("aria-label") ?? ""
-          )
-        );
-      const bg = await names();
+      const bg = await names(page);
       assert.equal(
         bg.length,
         3,
@@ -693,16 +792,20 @@ test(
       for (const name of bg) {
         assert.match(name, /[Ѐ-ӿ]/, `"${name}" reaches a Bulgarian reader in English`);
       }
-
-      await page.locator("header .controls button").last().click();
-      await page.waitForTimeout(300);
-      const en = await names();
-      for (const [i, name] of en.entries()) {
-        assert.ok(name.trim(), "a control lost its accessible name in English");
-        assert.notEqual(name, bg[i], `"${name}" is the same string in both languages`);
-      }
       assert.deepEqual(errors, [], errors.join(" | "));
     });
+
+    // The English page rather than the same page after a click, because that
+    // is what a reader gets: the two languages are two documents now.
+    await withApp(async (page, errors) => {
+      const en = await names(page);
+      assert.equal(en.length, 3, `${en.length} controls carry an aria-label on /en/`);
+      for (const name of en) {
+        assert.ok(name.trim(), "a control lost its accessible name in English");
+        assert.doesNotMatch(name, /[Ѐ-ӿ]/, `"${name}" reaches an English reader in Bulgarian`);
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, "/en/");
   }
 );
 

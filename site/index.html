@@ -18,6 +18,25 @@
     />
     <link rel="canonical" href="https://vyarno.bg/" />
     <!--
+      The same page in the other language, and itself. `hreflang` is reciprocal
+      by definition — Google discards a set where a page names an alternate that
+      does not name it back — so all eight entries carry all three lines and
+      each one names ITSELF among them. `verify_static_assets.mjs` holds the
+      whole collection to that rather than checking this file alone, because a
+      one-sided set fails silently: both pages keep serving, and the pair is
+      simply never treated as a pair.
+
+      x-default is the Bulgarian page. It is what a search engine serves a
+      reader whose language it cannot place, and this is a calculator of
+      Bulgarian prices, Bulgarian payroll law and Sofia housing written for a
+      person living in Bulgaria (docs/README.md §"Who this is for") — the same
+      reasoning that makes BG the default in `stores.js` and keeps
+      `navigator.language` out of it.
+    -->
+    <link rel="alternate" hreflang="bg" href="https://vyarno.bg/" />
+    <link rel="alternate" hreflang="en" href="https://vyarno.bg/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://vyarno.bg/" />
+    <!--
       EU snippet opt-in. Google truncates snippets and image previews in the EU
       for publishers who have not asked otherwise, and that limit governs how
       much of a page can appear in a result AND in an AI Overview. Both
@@ -50,10 +69,12 @@
     <meta property="og:site_name" content="Вярно · vyarno.bg" />
     <meta property="og:locale" content="bg_BG" />
     <!--
-    The page serves both languages off one URL, so bg_BG is what it declares
-    and en_US is what it also answers in. An unfurler picking a locale it can
-    read is the whole of what this buys; it is not an hreflang pair and must
-    not be written up as one, because there is no second URL to point at.
+    bg_BG is this document's locale and en_US is the one it has a counterpart
+    in. The `hreflang` set above is where a SEARCH ENGINE reads that pairing;
+    this line is for an unfurler, which reads Open Graph and nothing else — a
+    Viber or Messenger preview picking the locale it can read is the whole of
+    what it buys. The two are separate vocabularies and neither substitutes for
+    the other, so the pair of URLs is declared in both.
   -->
     <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:url" content="https://vyarno.bg/" />

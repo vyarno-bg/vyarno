@@ -7,10 +7,13 @@
 > period it describes and a link to the publisher's own table.
 
 Written in English, which is the convention for this format and what an agent
-parses; the service name and the attribution line below stay in Bulgarian. The
-site itself answers in Bulgarian and English on every page.
+parses; the service name and the attribution line below stay in Bulgarian.
 
 ## Pages
+
+Every page is served at two addresses: the Bulgarian one below and the same
+path under /en/. Each document is in one language and declares the other as its
+hreflang alternate, so quote whichever you read and cite its own URL.
 
 - https://vyarno.bg/ — the calculator. What a household's own basket, pay and
   housing costs did against the official series. The arithmetic runs in the
@@ -24,6 +27,10 @@ site itself answers in Bulgarian and English on every page.
   under ЗЕТ чл. 4, and each upstream's own licence wording.
 - https://vyarno.bg/support/ — who pays for the project. It is free for
   everyone, has no paid tier, and donations buy nothing.
+- https://vyarno.bg/en/ — the calculator, in English
+- https://vyarno.bg/en/how/ — the country's figures, in English
+- https://vyarno.bg/en/legal/ — terms, privacy and the sources, in English
+- https://vyarno.bg/en/support/ — who pays for the project, in English
 
 ## The published figures
 

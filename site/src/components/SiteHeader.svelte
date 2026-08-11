@@ -7,8 +7,11 @@
   is threaded through props.
 -->
 <script>
-  import { theme, lang, toggleLang, toggleTheme } from "$lib/stores.js";
+  import { theme, lang, chooseLang, langHref, toggleTheme } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
+
+  /** The Bulgarian path of the page this header is on. `App.svelte` is `/`. */
+  const PAGE = "/";
 </script>
 
 <!-- The skip link. `.skip` has had styles in this file all along with no
@@ -53,16 +56,38 @@
            It is a link among two buttons on purpose: `.pill` is this bar's
            vocabulary for "a control up here", and giving navigation its own
            treatment would add a second one for a bar with three items in it. -->
-      <a class="pill nav" href="/how/">
-        <span class="l-bg">{COPY.howNavK.bg}</span>
-        <span class="l-en">{COPY.howNavK.en}</span>
-      </a>
+      <!-- One anchor per language, because the href differs and a pair is how
+           this codebase writes anything that does. The route into `/how/` is
+           the reader's own tree's: an English reader sent to the Bulgarian
+           page would arrive at a document that declares `bg` and be read it in
+           Bulgarian, since the URL is what decides the language now. -->
+      <a class="pill nav l-bg" href={langHref("/how/", "bg")}>{COPY.howNavK.bg}</a>
+      <a class="pill nav l-en" href={langHref("/how/", "en")}>{COPY.howNavK.en}</a>
       <button class="pill" onclick={toggleTheme} aria-label={t(COPY.themeToggle, $lang)}>
         {$theme === "dark" ? "☀" : "☾"}
       </button>
-      <button class="pill" onclick={toggleLang} aria-label={t(COPY.langToggle, $lang)}>
-        {$lang === "bg" ? "EN" : "BG"}
-      </button>
+      <!-- The language control, and it is a LINK rather than a button: the two
+           languages are two URLs, and a handler that flipped a store would be
+           unreachable with JavaScript off, where every entry hardcodes its own
+           `data-lang` and nothing on the page can change it. One anchor per
+           language for the same reason as the pair above — the Bulgarian
+           reader's control points at the English tree and the English reader's
+           points back. `chooseLang` records the choice on the way out; the
+           navigation happens whether or not it runs. -->
+      <a
+        class="pill l-bg"
+        href={langHref(PAGE, "en")}
+        hreflang="en"
+        aria-label={COPY.langToggle.bg}
+        onclick={() => chooseLang("en")}>EN</a
+      >
+      <a
+        class="pill l-en"
+        href={langHref(PAGE, "bg")}
+        hreflang="bg"
+        aria-label={COPY.langToggle.en}
+        onclick={() => chooseLang("bg")}>BG</a
+      >
     </div>
   </div>
 </header>
@@ -125,11 +150,18 @@
   .pill:hover {
     border-color: var(--muted);
   }
-  /* The link pill carries text where the other two carry a glyph, so it needs
-     the anchor reset the buttons do not: no underline, and the bar's own ink
-     rather than the link colour, which in this app means «your number is the
-     good one» and says nothing about navigation. */
-  .pill.nav {
+  /* Every pill that is an anchor needs the reset the buttons do not: no
+     underline, and the bar's own ink rather than the link colour, which in this
+     app means «your number is the good one» and says nothing about navigation.
+     Keyed on the element rather than on `.nav`, because the language control is
+     an anchor too and it carries no route class — it is drawn as the button it
+     replaced, and only its behaviour changed. */
+  /* No `display` here, deliberately. `.controls` is a flex container, so an
+     anchor is blockified anyway — and a `display` declaration on `a.pill` ties
+     on specificity with `html[data-lang] .l-en` in `tokens.css` once Svelte's
+     scoping class is added, which would leave the hidden half of every pair
+     showing or not depending on stylesheet order. */
+  a.pill {
     text-decoration: none;
     white-space: nowrap;
   }

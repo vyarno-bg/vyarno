@@ -61,7 +61,14 @@ test("the header still fits a phone with the route on it", { skip }, async () =>
       const bar = await page.evaluate(() => {
         const vw = document.documentElement.clientWidth;
         const brand = document.querySelector("header.site .brand");
-        const controls = [...document.querySelectorAll("header.site .controls > *")];
+        // What a reader can see. Two of the bar's controls are written as a
+        // `.l-bg` / `.l-en` pair — the route into `/how/` and the language
+        // link, whose hrefs differ by language — so the DOM holds five
+        // elements and draws three. A count over the DOM would measure how the
+        // markup is assembled; what has to fit is what is drawn.
+        const controls = [...document.querySelectorAll("header.site .controls > *")].filter(
+          (el) => el.offsetParent !== null
+        );
         return {
           vw,
           barHeight: Math.round(
