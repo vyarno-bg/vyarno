@@ -580,6 +580,56 @@ export const COPY = {
     bg: "дял от парите, които наистина харчиш",
     en: "share of your money you actually spend",
   },
+
+  // ---- What a slider says out loud ----------------------------------------
+  // A range input hands a screen reader its raw `value` and nothing else, and
+  // every rail in the basket carries a number whose unit is written somewhere
+  // else on the row: a division at 22 per cent and a group at 22 euros are
+  // announced identically, so the unit the %/€ toggle exists to switch is the
+  // one thing that is never spoken. These are the `aria-valuetext` of each, and
+  // each says the same figure the row prints beside the rail.
+  //
+  // **Every number in them arrives through `format.js#integer`**, the formatter
+  // the visible row uses. A slider announcing "22.0" over a row printing «22»
+  // is one figure with two spellings, and the one a reader can check is the one
+  // they cannot see.
+  //
+  // «около», never «≈»: a screen reader reads the symbol out as "almost equal
+  // to" or skips it altogether, and neither is a word the sentence needs.
+  //
+  // The two spend-share variants split on housing for the reason
+  // `spendShareLead*` above does — `spendable` is the net pay MINUS any rent or
+  // mortgage, so naming the pay alone claims a base €450 larger than the one
+  // the arithmetic used, and an announcement is the whole of what that reader
+  // gets.
+  spendShareValueNoHousing: {
+    bg: "{p}% от чистия доход",
+    en: "{p}% of take-home pay",
+  },
+  spendShareValueWithHousing: {
+    bg: "{p}% от чистия доход след €{h} за жилище",
+    en: "{p}% of take-home pay after the €{h} for housing",
+  },
+  divisionValue: {
+    bg: "{p}% от кошницата, около €{e} на месец",
+    en: "{p}% of the basket, about €{e} a month",
+  },
+  divisionValueNoEuro: {
+    bg: "{p}% от кошницата",
+    en: "{p}% of the basket",
+  },
+  // The group rail is the one whose bare number misleads most: its maximum is
+  // its own division's weight, so 22 there is 22 of something the reader has to
+  // have seen to know the size of. Naming the division is what turns it back
+  // into a share.
+  groupValue: {
+    bg: "{p}% от {d}, около €{e} на месец",
+    en: "{p}% of {d}, about €{e} a month",
+  },
+  groupValueNoEuro: {
+    bg: "{p}% от {d}",
+    en: "{p}% of {d}",
+  },
   // Shown in € mode: how much of their take-home they have placed so far.
   // **A statement of what they have done, in both languages, never an
   // imperative.** «разпредели …» reads as an instruction to keep going until

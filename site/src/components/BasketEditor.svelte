@@ -45,6 +45,31 @@
     mort: fmt0(calc.monthlyMort),
     total: fmt0(calc.housingCost),
   });
+
+  // What a rail says out loud, for the reader who has only the announcement.
+  // A range input reports its raw `value` and nothing else, so the unit lives
+  // entirely in the column beside it: a division at 22 and a group at 22 are
+  // read out the same, and the %/€ toggle switches a thing that was never
+  // spoken. Both helpers take their figures from `fmt0` — the formatter that
+  // column already uses — because a rail announcing "22.0" over a row printing
+  // «22» gives the reader who cannot see the row a figure they cannot check
+  // against the one everybody else is quoting.
+  //
+  // The € clause drops out where the household has no net pay to carve, which
+  // is the same condition that empties the `<small>`: an announcement naming a
+  // euro figure the page is not showing is a second answer to a question the
+  // page declined to answer.
+  const divisionAnnounced = (i) =>
+    t(calc.householdNet > 0 ? COPY.divisionValue : COPY.divisionValueNoEuro, $lang, {
+      p: fmt0(calc.divisionSharePct(i)),
+      e: fmt0(calc.divisionEur(i)),
+    });
+  const groupAnnounced = (division, sharePct, eur) =>
+    t(eur === null ? COPY.groupValueNoEuro : COPY.groupValue, $lang, {
+      p: fmt0(sharePct),
+      e: fmt0(eur),
+      d: $lang === "bg" ? division.bg_name : division.en_name,
+    });
 </script>
 
 <!-- BASKET PRESETS + SLIDERS -->
@@ -171,6 +196,11 @@
       oninput={(e) => calc.onSpendShareInput(e.currentTarget.value)}
       style="--f:{calc.spendSharePct}%"
       aria-label={t(COPY.spendShareAria, $lang)}
+      aria-valuetext={t(
+        hasHousing ? COPY.spendShareValueWithHousing : COPY.spendShareValueNoHousing,
+        $lang,
+        { p: fmt0(calc.spendSharePct), h: fmt0(calc.housingCost) }
+      )}
     />
   </div>
 {/if}
@@ -275,6 +305,13 @@
       {#if calc.spendMode === "eur"}
         <span class="eurin">
           <span class="cur">€</span>
+          <!-- The unit stays in the NAME here, where the sliders carry it in an
+               `aria-valuetext`, and the asymmetry is the point: this is a field
+               the reader types into, and a valuetext replaces the value a
+               screen reader echoes back — so the digits somebody is halfway
+               through entering come back as a sentence about the previous
+               number. A name is fixed while a value is not, which is what makes
+               it the safe half of the control to put «евро на месец» in. -->
           <input
             type="number"
             inputmode="numeric"
@@ -297,6 +334,7 @@
           oninput={(e) => calc.onSliderInput(i, e.currentTarget.value)}
           style="--f:{(100 * calc.weights[i]) / 45}%"
           aria-label={$lang === "bg" ? c.bg_name : c.en_name}
+          aria-valuetext={divisionAnnounced(i)}
         />
       {/if}
 
@@ -309,6 +347,15 @@
         {@const spTotal = sp.reduce((s, x) => s + (x > 0 ? x : 0), 0)}
         <div class="subs">
           {#each c.groups as g, gi (g.cp_code)}
+            <!-- The two figures this row states, worked out once. The column
+                 and the announcement have to be the same number, and two
+                 copies of the expression are two numbers that agree until
+                 somebody edits one of them. -->
+            {@const share = spTotal > 0 ? (100 * Math.max(0, sp[gi])) / spTotal : 0}
+            {@const eur =
+              calc.householdNet > 0 && spTotal > 0
+                ? (calc.divisionEur(i) * Math.max(0, sp[gi])) / spTotal
+                : null}
             <div class="sub">
               <div class="top">
                 <span class="nm">
@@ -326,12 +373,8 @@
                   </span>
                 </span>
                 <span class="pc mono">
-                  <span>{fmt0(spTotal > 0 ? (100 * Math.max(0, sp[gi])) / spTotal : 0)}%</span>
-                  <small
-                    >{calc.householdNet > 0 && spTotal > 0
-                      ? `≈ €${fmt0((calc.divisionEur(i) * Math.max(0, sp[gi])) / spTotal)}`
-                      : ""}</small
-                  >
+                  <span>{fmt0(share)}%</span>
+                  <small>{eur === null ? "" : `≈ €${fmt0(eur)}`}</small>
                 </span>
               </div>
               <input
@@ -344,6 +387,7 @@
                 style="--f:{(100 * Math.min(sp[gi], Math.max(1, calc.weights[i]))) /
                   Math.max(1, calc.weights[i])}%"
                 aria-label={$lang === "bg" ? g.bg_name : g.en_name}
+                aria-valuetext={groupAnnounced(c, share, eur)}
               />
             </div>
           {/each}

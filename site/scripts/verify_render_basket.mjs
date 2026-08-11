@@ -562,4 +562,138 @@ test("a Bulgarian reader's basket table is in Bulgarian only", { skip }, async (
   );
 });
 
+test("every basket rail announces its value with its unit", { skip }, async () => {
+  // A range input hands a screen reader its raw `value` and nothing else. The
+  // unit lives in the column beside the rail, so a division at 22 per cent and
+  // a group at 22 euros are announced identically — and the %/€ toggle, whose
+  // entire job is to switch that unit, switches something the reader was never
+  // told. `aria-valuetext` is the only place a slider can say it.
+  //
+  // ONE rule over the whole collection rather than an assertion per rail: a
+  // check that cannot go red while this one stays green is a second thing to
+  // update, not a second guard. The three shapes have to be ON the page for the
+  // rule to mean anything, which is what the counts below are for — the
+  // group rails need the detail switch and an opened division to exist at all,
+  // and a collection rule that quietly ran over thirteen rows would read as
+  // having covered all of them.
+  //
+  // Both languages, because the announcement is a rendered string like any
+  // other: an empty attribute is the missing-translation failure and Cyrillic
+  // on the English page (or Latin on the Bulgarian one) is the wrong-language
+  // failure, and no other suite here can see either.
+  for (const [path, cyrillic] of [
+    ["/", true],
+    ["/en/", false],
+  ]) {
+    await withApp(async (page, errors) => {
+      await page.locator(".basketbar .homeTog input").check();
+      await page.locator("#sliders .cat .disc").first().click();
+      await page.waitForTimeout(300);
+
+      const rails = await page.evaluate(() => {
+        const read = (selector) =>
+          [...document.querySelectorAll(selector)].map((el) => ({
+            name: el.getAttribute("aria-label") ?? "",
+            said: el.getAttribute("aria-valuetext") ?? "",
+          }));
+        return {
+          spend: read(".spendshare input[type=range]"),
+          divisions: read("#sliders .cat > input[type=range]"),
+          groups: read("#sliders .subs input[type=range]"),
+        };
+      });
+      assert.equal(rails.spend.length, 1, `${path}: no spend-share rail to announce`);
+      assert.ok(
+        rails.divisions.length >= 13,
+        `${path}: ${rails.divisions.length} division rails — the published list is not drawn`
+      );
+      assert.ok(
+        rails.groups.length >= 2,
+        `${path}: ${rails.groups.length} group rails — the drill-down did not open, so this ` +
+          "rule ran over two of the three shapes"
+      );
+
+      for (const rail of [...rails.spend, ...rails.divisions, ...rails.groups]) {
+        assert.ok(
+          rail.said.trim(),
+          `${path}: the rail «${rail.name}» announces its raw number and nothing else`
+        );
+        assert.match(
+          rail.said,
+          /\d/,
+          `${path}: «${rail.name}» announces "${rail.said}" — a unit with no value in it`
+        );
+        assert.match(
+          rail.said,
+          /[%€]/,
+          `${path}: «${rail.name}» announces "${rail.said}" — a bare number, which is what a ` +
+            "reader who cannot see the column beside it already had"
+        );
+        assert.equal(
+          /[а-яА-Я]/.test(rail.said),
+          cyrillic,
+          `${path}: «${rail.name}» announces "${rail.said}" in the wrong language`
+        );
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, path);
+  }
+});
+
+test(
+  "a rail's announcement follows its value, and its unit follows the mode",
+  { skip },
+  async () => {
+    // The two things the rule over the collection cannot see. A constant string
+    // satisfies every assertion up there and tells the reader the same thing at
+    // both ends of the rail — so the announcement is moved, by the keyboard,
+    // which is how the reader it is written for moves it.
+    //
+    // And the mode: in € mode the division control is a number field, not a
+    // range, so the unit moves into its NAME. That asymmetry is deliberate — an
+    // `aria-valuetext` on a field replaces the value a screen reader echoes back,
+    // so a reader halfway through typing 180 hears a sentence about the number
+    // they are replacing.
+    await withApp(async (page, errors) => {
+      const rail = page.locator("#sliders .cat > input[type=range]").first();
+      const said = () => rail.getAttribute("aria-valuetext");
+
+      const before = await said();
+      assert.match(before, /%/, `a division rail in share mode announces "${before}"`);
+
+      await rail.focus();
+      for (let i = 0; i < 10; i++) await page.keyboard.press("ArrowRight");
+      await page.waitForTimeout(250);
+      assert.notEqual(
+        await said(),
+        before,
+        `the rail still announces "${before}" ten steps along — the announcement is a constant`
+      );
+
+      // Scoped to the basket's own toolbar: `.seg .segbtn` also matches the pay
+      // card's net/gross toggle, which changes the salary basis and leaves every
+      // assertion below passing.
+      await page.locator(".basketbar .seg .segbtn").nth(1).click();
+      await page.waitForTimeout(300);
+      assert.equal(
+        await page.locator("#sliders .cat > input[type=range]").count(),
+        0,
+        "the division rails are still ranges in € mode"
+      );
+      const field = page.locator("#sliders .cat .eurin input").first();
+      assert.match(
+        await field.getAttribute("aria-label"),
+        /евро на месец/,
+        "the € field's name stopped carrying the unit, and its value is now a bare number"
+      );
+      assert.equal(
+        await field.getAttribute("aria-valuetext"),
+        null,
+        "the € field states a valuetext, which replaces the digits the reader is typing"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
 test.after(shutdown);
