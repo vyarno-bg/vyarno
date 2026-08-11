@@ -161,7 +161,7 @@ margin are irrelevant to them, and none is an open question.
 | Idea | Why not |
 |---|---|
 | Crowd-sourced "average real basket" from users | Requires collecting personal spending on a server. P1. The privacy-preserving version — comparing your basket to the *official* one, locally — is what the site already does |
-| Accounts, saved profiles, email capture, cross-device sync | Same. "Remember my basket **across devices**" is the one-line request that converts a client-side convenience into a server-side store of somebody's spending pattern — a new decision against P1, not an extension of the local one |
+| Accounts, saved profiles, email capture, cross-device sync | Same. "Remember my basket **across devices**" is the one-line request that converts a client-side convenience into a server-side store of somebody's spending pattern — a new decision against P1, not an extension of the local one. The local half is what the `vyarno_inputs` switch does, and the boundary is the word *devices*: it writes to the reader's own `localStorage`, off until they turn it on, and no request carries it |
 | **Session recording, or any measurement that can see what a consumer typed** | P1 without qualification. A replay of the calculator is a recording of somebody's salary being entered |
 | **Selling, sharing or brokering user data** | P1. There is nothing to sell — we hold nothing — and building the capability in order to sell it is what P1 exists to prevent |
 | **Any commercial relationship that changes a number** | P10. If money could alter which figure is shown, which lender appears, or how affordable a home looks, it is declined regardless of margin |

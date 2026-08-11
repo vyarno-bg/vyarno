@@ -156,6 +156,28 @@ test("the ready-made baskets sit under the rows they fill", { skip }, async () =
   });
 });
 
+test("a basket the reader described survives an edit somewhere else", { skip }, async () => {
+  // The published basket seeds the sliders ONCE. Seeded on every pass of the
+  // effect that clamps the mortgage term, it follows the term — so touching a
+  // field on the other side of the card puts thirteen weights, the splits, the
+  // preset and the %/€ mode back to the national average, with nothing on
+  // screen saying why. Take the `basketSeeded` guard out of
+  // `Calculator#syncWithData` and this goes red on the first assertion.
+  await withApp(async (page, errors) => {
+    const firstWeight = page.locator("#sliders .cat input[type=range]").first();
+    await firstWeight.fill("40");
+    await page.locator(".m-inputs .homeTog input").first().check();
+    await page.locator("#inTerm").fill("22");
+    await page.waitForTimeout(300);
+    assert.equal(await firstWeight.inputValue(), "40", "editing the term re-seeded the basket");
+
+    await page.locator("#inRate").fill("3,4");
+    await page.waitForTimeout(300);
+    assert.equal(await firstWeight.inputValue(), "40", "editing the rate re-seeded the basket");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the loaded basket is marked, not crowned", { skip }, async () => {
   // A solid `--ink` fill is the strongest "this is the answer" signal the app
   // has, and the chip it sat on had only seeded thirteen sliders that outrank

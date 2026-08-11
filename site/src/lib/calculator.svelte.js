@@ -314,6 +314,24 @@ export class Calculator {
    */
   splits = $state(PRESETS.official.map(() => null));
 
+  /**
+   * Whether a payload has already seeded the basket.
+   *
+   * **The seeding is once per calculator, and this is the field that makes it
+   * so.** `syncWithData` runs from an `$effect` that also clamps the term, so
+   * it re-runs whenever the reader edits the term or the rate — and a run that
+   * seeds overwrites the thirteen weights, the splits, the preset and the %/€
+   * mode with the published basket. Unguarded, a reader who spends a minute
+   * describing what they buy and then changes the mortgage term watches it go
+   * back to the national average, with nothing on screen saying why. Remembered
+   * inputs make that worse rather than differently: the reseed is persisted a
+   * moment later, so the saved basket goes from the device too.
+   *
+   * NOT `$state`, deliberately. The effect reads it, and a reactive flag read
+   * and written in the same pass is a dependency on the thing being guarded.
+   */
+  basketSeeded = false;
+
   /** The method drawer's open state, held here so the header can close it. */
   drawerOpen = $state(false);
 
@@ -370,9 +388,14 @@ export class Calculator {
    * in `App.svelte` rather than at the end of `load()`, because the term clamp
    * has to re-run when the *user* types a term past the cap, not only when new
    * data arrives.
+   *
+   * That is also why the basket is seeded once and not on every run — the same
+   * effect fires on a term the reader typed, and a pass that seeds takes their
+   * basket with it. `basketSeeded` above carries the failure; the clamp below
+   * stays outside the guard because it is the reason this runs at all.
    */
   syncWithData = () => {
-    if (this.dataReady && this.data.hicpCategories) {
+    if (this.dataReady && this.data.hicpCategories && !this.basketSeeded) {
       // Seed from the LIVE published weights, not the PRESETS copy, and NOT
       // rounded — rounding each division to a whole percent made the default
       // basket sum to 97 and put a third inflation figure (5.30%) on screen
@@ -384,6 +407,7 @@ export class Calculator {
       this.openDivisions = new Set();
       this.activePreset = "official";
       this.spendMode = "pct";
+      this.basketSeeded = true;
     }
     if (this.dataReady && this.data.mortgage) {
       // Only adopt the live default while the user hasn't touched the input.
@@ -392,6 +416,112 @@ export class Calculator {
     // Clamp the term to the BNB maturity cap (view.js#clampTerm).
     this.term = clampTerm(this.term, this.limits);
     // Do not auto-fill raise. We don't have a nominal wage index.
+  };
+
+  /**
+   * Everything the reader typed, as plain JSON — what `stores.js` keeps on the
+   * device for somebody who asked it to.
+   *
+   * **The published figures are not in here and must not be.** `data`,
+   * `dataRows` and the freshness verdict are re-fetched on every visit and
+   * judged against the reader's own clock; a copy of them on the device would
+   * be the one thing P4 forbids, a stale payload with no date on screen to say
+   * so. What is here is the other half: numbers nobody but the reader can
+   * supply, which is exactly what a reload would otherwise throw away.
+   *
+   * `raiseText` travels and `raise` does not. The parse is one call
+   * (`parseDecimal`) and the characters are what the box shows, so storing the
+   * string keeps the field and the model saying the same thing — and NaN, which
+   * is what an unsaid raise IS, does not survive JSON in the first place.
+   *
+   * `stashed` stays behind for the opposite reason: it is the amount the reader
+   * last typed in the OTHER basis, which is a draft of an edit in progress
+   * rather than an answer they gave.
+   */
+  snapshot = () => ({
+    earners: this.earners.map((e) => ({ amount: e.amount, raiseText: e.raiseText })),
+    earnersDirty: this.earnersDirty,
+    raiseDirty: this.raiseDirty,
+    payBasis: this.payBasis,
+    anchor: this.anchor,
+    rent: this.rent,
+    cash: this.cash,
+    homeOn: this.homeOn,
+    m2: this.m2,
+    rate: this.rate,
+    rateTouched: this.rateTouched,
+    term: this.term,
+    priceMode: this.priceMode,
+    manualPrice: this.manualPrice,
+    weights: [...this.weights],
+    splits: this.splits.map((s) => (s ? [...s] : null)),
+    activePreset: this.activePreset,
+    spendMode: this.spendMode,
+    spendSharePct: this.spendSharePct,
+    detailMode: this.detailMode,
+    sectorKey: this.sectorKey,
+  });
+
+  /**
+   * Put a saved snapshot back, or refuse it whole.
+   *
+   * **The three checks here are the ones `stores.js` cannot make**, because
+   * each is a fact about a published payload or about this card rather than
+   * about the shape of a JSON object: how many divisions the basket has, how
+   * many groups each division has, and how many incomes the pay card holds.
+   * They are what stops a saved basket from being read back against a payload
+   * that has since changed — thirteen weights spread over fourteen divisions is
+   * a wrong personal inflation wearing the appearance of the reader's own
+   * choice, and no gate upstream can see it because nothing published is wrong.
+   *
+   * All-or-nothing rather than field by field: a half-applied snapshot is a
+   * page half describing the reader, and which half is silent.
+   *
+   * Called once the payloads have landed, so the seeding in `syncWithData` has
+   * already run and this is what the reader ends up looking at.
+   *
+   * @param {Record<string, any>} saved  a `stores.js#readInputs` result
+   * @returns {boolean} whether it was applied
+   */
+  restore = (saved) => {
+    const divisions = this.categories;
+    if (saved.earners.length < 1 || saved.earners.length > MAX_EARNERS) return false;
+    if (saved.weights.length !== divisions.length) return false;
+    if (saved.splits.length !== divisions.length) return false;
+    const splitsFit = saved.splits.every(
+      (split, i) => split === null || split.length === (divisions[i].groups?.length ?? 0)
+    );
+    if (!splitsFit) return false;
+
+    this.earners = saved.earners.map((e) => ({
+      amount: e.amount,
+      stashed: null,
+      raise: parseDecimal(e.raiseText),
+      raiseText: e.raiseText,
+    }));
+    this.earnersDirty = saved.earnersDirty;
+    this.raiseDirty = saved.raiseDirty;
+    this.payBasis = saved.payBasis;
+    this.anchor = saved.anchor;
+    this.rent = saved.rent;
+    this.cash = saved.cash;
+    this.homeOn = saved.homeOn;
+    this.m2 = saved.m2;
+    this.rate = saved.rate;
+    this.rateTouched = saved.rateTouched;
+    // Through the clamp, not verbatim: the BNB maturity cap is published, so a
+    // term saved under a longer one would quote a payment no bank may offer.
+    this.term = clampTerm(saved.term, this.limits);
+    this.priceMode = saved.priceMode;
+    this.manualPrice = saved.manualPrice;
+    this.weights = [...saved.weights];
+    this.splits = saved.splits.map((s) => (s ? [...s] : null));
+    this.activePreset = saved.activePreset;
+    this.spendMode = saved.spendMode;
+    this.spendSharePct = saved.spendSharePct;
+    this.detailMode = saved.detailMode;
+    this.sectorKey = saved.sectorKey;
+    return true;
   };
 
   // ---------------------------------------------------------------------

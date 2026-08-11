@@ -18,7 +18,7 @@ import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { join } from "node:path";
 import { SITE } from "./render-dist.mjs";
-import { shutdown, skip, withApp } from "./render-harness.mjs";
+import { READY, shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
 
@@ -354,6 +354,147 @@ test("every decimal field takes the separator this page writes", { skip }, async
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
+
+// --------------------------------------------------------------------------
+// Remembering the reader's figures — the three states, in a real browser
+//
+// `verify_stores.mjs` holds what the module does when it is called. What it
+// cannot see is whether anything CALLS it: the write-through is an `$effect` in
+// `App.svelte`, so a page that persisted a salary nobody asked it to persist —
+// or one that quietly stopped — would pass every case in that file. This is the
+// only suite that runs the app.
+// --------------------------------------------------------------------------
+
+/** Reload and wait for the calculator to come back up, restore included. */
+async function reopen(page) {
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction(READY["/"]);
+  await page.waitForTimeout(300);
+}
+
+const rememberBox = (page) => page.locator(".remember input[type=checkbox]");
+
+test("a first visit leaves nothing on this device", { skip }, async () => {
+  // ЗЕТ чл. 4а, ал. 4, т. 2 exempts storage for a service «изрично поискана» by
+  // the recipient, and the switch is what asking looks like. So a visitor who
+  // types a salary and never touches it has to leave no trace at all — not a
+  // preference, and above all not the salary.
+  await withApp(async (page, errors) => {
+    await page.locator("input[type=number]").first().fill("1234");
+    await page.locator("#inRent").fill("700");
+    await page.waitForTimeout(300);
+
+    assert.equal(await rememberBox(page).isChecked(), false, "the switch arrives ticked");
+    assert.deepEqual(
+      await page.evaluate(() => Object.keys(localStorage)),
+      [],
+      "the page wrote something the reader never asked it to keep"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("switched on, the figures survive a reload", { skip }, async () => {
+  await withApp(async (page, errors) => {
+    const salary = page.locator("input[type=number]").first();
+    const firstWeight = page.locator("#sliders .cat input[type=range]").first();
+    await salary.fill("1234");
+    await firstWeight.fill("40");
+    await rememberBox(page).check();
+    await page.waitForTimeout(300);
+
+    await reopen(page);
+
+    assert.equal(await rememberBox(page).isChecked(), true, "the switch came back off");
+    assert.equal(await salary.inputValue(), "1234", "the salary did not come back");
+    assert.equal(await firstWeight.inputValue(), "40", "the basket did not come back");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("switched off, the figures are gone from the device at once", { skip }, async () => {
+  // Not «stops writing»: the key goes in the same action. A switch that reads
+  // off over yesterday's salary is the one state this feature must not have.
+  await withApp(async (page, errors) => {
+    const salary = page.locator("input[type=number]").first();
+    await salary.fill("1234");
+    await rememberBox(page).check();
+    await page.waitForTimeout(300);
+    assert.ok(
+      await page.evaluate(() => localStorage.getItem("vyarno_inputs")),
+      "switching it on kept nothing"
+    );
+
+    await rememberBox(page).uncheck();
+    await page.waitForTimeout(200);
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("vyarno_inputs")),
+      null,
+      "the figures are still on the device"
+    );
+
+    await reopen(page);
+    assert.equal(await rememberBox(page).isChecked(), false);
+    assert.notEqual(await salary.inputValue(), "1234", "a reload brought the salary back");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("a payload that will not load does not empty the device", { skip }, async () => {
+  // The restore judges a saved basket by the divisions published today, and a
+  // failed fetch leaves the page with none — so a restore gated on
+  // `dataReady` rather than on the divisions refuses every snapshot and
+  // clears the device, erasing the reader's own figures to report our network
+  // problem. The snapshot waits for the retry instead. Swap the guard in
+  // `App.svelte` and this goes red; nothing else in the suite would notice.
+  await withApp(async (page) => {
+    await page.locator("input[type=number]").first().fill("1234");
+    await rememberBox(page).check();
+    await page.waitForTimeout(300);
+    const stored = await page.evaluate(() => localStorage.getItem("vyarno_inputs"));
+    assert.ok(stored, "switching it on kept nothing");
+
+    await page.route("**/data/published/*.json", (r) => r.abort());
+    await reopen(page);
+
+    assert.ok(await page.locator(".load-fail").count(), "the failure state was never reached");
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("vyarno_inputs")),
+      stored,
+      "a failed fetch threw the reader's own figures away"
+    );
+  });
+});
+
+test(
+  "the forget button empties the device without being switched off first",
+  { skip },
+  async () => {
+    await withApp(async (page, errors) => {
+      const forget = page.locator(".remember button.forget");
+      assert.equal(
+        await forget.isDisabled(),
+        true,
+        "it offers to clear a device with nothing on it"
+      );
+
+      await page.locator("input[type=number]").first().fill("1234");
+      await rememberBox(page).check();
+      await page.waitForTimeout(300);
+      assert.equal(await forget.isDisabled(), false);
+
+      await forget.click();
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => localStorage.getItem("vyarno_inputs")), null);
+      assert.equal(
+        await rememberBox(page).isChecked(),
+        false,
+        "it wiped the device and kept writing"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
 
 test("the language and theme toggles change the page", { skip }, async () => {
   await withApp(async (page, errors) => {

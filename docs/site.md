@@ -69,7 +69,7 @@ site/
 │   ├── verify_wiring.mjs          # which value the template feeds which function
 │   ├── verify_copy.mjs            # copy invariants, against the imported COPY
 │   ├── verify_format.mjs          # how a number or a date is written
-│   ├── verify_stores.mjs          # lang/theme persistence
+│   ├── verify_stores.mjs          # what this device keeps, and what it never does
 │   ├── verify_contrast.mjs        # WCAG ratios computed from tokens.css
 │   ├── verify_data_contracts.mjs  # data.js chains + the shipped JSON
 │   ├── verify_legal.mjs           # the legal documents and the identity table
@@ -111,7 +111,7 @@ site/
         ├── legal.js      # the four legal documents + the ЗЕТ чл. 4 identity
         ├── legal-nav.js  # contact addresses + document names (every page)
         ├── support.js    # the donation rules — what may be offered
-        ├── stores.js     # lang + theme, persisted to localStorage
+        ├── stores.js     # lang · theme · област · the opt-in memory
         ├── build.js      # the build stamp (__BUILD_ID__, or "dev")
         ├── SiteFooter.svelte  # attribution + legal links + build stamp
         └── tokens.css · card.css · result-row.css · disclosure.css
@@ -419,7 +419,7 @@ the tests live beside the code they protect:
 | `verify_net_salary.mjs` | `bgNetSalary`, `bgGrossFromNet` — the cap boundary, the flat tax, the round-trip above the contribution cap, cross-checks against published BG payroll references |
 | `verify_mirror_math.mjs` | everything else in `mirror.js` — the anchor contract, personal vs official inflation, the real-wage division, `percentile`'s direction, `buildLadder`, annuity + inverse, `cashErosion`, `payrollParams`, the tax wedge |
 | `verify_view.mjs` | every derived value in `view.js` — which input reaches which formula, and the two boundaries below |
-| `verify_stores.mjs` | the persisted lang/theme keys |
+| `verify_stores.mjs` | every persisted key — the three preferences, and the reader's own figures behind the switch that has to be turned on first |
 | `verify_contrast.mjs` | WCAG AA ratios for every ink × surface pair, both themes, computed from `tokens.css` itself |
 | `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down — and every control boundary at the 3:1 WCAG 1.4.11 asks. Both themes, both languages |
 | `verify_data_contracts.mjs` | `data.js`'s fallback chains, and these same functions run over the JSON committed in `data/published/` |
@@ -680,14 +680,16 @@ visible name, and the official wording still on the link.
 is written into the SPA — the front end renders `hicp_categories.json`. If
 Eurostat reclassifies, the pipeline republishes and the UI follows.
 
-## `src/lib/stores.js` — lang + theme
+## `src/lib/stores.js` — everything this device is allowed to keep
 
-Two `writable` stores with `localStorage` persistence:
+Four `writable` stores with `localStorage` persistence:
 
 | Store | Values | Default with no saved preference |
 |---|---|---|
 | `lang` | `"bg" \| "en"` | `"bg"`, exported as `DEFAULT_LANG`. `navigator.language` is deliberately **not** consulted |
 | `theme` | `"light" \| "dark"` | `matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"` |
+| `region` | an `region_salary.json` code, or `""` | `""` — no default at all, and that is P7: a preselected София hands a Бургас reader Sofia's wage and Sofia's €/m² wearing the appearance of a choice they made |
+| `rememberInputs` | `boolean` | `false`, and the reader is the only thing that turns it on |
 
 **Why `lang` ignores the browser.** This is a calculator of Bulgarian prices,
 Bulgarian payroll law and Bulgarian housing, for a person living in Bulgaria
@@ -708,14 +710,40 @@ language-scoped typography. One toggle helper each: `toggleLang()`,
 `toggleTheme()`. Both swallow `localStorage` errors silently — private mode,
 quota exhausted, no DOM — they simply do not persist.
 
-The persisted keys are `vyarno_lang` and `vyarno_theme`, exported as `LANG_KEY`
-/ `THEME_KEY`. `readPreference(key, legacyKey, isValid)` accepts an optional
-legacy key so a key rename can migrate rather than silently reset every
-returning visitor's language and theme; a junk legacy value is discarded, not
-adopted. Tested in `verify_stores.mjs`, which installs a fake `localStorage` /
-`document` / `navigator` / `matchMedia` per case and re-imports the module under
-a unique query string, because `stores.js` reads storage at module-evaluation
-time.
+The persisted keys are `vyarno_lang`, `vyarno_theme`, `vyarno_region` and
+`vyarno_inputs`, exported as `LANG_KEY` / `THEME_KEY` / `REGION_KEY` /
+`INPUTS_KEY`. `readPreference(key, isValid)` returns a saved value only where
+`isValid` accepts it, so junk is absent rather than adopted — and the exported
+names are read straight out of this file by `verify_legal.mjs`, which fails when
+the privacy notice does not name one of them in both languages. Tested in
+`verify_stores.mjs`, which installs a fake `localStorage` / `document` /
+`navigator` / `matchMedia` per case and re-imports the module under a unique
+query string, because `stores.js` reads storage at module-evaluation time.
+
+**Nothing is written until the visitor chooses something, and that is a legal
+constraint rather than a taste one.** A Svelte `writable` calls a new subscriber
+synchronously with the current value, so a subscriber that persists on every
+value writes on first paint — with defaults, for a reader who has touched
+nothing. `persistOnChange` swallows that first call. ЗЕТ чл. 4а, ал. 4, т. 2
+exempts storage «изрично поискана» by the recipient; a default nobody asked for
+is the weakest available form of that argument, and the notice's «избраният
+език» would not be true of it either.
+
+**`vyarno_inputs` is the reader themselves, so it is the one key with a switch
+in front of it.** It holds what they typed — pay, raise, rent, savings, basket,
+splits, the home block — versioned, and dropped unread when the version does not
+match, because a basket saved against thirteen divisions and read back against
+fourteen is a wrong number wearing the appearance of the reader's own choice.
+The risk it opens is not the network one P1 is about: a stored salary is exposed
+to the next person holding the device. Hence off by default (P7), a one-line
+label that says so, a «forget everything on this device» button beside the
+switch, and deletion in the same action as switching off — a switch that stops
+writing while yesterday's figures stay on disk is the state the design makes
+unreachable. `Calculator#snapshot` writes it and `Calculator#restore` reads it
+back, refusing a snapshot whole when the payload's divisions, a division's
+groups or the pay card's `MAX_EARNERS` no longer fit: those are sizes, and
+`stores.js` deliberately knows nothing about the payloads. `App.svelte` holds
+the only two effects that call either.
 
 ## `src/lib/content.js` — copy, presets, offline sentinels
 

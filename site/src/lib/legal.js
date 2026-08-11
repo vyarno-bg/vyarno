@@ -48,8 +48,8 @@
  * Bump, always. The shortcut is only ever available before anything has been
  * served at all, and that moment has passed.
  */
-export const LEGAL_VERSION = "1.3";
-export const LEGAL_EFFECTIVE = { bg: "1 август 2026 г.", en: "1 August 2026" };
+export const LEGAL_VERSION = "1.4";
+export const LEGAL_EFFECTIVE = { bg: "11 август 2026 г.", en: "11 August 2026" };
 
 import { CONTACT, LEGAL_NAV, REPO_ISSUES_URL, REPO_SLUG } from "./legal-nav.js";
 
@@ -658,8 +658,24 @@ const DOC_BODIES = [
         h: { bg: "Какво се пази — на твоето устройство", en: "What is stored — on your device" },
         p: [
           {
-            bg: "Три настройки, и то само ако ги смениш: езикът, светлата или тъмната тема и мястото, за което гледаш числата. Ако не пипнеш нищо, не записваме нищо — първото зареждане не оставя следа в браузъра ти. Смениш ли някоя от тях, тя се пази в localStorage под ключа vyarno_lang, vyarno_theme или vyarno_region. Това не са бисквитки, но правилото за съхраняване на данни в устройството ти важи и за тях (чл. 4а от Закона за електронната търговия); пазим ги, защото ти си поискал точно тези настройки, и затова не те питаме отново. Мястото е предпочитание за това кои публикувани числа да ти покажем, а не факт за теб — не се изпраща никъде и не се свързва с нищо друго, което си въвел. Не се изпращат заедно със заявките и не съдържат нищо лично. Изчистваш ги от настройките на браузъра си, когато поискаш.",
-            en: "Three preferences, and only if you change them: the language, the light or dark theme, and the place you are looking at the figures for. Touch nothing and nothing is written — a first load leaves no trace in your browser. Change one and it is kept in localStorage under the key vyarno_lang, vyarno_theme or vyarno_region. These are not cookies, but the rule about storing data on your device covers them anyway (art. 4a of the Bulgarian E-Commerce Act); we keep them because you asked for that specific setting, which is why we do not ask you again. The place is a preference about which published figures to show you rather than a fact about you — it is sent nowhere and tied to nothing else you typed. They are never sent with a request and contain nothing personal. You can clear them from your browser's settings whenever you like.",
+            bg: "Четири неща, и всяко от тях само ако го поискаш: езикът, светлата или тъмната тема, мястото, за което гледаш числата, и — единствено ако сам включиш «Помни числата ми на това устройство» — самите числа, които си въвел. Ако не пипнеш нищо, не записваме нищо: първото зареждане не оставя следа в браузъра ти. Смениш ли някое от тях, то се пази в localStorage под ключа vyarno_lang, vyarno_theme, vyarno_region или vyarno_inputs. Това не са бисквитки, но правилото за съхраняване на данни в устройството ти важи и за тях (чл. 4а от Закона за електронната търговия); пазим ги, защото ти си поискал точно това, и затова не те питаме отново. Мястото е предпочитание за това кои публикувани числа да ти покажем, а не факт за теб — не се изпраща никъде и не се свързва с нищо друго, което си въвел. Нито един от четирите не се изпраща заедно със заявките. Първите три не съдържат нищо лично; четвъртият съдържа точно твоите числа и затова има свой раздел веднага след този. Изчистваш ги от настройките на браузъра си, когато поискаш.",
+            en: "Four things, and each of them only if you ask for it: the language, the light or dark theme, the place you are looking at the figures for, and — only if you yourself switch on “Remember my figures on this device” — the figures you typed. Touch nothing and nothing is written: a first load leaves no trace in your browser. Change one and it is kept in localStorage under the key vyarno_lang, vyarno_theme, vyarno_region or vyarno_inputs. These are not cookies, but the rule about storing data on your device covers them anyway (art. 4a of the Bulgarian E-Commerce Act); we keep them because you asked for exactly that, which is why we do not ask you again. The place is a preference about which published figures to show you rather than a fact about you — it is sent nowhere and tied to nothing else you typed. None of the four is ever sent with a request. The first three contain nothing personal; the fourth contains your own figures, which is why it has a section of its own directly below. You can clear them from your browser's settings whenever you like.",
+          },
+        ],
+      },
+      {
+        h: {
+          bg: "Ако включиш «Помни числата ми»",
+          en: "If you turn on “Remember my figures”",
+        },
+        p: [
+          {
+            bg: "Този превключвател стои под въпроса «Твоите числа. Твоята реалност.» на началната страница и е изключен, докато ти не го включиш. Включиш ли го, под ключа vyarno_inputs се записва това, което си въвел в калкулатора: заплатите, повишението, наемът, спестяванията, кошницата и настройките за жилището. Записът се прави в твоя браузър и остава там — не се изпраща заедно със заявките, не стига до нас и няма сървър, който да го получи. Сметките продължават да се правят изцяло в твоето устройство.",
+            en: "The switch sits under “Your numbers. Your reality.” on the front page, and it is off until you turn it on. Turn it on and what you entered in the calculator is written under the key vyarno_inputs: the pay, the raise, the rent, the savings, the basket and the home settings. That record is written in your browser and stays there — it is not sent with a request, it does not reach us, and there is no server to receive it. The arithmetic still happens entirely on your device.",
+          },
+          {
+            bg: "Изключен по подразбиране е заради едно нещо, което ние не можем да преценим вместо теб: числата са твои, но устройството може да не е само твое. На общ лаптоп или таблет ги вижда и следващият, който отвори сайта. Затова изборът е твой и се връща назад веднага — изключиш ли превключвателя, записът се изтрива в същия момент, а бутонът «Изтрий запазеното от това устройство» до него прави същото с едно натискане. Изчистването на данните на сайта от настройките на браузъра също го маха.",
+            en: "It is off by default because of the one thing we cannot judge for you: the figures are yours, but the device may not be yours alone. On a shared laptop or tablet the next person to open the site sees them. So the choice is yours and it reverses at once — switch it off and the record is deleted in the same action, and the “Forget everything on this device” button beside it does the same in one press. Clearing the site's data from your browser's settings removes it too.",
           },
         ],
       },
