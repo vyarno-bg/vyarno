@@ -79,6 +79,7 @@ site/
 │   ├── strip-sourcemaps.mjs   # moves maps OUT of dist/; fails if source survives
 │   ├── check-identity.mjs     # release guard on the ЗЕТ чл. 4 identity
 │   ├── published-payload.mjs  # the suites' reader for data/published/*.json
+│   ├── payload-cadence.mjs    # the manifest's cadenceDays as JSON, for the refresh workflows
 │   ├── near.mjs               # the float comparator, and the tolerance it carries
 │   ├── verify_net_salary.mjs      # gross ↔ net payroll pair
 │   ├── verify_mirror_math.mjs     # every formula in mirror.js

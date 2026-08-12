@@ -1,7 +1,17 @@
 # Weekly freshness check — and who is holding the data up.
 #
-# Alerts when any payload in data/published/ is older than 30 days, AND when a
-# `data/<source>` pull request has been sitting open without being merged.
+# Alerts when any payload in data/published/ is older than ITS OWN cadence, AND
+# when a `data/<source>` pull request has been sitting open without being
+# merged.
+#
+# **The cadence is per payload and comes from the manifest**, because one
+# threshold cannot serve a monthly HICP release, a quarterly Eurostat cube and
+# a four-yearly SES vintage at once. Held to a flat thirty days a healthy
+# quarterly payload reports stale for sixty-one days of every ninety-one and
+# `salary_dist` for all but a month of four years — a weekly alert that is
+# wrong two weeks in three is one nobody opens, and this alert is the only
+# thing watching for a refresh arm that has quietly stopped firing.
+# `site/scripts/payload-cadence.mjs` prints the table and carries the argument.
 #
 # **The second half is the one that makes the first actionable.** Every arm but
 # `city-price` refreshes on a cron and opens a pull request, so a payload
@@ -19,11 +29,14 @@
 # cannot stand in for that; they catch a payload that is wrong in a way somebody
 # already thought of. `docs/architecture.md` §CI carries the argument.
 #
-# 30-day payload threshold matches the per-source refresh workflow, and
-# `test_cli_dispatch.py` holds the two to each other. The site's own overdue
-# line is per payload against its own cadence (view/freshness.js#payloadStatus),
-# and the shortest of those is 31 days with a 1.5× multiple — so this fires at
-# least a fortnight before any reader sees anything.
+# The per-source refresh workflow reads the same table for the "other payloads
+# that have gone quiet" list in its pull-request body, and
+# `test_cli_dispatch.py` holds the two to that table rather than to each other —
+# a number they agree on is still a number that can drift from the manifest both
+# of them are describing. This fires at a payload's cadence and the page raises
+# its banner at 1.5× the same figure (view/freshness.js#payloadStatus), so the
+# alert reaches a maintainer with a fortnight in hand on the shortest cadence in
+# the table and longer on every other.
 #
 # Failure handling: a non-zero exit surfaces in the GitHub Actions UI
 # and (when configured in repo Notifications) emails the maintainer.
@@ -73,9 +86,11 @@ jobs:
         # nothing true, and the week it means something is the week it has
         # already been learned to ignore.
         run: |
+          set -euo pipefail
+          node site/scripts/payload-cadence.mjs > /tmp/cadence.json
           python3 - <<'PY'
           import datetime, glob, json, os
-          threshold_days = 30
+          cadence = json.load(open("/tmp/cadence.json"))
           today = datetime.date.today()
 
           old = []
@@ -85,9 +100,18 @@ jobs:
               if not as_of:
                   old.append(f"{stem} (no as_of)")
                   continue
+              # **A published file with no row in the manifest is reported, not
+              # skipped.** The site fetches what the manifest names, so a file
+              # absent from it renders nowhere — and a lookup with a generous
+              # default would let this check pass it silently for as long as it
+              # sits in the directory.
+              threshold_days = cadence.get(stem)
+              if threshold_days is None:
+                  old.append(f"{stem} (published, not in the payload manifest)")
+                  continue
               days = (today - datetime.date.fromisoformat(as_of)).days
               if days > threshold_days:
-                  old.append(f"{stem} ({days}d)")
+                  old.append(f"{stem} ({days}d, cadence {threshold_days}d)")
 
           print(f"stale_count={len(old)}")
           print(f"stale={old}")
@@ -152,11 +176,11 @@ jobs:
           LATE: ${{ steps.prs.outputs.late }}
         run: |
           set -euo pipefail
-          echo "payloads over 30d: ${STALE_COUNT}"
+          echo "payloads past their own cadence: ${STALE_COUNT}"
           echo "open data PRs: ${OPEN_COUNT}, of them past a review cycle: ${LATE_COUNT}"
           FAIL=0
           if [[ "${STALE_COUNT}" != "0" ]]; then
-            echo "::error::${STALE_COUNT} payload(s) older than 30 days: ${STALE}"
+            echo "::error::${STALE_COUNT} payload(s) past their own cadence: ${STALE}"
             FAIL=1
           fi
           if [[ "${LATE_COUNT}" != "0" ]]; then

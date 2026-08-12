@@ -4,7 +4,7 @@
 #
 # Steps: checkout, install the pipeline, run it against live upstreams,
 # stage and capture changes, compute the source's as_of plus any payloads
-# older than 30 days, commit with --signoff, push the data/<source>
+# past their own cadence, commit with --signoff, push the data/<source>
 # branch, open a PR, and dispatch CI against it.
 #
 # The pipeline's exit codes drive the rest of the workflow:
@@ -116,9 +116,13 @@ jobs:
       - name: Compute as_of + stale-sources
         id: meta
         if: steps.diff.outputs.changed != ''
-        # 30-day threshold matches the freshness check workflow. The
-        # site banner surfaces staleness at 45 days (view/freshness.js), so this
-        # 30-day threshold gives two weeks of headroom.
+        # The threshold is per payload and comes from the manifest, the same
+        # table `freshness-check.yml` reads (`site/scripts/payload-cadence.mjs`).
+        # A flat number here would list most of the directory under "other
+        # payloads that have gone quiet" on every quarterly refresh — the
+        # Eurostat property cubes and the НСИ wage tables spend two thirds of a
+        # healthy quarter past thirty days — and a list that is mostly wrong is
+        # one a reviewer scrolls past on the run where it names something real.
         #
         # Also detects a "cached read" — a pipeline run that produced
         # the same data values as the previously committed version
@@ -127,13 +131,15 @@ jobs:
         # `outputs.real_change`. PRs only ever open when the
         # upstream actually republished different data.
         run: |
+          set -euo pipefail
+          node site/scripts/payload-cadence.mjs > /tmp/cadence.json
           python3 - <<'PY'
           import datetime, glob, json, os, subprocess
           from pathlib import Path
 
           source = os.environ["SOURCE"]
           repo = Path(os.environ["GITHUB_WORKSPACE"])
-          threshold_days = 30
+          cadence = json.load(open("/tmp/cadence.json"))
           today = datetime.date.today()
 
           # **A `--source` name is not a filename.** The CLI option is
@@ -179,9 +185,16 @@ jobs:
               as_of_other = json.load(open(path)).get("as_of")
               if not as_of_other:
                   continue
+              # A file in the directory with no row in the manifest renders
+              # nowhere on the site, so it is named rather than passed over —
+              # the weekly check reports the same thing the same way.
+              threshold_days = cadence.get(stem)
+              if threshold_days is None:
+                  stale.append(f"{stem} (not in the payload manifest)")
+                  continue
               days = (today - datetime.date.fromisoformat(as_of_other)).days
               if days > threshold_days:
-                  stale.append(f"{stem} ({days}d)")
+                  stale.append(f"{stem} ({days}d, cadence {threshold_days}d)")
 
           # Real-change detection: compare the working-tree payload
           # against the version currently committed on origin/main,
@@ -309,7 +322,7 @@ jobs:
             }
             if (staleList) {
               lines.push('');
-              lines.push('### Other payloads > 30d old');
+              lines.push('### Other payloads past their own cadence');
               lines.push('');
               lines.push(staleList);
               lines.push('');
