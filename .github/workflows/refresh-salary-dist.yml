@@ -1,31 +1,37 @@
-# Quarterly salary distribution refresh (Eurostat SES, re-levelled to NSI).
+# Quarterly salary distribution refresh (Eurostat SES).
 #
-# Dependency: salary_dist.json is built by re-levelling the SES shape
-# to the live NSI region-level wage, so it reads what region-salary
-# wrote. Running this before region-salary re-publishes at the old
-# wage level and the ladder disagrees with the wage card on the page.
+# **This arm has one upstream and no dependency on any НСИ arm.** What it
+# publishes is a SHAPE — the P1…P99 gross-earnings ladder as Eurostat's SES
+# measures it, at Eurostat's own level. The re-levelling onto НСИ's national
+# all-activities average happens in the reader's browser, against whatever
+# `sector_salary.json` is live at the time (`cli.py#_refresh_salary_dist`,
+# `docs/data-sources.md` §"Salary distribution").
 #
-# Triggered by workflow_run on refresh-region-salary finishing
-# successfully. The dependency is explicit in the trigger rather
-# than implied by time-of-day arithmetic.
+# So there is no ordering to respect here and no run to wait for: publishing
+# this while an НСИ payload is mid-refresh cannot produce a ladder at the wrong
+# level, because this file carries no level. Chaining it behind another
+# workflow would buy nothing and would make a quarterly publish depend on
+# another workflow's conclusion — one failure upstream and this one silently
+# never fires at all.
 
 name: refresh-salary-dist
 
 on:
-  workflow_run:
-    workflows: ["refresh-region-salary"]
-    types: [completed]
+  schedule:
+    # Quarterly, 17th, 05:00 UTC — the same quarterly cluster as the two НСИ
+    # arms, which is a convenience for reviewing them together rather than a
+    # dependency. SES itself republishes about once a year; the quarterly
+    # cadence costs one cached-read no-op per quarter, and the workflow skips
+    # the commit and the PR when it detects one.
+    - cron: "0 5 17 2,5,8,11 *"
   workflow_dispatch:
 
 jobs:
   refresh:
-    # Only run if region-salary succeeded. On failure or cancellation
-    # this workflow does not fire; the next quarterly schedule retries
-    # from region-salary again.
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     uses: ./.github/workflows/refresh.yml
     with:
       source: salary-dist
