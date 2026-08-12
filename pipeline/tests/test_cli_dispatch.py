@@ -262,6 +262,80 @@ def test_the_refresh_workflow_commits_under_an_identity() -> None:
         )
 
 
+def test_the_two_workflows_agree_on_how_old_is_too_old() -> None:
+    """Two thresholds, two files, and each comment claims they match.
+
+    `refresh.yml` lists other payloads over the threshold in the pull-request
+    body so a reviewer sees what a reader would see; `freshness-check.yml`
+    fails the weekly run on the same line. Both say in prose that they use the
+    same number, and prose is not what makes them. Drift is silent in the worse
+    direction: raise one and the weekly alert goes quiet about payloads the PR
+    body is still listing, so the surface nobody is watching stays green while
+    the surface nobody reads keeps reporting.
+
+    The site's own threshold is deliberately NOT in here. That one is per
+    payload against its own cadence (`site/src/lib/payloads.js`), because a
+    single site-wide number cannot serve a monthly HICP release and a quarterly
+    НСИ wage series at once; the two workflows are the ones claiming to be one
+    number.
+    """
+    workflow_dir = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    thresholds = {}
+    for name in ("refresh.yml", "freshness-check.yml"):
+        text = (workflow_dir / name).read_text("utf-8")
+        found = re.findall(r"^\s*threshold_days = (\d+)\s*$", text, re.M)
+        assert found, f"{name} sets no `threshold_days` — has the age check moved?"
+        assert len(set(found)) == 1, f"{name} sets threshold_days to {sorted(set(found))}"
+        thresholds[name] = found[0]
+
+    assert len(set(thresholds.values())) == 1, (
+        f"the two workflows disagree about how old a payload may be: {thresholds}. "
+        f"Both comment that they use the same number; raise one and the weekly "
+        f"alert goes quiet about payloads the pull-request body still lists."
+    )
+
+
+def test_the_weekly_check_reads_the_data_pull_requests_and_never_merges_them() -> None:
+    """Every arm but one opens a PR, and a payload reaches a reader through a merge.
+
+    Nothing in this repository merges them. Left alone the site ages while every
+    gate stays green — the refresh ran, the gates passed, the PR opened, CI went
+    green on it — and the only other signal is an overdue line on a page the
+    reader may never open. So the weekly check reports the open `data/*` pull
+    requests beside the stale payloads, which is what makes a staleness alert
+    actionable rather than merely true.
+
+    The second half of the assertion is the one worth keeping: auto-merge on
+    green is the obvious next step and it is refused, because a data refresh is
+    the change where the diff IS the review. This workflow may read the pull
+    requests and may never take a write scope over them.
+    """
+    text = (
+        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "freshness-check.yml"
+    ).read_text("utf-8")
+
+    assert "pulls.list" in text, (
+        "freshness-check.yml no longer reads the open pull requests, so a stale "
+        "payload is reported with no indication that its refresh is already "
+        "written and waiting for a merge."
+    )
+    assert re.search(r"^\s+pull-requests: read\s*$", text, re.M), (
+        "freshness-check.yml does not take `pull-requests: read` — the listing "
+        "step cannot see anything."
+    )
+    assert not re.search(r"^\s+pull-requests: write\s*$", text, re.M), (
+        "freshness-check.yml has taken a write scope over pull requests. This "
+        "workflow reports who has not merged the data; it must not become the "
+        "thing that merges it (docs/architecture.md §CI)."
+    )
+    for forbidden in ("pulls.merge", "enablePullRequestAutoMerge", "gh pr merge"):
+        assert forbidden not in text, (
+            f"freshness-check.yml calls {forbidden}. A data refresh is the change "
+            f"where the diff is the review; a bot merging it removes the only "
+            f"human look any published figure gets."
+        )
+
+
 def test_every_payload_an_arm_writes_is_owned_by_that_arm() -> None:
     """A payload whose stem does not match its arm never publishes, and CI goes green.
 
