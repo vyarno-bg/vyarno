@@ -132,7 +132,7 @@ const junitAsserted = (text) => {
 export const FLOORS = {
   pytest: { floor: 394, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
   node: { floor: 512, report: join(SITE, ".report-node.tap"), count: tapPassed },
-  render: { floor: 119, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  render: { floor: 121, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**

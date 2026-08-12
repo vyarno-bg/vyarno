@@ -40,37 +40,177 @@ const payload = (stem) => {
 
 test.after(shutdown);
 
-test("the market page renders its figures, each with a source under it", { skip }, async () => {
+test("every figure on the market page carries a source under it", { skip }, async () => {
+  // Cards and tables both, because most of this page's figures moved into
+  // tables and a rule that only walks `.stat` would have gone on passing over a
+  // page whose tables cite nothing. What has to be true is the same either way:
+  // a digit with no publisher, no period and no link under it is a figure a
+  // reader has to take on trust, and the whole argument of the page is that
+  // they should not have to.
   await withApp(
     async (page, errors) => {
       const stats = page.locator("main.market .stat");
-      const n = await stats.count();
-      assert.ok(n >= 8, `the market page draws ${n} figures — it should carry the six sections'`);
+      const tables = page.locator("main.market table.fig-table");
+      const cards = await stats.count();
+      const tabled = await tables.count();
+      assert.ok(
+        tabled >= 5,
+        `the market page draws ${tabled} figure tables — it should carry six sections'`
+      );
+      assert.ok(cards >= 3, `the market page draws ${cards} figure cards`);
 
-      for (let i = 0; i < n; i += 1) {
+      for (let i = 0; i < cards; i += 1) {
         const stat = stats.nth(i);
         const value = (await stat.locator(".sv").innerText()).trim();
-        assert.ok(value, `figure ${i} renders no value`);
         assert.match(
           value,
           /\d/,
-          `figure ${i} renders "${value}" with no digit in it — a blank payload ` +
+          `card ${i} renders "${value}" with no digit in it — a blank payload ` +
             "field reaches the page as an empty stat rather than as an error"
         );
         const source = stat.locator(".ss a");
-        assert.equal(
-          await source.count(),
-          1,
+        assert.ok(
+          (await source.count()) >= 1,
           `the figure "${value}" has no source link. Every digit on this page ` +
             "carries its publisher, its period and a link, or it should not be here."
         );
-        const href = await source.getAttribute("href");
+        const href = await source.first().getAttribute("href");
         assert.match(href ?? "", /^https?:\/\//, `the source link for "${value}" is not a URL`);
-        const caption = (await source.innerText()).trim();
+        const caption = (await source.first().innerText()).trim();
         assert.ok(
           caption.includes("·"),
           `the source line for "${value}" is "${caption}" — it should name the ` +
             "publisher and the period the figure describes"
+        );
+      }
+
+      // Every table cites too, and the citation is the element after its scroll
+      // box rather than something inside it: a caption inside a horizontally
+      // scrolling region is one a phone reader has to scroll sideways to reach.
+      for (let i = 0; i < tabled; i += 1) {
+        const cited = await tables.nth(i).evaluate((el) => {
+          const box = el.closest(".scroll") ?? el;
+          const after = box.nextElementSibling;
+          const links = after ? [...after.querySelectorAll("a[href^='http']")] : [];
+          return {
+            after: after?.className ?? null,
+            links: links.length,
+            text: after?.innerText ?? "",
+          };
+        });
+        assert.ok(
+          cited.links >= 1,
+          `figure table ${i} is followed by "${cited.after}" carrying ${cited.links} source ` +
+            "links. A table of published figures cites its publisher exactly as a card does."
+        );
+      }
+
+      // Every table cell holds a figure or a visible em dash. An empty cell is
+      // a payload field that stopped arriving, and it reads as a value of
+      // nothing rather than as data that is missing.
+      const blanks = await tables
+        .locator("tbody td")
+        .evaluateAll((tds) => tds.filter((td) => !/[\d\u2014]/.test(td.innerText)).length);
+      assert.equal(blanks, 0, `${blanks} table cells render neither a digit nor an em dash`);
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+});
+
+test("every figure links the query that returns exactly it", { skip }, async () => {
+  // Eurostat's table view opens a dataset with every unit it carries at once,
+  // so a reader following «16 227 · Евростат» lands on a table reading −19.8
+  // for the same country and quarter — the quarter-on-quarter rate, and one
+  // click from the page's own argument to a figure that appears to contradict
+  // it. The second link is what closes that: it returns this number and
+  // nothing else. Verified end to end against the live API in review; what
+  // this holds is that the link is rendered at all.
+  await withApp(
+    async (page, errors) => {
+      const queries = page.locator("main.market .ss a.q-link");
+      const n = await queries.count();
+      assert.ok(
+        n >= 6,
+        `only ${n} figures on the market page link the query behind them. The ` +
+          "publisher's table shows every unit in the dataset at once, so the " +
+          "table link alone can land a reader on a different number."
+      );
+      for (let i = 0; i < n; i += 1) {
+        const href = await queries.nth(i).getAttribute("href");
+        assert.match(
+          href ?? "",
+          /\/api\/|format=JSON/i,
+          `query link ${i} points at ${href} — that is not a query returning the figure`
+        );
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+});
+
+test("both charts are drawn from zero, and say what they show", { skip }, async () => {
+  // A y-axis cropped to a property series' own range turns any of them into a
+  // cliff, and it is exactly the bias this page refuses. Measured rather than
+  // read off the source: the scale lives in the component as arithmetic, and a
+  // floor introduced there draws a chart that looks entirely reasonable.
+  //
+  // The invariant is the one a zero-based axis actually means — **the drawn
+  // heights are in the same ratio as the values.** Subtract any floor and the
+  // smallest reading shrinks faster than the largest, so the two ratios part.
+  const market = payload("house_market");
+  const structure = payload("house_market_structure");
+  if (!market || !structure) return; // no refresh in this checkout
+
+  const deals = Object.values(market.deals.series_by_period).map((r) => r.total);
+  const pti = Object.values(structure.price_to_income.series_by_period);
+  const expected = [
+    ["dwellings sold", Math.min(...deals) / Math.max(...deals)],
+    // The reference rule at 100 is part of this plot's own scale, so the
+    // largest thing on it is whichever of the series and the rule is higher.
+    ["price to income", Math.min(...pti) / Math.max(100, ...pti)],
+  ];
+
+  await withApp(
+    async (page, errors) => {
+      const charts = page.locator("main.market figure.chart svg");
+      const n = await charts.count();
+      assert.equal(n, expected.length, `the market page draws ${n} charts`);
+
+      for (let i = 0; i < n; i += 1) {
+        const [what, ratio] = expected[i];
+        const svg = charts.nth(i);
+
+        const label = (await svg.getAttribute("aria-label")) ?? "";
+        assert.ok(
+          label.length > 40 && /\d/.test(label),
+          `the ${what} chart has no text alternative naming its figures: "${label}"`
+        );
+        assert.equal(await svg.getAttribute("role"), "img", `${what} is not announced as an image`);
+
+        const ticks = (await svg.locator("text.plot-tick").allTextContents()).map((t) => t.trim());
+        assert.ok(ticks.includes("0"), `the ${what} chart draws no zero: ${ticks.join(", ")}`);
+
+        const drawn = await svg.evaluate((el) => {
+          const base = el.querySelector("line.plot-axis").getBBox().y;
+          const bars = [...el.querySelectorAll("rect.plot-bar")];
+          if (bars.length) {
+            const heights = bars.map((b) => b.getBBox().height);
+            return { lo: Math.min(...heights), hi: Math.max(...heights) };
+          }
+          const box = el.querySelector("path.plot-line").getBBox();
+          return { lo: base - (box.y + box.height), hi: base - box.y };
+        });
+        const drawnRatio = drawn.lo / drawn.hi;
+        assert.ok(
+          Math.abs(drawnRatio - ratio) < 0.03,
+          `the ${what} chart draws its smallest reading at ${(drawnRatio * 100).toFixed(1)}% of ` +
+            `its largest, where the published figures are ${(ratio * 100).toFixed(1)}% apart. ` +
+            "The axis does not start at zero, and a truncated y-axis on a property chart is the " +
+            "one distortion this page cannot afford."
         );
       }
       assert.deepEqual(errors, [], errors.join(" | "));
@@ -162,7 +302,7 @@ test(
     // rather than as a minus at 12px in a column of percentages.
     await withApp(
       async (page, errors) => {
-        const table = page.locator("main.market table.fig-table");
+        const table = page.locator("main.market table.fig-table.cities");
         if (!(await table.count())) return; // no нси payload in this checkout
 
         for (const col of [2, 3]) {

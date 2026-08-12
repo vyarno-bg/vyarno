@@ -2095,45 +2095,20 @@ export const COPY = {
   // panel on the calculator.
   howSrc: { bg: "{s} · {p}", en: "{s} · {p}" },
 
-  // `/market/`'s figure labels. Inline prose on that page is written as
-  // `.l-bg` / `.l-en` pairs in the component, the way `How.svelte` writes its
-  // paragraphs; these are here because a label is passed as a value to the
-  // figure snippet rather than written into the template.
+  // `/market/`'s labels — the figure cards' and the tables'. Inline prose on
+  // that page is written as `.l-bg` / `.l-en` pairs in the component, the way
+  // `How.svelte` writes its paragraphs; these are here because a label is
+  // passed as a value to a snippet rather than written into the template.
   //
-  // Every one of them names WHAT IS COUNTED rather than what it means. "Deals
-  // this quarter", not "the market"; "owners with a mortgage", not "leverage".
-  // A label that interprets is the cheapest place for a view of the market to
-  // get onto a page that must not carry one.
+  // Every one of them names WHAT IS COUNTED rather than what it means. "Dwellings
+  // sold", not "the market"; "owners with a loan", not "leverage". A label that
+  // interprets is the cheapest place for a view of the market to get onto a page
+  // that must not carry one.
   marketTitle: {
     bg: "Вярно — пазарът на жилища",
     en: "Vyarno — the property market",
   },
-  mktKDeals: { bg: "жилища, купени от домакинства", en: "dwellings bought by households" },
-  mktKDealsYoy: {
-    bg: "спрямо същото тримесечие година по-рано",
-    en: "against the same quarter a year earlier",
-  },
-  mktKDealsNew: { bg: "от тях ново строителство", en: "of them newly built" },
-  mktKDealsExisting: { bg: "от тях съществуващи", en: "of them existing" },
-  mktKPriceRate: {
-    bg: "цени на сделките, спрямо година по-рано",
-    en: "transaction prices, against a year earlier",
-  },
-  mktKPriceRateNew: { bg: "ново строителство", en: "newly built" },
-  mktKPriceRateExisting: { bg: "съществуващи жилища", en: "existing dwellings" },
-  mktKAvgDeal: { bg: "средно платено за жилище", en: "average paid per dwelling" },
-  mktKAvgDealNew: { bg: "средно за ново жилище", en: "average for a new build" },
-  mktKAvgDealExisting: { bg: "средно за съществуващо", en: "average for an existing one" },
   mktKYearsOfPay: { bg: "години средна брутна заплата", en: "years of the average gross wage" },
-  mktKOwn: { bg: "живеят в собствено жилище", en: "live in a home they own" },
-  mktKOwnMortgage: {
-    bg: "от всички — собствено жилище със заем",
-    en: "of everyone — own a home with a loan",
-  },
-  mktKRentMarket: { bg: "плащат наем по пазарна цена", en: "rent at the market price" },
-  mktKDwellings: { bg: "жилища в страната", en: "dwellings in the country" },
-  mktKUnoccupied: { bg: "необитавани при преброяването", en: "unoccupied at the census" },
-  mktKUnoccupiedShare: { bg: "дял необитавани", en: "share unoccupied" },
   mktKPriceToIncome: {
     bg: "цени спрямо доходите, при 100 = собствената дългосрочна средна",
     en: "prices against incomes, 100 = its own long-run average",
@@ -2143,6 +2118,72 @@ export const COPY = {
     en: "spend over 40% of income on housing",
   },
   mktKRentInflation: { bg: "наеми, спрямо година по-рано", en: "rents, against a year earlier" },
+  // The figure tables. A row of loose cards is what most of this page was, and
+  // it reads as a wall: four boxes of the same size, the same weight and the
+  // same colour, with the thing that separates them in the smallest type on the
+  // card. Where the figures share a subject — three purchase types, one tenure
+  // split, one census — a table says what the cards were trying to.
+  //
+  // Every one of these is a HEADING rather than a sentence. The prose above
+  // each table carries the meaning; a column head that explains is a column
+  // head that wraps to three lines at 360px.
+  mktColKind: { bg: "Вид жилище", en: "Type of dwelling" },
+  mktRowTotal: { bg: "Общо", en: "Total" },
+  mktRowNew: { bg: "Ново строителство", en: "Newly built" },
+  mktRowExisting: { bg: "Съществуващи", en: "Existing" },
+  mktColCount: { bg: "Брой сделки", en: "Dwellings sold" },
+  mktColYoy: { bg: "Спрямо година по-рано", en: "Against a year earlier" },
+  mktColAvgPaid: { bg: "Средно платено", en: "Average paid" },
+  mktColTotalPaid: { bg: "Платено общо", en: "Total paid" },
+  mktColEurostat: { bg: "Евростат", en: "Eurostat" },
+  mktColNsi: { bg: "НСИ", en: "NSI" },
+  mktTblVolume: {
+    bg: "Брой сделки по вид жилище",
+    en: "Dwellings sold by type",
+  },
+  mktTblPrices: {
+    bg: "Промяна в цените на сделките, от двамата публикуващи",
+    en: "Change in transaction prices, from both publishers",
+  },
+  mktTblDeal: {
+    bg: "Средно платено за жилище, и числата, от които идва",
+    en: "Average paid per dwelling, and the figures it comes from",
+  },
+  mktTblTenure: { bg: "Как живеят хората", en: "How people live" },
+  mktTblStock: { bg: "Жилищен фонд при преброяването", en: "The dwelling stock at the census" },
+  mktColHowLive: { bg: "Как живеят", en: "How people live" },
+  mktColShareOfPeople: { bg: "Дял от хората", en: "Share of people" },
+  mktRowOwn: { bg: "В собствено жилище", en: "In a home they own" },
+  mktRowOwnLoan: { bg: "— от тях със заем по жилището", en: "— of them with a loan on it" },
+  mktRowRent: { bg: "Под наем", en: "Renting" },
+  mktRowRentMarket: { bg: "— от тях по пазарна цена", en: "— of them at the market price" },
+  mktColDwelling: { bg: "Жилища", en: "Dwellings" },
+  mktColHowMany: { bg: "Колко", en: "How many" },
+  mktRowAllDwellings: { bg: "Всички конвенционални жилища", en: "All conventional dwellings" },
+  mktRowOccupied: { bg: "Обитавани", en: "Occupied" },
+  mktRowUnoccupied: { bg: "Необитавани", en: "Unoccupied" },
+  mktRowUnoccupiedShare: { bg: "Дял необитавани", en: "Share unoccupied" },
+  // The second link under every figure, and it exists because the first one
+  // does not land where a reader expects. Eurostat's table view opens with all
+  // of a dataset's units at once — `prc_hpi_hsnq` carries a count, two indices
+  // and three rates — so a reader following «16 227 · Евростат» arrives at a
+  // table showing −19.8 for the same country and quarter, which is the
+  // quarter-on-quarter rate. That is one click from the page's whole argument
+  // to a figure that contradicts it. The query link returns this number and
+  // nothing else.
+  mktSrcQuery: { bg: "точно това число", en: "this exact figure" },
+  // The charts' accessible names. Built from the payload at render, because a
+  // description naming a peak or a period is a figure written into prose.
+  mktChartVolume: {
+    bg: "Брой продадени жилища по тримесечия, от {from} до {to}. Най-много са {peak} през {peakAt}, а през {to} — {last}.",
+    en: "Dwellings sold per quarter, {from} to {to}. The highest is {peak} in {peakAt}; in {to} it is {last}.",
+  },
+  mktChartPti: {
+    bg: "Цени спрямо доходите по години, от {from} до {to}, срещу дългосрочната средна стойност на същия показател, отбелязана със 100. Най-високо {peak} през {peakAt}, а за {to} — {last}.",
+    en: "Prices against incomes by year, {from} to {to}, against the same indicator's own long-run average marked at 100. The highest is {peak} in {peakAt}; for {to} it is {last}.",
+  },
+  mktChartRefLine: { bg: "100 = дългосрочната средна", en: "100 = its long-run average" },
+
   // The six-city table's column heads and its accessible name. Short, because
   // the columns are narrow and the sentence above the table already says these
   // are changes rather than levels.

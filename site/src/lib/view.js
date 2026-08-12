@@ -2307,6 +2307,12 @@ export function marketVolume(houseMarket) {
     deals: sourced(count, block, { refPeriod: period }),
     newBuild: Number.isFinite(at.new) ? at.new : null,
     existing: Number.isFinite(at.existing) ? at.existing : null,
+    // Per purchase type as well as in total, because new builds and existing
+    // dwellings move differently in volume and the split is why the payload
+    // carries them apart. One year-on-year figure for the total leaves the
+    // table's other two rows to be read as though they had not moved.
+    changeNewPct: dealsAtQuarter(series, period ?? "", "new").changePct,
+    changeExistingPct: dealsAtQuarter(series, period ?? "", "existing").changePct,
     changePct: sourced(yoy, block, {
       refPeriod: period,
       method:
@@ -2343,8 +2349,15 @@ export function marketAverageDeal(houseMarket) {
     }),
     newBuild: Number.isFinite(at.new) ? at.new : null,
     existing: Number.isFinite(at.existing) ? at.existing : null,
+    // Both sides of every row's division, per purchase type. The page prints
+    // them beside the quotient and asks the reader to check it, and a row whose
+    // numerator and denominator are not on the page is a row they cannot.
     totalValue: houseMarket?.value?.series_by_period?.[period ?? ""]?.total ?? null,
+    newValue: houseMarket?.value?.series_by_period?.[period ?? ""]?.new ?? null,
+    existingValue: houseMarket?.value?.series_by_period?.[period ?? ""]?.existing ?? null,
     deals: houseMarket?.deals?.series_by_period?.[period ?? ""]?.total ?? null,
+    newDeals: houseMarket?.deals?.series_by_period?.[period ?? ""]?.new ?? null,
+    existingDeals: houseMarket?.deals?.series_by_period?.[period ?? ""]?.existing ?? null,
   };
 }
 
@@ -2390,8 +2403,14 @@ export function marketStructure(structure) {
   return {
     owner: sourced(tenure?.owner_pct, tenure),
     ownerWithMortgage: sourced(tenure?.owner_with_mortgage_pct, tenure),
+    // The whole split rather than the three figures a card row happened to
+    // want. Every one of these is a share of the POPULATION on the same base,
+    // so owners and renters add to the published total — which is what makes
+    // them a table a reader can add up rather than three unrelated percentages.
+    renter: sourced(tenure?.rent_pct, tenure),
     renterAtMarketPrice: sourced(tenure?.rent_market_price_pct, tenure),
     dwellings: sourced(census?.total, census),
+    occupied: sourced(census?.occupied, census),
     unoccupied: sourced(census?.unoccupied, census),
     unoccupiedPct: sourced(unoccupiedSharePct(census), census, {
       method:
@@ -2527,5 +2546,87 @@ export function marketNsiNationalRate(nsiHousing) {
     ...sourced(at.total, block),
     newBuild: Number.isFinite(at.new) ? at.new : null,
     existing: Number.isFinite(at.existing) ? at.existing : null,
+  };
+}
+
+/**
+ * The quarterly transaction count as a series, for drawing.
+ *
+ * The page's lead finding is a change in VOLUME over time and it was one number
+ * and a percentage — the shape that number sits in is the argument, and thirty-
+ * seven quarters of it are already in the payload. What comes back is the data;
+ * the geometry is the component's, the way `systemWedgeLadder` feeds the tax
+ * wedge.
+ *
+ * `max` travels with the points because the axis has to be built from the whole
+ * series rather than from what a caller happens to plot. **A count chart starts
+ * at zero and nothing here offers a `min`**: the y-axis of a property series
+ * cropped to its own range is the single most common way to draw an honest
+ * number dishonestly, and the way to keep it out of this page is to leave the
+ * caller nothing to crop with.
+ *
+ * @param {object|null} houseMarket
+ * @returns {{points: Array<{period: string, value: number}>, max: number,
+ *            from: string|null, to: string|null}}
+ */
+export function marketVolumeSeries(houseMarket) {
+  const series = houseMarket?.deals?.series_by_period ?? {};
+  const points = Object.keys(series)
+    .sort()
+    .map((period) => ({ period, value: series[period]?.total }))
+    .filter((p) => Number.isFinite(p.value));
+  const peak = points.reduce((best, p) => (best && best.value >= p.value ? best : p), null);
+  return {
+    points,
+    max: peak?.value ?? 0,
+    // The peak and the latest reading, because they are what the text
+    // alternative has to say: a chart described as "a line over 37 quarters"
+    // tells a screen-reader user the shape of the markup rather than the shape
+    // of the data.
+    peak,
+    latest: points[points.length - 1] ?? null,
+    from: points[0]?.period ?? null,
+    to: points[points.length - 1]?.period ?? null,
+  };
+}
+
+/**
+ * Price-to-income against its own long-run average, as a series.
+ *
+ * The one figure on the page whose meaning is genuinely hard to state in a
+ * sentence and trivial to show: a line, a rule at 100, and where the reading
+ * sits against its own history is answered without a paragraph.
+ *
+ * `reference` is 100 by construction — it is what `PTIR_LT_AVG` indexes against
+ * — and it comes back so the drawing cannot pick a different one. `max` covers
+ * the reference as well as the data, because a chart whose rule is off the top
+ * of its own plot has drawn everything except the thing it is about.
+ *
+ * @param {object|null} structure
+ * @returns {{points: Array<{period: string, value: number}>, max: number,
+ *            reference: number, from: string|null, to: string|null,
+ *            latest: number|null, unit: string|null}}
+ */
+export function marketPriceToIncomeSeries(structure) {
+  const block = structure?.price_to_income ?? null;
+  const series = block?.series_by_period ?? {};
+  const points = Object.keys(series)
+    .sort()
+    .map((period) => ({ period, value: series[period] }))
+    .filter((p) => Number.isFinite(p.value));
+  const reference = 100;
+  const peak = points.reduce((best, p) => (best && best.value >= p.value ? best : p), null);
+  return {
+    points,
+    max: Math.max(reference, ...points.map((p) => p.value), 0),
+    reference,
+    peak,
+    from: points[0]?.period ?? null,
+    to: points[points.length - 1]?.period ?? null,
+    latest: Number.isFinite(block?.value) ? block.value : null,
+    // The unit is the whole claim: only PTIR_LT_AVG indexes the ratio against
+    // this country's own long-run average, and a caller drawing a rule at 100
+    // over any other unit has drawn a line through nothing.
+    unit: block?.unit ?? null,
   };
 }

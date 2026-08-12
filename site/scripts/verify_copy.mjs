@@ -2016,6 +2016,12 @@ test("every НСИ credit line marks a preliminary quarter as preliminary", () =
  * explaining which words are banned must not be the thing that fails the check.
  */
 const MARKET_SRC = readFileSync(join(HERE, "..", "src", "Market.svelte"), "utf8")
+  // The stylesheet goes first, and not for tidiness: `border-collapse: collapse`
+  // is two matches for the verdict pattern's «collapse», in a declaration that
+  // says nothing about the property market. A style gate that is wrong even
+  // occasionally teaches a contributor to argue with the tooling rather than
+  // read the guidance (docs/writing-style.md), and the rule is about prose.
+  .replace(/<style>[\s\S]*?<\/style>/g, "")
   .replace(/<!--[\s\S]*?-->/g, "")
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .split("\n")
