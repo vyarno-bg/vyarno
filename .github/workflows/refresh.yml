@@ -89,9 +89,16 @@ jobs:
         # 30-day threshold matches the freshness check workflow. The
         # site banner surfaces staleness at 45 days (view.js), so this
         # 30-day threshold gives two weeks of headroom.
+        #
+        # Also detects a "cached read" — a pipeline run that produced
+        # the same data values as the previously committed version
+        # (only the run-date as_of differs). In that case, the
+        # downstream commit/push/PR steps are skipped via
+        # `outputs.real_change`. PRs only ever open when the
+        # upstream actually republished different data.
         run: |
           python3 - <<'PY'
-          import datetime, glob, json, os
+          import datetime, glob, json, os, subprocess
           from pathlib import Path
 
           source = os.environ["SOURCE"]
@@ -119,21 +126,61 @@ jobs:
               if days > threshold_days:
                   stale.append(f"{stem} ({days}d)")
 
+          # Real-change detection: compare the working-tree payload
+          # against the version currently committed on origin/main,
+          # excluding the `as_of` field. Same data values = cached
+          # read = skip the commit/PR entirely. The pipeline's own
+          # exit-0 vs non-zero distinction is not enough — it can
+          # exit 0 on a no-op re-publish.
+          real_change = "yes"
+          payload_files = []
+          for path in sorted(glob.glob(str(repo / "data/published/*.json"))):
+              stem = os.path.basename(path).removesuffix(".json")
+              if stem != source and not stem.startswith(source):
+                  continue
+              new_payload = json.load(open(path))
+              # Read the committed version via `git show`.
+              rel = os.path.relpath(path, repo)
+              try:
+                  committed = subprocess.check_output(
+                      ["git", "-C", str(repo), "show", f"origin/main:{rel}"],
+                      stderr=subprocess.DEVNULL,
+                  )
+                  committed_payload = json.loads(committed)
+              except subprocess.CalledProcessError:
+                  # File does not exist on origin/main yet — first
+                  # commit for this source. Counts as a real change.
+                  payload_files.append(path)
+                  continue
+              # Drop `as_of` and any other run-date metadata before
+              # comparing. A data refresh is real if any other field
+              # differs.
+              new_norm = {k: v for k, v in new_payload.items() if k != "as_of"}
+              committed_norm = {k: v for k, v in committed_payload.items() if k != "as_of"}
+              if new_norm != committed_norm:
+                  payload_files.append(path)
+
+          if not payload_files:
+              real_change = "no"
+              print("::notice::Cached read — no real data change. Skipping commit/PR.")
+
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"as_of={as_of}\n")
+              f.write(f"real_change={real_change}\n")
               f.write(f"stale={'yes' if stale else 'no'}\n")
               if stale:
                   f.write(f"stale_list<<EOF\n")
                   f.write(", ".join(stale) + "\n")
                   f.write("EOF\n")
           print(f"as_of={as_of}")
+          print(f"real_change={real_change}")
           print(f"stale={stale}")
           PY
         env:
           SOURCE: ${{ inputs.source }}
 
       - name: Commit
-        if: steps.diff.outputs.changed != ''
+        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
         run: |
           set -euo pipefail
           git checkout -b "data/${{ inputs.source }}"
@@ -141,7 +188,7 @@ jobs:
           git commit --signoff -m "data refresh: ${{ inputs.source }} as of ${{ steps.meta.outputs.as_of }}"
 
       - name: Push
-        if: steps.diff.outputs.changed != ''
+        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
         # `-u` is the right flag for the first push of a new branch.
         # Subsequent runs of this workflow (after the branch exists on
         # origin) still work — git updates the upstream tracking ref
@@ -156,7 +203,7 @@ jobs:
         run: git push -u origin "data/${{ inputs.source }}"
 
       - name: Open PR
-        if: steps.diff.outputs.changed != ''
+        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
         uses: actions/github-script@v7
         with:
           script: |
