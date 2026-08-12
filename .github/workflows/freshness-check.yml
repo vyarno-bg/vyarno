@@ -1,0 +1,60 @@
+# Weekly freshness check.
+#
+# Alerts when any payload in data/published/ is older than 30 days.
+#
+# 30-day threshold matches the per-source refresh workflow. The site
+# banner surfaces staleness at 45 days (view.js), so this 30-day
+# check gives two weeks of headroom before a reader sees the banner.
+#
+# Failure handling: a non-zero exit surfaces in the GitHub Actions UI
+# and (when configured in repo Notifications) emails the maintainer.
+# No external alert integration.
+
+name: freshness-check
+
+on:
+  schedule:
+    # Monday 09:00 UTC. cron schedules are UTC, no DST. A weekly check
+    # rather than daily — daily would alert on the same stale data
+    # for a fortnight. Monday morning so the alert is actionable the
+    # same day.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Compute payload ages
+        # Exit non-zero on any stale payload. The Actions UI surfaces
+        # the failure; repo notification settings route it to email.
+        run: |
+          python3 - <<'PY'
+          import datetime, glob, json, sys
+          threshold_days = 30
+          today = datetime.date.today()
+
+          old = []
+          for path in sorted(glob.glob("data/published/*.json")):
+              stem = os.path.basename(path).removesuffix(".json")
+              as_of = json.load(open(path)).get("as_of")
+              if not as_of:
+                  old.append(f"{stem} (no as_of)")
+                  continue
+              days = (today - datetime.date.fromisoformat(as_of)).days
+              if days > threshold_days:
+                  old.append(f"{stem} ({days}d)")
+
+          print(f"stale_count={len(old)}")
+          print(f"stale={old}")
+          sys.exit(1 if old else 0)
+          PY

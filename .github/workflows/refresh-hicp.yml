@@ -1,0 +1,27 @@
+# Monthly HICP refresh.
+#
+# Eurostat publishes the final HICP with full country and COICOP
+# breakdowns around the middle of the month for the previous month, at
+# 11:00 CET. The 18th gives one day of headroom over the historical
+# release window. A missed run costs a month — the headline figure
+# a month stale on a page whose entire promise is that it is not.
+#
+# This payload writes both hicp_headline.json and hicp_categories.json,
+# which is every number in the calculator.
+
+name: refresh-hicp
+
+on:
+  schedule:
+    # GHA cron schedules are UTC, no DST. 04:00 UTC ≈ 06:00 EEST / 07:00 EET.
+    # GHA schedules can run 5–30 minutes late under load; acceptable here.
+    - cron: "0 4 18 * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: hicp
+    secrets:
+      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}

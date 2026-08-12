@@ -1,0 +1,21 @@
+# Monthly payroll refresh (BG statutory payroll constants).
+#
+# BG statutory dates are month boundaries — min wage 1 Jan,
+# max-insurable ceiling when scheduled. Fires on the 1st so the
+# ceiling/payment updates land in payroll.json at the start of the
+# affected month.
+
+name: refresh-payroll
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: payroll
+    secrets:
+      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}

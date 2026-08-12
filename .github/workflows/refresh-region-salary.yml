@@ -1,0 +1,23 @@
+# Quarterly region-level salary refresh (NSI "Наети лица и средна работна
+# заплата" — all 28 regions, not just Sofia).
+#
+# NSI publishes roughly six weeks after quarter close. The 17th (not
+# the 15th) gives headroom — the 15th has been the historical release
+# day, so firing at 04:00 on the 15th would miss it.
+
+name: refresh-region-salary
+
+on:
+  schedule:
+    # Quarterly, 17th, 04:00 UTC. cron doesn't accept a list of months
+    # inline cleanly; 2,5,8,11 is February, May, August, November.
+    - cron: "0 4 17 2,5,8,11 *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: region-salary
+    secrets:
+      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}

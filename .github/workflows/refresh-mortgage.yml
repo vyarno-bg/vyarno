@@ -1,0 +1,19 @@
+# Monthly mortgage refresh (ECB MFI + BNB housing stock rate).
+#
+# ECB MFI interest-rate stats for month M land between the last day of
+# M+1 and the 5th of M+2. The 6th catches every observed release.
+
+name: refresh-mortgage
+
+on:
+  schedule:
+    - cron: "0 4 6 * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: mortgage
+    secrets:
+      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}
