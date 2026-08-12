@@ -403,10 +403,25 @@ test("the charts are legible on the phone, not only on the desk", { skip }, asyn
             const scale = el.closest("svg") ? box.width / pane.viewBox.baseVal.width : 1;
             return Number((declared * scale).toFixed(2));
           });
+          // Where the labels actually land, as a fraction of the plot. A tick
+          // that names a level and does not sit at it is worse than no tick,
+          // and it is not a thing a reader reports — it looks like a rendering
+          // glitch. The grid positions each one with a percentage `top`, which
+          // a relatively positioned grid item resolves against its GRID AREA:
+          // a row sized to its own content makes every tick land within one
+          // line-height of the top of the plot, on all six charts at once,
+          // while every text assertion about them stays green.
+          const spread = [...figure.querySelectorAll(".yaxis .plot-tick")].map(
+            (el) =>
+              (el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2 - box.top) /
+              box.height
+          );
           out.push({
             height: Math.round(box.height),
             labels: sizes.length,
             smallest: sizes.length ? Math.min(...sizes) : 0,
+            highest: Math.min(...spread),
+            lowest: Math.max(...spread),
             // A label that starts left of the page is one nobody reads either.
             offPage: [...figure.querySelectorAll(".plot-tick")].some(
               (el) => el.getBoundingClientRect().left < 0
@@ -432,6 +447,23 @@ test("the charts are legible on the phone, not only on the desk", { skip }, asyn
             "vertical room than a line of body copy"
         );
         assert.equal(chart.offPage, false, `chart ${i} hangs an axis label off the left edge`);
+        // Every chart on this page has zero inside its scale and prints it, so
+        // the bottom label is at the foot of the plot. How high the top one
+        // sits is data — the price-to-income plot's highest label is its rule
+        // at 100, which is below the series' own peak — so what is asserted
+        // there is that the labels SPAN the box rather than where each lands.
+        assert.ok(
+          chart.lowest > 0.9,
+          `chart ${i} puts its lowest axis label at ${(chart.lowest * 100).toFixed(0)}% of the ` +
+            "plot's height. Zero is inside every scale on this page and belongs at the foot of it."
+        );
+        assert.ok(
+          chart.lowest - chart.highest > 0.4,
+          `chart ${i} bunches its axis labels into ${((chart.lowest - chart.highest) * 100).toFixed(0)}% ` +
+            "of the plot's height. They are supposed to span it — a tick naming a level and not " +
+            "sitting at that level names nothing, and it reads as a rendering glitch rather than " +
+            "as a wrong axis."
+        );
       }
       assert.equal(
         probe.scrollWidth,
