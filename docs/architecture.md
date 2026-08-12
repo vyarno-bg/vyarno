@@ -267,6 +267,40 @@ the missing TLS intermediate supplied before it can fetch at all
 the same reason they always were: run them from an ordinary network with
 `pytest -m live`.
 
+### What happens to a data pull request
+
+Every refresh arm but `city-price` fires on a cron, pushes `data/<source>` and
+opens a pull request against `main`. **A published figure reaches a reader
+through a merge and no other way**, and nothing in this repository merges one.
+That is deliberate, and the failure it leaves is the one worth naming: left
+alone the site ages while every gate stays green — the refresh ran, the gates
+passed, the PR opened, the dispatched CI went green on it — and the only signal
+a reader would ever get is the overdue line on a page they may never open.
+
+**Auto-merge on green is refused.** A data refresh is precisely the change where
+the diff IS the review: a number moving is the whole event, `data/published/` is
+committed so the diff shows which ones moved, and a bot merging it removes the
+only human look any published figure gets. The gates are not a substitute — they
+catch a payload that is wrong in a way somebody already thought of, which is a
+narrower claim than "this is the right number this quarter".
+`freshness-check.yml` therefore takes `pull-requests: read` and
+`test_cli_dispatch.py` asserts it never takes write.
+
+**The enforcement is that the weekly check fails loudly, naming the pull
+request.** `freshness-check.yml` reports two things in one run: payloads over 30
+days old, and open `data/*` pull requests with how long each has been sitting.
+Both halves always run and one exit code covers them, because a payload is
+usually stale *because* its refresh is waiting in an unmerged PR — a check that
+exited on the staleness would hide the reason for it on exactly the weeks it
+mattered. Seven days is the pull-request line: this check runs weekly, so a PR
+that was open the last time it ran has been passed over rather than merely not
+looked at yet.
+
+Naming an assignee was the other candidate and it is not implementable here
+without inventing a fact: the owner is an organisation rather than a user, so
+there is no account this repository can name as the reviewer without asserting
+something about a person it does not know.
+
 **The workflow uses no secrets**, with `permissions: contents: read`. Because it
 does not refresh data it holds no upstream credential, and that is what lets a
 pull request from a stranger run the full suite. Keep it that way — the refresh

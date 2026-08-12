@@ -1,10 +1,29 @@
-# Weekly freshness check.
+# Weekly freshness check — and who is holding the data up.
 #
-# Alerts when any payload in data/published/ is older than 30 days.
+# Alerts when any payload in data/published/ is older than 30 days, AND when a
+# `data/<source>` pull request has been sitting open without being merged.
 #
-# 30-day threshold matches the per-source refresh workflow. The site
-# banner surfaces staleness at 45 days (view.js), so this 30-day
-# check gives two weeks of headroom before a reader sees the banner.
+# **The second half is the one that makes the first actionable.** Every arm but
+# `city-price` refreshes on a cron and opens a pull request, so a payload
+# reaches a reader only through a merge — and nothing merges them. Left alone
+# the site ages while every gate stays green: the refresh ran, the gates passed,
+# the PR opened, CI went green on it, and the figure a reader sees is the one
+# from before. The only other signal is the overdue line on a page that reader
+# may never open. So this check reports the two halves together, and a stale
+# payload is reported beside the pull request that would fix it.
+#
+# **Nothing here merges anything, and `permissions` says so.** Auto-merge on
+# green was the alternative and it is refused: a data refresh is the change
+# where the diff IS the review — a number moving is the whole event — and a bot
+# merging it removes the only human look any published figure gets. The gates
+# cannot stand in for that; they catch a payload that is wrong in a way somebody
+# already thought of. `docs/architecture.md` §CI carries the argument.
+#
+# 30-day payload threshold matches the per-source refresh workflow, and
+# `test_cli_dispatch.py` holds the two to each other. The site's own overdue
+# line is per payload against its own cadence (view.js#payloadStatus), and the
+# shortest of those is 31 days with a 1.5× multiple — so this fires at least a
+# fortnight before any reader sees anything.
 #
 # Failure handling: a non-zero exit surfaces in the GitHub Actions UI
 # and (when configured in repo Notifications) emails the maintainer.
@@ -27,6 +46,10 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+      # Reading the open pull requests is the second half of the check. READ,
+      # and it stays read: this workflow reports who has not merged the data and
+      # never becomes the thing that merges it.
+      pull-requests: read
 
     steps:
       - name: Checkout
@@ -35,17 +58,23 @@ jobs:
           persist-credentials: false
 
       - name: Compute payload ages
-        # Exit non-zero on any stale payload. The Actions UI surfaces
-        # the failure; repo notification settings route it to email.
+        id: payloads
+        # **This step reports and does not exit.** It used to exit non-zero on
+        # the first stale payload, which meant the pull-request half below never
+        # ran on exactly the weeks it mattered — a payload is stale BECAUSE its
+        # refresh is sitting in an unmerged PR, so the run that found the
+        # staleness was the run that hid the reason for it. Both halves run and
+        # the last step decides the exit code.
         #
         # The import list is the whole check. A name this script uses and does
-        # not import raises before the first payload is read, and the exit code
-        # that carries — non-zero — is the same one a stale payload raises. So
-        # the alert fires every week, says nothing true, and the week it means
-        # something is the week it has already been learned to ignore.
+        # not import raises before the first payload is read, and the failure
+        # that carries — a non-zero exit from the step itself — is the same
+        # signal a stale payload raises. So the alert fires every week, says
+        # nothing true, and the week it means something is the week it has
+        # already been learned to ignore.
         run: |
           python3 - <<'PY'
-          import datetime, glob, json, os, sys
+          import datetime, glob, json, os
           threshold_days = 30
           today = datetime.date.today()
 
@@ -62,5 +91,78 @@ jobs:
 
           print(f"stale_count={len(old)}")
           print(f"stale={old}")
-          sys.exit(1 if old else 0)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"stale_count={len(old)}\n")
+              f.write("stale<<EOF\n" + ", ".join(old) + "\nEOF\n")
           PY
+
+      - name: List the data pull requests nobody merged
+        id: prs
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        # A refresh arm pushes `data/<source>` and opens a pull request against
+        # `main`; that PR is the only route a new figure has to a reader. One
+        # open past a full cycle of this check has missed its review, and the
+        # payload behind it is on its way to being reported stale by the step
+        # above with no indication that the fix is already written.
+        #
+        # Seven days, because this check is weekly: a PR that was open the last
+        # time this ran and is open now has been passed over once rather than
+        # merely not looked at yet.
+        with:
+          script: |
+            const OPEN_DAYS = 7;
+            const now = Date.now();
+            const { data: open } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base: 'main',
+              per_page: 100,
+            });
+            const waiting = open
+              .filter((pr) => pr.head.ref.startsWith('data/'))
+              .map((pr) => ({
+                ref: pr.head.ref,
+                number: pr.number,
+                url: pr.html_url,
+                days: Math.floor((now - Date.parse(pr.created_at)) / 86400000),
+              }))
+              .sort((a, b) => b.days - a.days);
+
+            for (const pr of waiting) {
+              core.info(`${pr.ref} — #${pr.number}, open ${pr.days}d — ${pr.url}`);
+            }
+            const late = waiting.filter((pr) => pr.days > OPEN_DAYS);
+            core.setOutput('open_count', String(waiting.length));
+            core.setOutput('late_count', String(late.length));
+            core.setOutput(
+              'late',
+              late.map((pr) => `${pr.ref} (#${pr.number}, ${pr.days}d) ${pr.url}`).join('\n  ')
+            );
+
+      - name: Report
+        # One exit code for both halves, so a week with a stale payload AND the
+        # pull request that would fix it reports the pair rather than whichever
+        # step ran first.
+        env:
+          STALE_COUNT: ${{ steps.payloads.outputs.stale_count }}
+          STALE: ${{ steps.payloads.outputs.stale }}
+          OPEN_COUNT: ${{ steps.prs.outputs.open_count }}
+          LATE_COUNT: ${{ steps.prs.outputs.late_count }}
+          LATE: ${{ steps.prs.outputs.late }}
+        run: |
+          set -euo pipefail
+          echo "payloads over 30d: ${STALE_COUNT}"
+          echo "open data PRs: ${OPEN_COUNT}, of them past a review cycle: ${LATE_COUNT}"
+          FAIL=0
+          if [[ "${STALE_COUNT}" != "0" ]]; then
+            echo "::error::${STALE_COUNT} payload(s) older than 30 days: ${STALE}"
+            FAIL=1
+          fi
+          if [[ "${LATE_COUNT}" != "0" ]]; then
+            echo "::error::${LATE_COUNT} data pull request(s) open past a review cycle:"
+            echo "  ${LATE}"
+            echo "Nothing merges these. A payload reaches a reader through a merge and no other way."
+            FAIL=1
+          fi
+          exit "$FAIL"
