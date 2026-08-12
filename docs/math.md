@@ -864,6 +864,21 @@ end of the track looking exactly like a record. A series shorter than
 `view.js#RANGE_MIN_POINTS`, or one that never moved, produces no row at all: an
 empty cell on a strip of positions reads as a position.
 
+**`price_to_income` is deliberately not one of the rows**, and it is the one
+that would be wrong rather than merely awkward. Every value the strip prints
+reads on its own — a count, «×2,7», «+14,8%», «6,9%» — so the position beside it
+adds a second fact. `PTIR_LT_AVG` is not a level: Eurostat publish it as an
+index where **100 is Bulgaria's own long-run average of the ratio**, so «67,8»
+says nothing without that 100 and a one-line row has nowhere to mark it. Drawn
+anyway, the dot lands at the left end of a line labelled «цена спрямо доходите»
+and reads as "housing has never been more affordable" — a verdict, on the
+indicator whose own section spends three paragraphs on why it may not be read as
+one: the denominator is the whole population's income including pensions,
+benefits and services the state pays for, divided by a population that has
+fallen throughout the period, and the average it is measured against is pulled
+up by the years the ratio was at its highest. `#ratio` draws it whole, with the
+rule at 100 that `plotSeries#reference` exists for.
+
 A row whose series only ever rises sits at its right end by construction, which
 the page says out loud under the strip — it is a property of that series and not
 a reading of this quarter, and the two price rows are drawn separately so the

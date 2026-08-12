@@ -338,7 +338,6 @@
     index: COPY.mktRangeIndex,
     indexReal: COPY.mktRangeIndexReal,
     rate: COPY.mktRangeRate,
-    pti: COPY.mktRangePti,
     overburden: COPY.mktRangeOverburden,
   };
 
@@ -723,7 +722,10 @@
     {#if reading.realTimes != null}
       {@render figure(
         `×${fmt(reading.realTimes)}`,
-        COPY.mktKTimesReal,
+        {
+          bg: t(COPY.mktKTimesReal, "bg", { year: reading.baseYear }),
+          en: t(COPY.mktKTimesReal, "en", { year: reading.baseYear }),
+        },
         COPY.srcEurostat,
         reading.realSourceUrl,
         when(reading.period),
@@ -790,8 +792,8 @@
     <p class="lead">
       <span class="l-bg"
         >Всеки от показателите отдолу има своя история. Точката показва къде в нея е последното
-        число: най-лявото е най-ниското, което Евростат е публикувал за него, най-дясното —
-        най-високото. Нищо тук не се сумира в една обща оценка — показателите мерят различни неща и
+        число: вляво е най-ниското, което Евростат изобщо е публикувал за него, вдясно —
+        най-високото. Нищо тук не се събира в една обща оценка — показателите мерят различни неща и
         не сочат в една посока.</span
       >
       <span class="l-en"
@@ -864,18 +866,20 @@
     </div>
     <p class="cap">
       <span class="l-bg"
-        >Показател, който само расте, стои в десния си край, защото такъв е самият показател, а не
-        защото нещо се е случило точно сега. Затова цените са на два реда: единият е това, което
-        реално се плаща, другият — същото, но без поскъпването на всичко останало, и точките им не
-        са на едно и също място. Всеки показател започва от различна година и всеки ред пише своята
-        под името си.</span
+        >Показател, който само расте, стои в десния си край, защото така се движи той, а не защото
+        нещо се е случило точно сега. Затова цените са на два реда: единият е това, което реално се
+        плаща, другият — същото, но без поскъпването на всичко останало, и точките им не са на едно
+        и също място. И двата се четат «колко пъти повече от {reading.baseYear} г.» — годината, която
+        самият Евростат е взел за начало. Всеки показател започва от различна година — всеки ред пише
+        своята под името си.</span
       >
       <span class="l-en"
         >An indicator that only ever rises sits at its right end because that is what the indicator
         does, not because of anything happening now. That is why prices are on two rows: one is what
         is actually paid and the other is the same thing with the rise in everything else taken out,
-        and their dots are not in the same place. Each one is published from a different year, and
-        every row writes its own under its name.</span
+        and their dots are not in the same place. Both read as "how many times more than in {reading.baseYear}"
+        — the year Eurostat themselves took as the starting point. Each indicator is published from
+        a different year, and every row writes its own under its name.</span
       >
     </p>
   {/if}
@@ -912,7 +916,11 @@
           `всички дейности. Двата файла остават отделни чак до браузъра ти и се срещат едва тук, ` +
           `така че във всеки от тях стоят числата само на един публикуващ орган. Заплатата е ` +
           `брутната, както я публикува НСИ: парите на ръка зависят от данъчната таблица на ` +
-          `годината, в която са сметнати — това би вкарало трети закон в сметка между две институции.`,
+          `годината, в която са сметнати — това би вкарало трети закон в сметка между две ` +
+          `институции. И двете числа са средни за цялата страна, така че този резултат не е ` +
+          `сметката на конкретен купувач в конкретен град: и жилищата, и заплатите се различават ` +
+          `много по места, а средното жилище в страната и средната заплата в страната не се ` +
+          `намират непременно на едно и също място.`,
         en:
           `The multiple and the years figure are our arithmetic, both from published ` +
           `numbers. The multiple is Eurostat's index divided by its ${reading.baseYear} level — ` +
@@ -922,7 +930,10 @@
           `browser and meet only here, which is what keeps each of them one publisher's data. ` +
           `The wage is the one before tax and contributions, as НСИ publish it: take-home pay ` +
           `depends on the payroll table of the year that computed it, which would put a third ` +
-          `body's law inside a two-publisher ratio.`,
+          `body's law inside a two-publisher ratio. Both figures are country-wide averages, so ` +
+          `the result is not any particular buyer's arithmetic in any particular city: homes and ` +
+          `wages both vary a great deal by place, and the country's average dwelling and its ` +
+          `average wage are not necessarily in the same one.`,
       },
       yearsOfPay.derivedFrom
     )}
@@ -2113,16 +2124,20 @@
       </p>
       <p class="cap">
         <span class="l-bg"
-          >Две неща за този ред, които не си личат от картинката. Броят хора, на който се дели, е
+          >Три неща за този ред, които не си личат от картинката. Броят хора, на който се дели, е
           намалявал през целия период, така че доходът на човек расте и когато общата сума не расте.
-          И средната, спрямо която се мери, се пресмята наново при всяко издание: излезе ли нова
-          година, всички предишни точки се разместват, без годината им да се променя.</span
+          Средната, спрямо която се мери, се пресмята наново при всяко издание: излезе ли нова
+          година, всички предишни точки се разместват, без годината им да се променя. И в тази
+          средна влизат и годините, в които съотношението е било най-високото за целия ред — те я
+          вдигат, така че «под 100» отчасти значи «под тях».</span
         >
         <span class="l-en"
-          >Two things about this series that the picture does not show. The number of people it is
+          >Three things about this series that the picture does not show. The number of people it is
           divided by has fallen throughout the period, so income per head rises even when the total
-          does not. And the average it is measured against is worked out afresh with every edition:
-          when a new year is added, every earlier point shifts without its year changing.</span
+          does not. The average it is measured against is worked out afresh with every edition: when
+          a new year is added, every earlier point shifts without its year changing. And that
+          average includes the years the ratio was at its highest for the whole series — they pull
+          it up, so "below 100" partly means "below those".</span
         >
       </p>
     {/if}

@@ -3003,7 +3003,6 @@ const RANGE_ROWS = Object.freeze(
     // Signed, because every reading of it is a direction: the series runs
     // +34.6% to -26.8% and «6,9%» without its sign is two different quarters.
     { key: "rate", format: "signedPct", href: "#prices" },
-    { key: "pti", format: "ratio", href: "#ratio" },
     // Unsigned, because it is a share of the population and not a change. The
     // signed formatter would print «+6,9%» and invent a movement.
     { key: "overburden", format: "pct", href: "#ratio" },
@@ -3034,6 +3033,24 @@ const RANGE_ROWS = Object.freeze(
  * zero, every one of these sits in the top fifth and the strip says the same
  * thing six times. `peak` and `trough` are the highest and lowest readings the
  * publisher has actually printed, which is what "inside its own range" means.
+ *
+ * **`price_to_income` is deliberately NOT here, and the reason is the one thing
+ * this strip cannot draw.** Every value in a row above reads on its own — a
+ * count, «×2,7», «+14,8%», «6,9%» — so the position beside it adds a second
+ * fact. `PTIR_LT_AVG` is not a level: Eurostat publish it as an index where
+ * **100 is Bulgaria's own long-run average of the ratio**, so «67,8» means
+ * nothing at all without that 100, and the track has no room to mark it. A dot
+ * at the left end of a line labelled «цена спрямо доходите», with the reference
+ * it is defined against nowhere on the row, reads as "housing has never been
+ * more affordable" — a verdict, on the indicator whose own section spends two
+ * paragraphs on why it may not be read that way: the denominator is the whole
+ * population's income including pensions and benefits, divided by a population
+ * that has fallen throughout the period, and the average it is measured against
+ * is pulled up by the years the ratio was at its highest.
+ *
+ * `#ratio` draws it whole, with the rule at 100 on the plot — which is exactly
+ * the mark `marketPriceToIncomeSeries` passes a `reference` for, and exactly
+ * what a one-line row has nowhere to put.
  *
  * **A row that cannot be placed is absent rather than empty.** A series with
  * fewer than `RANGE_MIN_POINTS` readings, a payload that failed to fetch, a
