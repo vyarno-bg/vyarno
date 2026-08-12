@@ -323,7 +323,7 @@
       ><span class="l-bg">жилищният кредит</span><span class="l-en">the home loan</span></a
     >
     <a href="#home"
-      ><span class="l-bg">цената на жилището</span><span class="l-en">what a home costs</span></a
+      ><span class="l-bg">цената в обявите</span><span class="l-en">the listed price</span></a
     >
     <a href="#work"
       ><span class="l-bg">работа и заплати</span><span class="l-en">work and pay</span></a
@@ -976,8 +976,8 @@
   <!-- 6 ------------------------------------------------------------------ -->
   <section id="home">
     <h2>
-      <span class="l-bg">Колко струва квадратният метър и колко заплати е едно жилище</span>
-      <span class="l-en">What a square metre costs, and how many salaries a home is</span>
+      <span class="l-bg">Цената на квадратен метър в обявите</span>
+      <span class="l-en">The €/m² in the listings</span>
     </h2>
     <p>
       <span class="l-bg"
@@ -1027,15 +1027,6 @@
           IMOT_URL,
           imotDated
         )}
-        {#if calc.cityHome.netMonthly > 0}
-          {@render stat(
-            fmt(calc.cityHome.years),
-            COPY.howKHomeYears,
-            COPY.srcNsiWages,
-            calc.payLadderRows.anchorUrl,
-            when(calc.cityHome.wagePeriod, wagesArePreliminary)
-          )}
-        {/if}
       {/if}
     </div>
 
@@ -1045,18 +1036,21 @@
         <span class="l-bg"
           >имот.bg публикува по едно число на квартал и нито едно за София като цяло. Медианата на
           {fmt0(calc.cityHome.nDistricts)} квартала и сравнението с {calc.cityHome.baselineYear} г. са
-          наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. „Години заплата“
-          значи цената, разделена на дванадесет средни нетни заплати за София: сравнение на едно цяло
-          жилище с една цяла заплата, без спестявания, без лихва и без нищо друго в живота.</span
+          наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. Колко заплати
+          струва жилище стои в калкулатора, до самата цена. Числата по сключени сделки — колко жилища
+          се купуват, колко се плаща за тях и как се движи официалният индекс — са на
+          <a href="/market/">страницата за пазара</a>, защото идват от Евростат и НСИ и мерят друго.</span
         >
         <span class="l-en"
           >imot.bg publishes one figure per district and none for Sofia as a whole. The median
           across
           {fmt0(calc.cityHome.nDistricts)} districts, and the comparison with {calc.cityHome
             .baselineYear}, are our arithmetic over their figures — which is why they are named here
-          rather than attributed to them. "Years of pay" means the price divided by twelve average
-          net Sofia monthly wages: a whole home against a whole salary, with no savings, no interest
-          and nothing else in a life.</span
+          rather than attributed to them. How many salaries a home is sits in the calculator, next
+          to the price itself. The figures from closed sales — how many dwellings are bought, what
+          is paid for them and how the official index moves — are on
+          <a href="/market/">the market page</a>, because they come from Eurostat and НСИ and
+          measure something else.</span
         >
       </p>
     {/if}

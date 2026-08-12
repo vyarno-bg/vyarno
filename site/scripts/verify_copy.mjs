@@ -2076,7 +2076,14 @@ test("the market page describes the market and does not judge it", () => {
     //   a comparative against a named baseline — «по-евтино, отколкото средно
     //   за собствената им история» is a measurement with its yardstick stated,
     //   which is the opposite of a verdict.
-    if (/[?？]|\bли\b/u.test(sentence)) continue;
+    // `\b` is ASCII-only whatever the flags, which is the trap the comment
+    // above documents for the patterns and which this line then repeated: no
+    // Cyrillic letter is a word character, so `/\bли\b/u` finds no boundary
+    // between a space and a «л» and matched nothing. The exemption survived
+    // only because «Скъпо ли е спрямо доходите» shares a flattened sentence
+    // with the English heading's question mark — an accident of where Prettier
+    // wraps, which a copy edit undoes.
+    if (/[?？]|(?<!\p{L})ли(?!\p{L})/u.test(sentence)) continue;
     if (/(?:not that|nor that|не че|нито че)/iu.test(sentence)) continue;
     for (const re of VERDICT) {
       for (const m of sentence.matchAll(re)) {
@@ -2093,6 +2100,37 @@ test("the market page describes the market and does not judge it", () => {
       "telling them what to think about the property market has spent the " +
       "credibility the official figures lent it (docs/principles.md P6)."
   );
+});
+
+test("the six-city sentence names as many cities as the payload carries", () => {
+  // «шестте града с над 120 000 жители» is a count in prose, and the rule two
+  // sections up is that a count the payload carries does not get written into a
+  // sentence. This one is an exception with a reason: it is НСИ's own
+  // definition of the series rather than a reading of it, and «градовете с над
+  // 120 000 жители» loses the thing a reader wants from the sentence, which is
+  // how many rows are about to follow.
+  //
+  // So the number stays and this is what stops it going stale. НСИ publish the
+  // city set from their own population threshold; a seventh city crossing it
+  // leaves every figure in the table correct and the sentence introducing it
+  // wrong, and `validate_nsi_housing` asserts nothing about how many there are.
+  const nsi = published("nsi_housing");
+  if (!nsi) return; // no refresh in this checkout
+
+  const cities = nsi.city_price_index_yoy?.cities?.length ?? 0;
+  assert.equal(
+    cities,
+    6,
+    `nsi_housing carries ${cities} cities and Market.svelte says «шестте града» / ` +
+      `"the six cities". Update both halves of that sentence, and check ` +
+      `HOUSING_CITIES in transform.py against НСИ's own footnote while you are there.`
+  );
+  for (const [lang, re] of [
+    ["BG", /шестте града/u],
+    ["EN", /six cities/i],
+  ]) {
+    assert.match(MARKET_FLAT, re, `the ${lang} copy no longer introduces the city table`);
+  }
 });
 
 test("the market page never lets a register count read as a housing count", () => {

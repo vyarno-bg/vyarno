@@ -1983,9 +1983,15 @@ export const COPY = {
   // say which numbers.
   howNavK: { bg: "числата", en: "the numbers" },
   // One word, because it shares the bar with `howNavK`, a theme button and a
-  // language link. «пазарът» carries the definite article: a bare «пазар»
-  // reads as a category rather than as the page about this one.
-  marketNavK: { bg: "пазарът", en: "the market" },
+  // language link, and the bar has to stay on one line at 360px.
+  //
+  // The word has to name the SUBJECT rather than the page. «пазарът» is what
+  // the page calls itself and it is not what a reader scanning a header reads:
+  // beside «числата» it says "the market" of nothing in particular, and a
+  // Bulgarian reader has to open it to find out which one. «имоти» is the word
+  // they would use for the topic out loud. The precise «жилищен пазар» is two
+  // words and puts this bar on a second row on every phone.
+  marketNavK: { bg: "имоти", en: "property" },
   howFooterK: { bg: "Числата за България", en: "Bulgaria's numbers" },
   marketFooterK: { bg: "Пазарът на жилища →", en: "The property market →" },
 
@@ -2037,10 +2043,6 @@ export const COPY = {
   howKHomePrice: {
     bg: "жилище от {m2} кв. м по тази медиана",
     en: "a {m2} m² home at that median",
-  },
-  howKHomeYears: {
-    bg: "години от средната нетна заплата за София",
-    en: "years of Sofia's average net pay",
   },
   howKUnemp: { bg: "безработица, сезонно изгладена", en: "unemployment, seasonally adjusted" },
 
