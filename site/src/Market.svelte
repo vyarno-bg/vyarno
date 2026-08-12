@@ -225,8 +225,16 @@
    * are the same figure.
    */
   const reading = $derived(marketIndexReading(data.houseMarket));
-  /** An index level as the multiple of its base the reader is shown. */
-  const times = (value) => `×${fmt(indexTimesBase(value, indexScale.reference))}`;
+  /**
+   * An index level as the multiple of its base the reader is shown.
+   *
+   * `decimals` exists for the base itself, which is exactly ×1 and reads as a
+   * measurement rather than as a definition when it is printed «×1,0» — and
+   * the caption beside the plot says «×1 = колкото през {year} г.», so the
+   * axis has to agree with it.
+   */
+  const times = (value, decimals = 1) =>
+    `×${number(indexTimesBase(value, indexScale.reference), decimals, $lang)}`;
   const flagKey = $derived(statusLettersUsed([indexSeries.flags, indexRealSeries.flags]));
   const rateSeries = $derived(marketPriceRateSeries(data.houseMarket));
   const dealNewSeries = $derived(marketAverageDealSeries(data.houseMarket, "new"));
@@ -1074,7 +1082,7 @@
                figure a sceptic checks against Eurostat. -->
           {@render yAxis([
             { at: tickAt(indexScale.max, indexScale), label: times(indexScale.max) },
-            { at: tickAt(indexScale.reference, indexScale), label: times(indexScale.reference) },
+            { at: tickAt(indexScale.reference, indexScale), label: times(indexScale.reference, 0) },
             { at: tickAt(0, indexScale), label: "0" },
           ])}
           <svg
@@ -2355,6 +2363,15 @@
     text-align: right;
     white-space: nowrap;
   }
+  /* A COLUMN HEAD MAY WRAP; A FIGURE MAY NOT. «Спрямо година по-рано» held on
+     one line pushed the three-column volume table 19px past a 360px screen, so
+     a table that fits was scrolled sideways to read three numbers — and the
+     heading is the one thing in the column with somewhere to go. The cells keep
+     `nowrap`: «1 343 368 578 €» broken across two lines is a figure a reader
+     has to reassemble. */
+  .fig-table thead th.num {
+    white-space: normal;
+  }
   /* The row a section's headline figure is on. The same `--real-soft` wash
      `/how/` marks the reader's own row with: one row per table, or the mark
      means nothing. */
@@ -2405,8 +2422,16 @@
   .yaxis {
     grid-column: 1;
     display: grid;
+    /* ONE ROW, AND IT TAKES THE WHOLE BOX. A relatively positioned grid item
+       resolves a percentage `top` against its GRID AREA rather than against the
+       container, so a row sized to its own content makes `top: 100%` mean 11px
+       — and every tick lands within one line-height of the top of the plot,
+       looking like a rendering glitch rather than like a wrong axis. */
+    grid-template-rows: 1fr;
     justify-items: end;
-    align-content: start;
+    /* …and the items sit at the top of that area rather than stretching to it,
+       or `translateY(-50%)` moves each one by half the plot. */
+    align-items: start;
   }
   .yaxis .plot-tick {
     grid-area: 1 / 1;
