@@ -30,16 +30,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Compute payload ages
         # Exit non-zero on any stale payload. The Actions UI surfaces
         # the failure; repo notification settings route it to email.
+        #
+        # The import list is the whole check. A name this script uses and does
+        # not import raises before the first payload is read, and the exit code
+        # that carries — non-zero — is the same one a stale payload raises. So
+        # the alert fires every week, says nothing true, and the week it means
+        # something is the week it has already been learned to ignore.
         run: |
           python3 - <<'PY'
-          import datetime, glob, json, sys
+          import datetime, glob, json, os, sys
           threshold_days = 30
           today = datetime.date.today()
 
