@@ -2407,8 +2407,17 @@ export function marketStructure(structure) {
     // want. Every one of these is a share of the POPULATION on the same base,
     // so owners and renters add to the published total — which is what makes
     // them a table a reader can add up rather than three unrelated percentages.
+    // The two rows a four-row table left out, and they are the ones that make
+    // the other four add up. Owners without a loan are the overwhelming
+    // majority of the country and the page leans on that in two places; a
+    // reader had to subtract to find the figure. Reduced-rent and rent-free is
+    // the other side of the same identity — with both here every published
+    // share is on the page and the column visibly sums to the published total,
+    // which is the check a reader can make without leaving it.
+    ownerNoMortgage: sourced(tenure?.owner_no_mortgage_pct, tenure),
     renter: sourced(tenure?.rent_pct, tenure),
     renterAtMarketPrice: sourced(tenure?.rent_market_price_pct, tenure),
+    renterReducedOrFree: sourced(tenure?.rent_reduced_or_free_pct, tenure),
     dwellings: sourced(census?.total, census),
     occupied: sourced(census?.occupied, census),
     unoccupied: sourced(census?.unoccupied, census),

@@ -303,13 +303,19 @@ async function sweep(collect) {
  * it is the kind of thing that gets faded, and the walk reads `fill` for
  * exactly this.
  *
- * No interaction to drive first, unlike the calculator. The page has no input
- * on it, so nothing on it is gated on a reader answering — every region it will
- * ever show is on screen at load.
+ * No interaction to drive first, unlike the calculator — the page has no input
+ * on it, so nothing on it is gated on a reader answering. **Every `<details>`
+ * is opened, and the walk was worth much less without it.** Each chart carries
+ * its own numbers table inside a closed disclosure, which is several hundred
+ * cells of `--muted` mono at `--fs-micro`, plus the flag column at the same
+ * size again — the smallest painted text on the site, in the part of the page
+ * a reader reaches only by asking for it. A walk over the shut page reports
+ * nothing about any of it and looks exactly like a walk that passed.
  */
 async function sweepMarket(collect) {
   await withApp(
     async (page, errors) => {
+      await page.evaluate(OPEN_DETAILS);
       const theme = page.locator("header.site .controls button").first();
       const settled = () =>
         page.waitForFunction(() =>
@@ -331,6 +337,7 @@ async function sweepMarket(collect) {
   // a store flip, so the English half is audited by opening it.
   await withApp(
     async (page, errors) => {
+      await page.evaluate(OPEN_DETAILS);
       const theme = page.locator("header.site .controls button").first();
       const settled = () =>
         page.waitForFunction(() =>

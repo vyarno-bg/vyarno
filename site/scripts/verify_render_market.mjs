@@ -91,11 +91,18 @@ test("every figure on the market page carries a source under it", { skip }, asyn
         els
           .map((el, i) => {
             const box = el.closest(".scroll") ?? el;
-            // A numbers table publishes the series of the chart above it and is
-            // cited by that chart's own source line, which sits directly above
-            // the disclosure it lives in. Everything else cites after itself.
-            const disclosure = box.closest("details.numbers");
-            const near = disclosure ? disclosure.previousElementSibling : box.nextElementSibling;
+            // A numbers table publishes the series of the figure above it and
+            // is cited by that figure's own source line, which sits above the
+            // disclosure it lives in. Sibling disclosures are stepped over:
+            // where one figure publishes two series — the six cities' prices
+            // and their sales counts — the second `<details>` follows the
+            // first, and its citation is the same line above both. Everything
+            // that is not a disclosure cites after itself.
+            let near = box.closest("details.numbers") ?? box;
+            const upwards = near !== box;
+            do {
+              near = upwards ? near.previousElementSibling : near.nextElementSibling;
+            } while (near && upwards && near.matches("details.numbers"));
             const links = near ? near.querySelectorAll("a[href^='http']").length : 0;
             return links >= 1 ? null : `table ${i} beside "${near?.className ?? "nothing"}"`;
           })
@@ -637,6 +644,85 @@ test(
           cells.some((c) => c.includes("\u2212")),
           "no cell in the city table carries a minus at all — every НСИ city " +
             "figure is a change, and falls are what the table exists to show"
+        );
+
+        // Both histories reach the page, not only the priced one. НСИ publish a
+        // sales series per city as well as a price series, over a shorter
+        // window, and the page carried it in the payload while drawing only its
+        // newest cell. The two disclosures are told apart by the counts in their
+        // own summaries, which come from the two series' own lengths — so this
+        // goes red if either stops being published as well as if either stops
+        // being drawn.
+        const nsi = payload("nsi_housing");
+        if (!nsi) return;
+        const lengths = ["city_price_index_yoy", "city_deals_yoy"].map(
+          (block) => Object.keys(nsi[block]?.cities?.[0]?.series_by_period ?? {}).length
+        );
+        assert.ok(lengths[0] > 2 && lengths[1] > 2, `city series lengths: ${lengths.join(", ")}`);
+        const summaries = (
+          await page.locator("main.market details.numbers summary").allInnerTexts()
+        ).map((text) => text.replace(/[\s .,]/g, ""));
+        for (const [i, n] of lengths.entries()) {
+          assert.ok(
+            summaries.some((text) => text.includes(String(n))),
+            `no disclosure on the page publishes the ${n}-quarter city series ` +
+              `(${["prices", "sales counts"][i]}). НСИ publish it per city and the page would ` +
+              "be showing only its newest cell, which is a number where the payload carries a " +
+              "history."
+          );
+        }
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      "/market/",
+      {}
+    );
+  }
+);
+
+test(
+  "the tenure table shows every share the survey publishes, and they add up",
+  { skip },
+  async () => {
+    // The table showed four of the six shares EU-SILC publish, and the two it
+    // left out are the ones that make the rest legible: 84.4% own with no loan at
+    // all — which is the fact two paragraphs elsewhere on the page lean on, and a
+    // reader had to subtract to find it — and 11.7% pay a reduced rent or none,
+    // which is by far the larger half of renting here, so a table showing only
+    // the market-price half described the smaller case.
+    //
+    // Read off the payload rather than listed here, so a share Eurostat add later
+    // fails this instead of quietly not being drawn. The sum is the other half:
+    // owners and renters are on one base and add to the published total, which is
+    // the check a reader can make with their eyes and the reason it is a table.
+    const structure = payload("house_market_structure");
+    if (!structure) return; // no refresh in this checkout
+    const tenure = structure.tenure;
+    const shares = Object.entries(tenure).filter(
+      ([key, value]) => key.endsWith("_pct") && key !== "total_pct" && Number.isFinite(value)
+    );
+    assert.ok(shares.length >= 6, `the tenure block publishes ${shares.length} shares`);
+    assert.ok(
+      Math.abs(tenure.owner_pct + tenure.rent_pct - tenure.total_pct) < 0.15,
+      `owners (${tenure.owner_pct}) and renters (${tenure.rent_pct}) do not add to the published ` +
+        `total (${tenure.total_pct}). The table says they are shares of one and the same base.`
+    );
+
+    await withApp(
+      async (page, errors) => {
+        // Located by its section rather than by position: the numbers tables
+        // under the charts are `table.fig-table` too, so an index counts past
+        // several of them and lands somewhere else the day a chart is added.
+        const rows = await page.locator("main.market #credit table.fig-table").innerText();
+        const digits = rows.replace(/[\s .,]/g, "");
+        const missing = shares
+          .filter(([, value]) => !digits.includes(String(value).replace(".", "")))
+          .map(([key, value]) => `${key} = ${value}%`);
+        assert.deepEqual(
+          missing,
+          [],
+          `the tenure table does not draw these published shares: ${missing.join(", ")}. ` +
+            "Every one of them is a share of the same base, and the ones left out are the ones " +
+            "that make the column add up to the total the prose claims it adds up to."
         );
         assert.deepEqual(errors, [], errors.join(" | "));
       },
