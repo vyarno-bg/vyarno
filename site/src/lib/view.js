@@ -2919,6 +2919,37 @@ export function marketOverburdenSeries(structure) {
 }
 
 /**
+ * What renting costs against a year earlier — the calculator's own line, read
+ * here rather than fetched again.
+ *
+ * **The `source_url` is the payload's and the `api_url` is the row's**, and
+ * that pairing is the whole reason this is wiring rather than a lookup in the
+ * template. `hicp_categories.json` carries one publisher page for the whole
+ * cube and a query per row, so a caption built from the row alone has no
+ * databrowser link to offer and sends a reader to raw JSON as its FIRST
+ * destination — on the page whose argument is that a sceptic can follow the
+ * link and check.
+ *
+ * CP041 is actual rents paid for housing, not imputed rent and not the whole of
+ * CP04, which sweeps in water, electricity and gas. A section asking what
+ * housing costs against incomes would read very differently on CP04.
+ *
+ * @param {object|null} hicpCategories
+ */
+export function marketRent(hicpCategories) {
+  const row =
+    (hicpCategories?.categories ?? [])
+      .flatMap((c) => c.groups ?? [])
+      .find((g) => g?.cp_code === "CP041") ?? null;
+  if (!row) return null;
+  return {
+    ...sourced(row.annual_rate_pct, null, { refPeriod: row.ref_period ?? null }),
+    sourceUrl: hicpCategories?.source_url ?? null,
+    apiUrl: row.api_url ?? null,
+  };
+}
+
+/**
  * Price-to-income against its own long-run average, as a series.
  *
  * The one figure on the page whose meaning is genuinely hard to state in a
