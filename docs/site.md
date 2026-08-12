@@ -362,6 +362,24 @@ therefore searches for `data.<key>` in the SPA *excluding* `payloads.js` and
 `DataPanel.svelte`: a payload must feed a figure, not just a dated row in the
 freshness table.
 
+**Three pages carry the freshness verdict and only one of them has a panel.**
+`DataBanner` counts the overdue payloads above the calculator, over a disclosure
+listing every one of them with its own date, so a reader who wants to know which
+opens it. `/how/` and `/market/` have no panel — and they are the two pages built
+to be quoted and cited, so a payload whose workflow stops firing was showing an
+old period caption there and nothing else. `DataLate` is what they carry
+instead, and it NAMES the late payloads with their own ages rather than counting
+them, because a warning that something here is overdue with no way to find out
+what is a warning a reader can do nothing with.
+
+Both compute the verdict in `onMount` and never from the prerender prop, for the
+reason `calculator.svelte.js`'s constructor gives: it is a function of the clock,
+and a page stamped fresh at build time goes on saying so for as long as it is
+served. On `/market/` the band sits under the four answer cards rather than above
+the page, which was measured rather than chosen — at 360px the cards already end
+710px down an 800px screen, and a full-bleed band above them costs 74px with one
+payload late and 113px with three.
+
 **`pages` is what stops the manifest costing every reader every payload**, and
 the route it names has to be the one the panel is dated from. `view.js#dataAge`
 calls a row it holds no payload for `absent`, and `absent` is what the "some

@@ -14,6 +14,72 @@ import {} from "./render-dist.mjs";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 
+/**
+ * A `before` hook that serves one payload with an `as_of` far in the past.
+ *
+ * The freshness verdict is the one thing on this page no committed file can
+ * produce: it is computed against the reader's own clock, so a suite running on
+ * green data only ever sees the state where nothing is late. Ageing the file on
+ * its way to the tab is what puts the other state on screen, and that state is
+ * the whole point of the line under test. Everything else in the payload is
+ * served verbatim, so the page under measurement is the real page.
+ */
+const servedStale = (stem) => async (page) => {
+  const aged = { ...published(stem), as_of: "2019-01-01" };
+  await page.route(`**/data/published/${stem}.json`, (route) =>
+    route.fulfill({ contentType: "application/json", body: JSON.stringify(aged) })
+  );
+};
+
+test("a payload that stopped refreshing says so on the country page", { skip }, async () => {
+  // `/how/` is the page that argues its numbers are checkable, and it could not
+  // tell a reader one of them was late. A payload whose workflow stops firing
+  // shows an old period caption — which is correct, it is what the figure
+  // describes — and the page otherwise looks exactly as it does the day of a
+  // refresh. `DataBanner` was on the calculator and nowhere else.
+  //
+  // It NAMES the payload rather than counting it, which is the difference from
+  // the calculator's banner: there the count sits above a disclosure listing
+  // every payload with its own date, and this page has no panel to open.
+  if (!published("hicp_categories")) return; // no refresh in this checkout
+
+  await withApp(
+    async (page, errors) => {
+      const note = page.locator(".late");
+      assert.equal(await note.count(), 1, "an overdue payload raises no warning on /how/");
+      const text = (await note.innerText()).trim();
+      // The manifest's own name for it, so a row renamed there renames this.
+      assert.ok(
+        text.includes("Инфлация по групи"),
+        `the warning does not name the late payload: "${text}"`
+      );
+      assert.match(text, /\d+/, `the warning does not say how late it is: "${text}"`);
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/how/",
+    {},
+    servedStale("hicp_categories")
+  );
+
+  // Nothing at all while every payload is inside its own cadence, which is the
+  // ordinary state. A warning that is always up is one nobody reads on the day
+  // it means something.
+  await withApp(
+    async (page, errors) => {
+      assert.equal(
+        await page.locator(".late").count(),
+        0,
+        "the overdue warning is up on /how/ with every committed payload inside its own " +
+          "cadence. Either a payload has genuinely gone stale — refresh it — or the verdict " +
+          "is being computed against something other than `as_of` and the manifest."
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/how/",
+    {}
+  );
+});
+
 test("the country page mounts over its prerender rather than beside it", { skip }, async () => {
   // The failure `how-main.js`'s `replaceChildren()` prevents, checked on the
   // page rather than on the file: `mount()` appends, and this entry arrives

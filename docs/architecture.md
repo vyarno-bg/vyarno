@@ -64,7 +64,8 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
     └── src/         App.svelte · How.svelte · Market.svelte ·
                      Legal.svelte · Support.svelte · NotFound.svelte
         ├── components/  the calculator's parts: SiteHeader · DataBanner ·
-        │                DataPanel ·
+        │                DataPanel · DataLate (the overdue line /how/ and
+        │                /market/ carry, where there is no panel to open) ·
         │                InputsCard · PayField · BasketEditor · PayslipTable ·
         │                ResultsCard · ResultsAnswer · ResultsSummary ·
         │                RankedContributions ·

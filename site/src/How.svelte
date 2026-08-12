@@ -31,6 +31,7 @@
   import { onMount } from "svelte";
   import { lang, theme, chooseLang, langHref, toggleTheme } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
+  import DataLate from "./components/DataLate.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
   import { QUARTERS, monthsSplit as monthsAreSplit } from "./lib/view.js";
@@ -288,6 +289,13 @@
     >
   </p>
 {/snippet}
+
+<!-- Between the header and the page, where the calculator puts the same
+     warning. `calc.dataOverdue` is empty until `load()` has run in the reader's
+     own tab: the verdict is a function of the clock and the build's clock is
+     not the reader's, which is why the constructor deliberately does not seed
+     it (calculator.svelte.js). -->
+<DataLate rows={calc.dataOverdue} />
 
 <main id="main" class="wrap how">
   <h1>
