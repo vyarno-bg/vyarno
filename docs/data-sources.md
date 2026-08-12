@@ -765,7 +765,7 @@ verify link can land on the edition the label came from, `ref_period`, `unit`
 `en_name`, `bg_name` (both НСИ's own), `value_eur` and
 `series_by_period`. Nothing in it is computed
 — the gap a reader sees is `mirror.js` arithmetic in their own tab. `sector
-wages` (gate 7 in `validate.py`) fails the publish if a headline stops being the
+wages` (gate 8 in `validate.py`) fails the publish if a headline stops being the
 published cell, and `sector_salary.json carries no rank, because nobody
 publishes one` in `verify_data_contracts.mjs` fails if a percentile-shaped field
 appears in a row.
