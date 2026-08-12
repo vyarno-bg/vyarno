@@ -204,7 +204,7 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 |---|---|
 | `sources/*.py` | Talking to one upstream, and proving the response is the one requested |
 | `transform.py` | Reshaping upstream rows into published shapes |
-| `validate.py` | The six HICP gates, and the sector-wage gate that runs under `--source sector-salary` |
+| `validate.py` | The seven HICP gates, and the sector-wage gate that runs under `--source sector-salary` |
 | `mortgage.py` / `payroll.py` | The dated legislative tables and the mortgage gates |
 | `publish.py` | The envelopes and the provenance frame |
 | `cli.py` | One arm per `--source`; exit codes **2** transform, **3** gate, **4** network |
@@ -253,18 +253,25 @@ sees: a branch and `main` can each be green and their merge broken. A same-repo
 pull request therefore runs twice, and the second run is not a duplicate of the
 first.
 
-It does **not** refresh data. Two of the five upstreams need network paths a
-cloud runner does not have, and a scheduled job that silently publishes a
-partial panel is worse than a manual one that fails loudly. A refresh is run
-where those paths exist, and its output is committed, because the diff is the
-review. The `live` probes are excluded for the same reason: run them from an
-ordinary network with `pytest -m live`.
+It does **not** refresh data — the refresh workflows are separate files with
+separate triggers, and this one holds no upstream credential and no schedule.
+Every arm but one refreshes on a cron in `.github/workflows/refresh-*.yml`,
+each opening a pull request against `main` so the diff stays the review. The
+exception is `city-price`: `имот.bg` answers a datacenter IP with a 403, no
+runner has an ordinary Bulgarian connection to offer it, and it is refreshed by
+hand for that reason and no other. A refresh that runs
+anywhere still has to be given what the network there lacks: the БНБ arm needs
+the missing TLS intermediate supplied before it can fetch at all
+(`data-sources.md` §"TLS setup"). The `live` probes stay excluded from CI for
+the same reason they always were: run them from an ordinary network with
+`pytest -m live`.
 
 **The workflow uses no secrets**, with `permissions: contents: read`. Because it
 does not refresh data it holds no upstream credential, and that is what lets a
-pull request from a stranger run the full suite. Keep it that way: a refresh
-workflow would need БНБ TLS and a Bulgarian egress path, which is a deliberate
-decision rather than a CI tweak.
+pull request from a stranger run the full suite. Keep it that way — the refresh
+workflows write, and this one must not: they take `contents: write` to push a
+`data/<source>` branch and `actions: write` to start this workflow against it,
+which is a token a fork's code must never run under.
 
 That property is also what makes the `pull_request` trigger safe to have. It
 runs **this** repository's copy of the workflow against the merge ref with a

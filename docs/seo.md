@@ -228,7 +228,10 @@ HTML then carries the whole published method, which is the §9.2 obligation
 There is no deploy job in this repository. `.github/workflows/ci.yml` builds and
 tests; it does not deploy and it does not refresh
 ([`architecture.md`](./architecture.md) §CI), and hosting the build is the
-operator's decision. So the guarantee above holds **per build**, not per deploy.
+operator's decision. The refresh workflows beside it do not deploy either —
+they open a pull request against `main`, so a payload reaches a reader only
+through a merge and whatever that merge triggers. So the guarantee above holds
+**per build**, not per deploy.
 
 `site/public/_headers` caches `/data/published/*` for 300 s and every HTML entry
 at `max-age=0, must-revalidate`, which keeps a reader's HTML and JSON from

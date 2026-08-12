@@ -361,6 +361,13 @@ vyarno-pipeline refresh --source <name> --out ../data/published
 `city-price`, `region-salary`, `sector-salary`, `salary-dist`, `payroll`,
 `all`. Eight arms and nine files — `hicp` writes both HICP payloads.
 
+**Seven of the eight run on a schedule without you.** `.github/workflows/
+refresh-*.yml` fires each one on its own upstream's cadence and opens a pull
+request with the diff; running an arm here is for developing it, for re-reading
+a payload the review questioned, and for `city-price`, which cannot run on a
+runner at all. What a scheduled run cannot do is decide whether a moved number
+is right — the pull request exists so that stays a person's job.
+
 `--skip-link-check` skips **gate 6** (the published-URL body inspection — 52
 calls). Use it only where outbound HTTP is genuinely blocked, and **never for
 `--source hicp` in production**: it is the only check that the links we publish
