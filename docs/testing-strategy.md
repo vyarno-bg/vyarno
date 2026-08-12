@@ -175,6 +175,57 @@ needs and builds its own shapes, which is what makes them separable at all;
 `near` — the float comparator, which carries a tolerance — is the one thing they
 share, and `scripts/near.mjs` says why it is not copied.
 
+## When one suite file has become two
+
+§"Would the failure message tell you which thing broke?" is the rule for
+splitting a TEST. This is the rule for splitting a FILE, and the two answer
+different failures: a file can be perfectly split into unambiguous tests and
+still be unreviewable, and a file of two tests can be exactly the right shape at
+five hundred lines.
+
+**The question is whether you can say what the file is for in one sentence, and
+whether that sentence needs an "and".** A file that is one subject is auditable
+at nine hundred lines. A file that is five subjects is not at four hundred,
+because a reviewer who cannot hold the whole remit cannot tell a guard that has
+quietly stopped guarding from one that never guarded anything — which is the
+failure this repository has already had, and the reason `verify_docs_map.mjs`
+and `verify_suites.mjs` exist.
+
+The tell that a section is its own subject is its FIXTURES. `verify_copy.mjs`
+runs one rule — what a visible string may claim — over every surface on the
+site, and every section of it reads the same imported `COPY`. That is a
+catalogue, and a catalogue is audited entry by entry rather than front to back,
+however long it is; `verify_mirror_math.mjs` is the same shape over the
+formulas. A section that has to build its own payload shape, its own synthetic
+quarters or its own limits object before it can assert anything is answering a
+different question from its neighbours, and the fixture is the evidence.
+
+**There is deliberately no gate on file length, and the reason is the one
+[`writing-style.md`](./writing-style.md) §"Write the constraint, never the diff"
+gives for having no gate on prose.** Any threshold is either set where the files
+happen to sit, which certifies whatever is there on the day it is written, or
+set lower, which fails a legitimately long file and earns an exemption list —
+and an exemption list is the thing it was supposed to replace. Lines per test is
+worse: it is the measurement §"Would the failure message tell you which thing
+broke?" already rejects, and `verify_template_safety.mjs` and
+`verify_render_contrast.mjs` are the standing counter-examples — a handful of
+tests over several hundred lines, most of which are a scanner and the reasoning
+behind it, each test naming every offending element in its failure. A
+gate that is wrong even occasionally teaches a contributor to argue with the
+tooling, and that costs more than the files it would catch.
+
+What is checked instead is the part of this with no judgement in it, and it
+already fires: `verify_docs_map.mjs` fails when a file in `site/scripts/` is not
+named in `docs/site.md`'s tree. **The line you have to write there is the file's
+subject**, so the review question has a trigger nobody can walk past. Read the
+line back:
+
+- if it needs an "and", the file is two files;
+- if it restates a line already in the tree, one of the two is misnamed and some
+  of the tests are in the wrong one;
+- if you cannot write it without naming three payloads, the seam is where the
+  payloads change.
+
 ## Why the layout is what it is
 
 ### Published artefacts are pytest's
@@ -407,9 +458,14 @@ Lines per test is the wrong signal for this. `verify_template_safety.mjs` is
 seven tests over five hundred lines, and most of those lines are the `{@html}`
 scanner and the reasoning behind it — each of the seven reports the offending
 expression by name, so none of them is ambiguous and none should be split.
-`test_published_contracts.py` is the same shape over the published payloads. A
-test earns a split when its failure says the results card is wrong and leaves
-you to read the body to find out which of eight things it meant.
+`test_published_contracts.py` is the same shape over the published payloads,
+and so is `verify_render_contrast.mjs`: two tests over four hundred lines that
+are almost all the compositing walk, each reporting every failing element with
+its selector, its text, the ratio it was painted at and the alpha that got it
+there. Splitting either of those two would drive the page through another
+browser to report less. A test earns a split when its failure says the results
+card is wrong and leaves you to read the body to find out which of eight things
+it meant.
 
 ### And these get no test at all
 
