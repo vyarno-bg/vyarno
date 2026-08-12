@@ -150,14 +150,13 @@ const origin = site ? `http://127.0.0.1:${site.port}` : "";
  *   executed at all would leave the prerendered table standing and satisfy this
  *   — that case is caught by the error list, which every test in this file
  *   asserts is empty, and by `verify_static_assets.mjs`.
- * - **`/market/`** — prerendered too, and its figure tables are built from the
- *   payloads, so `#app` having a child is true before the bundle has run and
- *   every assertion in `verify_render_market.mjs` would be reading markup
- *   frozen at build time. The city table is what proves the client ran and
- *   fetched: `nsi_housing.json` reaches the page through `loadAll("market")`,
- *   and a bundle that never executed leaves the prerendered copy standing —
- *   which the collected error list, asserted empty by every test in that file,
- *   is what catches.
+ * - **`/market/`** — prerendered too, tables and charts included, so `#app`
+ *   having a child is satisfied by markup frozen at build time and every
+ *   assertion in `verify_render_market.mjs` would have been reading that.
+ *   `document.readyState === "complete"` is what proves otherwise, for the
+ *   reason it does on `/how/`: a module script has executed by the time `load`
+ *   fires, so `market-main.js` has already emptied `#app` and mounted over it.
+ *   The element half only rules out a page that mounted something else.
  * - **`/legal/` and `/support/`** — prerendered for the same reason and waited
  *   for the same way. Their prose is assembled from in-repo constants rather
  *   than from a payload, which changes nothing about what a predicate has to

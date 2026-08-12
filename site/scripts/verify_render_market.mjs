@@ -119,24 +119,40 @@ test("every figure on the market page carries a source under it", { skip }, asyn
   );
 });
 
-test("every figure links the query that returns exactly it", { skip }, async () => {
-  // Eurostat's table view opens a dataset with every unit it carries at once,
+test("every figure whose table shows more than it links the query too", { skip }, async () => {
+  // Eurostat's databrowser opens a dataset with every unit it carries at once,
   // so a reader following «16 227 · Евростат» lands on a table reading −19.8
   // for the same country and quarter — the quarter-on-quarter rate, and one
   // click from the page's own argument to a figure that appears to contradict
-  // it. The second link is what closes that: it returns this number and
-  // nothing else. Verified end to end against the live API in review; what
-  // this holds is that the link is rendered at all.
+  // it. The second link returns this number and nothing else.
+  //
+  // The rule is per source line rather than a count, because a count passes
+  // while any one figure is missing its query: **every line citing a Eurostat
+  // databrowser page carries one.** НСИ's do not and need not — their source
+  // link is the workbook itself, which holds the cell and nothing beside it.
   await withApp(
     async (page, errors) => {
+      const missing = await page.locator("main.market .ss").evaluateAll((lines) =>
+        lines
+          .map((line) => {
+            const first = line.querySelector("a:not(.q-link)");
+            const href = first?.getAttribute("href") ?? "";
+            if (!/databrowser/.test(href)) return null;
+            return line.querySelector("a.q-link") ? null : href;
+          })
+          .filter(Boolean)
+      );
+      assert.deepEqual(
+        missing,
+        [],
+        `these figures cite a Eurostat table and link no query:\n  ${missing.join("\n  ")}\n\n` +
+          "That table shows every unit in the dataset at once, so the link alone " +
+          "can land a reader on a different number for the same quarter."
+      );
+
       const queries = page.locator("main.market .ss a.q-link");
       const n = await queries.count();
-      assert.ok(
-        n >= 6,
-        `only ${n} figures on the market page link the query behind them. The ` +
-          "publisher's table shows every unit in the dataset at once, so the " +
-          "table link alone can land a reader on a different number."
-      );
+      assert.ok(n >= 6, `only ${n} query links on the page — the rule above matched nothing`);
       for (let i = 0; i < n; i += 1) {
         const href = await queries.nth(i).getAttribute("href");
         assert.match(
