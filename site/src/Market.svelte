@@ -935,6 +935,7 @@
     <a href="#prices"
       ><span class="l-bg">колко струва</span><span class="l-en">what it costs</span></a
     >
+    <a href="#cities"><span class="l-bg">по градове</span><span class="l-en">by city</span></a>
     <a href="#deal"
       ><span class="l-bg">средната сделка</span><span class="l-en">the average deal</span></a
     >
@@ -1486,6 +1487,22 @@
         )}
       {/if}
     {/if}
+  </section>
+
+  <!-- 2b -----------------------------------------------------------------
+       Its own section, because section two had grown into the longest on the
+       page: two publishers' rate table, the index chart with two lines and its
+       85-row disclosure, the annual rate chart with its 81-row disclosure, and
+       then six cities with two more — read end to end, the city table arrives
+       after four charts and a reader looking for their own city has no way to
+       jump to it. It is also a different subject and a different publisher:
+       everything above is Eurostat's national series, and every cell below is a
+       cell НСИ published for one city. -->
+  <section id="cities">
+    <h2>
+      <span class="l-bg">Цените и сделките по градове</span>
+      <span class="l-en">Prices and sales by city</span>
+    </h2>
 
     {#if cities.cities.length}
       <p>

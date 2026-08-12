@@ -11,7 +11,17 @@ import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
-import { regionRow, SOFIA_CITY_CODE } from "../src/lib/view.js";
+import { regionQuarter, regionRow, SOFIA_CITY_CODE } from "../src/lib/view.js";
+import { periodLong } from "../src/lib/format.js";
+
+/**
+ * A period as the strip writes it, from the one implementation the site shares.
+ *
+ * Taken from `format.js` rather than restated here: the assertion is that the
+ * card carries the period a reader is shown, and a second copy of the rule in
+ * the test would go on passing over a card that had stopped using the first.
+ */
+const said = (value) => periodLong(value, "bg");
 
 test("the housing card says which of its figures are ours", { skip }, async () => {
   // имот.bg publish one average per district and nothing for Sofia as a whole,
@@ -262,6 +272,14 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
   // Sofia average takes home every lev of it. The period is the same shape —
   // blanked to an em dash it leaves an undated wage under a dated credit.
   const wage = regionRow(published("region_salary"), SOFIA_CITY_CODE);
+  // **The quarter comes from `regionQuarter`, which is what the card reads.**
+  // `regionRow` returns the область's row and no period at all, so
+  // `wage.ref_period` was `undefined` here — and `new RegExp(undefined)` is the
+  // EMPTY pattern, which matches every string there is. The assertion below ran
+  // on every green build and could not fail: a card with its date blanked to an
+  // em dash would have passed it, which is precisely the case its own comment
+  // says it exists for.
+  const quarter = regionQuarter(published("region_salary"), SOFIA_CITY_CODE).refPeriod;
   const payroll = published("payroll");
   const gross = Math.round(wage.value_eur);
   assert.ok(gross > 0, "region_salary.json carries no value to render for Sofia-city");
@@ -315,13 +333,17 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
       /(по наша сметка|our conversion)/,
       `the gross-to-net step on the wage card is not attributed to us:\n${caption}`
     );
-    // The quarter the two figures describe, as НСИ label it. Both are averages
-    // over one of their reporting periods and neither means anything without
-    // it — «1 915 € · ≈ 1 486 € нето» dates a Q1 average to nothing at all.
+    // The quarter the two figures describe, written the way a reader says it.
+    // Both are averages over one of НСИ's reporting periods and neither means
+    // anything without it — «1 915 € · ≈ 1 486 € нето» dates a Q1 average to
+    // nothing at all. Asserted in the READ form rather than the payload's own
+    // key, because the strip sits directly under a bar that writes «числата са
+    // към юни 2026 г.»: the same month in two notations on one screen is a
+    // difference a reader has to convert before they can see it is not one.
     assert.match(
       caption,
-      new RegExp(wage.ref_period),
-      `the wage card dates its figures to ${wage.ref_period} nowhere:\n${caption}`
+      new RegExp(said(quarter)),
+      `the wage card dates its figures to ${said(quarter)} nowhere:\n${caption}`
     );
     // **The star on НСИ's sheet, where the reader meets the number.** They mark
     // a whole year provisional until they finalise it, so their newest quarter
@@ -330,11 +352,11 @@ test("the Sofia card carries НСИ's own gross, not only our net", { skip }, as
     // on one and not the other, a reader has no way to tell the two claims are
     // the same claim. Read off the payload, so a finalised quarter drops the
     // assertion with the marker rather than pinning a word that must go.
-    if (wage.is_preliminary) {
+    if (published("region_salary")?.is_preliminary) {
       assert.match(
         caption,
         /(предварителни данни|preliminary)/,
-        `${wage.ref_period} is still provisional at НСИ and the Sofia card shows ` +
+        `${quarter} is still provisional at НСИ and the Sofia card shows ` +
           `it as settled:\n${caption}`
       );
     }

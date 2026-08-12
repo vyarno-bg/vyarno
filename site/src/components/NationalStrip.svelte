@@ -9,7 +9,15 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, HOME, t } from "$lib/content.js";
-  import { bgIn, number, integer, percentSigned, period, safeText, yearText } from "$lib/format.js";
+  import {
+    bgIn,
+    number,
+    integer,
+    percentSigned,
+    periodLong,
+    safeText,
+    yearText,
+  } from "$lib/format.js";
   import { fastestRisingDivision, CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE } from "$lib/view.js";
 
   const {
@@ -109,7 +117,7 @@
     region: regionName(lang),
     gross: regionMeanGross > 0 ? fmt0(regionMeanGross) : "—",
     net: regionNet > 0 ? fmt0(regionNet) : "—",
-    period: period(regionWagePeriod),
+    period: periodLong(regionWagePeriod, lang),
     // Empty for a settled quarter, so the marker is absent rather than negated.
     prelim: regionWageIsPreliminary ? t(COPY.srcPrelim, lang) : "",
   });
@@ -171,7 +179,9 @@
           <a href={estatHeadlineUrl} target="_blank" rel="noopener"
             >{COPY.srcEurostat[$lang] ?? COPY.srcEurostat.en}</a
           >
-          · {data.hicpHeadline?.ref_period ?? ""}{headlineIsFlash ? t(COPY.srcFlash, $lang) : ""}
+          · {periodLong(data.hicpHeadline?.ref_period, $lang)}{headlineIsFlash
+            ? t(COPY.srcFlash, $lang)
+            : ""}
         </div>
       </div>
     {/if}
@@ -219,7 +229,7 @@
               · <a href={salaryShapeUrl} target="_blank" rel="noopener"
                 >{t(COPY.statMedianSrc, $lang, {
                   shapeYear: salaryShapeYear,
-                  anchorPeriod: salaryAnchorPeriod,
+                  anchorPeriod: periodLong(salaryAnchorPeriod, $lang),
                 })}</a
               >
             {/if}
@@ -316,7 +326,7 @@
           <a href={estatCatUrl(fastest)} target="_blank" rel="noopener"
             >{COPY.srcEurostat[$lang] ?? COPY.srcEurostat.en}</a
           >
-          · {fastest.ref_period}
+          · {periodLong(fastest.ref_period, $lang)}
         </div>
       </div>
     {/if}
@@ -341,7 +351,7 @@
           <a href={estatUnempUrl} target="_blank" rel="noopener"
             >{COPY.srcEurostat[$lang] ?? COPY.srcEurostat.en}</a
           >
-          · {data.unemployment.ref_period}
+          · {periodLong(data.unemployment.ref_period, $lang)}
         </div>
       </div>
     {/if}
