@@ -39,6 +39,7 @@ import {
   dealInYearsOfPay,
   unoccupiedSharePct,
   indexTimesBase,
+  rangePosition,
   shortfallPct,
   flooredCuts,
   homeYears,
@@ -2973,4 +2974,115 @@ export function marketPriceToIncomeSeries(structure) {
     value: Number.isFinite(block?.value) ? block.value : null,
     refPeriod: block?.ref_period ?? null,
   };
+}
+
+/**
+ * The fewest points a series needs before the page will place a reading in it.
+ *
+ * Five, which is the gate every chart on `/market/` already draws behind. A
+ * range over two readings is not a range — it is the pair of them, and a marker
+ * halfway along it says "mid-range" about a series with no middle.
+ */
+export const RANGE_MIN_POINTS = 5;
+
+/**
+ * Which series the strip places, in the order it draws them, and where each
+ * one's working is on the page.
+ *
+ * `times` divides by the series' own reference, so an index arrives at the
+ * strip in the multiples the rest of the page reads it in rather than as a
+ * level nobody has a feel for. `pct` and `count` are already in their units;
+ * `ratio` is Eurostat's own index against Bulgaria's long-run average and has
+ * none.
+ */
+const RANGE_ROWS = Object.freeze(
+  [
+    { key: "deals", format: "count", href: "#volume" },
+    { key: "index", format: "times", href: "#prices" },
+    { key: "indexReal", format: "times", href: "#prices" },
+    // Signed, because every reading of it is a direction: the series runs
+    // +34.6% to -26.8% and «6,9%» without its sign is two different quarters.
+    { key: "rate", format: "signedPct", href: "#prices" },
+    { key: "pti", format: "ratio", href: "#ratio" },
+    // Unsigned, because it is a share of the population and not a change. The
+    // signed formatter would print «+6,9%» and invent a movement.
+    { key: "overburden", format: "pct", href: "#ratio" },
+  ].map(Object.freeze)
+);
+
+/**
+ * **Where today's reading sits inside each published series' own range.**
+ *
+ * The page answers four questions at the top and then spends six sections and
+ * six charts on the working, and a reader who wants the whole picture at once
+ * has to read all six. This is that picture: one line per series, each saying
+ * how far along its own record the newest reading is — and nothing else.
+ *
+ * **IT POSITIONS AND IT DOES NOT SCORE.** There is no weighting, no total, and
+ * no composite, and that is a constraint rather than an omission. Prices,
+ * volume, rates and cost burden point in different directions on purpose;
+ * combining them into one figure would decide on the reader's behalf which of
+ * them is the bad news, using credibility that belongs to Eurostat, and would
+ * produce the single number on this site nobody could check against anything
+ * (docs/principles.md P6). Every row here is one publisher's one series, and a
+ * reader can open the numbers table under its own chart and find the same three
+ * readings.
+ *
+ * **The extremes are the SERIES' own, never the drawn scale's.** `plotSeries`
+ * clamps its `min` at or below zero so a chart cannot crop its axis, which is
+ * the right rule for a plot and the wrong one here: placed against a floor of
+ * zero, every one of these sits in the top fifth and the strip says the same
+ * thing six times. `peak` and `trough` are the highest and lowest readings the
+ * publisher has actually printed, which is what "inside its own range" means.
+ *
+ * **A row that cannot be placed is absent rather than empty.** A series with
+ * fewer than `RANGE_MIN_POINTS` readings, a payload that failed to fetch, a
+ * flat series whose peak and trough are the same figure — each returns no row,
+ * the way the deflated-peak sentence renders nothing rather than «0,0% под
+ * него». An empty cell on a strip of positions reads as a position.
+ *
+ * @param {object|null} houseMarket
+ * @param {object|null} structure
+ * @returns {{rows: Array<object>, sources: Array<object>}}
+ */
+export function marketRangeStrip(houseMarket, structure) {
+  const nominal = marketPriceIndexSeries(houseMarket);
+  const real = marketPriceIndexRealSeries(houseMarket);
+  const series = {
+    deals: marketVolumeSeries(houseMarket),
+    index: nominal,
+    indexReal: real,
+    rate: marketPriceRateSeries(houseMarket),
+    pti: marketPriceToIncomeSeries(structure),
+    overburden: marketOverburdenSeries(structure),
+  };
+
+  const rows = [];
+  for (const row of RANGE_ROWS) {
+    const s = series[row.key];
+    if (!s || s.points.length < RANGE_MIN_POINTS) continue;
+    const at = rangePosition(s.latest?.value, s.trough?.value, s.peak?.value);
+    if (at === null) continue;
+    // In the units the page shows, so the low, the latest and the high on one
+    // line are the three figures a reader could read off the chart below.
+    const shown = (v) => (row.format === "times" ? indexTimesBase(v, s.reference) : v);
+    rows.push({
+      key: row.key,
+      format: row.format,
+      href: row.href,
+      at,
+      value: shown(s.latest?.value),
+      low: shown(s.trough?.value),
+      high: shown(s.peak?.value),
+      latestPeriod: s.latest?.period ?? null,
+      lowPeriod: s.trough?.period ?? null,
+      highPeriod: s.peak?.period ?? null,
+      from: s.from,
+      to: s.to,
+      sourceUrl: s.sourceUrl,
+      apiUrl: s.apiUrl,
+    });
+  }
+
+  return { rows };
 }

@@ -2199,6 +2199,37 @@ export const COPY = {
   // also the WCAG text alternative and the thing that makes the page quotable,
   // so it carries every point rather than a sample.
   mktColPeriod: { bg: "Период", en: "Period" },
+
+  // The range strip: one row per published series, saying where the newest
+  // reading sits inside that series' own record. Positions, never scores —
+  // nothing here weighs one row against another, and there is no combined
+  // figure for a label to name (view.js#marketRangeStrip).
+  mktTblRange: {
+    bg: "Къде е всяко число в собствената си история",
+    en: "Where each figure sits in its own record",
+  },
+  mktColRangeWhat: { bg: "Показател", en: "Indicator" },
+  mktColRangeWhere: { bg: "В собствената си история", en: "Within its own record" },
+  mktColRangeNow: { bg: "Сега", en: "Now" },
+  mktRangeDeals: { bg: "продадени жилища", en: "dwellings sold" },
+  mktRangeIndex: { bg: "цените, в парите на деня", en: "prices, in the money of the day" },
+  mktRangeIndexReal: {
+    bg: "цените, без поскъпването на всичко друго",
+    en: "prices, with everything else's rise taken out",
+  },
+  mktRangeRate: { bg: "промяната за една година", en: "the change over one year" },
+  mktRangePti: { bg: "цена спрямо доходите", en: "price against incomes" },
+  mktRangeOverburden: {
+    bg: "дял с тежки разходи за жилище",
+    en: "share with heavy housing costs",
+  },
+  // The track's own text alternative. A dot on a line is unreadable without
+  // one, and the three readings it names are the three a reader would take off
+  // the chart in the section this row links to.
+  mktRangeMark: {
+    bg: "{what}: най-ниско {low} през {lowAt}, най-високо {high} през {highAt}. Сега {now} през {nowAt}.",
+    en: "{what}: lowest {low} in {lowAt}, highest {high} in {highAt}. Now {now} in {nowAt}.",
+  },
   mktOpenQuarters: {
     bg: "виж числата — всички {n} тримесечия",
     en: "read the numbers — all {n} quarters",

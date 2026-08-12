@@ -49,6 +49,7 @@
     marketOverburdenSeries,
     marketPriceIndexRealSeries,
     marketIndexReading,
+    marketRangeStrip,
     marketRent,
     statusLettersUsed,
   } from "./lib/view.js";
@@ -283,6 +284,48 @@
 
   /** The rent line the calculator already publishes, read here rather than refetched. */
   const rent = $derived(marketRent(data.hicpCategories));
+
+  /**
+   * Where the newest reading of each series sits inside that series' own range.
+   *
+   * The arithmetic is `mirror.js#rangePosition` and the wiring is
+   * `view.js#marketRangeStrip`; what is here is the box it is drawn in, the
+   * same split every plot on this page follows.
+   */
+  const rangeStrip = $derived(marketRangeStrip(data.houseMarket, data.houseMarketStructure));
+  const RG_W = 100,
+    RG_H = 14;
+  /**
+   * Where a position lands on the track, in the track's own coordinates.
+   *
+   * Inset by the marker's own radius at each end, because a reading AT its
+   * series' record is drawn at 0 or at 1 — and a dot centred on the end of the
+   * line has half of itself outside the box. `overflow: visible` would paint it
+   * and it would still be the only mark on the strip whose centre is not on the
+   * track it belongs to.
+   */
+  const RG_R = 3.5;
+  const rangeX = (at) => RG_R + at * (RG_W - 2 * RG_R);
+
+  /** A strip row's figure, written the way the section it links to writes it. */
+  const rangeValue = (row, value) => {
+    if (!Number.isFinite(value)) return "—";
+    if (row.format === "count") return fmt0(value);
+    if (row.format === "times") return `×${fmt(value)}`;
+    if (row.format === "signedPct") return pct(value);
+    if (row.format === "pct") return `${fmt(value)}%`;
+    return fmt(value);
+  };
+
+  /** A strip row's label. Words, so they live in the component's copy file. */
+  const RANGE_LABEL = {
+    deals: COPY.mktRangeDeals,
+    index: COPY.mktRangeIndex,
+    indexReal: COPY.mktRangeIndexReal,
+    rate: COPY.mktRangeRate,
+    pti: COPY.mktRangePti,
+    overburden: COPY.mktRangeOverburden,
+  };
 
   /** The rows of a numbers table: one period, one value per column. */
   const rowsOf = (series, extra = []) =>
@@ -692,6 +735,125 @@
       )}
     {/if}
   </div>
+
+  <!--
+    Where today sits inside each series' own record — the whole page, on one
+    screen, without a verdict in it.
+
+    THE ANSWER TO "why not one market-health score". Six sections and six charts
+    give a reader no way to see everything at once, which is the real complaint,
+    and a single composite would answer it by deciding on their behalf which of
+    these is the bad news: whose fall counts as good news depends on whether
+    they own or are buying, and any weighting of prices, volume, rates and cost
+    burden makes that call using credibility that belongs to Eurostat. It would
+    also be the one figure on this site nobody can check against anything. So
+    every row is one publisher's one series, placed against its own extremes and
+    against nothing else, and each links the section that shows the working.
+
+    ONE HUE, and it is `--real` — the accent every data mark on this page is
+    already drawn in. Not red-to-green and not a two-ended scale: `--erode`
+    means "money leaving you" and `--real` its opposite everywhere else on the
+    site, so painting a position in either says which end is the bad end. Drawn
+    identically on all six rows, the accent says "this is the reading" and
+    nothing more.
+
+    BELOW the answer cards rather than above them. At 360px the four cards
+    already end 710px down an 800px screen, so there is no room above them for
+    anything at all — and pushing the summary a reader came for off their screen
+    to make space for a second one is the trade this strip exists to avoid.
+  -->
+  {#if rangeStrip.rows.length}
+    <p class="lead">
+      <span class="l-bg"
+        >Всеки от редовете отдолу има своя история. Точката показва къде в нея е последното число:
+        най-лявото е най-ниското, което Евростат е публикувал за този ред, най-дясното —
+        най-високото. Нищо тук не се събира в една обща оценка — редовете мерят различни неща и не
+        сочат в една посока.</span
+      >
+      <span class="l-en"
+        >Each of the series below has a record of its own. The dot is where the newest reading sits
+        in it: the left end is the lowest Eurostat have published for that series and the right end
+        the highest. Nothing here adds up to a single score — the series measure different things
+        and do not point one way.</span
+      >
+    </p>
+
+    <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblRange, $lang)}>
+      <table class="fig-table range">
+        <thead>
+          <tr>
+            <th scope="col">{@render colHead(COPY.mktColRangeWhat, null)}</th>
+            <th scope="col">{@render colHead(COPY.mktColRangeWhere, null)}</th>
+            <th scope="col" class="num">{@render colHead(COPY.mktColRangeNow, null)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each rangeStrip.rows as row (row.key)}
+            {@const label = RANGE_LABEL[row.key]}
+            <tr>
+              <th scope="row">
+                <a href={row.href}>
+                  <span class="l-bg">{label.bg}</span>
+                  <span class="l-en">{label.en}</span>
+                </a>
+                <!-- The row's own provenance, on the row. The publisher is the
+                     same across the strip and the WINDOW is not: these six
+                     records start in four different years, and a position means
+                     nothing without the span it is a position inside. -->
+                <span class="ss">
+                  {@render srcLine(COPY.srcEurostat, row.sourceUrl, spanned(row), row.apiUrl)}
+                </span>
+              </th>
+              <td class="track">
+                <svg
+                  class="rng"
+                  viewBox="0 0 {RG_W} {RG_H}"
+                  role="img"
+                  aria-label={t(COPY.mktRangeMark, $lang, {
+                    what: t(label, $lang),
+                    low: rangeValue(row, row.low),
+                    lowAt: at(row.lowPeriod),
+                    high: rangeValue(row, row.high),
+                    highAt: at(row.highPeriod),
+                    now: rangeValue(row, row.value),
+                    nowAt: at(row.latestPeriod),
+                  })}
+                >
+                  <line
+                    class="rng-track"
+                    x1={rangeX(0)}
+                    y1={RG_H / 2}
+                    x2={rangeX(1)}
+                    y2={RG_H / 2}
+                  />
+                  <circle class="rng-dot" cx={rangeX(row.at)} cy={RG_H / 2} r={RG_R} />
+                </svg>
+                <small class="q mono"
+                  >{rangeValue(row, row.low)} … {rangeValue(row, row.high)}</small
+                >
+              </td>
+              <td class="num mono">{rangeValue(row, row.value)}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">
+      <span class="l-bg"
+        >Ред, който само расте, стои в десния си край, защото такъв е редът, а не защото нещо се е
+        случило точно сега. Затова двата реда за цените стоят поотделно: единият е в парите на деня,
+        другият — без поскъпването на всичко останало, и точките им не са на едно и също място.
+        Първата и последната година на всеки ред са различни; всяка пише своята под името си.</span
+      >
+      <span class="l-en"
+        >A series that only ever rises sits at its right end because that is what the series does,
+        not because of anything happening now. That is why the two price lines are here separately:
+        one is in the money of the day and the other takes out the rise in everything else, and
+        their dots are not in the same place. Each record starts and ends in a different year, and
+        every row writes its own under its name.</span
+      >
+    </p>
+  {/if}
 
   <p class="lead">
     <span class="l-bg"
@@ -2580,6 +2742,55 @@
     color: var(--muted);
     font-size: var(--fs-micro);
   }
+  /* The range strip. A row is a label, a track and a figure, and the track cell
+     is what has to hold its width — at 360px the label column takes what it
+     needs and the figure column is `nowrap`, so a track with no floor of its
+     own is the cell that collapses. 96px is the narrowest a six-position line
+     is still readable at, measured at 360. */
+  .fig-table.range td.track {
+    width: 108px;
+    padding-right: 12px;
+  }
+  .fig-table.range tbody th {
+    font-weight: 400;
+    padding-right: 12px;
+  }
+  /* The label is the route to the working. Drawn as the page's other in-text
+     links are, so a reader can tell it goes somewhere. */
+  .fig-table.range tbody th > a {
+    color: var(--real-ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--real-soft);
+    font-weight: 500;
+  }
+  .fig-table.range tbody th > a:hover {
+    border-bottom-color: var(--real);
+  }
+  .fig-table.range .ss {
+    display: block;
+    margin-top: 3px;
+  }
+  .fig-table.range .q {
+    margin-top: 2px;
+  }
+  .rng {
+    width: 108px;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .rng-track {
+    stroke: var(--rule);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  /* ONE HUE, and the same one on every row. `--real` is the accent every data
+     mark on this page is drawn in; `--erode` beside it would mean "this one
+     costs you", which is a reading of the position rather than the position. */
+  .rng-dot {
+    fill: var(--real);
+  }
+
   /* A city's history, in a table cell. `height: auto` keeps the box 1:1 rather
      than stretching to the row — a sparkline drawn with one axis scaled and the
      other not is the distortion `verify_render_strip.mjs` fails a chart for. */

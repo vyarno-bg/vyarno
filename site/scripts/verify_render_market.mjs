@@ -90,6 +90,15 @@ test("every figure on the market page carries a source under it", { skip }, asyn
       const uncited = await tables.evaluateAll((els) =>
         els
           .map((el, i) => {
+            // A table that cites on every ROW needs no line beside it. The
+            // range strip is the case: six series against six different
+            // windows, so one caption under it could not carry six periods and
+            // the provenance sits on the row it belongs to.
+            const rows = [...el.querySelectorAll("tbody tr")];
+            if (rows.length && rows.every((r) => r.querySelector(".ss a[href^='http']"))) {
+              return null;
+            }
+
             const box = el.closest(".scroll") ?? el;
             // A numbers table publishes the series of the figure above it and
             // is cited by that figure's own source line, which sits above the
@@ -103,8 +112,16 @@ test("every figure on the market page carries a source under it", { skip }, asyn
             do {
               near = upwards ? near.previousElementSibling : near.nextElementSibling;
             } while (near && upwards && near.matches("details.numbers"));
-            const links = near ? near.querySelectorAll("a[href^='http']").length : 0;
-            return links >= 1 ? null : `table ${i} beside "${near?.className ?? "nothing"}"`;
+            // **The neighbour has to BE a source line, not merely hold a
+            // link.** Stepping over sibling disclosures widened what this rule
+            // will accept, and what it accepted was any element with an
+            // outbound `<a>` in it — a paragraph linking Eurostat's methodology
+            // reads as a citation to this walk while the table beside it cites
+            // nobody. `.ss` and `.cap` are the two classes the page writes a
+            // source line as, and both are checked for the link as well.
+            const cites =
+              near?.matches(".ss, .cap") && near.querySelector("a[href^='http']") !== null;
+            return cites ? null : `table ${i} beside "${near?.className ?? "nothing"}"`;
           })
           .filter(Boolean)
       );
@@ -475,6 +492,104 @@ test("the charts are legible on the phone, not only on the desk", { skip }, asyn
     },
     "/market/",
     { viewport: { width: 360, height: 800 } }
+  );
+});
+
+test("the range strip puts every marker where the published figures put it", { skip }, async () => {
+  // The strip's whole claim is that a dot on a line says where the newest
+  // reading sits inside its own series' record. A marker that is anywhere else
+  // is worse than no marker: it is a picture of a number, drawn wrong, on the
+  // page that exists to be checked.
+  //
+  // So the position is recomputed here from the committed payloads and compared
+  // against where the browser actually painted the dot — the drawn centre as a
+  // fraction of the drawn track, not the `cx` attribute, because a CSS rule
+  // that scales or offsets the box would leave the attribute right and the
+  // picture wrong.
+  //
+  // **The extremes are the SERIES' own, never zero.** `plotSeries` floors its
+  // scale at or below zero so no chart can crop an axis, and reusing that here
+  // would put all six of these in the top fifth of their tracks and make the
+  // strip say the same thing six times. What is asserted is the arithmetic the
+  // strip claims: peak, trough, latest.
+  const market = payload("house_market");
+  const structure = payload("house_market_structure");
+  if (!market || !structure) return; // no refresh in this checkout
+
+  const at = (entries) => {
+    const values = Object.keys(entries)
+      .sort()
+      .map((k) => entries[k])
+      .filter(Number.isFinite);
+    const low = Math.min(...values);
+    const high = Math.max(...values);
+    return (values[values.length - 1] - low) / (high - low);
+  };
+  const col = (rows, f) =>
+    Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, f ? r[f] : r]));
+
+  const expected = [
+    ["dwellings sold", at(col(market.deals.series_by_period, "total"))],
+    ["house price index", at(col(market.price_index.series_by_period, "total"))],
+    ["deflated index", at(col(market.price_index_real.series_by_period))],
+    ["annual price change", at(col(market.price_index.annual_rate_pct, "total"))],
+    ["price to income", at(col(structure.price_to_income.series_by_period))],
+    ["housing cost overburden", at(col(structure.housing_cost_overburden.series_by_period))],
+  ];
+
+  await withApp(
+    async (page, errors) => {
+      const drawn = await page.evaluate(() =>
+        [...document.querySelectorAll("main.market table.range tbody tr")].map((tr) => {
+          const track = tr.querySelector("line.rng-track").getBoundingClientRect();
+          const dot = tr.querySelector("circle.rng-dot").getBoundingClientRect();
+          return {
+            label: tr.querySelector("th a").innerText.trim(),
+            at: (dot.left + dot.width / 2 - track.left) / track.width,
+            named: tr.querySelector("svg.rng").getAttribute("aria-label") ?? "",
+          };
+        })
+      );
+
+      assert.equal(
+        drawn.length,
+        expected.length,
+        `the strip draws ${drawn.length} rows and this test knows ${expected.length}. Every ` +
+          "series it places is measured here, or the rule guards the ones it remembers."
+      );
+      for (const [i, [what, want]] of expected.entries()) {
+        // The track is drawn with round caps and the dot has a radius, so the
+        // two boxes differ by a stroke either side. A whole percent of the
+        // track is well inside that and nowhere near the gap a wrong series
+        // would open.
+        assert.ok(
+          Math.abs(drawn[i].at - want) < 0.02,
+          `the ${what} marker sits at ${(drawn[i].at * 100).toFixed(1)}% of its track where the ` +
+            `published series puts it at ${(want * 100).toFixed(1)}%. A dot that is not where ` +
+            "the arithmetic says is a picture of a number, drawn wrong."
+        );
+        assert.ok(
+          drawn[i].named.length > 30 && /\d/.test(drawn[i].named),
+          `the ${what} track has no text alternative naming its readings: "${drawn[i].named}"`
+        );
+      }
+
+      // …and the strip carries no total, no rank and no score. Six positions
+      // against six different records do not add up to anything, and a seventh
+      // row summing them would be the one figure on this site nobody could
+      // check (docs/principles.md P6).
+      const heads = await page.locator("main.market table.range thead th").allInnerTexts();
+      assert.equal(heads.length, 3, `the strip has ${heads.length} columns: ${heads.join(" | ")}`);
+      assert.equal(
+        await page.locator("main.market table.range tfoot").count(),
+        0,
+        "the range strip grew a footer row. Six positions against six different records " +
+          "do not total, and anything drawn across them is a composite this page may not make."
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
   );
 });
 
