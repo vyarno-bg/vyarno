@@ -727,23 +727,76 @@ is: new builds and existing dwellings move differently in volume, and one
 year-on-year figure for the total leaves the table's other two rows reading as
 though they had not moved.
 
+### The nominal index and the deflated one
+
+`prc_hpi_q` at `I15_Q` is the house price index in the money of the day.
+`tipsho30` at the same unit is the same index divided by the national accounts
+deflator for private final consumption. **Both are Eurostat's, neither is
+computed here**, and they are published together because either one alone
+misleads: nominally the index sits far above its 2008 peak, deflated it sits
+below it, and a site whose whole subject is the gap between a number and what it
+buys cannot show only the first.
+
+The pair is drawn on one axis with nothing rescaled, which is a property the
+pipeline gates rather than the page assumes: **the four quarters of the base year
+each index names average to 100.** That identity is definitional, so anything
+else means the cube read is not the cube named — and `I15_Q` against `I25_Q` is
+the same series on two bases, both answering 200, one of them putting today at
+109 instead of 273.
+
+`tipsho30` has no `purchase` dimension. Eurostat deflate the total only, so
+there is no new-build/existing split to be had and nothing may imply one.
+
+### Eurostat's flags, and why the page draws them
+
+`status_by_period` carries the publisher's own letters at the quarters they
+apply to — `b` break in series, `e` estimate, `p` provisional, `d` definition
+differs. They are sparse: a quarter Eurostat did not flag has no entry, so the
+presence of one means something rather than being a default to filter.
+
+**A twenty-one-year line drawn unbroken across a break the publisher declared is
+a claim they declined to make**, on our behalf. The chart marks the break
+quarters and the numbers table prints the letter per row, with a key naming only
+the letters the series actually carries — a legend for a marker that is nowhere
+on the chart is a question a reader cannot answer.
+
 ### The two charts, and the axis rule they are drawn under
 
-`marketVolumeSeries` and `marketPriceToIncomeSeries` return the published points
-and the maximum over them. Neither returns a minimum, **and that absence is the
-guarantee**: both plots are drawn from zero, and there is no floor parameter for
-a later edit to introduce. A y-axis cropped to a property series' own range
-turns any of them into a cliff, which is the distortion this page exists not to
-make.
+`plotSeries` shapes every series the page draws, and **its minimum is clamped at
+or below zero with no way to raise it**. That absence is the guarantee rather
+than a default: a y-axis cropped to a property series' own range turns any of
+them into a cliff, which is the distortion this page exists not to make, and the
+way to keep it out is to leave no caller a floor to set.
+
+The clamp is `min(0, smallest)` rather than a constant zero, because Eurostat's
+annual rate ran from +34.6% to −26.8% and a plot that dropped its negative half
+would be describing a different market. What is invariant is that **the drawn
+scale contains zero**, which is what makes a bar twice as tall mean twice as
+much.
 
 The price-to-income plot's scale covers its own reference line as well as its
 data, because the rule at 100 IS the indicator — a plot that cropped it out
 would be missing the thing it is about in every year from 2004 to 2010, when the
 ratio ran above its own average.
 
-`verify_render_market.mjs` measures it rather than reading the source: the drawn
-heights of the smallest and the largest reading have to be in the same ratio as
-the published figures, which no floor can survive.
+`verify_render_market.mjs` measures it rather than reading the source: for every
+chart on the page, the drawn distances from the zero line to the smallest and the
+largest reading have to be in the same ratio as the published figures, which no
+floor can survive.
+
+Six charts carry it — dwellings sold, the index level with its deflated twin, the
+annual rate, the average deal split by purchase type, price-to-income against its
+own average, and the overburden share — plus a sparkline per city, all six of
+those on **one shared scale**, because six charts each drawn to its own range are
+six pictures of the same shape and comparing rows is the only reason to put a
+chart in a column.
+
+Every chart is also published as a table inside a `<details>`. That is the WCAG
+text alternative, the only way to read one quarter off an eighty-five-quarter
+line, and what makes the page quotable — a `<title>` on each mark answers a
+pointer and leaves out touch, the keyboard and every screen reader. A `<details>`
+is a disclosure and not an input, so the rule that this page takes nothing from
+the reader is untouched.
 
 ### The unoccupied share of the dwelling stock
 

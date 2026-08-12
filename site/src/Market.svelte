@@ -43,6 +43,12 @@
     marketNsiNationalRate,
     marketVolumeSeries,
     marketPriceToIncomeSeries,
+    marketPriceIndexSeries,
+    marketPriceRateSeries,
+    marketAverageDealSeries,
+    marketOverburdenSeries,
+    marketPriceIndexRealSeries,
+    statusLettersUsed,
   } from "./lib/view.js";
   import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
 
@@ -99,51 +105,6 @@
           en: `${sa.en} ${periodLong(a, "en")}, ${sb.en} ${periodLong(b, "en")}`,
         };
 
-  const volume = $derived(marketVolume(data.houseMarket));
-  const deal = $derived(marketAverageDeal(data.houseMarket));
-  const priceRate = $derived(marketPriceRate(data.houseMarket));
-  const structure = $derived(marketStructure(data.houseMarketStructure));
-  const yearsOfPay = $derived(marketDealInYearsOfPay(data.houseMarket, data.sectorSalary));
-  const cities = $derived(marketCities(data.nsiHousing));
-  const nsiNational = $derived(marketNsiNationalRate(data.nsiHousing));
-  const volumeSeries = $derived(marketVolumeSeries(data.houseMarket));
-  const ptiSeries = $derived(marketPriceToIncomeSeries(data.houseMarketStructure));
-
-  /**
-   * The plot box, and the mapping from a published figure to a coordinate in
-   * it.
-   *
-   * Geometry rather than domain math, which is why it is here and not in
-   * `mirror.js` — `systemWedgeLadder` draws the same line, returning the rates
-   * and leaving the pixels to the component that knows how wide its box is.
-   *
-   * **`barH` takes a maximum and no minimum, and that is the honesty
-   * constraint rather than a simplification.** Both plots are drawn from zero.
-   * A y-axis cropped to a series' own range turns every property chart into a
-   * cliff, and this is the page that refuses to tell a reader what to think —
-   * so there is no floor parameter for a later edit to introduce.
-   */
-  const CH_W = 640,
-    CH_H = 190,
-    CH_PAD_L = 52,
-    CH_PAD_R = 10,
-    CH_TOP = 12,
-    CH_BASE = CH_H - 26;
-  const plotW = CH_W - CH_PAD_L - CH_PAD_R;
-  const barH = (value, max) => (max > 0 ? ((CH_BASE - CH_TOP) * value) / max : 0);
-  const barW = (n) => Math.max(1, (plotW / n) * 0.72);
-  const barX = (i, n) => CH_PAD_L + (plotW / n) * (i + 0.14);
-  /** The line, with the first point moved to and the rest drawn through. */
-  const ptiPath = $derived(
-    ptiSeries.points
-      .map((p, i) => {
-        const n = ptiSeries.points.length;
-        const x = CH_PAD_L + (n > 1 ? (plotW * i) / (n - 1) : plotW / 2);
-        return `${i ? "L" : "M"}${x.toFixed(2)} ${(CH_BASE - barH(p.value, ptiSeries.max)).toFixed(2)}`;
-      })
-      .join(" ")
-  );
-
   /**
    * A signed percentage, from the one implementation the whole site shares.
    *
@@ -160,12 +121,137 @@
    */
   const pct = (x) => percentSigned(x, 1, $lang);
 
+  const volume = $derived(marketVolume(data.houseMarket));
+  const deal = $derived(marketAverageDeal(data.houseMarket));
+  const priceRate = $derived(marketPriceRate(data.houseMarket));
+  const structure = $derived(marketStructure(data.houseMarketStructure));
+  const yearsOfPay = $derived(marketDealInYearsOfPay(data.houseMarket, data.sectorSalary));
+  const cities = $derived(marketCities(data.nsiHousing));
+  const nsiNational = $derived(marketNsiNationalRate(data.nsiHousing));
+  const volumeSeries = $derived(marketVolumeSeries(data.houseMarket));
+  const ptiSeries = $derived(marketPriceToIncomeSeries(data.houseMarketStructure));
+
+  /**
+   * The plot box, and the mapping from a published figure to a coordinate in it.
+   *
+   * Geometry rather than domain math, which is why it is here and not in
+   * `mirror.js` — `systemWedgeLadder` draws the same line, returning the rates
+   * and leaving the pixels to the component that knows how wide its box is.
+   *
+   * **`yOf` takes a series and never a pair of bounds, and that is the honesty
+   * constraint rather than a convenience.** `plotSeries` clamps `min` at or
+   * below zero and offers no way to raise it, so every scale on this page
+   * contains zero by construction and there is no floor for a later edit to
+   * pass in. A y-axis cropped to a property series' own range turns any of them
+   * into a cliff, and this is the page that refuses to tell a reader what to
+   * think.
+   */
+  const CH_W = 640,
+    CH_H = 190,
+    CH_PAD_L = 54,
+    CH_PAD_R = 12,
+    CH_TOP = 14,
+    CH_BASE = CH_H - 28;
+  const plotW = CH_W - CH_PAD_L - CH_PAD_R;
+  const plotH = CH_BASE - CH_TOP;
+  const span = (s) => s.max - s.min || 1;
+  const yOf = (value, s) => CH_TOP + plotH * (1 - (value - s.min) / span(s));
+  /** Evenly across the box, first point on the left edge and last on the right. */
+  const lineX = (i, n) => CH_PAD_L + (n > 1 ? (plotW * i) / (n - 1) : plotW / 2);
+  /** A column occupies its own slot with a gap, so 85 of them still read. */
+  const colX = (i, n) => CH_PAD_L + (plotW / n) * (i + 0.12);
+  const colW = (n) => Math.max(0.8, (plotW / n) * 0.76);
+  /** The sparkline box, and its own mapping. Small, and drawn 1:1 like the rest. */
+  const SP_W = 108,
+    SP_H = 26;
+  const spY = (value, scale) =>
+    2 + (SP_H - 4) * (1 - (value - scale.min) / (scale.max - scale.min || 1));
+
+  const pathOf = (s) =>
+    s.points
+      .map(
+        (p, i) =>
+          `${i ? "L" : "M"}${lineX(i, s.points.length).toFixed(2)} ${yOf(p.value, s).toFixed(2)}`
+      )
+      .join(" ");
+
+  /**
+   * Every series the page draws, and the ones it draws a table of.
+   *
+   * Twenty-one years of the official index, twenty of Eurostat's own annual
+   * rate, thirty-seven quarters of what a dwelling actually changed hands for
+   * and twenty of the overburden share were all in the payloads and none of
+   * them reached the page — it rendered the newest reading of each and threw
+   * the history away. A single reading of a figure that has swung by fifteen
+   * points twice tells a reader almost nothing about it.
+   */
+  const indexSeries = $derived(marketPriceIndexSeries(data.houseMarket));
+  const indexRealSeries = $derived(marketPriceIndexRealSeries(data.houseMarket));
+  /**
+   * Both index lines on ONE scale, which they are already on.
+   *
+   * Eurostat publish the deflated series on the same 2015 base as the nominal
+   * one and the gate holds them to it, so nothing is rescaled here — the shared
+   * maximum is the only thing the drawing needs, and the two lines mean the
+   * same 100.
+   */
+  const indexScale = $derived({
+    min: 0,
+    max: Math.max(indexSeries.max, indexRealSeries.max),
+    reference: 100,
+  });
+  const flagKey = $derived(statusLettersUsed([indexSeries.flags, indexRealSeries.flags]));
+  const rateSeries = $derived(marketPriceRateSeries(data.houseMarket));
+  const dealNewSeries = $derived(marketAverageDealSeries(data.houseMarket, "new"));
+  const dealExistingSeries = $derived(marketAverageDealSeries(data.houseMarket, "existing"));
+  const overburdenSeries = $derived(marketOverburdenSeries(data.houseMarketStructure));
+
+  /**
+   * Both average-deal lines on ONE scale, so the gap between them is the gap.
+   *
+   * Drawn against their own maxima the two lines would sit on top of each other
+   * and a new build would look the same price as an existing dwelling — which
+   * is the single thing this pair exists to show is not so.
+   */
+  const dealScale = $derived({
+    min: 0,
+    max: Math.max(dealNewSeries.max, dealExistingSeries.max),
+  });
+
+  /** A series' own window, as the `{bg, en}` period a source line prints. */
+  const spanned = (series) => ({
+    bg: `${periodLong(series.from, "bg")} – ${periodLong(series.to, "bg")}`,
+    en: `${periodLong(series.from, "en")} – ${periodLong(series.to, "en")}`,
+  });
+
+  /** A disclosure label with its own row count in it, never a written figure. */
+  const countLabel = (key, n) => ({
+    bg: t(key, "bg", { n: fmt0(n) }),
+    en: t(key, "en", { n: fmt0(n) }),
+  });
+
   /** The rent line the calculator already publishes, read here rather than refetched. */
   const rent = $derived(
     (data.hicpCategories?.categories ?? [])
       .flatMap((c) => c.groups ?? [])
       .find((g) => g.cp_code === "CP041") ?? null
   );
+
+  /** The rows of a numbers table: one period, one value per column. */
+  const rowsOf = (series, extra = []) =>
+    series.points.map((p, i) => ({
+      period: p.period,
+      values: [p.value, ...extra.map((e) => e.points[i]?.value ?? null)],
+      flag: series.flags?.[p.period] ?? null,
+    }));
+
+  /** Eurostat's own key, for the letters this page's series actually carry. */
+  const FLAG_COPY = {
+    b: COPY.mktFlagB,
+    e: COPY.mktFlagE,
+    p: COPY.mktFlagP,
+    d: COPY.mktFlagD,
+  };
 </script>
 
 <svelte:head>
@@ -310,6 +396,137 @@
       <a href="/legal/#sources">{COPY.oursMoreK.en} →</a></span
     >
   </p>
+{/snippet}
+
+<!--
+  A plot, and the two things that make it readable rather than decorative.
+
+  EVERY MARK CARRIES A `<title>`. It is the browser's own tooltip, it costs one
+  element per point, it needs no script and no CSP exception, and it is the
+  answer to "what is that bar" for anyone with a pointer. It is NOT the whole
+  answer: a `<title>` is unreachable by touch and by keyboard, which is why
+  every chart on this page is also published as a table.
+
+  THE TABLE IS THE CHART. `numbersTable` below renders the same series as rows,
+  inside a `<details>` a reader opens — the WCAG text alternative, the way to
+  read an exact figure off a 85-quarter plot, and the thing that makes the page
+  quotable. A `<details>` is a disclosure, not an input: it takes nothing from
+  the reader and there is nothing in it a figure of theirs could be threaded
+  into, so the rule that this page has no input control is untouched.
+
+  The scale comes from `plotSeries`, which clamps its own minimum at or below
+  zero. Nothing here can crop an axis because nothing here is handed a floor.
+-->
+{#snippet columns(series, label, scale = null)}
+  {@const s = scale ?? series}
+  {@const n = series.points.length}
+  {#each series.points as p, i (p.period)}
+    <rect
+      class="plot-bar"
+      x={colX(i, n)}
+      y={Math.min(yOf(p.value, s), yOf(0, s))}
+      width={colW(n)}
+      height={Math.max(0.8, Math.abs(yOf(p.value, s) - yOf(0, s)))}
+    >
+      <title>{p.period}: {label(p.value)}</title>
+    </rect>
+  {/each}
+{/snippet}
+
+{#snippet dots(series, label)}
+  {@const n = series.points.length}
+  {#each series.points as p, i (p.period)}
+    <!-- An invisible target over each point of a line. A line has no mark to
+         put a `<title>` on, and a reader hunting for one quarter of eighty-five
+         needs a box wide enough to hit rather than a stroke one pixel wide. -->
+    <rect
+      class="plot-hit"
+      x={lineX(i, n) - plotW / n / 2}
+      y={CH_TOP}
+      width={plotW / n}
+      height={plotH}
+    >
+      <title>{p.period}: {label(p.value)}</title>
+    </rect>
+  {/each}
+{/snippet}
+
+<!--
+  A city's own history, drawn small enough to sit in a table cell.
+
+  Six of them share one scale (`cities.priceScale`) because six sparklines each
+  drawn to its own range are six pictures of the same shape — and comparing rows
+  is the only reason to put a chart in a column. The zero rule is drawn, because
+  on a series of year-on-year changes the sign is the whole reading.
+-->
+{#snippet spark(series, scale, label)}
+  {#if series.points.length > 2}
+    <svg class="spark" viewBox="0 0 {SP_W} {SP_H}" role="img" aria-label={label}>
+      <line class="plot-ref" x1="0" y1={spY(0, scale)} x2={SP_W} y2={spY(0, scale)} />
+      <path
+        class="plot-line"
+        d={series.points
+          .map(
+            (p, i) =>
+              `${i ? "L" : "M"}${((SP_W * i) / (series.points.length - 1)).toFixed(2)} ${spY(p.value, scale).toFixed(2)}`
+          )
+          .join(" ")}
+      />
+    </svg>
+  {/if}
+{/snippet}
+
+<!--
+  The same series as a table a reader can read a figure off.
+
+  Closed by default, because it is the long form and the plot above it is the
+  short one — and open on a `#`-linked visit is not something a `<details>` can
+  do without script. `cols` are `{bg, en}` pairs; `rows` come from `rowsOf`.
+-->
+{#snippet numbersTable(open, caption, cols, rows, format, flagged = false)}
+  <details class="numbers">
+    <summary>
+      <span class="l-bg">{open.bg}</span>
+      <span class="l-en">{open.en}</span>
+    </summary>
+    <div class="scroll" role="region" tabindex="0" aria-label={t(caption, $lang)}>
+      <table class="fig-table">
+        <thead>
+          <tr>
+            <th scope="col">
+              <span class="l-bg">{COPY.mktColPeriod.bg}</span>
+              <span class="l-en">{COPY.mktColPeriod.en}</span>
+            </th>
+            {#each cols as c (c.bg)}
+              <th scope="col" class="num">
+                <span class="l-bg">{c.bg}</span>
+                <span class="l-en">{c.en}</span>
+              </th>
+            {/each}
+            {#if flagged}
+              <th scope="col">
+                <span class="l-bg">{COPY.mktColFlag.bg}</span>
+                <span class="l-en">{COPY.mktColFlag.en}</span>
+              </th>
+            {/if}
+          </tr>
+        </thead>
+        <tbody>
+          {#each rows as r (r.period)}
+            <tr>
+              <th scope="row" class="mono">{periodLong(r.period, $lang)}</th>
+              {#each r.values as v, i (i)}
+                <td class="num mono">{format(v)}</td>
+              {/each}
+              {#if flagged}
+                <td class="mono flag">{r.flag ?? ""}</td>
+              {/if}
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  </details>
 {/snippet}
 
 <!-- A column head with the quarter its own workbook or cube is at. Two
@@ -464,15 +681,7 @@
               last: fmt0(volumeSeries.latest?.value),
             })}
           >
-            {#each volumeSeries.points as p, i (p.period)}
-              <rect
-                class="plot-bar"
-                x={barX(i, volumeSeries.points.length)}
-                y={CH_BASE - barH(p.value, volumeSeries.max)}
-                width={barW(volumeSeries.points.length)}
-                height={Math.max(1, barH(p.value, volumeSeries.max))}
-              />
-            {/each}
+            {@render columns(volumeSeries, (v) => `${fmt0(v)}`)}
             <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
             <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
               >{fmt0(volumeSeries.max)}</text
@@ -488,13 +697,17 @@
           {@render srcLine(
             COPY.srcEurostat,
             volume.deals.sourceUrl,
-            {
-              bg: `${periodLong(volumeSeries.from, "bg")} – ${periodLong(volumeSeries.to, "bg")}`,
-              en: `${periodLong(volumeSeries.from, "en")} – ${periodLong(volumeSeries.to, "en")}`,
-            },
+            spanned(volumeSeries),
             volume.deals.apiUrl
           )}
         </p>
+        {@render numbersTable(
+          countLabel(COPY.mktOpenQuarters, volumeSeries.points.length),
+          COPY.mktTblVolumeNumbers,
+          [COPY.mktColSold],
+          rowsOf(volumeSeries),
+          fmt0
+        )}
       {/if}
 
       {#if volume.changePct.value != null}
@@ -516,6 +729,20 @@
       {/if}
     {/if}
 
+    <p class="cap">
+      <span class="l-bg"
+        >Редицата започва оттам, откъдето Евростат я публикува, и първото тримесечие се случва да е
+        и най-ниското в нея — това е начало на запис, а не дъно на пазара. Между тримесечията на
+        една и съща година разликата е сезонна и е голяма, затова таблицата сравнява едни и същи
+        тримесечия.</span
+      >
+      <span class="l-en"
+        >The series begins where Eurostat publish it from, and its first quarter happens to be its
+        lowest — that is the start of a record, not a floor in the market. Between quarters of one
+        year the difference is seasonal and it is large, which is why the table compares like
+        quarters.</span
+      >
+    </p>
     <p class="cap">
       <span class="l-bg"
         >Това не е броят на всички сделки с имоти. Имотният регистър вписва и продажбите на земя,
@@ -608,6 +835,227 @@
       </p>
     {/if}
 
+    <!-- The index, twenty-one years of it -------------------------------- -->
+    {#if indexSeries.points.length > 8}
+      <p>
+        <span class="l-bg"
+          >Процентът отгоре е за една година. Самият индекс показва нивото на цените, а не промяната
+          им: 100 е там, където са били през базисната година. Редицата на Евростат започва оттам,
+          откъдето я публикуват — първата точка не е дъно, а началото на записа.</span
+        >
+        <span class="l-en"
+          >The percentage above is one year's. The index itself shows the LEVEL of prices rather
+          than their change: 100 is where they stood in the base year. Eurostat's series begins
+          where they publish it from — the first point is not a floor, it is the start of the
+          record.</span
+        >
+      </p>
+
+      <p>
+        <span class="l-bg"
+          >Двата реда са едно и също нещо, мерено по два начина. Тъмният е в цените от деня на
+          сделката: там 2026 г. се сравнява с 2015 г., без да се държи сметка, че междувременно е
+          поскъпнало всичко останало. Пунктираният е същият индекс, изчистен от инфлацията —
+          Евростат го публикува отделно и той отговаря на въпроса «повече ли са жилищата спрямо
+          всичко останало». Разликата между двата реда е точно инфлацията за периода, и тя е
+          причината страницата да ги показва заедно.</span
+        >
+        <span class="l-en"
+          >The two lines are the same thing measured two ways. The solid one is in the money of the
+          day: it compares 2026 with 2015 without accounting for everything else having got dearer
+          in between. The dashed one is the same index with inflation taken out — Eurostat publish
+          it separately, and it answers "have homes risen against everything else". The gap between
+          the lines is exactly the inflation of the period, which is why the page shows both.</span
+        >
+      </p>
+
+      <figure class="chart">
+        <svg
+          viewBox="0 0 {CH_W} {CH_H}"
+          role="img"
+          aria-label={t(COPY.mktChartIndex, $lang, {
+            from: indexSeries.from,
+            to: indexSeries.to,
+            base: indexSeries.reference === 100 ? "2015" : "",
+            low: fmt(indexSeries.trough?.value),
+            lowAt: indexSeries.trough?.period,
+            peak: fmt(indexSeries.peak?.value),
+            peakAt: indexSeries.peak?.period,
+            last: fmt(indexSeries.latest?.value),
+            realPeak: fmt(indexRealSeries.peak?.value),
+            realPeakAt: indexRealSeries.peak?.period,
+            realLast: fmt(indexRealSeries.latest?.value),
+          })}
+        >
+          <line
+            class="plot-ref"
+            x1={CH_PAD_L}
+            y1={yOf(indexScale.reference, indexScale)}
+            x2={CH_W - CH_PAD_R}
+            y2={yOf(indexScale.reference, indexScale)}
+          />
+          <!-- A quarter Eurostat marked as a break in their own series. Drawn as
+               a rule rather than smoothed over: the line either side of it is
+               not one continuous measurement, and joining them without saying
+               so is a claim the publisher declined to make. -->
+          {#each Object.entries(indexSeries.flags) as [period, letter] (period)}
+            {#if letter.includes("b")}
+              {@const i = indexSeries.points.findIndex((p) => p.period === period)}
+              {#if i >= 0}
+                <line
+                  class="plot-break"
+                  x1={lineX(i, indexSeries.points.length)}
+                  y1={CH_TOP}
+                  x2={lineX(i, indexSeries.points.length)}
+                  y2={CH_BASE}
+                >
+                  <title>{period}: {t(COPY.mktFlagB, $lang)}</title>
+                </line>
+              {/if}
+            {/if}
+          {/each}
+          <path class="plot-line second" d={pathOf({ ...indexRealSeries, ...indexScale })} />
+          <path class="plot-line" d={pathOf({ ...indexSeries, ...indexScale })} />
+          {@render dots({ ...indexSeries, ...indexScale }, (v) => fmt(v))}
+          <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
+          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
+            >{fmt0(indexScale.max)}</text
+          >
+          <text
+            class="plot-tick"
+            x={CH_PAD_L - 6}
+            y={yOf(indexScale.reference, indexScale) + 4}
+            text-anchor="end">100</text
+          >
+          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
+          <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{indexSeries.from}</text>
+          <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
+            >{indexSeries.to}</text
+          >
+        </svg>
+        <figcaption>
+          <span class="key one"
+            ><span class="l-bg">{COPY.mktKeyNominal.bg}</span><span class="l-en"
+              >{COPY.mktKeyNominal.en}</span
+            ></span
+          >
+          <span class="key two"
+            ><span class="l-bg">{COPY.mktKeyReal.bg}</span><span class="l-en"
+              >{COPY.mktKeyReal.en}</span
+            ></span
+          >
+          <span
+            ><span class="l-bg">{COPY.mktRefIndexBase.bg}</span><span class="l-en"
+              >{COPY.mktRefIndexBase.en}</span
+            ></span
+          >
+        </figcaption>
+      </figure>
+      <p class="ss tsrc">
+        {@render srcLine(
+          COPY.srcEurostat,
+          indexSeries.sourceUrl,
+          spanned(indexSeries),
+          indexSeries.apiUrl
+        )}
+      </p>
+      {@render numbersTable(
+        countLabel(COPY.mktOpenQuarters, indexSeries.points.length),
+        COPY.mktTblIndexNumbers,
+        [COPY.mktColIndex, COPY.mktColIndexReal],
+        rowsOf(indexSeries, [indexRealSeries]),
+        (v) => fmt(v),
+        true
+      )}
+      {#if flagKey.length}
+        <p class="cap flags">
+          <span class="l-bg"
+            >{COPY.mktFlagsLead.bg}
+            {#each flagKey as letter, i (letter)}{i ? " · " : " "}{FLAG_COPY[letter]
+                .bg}{/each}</span
+          >
+          <span class="l-en"
+            >{COPY.mktFlagsLead.en}
+            {#each flagKey as letter, i (letter)}{i ? " · " : " "}{FLAG_COPY[letter]
+                .en}{/each}</span
+          >
+        </p>
+      {/if}
+
+      <!-- The published rate, every quarter there is one ----------------- -->
+      {#if rateSeries.points.length > 8}
+        <p>
+          <span class="l-bg"
+            >Същото, но като годишна промяна — числото, което Евростат публикува всяко тримесечие.
+            Линията на нулата е «толкова, колкото и преди година». По-ниско стълбче над нея значи
+            по-малко поскъпване, а не поевтиняване: цените падат само в тримесечията със стълбче под
+            линията.</span
+          >
+          <span class="l-en"
+            >The same thing as an annual change — the figure Eurostat publish each quarter. The line
+            at zero is "the same as twelve months ago". A shorter column above it is a smaller rise,
+            not a fall: prices fell only in the quarters whose column is below the line.</span
+          >
+        </p>
+        <figure class="chart">
+          <svg
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.mktChartRate, $lang, {
+              from: rateSeries.from,
+              to: rateSeries.to,
+              low: pct(rateSeries.trough?.value),
+              lowAt: rateSeries.trough?.period,
+              peak: pct(rateSeries.peak?.value),
+              peakAt: rateSeries.peak?.period,
+              last: pct(rateSeries.latest?.value),
+            })}
+          >
+            {@render columns(rateSeries, (v) => pct(v))}
+            <line
+              class="plot-axis"
+              x1={CH_PAD_L}
+              y1={yOf(0, rateSeries)}
+              x2={CH_W - CH_PAD_R}
+              y2={yOf(0, rateSeries)}
+            />
+            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
+              >{pct(rateSeries.max)}</text
+            >
+            <text class="plot-tick" x={CH_PAD_L - 6} y={yOf(0, rateSeries) + 4} text-anchor="end"
+              >0</text
+            >
+            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end"
+              >{pct(rateSeries.min)}</text
+            >
+            <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{rateSeries.from}</text>
+            <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
+              >{rateSeries.to}</text
+            >
+          </svg>
+          <figcaption>
+            <span class="l-bg">{COPY.mktRefZero.bg}</span>
+            <span class="l-en">{COPY.mktRefZero.en}</span>
+          </figcaption>
+        </figure>
+        <p class="ss tsrc">
+          {@render srcLine(
+            COPY.srcEurostat,
+            rateSeries.sourceUrl,
+            spanned(rateSeries),
+            rateSeries.apiUrl
+          )}
+        </p>
+        {@render numbersTable(
+          countLabel(COPY.mktOpenQuarters, rateSeries.points.length),
+          COPY.mktTblRateNumbers,
+          [COPY.mktColChange],
+          rowsOf(rateSeries),
+          (v) => pct(v)
+        )}
+      {/if}
+    {/if}
+
     {#if cities.cities.length}
       <p>
         <span class="l-bg"
@@ -642,6 +1090,18 @@
               <th scope="col" class="num"
                 >{@render colHead(COPY.mktColPrice, cities.pricePeriod)}</th
               >
+              <th scope="col" class="spark-col">
+                <span class="l-bg"
+                  >{t(COPY.mktColCityTrend, "bg", {
+                    from: periodLong(cities.cities[0]?.priceSeries.from, "bg"),
+                  })}</span
+                >
+                <span class="l-en"
+                  >{t(COPY.mktColCityTrend, "en", {
+                    from: periodLong(cities.cities[0]?.priceSeries.from, "en"),
+                  })}</span
+                >
+              </th>
               <th scope="col" class="num"
                 >{@render colHead(COPY.mktColDeals, cities.dealsPeriod)}</th
               >
@@ -668,6 +1128,18 @@
                       <span class="l-en">{periodLong(c.pricePeriod, "en")}</span>
                     </small>
                   {/if}
+                </td>
+                <td class="spark-col">
+                  {@render spark(
+                    c.priceSeries,
+                    cities.priceScale,
+                    t(COPY.mktChartCity, $lang, {
+                      city: $lang === "bg" ? c.nameBg : c.nameEn,
+                      from: c.priceSeries.from,
+                      to: c.priceSeries.to,
+                      last: fmt(c.priceSeries.latest?.value),
+                    })
+                  )}
                 </td>
                 <td class="num mono">
                   {pct(c.dealsPct)}
@@ -705,6 +1177,16 @@
           value is a cell НСИ published; nothing in this table is computed by us.</span
         >
       </p>
+      {@render numbersTable(
+        countLabel(COPY.mktOpenQuarters, cities.cities[0]?.priceSeries.points.length ?? 0),
+        COPY.mktTblCityNumbers,
+        cities.cities.map((c) => ({ bg: c.nameBg, en: c.nameEn })),
+        rowsOf(
+          cities.cities[0].priceSeries,
+          cities.cities.slice(1).map((c) => c.priceSeries)
+        ),
+        (v) => pct(v)
+      )}
     {/if}
 
     <p class="cap">
@@ -778,6 +1260,68 @@
       <p class="ss tsrc">
         {@render srcLine(COPY.srcEurostat, deal.avg.sourceUrl, when(deal.period), deal.avg.apiUrl)}
       </p>
+
+      <!-- The two lines apart, never one line for the total ---------------
+           The average deal is a mean over whatever sold that quarter, so a
+           TOTAL line moves with the mix of new builds and existing dwellings as
+           much as with prices — and a line chart invites exactly the reading
+           that mix will not support. Within one purchase type the mix is far
+           narrower, and the two drawn on one scale show the gap between them,
+           which is what the mix caveat is about. -->
+      {#if dealNewSeries.points.length > 4}
+        <figure class="chart">
+          <svg
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.mktChartDeal, $lang, {
+              from: dealNewSeries.from,
+              to: dealNewSeries.to,
+              new: fmt0(dealNewSeries.latest?.value),
+              existing: fmt0(dealExistingSeries.latest?.value),
+            })}
+          >
+            <path class="plot-line" d={pathOf({ ...dealNewSeries, ...dealScale })} />
+            <path class="plot-line second" d={pathOf({ ...dealExistingSeries, ...dealScale })} />
+            {@render dots(dealNewSeries, (v) => `${fmt0(v)} €`)}
+            <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
+            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
+              >{fmt0(dealScale.max)}</text
+            >
+            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
+            <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{dealNewSeries.from}</text>
+            <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
+              >{dealNewSeries.to}</text
+            >
+          </svg>
+          <figcaption>
+            <span class="key one"
+              ><span class="l-bg">{COPY.mktKeyNew.bg}</span><span class="l-en"
+                >{COPY.mktKeyNew.en}</span
+              ></span
+            >
+            <span class="key two"
+              ><span class="l-bg">{COPY.mktKeyExisting.bg}</span><span class="l-en"
+                >{COPY.mktKeyExisting.en}</span
+              ></span
+            >
+          </figcaption>
+        </figure>
+        <p class="ss tsrc">
+          {@render srcLine(
+            COPY.srcEurostat,
+            deal.avg.sourceUrl,
+            spanned(dealNewSeries),
+            deal.avg.apiUrl
+          )}
+        </p>
+        {@render numbersTable(
+          countLabel(COPY.mktOpenQuarters, dealNewSeries.points.length),
+          COPY.mktTblDealNumbers,
+          [COPY.mktColAvgNew, COPY.mktColAvgExisting],
+          rowsOf(dealNewSeries, [dealExistingSeries]),
+          (v) => (v == null ? "—" : `${fmt0(v)} €`)
+        )}
+      {/if}
 
       {@render ourSum(
         {
@@ -1029,22 +1573,23 @@
             to: ptiSeries.to,
             peak: fmt(ptiSeries.peak?.value),
             peakAt: ptiSeries.peak?.period,
-            last: fmt(ptiSeries.latest),
+            last: fmt(ptiSeries.latest?.value),
           })}
         >
           <line
             class="plot-ref"
             x1={CH_PAD_L}
-            y1={CH_BASE - barH(ptiSeries.reference, ptiSeries.max)}
+            y1={yOf(ptiSeries.reference, ptiSeries)}
             x2={CH_W - CH_PAD_R}
-            y2={CH_BASE - barH(ptiSeries.reference, ptiSeries.max)}
+            y2={yOf(ptiSeries.reference, ptiSeries)}
           />
-          <path class="plot-line" d={ptiPath} />
+          <path class="plot-line" d={pathOf(ptiSeries)} />
+          {@render dots(ptiSeries, (v) => fmt(v))}
           <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
           <text
             class="plot-tick"
-            x={CH_W - CH_PAD_R}
-            y={CH_BASE - barH(ptiSeries.reference, ptiSeries.max) - 5}
+            x={CH_PAD_L - 6}
+            y={yOf(ptiSeries.reference, ptiSeries) + 4}
             text-anchor="end">100</text
           >
           <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
@@ -1061,11 +1606,115 @@
       <p class="ss tsrc">
         {@render srcLine(
           COPY.srcEurostat,
-          structure.priceToIncome.sourceUrl,
-          { bg: `${ptiSeries.from} – ${ptiSeries.to}`, en: `${ptiSeries.from} – ${ptiSeries.to}` },
-          structure.priceToIncome.apiUrl
+          ptiSeries.sourceUrl,
+          spanned(ptiSeries),
+          ptiSeries.apiUrl
         )}
       </p>
+      {@render numbersTable(
+        countLabel(COPY.mktOpenYears, ptiSeries.points.length),
+        COPY.mktTblPtiNumbers,
+        [COPY.mktColRatio],
+        rowsOf(ptiSeries),
+        (v) => fmt(v)
+      )}
+      <p class="cap">
+        <span class="l-bg"
+          >Този ред спира на {ptiSeries.to} г., докато другите числа на страницата са за {periodLong(
+            priceRate.period,
+            "bg"
+          )}. Така го публикува Евростат: показателят излиза веднъж годишно и последната година още
+          не е излязла. Показваме последната, която съществува, с годината до нея.</span
+        >
+        <span class="l-en"
+          >This series stops at {ptiSeries.to} while the other figures on the page are for {periodLong(
+            priceRate.period,
+            "en"
+          )}. That is Eurostat's own schedule: the indicator comes out once a year and the latest
+          year is not out yet. We show the newest that exists, with its year beside it.</span
+        >
+      </p>
+      <p class="cap">
+        <span class="l-bg"
+          >Две неща за този ред, които не си личат от картинката. «Доход» тук е разполагаемият доход
+          на домакинствата на човек от населението, а не заплата — включва пенсии, помощи и услуги,
+          които държавата плаща вместо домакинството, и се дели на броя хора в страната, който за
+          периода на реда е намалял. И средната, спрямо която се мери, се преизчислява при всяко
+          ново издание: като излезе нова година, всички предишни точки се променят, без годината им
+          да се променя.</span
+        >
+        <span class="l-en"
+          >Two things about this series that the picture does not show. "Income" here is household
+          disposable income per head of population, not a wage — it includes pensions, benefits and
+          services the state pays for on a household's behalf, and it is divided by a population
+          that has fallen over the span of the series. And the average it is measured against is
+          recomputed with every edition: when a new year is added, every earlier point moves without
+          its year changing.</span
+        >
+      </p>
+    {/if}
+
+    <!-- Twenty years of the overburden share, which was one number ------- -->
+    {#if overburdenSeries.points.length > 4}
+      <p>
+        <span class="l-bg"
+          >Другият официален показател брои хората, чието домакинство дава над 40% от дохода си за
+          жилище. «Разходи за жилище» тук е всичко около него — ток, парно, вода, поддръжка и данък,
+          а наем или вноска само за тези, които плащат такива. В България огромната част от хората
+          живеят в собствено жилище без заем, така че този ред се движи най-вече от сметките, а не
+          от цените на сделките. И не върви в една посока: минавал е от най-ниската до най-високата
+          си стойност два пъти за двайсет години.</span
+        >
+        <span class="l-en"
+          >The other official indicator counts people whose household spends more than 40% of its
+          income on housing. "Housing costs" here is everything around it — electricity, heating,
+          water, maintenance and tax, with rent or a mortgage payment only for those who pay one.
+          Most people in Bulgaria live in a home they own outright, so this series moves mainly with
+          bills rather than with transaction prices. It does not move one way either: it has
+          travelled from its lowest reading to its highest twice in twenty years.</span
+        >
+      </p>
+      <figure class="chart">
+        <svg
+          viewBox="0 0 {CH_W} {CH_H}"
+          role="img"
+          aria-label={t(COPY.mktChartOverburden, $lang, {
+            from: overburdenSeries.from,
+            to: overburdenSeries.to,
+            peak: fmt(overburdenSeries.peak?.value),
+            peakAt: overburdenSeries.peak?.period,
+            low: fmt(overburdenSeries.trough?.value),
+            lowAt: overburdenSeries.trough?.period,
+            last: fmt(overburdenSeries.latest?.value),
+          })}
+        >
+          {@render columns(overburdenSeries, (v) => `${fmt(v)}%`)}
+          <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
+          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
+            >{fmt(overburdenSeries.max)}%</text
+          >
+          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
+          <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{overburdenSeries.from}</text>
+          <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
+            >{overburdenSeries.to}</text
+          >
+        </svg>
+      </figure>
+      <p class="ss tsrc">
+        {@render srcLine(
+          COPY.srcEurostat,
+          overburdenSeries.sourceUrl,
+          spanned(overburdenSeries),
+          overburdenSeries.apiUrl
+        )}
+      </p>
+      {@render numbersTable(
+        countLabel(COPY.mktOpenYears, overburdenSeries.points.length),
+        COPY.mktTblOverburdenNumbers,
+        [COPY.mktColShare],
+        rowsOf(overburdenSeries),
+        (v) => `${fmt(v)}%`
+      )}
     {/if}
 
     {#if structure.priceToIncome.value != null}
@@ -1455,6 +2104,48 @@
     font-family: var(--mono);
     font-size: var(--fs-micro);
     color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+  }
+  /* A series key is a painted swatch with real area, for the reason the tax
+     wedge's is: a zero-height box carrying a border names a series a reader
+     cannot match to the plot. */
+  .key::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .key.one::before {
+    background: var(--real);
+  }
+  .key.two::before {
+    background: var(--ink-2);
+  }
+
+  /* The numbers under a chart. Closed, because it is the long form and the plot
+     is the short one; a real <table>, because it is the WCAG text alternative
+     and the only way to read one quarter off an eighty-five-quarter line. */
+  .numbers {
+    margin-top: 8px;
+  }
+  .numbers > summary {
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    color: var(--real-ink);
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .numbers > summary:hover {
+    color: var(--ink);
+  }
+  .numbers .scroll {
+    max-height: 22rem;
+    overflow-y: auto;
+    margin-top: 6px;
   }
   .plot-bar {
     fill: var(--real);
@@ -1464,6 +2155,53 @@
     stroke: var(--real);
     stroke-width: 2;
     stroke-linejoin: round;
+  }
+  /* The second series on a shared scale. Dashed and in the neutral ink, never
+     the erode accent: `--erode` means "this one costs you something" elsewhere
+     on the site and `--real` means the opposite, so drawing one of two
+     measurements in either says which one is the bad news. Whose fall is bad
+     here depends on whether a reader owns or is buying, and the page does not
+     get to decide that. The accent stays on the data line and the erode accent
+     stays on a REFERENCE rule, which is a different kind of mark. */
+  .plot-line.second {
+    stroke: var(--ink-2);
+    stroke-dasharray: 5 3;
+  }
+  /* The hit target over each point of a line. It carries the `<title>` a
+     pointer needs and paints nothing — a line has no mark to hang one on, and a
+     reader hunting for one quarter of eighty-five needs a box to aim at rather
+     than a two-pixel stroke. */
+  .plot-hit {
+    fill: transparent;
+  }
+  /* A break the publisher declared, drawn as a rule through the plot. Quiet on
+     purpose: it qualifies the line, it is not a second series. */
+  .plot-break {
+    stroke: var(--muted);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+  .fig-table .flag {
+    color: var(--muted);
+    font-size: var(--fs-micro);
+  }
+  /* A city's history, in a table cell. `height: auto` keeps the box 1:1 rather
+     than stretching to the row — a sparkline drawn with one axis scaled and the
+     other not is the distortion `verify_render_strip.mjs` fails a chart for. */
+  .spark {
+    width: 108px;
+    height: auto;
+    display: block;
+  }
+  .spark .plot-line {
+    stroke-width: 1.5;
+  }
+  .spark .plot-ref {
+    stroke-width: 1;
+  }
+  .fig-table .spark-col {
+    width: 108px;
+    padding-right: 12px;
   }
   .plot-axis {
     stroke: var(--muted);

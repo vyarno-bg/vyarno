@@ -822,6 +822,91 @@ def validate_house_market(payload: dict) -> None:
             "published figure and the one the НСИ cross-check reconciles against."
         )
 
+    _validate_index_base(payload)
+    _validate_status_flags(payload)
+
+
+# Eurostat's own flag letters, and the combinations they publish them in. A
+# letter outside this set is a vocabulary we have not read, and rendering it as
+# a footnote nobody can look up is worse than failing here.
+STATUS_FLAGS: frozenset[str] = frozenset({"e", "b", "p", "d", "u", "n", "c", "f", "s", "z"})
+
+
+def _validate_index_base(payload: dict) -> None:
+    """Both indices average 100 across the base year they name.
+
+    **The identity that catches a wrong unit**, which is otherwise invisible:
+    `I15_Q` and `I25_Q` are the same series on two bases, both return 200, and
+    both draw a plausible line — one of them just puts today at 109 instead of
+    273. The base year is definitional, so its four quarters average to 100 by
+    construction and anything else means the cube we read is not the cube we
+    named.
+
+    It also holds the deflated series to the SAME base as the nominal one, which
+    is what lets the page draw them on one axis without rescaling anything.
+    """
+    for key in ("price_index", "price_index_real"):
+        block = payload.get(key, {})
+        series = block.get("series_by_period", {})
+        base = block.get("base_year")
+        if not series or not base:
+            raise ValidationError(f"house market: {key} carries no series or no base year")
+        quarters = [
+            v.get("total") if isinstance(v, dict) else v
+            for p, v in series.items()
+            if p.startswith(f"{base}-Q")
+        ]
+        quarters = [q for q in quarters if q is not None]
+        if len(quarters) != 4:
+            raise ValidationError(
+                f"house market: {key} carries {len(quarters)} quarters of its own base "
+                f"year {base}, not four. The base year is what 100 means here."
+            )
+        mean = sum(quarters) / 4
+        if abs(mean - 100) > 0.05:
+            raise ValidationError(
+                f"house market: {key} averages {mean:.2f} across {base}, not 100. "
+                f"It is on a different base than the one it names — I15_Q and I25_Q "
+                f"both answer 200 and both draw a plausible line."
+            )
+
+    # The two indices are the same statistic deflated and not, so they cover the
+    # same quarters. A gap means one of them was filtered differently.
+    nominal = set(payload["price_index"]["series_by_period"])
+    real = set(payload["price_index_real"]["series_by_period"])
+    if not real <= nominal:
+        raise ValidationError(
+            f"house market: the deflated index carries {len(real - nominal)} quarters the "
+            f"nominal one does not ({sorted(real - nominal)[:3]}). They are one series "
+            f"published twice; a quarter in one and not the other is a wrong slice."
+        )
+
+
+def _validate_status_flags(payload: dict) -> None:
+    """Every published flag is a letter Eurostat actually use, at a real period.
+
+    The flags exist so the page can decline to draw an unbroken line across a
+    break the publisher declared. A flag at a quarter the series does not carry
+    would mark nothing; a letter outside Eurostat's own vocabulary would render
+    as a footnote a reader cannot look up.
+    """
+    for key in ("price_index", "price_index_real"):
+        block = payload.get(key, {})
+        series = block.get("series_by_period", {})
+        for period, flags in (block.get("status_by_period") or {}).items():
+            if period not in series:
+                raise ValidationError(
+                    f"house market: {key} flags {period}, which its own series does not carry."
+                )
+            entries = flags.items() if isinstance(flags, dict) else [("total", flags)]
+            for field, letter in entries:
+                if not set(str(letter)) <= STATUS_FLAGS:
+                    raise ValidationError(
+                        f"house market: {key} flags {period}/{field} as {letter!r}, which is "
+                        f"not one of Eurostat's own letters ({''.join(sorted(STATUS_FLAGS))}). "
+                        f"A marker a reader cannot look up is worse than none."
+                    )
+
 
 def validate_house_market_structure(payload: dict) -> None:
     """Gate `house_market_structure.json` before it is written.

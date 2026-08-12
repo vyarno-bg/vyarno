@@ -262,7 +262,7 @@ like a percentage:
   the page's sentence about a country's own long-run average false while
   rendering a perfectly ordinary index.
 
-**Gate 6 runs over the seven published `api_url`s**, body-checked. Those are the
+**Gate 6 runs over the eight published `api_url`s**, body-checked. Those are the
 queries the page links for "check it yourself", so a dead one costs the page its
 argument rather than a footnote. It is the `api_url`s rather than the databrowser
 pages because Eurostat answer a rate-limited or malformed query with 200 OK and
@@ -352,7 +352,7 @@ detail.
 | `payroll` | no network; parity-checked against the SPA sentinel. `payroll.py` raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | `test_payroll.py` reads `mirror.js` |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
 | `nsi-housing` | every published figure is a cell НСИ published, and the national price index change reconciles with Eurostat's at the newest shared quarter | The reconciliation reads `house_market.json` off disk and says so when it is absent rather than passing quietly |
-| `house-market` | the two blocks above: the derivation reproduces, the purchase codes are not swapped, the average is inside €10k–€500k, and the tenure and census identities hold. Gate 6 over the seven published `api_url`s unless `--skip-link-check` | One arm, two payloads — the stems both start `house_market` because `refresh.yml` matches them against the `--source` name, and a payload no arm owns publishes nothing while the run reports success |
+| `house-market` | the two blocks above: the derivation reproduces, the purchase codes are not swapped, the average is inside €10k–€500k, both indices average 100 across the base year they name, every published flag is one of Eurostat's own letters at a quarter the series carries, and the tenure and census identities hold. Gate 6 over the eight published `api_url`s unless `--skip-link-check` | One arm, two payloads — the stems both start `house_market` because `refresh.yml` matches them against the `--source` name, and a payload no arm owns publishes nothing while the run reports success |
 
 ## A good HICP run
 

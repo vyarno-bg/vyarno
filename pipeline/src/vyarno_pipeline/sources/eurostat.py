@@ -132,6 +132,14 @@ def _cube_to_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
     # invert: linear index → category label
     cat_labels = [{v: k for k, v in ci.items()} for ci in cat_indexes]
     values: dict[str, float] = payload["value"]
+    # Eurostat's own flags on their own numbers, keyed by the same linear index
+    # as the values: `e` estimated, `b` break in series, `p` provisional, `d`
+    # definition differs, and combinations of them. **They are a statement the
+    # publisher makes and we do not**, so a series drawn as one unbroken line
+    # across a flagged break is a claim they did not make on our behalf.
+    # Carried only where present, so a cube with no flags emits the rows it
+    # always did.
+    status: dict[str, str] = payload.get("status") or {}
 
     out: list[dict[str, Any]] = []
     for linear_str, val in values.items():
@@ -143,6 +151,9 @@ def _cube_to_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
             rem //= s
         row: dict[str, Any] = {dims[i]: cat_labels[i][idxs[i]] for i in range(len(dims))}
         row["value"] = val
+        flag = status.get(linear_str)
+        if flag:
+            row["status"] = flag
         out.append(row)
     return out
 
@@ -420,6 +431,16 @@ def fetch_ses_earnings_bg(geo: str = "BG") -> dict[str, Any]:
 HOUSE_SALES_COUNT_DATASET = "prc_hpi_hsnq"  # number of dwellings sold
 HOUSE_SALES_VALUE_DATASET = "prc_hpi_hsvq"  # what was paid for them
 HOUSE_PRICE_INDEX_DATASET = "prc_hpi_q"  # the official house price index
+# The SAME index deflated by the national accounts deflator for private final
+# consumption, on the same 2015 base and the same 85 quarters.
+#
+# **It is the difference between the two most important sentences this page can
+# say.** Nominally the index sits 77% above its 2008 peak; deflated it sits
+# below it. A site whose whole subject is the gap between a number and what it
+# buys cannot draw twenty-one years of property prices in the money of the day
+# and leave the other line unavailable — that is the correction it exists to
+# make, applied to everything except this.
+HOUSE_PRICE_REAL_DATASET = "tipsho30"
 
 # `DW_EXST`, not `DW_EXIST`. A misspelled purchase code filters the cube to
 # nothing and Eurostat answers 200 with an empty `value` — the query fails
@@ -584,6 +605,29 @@ def fetch_house_price_index_bg(geo: str = "BG") -> CubeFetch:
         HOUSE_PRICE_INDEX_DATASET,
         house_api_url(HOUSE_PRICE_INDEX_DATASET, params),
         house_dataset_url(HOUSE_PRICE_INDEX_DATASET),
+    )
+
+
+def fetch_house_price_index_real_bg(geo: str = "BG") -> CubeFetch:
+    """The deflated house price index — the same series in constant prices.
+
+    One unit, and it is the one that matches: `I15_Q` puts the deflated index on
+    the same 2015 base and the same quarterly frequency as the nominal series,
+    so the two are drawn against one axis without anything being rescaled here.
+    A different unit would still return 200 and a plausible line.
+
+    `tipsho30` has no `purchase` dimension: Eurostat deflate the total only, so
+    there is no new-build/existing split to be had and the page may not imply
+    one.
+    """
+    params = {"format": "JSON", "lang": "EN", "geo": geo, "unit": HOUSE_PRICE_INDEX_UNIT}
+    rows = _cube_to_rows(_get(f"{BASE}/{HOUSE_PRICE_REAL_DATASET}", params, timeout=60.0))
+    _require_periods(rows, HOUSE_PRICE_REAL_DATASET, HOUSE_PRICE_INDEX_UNIT, minimum=40)
+    return CubeFetch(
+        rows,
+        HOUSE_PRICE_REAL_DATASET,
+        house_api_url(HOUSE_PRICE_REAL_DATASET, params),
+        house_dataset_url(HOUSE_PRICE_REAL_DATASET),
     )
 
 

@@ -77,6 +77,7 @@ from vyarno_pipeline.sources.eurostat import (
     fetch_hicp_rates_bg,
     fetch_hicp_weights_bg,
     fetch_house_price_index_bg,
+    fetch_house_price_index_real_bg,
     fetch_house_sales_count_bg,
     fetch_house_sales_value_bg,
     fetch_housing_structure_bg,
@@ -1208,9 +1209,10 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
         count = fetch_house_sales_count_bg(geo=geo)
         value = fetch_house_sales_value_bg(geo=geo)
         index = fetch_house_price_index_bg(geo=geo)
+        real_index = fetch_house_price_index_real_bg(geo=geo)
         click.echo(
             f"  got {len(count.rows)} count rows, {len(value.rows)} value rows, "
-            f"{len(index.rows)} index rows"
+            f"{len(index.rows)} index rows, {len(real_index.rows)} deflated rows"
         )
         click.echo("→ fetching tenure, census stock, price-to-income, overburden...")
         structure = fetch_housing_structure_bg(geo=geo)
@@ -1220,7 +1222,7 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
         sys.exit(4)
 
     try:
-        payload = build_house_market_payload(count, value, index, as_of)
+        payload = build_house_market_payload(count, value, index, real_index, as_of)
         structure_payload = build_house_market_structure_payload(structure, as_of)
     except ValueError as e:
         click.echo(f"ERROR: transform failed: {e}", err=True)
@@ -1229,6 +1231,7 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
     try:
         validate_house_market(payload)
         click.echo("  gate: avg_deal_eur reproduces from the published count and value")
+        click.echo("  gate: both indices average 100 across their own base year")
         validate_house_market_structure(structure_payload)
         click.echo("  gate: the tenure split and the census stock are internally consistent")
         if not skip_link_check:
@@ -1241,6 +1244,7 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
                     payload["deals"]["api_url"],
                     payload["value"]["api_url"],
                     payload["price_index"]["api_url"],
+                    payload["price_index_real"]["api_url"],
                     structure_payload["tenure"]["api_url"],
                     structure_payload["census_dwellings"]["api_url"],
                     structure_payload["price_to_income"]["api_url"],
@@ -1248,7 +1252,7 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
                 ],
                 _is_real_estat_cube,
             )
-            click.echo("  gate: all seven published api_urls return a real cube")
+            click.echo("  gate: all eight published api_urls return a real cube")
     except ValidationError as e:
         click.echo(f"ERROR: validation failed: {e}", err=True)
         sys.exit(3)

@@ -31,6 +31,7 @@ import respx
 from vyarno_pipeline.sources.eurostat import (
     CENSUS_DWELLINGS_DATASET,
     HOUSE_PRICE_INDEX_DATASET,
+    HOUSE_PRICE_REAL_DATASET,
     HOUSE_SALES_COUNT_DATASET,
     HOUSE_SALES_VALUE_DATASET,
     HOUSING_OVERBURDEN_DATASET,
@@ -38,6 +39,7 @@ from vyarno_pipeline.sources.eurostat import (
     TENURE_DATASET,
     CubeFetch,
     _cube_to_rows,
+    fetch_house_price_index_real_bg,
     fetch_house_sales_count_bg,
     fetch_housing_structure_bg,
 )
@@ -82,6 +84,7 @@ def market() -> dict:
         _fetch("eurostat_house_sales_count_bg.json", HOUSE_SALES_COUNT_DATASET),
         _fetch("eurostat_house_sales_value_bg.json", HOUSE_SALES_VALUE_DATASET),
         _fetch("eurostat_house_price_index_bg.json", HOUSE_PRICE_INDEX_DATASET),
+        _fetch("eurostat_house_price_real_bg.json", HOUSE_PRICE_REAL_DATASET),
         date(2026, 8, 12),
     )
 
@@ -315,3 +318,99 @@ def test_a_price_to_income_reading_on_the_wrong_unit_is_refused(structure):
     structure["price_to_income"]["unit"] = "PTIR_I15"
     with pytest.raises(ValidationError, match="PTIR_LT_AVG"):
         validate_house_market_structure(structure)
+
+
+# --- the deflated index, and the publisher's own flags ----------------------
+
+
+def test_the_deflated_index_is_published_beside_the_nominal_one(market):
+    """The one comparison this site exists to make, applied to property.
+
+    Nominally the index sits far above its 2008 peak; deflated it does not, and
+    a page that draws twenty-one years of prices in the money of the day and
+    cannot show the other line has left out the correction it was built for.
+
+    Both come back on the SAME base and the same quarters, which is what lets
+    them be drawn on one axis with nothing rescaled in the browser.
+    """
+    real = market["price_index_real"]
+    nominal = market["price_index"]
+    assert real["dataset"] == HOUSE_PRICE_REAL_DATASET
+    assert real["base_year"] == nominal["base_year"]
+    assert set(real["series_by_period"]) <= set(nominal["series_by_period"])
+    # A flat map of period → level. `tipsho30` has no purchase dimension, so a
+    # split here would be one we invented.
+    for period, value in real["series_by_period"].items():
+        assert isinstance(value, float), f"{period} is {value!r}, not a bare level"
+    assert real["api_url"] != nominal["api_url"]
+    assert "deflat" in real["note"].lower()
+
+
+def test_eurostat_flags_travel_with_the_points_they_are_on(market):
+    """A break, an estimate and a provisional reading are the publisher's words.
+
+    Twenty-one years drawn as one unbroken line crosses two breaks Eurostat
+    declared and seventeen quarters they call estimates. The page cannot decline
+    to draw that unless the payload carries it, and a flag at a quarter the
+    series does not hold would mark nothing.
+    """
+    for key in ("price_index", "price_index_real"):
+        block = market[key]
+        flags = block["status_by_period"]
+        assert flags, f"{key} carries no flags at all — the cube publishes them"
+        assert set(flags) <= set(block["series_by_period"]), (
+            f"{key} flags a quarter its own series does not carry"
+        )
+    # The nominal block is split by purchase type and its flags are too, so a
+    # renderer marking the total does not have to guess which field a letter is
+    # about.
+    nominal = market["price_index"]["status_by_period"]
+    assert all(isinstance(v, dict) for v in nominal.values())
+    assert any("total" in v for v in nominal.values())
+    # The deflated block has no split, so its flags are bare letters.
+    assert all(isinstance(v, str) for v in market["price_index_real"]["status_by_period"].values())
+
+
+def test_an_index_on_the_wrong_base_is_refused(market):
+    """`I15_Q` and `I25_Q` are one series on two bases and both answer 200.
+
+    The base year is definitional: its four quarters average to 100 by
+    construction. Anything else means the cube we read is not the cube we named
+    — and the wrong one still draws a perfectly plausible line, three times
+    flatter and with today at 109 instead of 273.
+    """
+    validate_house_market(market)  # the real payload passes
+
+    rebased = json.loads(json.dumps(market))
+    base = rebased["price_index"]["base_year"]
+    for period in list(rebased["price_index"]["series_by_period"]):
+        if period.startswith(f"{base}-Q"):
+            for field in rebased["price_index"]["series_by_period"][period]:
+                rebased["price_index"]["series_by_period"][period][field] *= 0.4
+    with pytest.raises(ValidationError, match="different base"):
+        validate_house_market(rebased)
+
+
+def test_a_flag_outside_eurostats_own_vocabulary_is_refused(market):
+    """A marker a reader cannot look up is worse than no marker."""
+    tampered = json.loads(json.dumps(market))
+    period = next(iter(tampered["price_index_real"]["status_by_period"]))
+    tampered["price_index_real"]["status_by_period"][period] = "X"
+    with pytest.raises(ValidationError, match="not one of Eurostat"):
+        validate_house_market(tampered)
+
+    orphan = json.loads(json.dumps(market))
+    orphan["price_index_real"]["status_by_period"]["1999-Q1"] = "b"
+    with pytest.raises(ValidationError, match="does not carry"):
+        validate_house_market(orphan)
+
+
+@respx.mock
+def test_the_deflated_cube_refuses_a_filter_that_matches_nothing():
+    """Same failure mode as every other cube here: a wrong unit answers 200."""
+    empty = _cube("eurostat_house_price_real_bg.json") | {"value": {}}
+    respx.get(f"{EUROSTAT_BASE}/{HOUSE_PRICE_REAL_DATASET}").mock(
+        return_value=httpx.Response(200, json=empty)
+    )
+    with pytest.raises(ValueError, match="expected at least"):
+        fetch_house_price_index_real_bg(geo="BG")
