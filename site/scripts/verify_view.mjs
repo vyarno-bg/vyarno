@@ -99,6 +99,7 @@ import {
   marketPriceIndexSeries,
   marketPriceIndexRealSeries,
   marketIndexReading,
+  marketRent,
   marketPriceRateSeries,
   marketAverageDealSeries,
   marketOverburdenSeries,
@@ -3470,6 +3471,45 @@ test("plotSeries clamps its own floor at zero and offers no way to raise it", ()
 
   assert.deepEqual(plotSeries(null).points, []);
   assert.equal(plotSeries(null).min, 0);
+});
+
+test("marketRent cites the publisher's page and queries the row", () => {
+  // `hicp_categories.json` carries ONE databrowser page for the whole cube and
+  // a query per row, so the two halves of a source line come from two places.
+  // Built from the row alone the caption has no page to offer and sends a
+  // reader to raw JSON as its first destination — on the page whose argument is
+  // that a sceptic can follow the link and check.
+  const payload = {
+    source_url: "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table",
+    categories: [
+      {
+        groups: [
+          { cp_code: "CP045", annual_rate_pct: 3.3, ref_period: "2026-06", api_url: "x/CP045" },
+          {
+            cp_code: "CP041",
+            annual_rate_pct: 10.1,
+            ref_period: "2026-06",
+            api_url: "https://ec.europa.eu/eurostat/api/x?coicop=CP041",
+          },
+        ],
+      },
+    ],
+  };
+  const rent = marketRent(payload);
+  assert.equal(rent.value, 10.1);
+  assert.equal(rent.refPeriod, "2026-06");
+  assert.match(rent.sourceUrl, /databrowser/, "the rent line cites no page a reader can browse");
+  assert.match(rent.apiUrl, /CP041/, "the query behind the rent figure is not the rent row's");
+
+  // CP041 is actual rents paid. CP04 sweeps in water, electricity and gas, and
+  // a section asking what housing costs against incomes reads very differently
+  // on it — so the row is found by its code and never by position.
+  assert.equal(
+    marketRent({ ...payload, categories: [{ groups: [payload.categories[0].groups[0]] }] }),
+    null,
+    "a payload without the rent row returns something for the page to render"
+  );
+  assert.equal(marketRent(null), null);
 });
 
 test("marketIndexReading takes the base year off the payload and divides by its own base", () => {

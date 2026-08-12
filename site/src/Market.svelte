@@ -49,6 +49,7 @@
     marketOverburdenSeries,
     marketPriceIndexRealSeries,
     marketIndexReading,
+    marketRent,
     statusLettersUsed,
   } from "./lib/view.js";
   import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
@@ -257,11 +258,7 @@
   });
 
   /** The rent line the calculator already publishes, read here rather than refetched. */
-  const rent = $derived(
-    (data.hicpCategories?.categories ?? [])
-      .flatMap((c) => c.groups ?? [])
-      .find((g) => g.cp_code === "CP041") ?? null
-  );
+  const rent = $derived(marketRent(data.hicpCategories));
 
   /** The rows of a numbers table: one period, one value per column. */
   const rowsOf = (series, extra = []) =>
@@ -706,8 +703,8 @@
           `брутната, както я публикува НСИ: парите на ръка зависят от данъчната таблица на ` +
           `годината, в която са сметнати, и биха вкарали трети закон в сметка на двама.`,
         en:
-          `The «×» figures and the one in years are our arithmetic, both from published ` +
-          `numbers. The multiple is Eurostat's index divided by the ${reading.baseYear} level — ` +
+          `The multiple and the years figure are our arithmetic, both from published ` +
+          `numbers. The multiple is Eurostat's index divided by its ${reading.baseYear} level — ` +
           `the year Eurostat themselves took as the starting point and wrote as 100. The years ` +
           `figure is Eurostat's average transaction divided by twelve of НСИ's published average ` +
           `monthly wages across all activities. The two files stay apart all the way to your ` +
@@ -879,16 +876,16 @@
 
     <p class="cap">
       <span class="l-bg"
-        >Редицата започва оттам, откъдето Евростат я публикува, и първото тримесечие се случва да е
-        и най-ниското в нея — това е начало на запис, а не дъно на пазара. Между тримесечията на
-        една и съща година разликата е сезонна и е голяма, затова таблицата сравнява едни и същи
+        >Редицата започва оттам, откъдето Евростат я публикува. Първата точка е начало на запис, а
+        не дъно на пазара — преди нея е имало сделки, просто не в тази таблица. Между тримесечията
+        на една и съща година разликата е сезонна и е голяма, затова таблицата сравнява едни и същи
         тримесечия.</span
       >
       <span class="l-en"
-        >The series begins where Eurostat publish it from, and its first quarter happens to be its
-        lowest — that is the start of a record, not a floor in the market. Between quarters of one
-        year the difference is seasonal and it is large, which is why the table compares like
-        quarters.</span
+        >The series begins where Eurostat publish it from. Its first point is the start of a record
+        rather than a floor in the market — there were sales before it, just not in this table.
+        Between quarters of one year the difference is seasonal and it is large, which is why the
+        table compares like quarters.</span
       >
     </p>
     <p class="cap">
@@ -1600,16 +1597,20 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Изследването на доходите и условията на живот пита хората какво е жилището им: собствено
-        без заем, собствено със заем или под наем. Всички числа тук са дял от хората в страната, на
-        една и съща основа — затова собствениците и наемателите се събират на сто. Делът на тези,
-        които дължат нещо по жилището си, е контекстът, в който се четат числата по-горе.</span
+        >Всяка година Евростат обикаля извадка от домакинствата и ги пита, наред с всичко останало,
+        какво е жилището, в което живеят: тяхно и изплатено, тяхно, но с кредит по него, или под
+        наем. Числата в таблицата са дял от всички хора в страната и стоят на една и съща основа, за
+        да се събират: собствениците и наемателите правят сто. Ето защо таблицата е тук — редът със
+        заема е отговорът на въпроса в заглавието, и той е малък. В България жилището почти винаги
+        се предава по наследство или се купува веднъж, а не се държи на кредит.</span
       >
       <span class="l-en"
-        >The income and living-conditions survey asks people what their housing is: owned outright,
-        owned with a loan, or rented. Every figure here is a share of the country's people on one
-        and the same base, which is why owners and renters add to a hundred. The share of people who
-        owe anything on their home is the context the figures above are read in.</span
+        >Every year Eurostat put a sample of households a set of questions, among them what the home
+        they live in is: theirs and paid off, theirs but with a loan on it, or rented. The figures
+        in the table are shares of everybody in the country, on one and the same base so that they
+        add up: owners and renters make a hundred. That is why the table is here — the row with the
+        loan on it answers the question in the heading, and it is a small row. In Bulgaria a home is
+        almost always inherited or bought once, rather than carried on credit.</span
       >
     </p>
 
@@ -1993,21 +1994,21 @@
         <span class="l-bg"
           >Двата реда отгоре са най-вече за хората със собствено жилище, защото такива са почти
           всички в България. За тези, които плащат наем, официалното число е друго: промяната в
-          наемите за {periodLong(rent.ref_period, "bg")} спрямо същия месец година по-рано е {pct(
-            rent.annual_rate_pct
+          наемите за {periodLong(rent.refPeriod, "bg")} спрямо същия месец година по-рано е {pct(
+            rent.value
           )}. Това е цената на наема, а не цената на жилището, и се мери всеки месец, а не веднъж
           годишно.</span
         >
         <span class="l-en"
           >The two series above are mostly about people who own their home, because almost everyone
           in Bulgaria does. For those who pay rent the official figure is a different one: the
-          change in rents for {periodLong(rent.ref_period, "en")} against the same month a year earlier
-          is {pct(rent.annual_rate_pct)}. That is the price of renting rather than the price of a
-          home, and it is measured every month rather than once a year.</span
+          change in rents for {periodLong(rent.refPeriod, "en")} against the same month a year earlier
+          is {pct(rent.value)}. That is the price of renting rather than the price of a home, and it
+          is measured every month rather than once a year.</span
         >
       </p>
       <p class="ss tsrc">
-        {@render srcLine(COPY.srcEurostat, rent.api_url, when(rent.ref_period))}
+        {@render srcLine(COPY.srcEurostat, rent.sourceUrl, when(rent.refPeriod), rent.apiUrl)}
       </p>
     {/if}
 
