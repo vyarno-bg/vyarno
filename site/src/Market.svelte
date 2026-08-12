@@ -85,6 +85,22 @@
   const when = (p) => ({ bg: periodLong(p, "bg"), en: periodLong(p, "en") });
 
   /**
+   * The same period for a slot that is NOT a bilingual pair — a chart's
+   * accessible name, which is one attribute and therefore one language.
+   *
+   * A series states its own window as the payload keys it — `2006-Q1`, `2011`
+   * — and four of the six charts put those keys straight into their text
+   * alternative while the two beside them read «Q1 2006». So one plot was
+   * described to a screen reader in the notation the page uses and the next in
+   * the one the pipeline uses, on the page whose smallest promise is that a
+   * figure and its period are legible together. An annual series hides it:
+   * `periodLong("2011")` is `"2011"`, so the same slip in the overburden
+   * sentence changes nothing on screen today and changes it the day EU-SILC
+   * publish a quarter.
+   */
+  const at = (p) => periodLong(p, $lang);
+
+  /**
    * The period slot for a figure built from two publishers on two clocks.
    *
    * One quarter under a figure describing two is the caption error that needs
@@ -1241,12 +1257,12 @@
               viewBox="0 0 {CH_W} {CH_H}"
               role="img"
               aria-label={t(COPY.mktChartRate, $lang, {
-                from: rateSeries.from,
-                to: rateSeries.to,
+                from: at(rateSeries.from),
+                to: at(rateSeries.to),
                 low: pct(rateSeries.trough?.value),
-                lowAt: rateSeries.trough?.period,
+                lowAt: at(rateSeries.trough?.period),
                 peak: pct(rateSeries.peak?.value),
-                peakAt: rateSeries.peak?.period,
+                peakAt: at(rateSeries.peak?.period),
                 last: pct(rateSeries.latest?.value),
               })}
             >
@@ -1363,8 +1379,8 @@
                     cities.priceScale,
                     t(COPY.mktChartCity, $lang, {
                       city: $lang === "bg" ? c.nameBg : c.nameEn,
-                      from: c.priceSeries.from,
-                      to: c.priceSeries.to,
+                      from: at(c.priceSeries.from),
+                      to: at(c.priceSeries.to),
                       last: fmt(c.priceSeries.latest?.value),
                     })
                   )}
@@ -1527,8 +1543,8 @@
               viewBox="0 0 {CH_W} {CH_H}"
               role="img"
               aria-label={t(COPY.mktChartDeal, $lang, {
-                from: dealNewSeries.from,
-                to: dealNewSeries.to,
+                from: at(dealNewSeries.from),
+                to: at(dealNewSeries.to),
                 new: fmt0(dealNewSeries.latest?.value),
                 existing: fmt0(dealExistingSeries.latest?.value),
               })}
@@ -1831,10 +1847,10 @@
             viewBox="0 0 {CH_W} {CH_H}"
             role="img"
             aria-label={t(COPY.mktChartPti, $lang, {
-              from: ptiSeries.from,
-              to: ptiSeries.to,
+              from: at(ptiSeries.from),
+              to: at(ptiSeries.to),
               peak: fmt(ptiSeries.peak?.value),
-              peakAt: ptiSeries.peak?.period,
+              peakAt: at(ptiSeries.peak?.period),
               last: fmt(ptiSeries.latest?.value),
             })}
           >
@@ -1879,18 +1895,16 @@
       )}
       <p class="cap">
         <span class="l-bg"
-          >Този ред спира на {ptiSeries.to} г., докато другите числа на страницата са за {periodLong(
-            priceRate.period,
-            "bg"
-          )}. Така го публикува Евростат: показателят излиза веднъж годишно и последната година още
-          не е излязла. Показваме последната, която съществува, с годината до нея.</span
+          >Този ред спира на {periodLong(ptiSeries.to, "bg")} г., докато другите числа на страницата са
+          за {periodLong(priceRate.period, "bg")}. Така го публикува Евростат: показателят излиза
+          веднъж годишно и последната година още не е излязла. Показваме последната, която
+          съществува, с годината до нея.</span
         >
         <span class="l-en"
-          >This series stops at {ptiSeries.to} while the other figures on the page are for {periodLong(
-            priceRate.period,
-            "en"
-          )}. That is Eurostat's own schedule: the indicator comes out once a year and the latest
-          year is not out yet. We show the newest that exists, with its year beside it.</span
+          >This series stops at {periodLong(ptiSeries.to, "en")} while the other figures on the page are
+          for {periodLong(priceRate.period, "en")}. That is Eurostat's own schedule: the indicator
+          comes out once a year and the latest year is not out yet. We show the newest that exists,
+          with its year beside it.</span
         >
       </p>
       <p class="cap">
@@ -1928,9 +1942,13 @@
           ток, парно, вода, поддръжка и данък, а наем или вноска само за тези, които плащат такива.
           Огромната част от хората в България живеят в собствено жилище без заем, така че този ред
           се движи най-вече от сметките, а не от цените на сделките. И не върви в една посока:
-          най-ниското му е {fmt(overburdenSeries.trough?.value)}% през {overburdenSeries.trough
-            ?.period}, а най-високото — {fmt(overburdenSeries.peak?.value)}% през {overburdenSeries
-            .peak?.period}.</span
+          най-ниското му е {fmt(overburdenSeries.trough?.value)}% през {periodLong(
+            overburdenSeries.trough?.period,
+            "bg"
+          )}, а най-високото — {fmt(overburdenSeries.peak?.value)}% през {periodLong(
+            overburdenSeries.peak?.period,
+            "bg"
+          )}.</span
         >
         <span class="l-en"
           >The other official indicator counts people living in a household that spends more than
@@ -1944,9 +1962,9 @@
           own outright, so this series moves mainly with bills rather than with transaction prices.
           It does not move one way either: its lowest reading is {fmt(
             overburdenSeries.trough?.value
-          )}% in {overburdenSeries.trough?.period} and its highest {fmt(
+          )}% in {periodLong(overburdenSeries.trough?.period, "en")} and its highest {fmt(
             overburdenSeries.peak?.value
-          )}% in {overburdenSeries.peak?.period}.</span
+          )}% in {periodLong(overburdenSeries.peak?.period, "en")}.</span
         >
       </p>
       <figure class="chart">
@@ -1963,12 +1981,12 @@
             viewBox="0 0 {CH_W} {CH_H}"
             role="img"
             aria-label={t(COPY.mktChartOverburden, $lang, {
-              from: overburdenSeries.from,
-              to: overburdenSeries.to,
+              from: at(overburdenSeries.from),
+              to: at(overburdenSeries.to),
               peak: fmt(overburdenSeries.peak?.value),
-              peakAt: overburdenSeries.peak?.period,
+              peakAt: at(overburdenSeries.peak?.period),
               low: fmt(overburdenSeries.trough?.value),
-              lowAt: overburdenSeries.trough?.period,
+              lowAt: at(overburdenSeries.trough?.period),
               last: fmt(overburdenSeries.latest?.value),
             })}
           >

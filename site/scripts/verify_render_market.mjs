@@ -478,6 +478,59 @@ test("the charts are legible on the phone, not only on the desk", { skip }, asyn
   );
 });
 
+test("no period reaches a reader in the notation the pipeline keys it by", { skip }, async () => {
+  // A series states its own window as the keys the payload uses — `2006-Q1`,
+  // `2025-Q4` — and `periodLong` is what turns one into «Q1 2006». Four of the
+  // six charts put the raw key into their text alternative while the two beside
+  // them read the formatted one, so the same plot was described one way to a
+  // screen reader and the other way to an eye, on the page whose smallest
+  // promise is that a figure and its period are legible together.
+  //
+  // Both surfaces are walked, because they fail separately: a caption is
+  // rendered by the template and a text alternative is assembled inside a `t()`
+  // slot, and the one nobody looks at is the one that goes stale.
+  //
+  // **The `<title>` marks are deliberately outside this.** One per point on an
+  // eighty-five-quarter line, they are the browser's own tooltip on a mark a
+  // reader is already pointing at — the terse key is what identifies the point
+  // and there is no sentence around it to read oddly. `docs/testing-strategy.md`
+  // §"What does NOT get a test" is the same call: a rule that would fire on 288
+  // marks to catch nothing a reader reads is a rule that gets relaxed.
+  await withApp(
+    async (page, errors) => {
+      const ISO = /\d{4}-(?:Q[1-4]|\d{2})\b/;
+      const found = await page.evaluate(() => {
+        const main = document.querySelector("main.market");
+        const out = [];
+        for (const el of main.querySelectorAll("[aria-label]")) {
+          out.push(["aria-label", el.getAttribute("aria-label")]);
+        }
+        // Rendered text only — an SVG `<title>` is not rendered, so the marks
+        // stay out of this without being filtered by name.
+        out.push(["visible text", main.innerText]);
+        return out;
+      });
+
+      const offenders = [];
+      for (const [where, text] of found) {
+        const hit = ISO.exec(text ?? "");
+        if (hit) offenders.push(`${where}: ${hit[0]} — ${text.trim().slice(0, 100)}`);
+      }
+      assert.deepEqual(
+        offenders,
+        [],
+        `these reach a reader as a payload key rather than as a period:\n  ` +
+          `${offenders.join("\n  ")}\n\nformat.js#periodLong is what every other period on ` +
+          "this page goes through, and it returns the same string for an annual series — so a " +
+          "period that skips it is invisible until the series stops being annual."
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+});
+
 test("every chart publishes its own numbers, and every mark names itself", { skip }, async () => {
   // A plot shows a shape and hides every value in it. Twenty-one years of an
   // index is exactly the case where a reader wants ONE quarter and the chart
