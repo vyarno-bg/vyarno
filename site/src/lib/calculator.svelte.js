@@ -48,7 +48,7 @@
 import { HOME, PRESETS } from "./content.js";
 import { parseDecimal } from "./format.js";
 import { loadAll, mortgageDefaultRate, mortgageAprc, mortgageLendingLimits } from "./data.js";
-import { PAYLOADS } from "./payloads.js";
+import { payloadsFor } from "./payloads.js";
 import {
   latestIndexYear,
   officialInflation,
@@ -111,6 +111,17 @@ import {
   payslipPanel,
   sharePayload,
 } from "./view.js";
+
+/**
+ * The route this module serves, and the one argument `loadAll` and the panel
+ * both take.
+ *
+ * A constant rather than a parameter because this class **is** the calculator
+ * page — nothing else mounts it. Threading it in as an option would let a
+ * caller ask for one route's data while the panel dated another's, which is
+ * precisely the pairing `payloadsFor` exists to make impossible.
+ */
+const PAGE = "home";
 
 /**
  * How many incomes the pay card will hold.
@@ -352,7 +363,7 @@ export class Calculator {
    * loader.
    */
   load = async () => {
-    this.data = await loadAll();
+    this.data = await loadAll(PAGE);
     this.dataReady = true;
     // Staleness is age-based off `as_of` (the date the pipeline last refreshed
     // each JSON) — no hardcoded release date to maintain — and it is judged per
@@ -360,7 +371,7 @@ export class Calculator {
     // months old is fresh while a monthly one two months old is not. The banner
     // fires when some payload is genuinely overdue, and the panel shows which.
     // See view.js#dataAge and the cadences in payloads.js.
-    const age = dataAge(this.data, PAYLOADS);
+    const age = dataAge(this.data, payloadsFor(PAGE));
     this.dataDaysOld = age.daysOld;
     this.dataStale = age.stale;
     this.dataOldestAsOf = age.oldestAsOf;

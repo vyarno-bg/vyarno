@@ -253,9 +253,16 @@ flag. The Vite banner prints the actual LAN URL on startup (Network: …).
 
 ## `src/lib/data.js` — the fetch layer
 
-`loadAll()`, which maps over `payloads.js#PAYLOADS` — so the fetch list and the
-panel's row list are the same list, and there is no hand-written loader per
-payload to forget.
+`loadAll(page)`, which maps over `payloads.js#payloadsFor(page)` — so the fetch
+list and the panel's row list are the same list, and there is no hand-written
+loader per payload to forget.
+
+**The route argument is required.** More than one page here reads data, and a
+loader with no route fetches the whole manifest for all of them: the calculator
+downloads the property market's quarterly series and `/market/` downloads the
+payroll table, neither rendering a figure from it. Defaulting the argument to
+"everything" would hide a misspelled route as a slow page rather than an error,
+so `payloadsFor` throws on a route no row names.
 
 Three helpers on the same module:
 
@@ -309,6 +316,7 @@ Each row carries what the payload cannot say about itself:
 |---|---|
 | `key` | the property in the `loadAll()` result — components read `data.<key>` |
 | `file` | the published stem, `data/published/<file>.json` |
+| `pages` | the routes that render a figure from it, and the filter `loadAll` applies |
 | `cadenceDays` | the upstream's release rhythm. Past it a payload is *due*; past 1.5× it is *overdue* and the banner fires |
 | `name` / `feeds` | the panel's row label, and what this payload produces **on the page** |
 | `refPeriod(payload)` | where this payload keeps the period its figures describe |
@@ -350,6 +358,15 @@ is trivially true for anything in the manifest. `verify_data_contracts.mjs`
 therefore searches for `data.<key>` in the SPA *excluding* `payloads.js` and
 `DataPanel.svelte`: a payload must feed a figure, not just a dated row in the
 freshness table.
+
+**`pages` is what stops the manifest costing every reader every payload**, and
+the route it names has to be the one the panel is dated from. `view.js#dataAge`
+calls a row it holds no payload for `absent`, and `absent` is what the "some
+data is missing" state renders from — so fetching one route's share while
+handing the panel the whole list turns every unfetched payload into a standing
+warning about an upstream that never failed. `payloadsFor` is the single way to
+ask, and a contract test holds the two calls in `calculator.svelte.js` to the
+same route.
 
 ## `src/lib/mirror.js` — the formulas
 

@@ -12,7 +12,7 @@
  */
 
 import { HOME } from "./content.js";
-import { PAYLOADS } from "./payloads.js";
+import { payloadsFor } from "./payloads.js";
 
 const BASE = "/data/published";
 
@@ -32,11 +32,17 @@ async function fetchJson(name) {
 }
 
 /**
- * Load every payload in `PAYLOADS`, in parallel; return whichever succeeded.
+ * Load one route's payloads, in parallel; return whichever succeeded.
  *
  * The list is the manifest's, so adding or removing a payload needs no edit
  * here. Failures become `null` (see `fetchJson`) and the page renders whatever
  * subset loaded, so one 404 costs one card rather than the whole calculator.
+ *
+ * **The route is required, and `payloadsFor` throws on one no row names.** The
+ * argument could default to fetching everything, and that default would be
+ * wrong in the direction nothing catches: a page whose key was misspelled would
+ * quietly download every payload on the site and still render, so the mistake
+ * would show up as a slow page rather than as an error.
  *
  * What the less obvious payloads are, since the manifest names them only for the
  * reader:
@@ -56,11 +62,13 @@ async function fetchJson(name) {
  *   which mixes units and pushes almost every Sofia salary into the top few
  *   percent. `ilc_di01` is the wrong unit for this and is not published.
  *
+ * @param {string} page  the route key, matched against each row's `pages`
  * @returns {Promise<Record<string, object|null>>} keyed by `PAYLOADS[].key`
  */
-export async function loadAll() {
-  const loaded = await Promise.all(PAYLOADS.map((entry) => fetchJson(entry.file)));
-  return Object.fromEntries(PAYLOADS.map((entry, i) => [entry.key, loaded[i]]));
+export async function loadAll(page) {
+  const wanted = payloadsFor(page);
+  const loaded = await Promise.all(wanted.map((entry) => fetchJson(entry.file)));
+  return Object.fromEntries(wanted.map((entry, i) => [entry.key, loaded[i]]));
 }
 
 /**

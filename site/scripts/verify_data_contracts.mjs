@@ -36,7 +36,7 @@ import {
   mortgageLendingLimits,
   loadAll,
 } from "../src/lib/data.js";
-import { PAYLOAD_KEYS, PAYLOADS } from "../src/lib/payloads.js";
+import { PAYLOAD_KEYS, PAYLOAD_PAGES, PAYLOADS, payloadsFor } from "../src/lib/payloads.js";
 import { cityRow, regionQuarter, SOFIA_CITY_CODE } from "../src/lib/view.js";
 import { HOME, PRESETS } from "../src/lib/content.js";
 import {
@@ -554,7 +554,7 @@ test("the offline sentinels in content.js still match what the pipeline publishe
   }
 });
 
-test("loadAll fetches exactly the manifest, and returns it under the manifest's keys", async () => {
+test("loadAll fetches exactly the route's manifest rows, under the manifest's keys", async () => {
   // `loadAll` must derive its fetch list from the manifest rather than holding a
   // copy of it. A second list is how the repo ends up with two answers to "which
   // payloads?", and the one that drifts is always the one nothing renders.
@@ -562,7 +562,7 @@ test("loadAll fetches exactly the manifest, and returns it under the manifest's 
   const start = src.indexOf("export async function loadAll");
   assert.ok(start > 0, "data.js no longer exports loadAll");
   const body = src.slice(start, src.indexOf("\n}", start));
-  assert.match(body, /PAYLOADS/, "loadAll no longer reads the manifest");
+  assert.match(body, /payloadsFor/, "loadAll no longer reads the manifest");
   assert.doesNotMatch(
     body,
     /fetchJson\(\s*["']/,
@@ -573,20 +573,63 @@ test("loadAll fetches exactly the manifest, and returns it under the manifest's 
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => ({ ok: false, status: 404 });
   try {
-    const loaded = await loadAll();
-    assert.deepEqual(
-      Object.keys(loaded).sort(),
-      [...PAYLOAD_KEYS].sort(),
-      "loadAll's result keys must be the manifest's keys — components read data.<key>"
-    );
-    assert.deepEqual(
-      Object.values(loaded).filter((v) => v !== null),
-      [],
-      "a failed fetch must become null, not throw and not a partial object"
-    );
+    for (const page of PAYLOAD_PAGES) {
+      const loaded = await loadAll(page);
+      assert.deepEqual(
+        Object.keys(loaded).sort(),
+        payloadsFor(page)
+          .map((p) => p.key)
+          .sort(),
+        `loadAll("${page}") must return that route's manifest keys — components read data.<key>`
+      );
+      assert.deepEqual(
+        Object.values(loaded).filter((v) => v !== null),
+        [],
+        "a failed fetch must become null, not throw and not a partial object"
+      );
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("a route no payload names is an error, not an empty fetch list", () => {
+  // The failure this catches is silent in the worst way. `payloadsFor` returning
+  // [] for a misspelled route would have `loadAll` resolve to `{}`, every
+  // `data.<key>` read as undefined, and the page render its offline sentinels —
+  // a page that looks like an upstream outage and has no upstream involved.
+  assert.throws(
+    () => payloadsFor("markt"),
+    /no payload names the route/,
+    "payloadsFor accepted a route no row declares"
+  );
+  for (const page of PAYLOAD_PAGES) {
+    assert.ok(payloadsFor(page).length > 0, `PAYLOAD_PAGES lists "${page}" but no row carries it`);
+  }
+  const undeclared = PAYLOADS.filter((p) => !Array.isArray(p.pages) || p.pages.length === 0);
+  assert.deepEqual(
+    undeclared.map((p) => p.key),
+    [],
+    "a manifest row naming no route is fetched by nobody and dated by nobody"
+  );
+});
+
+test("the page fetches and the panel dates the same route's payloads", () => {
+  // `dataAge` reports a row it holds no payload for as `absent`, and `absent`
+  // feeds the "some data is missing" state. Fetch one route's share of the
+  // manifest while handing the panel all of it and every unfetched payload reads
+  // as a failed upstream — a standing warning about data the page never wanted.
+  // The two calls have to name the same route, so this checks they do.
+  const src = readFileSync(join(HERE, "..", "src", "lib", "calculator.svelte.js"), "utf-8");
+  const fetched = /loadAll\(([A-Za-z_$][\w$]*)\)/.exec(src);
+  const dated = /dataAge\(this\.data,\s*payloadsFor\(([A-Za-z_$][\w$]*)\)\)/.exec(src);
+  assert.ok(fetched, "calculator.svelte.js no longer calls loadAll with a route");
+  assert.ok(dated, "calculator.svelte.js no longer dates the panel from payloadsFor");
+  assert.equal(
+    fetched[1],
+    dated[1],
+    "the calculator fetches one route's payloads and dates another's"
+  );
 });
 
 test("every manifest payload feeds a figure, not just a row in the freshness panel", () => {
