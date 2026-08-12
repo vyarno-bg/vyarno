@@ -2927,8 +2927,38 @@ test("the sector gap is measured net against net, per earner", () => {
   assert.ok(out.net < out.gross, "the sector reference is no longer converted to net");
   assert.equal(out.gaps.length, 2, "the gap is per earner — НСИ publish a wage, not a household");
   assert.equal(out.gaps[0].direction, "below");
-  assert.equal(out.gaps[0].magnitudePct, 18);
   assert.equal(out.gaps[1].direction, "below");
+
+  // **The percentage is asserted against a wage this file states, never
+  // against the published one.** НСИ republish quarterly and the sector average
+  // moves with them, so a figure pinned off the live payload is a test that
+  // goes red on a data refresh — a correct refresh, arriving as a failing
+  // build, with the only apparent fix being to edit the expectation until it
+  // matches whatever the upstream now says. That is the habit this repository
+  // exists to make impossible, and a test that teaches it is worse than no
+  // test. Stated here, the arithmetic is exact and only a change to the
+  // FORMULA can move it.
+  const own = 1000;
+  const fixed = sectorComparison({
+    sectorSalary: { ...payload, sectors: [{ en_name: "X", bg_name: "Х", value_eur: 3000 }] },
+    key: "X",
+    nets: [own],
+    payroll,
+  });
+  const againstNet = Math.round((1 - own / fixed.net) * 100);
+  const againstGross = Math.round((1 - own / fixed.gross) * 100);
+  assert.notEqual(
+    againstNet,
+    againstGross,
+    "the fixed wage no longer tells the two readings apart — pick another"
+  );
+  assert.equal(fixed.gaps[0].direction, "below");
+  assert.equal(
+    fixed.gaps[0].magnitudePct,
+    againstNet,
+    `the gap reads ${fixed.gaps[0].magnitudePct}%, which is the gross reading (${againstGross}%) ` +
+      `rather than the net one (${againstNet}%)`
+  );
 
   // An unpicked sector states nothing about anybody.
   assert.equal(sectorComparison({ sectorSalary: payload, key: "", nets: [2100], payroll }), null);
