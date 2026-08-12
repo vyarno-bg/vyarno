@@ -21,9 +21,9 @@
 #    person searching.
 #
 #    Anyone who wants the data by machine should take it from the repository
-#    rather than this box: github.com/vyarno-bg/vyarno. It is faster, it is
-#    versioned, and it does not cost a small server anything. That route is
-#    named in the terms of use too.
+#    rather than from here: github.com/vyarno-bg/vyarno. It is faster, it is
+#    versioned, and it carries the history this site only shows the latest of.
+#    That route is named in the terms of use too.
 #
 #    NOTE, because it is the thing people get wrong: the CODE is openly
 #    licensed, the FIGURES are not ours to license. Each one carries a

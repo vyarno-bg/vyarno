@@ -673,24 +673,52 @@ Verified against the code on 2026-07-30 and corrected where it did not hold.
   deletes the key in the same action. Notice version 1.4 carries it in its own
   section, per the notice's own rule that anything leaving something in the
   reader's browser changes the version in the same release.
-- **There is a processor and there is a contract.** The site runs on a rented
-  Hetzner VPS, so the host processes the request log on the controller's behalf
-  and **GDPR art. 28(3) needs a written contract**. Concluded 2026-07-30. It did
-  not come with the server: Hetzner's DPA is a separate agreement, accepted by a
-  checkbox in the customer account, and ordering a machine does not conclude it
-  — which is the trap, because the privacy notice asserts the contract exists
-  from the first page view. See §"Standing commitments" item 4. No art. 44
-  transfer, because the box is in the EU.
-- **The notice states a retention period in days, not a mechanism.**
-  Art. 13(2)(a) wants a period or the criteria for one; "rotated automatically"
-  is neither. The notice commits to **14 days**, and the server's logrotate is
-  set to 14 days — confirmed 2026-07-30. **The copy is the commitment and the
-  box has to match it**, not the other way round.
+- **There is a processor and there is a contract.** The site is delivered by
+  Cloudflare, Inc., so the host processes the request data on the controller's
+  behalf and **GDPR art. 28(3) needs a written contract**. Cloudflare's standard
+  DPA is *incorporated by reference into the Self-Serve Subscription Agreement*
+  — their own words, on their GDPR page, read 2026-08-12 — so accepting the
+  subscription terms is what concludes it. That is the opposite arrangement from
+  a provider whose DPA is a separate tick-box, and the difference is worth
+  writing down rather than remembering: with one, the contract exists from the
+  first page view; with the other, believing it does is the failure. Re-read it
+  on any change of provider — §"Standing commitments" item 4.
+- **There IS an art. 44 transfer, and the notice says so.** Cloudflare processes
+  request metadata "in our data centers in the United States and Europe" (their
+  GDPR page, read 2026-08-12), and on this plan nothing pins the processing to
+  the EU — regional pinning is a paid add-on we do not buy. The transfer runs on
+  the Commission's SCCs, and Cloudflare is additionally certified under the
+  EU-U.S. Data Privacy Framework, under which it undertakes that a DPF transfer
+  is not a Restricted Transfer. Both are the processor's, not ours; what is ours
+  is stating the transfer in the notice instead of leaving a reader to infer an
+  EU-only answer from an EU-only publisher list.
+- **The notice states retention as a criterion, because a period is not ours to
+  state.** Art. 13(2)(a) wants a period **or** the criteria for one, and the
+  criteria are the honest half here: Cloudflare publishes "a limited period of
+  time" and no figure in days, per-request records are not available to read or
+  export on this plan, and nothing is copied out. So the notice commits to what
+  can be kept true — no log of ours, no archive, no file that outlives the
+  host's own period — rather than to a number nobody here can hold the host to.
+  **A number in the copy that only the host can honour is a promise made with
+  someone else's hands.**
 - **The response headers in `site/public/_headers` are served by the live
-  origin** — confirmed 2026-07-30. That matters because the privacy notice
-  points at the CSP as the thing that makes "no third-party script" checkable
-  rather than promised, and a declaration a server never applies would make that
-  sentence false.
+  origin** — confirmed 2026-08-12 against vyarno.bg, every declared rule
+  arriving as written. That matters because the privacy notice points at the CSP
+  as the thing that makes "no third-party script" checkable rather than
+  promised, and a declaration a server never applies would make that sentence
+  false.
+- **The origin also adds headers this repository never declared, and one of
+  them reaches the reader's browser.** `NEL` and `Report-To` ask the browser to
+  post a report about a failed request to the host's reporting address; the
+  edge adds `Strict-Transport-Security` and a same-origin `Speculation-Rules`
+  pointer. None is a third party — the reporting address is the processor
+  already named above — but «браузърът ти не праща нито една заявка към трето
+  лице» is a sentence a reader can check, so the notice describes the error
+  report in its own paragraph rather than resting on the CSP. It could not rest
+  on the CSP anyway: `connect-src` does not govern a Reporting API upload.
+  `check-live-headers.mjs` fails on any FURTHER header of that kind, which is
+  the guard — the next feature a CDN turns on by default will not announce
+  itself.
 - **Art. 30 register of processing.** The art. 30(5) exemption for
   organisations under 250 people is not available for processing that is more
   than occasional, and serving a website logs continuously. The register covers
@@ -841,7 +869,7 @@ something changes.
 | **AI Act** (Reg. 2024/1689) | **No** | Every figure is deterministic arithmetic over published data; nothing infers, and there is no AI system to classify. |
 | **ЗЕС** | **No** | Not an electronic communications network or service. The storage rule people expect to find here is in ЗЕТ чл. 4а. |
 | **ЗЗК чл. 29** (unfair competition) | **No** | Needs conduct «при осъществяване на стопанска дейност» damaging «интересите на конкурентите». See §имот.bg. |
-| **ЗЗД чл. 45** (delict) | **Always available** | A person who relies on a wrong figure and suffers loss can plead it. Nothing disclaims it away — ЗЗП and ЗЗД limits on excluding liability are why the terms say the disclaimer does not touch rights consumer law gives. What answers it is the practice: every figure sourced, dated, and checked at publish time by the seven gates in [`validation-gates.md`](./validation-gates.md). |
+| **ЗЗД чл. 45** (delict) | **Always available** | A person who relies on a wrong figure and suffers loss can plead it. Nothing disclaims it away — ЗЗП and ЗЗД limits on excluding liability are why the terms say the disclaimer does not touch rights consumer law gives. What answers it is the practice: every figure sourced, dated, and checked at publish time by the eight gates in [`validation-gates.md`](./validation-gates.md). |
 | **`.bg` domain** | **Yes** | register.bg's Общи условия govern the name. They are revised, so this page links to them rather than restating clause numbers. |
 
 ## Standing commitments
@@ -854,20 +882,23 @@ true. Each is published under ЗЕТ чл. 4 or the GDPR.
 2. **Answer a request for the postal address within three working days**, in
    writing, with the address. It is a published чл. 4 т. 2 row, and it is the
    only non-electronic route the site offers.
-3. **Keep the server's log rotation at 14 days**, the period the privacy notice
-   commits to. The copy is the commitment; the box matches it. Confirmed set
-   2026-07-30.
+3. **Re-read what the host injects into a response, on any provider change and
+   on any notice edit.** A CDN turns features on by default and does not ask:
+   the reporting headers the notice's «Какво вижда хостът» paragraph describes
+   arrived that way. `npm run check:headers` against the live origin is the
+   reading, and it fails on a directive header the notice does not account for.
+   Read 2026-08-12.
 4. **Hold the hosting provider's GDPR art. 28 agreement, and re-conclude it if
-   the provider changes.** Accepted with Hetzner on 2026-07-30. It is worth
-   knowing why this is a standing item rather than a box that was ticked once:
-   **Hetzner's DPA is not part of their general terms and is not concluded by
-   ordering a server.** Their own words — «Hetzner only processes personal data
-   as a processor pursuant to Art. 28 GDPR if the customer concludes a contract
-   for processing orders with Hetzner. This contract for processing orders is
-   **not concluded automatically**.» It is a separate agreement accepted by
-   ticking "I agree to the agreement" in the customer account. A new provider,
-   or a new account with the same provider, starts again from nothing while the
-   privacy notice keeps telling readers the contract exists.
+   the provider changes.** In force with Cloudflare, whose standard DPA is
+   incorporated by reference into the Self-Serve Subscription Agreement — read
+   2026-08-12. It is worth knowing why this is a standing item rather than a box
+   ticked once, and the reason is that **how the contract is concluded is a fact
+   about the provider, not about DPAs.** Some incorporate it into the terms the
+   account already accepted; others hold it back as a separate agreement that
+   ordering a machine does not conclude, and with those, believing you have it
+   is the whole failure. A new provider — or a new account with the same one —
+   starts that question again from nothing, while the privacy notice keeps
+   telling readers the contract exists from the first page view.
 5. **Re-read имот.bg's terms on every refresh pass and date the reading.** §V.1
    lets Rezon add a clause at any time, effective on posting, and that section's
    position depends on its continued absence.

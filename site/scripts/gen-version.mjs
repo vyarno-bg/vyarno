@@ -37,8 +37,23 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const DIST = join(HERE, "..", "dist");
 const DATA = join(HERE, "..", "..", "data", "published");
 
-/** The short SHA, or "unknown" outside a checkout — never a thrown build. */
+/**
+ * The short SHA, or "unknown" outside a checkout — never a thrown build.
+ *
+ * **A build host that hands the SHA over in the environment is asked first.**
+ * The `git` call needs three things at once — the binary on PATH, a `.git` to
+ * read, and the checkout to be at the built commit — and a host that supplies
+ * none of them is not a broken host, it is an ordinary one: plenty of build
+ * images fetch a tarball or a detached tree and never install git at all. Every
+ * way of getting it wrong lands on the same `"unknown"`, silently, in the one
+ * file whose entire job is answering "is the commit I pushed the one that is
+ * live?". An environment variable the host sets from the commit it checked out
+ * cannot drift from the build the way a working tree can.
+ */
 function commit() {
+  // Cloudflare Pages sets this to the full SHA of the commit being built.
+  const fromEnv = process.env.CF_PAGES_COMMIT_SHA;
+  if (fromEnv) return fromEnv.slice(0, 7);
   try {
     return execFileSync("git", ["rev-parse", "--short", "HEAD"], {
       cwd: HERE,

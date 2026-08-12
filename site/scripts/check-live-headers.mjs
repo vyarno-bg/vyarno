@@ -158,6 +158,45 @@ async function headOrGet(url) {
   return get;
 }
 
+/**
+ * Response headers that make the BROWSER go somewhere — fetch a resource,
+ * open a connection, post a report.
+ *
+ * `_headers` is checked for drift in one direction: every rule it declares has
+ * to arrive. That misses the direction a CDN actually drifts in, which is
+ * adding something nobody declared. These headers are the ones where that
+ * matters, because each is an instruction to the reader's browser rather than
+ * a property of the response, and the privacy notice makes a checkable claim
+ * about exactly that: «браузърът ти не праща нито една заявка към трето лице».
+ * A `Link: <https://…>; rel=preconnect` or a reporting endpoint on another
+ * origin falsifies that sentence without changing one line in this repository.
+ *
+ * The CSP does not cover this. `connect-src` governs fetch and XHR; a Reporting
+ * API upload is not subject to it, which is precisely why the notice describes
+ * error reporting in its own paragraph instead of pointing at the policy.
+ */
+const DIRECTIVE_HEADERS = [
+  "link",
+  "nel",
+  "refresh",
+  "report-to",
+  "reporting-endpoints",
+  "speculation-rules",
+];
+
+/**
+ * The ones the notice already accounts for, and what accounts for them.
+ *
+ * A name is in here because the published notice describes it, never because
+ * it is common or harmless. Adding a name is a privacy-notice edit first and a
+ * line here second — in that order, and in the same release.
+ */
+const DISCLOSED = new Map([
+  ["nel", "network error reporting — privacy notice, «Какво вижда хостът»"],
+  ["report-to", "network error reporting — privacy notice, «Какво вижда хостът»"],
+  ["speculation-rules", "same-origin prefetch, served from /cdn-cgi/ on this origin"],
+]);
+
 const origin = process.argv[2] ?? ORIGIN;
 const blocks = parseHeaders(readFileSync(join(SITE, "public", "_headers"), "utf8"));
 if (blocks.length === 0) {
@@ -207,6 +246,26 @@ for (const [path, patterns] of probes) {
       wrong.push(`   ${name}:\n     declared: ${want}\n     served:   ${got}`);
   }
 
+  // Declared names are compared case-insensitively: `_headers` writes
+  // `Cache-Control` and a header name is case-insensitive by definition, so
+  // matching the literal spelling would report a declared header as undeclared.
+  const declared = new Set(Object.keys(expected).map((n) => n.toLowerCase()));
+  const notes = [];
+  for (const name of DIRECTIVE_HEADERS) {
+    const got = res.headers.get(name);
+    if (got === null || declared.has(name)) continue;
+    const why = DISCLOSED.get(name);
+    if (why) {
+      notes.push(`   note ${name}: ${why}`);
+      continue;
+    }
+    wrong.push(
+      `   ${name}: served but declared nowhere\n     served:   ${got}\n` +
+        "     A header that sends the browser somewhere is a privacy-notice\n" +
+        "     change before it is a header change. Read where it points."
+    );
+  }
+
   const named = patterns.filter((p) => p !== path);
   const from = named.length ? `  (${named.join(", ")})` : "";
   if (wrong.length === 0) {
@@ -216,6 +275,7 @@ for (const [path, patterns] of probes) {
     console.log(`FAIL ${path}${from} — HTTP ${res.status}`);
     for (const line of wrong) console.log(line);
   }
+  for (const line of notes) console.log(line);
 }
 
 console.log();

@@ -139,14 +139,21 @@ export const SUPPORT_COPY = Object.freeze({
    *
    * The second sentence names what the money is for rather than that money
    * exists. «Поддържа се от дарения» is true of a foundation with staff and of
-   * one person paying a hosting bill, and the reader cannot tell which they are
-   * looking at; the domain and the server are the whole list, so printing the
-   * list is both shorter and the more informative sentence. Rule 3 still binds
-   * — a cost is named, never a figure.
+   * one person paying a bill, and the reader cannot tell which they are looking
+   * at; the domain is the whole list, so printing the list is both shorter and
+   * the more informative sentence. Rule 3 still binds — a cost is named, never
+   * a figure.
+   *
+   * **The list is what is actually paid for, and it shrinks when a cost goes
+   * away.** Naming a cost that no longer exists asks for money against a bill
+   * nobody receives, which is a worse failure than vagueness: hosting and the
+   * refresh runs are on free plans, so the domain is the list. If that changes,
+   * this line changes in the same release — in both languages, and in all three
+   * places below that state it.
    */
   line: {
-    bg: "Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от дарения.",
-    en: "Vyarno is free for everyone and has no paid version. The domain and the server are paid for by donations.",
+    bg: "Вярно е безплатно за всички и няма платена версия. Домейнът се плаща от дарения; хостингът е безплатен.",
+    en: "Vyarno is free for everyone and has no paid version. The domain is paid for by donations; the hosting is free.",
   },
 
   /**
@@ -176,8 +183,8 @@ export const SUPPORT_COPY = Object.freeze({
    */
   explainK: { bg: "Кой плаща за това?", en: "Who pays for this?" },
   explainBody: {
-    bg: "Никой не ни плаща да ти показваме тези числа. Няма реклами, няма платена версия и не взимаме пари от банки, кредитни посредници, брокери или застрахователи — нито едно число тук не зависи от това кой плаща. Домейнът и сървърът се плащат от дарения.",
-    en: "Nobody pays us to show it to you. There is no advertising, no paid version, and we take no money from a bank, a credit intermediary, a broker or an insurer — no figure here depends on who is paying. The domain and the server are covered by donations.",
+    bg: "Никой не ни плаща да ти показваме тези числа. Няма реклами, няма платена версия и не взимаме пари от банки, кредитни посредници, брокери или застрахователи — нито едно число тук не зависи от това кой плаща. Домейнът се плаща от дарения; хостингът е безплатен.",
+    en: "Nobody pays us to show it to you. There is no advertising, no paid version, and we take no money from a bank, a credit intermediary, a broker or an insurer — no figure here depends on who is paying. The domain is covered by donations; the hosting is free.",
   },
 
   /** The link that closes the explainer item, and the only route it offers. */
@@ -202,8 +209,8 @@ export const SUPPORT_COPY = Object.freeze({
    * link is already reading. Says where money goes and what it does not buy.
    */
   body: {
-    bg: "Вярно се поддържа от дарения. Те покриват домейна, сървъра и нищо друго — няма заплати, няма дружество, няма инвеститор. Дарението не купува нищо: няма платена версия, няма допълнителни функции за дарители и никое число на сайта не зависи от това кой е дарил. Ако предпочиташ да не даряваш, нищо не се променя за теб — целият сайт остава напълно достъпен.",
-    en: "Vyarno runs on donations. They cover the domain and the server and nothing else — there are no salaries, no company and no investor. A donation buys nothing: there is no paid version, no donor-only features, and no figure on the site depends on who gave. If you would rather not donate, nothing changes for you — the whole site stays fully available.",
+    bg: "Вярно се поддържа от дарения. Те покриват домейна и нищо друго — хостингът е безплатен, няма заплати, няма дружество, няма инвеститор. Дарението не купува нищо: няма платена версия, няма допълнителни функции за дарители и никое число на сайта не зависи от това кой е дарил. Ако предпочиташ да не даряваш, нищо не се променя за теб — целият сайт остава напълно достъпен.",
+    en: "Vyarno runs on donations. They cover the domain and nothing else — the hosting costs nothing, there are no salaries, no company and no investor. A donation buys nothing: there is no paid version, no donor-only features, and no figure on the site depends on who gave. If you would rather not donate, nothing changes for you — the whole site stays fully available.",
   },
 
   /**
