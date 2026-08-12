@@ -206,3 +206,39 @@ def test_every_arm_is_either_scheduled_or_named_as_manual() -> None:
         f"a refresh workflow passes --source {unknown}, which the CLI does not "
         f"accept. That run fails on click's own validation, monthly, unwatched."
     )
+
+
+def test_the_refresh_workflow_commits_under_an_identity() -> None:
+    """A runner has no git identity, so `git commit` there aborts with exit 128.
+
+    It aborts at the end of the job, after the install, the live fetch and a
+    correct payload written to disk — so every step before it is green and the
+    one thing the run exists to do is the one thing that does not happen. On a
+    cron, that is a month of a payload not publishing and a red mark nobody is
+    looking at.
+
+    The assertion is that the two live in the SAME `run:` block, which is the
+    only arrangement that cannot come apart: a separate configure step can be
+    moved, renamed, made conditional or dropped while the commit step still
+    reads as complete on its own.
+    """
+    workflow = (
+        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh.yml"
+    ).read_text("utf-8")
+
+    committing = [
+        block
+        for block in re.split(r"^      - name: ", workflow, flags=re.M)
+        if re.search(r"^\s+git commit\b", block, re.M)
+    ]
+    assert committing, "no step in refresh.yml runs `git commit` — has the publish path moved?"
+    for block in committing:
+        name = block.splitlines()[0].strip()
+        assert re.search(r"^\s+git config user\.email\b", block, re.M), (
+            f"the `{name}` step commits without setting user.email in the same block. "
+            f"A runner carries no identity: git aborts with exit 128 after the payload "
+            f"is already written."
+        )
+        assert re.search(r"^\s+git config user\.name\b", block, re.M), (
+            f"the `{name}` step commits without setting user.name in the same block."
+        )
