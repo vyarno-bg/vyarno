@@ -70,7 +70,7 @@ assertion written as "there is at least one of these".
 reason, and the browser suites count the header, the footer and the heading
 exactly rather than merely finding them.
 
-It reads the eleven published payloads off disk — `PAYLOADS` from
+It reads the twelve published payloads off disk — `PAYLOADS` from
 `src/lib/payloads.js`, never a directory listing — and hands them to the
 component as a prop. `data.js` is not imported and must not be: that layer is
 `fetch`, and there is no fetch in a Node build step. A payload that will not

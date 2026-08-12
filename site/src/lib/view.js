@@ -2445,3 +2445,66 @@ export function marketDealInYearsOfPay(houseMarket, sectorSalary) {
     wageUrl: sectorSalary?.source_url ?? null,
   };
 }
+
+/**
+ * The six cities, price movement beside sales movement.
+ *
+ * **Change against change, and never a level against a level.** Every НСИ city
+ * series is an index or a percentage, and their own лв./кв.м survey ran to
+ * 2014-Q2 and was discontinued, so no transaction price per square metre exists
+ * for any Bulgarian city from any publisher. The имот.bg figures the calculator
+ * shows are ASKING prices from listings — a different measurement, and putting
+ * the two in one column would invent a comparison neither publisher supports.
+ *
+ * The two blocks are joined on the city code rather than zipped by position:
+ * they come from two workbooks with two different coverage windows, and НСИ
+ * publish the sales series over a shorter one.
+ *
+ * @param {object|null} nsiHousing
+ * @returns {{period: string|null, priceUrl: string|null, dealsUrl: string|null,
+ *            cities: Array<object>}}
+ */
+export function marketCities(nsiHousing) {
+  const price = nsiHousing?.city_price_index_yoy ?? null;
+  const deals = nsiHousing?.city_deals_yoy ?? null;
+  const dealsBy = new Map((deals?.cities ?? []).map((c) => [c.code, c]));
+  const cities = (price?.cities ?? []).map((c) => {
+    const d = dealsBy.get(c.code) ?? null;
+    return {
+      code: c.code,
+      nameBg: c.name_bg,
+      nameEn: c.name_en,
+      pricePct: c.value_pct ?? null,
+      pricePeriod: c.ref_period ?? null,
+      dealsPct: d?.value_pct ?? null,
+      dealsPeriod: d?.ref_period ?? null,
+    };
+  });
+  return {
+    period: nsiHousing?.ref_period ?? null,
+    priceUrl: price?.source_url ?? null,
+    dealsUrl: deals?.source_url ?? null,
+    cities,
+  };
+}
+
+/**
+ * НСИ's national house price index change — the same statistic Eurostat
+ * disseminate, published here by the body that compiles it.
+ *
+ * Both are on the page deliberately. They agree to the decimal, and a reader
+ * who checks one against the other finds that out — which is worth more than
+ * either figure alone on a page arguing that its numbers are checkable.
+ *
+ * @param {object|null} nsiHousing
+ * @returns {SourcedFigure & {newBuild: number|null, existing: number|null}}
+ */
+export function marketNsiNationalRate(nsiHousing) {
+  const block = nsiHousing?.national_price_index_yoy ?? null;
+  const at = block?.value_pct ?? {};
+  return {
+    ...sourced(at.total, block),
+    newBuild: Number.isFinite(at.new) ? at.new : null,
+    existing: Number.isFinite(at.existing) ? at.existing : null,
+  };
+}

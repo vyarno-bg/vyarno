@@ -50,6 +50,7 @@ ARMS = {
     "salary-dist": "_refresh_salary_dist",
     "payroll": "_refresh_payroll",
     "house-market": "_refresh_house_market",
+    "nsi-housing": "_refresh_nsi_housing",
 }
 
 # What each arm is allowed to write. `refresh.yml` derives this from the source
@@ -65,6 +66,7 @@ ARM_PAYLOADS = {
     "salary-dist": ["salary_dist.json"],
     "payroll": ["payroll.json"],
     "house-market": ["house_market.json", "house_market_structure.json"],
+    "nsi-housing": ["nsi_housing.json"],
 }
 
 

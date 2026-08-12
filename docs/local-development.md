@@ -72,7 +72,7 @@ on a short-lived branch, merges into `main`, and is deleted.
 
 **CI runs on every push to every branch, and on every pull request**
 (`.github/workflows/ci.yml`): `pytest -q`, `npm run verify:math`,
-`npm run build`, plus a check that all eleven published payloads parse. So a
+`npm run build`, plus a check that all twelve published payloads parse. So a
 working branch is proven before the merge, and `main` is re-checked after it.
 
 The pull-request trigger is not a second copy of the push run. It is the only
@@ -192,7 +192,7 @@ rather than tidy:
   which turns the UTF-8 Eurostat cubes into a `UnicodeDecodeError` on read and
   the Cyrillic labels into mojibake on write — and it translates `"\n"` to
   `os.linesep`, so `publish.write_payload` without `newline="\n"` rewrites all
-  eleven payloads CRLF. That last one hides: `.gitattributes` normalises them
+  twelve payloads CRLF. That last one hides: `.gitattributes` normalises them
   back on commit, so the repository stays clean while the working tree does
   not, and what reads the working tree before git does — `copy-data.mjs`
   filling `dist/`, any byte comparison against the previous publish — sees a
@@ -350,7 +350,7 @@ All of them also run in CI on every push and on every pull request, alongside
 ```bash
 cd pipeline && source .venv/bin/activate
 
-# Full refresh — every connector, every gate, all 11 JSONs. ~10 s.
+# Full refresh — every connector, every gate, all 12 JSONs. ~10 s.
 vyarno-pipeline refresh --source all --out ../data/published
 
 # Or one at a time.
@@ -359,7 +359,7 @@ vyarno-pipeline refresh --source <name> --out ../data/published
 
 **`--source` values:** `hicp`, `unemployment`, `mortgage`,
 `city-price`, `region-salary`, `sector-salary`, `salary-dist`, `payroll`,
-`house-market`, `all`. Nine arms and eleven files — `hicp` and `house-market`
+`house-market`, `all`. Ten arms and twelve files — `hicp` and `house-market`
 each write two.
 
 **`house-market` writes both `house_market.json` and
@@ -556,7 +556,7 @@ Before pushing a change to `site/`:
       `make render` gates on the browser resolver and fails where none is
       found, which is the run to trust
 - [ ] `npm run build` exits 0
-- [ ] `dist/data/published/*.json` exists for all eleven files
+- [ ] `dist/data/published/*.json` exists for all twelve files
 - [ ] `npm run dev` and `npm run preview` both serve `/data/published/*.json`
       with 200
 

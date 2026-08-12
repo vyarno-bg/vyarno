@@ -876,3 +876,118 @@ def validate_house_market_structure(payload: dict) -> None:
             f"long-run average, which is the only reading that supports the "
             f"sentence the page puts beside it."
         )
+
+
+# ---------------------------------------------------------------------------
+# The НСИ housing gates
+# ---------------------------------------------------------------------------
+
+
+def validate_nsi_housing(payload: dict) -> None:
+    """Gate `nsi_housing.json`: every published figure is a cell НСИ published.
+
+    Gate 8's shape, for the same licence reason. §2.1.1 forbids distributing
+    производни произведения, so a headline this pipeline calculated rather than
+    selected is a breach that looks exactly like a correct number — and the only
+    way to tell from the payload alone is that the headline and the series
+    entry at its own reference period are the SAME cell.
+
+    An identity rather than a tolerance, because there is no arithmetic between
+    them that could legitimately round.
+    """
+    national = payload.get("national_price_index_yoy", {})
+    period = national.get("ref_period")
+    series = national.get("series_by_period", {})
+    if not period or period not in series:
+        raise ValidationError(
+            "nsi housing: the national block names a ref_period its own series "
+            "does not carry, so the headline is dated by a quarter nobody published."
+        )
+    if national.get("value_pct") != series[period]:
+        raise ValidationError(
+            f"nsi housing: the national headline {national.get('value_pct')} is not "
+            f"the published cell at {period}, which is {series[period]}. A figure "
+            f"we computed rather than selected is a licence breach that reads as "
+            f"a correct number."
+        )
+
+    for key in ("city_price_index_yoy", "city_deals_yoy"):
+        block = payload.get(key, {})
+        cities = block.get("cities", [])
+        if not cities:
+            raise ValidationError(f"nsi housing: {key} carries no cities")
+        seen = set()
+        for city in cities:
+            code = city.get("code")
+            if code in seen:
+                raise ValidationError(f"nsi housing: {key} lists {code!r} twice")
+            seen.add(code)
+            if not city.get("name_bg") or not city.get("name_en"):
+                raise ValidationError(
+                    f"nsi housing: {key} city {code!r} is missing a name in one "
+                    f"language. The page renders a blank line for a missing "
+                    f"string, not a fallback."
+                )
+            at = city.get("ref_period")
+            city_series = city.get("series_by_period", {})
+            if at not in city_series:
+                raise ValidationError(
+                    f"nsi housing: {key} city {code!r} names {at} and its series does not carry it"
+                )
+            if city["value_pct"] != city_series[at]:
+                raise ValidationError(
+                    f"nsi housing: {key} city {code!r} headlines {city['value_pct']} "
+                    f"but the published cell at {at} is {city_series[at]}."
+                )
+
+
+def validate_hpi_across_publishers(nsi_housing: dict, house_market: dict) -> None:
+    """НСИ's own house price index change must equal Eurostat's, at one decimal.
+
+    **The strongest gate here.** These are the same statistic reaching us by two
+    routes — НСИ compile it and Eurostat disseminate it — so they are not merely
+    close, they are the same number printed twice. Anything else means we read
+    the wrong quarter, the wrong column or the wrong purchase type on one side,
+    and each of those produces a figure that looks entirely reasonable on the
+    page. One check catches all three.
+
+    Compared at the newest quarter BOTH carry rather than at each payload's own
+    latest: Eurostat disseminate a few days behind НСИ publishing, so a refresh
+    landing between the two would otherwise fail on a quarter one side simply
+    does not have yet — a false alarm that teaches whoever sees it to distrust
+    the gate. **No overlap at all is still a failure**: they are the same
+    series, and two non-overlapping windows mean one of them is not what we
+    think it is.
+
+    If this fails, the bug is ours. Do not soften it into a band.
+    """
+    nsi = nsi_housing.get("national_price_index_yoy", {}).get("series_by_period", {})
+    estat = house_market.get("price_index", {}).get("annual_rate_pct", {})
+    if not nsi or not estat:
+        raise ValidationError(
+            "hpi cross-check: one of the two publishers' rate series is empty, "
+            "so the reconciliation could not run at all."
+        )
+    shared = sorted(set(nsi) & set(estat))
+    if not shared:
+        raise ValidationError(
+            f"hpi cross-check: НСИ publish {min(nsi)}..{max(nsi)} and Eurostat "
+            f"{min(estat)}..{max(estat)}, and the two share no quarter. They are "
+            f"the same statistic, so non-overlapping windows mean one of them is "
+            f"not the series it is taken for."
+        )
+    period = shared[-1]
+    for field in ("total", "new", "existing"):
+        theirs = nsi[period].get(field)
+        ours = estat[period].get(field)
+        if theirs is None or ours is None:
+            continue
+        # Both publish to one decimal, so equality is the right comparison and
+        # the tolerance exists only to absorb float representation.
+        if abs(theirs - ours) > 0.051:
+            raise ValidationError(
+                f"hpi cross-check: at {period} НСИ publish {theirs}% for {field} "
+                f"and Eurostat {ours}%. These are the same statistic by two "
+                f"routes. A gap means a wrong quarter, a wrong column or a wrong "
+                f"purchase type on our side — find which. Do not widen this."
+            )

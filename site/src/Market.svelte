@@ -39,6 +39,8 @@
     marketPriceRate,
     marketStructure,
     marketDealInYearsOfPay,
+    marketCities,
+    marketNsiNationalRate,
   } from "./lib/view.js";
   import { number, integer, periodLong, httpUrl } from "./lib/format.js";
 
@@ -76,6 +78,11 @@
   const priceRate = $derived(marketPriceRate(data.houseMarket));
   const structure = $derived(marketStructure(data.houseMarketStructure));
   const yearsOfPay = $derived(marketDealInYearsOfPay(data.houseMarket, data.sectorSalary));
+  const cities = $derived(marketCities(data.nsiHousing));
+  const nsiNational = $derived(marketNsiNationalRate(data.nsiHousing));
+
+  /** A signed percentage, so a rise and a fall are told apart at a glance. */
+  const signed = (x, d = 1) => (x == null ? "" : `${x > 0 ? "+" : ""}${number(x, d, $lang)}%`);
 
   /** The rent line the calculator already publishes, read here rather than refetched. */
   const rent = $derived(
@@ -387,6 +394,95 @@
           )}
         {/if}
       </div>
+    {/if}
+
+    {#if cities.cities.length}
+      <p>
+        <span class="l-bg"
+          >НСИ публикуват същото движение и за шестте града с над 120 000 жители, а до него — с
+          колко се е променил броят на сделките там. Двете колони са промени, не нива: цената вляво
+          е с колко са се променили цените на сделките, а не колко струва нещо.</span
+        >
+        <span class="l-en"
+          >НСИ publish the same movement for the six cities over 120,000 people, and beside it how
+          much the number of sales there changed. Both columns are changes rather than levels: the
+          left one is how much transaction prices moved, not what anything costs.</span
+        >
+      </p>
+
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <!-- A scroll container IS interactive to a keyboard and the rule cannot
+           see that: without the attribute the arrow keys reach nothing, which
+           is what WAI asks for on a scrollable region. The role and the name
+           are the other half — a tab stop that announces nothing is worse than
+           no tab stop. -->
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblCities, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">
+                <span class="l-bg">{COPY.mktColCity.bg}</span>
+                <span class="l-en">{COPY.mktColCity.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.mktColPrice.bg}</span>
+                <span class="l-en">{COPY.mktColPrice.en}</span>
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg">{COPY.mktColDeals.bg}</span>
+                <span class="l-en">{COPY.mktColDeals.en}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each cities.cities as c (c.code)}
+              <tr>
+                <th scope="row">
+                  <span class="l-bg">{c.nameBg}</span>
+                  <span class="l-en">{c.nameEn}</span>
+                </th>
+                <td class="num mono">{signed(c.pricePct)}</td>
+                <td class="num mono">{signed(c.dealsPct)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="cap">
+        <span class="l-bg"
+          >Цените са от {COPY.srcNsi.bg}, {periodLong(cities.period, "bg")} —
+          <a href={httpUrl(cities.priceUrl)} target="_blank" rel="noopener">ИЦЖ по градове</a>;
+          броят сделки —
+          <a href={httpUrl(cities.dealsUrl)} target="_blank" rel="noopener">ППЖ по градове</a>.
+          Всяка стойност е клетка, която НСИ са публикували; нищо в тази таблица не е сметнато от
+          нас.</span
+        >
+        <span class="l-en"
+          >Prices from {COPY.srcNsi.en}, {periodLong(cities.period, "en")} —
+          <a href={httpUrl(cities.priceUrl)} target="_blank" rel="noopener">the city price index</a
+          >; sales counts —
+          <a href={httpUrl(cities.dealsUrl)} target="_blank" rel="noopener">the city sales table</a
+          >. Every value is a cell НСИ published; nothing in this table is computed by us.</span
+        >
+      </p>
+    {/if}
+
+    {#if nsiNational.value != null && priceRate.total.value != null}
+      <p class="cap">
+        <span class="l-bg"
+          >Едно и също число, публикувано от двама: НСИ го изчисляват и дават {signed(
+            nsiNational.value
+          )} за {periodLong(nsiNational.refPeriod, "bg")}, Евростат го разпространяват и дават
+          {signed(priceRate.total.value)}. Съвпадат, и това може да се провери — затова и двете
+          стоят тук.</span
+        >
+        <span class="l-en"
+          >One figure, published by two bodies: НСИ compile it and give {signed(nsiNational.value)}
+          for {periodLong(nsiNational.refPeriod, "en")}, Eurostat disseminate it and give
+          {signed(priceRate.total.value)}. They agree, and that is checkable — which is why both are
+          here.</span
+        >
+      </p>
     {/if}
 
     <p class="cap">

@@ -40,6 +40,9 @@ Every entry carries a provenance tag:
 | **Average gross wage by област** — НСИ `Labour_1.1.2.2_EUR_EN.xlsx` + `_EUR.xlsx` | VERIFIED | `region_salary.json`. All 28 области, both language editions, НСИ's published quarters from 2020-Q1. |
 | **€/m² by city** — `imot.bg/sredni-ceni` | VERIFIED | `city_price.json`. 27 cities, each with its own district count and its own year window. |
 | **Unemployment rate** — `une_rt_m` | VERIFIED | `unemployment.json`. **Monthly**, seasonally adjusted, 2020-01–. 2.9% at 2026-05. |
+| **НСИ house price index, national** — `HPI_1.3.xlsx` | VERIFIED | `nsi_housing.json`. Change on the same quarter a year earlier. **The cross-publisher reconciliation reads this** against Eurostat's `RCH_A`. |
+| **НСИ house price index, six cities** — `HPI_2.6.xlsx` | VERIFIED | `nsi_housing.json`. The six cities over 120,000 people, y/y. A percentage, never a level. |
+| **НСИ sales count, six cities** — `HSI_2.4.5.xlsx` | VERIFIED | `nsi_housing.json`. The change in the NUMBER of sales in those cities, y/y. |
 | **Dwellings sold** — `prc_hpi_hsnq` (unit=NR) | VERIFIED | `house_market.json → deals`. Quarterly, split `TOTAL` / `DW_NEW` / `DW_EXST`. Households only, at the price paid. |
 | **Value of those sales** — `prc_hpi_hsvq` (unit=EUR) | VERIFIED | `house_market.json → value`, and the numerator of `avg_deal_eur`. Reaches further back than the count cube, so the two are paired on the quarters they share. |
 | **House price index** — `prc_hpi_q` (units I15_Q + RCH_A) | VERIFIED | `house_market.json → price_index`. The level and **Eurostat's own annual rate**, never a rate we computed from the level. |
@@ -863,6 +866,52 @@ broad КИД-2008 sections. `view.js#sectorOptions` leaves it out and
 not the whole guarantee.
 
 ---
+
+### The housing workbooks — `HPI_1.3`, `HPI_2.6`, `HSI_2.4.5`
+
+Same host and directory as `Labour_1.1.2.x`, so the fetch plan, the TLS path and
+the licence read are already understood. Three things differ.
+
+**The filenames are discovered, never hardcoded.** `discover_housing_workbook`
+walks `/statistical-data/{topic}` to its sub-pages and takes the `timeseries/`
+link that names the workbook, raising if it is gone. The topics are 99
+(national price index), 98 (by city) and 93 (sales by city). Guessing is
+forbidden and would have failed on the first attempt: `HPI_1.3.xls` 404s where
+`HPI_1.3.xlsx` serves.
+
+**Four traps, all hit while probing, all silent:**
+
+- **The year header carries footnote markers glued to the numeral.** `HPI_2.4`'s
+  newest year reads `20263,5` and `HSI_2.4.5`'s reads `2026 3`. A
+  `str(y).isdigit()` parse drops the newest quarter and reports the one before
+  it as the latest — a plausible number for the wrong period, which is the worst
+  shape a bug takes here. Matched with `^\s*(\d{4})`.
+- **The quarter numerals carry them too** — `І6`, `І 7` — and mix alphabets:
+  Cyrillic І for Q1/Q2, Latin I/V for Q3/Q4. The labour workbooks'
+  `_roman_quarter` matches the numeral exactly and returns `None` for those, so
+  reusing it as-is would skip the column without a word. `_housing_quarter` is
+  the same map and the same translation with the marker stripped first.
+- **A city label carries a footnote digit**: «Варна 4» is Варна with НСИ's
+  marker. One of the six carries it today and any of them may tomorrow, so the
+  label is matched after stripping rather than compared whole.
+- **The workbook stores the float НСИ's own subtraction produced.** A cell
+  printed as `-19.2` is held as `-19.200000000000003`. The published value is
+  theirs at the precision they print it; carrying the artefact through would put
+  a figure on the page that appears on no НСИ table.
+
+**Every published value is a cell they published.** §2.1.1 forbids distributing
+производни и сборни произведения, so `nsi_housing.json` carries no gap, no
+ratio, no rank — and no level, which is the upstream rather than a choice: every
+НСИ city series is an index or a percentage, and their own «Пазарни цени на
+жилища» survey in лв./кв.м ran «I тримесечие 1993 - II тримесечие 2014» and was
+discontinued.
+
+**Their footnotes are worth reading and one of them shapes the code.** Footnote
+3 on `HPI_2.4`, read 2026-08-12: under Regulation (EU) 2025/1182 the base year
+moved to 2025 from the start of 2026, and «равнищата на изменение … изчислени от
+динамичния ред при база 2015=100, биха могли да се различават от тези, изчислени
+от динамичния ред при база 2025=100». That is why the rate on `/market/` is the
+one each publisher **prints** rather than one computed from an index.
 
 ## Dated legislative tables (not scraped)
 

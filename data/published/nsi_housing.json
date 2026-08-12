@@ -1,0 +1,750 @@
+{
+  "schema_version": "1.0",
+  "as_of": "2026-08-12",
+  "source": "nsi",
+  "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/HPI_1.3.xlsx",
+  "notes": "НСИ's housing price and sales statistics, as published. The national house price index change on the same quarter a year earlier, and the same figure for the six cities over 120,000 people, beside the change in the NUMBER of sales for those cities. Nothing in this file is computed by us — no gap, no ratio, no rank, and no level: every НСИ city series is an index or a percentage, and their лв./кв.м survey ran to 2014-Q2 and was discontinued, so no transaction price per square metre exists for any Bulgarian city from any publisher.",
+  "payload_name": "nsi_housing",
+  "ref_period": "2026-Q1",
+  "national_price_index_yoy": {
+    "dataset": "HPI_1.3.xlsx",
+    "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/HPI_1.3.xlsx",
+    "sheet": "съответно тримесечие=100 ",
+    "unit": "percent_change_on_same_quarter_a_year_earlier",
+    "note": "НСИ's own published change on the same quarter of the previous year, selected from the workbook named above and not computed here. The workbook stores the float their subtraction produced, so a cell printed as -19.2 is held as -19.200000000000003; the published value is theirs at the precision they print it.",
+    "ref_period": "2026-Q1",
+    "series_by_period": {
+      "2015-Q1": {
+        "total": 2.3,
+        "new": 2.0,
+        "existing": 2.4
+      },
+      "2015-Q2": {
+        "total": 2.8,
+        "new": 3.7,
+        "existing": 2.2
+      },
+      "2015-Q3": {
+        "total": 2.1,
+        "new": 3.8,
+        "existing": 0.9
+      },
+      "2015-Q4": {
+        "total": 4.0,
+        "new": 4.6,
+        "existing": 3.6
+      },
+      "2016-Q1": {
+        "total": 4.6,
+        "new": 5.8,
+        "existing": 3.8
+      },
+      "2016-Q2": {
+        "total": 6.5,
+        "new": 4.9,
+        "existing": 7.5
+      },
+      "2016-Q3": {
+        "total": 8.8,
+        "new": 7.9,
+        "existing": 9.4
+      },
+      "2016-Q4": {
+        "total": 8.1,
+        "new": 7.0,
+        "existing": 8.8
+      },
+      "2017-Q1": {
+        "total": 9.0,
+        "new": 9.4,
+        "existing": 8.8
+      },
+      "2017-Q2": {
+        "total": 8.6,
+        "new": 7.3,
+        "existing": 9.2
+      },
+      "2017-Q3": {
+        "total": 9.0,
+        "new": 5.5,
+        "existing": 10.9
+      },
+      "2017-Q4": {
+        "total": 8.2,
+        "new": 4.7,
+        "existing": 10.0
+      },
+      "2018-Q1": {
+        "total": 7.1,
+        "new": 2.3,
+        "existing": 9.7
+      },
+      "2018-Q2": {
+        "total": 7.5,
+        "new": 7.2,
+        "existing": 7.7
+      },
+      "2018-Q3": {
+        "total": 6.3,
+        "new": 7.2,
+        "existing": 5.8
+      },
+      "2018-Q4": {
+        "total": 5.5,
+        "new": 6.1,
+        "existing": 5.3
+      },
+      "2019-Q1": {
+        "total": 7.3,
+        "new": 11.9,
+        "existing": 5.0
+      },
+      "2019-Q2": {
+        "total": 5.0,
+        "new": 7.5,
+        "existing": 3.8
+      },
+      "2019-Q3": {
+        "total": 5.6,
+        "new": 5.8,
+        "existing": 5.5
+      },
+      "2019-Q4": {
+        "total": 6.2,
+        "new": 8.7,
+        "existing": 4.9
+      },
+      "2020-Q1": {
+        "total": 4.7,
+        "new": 2.0,
+        "existing": 6.3
+      },
+      "2020-Q2": {
+        "total": 2.9,
+        "new": 0.8,
+        "existing": 4.2
+      },
+      "2020-Q3": {
+        "total": 5.2,
+        "new": 3.5,
+        "existing": 6.2
+      },
+      "2020-Q4": {
+        "total": 5.4,
+        "new": 2.3,
+        "existing": 7.2
+      },
+      "2021-Q1": {
+        "total": 7.5,
+        "new": 6.7,
+        "existing": 8.0
+      },
+      "2021-Q2": {
+        "total": 9.1,
+        "new": 7.2,
+        "existing": 10.2
+      },
+      "2021-Q3": {
+        "total": 8.7,
+        "new": 8.5,
+        "existing": 8.8
+      },
+      "2021-Q4": {
+        "total": 9.4,
+        "new": 8.4,
+        "existing": 9.9
+      },
+      "2022-Q1": {
+        "total": 11.5,
+        "new": 8.7,
+        "existing": 13.3
+      },
+      "2022-Q2": {
+        "total": 14.6,
+        "new": 12.3,
+        "existing": 16.0
+      },
+      "2022-Q3": {
+        "total": 15.6,
+        "new": 12.6,
+        "existing": 17.4
+      },
+      "2022-Q4": {
+        "total": 13.4,
+        "new": 9.8,
+        "existing": 15.6
+      },
+      "2023-Q1": {
+        "total": 9.5,
+        "new": 4.9,
+        "existing": 12.3
+      },
+      "2023-Q2": {
+        "total": 10.7,
+        "new": 9.4,
+        "existing": 11.4
+      },
+      "2023-Q3": {
+        "total": 9.2,
+        "new": 9.5,
+        "existing": 9.0
+      },
+      "2023-Q4": {
+        "total": 10.1,
+        "new": 10.5,
+        "existing": 9.8
+      },
+      "2024-Q1": {
+        "total": 16.0,
+        "new": 19.3,
+        "existing": 14.1
+      },
+      "2024-Q2": {
+        "total": 15.1,
+        "new": 15.6,
+        "existing": 14.8
+      },
+      "2024-Q3": {
+        "total": 16.5,
+        "new": 16.6,
+        "existing": 16.5
+      },
+      "2024-Q4": {
+        "total": 18.3,
+        "new": 19.7,
+        "existing": 17.4
+      },
+      "2025-Q1": {
+        "total": 15.1,
+        "new": 13.4,
+        "existing": 16.2
+      },
+      "2025-Q2": {
+        "total": 15.5,
+        "new": 14.9,
+        "existing": 16.0
+      },
+      "2025-Q3": {
+        "total": 15.4,
+        "new": 11.0,
+        "existing": 18.2
+      },
+      "2025-Q4": {
+        "total": 12.6,
+        "new": 9.0,
+        "existing": 15.0
+      },
+      "2026-Q1": {
+        "total": 14.8,
+        "new": 12.5,
+        "existing": 16.3
+      }
+    },
+    "value_pct": {
+      "total": 14.8,
+      "new": 12.5,
+      "existing": 16.3
+    }
+  },
+  "city_price_index_yoy": {
+    "dataset": "HPI_2.6.xlsx",
+    "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/HPI_2.6.xlsx",
+    "sheet": "съответно тримесечие=100 ",
+    "unit": "percent_change_on_same_quarter_a_year_earlier",
+    "note": "НСИ's own published change on the same quarter of the previous year, selected from the workbook named above and not computed here. The workbook stores the float their subtraction produced, so a cell printed as -19.2 is held as -19.200000000000003; the published value is theirs at the precision they print it.",
+    "cities": [
+      {
+        "code": "sofiya",
+        "name_bg": "София",
+        "name_en": "Sofia",
+        "ref_period": "2026-Q1",
+        "value_pct": 16.0,
+        "series_by_period": {
+          "2015-Q1": 6.7,
+          "2015-Q2": 6.6,
+          "2015-Q3": 3.0,
+          "2015-Q4": 6.9,
+          "2016-Q1": 6.5,
+          "2016-Q2": 11.3,
+          "2016-Q3": 14.3,
+          "2016-Q4": 11.6,
+          "2017-Q1": 12.7,
+          "2017-Q2": 10.6,
+          "2017-Q3": 11.3,
+          "2017-Q4": 9.2,
+          "2018-Q1": 8.3,
+          "2018-Q2": 8.3,
+          "2018-Q3": 7.0,
+          "2018-Q4": 6.7,
+          "2019-Q1": 9.6,
+          "2019-Q2": 5.9,
+          "2019-Q3": 6.8,
+          "2019-Q4": 8.0,
+          "2020-Q1": 6.1,
+          "2020-Q2": 3.8,
+          "2020-Q3": 8.6,
+          "2020-Q4": 8.6,
+          "2021-Q1": 11.6,
+          "2021-Q2": 11.9,
+          "2021-Q3": 9.9,
+          "2021-Q4": 9.1,
+          "2022-Q1": 11.9,
+          "2022-Q2": 17.3,
+          "2022-Q3": 18.6,
+          "2022-Q4": 14.1,
+          "2023-Q1": 7.2,
+          "2023-Q2": 8.8,
+          "2023-Q3": 7.0,
+          "2023-Q4": 9.7,
+          "2024-Q1": 18.2,
+          "2024-Q2": 16.0,
+          "2024-Q3": 17.7,
+          "2024-Q4": 20.5,
+          "2025-Q1": 14.1,
+          "2025-Q2": 16.3,
+          "2025-Q3": 16.2,
+          "2025-Q4": 12.7,
+          "2026-Q1": 16.0
+        }
+      },
+      {
+        "code": "plovdiv",
+        "name_bg": "Пловдив",
+        "name_en": "Plovdiv",
+        "ref_period": "2026-Q1",
+        "value_pct": 8.8,
+        "series_by_period": {
+          "2015-Q1": 6.5,
+          "2015-Q2": 7.3,
+          "2015-Q3": 5.3,
+          "2015-Q4": 8.4,
+          "2016-Q1": 8.4,
+          "2016-Q2": 8.9,
+          "2016-Q3": 8.1,
+          "2016-Q4": 6.7,
+          "2017-Q1": 6.6,
+          "2017-Q2": 6.7,
+          "2017-Q3": 13.0,
+          "2017-Q4": 12.6,
+          "2018-Q1": 12.2,
+          "2018-Q2": 12.9,
+          "2018-Q3": 9.6,
+          "2018-Q4": 9.6,
+          "2019-Q1": 7.1,
+          "2019-Q2": 9.0,
+          "2019-Q3": 12.3,
+          "2019-Q4": 9.6,
+          "2020-Q1": 8.3,
+          "2020-Q2": 2.0,
+          "2020-Q3": 0.1,
+          "2020-Q4": 3.2,
+          "2021-Q1": 4.3,
+          "2021-Q2": 8.1,
+          "2021-Q3": 9.2,
+          "2021-Q4": 9.5,
+          "2022-Q1": 11.5,
+          "2022-Q2": 8.6,
+          "2022-Q3": 12.1,
+          "2022-Q4": 9.0,
+          "2023-Q1": 9.6,
+          "2023-Q2": 17.6,
+          "2023-Q3": 8.1,
+          "2023-Q4": 7.3,
+          "2024-Q1": 7.7,
+          "2024-Q2": 6.2,
+          "2024-Q3": 11.4,
+          "2024-Q4": 18.6,
+          "2025-Q1": 17.9,
+          "2025-Q2": 15.7,
+          "2025-Q3": 13.5,
+          "2025-Q4": 8.6,
+          "2026-Q1": 8.8
+        }
+      },
+      {
+        "code": "varna",
+        "name_bg": "Варна",
+        "name_en": "Varna",
+        "ref_period": "2026-Q1",
+        "value_pct": 13.2,
+        "series_by_period": {
+          "2015-Q1": 1.9,
+          "2015-Q2": 2.8,
+          "2015-Q3": 3.9,
+          "2015-Q4": 2.6,
+          "2016-Q1": 4.2,
+          "2016-Q2": 2.9,
+          "2016-Q3": 5.7,
+          "2016-Q4": 9.3,
+          "2017-Q1": 9.8,
+          "2017-Q2": 13.8,
+          "2017-Q3": 9.3,
+          "2017-Q4": 9.4,
+          "2018-Q1": 10.6,
+          "2018-Q2": 5.6,
+          "2018-Q3": 6.6,
+          "2018-Q4": 4.3,
+          "2019-Q1": 4.1,
+          "2019-Q2": 6.0,
+          "2019-Q3": 6.5,
+          "2019-Q4": 7.2,
+          "2020-Q1": 4.5,
+          "2020-Q2": -0.5,
+          "2020-Q3": -1.2,
+          "2020-Q4": -2.2,
+          "2021-Q1": -0.4,
+          "2021-Q2": 7.5,
+          "2021-Q3": 8.9,
+          "2021-Q4": 10.8,
+          "2022-Q1": 13.2,
+          "2022-Q2": 7.9,
+          "2022-Q3": 12.8,
+          "2022-Q4": 12.8,
+          "2023-Q1": 11.1,
+          "2023-Q2": 20.3,
+          "2023-Q3": 16.2,
+          "2023-Q4": 15.7,
+          "2024-Q1": 23.6,
+          "2024-Q2": 15.9,
+          "2024-Q3": 18.1,
+          "2024-Q4": 22.0,
+          "2025-Q1": 18.4,
+          "2025-Q2": 19.0,
+          "2025-Q3": 18.9,
+          "2025-Q4": 15.1,
+          "2026-Q1": 13.2
+        }
+      },
+      {
+        "code": "burgas",
+        "name_bg": "Бургас",
+        "name_en": "Burgas",
+        "ref_period": "2026-Q1",
+        "value_pct": 17.7,
+        "series_by_period": {
+          "2015-Q1": 7.8,
+          "2015-Q2": 14.0,
+          "2015-Q3": 12.8,
+          "2015-Q4": 10.2,
+          "2016-Q1": 6.3,
+          "2016-Q2": 5.4,
+          "2016-Q3": 4.5,
+          "2016-Q4": 2.7,
+          "2017-Q1": 7.3,
+          "2017-Q2": 4.0,
+          "2017-Q3": 4.2,
+          "2017-Q4": 5.9,
+          "2018-Q1": -2.7,
+          "2018-Q2": 6.4,
+          "2018-Q3": 7.4,
+          "2018-Q4": 6.3,
+          "2019-Q1": 8.1,
+          "2019-Q2": 0.8,
+          "2019-Q3": -1.6,
+          "2019-Q4": 0.4,
+          "2020-Q1": 3.2,
+          "2020-Q2": 5.6,
+          "2020-Q3": 7.4,
+          "2020-Q4": 5.9,
+          "2021-Q1": 4.9,
+          "2021-Q2": 4.3,
+          "2021-Q3": 7.3,
+          "2021-Q4": 9.0,
+          "2022-Q1": 11.1,
+          "2022-Q2": 14.9,
+          "2022-Q3": 12.3,
+          "2022-Q4": 14.5,
+          "2023-Q1": 19.5,
+          "2023-Q2": 12.7,
+          "2023-Q3": 15.6,
+          "2023-Q4": 17.3,
+          "2024-Q1": 12.3,
+          "2024-Q2": 16.7,
+          "2024-Q3": 17.0,
+          "2024-Q4": 11.6,
+          "2025-Q1": 10.6,
+          "2025-Q2": 14.2,
+          "2025-Q3": 9.9,
+          "2025-Q4": 13.1,
+          "2026-Q1": 17.7
+        }
+      },
+      {
+        "code": "ruse",
+        "name_bg": "Русе",
+        "name_en": "Ruse",
+        "ref_period": "2026-Q1",
+        "value_pct": -5.8,
+        "series_by_period": {
+          "2015-Q1": 2.8,
+          "2015-Q2": 3.7,
+          "2015-Q3": 0.9,
+          "2015-Q4": 0.6,
+          "2016-Q1": -0.9,
+          "2016-Q2": 0.3,
+          "2016-Q3": 5.2,
+          "2016-Q4": 5.7,
+          "2017-Q1": 11.3,
+          "2017-Q2": 12.8,
+          "2017-Q3": 13.5,
+          "2017-Q4": 15.9,
+          "2018-Q1": 13.3,
+          "2018-Q2": 10.5,
+          "2018-Q3": 6.6,
+          "2018-Q4": 4.1,
+          "2019-Q1": 3.3,
+          "2019-Q2": 4.6,
+          "2019-Q3": 4.8,
+          "2019-Q4": 4.8,
+          "2020-Q1": 4.3,
+          "2020-Q2": 1.1,
+          "2020-Q3": 5.4,
+          "2020-Q4": 4.9,
+          "2021-Q1": 5.3,
+          "2021-Q2": 8.4,
+          "2021-Q3": 6.1,
+          "2021-Q4": 8.8,
+          "2022-Q1": 15.5,
+          "2022-Q2": 23.3,
+          "2022-Q3": 12.9,
+          "2022-Q4": 11.2,
+          "2023-Q1": 10.3,
+          "2023-Q2": 2.1,
+          "2023-Q3": 20.0,
+          "2023-Q4": 18.1,
+          "2024-Q1": 9.2,
+          "2024-Q2": 22.1,
+          "2024-Q3": 5.8,
+          "2024-Q4": 14.1,
+          "2025-Q1": 25.4,
+          "2025-Q2": 7.4,
+          "2025-Q3": 14.7,
+          "2025-Q4": 4.4,
+          "2026-Q1": -5.8
+        }
+      },
+      {
+        "code": "stara-zagora",
+        "name_bg": "Стара Загора",
+        "name_en": "Stara Zagora",
+        "ref_period": "2026-Q1",
+        "value_pct": 12.7,
+        "series_by_period": {
+          "2015-Q1": 4.7,
+          "2015-Q2": 4.4,
+          "2015-Q3": 5.6,
+          "2015-Q4": 5.2,
+          "2016-Q1": 8.0,
+          "2016-Q2": 11.3,
+          "2016-Q3": 10.0,
+          "2016-Q4": 9.1,
+          "2017-Q1": 9.2,
+          "2017-Q2": 8.9,
+          "2017-Q3": 8.4,
+          "2017-Q4": 9.0,
+          "2018-Q1": 5.9,
+          "2018-Q2": 5.8,
+          "2018-Q3": 4.3,
+          "2018-Q4": 5.9,
+          "2019-Q1": 4.4,
+          "2019-Q2": 5.1,
+          "2019-Q3": 5.4,
+          "2019-Q4": 5.2,
+          "2020-Q1": 6.5,
+          "2020-Q2": 3.4,
+          "2020-Q3": 5.3,
+          "2020-Q4": 5.2,
+          "2021-Q1": 7.0,
+          "2021-Q2": 8.1,
+          "2021-Q3": 7.3,
+          "2021-Q4": 8.8,
+          "2022-Q1": 6.2,
+          "2022-Q2": 12.6,
+          "2022-Q3": 11.1,
+          "2022-Q4": 15.3,
+          "2023-Q1": 16.4,
+          "2023-Q2": 7.2,
+          "2023-Q3": 4.6,
+          "2023-Q4": 5.3,
+          "2024-Q1": 8.8,
+          "2024-Q2": 11.0,
+          "2024-Q3": 18.6,
+          "2024-Q4": 14.5,
+          "2025-Q1": 13.3,
+          "2025-Q2": 13.7,
+          "2025-Q3": 16.8,
+          "2025-Q4": 19.8,
+          "2026-Q1": 12.7
+        }
+      }
+    ],
+    "ref_period": "2026-Q1"
+  },
+  "city_deals_yoy": {
+    "dataset": "HSI_2.4.5.xlsx",
+    "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/HSI_2.4.5.xlsx",
+    "sheet": "съответно тримесечие=100 ",
+    "unit": "percent_change_on_same_quarter_a_year_earlier",
+    "note": "НСИ's own published change on the same quarter of the previous year, selected from the workbook named above and not computed here. The workbook stores the float their subtraction produced, so a cell printed as -19.2 is held as -19.200000000000003; the published value is theirs at the precision they print it.",
+    "cities": [
+      {
+        "code": "sofiya",
+        "name_bg": "София",
+        "name_en": "Sofia",
+        "ref_period": "2026-Q1",
+        "value_pct": -19.2,
+        "series_by_period": {
+          "2022-Q1": 6.4,
+          "2022-Q2": 8.1,
+          "2022-Q3": -9.6,
+          "2022-Q4": -20.1,
+          "2023-Q1": -10.9,
+          "2023-Q2": -14.6,
+          "2023-Q3": -9.9,
+          "2023-Q4": 9.5,
+          "2024-Q1": 24.9,
+          "2024-Q2": 15.2,
+          "2024-Q3": 20.6,
+          "2024-Q4": 3.0,
+          "2025-Q1": 11.0,
+          "2025-Q2": 7.2,
+          "2025-Q3": 6.3,
+          "2025-Q4": -24.6,
+          "2026-Q1": -19.2
+        }
+      },
+      {
+        "code": "plovdiv",
+        "name_bg": "Пловдив",
+        "name_en": "Plovdiv",
+        "ref_period": "2026-Q1",
+        "value_pct": -0.6,
+        "series_by_period": {
+          "2022-Q1": -6.0,
+          "2022-Q2": 2.9,
+          "2022-Q3": -2.9,
+          "2022-Q4": -26.1,
+          "2023-Q1": -11.4,
+          "2023-Q2": -17.3,
+          "2023-Q3": -16.4,
+          "2023-Q4": 27.1,
+          "2024-Q1": 19.9,
+          "2024-Q2": 3.4,
+          "2024-Q3": 21.3,
+          "2024-Q4": -12.0,
+          "2025-Q1": -0.9,
+          "2025-Q2": 3.7,
+          "2025-Q3": 9.1,
+          "2025-Q4": 12.0,
+          "2026-Q1": -0.6
+        }
+      },
+      {
+        "code": "varna",
+        "name_bg": "Варна",
+        "name_en": "Varna",
+        "ref_period": "2026-Q1",
+        "value_pct": -27.6,
+        "series_by_period": {
+          "2022-Q1": 54.4,
+          "2022-Q2": 19.0,
+          "2022-Q3": 0.1,
+          "2022-Q4": -19.9,
+          "2023-Q1": -25.4,
+          "2023-Q2": -9.5,
+          "2023-Q3": -12.2,
+          "2023-Q4": 4.7,
+          "2024-Q1": 15.3,
+          "2024-Q2": -1.9,
+          "2024-Q3": 0.5,
+          "2024-Q4": -7.9,
+          "2025-Q1": -4.4,
+          "2025-Q2": -3.0,
+          "2025-Q3": 14.9,
+          "2025-Q4": -15.1,
+          "2026-Q1": -27.6
+        }
+      },
+      {
+        "code": "burgas",
+        "name_bg": "Бургас",
+        "name_en": "Burgas",
+        "ref_period": "2026-Q1",
+        "value_pct": -30.5,
+        "series_by_period": {
+          "2022-Q1": 19.9,
+          "2022-Q2": 15.3,
+          "2022-Q3": -21.3,
+          "2022-Q4": -21.4,
+          "2023-Q1": -21.2,
+          "2023-Q2": -26.5,
+          "2023-Q3": -5.5,
+          "2023-Q4": 10.2,
+          "2024-Q1": 28.5,
+          "2024-Q2": 76.8,
+          "2024-Q3": 16.5,
+          "2024-Q4": 8.0,
+          "2025-Q1": 9.7,
+          "2025-Q2": -24.4,
+          "2025-Q3": 14.4,
+          "2025-Q4": -24.7,
+          "2026-Q1": -30.5
+        }
+      },
+      {
+        "code": "ruse",
+        "name_bg": "Русе",
+        "name_en": "Ruse",
+        "ref_period": "2026-Q1",
+        "value_pct": -13.0,
+        "series_by_period": {
+          "2022-Q1": 30.2,
+          "2022-Q2": 6.6,
+          "2022-Q3": -2.5,
+          "2022-Q4": -33.6,
+          "2023-Q1": -25.8,
+          "2023-Q2": -22.7,
+          "2023-Q3": -22.0,
+          "2023-Q4": 8.6,
+          "2024-Q1": 4.8,
+          "2024-Q2": -3.7,
+          "2024-Q3": -7.8,
+          "2024-Q4": 3.0,
+          "2025-Q1": 8.6,
+          "2025-Q2": 15.2,
+          "2025-Q3": 37.2,
+          "2025-Q4": -15.6,
+          "2026-Q1": -13.0
+        }
+      },
+      {
+        "code": "stara-zagora",
+        "name_bg": "Стара Загора",
+        "name_en": "Stara Zagora",
+        "ref_period": "2026-Q1",
+        "value_pct": -24.9,
+        "series_by_period": {
+          "2022-Q1": 38.7,
+          "2022-Q2": -5.8,
+          "2022-Q3": -21.7,
+          "2022-Q4": -40.9,
+          "2023-Q1": -32.9,
+          "2023-Q2": -19.3,
+          "2023-Q3": -15.8,
+          "2023-Q4": 12.6,
+          "2024-Q1": 1.6,
+          "2024-Q2": 15.2,
+          "2024-Q3": 20.0,
+          "2024-Q4": 3.6,
+          "2025-Q1": 12.8,
+          "2025-Q2": 2.1,
+          "2025-Q3": 19.2,
+          "2025-Q4": -32.8,
+          "2026-Q1": -24.9
+        }
+      }
+    ],
+    "ref_period": "2026-Q1"
+  },
+  "disclaimer": "Transaction prices for dwellings bought by households, and the number of those transactions. A percentage change, never a level: these say how much prices and volumes moved, not what anything costs. The asking prices per square metre elsewhere on this site are имот.bg's listings and a different measurement."
+}

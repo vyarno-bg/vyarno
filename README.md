@@ -138,7 +138,7 @@ flowchart LR
     C["connectors"] --> T["transform"] --> G{"7 validation<br/>gates"}
   end
 
-  J["data/published/*.json<br/>11 payloads, committed"]
+  J["data/published/*.json<br/>12 payloads, committed"]
   S["site/ · Vite + Svelte 5<br/>static build"]
   U["the reader's browser<br/>all personal figures stay here"]
 
@@ -210,7 +210,7 @@ threshold, on purpose.
 | Path | What |
 |---|---|
 | `docs/` | **[Start here](./docs/README.md)** — the engineer entry point: architecture, data sources, math, validation gates, local dev, site structure, and which suite a test belongs in |
-| `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes eleven JSONs to `data/published/` |
+| `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes twelve JSONs to `data/published/` |
 | `data/published/` | Versioned JSONs produced by the pipeline. Committed. The site reads these at runtime and never hits an upstream API. **These figures are not ours to license — see [Licence](#licence)** |
 | `site/` | Vite 8 + Svelte 5. Three pages — the calculator, `/legal/` and a 404. Builds to a static directory |
 | `.github/workflows/ci.yml` | Both test suites and the production build, on every push to every branch and on every pull request. Does not refresh data |
@@ -234,7 +234,7 @@ cd pipeline && source .venv/bin/activate
 vyarno-pipeline refresh --source all --out ../data/published
 ```
 
-That writes the eleven JSONs and commits nothing — the diff is the review, and a
+That writes the twelve JSONs and commits nothing — the diff is the review, and a
 payload nobody looked at is a number nobody checked. Each `--source` can be run
 alone; `vyarno-pipeline refresh --help` lists them.
 

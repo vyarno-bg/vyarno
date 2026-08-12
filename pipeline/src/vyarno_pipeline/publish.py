@@ -40,6 +40,7 @@ HOUSE_MARKET_FILE: str = "house_market.json"
 # nothing of its own changed, skips the commit and the PR, and reports the run
 # green while the payload never publishes. One arm writes both these files.
 HOUSE_MARKET_STRUCTURE_FILE: str = "house_market_structure.json"
+NSI_HOUSING_FILE: str = "nsi_housing.json"
 
 
 def write_payload(payload: dict, target_dir: Path, filename: str) -> Path:

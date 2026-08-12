@@ -274,6 +274,21 @@ export const PAYLOADS = Object.freeze(
       refPeriod: (p) => p?.ref_period ?? null,
     },
     {
+      key: "nsiHousing",
+      file: "nsi_housing",
+      pages: ["market"],
+      // НСИ publish the quarter about three months after it closes and roughly
+      // a week ahead of Eurostat's dissemination of the same figures, so this
+      // moves on the same clock as `houseMarket` and slightly earlier.
+      cadenceDays: 99,
+      name: { bg: "Цени и сделки по градове", en: "Prices and sales by city" },
+      feeds: {
+        bg: "как се движат цените и броят сделки в шестте най-големи града",
+        en: "how prices and transaction counts move in the six largest cities",
+      },
+      refPeriod: (p) => p?.ref_period ?? null,
+    },
+    {
       key: "mortgage",
       file: "mortgage",
       pages: ["home"],
