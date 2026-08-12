@@ -328,9 +328,9 @@ test(
     // Driven in a browser rather than read out of the source because the chain
     // it has to survive is a chain of layers: the range input's value → a
     // handler → `$state` → `basketBudget` → `spendBase` → thirteen rendered €
-    // figures and the row that names the remainder. `verify_view.mjs` proves
-    // the arithmetic and `verify_wiring.mjs` proves the arguments; neither can
-    // see a control that renders but moves nothing.
+    // figures and the row that names the remainder. `verify_view_spend.mjs`
+    // proves the arithmetic and `verify_wiring.mjs` proves the arguments;
+    // neither can see a control that renders but moves nothing.
     await withApp(async (page, errors) => {
       await page.locator("#inSalary").fill("1500");
       await page.waitForTimeout(400);

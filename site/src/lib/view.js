@@ -21,7 +21,8 @@
  *
  * The template's job after this file is rendering: pick a formatter, choose a
  * colour, place a string. Arithmetic in `App.svelte` belongs here (or in
- * `mirror.js`) with a test in `scripts/verify_view.mjs` — same commit.
+ * `mirror.js`) with a test in the `scripts/verify_view_*.mjs` suite that owns
+ * the subject — same commit.
  */
 
 import {
@@ -252,10 +253,10 @@ export const CITY_NO_PAGE = "nopage";
  * vocabulary in both halves. «София» and «Софийска област» are what a Bulgarian
  * says out loud.
  *
- * Exported so `verify_view.mjs` can hold the keys against the live payload:
- * a key that matches no row is НСИ having renamed one, and the rename then
- * stops applying silently — «София» would render for the ОБЛАСТ, adjacent to
- * the capital in the same list, with a wage 32% lower behind it.
+ * Exported so `verify_view_region.mjs` can hold the keys against the live
+ * payload: a key that matches no row is НСИ having renamed one, and the rename
+ * then stops applying silently — «София» would render for the ОБЛАСТ, adjacent
+ * to the capital in the same list, with a wage 32% lower behind it.
  */
 export const REGION_RENAMES = Object.freeze({
   bg: Object.freeze({ "София(столица)": "София", София: "Софийска област" }),
@@ -272,12 +273,12 @@ export const REGION_RENAMES = Object.freeze({
  * they live.
  *
  * **A table of two needs a rule over the whole collection beside it, and that
- * rule is a test rather than a branch in here.** `verify_view.mjs` asserts over
- * the published payload that every option name is non-empty and unique, that
- * both keys above still match a row НСИ publish, and that no name the table did
- * not write is a whole-word prefix of another. So an НСИ split this table does
- * not cover — a «Пловдив(град)» row appearing beside «Пловдив» — fails a run
- * instead of shipping two entries a reader cannot tell apart.
+ * rule is a test rather than a branch in here.** `verify_view_region.mjs`
+ * asserts over the published payload that every option name is non-empty and
+ * unique, that both keys above still match a row НСИ publish, and that no name
+ * the table did not write is a whole-word prefix of another. So an НСИ split
+ * this table does not cover — a «Пловдив(град)» row appearing beside «Пловдив»
+ * — fails a run instead of shipping two entries a reader cannot tell apart.
  *
  * The bracket spacing below is the other half of that rule and not decoration:
  * НСИ write no space before the bracket, Bulgarian writes one, and normalising
@@ -2045,9 +2046,9 @@ export const SHARE_DOMAIN = "vyarno.bg";
  * Everything `sharePayload` is allowed to hand onward, as a closed set.
  *
  * The list is the review surface. A field added to the returned object without
- * being added here fails `verify_view.mjs`, which puts the person adding it in
- * front of P2 at the moment they are deciding — rather than after an image is
- * already in somebody's chat.
+ * being added here fails `verify_view_share.mjs`, which puts the person adding
+ * it in front of P2 at the moment they are deciding — rather than after an
+ * image is already in somebody's chat.
  */
 export const SHARE_FIELDS = Object.freeze([
   "piPct",
@@ -2610,7 +2611,7 @@ export function marketNsiNationalRate(nsiHousing) {
  * signed series — Eurostat's annual rate ran from +34.6% to −26.8% — needs its
  * negative half, so the clamp is `min(0, smallest)` rather than a constant 0:
  * the drawn scale always CONTAINS zero, which is the property that matters, and
- * `verify_view.mjs` asserts it over every series function here.
+ * `verify_view_market.mjs` asserts it over every series function here.
  *
  * @param {Record<string, number>|null|undefined} entries
  * @param {{reference?: number|null}} [opts]  a level the figure is defined

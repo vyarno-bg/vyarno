@@ -627,7 +627,8 @@ test("the range strip puts every marker where the published figures put it", { s
     ["annual price change", at(col(market.price_index.annual_rate_pct, "total"))],
     // Price-to-income is deliberately not on the strip — its published value is
     // already an index against its own long-run average, and a one-line row
-    // cannot draw that 100. `verify_view.mjs` holds the absence with the reason.
+    // cannot draw that 100. `verify_view_market.mjs` holds the absence with its
+    // reason.
     ["housing cost overburden", at(col(structure.housing_cost_overburden.series_by_period))],
   ];
 

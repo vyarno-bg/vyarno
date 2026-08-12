@@ -627,7 +627,7 @@ def test_the_all_items_index_and_the_divisions_disagree_as_expected() -> None:
     chain-linked all-items index and Σw·(Iᵢ(now)/Iᵢ(2020) − 1) at current
     weights are both in the 30–60% band, so no range check can tell which one
     the savings card is showing. If they ever converge, the JS-side assertion
-    in `verify_view.mjs` stops discriminating too, and this says so.
+    in `verify_view_results.mjs` stops discriminating too, and this says so.
     """
     head = _published("hicp_headline")
     cats = _published("hicp_categories")

@@ -66,8 +66,7 @@ import {
   rangePosition,
   shortfallPct,
 } from "../src/lib/mirror.js";
-
-const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
+import { near } from "./near.mjs";
 
 /**
  * A category shaped like the published `hicp_categories.json` entries.

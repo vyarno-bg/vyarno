@@ -310,10 +310,11 @@ Fifteen files under Node's built-in test runner, no dependencies. The list is
 - `verify_mirror_math.mjs` — the rest of `mirror.js`: the anchor contract,
   personal vs official inflation, the real-wage division, the percentile
   direction, annuity and its inverse, savings erosion, the tax wedge.
-- `verify_view.mjs` — **the wiring**: every derived value in `view.js`, i.e.
-  which published number reaches which formula. Includes the two boundaries —
-  the annuity gets the AAR and never the APRC, and the share text carries no €
-  figure.
+- `verify_view_*.mjs` — **the wiring**: every derived value in `view.js`, i.e.
+  which published number reaches which formula, one subject per file. Includes
+  the two boundaries — the annuity gets the AAR and never the APRC
+  (`verify_view_home.mjs`), and the share text carries no € figure
+  (`verify_view_share.mjs`).
 - `verify_stores.mjs` — the `localStorage` layer.
 - `verify_contrast.mjs` — WCAG AA ratios for every ink × surface pair in both
   themes, computed from `tokens.css` itself.

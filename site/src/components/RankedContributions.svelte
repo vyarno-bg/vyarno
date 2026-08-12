@@ -98,7 +98,7 @@
        says the rows add up to exactly the user's number — so the
        remainder has to be on screen. `view.js#rankedSplit` owns that
        arithmetic (Σshown + restPp === π, asserted in
-       verify_view.mjs); the template only draws it. -->
+       verify_view_results.mjs); the template only draws it. -->
   {@const { shown, restN, restPp } = rankedSplit(ranked, limit)}
   {@const span = Math.max(...ranked.map((r) => Math.abs(r.contributionPp)), 0.1)}
   <div class="rank" bind:clientWidth={listW}>

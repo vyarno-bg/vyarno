@@ -6,7 +6,7 @@
  * and not a wrong string: `mirror.js` can be perfect, `content.js` can be
  * perfect, and the page can still print thirteen euro figures the reader never
  * typed because the template handed `spendable` to a function that wanted
- * `spendBase`. `verify_view.mjs` proves the arithmetic; the
+ * `spendBase`. The `verify_view_*.mjs` suites prove the arithmetic; the
  * `verify_render_*.mjs` suites prove the page draws. Neither can see which
  * argument the template passed.
  *
@@ -207,9 +207,9 @@ test("the basket accepts euros as well as percentages", () => {
 // summing to a total the reader deliberately avoided. Every figure downstream
 // — the € column, the ranked rows, "the biggest bite" — inherits it.
 //
-// `view.js#basketBudget` fixes the arithmetic and `verify_view.mjs` proves it.
-// These guard the WIRING: the template must feed `budget.spendBase` to the
-// consumers, not `spendable`.
+// `view.js#basketBudget` fixes the arithmetic and `verify_view_spend.mjs`
+// proves it. These guard the WIRING: the template must feed `budget.spendBase`
+// to the consumers, not `spendable`.
 // ---------------------------------------------------------------------------
 
 test("the euro column shows what was typed, not the whole budget", () => {
@@ -257,8 +257,8 @@ test("only one of the two remainders is ever on screen", () => {
   // The euro mode MEASURES what is left over off thirteen typed amounts; the
   // share control STATES it. Both live at once and the page carries two answers
   // to "how much do you not spend", free to disagree in front of the reader.
-  // `basketBudget` ignores the claim in euro mode (verify_view.mjs pins that);
-  // this is the other half — the control is not drawn there to ask it.
+  // `basketBudget` ignores the claim in euro mode (verify_view_spend.mjs pins
+  // that); this is the other half — the control is not drawn there to ask it.
   const editor = live(read("components", "BasketEditor.svelte"));
   const control = /\{#if ([^}]*)\}\s*<div class="spendshare">/.exec(editor);
   assert.ok(control, "the spend-share control is gone, or no longer gated at all");
@@ -389,8 +389,8 @@ test("the percentile marker is bound to the bottom-referenced rank, per earner",
   // `percentile()` returns a position FROM THE BOTTOM (1 = poorest). The
   // inverted `100 - rank` framing rendered a below-median income as "top 63%"
   // and put the marker on the wrong side of the ladder. The arithmetic is
-  // tested in verify_view.mjs; this is the wiring, and the wording rule lives
-  // in verify_copy.mjs.
+  // tested in verify_view_payroll.mjs; this is the wiring, and the wording rule
+  // lives in verify_copy.mjs.
   assert.ok(
     LIVE.includes("earnerRanks({ nets: nets, ladder: ladder })"),
     "the calculator no longer ranks through view.js#earnerRanks"
@@ -518,11 +518,11 @@ test("the share card is dated by the month its two figures describe", () => {
   // over June's numbers, with the anchor selector on the same page saying
   // «2025.06 → 2026.06».
   //
-  // Pinned here rather than in `verify_view.mjs`, which proves `sharePayload`
-  // returns whatever period it was handed and structurally cannot see which one
-  // the caller chose. And the card is a canvas, so no render test can read the
-  // string back off the DOM either — this wiring is the only place it is
-  // visible.
+  // Pinned here rather than in `verify_view_share.mjs`, which proves
+  // `sharePayload` returns whatever period it was handed and structurally
+  // cannot see which one the caller chose. And the card is a canvas, so no
+  // render test can read the string back off the DOM either — this wiring is
+  // the only place it is visible.
   const call = /sharePayload\(\{[\s\S]*?\}\)/.exec(LIVE);
   assert.ok(call, "the calculator no longer builds its share payload through sharePayload");
   assert.match(
@@ -678,14 +678,14 @@ test("the ranked column draws the remainder its sentence promises", () => {
   // clear the drawing threshold, so the visible points summed to 5.1 under a
   // sentence saying 5.4 — false on screen while `mirror.js#contributions` was
   // exactly right. The arithmetic lives in `view.js#rankedSplit`
-  // (verify_view.mjs asserts Σshown + rest === π); this asserts the template
-  // actually draws the remainder it is handed.
+  // (verify_view_results.mjs asserts Σshown + rest === π); this asserts the
+  // template actually draws the remainder it is handed.
   // Two halves, because the row cap is no longer one number. A narrow column
   // draws five rows and a wide one eight, so the call carries a limit — which
-  // `rankedSplit` has always taken and `verify_view.mjs` already exercises at
-  // 3 and at 8. What must not change is WHERE the slicing happens, so the
-  // check is now the property the exact-string match stood in for: the split
-  // goes through view.js, and the template does none of its own. That is
+  // `rankedSplit` has always taken and `verify_view_results.mjs` already
+  // exercises at 3 and at 8. What must not change is WHERE the slicing happens,
+  // so the check is now the property the exact-string match stood in for: the
+  // split goes through view.js, and the template does none of its own. That is
   // strictly more than the old assertion caught — a template that called
   // `rankedSplit(ranked)` and then sliced the result again passed it.
   assert.match(
@@ -936,7 +936,7 @@ test("the country page renders no figure it did not get from view.js", () => {
     arithmetic,
     [],
     `the country page computes in its markup: ${arithmetic.join(" | ")}. ` +
-      "Derived values belong in view.js with a test in verify_view.mjs."
+      "Derived values belong in view.js with a test in a verify_view_*.mjs suite."
   );
 });
 

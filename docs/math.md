@@ -1042,7 +1042,7 @@ basket.
 | This doc says | Enforced by |
 |---|---|
 | the rate is verbatim, never derived | `view.js#headlineRate` takes only the headline payload |
-| the annuity gets the AAR, never the APRC | `view.js#mortgagePanel` (`verify_view.mjs`) |
+| the annuity gets the AAR, never the APRC | `view.js#mortgagePanel` (`verify_view_home.mjs`) |
 | savings erosion is since-2020, not the user's rate | `view.js#savingsSince2020` takes the payloads, not a rate |
 | the savings card deflates by Eurostat's own all-items index | `view.js#savingsSince2020` prefers `hicp_headline.json`'s TOTAL index and returns `basis` |
 | the loan is bounded by regulation | `mortgagePanel` reads `lending_limits`; it does not accept a down payment |

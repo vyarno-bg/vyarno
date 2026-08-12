@@ -427,7 +427,7 @@ These are stable; scripts and CI rely on them.
 | Two cubes meaning different things by the same code | **Yes, gate 1** |
 | A whole division missing from the published basket | **Yes** — the transform raises rather than skipping, and gates 1–3 fail on a short basket |
 | A hand-edited payload in `data/published/` | **Partly** — no file integrity check, but the offline suites re-check the published payloads' identities and CI runs them on every push |
-| The SPA feeds a correct number into the wrong formula | **Yes** — `site/scripts/verify_view.mjs`. The pipeline gates structurally cannot see this: everything they check is already correct on disk |
+| The SPA feeds a correct number into the wrong formula | **Yes** — the `site/scripts/verify_view_*.mjs` suites. The pipeline gates structurally cannot see this: everything they check is already correct on disk |
 | A published field with no consumer | **Partly** — `test_published_contracts.py` asserts every payload has a publisher and a loader; an unread *field* inside a payload is not caught |
 | A refresh that ran but was never committed | **No** — the CI `data` job catches the missing file, not the stale one |
 
@@ -438,7 +438,7 @@ These are stable; scripts and CI rely on them.
 | `pipeline/tests/test_validate.py`, `test_mortgage.py` | Does the gate raise on the wrong value it exists to catch? | `pytest -q` |
 | `pipeline/tests/test_cli.py`, `test_cli_mortgage.py` | Is the gate wired into the refresh, does it abort **before** publishing, does it exit with the documented code? | `pytest -q` |
 | `test_published_contracts.py`, `test_mortgage.py` (published section), `site/scripts/verify_data_contracts.mjs` | Does the JSON **committed in this repo** still satisfy what the gate promised? | `pytest -q`, `npm run verify:math` |
-| `site/scripts/verify_view.mjs` | Does the SPA feed the right published number into the right formula? | `npm run verify:math` |
+| `site/scripts/verify_view_*.mjs` | Does the SPA feed the right published number into the right formula? | `npm run verify:math` |
 
 All of them run in CI on every push.
 

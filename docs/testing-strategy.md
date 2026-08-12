@@ -46,7 +46,7 @@ to do to count is §"The standard a test has to meet".
 | `pipeline/tests/test_*.py` | pytest | Connectors, transforms, publish gates, the models, the CLI |
 | `pipeline/tests/test_published_contracts.py` | pytest | The JSON committed under `data/published/`, re-checked offline |
 | `site/scripts/verify_mirror_math.mjs` · `verify_net_salary.mjs` | `node:test` | Every formula, against worked examples |
-| `site/scripts/verify_view.mjs` | `node:test` | Every derived value — which number feeds which formula |
+| `site/scripts/verify_view_*.mjs` | `node:test` | Every derived value — which number feeds which formula, one subject per file (§"Which `view.js` suite a test belongs in") |
 | `site/scripts/verify_copy.mjs` | `node:test` | Copy invariants, against the imported `COPY` object |
 | `site/scripts/verify_data_contracts.mjs` | `node:test` | `data.js` fallback chains and the shipped payloads |
 | `site/scripts/verify_legal.mjs` | `node:test` | The legal documents, the ЗЕТ чл. 4 identity, the licence claim, upstream attribution |
@@ -142,7 +142,7 @@ documentation actually has.
 | A CLI arm or an exit code | `test_cli*.py` |
 | A published-JSON field | `test_published_contracts.py`, and `verify_data_contracts.mjs` if the SPA reads it |
 | A formula in `mirror.js` | `verify_mirror_math.mjs` (or `verify_net_salary.mjs` for payroll) |
-| A derived value in `view.js` | `verify_view.mjs` |
+| A derived value in `view.js` | the `verify_view_*.mjs` suite for its subject — §"Which `view.js` suite a test belongs in" |
 | A fallback chain in `data.js` | `verify_data_contracts.mjs` |
 | A number or date the UI formats | `verify_format.mjs` |
 | A UI string, or a rule about what a string may claim | `verify_copy.mjs` |
@@ -150,6 +150,30 @@ documentation actually has.
 | Anything that has to be visible, positioned or coloured on the page | the `verify_render_*.mjs` suite for that region |
 | A legal document, the identity, or the licence claim | `verify_legal.mjs` |
 | Anything persisted to `localStorage` | `verify_stores.mjs` |
+
+### Which `view.js` suite a test belongs in
+
+`view.js` is one module and its suites are not, because the questions it answers
+are not one question. Each file below is one subject, and the sentence beside it
+is the whole of its remit.
+
+| The subject | The suite |
+|---|---|
+| Whether the figures on the page are still current | `verify_view_freshness.mjs` |
+| The published divisions the basket is built from | `verify_view_basket.mjs` |
+| What the price rise is charged against | `verify_view_spend.mjs` |
+| What the results card claims | `verify_view_results.mjs` |
+| What leaves the page when a reader shares it | `verify_view_share.mjs` |
+| Where a household's pay stands once it is taxed | `verify_view_payroll.mjs` |
+| What is published about the област a reader picked | `verify_view_region.mjs` |
+| What a home costs the reader buying one | `verify_view_home.mjs` |
+| The figures `/how/` renders with nobody in them | `verify_view_country.mjs` |
+| Which published field feeds which figure on `/market/` | `verify_view_market.mjs` |
+
+**The fixtures are the seam.** Each suite opens the payloads its own subject
+needs and builds its own shapes, which is what makes them separable at all;
+`near` — the float comparator, which carries a tolerance — is the one thing they
+share, and `scripts/near.mjs` says why it is not copied.
 
 ## Why the layout is what it is
 
@@ -254,9 +278,9 @@ that breaks either is the failure mode rather than the guard:
 A wrong wiring is not a wrong formula and not a wrong string. `mirror.js` can be
 perfect, `content.js` can be perfect, and the page can still print thirteen euro
 figures the reader never typed, because the template handed `spendable` to a
-function that wanted `spendBase`. `verify_view.mjs` proves the arithmetic and
-the render suites prove the page draws; neither can see which argument the
-template passed.
+function that wanted `spendBase`. The `verify_view_*.mjs` suites prove the
+arithmetic and the render suites prove the page draws; neither can see which
+argument the template passed.
 
 The same goes for the architectural invariants — the basket iterates the
 published payload rather than a frozen list. A DOM test would prove it better
