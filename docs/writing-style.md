@@ -151,6 +151,54 @@ for keeping them, and it is exempt from the check.
 - No gradient-and-glow decoration in the SPA either, and no badge that nothing
   measures. `docs/principles.md` is the perimeter.
 
+### Sentence length is a review note, and there is no ceiling on it
+
+A cap on words per sentence would cost one line. `verify_copy.mjs` already
+flattens `Market.svelte` and splits it on `[.!?]` to run the verdict rule, so
+the machinery is sitting there. **It stays a review note**, for three reasons
+worth reading before anybody adds the line.
+
+**A cap set where the prose sits today codifies today's prose.** Set it above
+the longest sentence currently on a page and it fires on nothing, which is a
+gate that reports green for work it never looked at. Set it lower and the first
+thing it catches is a sentence that has earned its length: «наред с останалото
+ги питат и какво е жилището, в което са: тяхно и изплатено, тяхно, но с кредит
+по него, или под наем» is a list of three tenure states and splitting it breaks
+the parallel that makes the three readable as one set.
+
+**The measurement is not well defined over these files.** A paragraph in the
+SPA is `.l-bg` / `.l-en` spans with `{slot}` expressions inside them, and
+headings, nav links and column labels sit between paragraphs in source order.
+Flatten that and a contents list runs into the heading under it and reports as
+one sentence of forty words that nobody wrote. A gate that invents its own
+offenders is one a contributor learns to argue with rather than read, which is
+the same ground §"Write the constraint, never the diff" gives for leaving that
+rule to review.
+
+**Length is a symptom, and not the interesting one.** A sentence saying «повече
+ли са жилищата» where the paragraph means «по-скъпи ли са» clears any ceiling at
+twenty-six words, and it is the worse error of the two: it does not say what it
+means, on the one comparison nobody else in the country publishes with a source
+attached. The other direction fails too — a long sentence is usually long
+because it is in the wrong layer, and a ceiling gets it cut to fit rather than
+moved, which loses the reason it existed.
+
+So what a reviewer reads a page for, in this order:
+
+1. **Which layer is this sentence in?** `/market/` is the worked example and its
+   hierarchy is load-bearing: `p.lead` is the answer, `p` is what the figure
+   means, `p.ours` is «наша сметка» and the links that reproduce it, `p.cap` is
+   the qualifications, and a `<details>` holds the numbers. **A sentence about
+   METHOD in body copy is in the wrong layer**, and moving it costs nothing
+   while deleting it would cost the page a claim it has to keep making.
+2. **Two ideas joined by a dash or a colon?** That is what most long sentences
+   are, and splitting one loses nothing at all.
+3. **An abstract noun used before it is explained?** «индекс», «съотношение»,
+   «показател», «дял», «медиана», «отправна година». Each is explained where it
+   is first used, or replaced with the thing it means.
+4. **Read it out loud in Bulgarian.** It is the only one of the four that
+   catches a word which is grammatical, ordinary and wrong.
+
 ## The tells
 
 Patterns that read as machine-written. Worth knowing by name, because they are
