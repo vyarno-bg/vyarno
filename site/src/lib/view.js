@@ -2517,6 +2517,13 @@ export function marketCities(nsiHousing) {
       pricePeriod: c.ref_period ?? null,
       dealsPct: d?.value_pct ?? null,
       dealsPeriod: d?.ref_period ?? null,
+      // Each city's own history, which the payload has carried all along: НСИ
+      // publish forty-five quarters per city and the table showed the newest
+      // one. Русе falling while Бургас rises is the sentence the table can
+      // make; whether Русе has been falling for a year or for six is the one it
+      // cannot, and that is the difference between a number and a finding.
+      priceSeries: plotSeries(c.series_by_period, { reference: 0 }),
+      dealsSeries: plotSeries(d?.series_by_period, { reference: 0 }),
     };
   });
   return {
@@ -2524,7 +2531,30 @@ export function marketCities(nsiHousing) {
     dealsPeriod: deals?.ref_period ?? null,
     priceUrl: price?.source_url ?? null,
     dealsUrl: deals?.source_url ?? null,
+    // ONE scale per column, across all six cities. Six sparklines each drawn to
+    // its own range are six pictures of the same shape: Русе's fall and Бургас'
+    // rise would occupy the same box, and a reader comparing rows — which is
+    // the only reason to put six charts in a column — would be comparing
+    // nothing. The shared bounds go through the same clamp, so zero is on every
+    // one of them.
+    priceScale: sharedScale(cities.map((c) => c.priceSeries)),
+    dealsScale: sharedScale(cities.map((c) => c.dealsSeries)),
     cities,
+  };
+}
+
+/**
+ * One scale covering several series, so charts drawn side by side compare.
+ *
+ * Runs through the same clamp `plotSeries` applies: zero is inside every scale
+ * on this page, including a shared one.
+ *
+ * @param {Array<{min: number, max: number}>} series
+ */
+function sharedScale(series) {
+  return {
+    min: Math.min(0, ...series.map((s) => s.min)),
+    max: Math.max(0, ...series.map((s) => s.max)),
   };
 }
 
@@ -2550,6 +2580,87 @@ export function marketNsiNationalRate(nsiHousing) {
 }
 
 /**
+ * A published `{period: value}` map, shaped for the plot and for the table that
+ * has to sit under it.
+ *
+ * One core for every series on `/market/`, because they differ only in where
+ * the numbers come from and every one of them needs the same six things: the
+ * ordered points, the extent to build an axis from, the peak and the trough and
+ * the latest reading for the text alternative, and the reference the figure is
+ * defined against where it has one.
+ *
+ * **`min` is clamped at or below zero and there is no way to raise it.** That
+ * is the whole honesty contract of this file rather than a default: a y-axis
+ * cropped to a property series' own range turns any of them into a cliff, and
+ * the way to keep that off this page is to leave no caller a floor to set. A
+ * signed series — Eurostat's annual rate ran from +34.6% to −26.8% — needs its
+ * negative half, so the clamp is `min(0, smallest)` rather than a constant 0:
+ * the drawn scale always CONTAINS zero, which is the property that matters, and
+ * `verify_view.mjs` asserts it over every series function here.
+ *
+ * @param {Record<string, number>|null|undefined} entries
+ * @param {{reference?: number|null}} [opts]  a level the figure is defined
+ *   against — 100 for an index, 0 for a rate — included in the extent, because
+ *   a plot whose own reference line is off the top has drawn everything except
+ *   the thing it is about
+ * @returns {{points: Array<{period: string, value: number}>, min: number,
+ *            max: number, peak: object|null, trough: object|null,
+ *            first: object|null, latest: object|null, from: string|null,
+ *            to: string|null, reference: number|null}}
+ */
+export function plotSeries(entries, { reference = null } = {}) {
+  const points = Object.keys(entries ?? {})
+    .sort()
+    .map((period) => ({ period, value: entries[period] }))
+    .filter((p) => Number.isFinite(p.value));
+  const values = points.map((p) => p.value);
+  const bounds = Number.isFinite(reference) ? [...values, reference] : values;
+  return {
+    points,
+    min: Math.min(0, ...bounds),
+    max: Math.max(0, ...bounds),
+    peak: points.reduce((best, p) => (best && best.value >= p.value ? best : p), null),
+    trough: points.reduce((worst, p) => (worst && worst.value <= p.value ? worst : p), null),
+    first: points[0] ?? null,
+    latest: points[points.length - 1] ?? null,
+    from: points[0]?.period ?? null,
+    to: points[points.length - 1]?.period ?? null,
+    reference: Number.isFinite(reference) ? reference : null,
+  };
+}
+
+/**
+ * A series with the provenance the caption under it has to print.
+ *
+ * The data and its publisher come back in one object for the reason `sourced`
+ * exists: a chart is a figure, it carries the same obligation as a number, and
+ * a renderer that has to fetch its source separately is one that can draw the
+ * chart and forget the line.
+ *
+ * @param {Record<string, number>|null|undefined} entries
+ * @param {object|null|undefined} block  the payload block the entries came from
+ * @param {{reference?: number|null, unit?: string|null}} [opts]
+ */
+function sourcedSeries(entries, block, opts = {}) {
+  return {
+    ...plotSeries(entries, opts),
+    sourceUrl: block?.source_url ?? null,
+    apiUrl: block?.api_url ?? null,
+    dataset: block?.dataset ?? null,
+    unit: opts.unit ?? block?.unit ?? null,
+  };
+}
+
+/** One field lifted out of a `{period: {total, new, existing}}` map. */
+function field(series, name) {
+  return Object.fromEntries(
+    Object.entries(series ?? {})
+      .map(([period, row]) => [period, row?.[name]])
+      .filter(([, value]) => Number.isFinite(value))
+  );
+}
+
+/**
  * The quarterly transaction count as a series, for drawing.
  *
  * The page's lead finding is a change in VOLUME over time and it was one number
@@ -2558,36 +2669,183 @@ export function marketNsiNationalRate(nsiHousing) {
  * the geometry is the component's, the way `systemWedgeLadder` feeds the tax
  * wedge.
  *
- * `max` travels with the points because the axis has to be built from the whole
- * series rather than from what a caller happens to plot. **A count chart starts
- * at zero and nothing here offers a `min`**: the y-axis of a property series
- * cropped to its own range is the single most common way to draw an honest
- * number dishonestly, and the way to keep it out of this page is to leave the
- * caller nothing to crop with.
- *
  * @param {object|null} houseMarket
- * @returns {{points: Array<{period: string, value: number}>, max: number,
- *            from: string|null, to: string|null}}
  */
 export function marketVolumeSeries(houseMarket) {
-  const series = houseMarket?.deals?.series_by_period ?? {};
-  const points = Object.keys(series)
-    .sort()
-    .map((period) => ({ period, value: series[period]?.total }))
-    .filter((p) => Number.isFinite(p.value));
-  const peak = points.reduce((best, p) => (best && best.value >= p.value ? best : p), null);
+  const block = houseMarket?.deals ?? null;
+  return sourcedSeries(field(block?.series_by_period, "total"), block);
+}
+
+/**
+ * **Twenty-one years of the official house price index**, as НСИ compile it and
+ * Eurostat disseminate it.
+ *
+ * Eighty-five quarters were in the payload and the page rendered one number out
+ * of that block. What the series carries and the number cannot: the index
+ * doubled to 2008, gave back more than a third of it by 2012, and has tripled
+ * since — so a reader asking "can this fall" has the publisher's own answer
+ * instead of ours. **That is the reason it is here and also the reason the page
+ * may not caption it**: showing a bust and today's level on one line is a fact;
+ * saying what the pair means is a position.
+ *
+ * The reference is 100, which is the 2015 base the index is defined against and
+ * not a judgement about 2015. **Nominal**, and the page has to say so — nothing
+ * published here deflates a quarterly series back to 2005, because the HICP
+ * index on this site is annual and starts at 2020.
+ *
+ * @param {object|null} houseMarket
+ * @param {"total"|"new"|"existing"} [purchase]
+ */
+export function marketPriceIndexSeries(houseMarket, purchase = "total") {
+  const block = houseMarket?.price_index ?? null;
   return {
-    points,
-    max: peak?.value ?? 0,
-    // The peak and the latest reading, because they are what the text
-    // alternative has to say: a chart described as "a line over 37 quarters"
-    // tells a screen-reader user the shape of the markup rather than the shape
-    // of the data.
-    peak,
-    latest: points[points.length - 1] ?? null,
-    from: points[0]?.period ?? null,
-    to: points[points.length - 1]?.period ?? null,
+    ...sourcedSeries(field(block?.series_by_period, purchase), block, {
+      reference: 100,
+      unit: block?.unit ?? null,
+    }),
+    // Eurostat's own letters on their own points, for the quarters they flagged.
+    flags: flagsFor(block?.status_by_period, purchase),
   };
+}
+
+/**
+ * The SAME index deflated, on the same base and the same quarters.
+ *
+ * **The one line without which the nominal one can mislead.** Nominally the
+ * index sits far above its 2008 peak; deflated it sits below it, and a site
+ * whose subject is the gap between a number and what it buys cannot draw
+ * twenty-one years of property prices in the money of the day with the other
+ * line unavailable — that is the correction it exists to make, applied to
+ * everything except this.
+ *
+ * `tipsho30` has no purchase dimension: Eurostat deflate the total only, so
+ * there is no split to be had and nothing here may imply one.
+ *
+ * @param {object|null} houseMarket
+ */
+export function marketPriceIndexRealSeries(houseMarket) {
+  const block = houseMarket?.price_index_real ?? null;
+  return {
+    ...sourcedSeries(block?.series_by_period, block, {
+      reference: 100,
+      unit: block?.unit ?? null,
+    }),
+    flags: flagsFor(block?.status_by_period, null),
+  };
+}
+
+/**
+ * The publisher's flags at the periods they apply to, keyed by period.
+ *
+ * Sparse in, sparse out. A quarter Eurostat did not flag has no entry, so the
+ * presence of one MEANS something rather than being a default a renderer has to
+ * filter — and a chart marking every quarter marks nothing.
+ *
+ * @param {Record<string, string|Record<string,string>>|null|undefined} status
+ * @param {string|null} purchase  the field, or null where the cube has no split
+ */
+function flagsFor(status, purchase) {
+  return Object.fromEntries(
+    Object.entries(status ?? {})
+      .map(([period, value]) => [
+        period,
+        typeof value === "string" ? value : (value?.[purchase ?? ""] ?? null),
+      ])
+      .filter(([, letter]) => Boolean(letter))
+  );
+}
+
+/**
+ * What Eurostat's flag letters mean, as a key a page can print.
+ *
+ * `b` break in series, `e` estimated, `p` provisional, `d` definition differs.
+ * A letter carries no meaning to a reader on its own, so a chart that marks a
+ * point has to be able to say what the mark is — and a marker nobody can look
+ * up is worse than none.
+ */
+export const STATUS_LETTERS = Object.freeze(["b", "e", "p", "d"]);
+
+/**
+ * Which flags a series actually carries, in a stable order.
+ *
+ * Read off the data rather than listed in the template, so a page that prints a
+ * key prints the entries it needs and no others — a legend naming a marker that
+ * is nowhere on the chart is a question a reader cannot answer.
+ *
+ * @param {Array<Record<string, string>>} flagMaps
+ * @returns {string[]}
+ */
+export function statusLettersUsed(flagMaps) {
+  const seen = new Set();
+  for (const map of flagMaps) {
+    for (const letter of Object.values(map ?? {})) {
+      for (const ch of String(letter)) seen.add(ch);
+    }
+  }
+  return STATUS_LETTERS.filter((letter) => seen.has(letter));
+}
+
+/**
+ * Eurostat's own published annual rate, every quarter they have published one.
+ *
+ * **Read, never derived** — the same rule the headline figure follows, and here
+ * it matters more: eighty-one quarters recomputed across НСИ's rebasing would
+ * differ from the published series in the last decimal at an unknown number of
+ * points, and the page's claim is that a reader can check it.
+ *
+ * Reference zero, so the axis spans the sign change rather than starting at the
+ * lowest bar. The series runs +34.6% to −26.8% and a plot that cropped either
+ * end would be describing a different market.
+ *
+ * @param {object|null} houseMarket
+ * @param {"total"|"new"|"existing"} [purchase]
+ */
+export function marketPriceRateSeries(houseMarket, purchase = "total") {
+  const block = houseMarket?.price_index ?? null;
+  return sourcedSeries(field(block?.annual_rate_pct, purchase), block, { reference: 0 });
+}
+
+/**
+ * What a dwelling changed hands for, quarter by quarter, split by purchase type.
+ *
+ * **Split rather than total, and that is what makes it drawable.** The average
+ * deal is a mean over whatever was sold that quarter, so a total line moves with
+ * the mix of new builds and existing dwellings as well as with prices — and a
+ * line chart invites exactly the reading that mix will not support. Within one
+ * purchase type the mix is far narrower, and the two lines drawn apart show the
+ * gap between them, which is the thing the mix caveat is about.
+ *
+ * @param {object|null} houseMarket
+ * @param {"total"|"new"|"existing"} [purchase]
+ */
+export function marketAverageDealSeries(houseMarket, purchase = "existing") {
+  const block = houseMarket?.avg_deal_eur ?? null;
+  return {
+    // Attributed to the VALUE cube, which is where the euro figure comes from
+    // and the only block of the three carrying a page to link. `avg_deal_eur`
+    // is ours and has no `source_url` of its own by design — a derived block
+    // that cited a publisher's page would be attributing our division to them.
+    ...sourcedSeries(field(block?.series_by_period, purchase), houseMarket?.value ?? null),
+    // The disclosure travels with the drawing: this is the one series on the
+    // page that is ours rather than a publisher's.
+    derivedFrom: block?.derived_from_api_urls ?? null,
+  };
+}
+
+/**
+ * The share of people whose housing costs pass 40% of their household income,
+ * every year EU-SILC has published one.
+ *
+ * Twenty annual points, of which the page showed the newest. The series is not
+ * a trend — 21.2% in 2007, 5.9% in 2010, 20.7% in 2016, 6.9% in 2025 — and a
+ * single reading of a figure that has swung by fifteen points twice tells a
+ * reader almost nothing about it.
+ *
+ * @param {object|null} structure
+ */
+export function marketOverburdenSeries(structure) {
+  const block = structure?.housing_cost_overburden ?? null;
+  return sourcedSeries(block?.series_by_period, block);
 }
 
 /**
@@ -2597,36 +2855,21 @@ export function marketVolumeSeries(houseMarket) {
  * sentence and trivial to show: a line, a rule at 100, and where the reading
  * sits against its own history is answered without a paragraph.
  *
- * `reference` is 100 by construction — it is what `PTIR_LT_AVG` indexes against
- * — and it comes back so the drawing cannot pick a different one. `max` covers
- * the reference as well as the data, because a chart whose rule is off the top
- * of its own plot has drawn everything except the thing it is about.
+ * `reference` is 100 by construction — it is what `PTIR_LT_AVG` indexes against.
  *
  * @param {object|null} structure
- * @returns {{points: Array<{period: string, value: number}>, max: number,
- *            reference: number, from: string|null, to: string|null,
- *            latest: number|null, unit: string|null}}
  */
 export function marketPriceToIncomeSeries(structure) {
   const block = structure?.price_to_income ?? null;
-  const series = block?.series_by_period ?? {};
-  const points = Object.keys(series)
-    .sort()
-    .map((period) => ({ period, value: series[period] }))
-    .filter((p) => Number.isFinite(p.value));
-  const reference = 100;
-  const peak = points.reduce((best, p) => (best && best.value >= p.value ? best : p), null);
   return {
-    points,
-    max: Math.max(reference, ...points.map((p) => p.value), 0),
-    reference,
-    peak,
-    from: points[0]?.period ?? null,
-    to: points[points.length - 1]?.period ?? null,
-    latest: Number.isFinite(block?.value) ? block.value : null,
-    // The unit is the whole claim: only PTIR_LT_AVG indexes the ratio against
-    // this country's own long-run average, and a caller drawing a rule at 100
-    // over any other unit has drawn a line through nothing.
-    unit: block?.unit ?? null,
+    ...sourcedSeries(block?.series_by_period, block, {
+      reference: 100,
+      // The unit is the whole claim: only PTIR_LT_AVG indexes the ratio against
+      // this country's own long-run average, and a caller drawing a rule at 100
+      // over any other unit has drawn a line through nothing.
+      unit: block?.unit ?? null,
+    }),
+    value: Number.isFinite(block?.value) ? block.value : null,
+    refPeriod: block?.ref_period ?? null,
   };
 }

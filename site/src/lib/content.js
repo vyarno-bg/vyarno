@@ -2163,6 +2163,104 @@ export const COPY = {
   mktRowOccupied: { bg: "Обитавани", en: "Occupied" },
   mktRowUnoccupied: { bg: "Необитавани", en: "Unoccupied" },
   mktRowUnoccupiedShare: { bg: "Дял необитавани", en: "Share unoccupied" },
+  // The numbers tables under the charts. A plot shows a shape and hides every
+  // value in it; twenty-one years of an index is exactly the case where a
+  // reader wants ONE quarter and the chart cannot give it to them. The table is
+  // also the WCAG text alternative and the thing that makes the page quotable,
+  // so it carries every point rather than a sample.
+  mktColPeriod: { bg: "Период", en: "Period" },
+  mktOpenQuarters: {
+    bg: "виж числата — всички {n} тримесечия",
+    en: "read the numbers — all {n} quarters",
+  },
+  mktOpenYears: { bg: "виж числата — всички {n} години", en: "read the numbers — all {n} years" },
+  mktColIndex: { bg: "Индекс", en: "Index" },
+  mktColChange: { bg: "Промяна", en: "Change" },
+  mktColShare: { bg: "Дял", en: "Share" },
+  mktColSold: { bg: "Продадени жилища", en: "Dwellings sold" },
+  mktColAvgNew: { bg: "Ново, средно", en: "New, average" },
+  mktColAvgExisting: { bg: "Съществуващо, средно", en: "Existing, average" },
+  mktColRatio: { bg: "Спрямо собствената средна", en: "Against its own average" },
+  mktTblIndexNumbers: {
+    bg: "Индекс на цените на жилищата по тримесечия",
+    en: "House price index by quarter",
+  },
+  mktTblRateNumbers: {
+    bg: "Годишна промяна на цените по тримесечия",
+    en: "Annual price change by quarter",
+  },
+  mktTblVolumeNumbers: {
+    bg: "Брой продадени жилища по тримесечия",
+    en: "Dwellings sold by quarter",
+  },
+  mktTblDealNumbers: {
+    bg: "Средно платено за жилище по тримесечия",
+    en: "Average paid per dwelling by quarter",
+  },
+  mktTblOverburdenNumbers: {
+    bg: "Дял на хората с разходи за жилище над 40% от дохода, по години",
+    en: "Share of people spending over 40% of income on housing, by year",
+  },
+  mktTblPtiNumbers: {
+    bg: "Цени спрямо доходите по години",
+    en: "Prices against incomes by year",
+  },
+  mktTblCityNumbers: {
+    bg: "Годишна промяна на цените по градове и тримесечия",
+    en: "Annual price change by city and quarter",
+  },
+  // The charts' accessible names. Built from the payload at render, because a
+  // description naming a peak or a period is a figure written into prose.
+  mktChartIndex: {
+    bg: "Индекс на цените на жилищата по тримесечия, от {from} до {to}, при 100 за {base} г. В цените от деня на сделката: най-ниско {low} през {lowAt}, най-високо {peak} през {peakAt}, а за {to} — {last}. Изчистено от инфлация: най-високо {realPeak} през {realPeakAt}, а за {to} — {realLast}.",
+    en: "House price index by quarter, {from} to {to}, with 100 for {base}. In the money of the day: the lowest is {low} in {lowAt}, the highest {peak} in {peakAt}, and for {to} it is {last}. Adjusted for inflation: the highest is {realPeak} in {realPeakAt}, and for {to} it is {realLast}.",
+  },
+  mktChartRate: {
+    bg: "Годишна промяна на цените на жилищата по тримесечия, от {from} до {to}. Най-силен спад {low} през {lowAt}, най-силно поскъпване {peak} през {peakAt}; за {to} — {last}.",
+    en: "Annual change in house prices by quarter, {from} to {to}. The steepest fall is {low} in {lowAt} and the steepest rise {peak} in {peakAt}; for {to} it is {last}.",
+  },
+  mktChartDeal: {
+    bg: "Средно платено за жилище по тримесечия, от {from} до {to}, отделно за ново строителство и за съществуващи жилища. За {to} — {new} евро за ново и {existing} евро за съществуващо.",
+    en: "Average paid per dwelling by quarter, {from} to {to}, new builds and existing dwellings apart. For {to} it is €{new} for a new build and €{existing} for an existing one.",
+  },
+  mktChartOverburden: {
+    bg: "Дял на хората, чието домакинство дава над 40% от дохода си за жилище, по години от {from} до {to}. Най-високо {peak}% през {peakAt}, най-ниско {low}% през {lowAt}; за {to} — {last}%.",
+    en: "Share of people whose household spends over 40% of its income on housing, by year {from} to {to}. The highest is {peak}% in {peakAt} and the lowest {low}% in {lowAt}; for {to} it is {last}%.",
+  },
+  mktChartCity: {
+    bg: "{city}: годишна промяна на цените по тримесечия, от {from} до {to}. За {to} — {last}%.",
+    en: "{city}: annual price change by quarter, {from} to {to}. For {to} it is {last}%.",
+  },
+  // The deflated line, and the letters Eurostat put on their own points.
+  mktKeyNominal: { bg: "в цените от деня", en: "in the money of the day" },
+  mktKeyReal: { bg: "изчистено от инфлация", en: "adjusted for inflation" },
+  mktColIndexReal: { bg: "Изчистен от инфлация", en: "Inflation-adjusted" },
+  mktColFlag: { bg: "Бележка", en: "Note" },
+  // Eurostat mark their own numbers and the letters mean nothing to a reader
+  // alone. Printed only for the letters a series actually carries — a key
+  // naming a marker that is nowhere on the chart is a question nobody can
+  // answer.
+  mktFlagB: { bg: "b — прекъсване в реда", en: "b — break in series" },
+  mktFlagE: { bg: "e — оценка", en: "e — estimate" },
+  mktFlagP: { bg: "p — предварително", en: "p — provisional" },
+  mktFlagD: { bg: "d — различна дефиниция", en: "d — definition differs" },
+  mktFlagsLead: { bg: "Бележките са на Евростат:", en: "The notes are Eurostat's:" },
+
+  // What a rule on a plot is. Written beside the chart, because a dashed line
+  // nobody explained is a line a reader has to guess at.
+  mktRefIndexBase: { bg: "100 = нивото през 2015 г.", en: "100 = the 2015 level" },
+  mktRefZero: {
+    bg: "0 = без промяна спрямо година по-рано",
+    en: "0 = no change on a year earlier",
+  },
+  mktKeyNew: { bg: "ново строителство", en: "new builds" },
+  mktKeyExisting: { bg: "съществуващи", en: "existing" },
+  // A slot, never a written year: НСИ's city series starts where their workbook
+  // starts, and a column head saying «От 2015 г.» is a claim about the data
+  // that the next republication can falsify while every figure under it stays
+  // right.
+  mktColCityTrend: { bg: "От {from}", en: "Since {from}" },
+
   // The second link under every figure, and it exists because the first one
   // does not land where a reader expects. Eurostat's table view opens with all
   // of a dataset's units at once — `prc_hpi_hsnq` carries a count, two indices

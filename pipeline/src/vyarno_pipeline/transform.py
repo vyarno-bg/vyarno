@@ -821,10 +821,35 @@ def _rows_by_period_and_purchase(
     return out
 
 
+def _flags_by_period(rows: list[dict], unit: str | None = None) -> dict[str, dict[str, str]]:
+    """Eurostat's own flags on their own cells, {period: {field: letter}}.
+
+    Sparse on purpose: a quarter Eurostat did not flag carries no entry, so the
+    published map is a few dozen bytes and its presence at a period MEANS
+    something rather than being a default the reader has to filter.
+
+    `e` estimated, `b` break in series, `p` provisional, `d` definition differs,
+    and combinations. **They are the publisher's statement about their own
+    number**, and a chart that draws an unbroken line across a flagged break has
+    made a claim on their behalf that they declined to make.
+    """
+    out: dict[str, dict[str, str]] = {}
+    for r in rows:
+        if unit is not None and r.get("unit") != unit:
+            continue
+        field = PURCHASE_FIELDS.get(str(r.get("purchase")))
+        flag = r.get("status")
+        if field is None or not flag or r.get("time") is None:
+            continue
+        out.setdefault(str(r["time"]), {})[field] = str(flag)
+    return out
+
+
 def build_house_market_payload(
     count: CubeFetch,
     value: CubeFetch,
     index: CubeFetch,
+    real_index: CubeFetch,
     as_of: date,
 ) -> dict:
     """Shape the three Eurostat property cubes into `house_market.json`.
@@ -856,12 +881,27 @@ def build_house_market_payload(
     values = _rows_by_period_and_purchase(value.rows)
     levels = _rows_by_period_and_purchase(index.rows, unit=HOUSE_PRICE_INDEX_UNIT)
     rates = _rows_by_period_and_purchase(index.rows, unit=HOUSE_PRICE_RATE_UNIT)
+    level_flags = _flags_by_period(index.rows, unit=HOUSE_PRICE_INDEX_UNIT)
+    # `tipsho30` has no `purchase` dimension — Eurostat deflate the total only —
+    # so it is read straight rather than through the purchase collapser, and the
+    # page may not imply a split it does not have.
+    real_levels = {
+        str(r["time"]): float(r["value"])
+        for r in real_index.rows
+        if r.get("value") is not None and r.get("time") is not None
+    }
+    real_flags = {
+        str(r["time"]): str(r["status"])
+        for r in real_index.rows
+        if r.get("status") and r.get("time") is not None
+    }
 
-    if not counts or not values or not levels or not rates:
+    if not counts or not values or not levels or not rates or not real_levels:
         raise ValueError(
-            "house market: one of the four series came back empty "
+            "house market: one of the five series came back empty "
             f"(counts {len(counts)}, values {len(values)}, index {len(levels)}, "
-            f"rates {len(rates)}). A cube that filtered to nothing answers 200."
+            f"rates {len(rates)}, deflated {len(real_levels)}). A cube that "
+            f"filtered to nothing answers 200."
         )
 
     # The intersection, and only where BOTH sides carry a total to divide.
@@ -904,15 +944,17 @@ def build_house_market_payload(
             "Bulgaria's residential property market as Eurostat publish it, "
             "quarterly: how many dwellings households bought, what they paid, "
             "and the official house price index with Eurostat's own annual rate "
-            "of change. Scope is dwellings bought by households at the price "
+            "of change, in the money of the day AND deflated. Scope is "
+            "dwellings bought by households at the price "
             "actually paid — flats and houses, VAT included on new builds, "
             "notary and agency fees excluded, land only as the plot under a "
             "house. Standalone land, garages, shops and offices are outside it, "
             "as are state and municipal sales, gifts, inheritances, "
             "court-executor sales and self-build. "
             "MODIFICATION NOTICE, per Eurostat's reuse conditions: every figure "
-            "under deals, value, price_index and annual_rate_pct is Eurostat's "
-            "own, unmodified, at the unit each block names. `avg_deal_eur` is "
+            "under deals, value, price_index, annual_rate_pct and "
+            "price_index_real is Eurostat's own, unmodified, at the unit each "
+            "block names. `avg_deal_eur` is "
             "OURS — the value cube divided by the count cube, quarter by "
             "quarter and purchase type by purchase type, published only for the "
             "quarters both cubes carry. Eurostat is not responsible for that "
@@ -950,6 +992,29 @@ def build_house_market_payload(
             # decimal — which is the decimal the cross-publisher gate compares.
             "annual_rate_pct": {p: rates[p] for p in sorted(rates)},
             "rate_ref_period": latest_rate_period,
+            # Eurostat's own flags, on the level series a chart draws.
+            "status_by_period": {p: level_flags[p] for p in sorted(level_flags)},
+        },
+        "price_index_real": {
+            "_role": "INDEX: the SAME index deflated, as published",
+            "dataset": real_index.dataset,
+            "source_url": real_index.page_url,
+            "api_url": real_index.api_url,
+            "unit": f"index_{HOUSE_PRICE_INDEX_BASE_YEAR}=100_deflated",
+            "base_year": HOUSE_PRICE_INDEX_BASE_YEAR,
+            # No purchase split, because Eurostat publish none: `tipsho30` has
+            # no `purchase` dimension and a page implying one would be inventing
+            # a series.
+            "series_by_period": {p: real_levels[p] for p in sorted(real_levels)},
+            "status_by_period": {p: real_flags[p] for p in sorted(real_flags)},
+            "note": (
+                "The house price index divided by the national accounts "
+                "deflator for private final consumption, as Eurostat publish "
+                "it. Same 2015 base and same quarters as the nominal index "
+                "above, so the two are read on one axis. Nothing here is "
+                "computed by us: this is their deflated series, not their "
+                "nominal one with our arithmetic on it."
+            ),
         },
         "avg_deal_eur": {
             "_role": "DERIVED BY US: value ÷ count, per quarter and purchase type",

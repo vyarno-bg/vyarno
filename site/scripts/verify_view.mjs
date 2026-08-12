@@ -94,6 +94,15 @@ import {
   marketDealInYearsOfPay,
   marketCities,
   marketNsiNationalRate,
+  plotSeries,
+  marketVolumeSeries,
+  marketPriceIndexSeries,
+  marketPriceIndexRealSeries,
+  marketPriceRateSeries,
+  marketAverageDealSeries,
+  marketOverburdenSeries,
+  marketPriceToIncomeSeries,
+  statusLettersUsed,
 } from "../src/lib/view.js";
 import { COPY, HOME, SECTOR_HINTS } from "../src/lib/content.js";
 import { ORIGIN as SITEMAP_ORIGIN } from "./gen-sitemap.mjs";
@@ -3411,4 +3420,175 @@ test("the live payloads still carry every field the market wiring reads", () => 
     assert.ok(city.nameBg && city.nameEn, `${city.code} is named in one language only`);
     assert.ok(city.pricePeriod, `${city.code}'s price cell is undated`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// `/market/`'s series — the shape every chart is drawn from
+// ---------------------------------------------------------------------------
+
+test("plotSeries clamps its own floor at zero and offers no way to raise it", () => {
+  // **The honesty contract of the whole file.** A y-axis cropped to a property
+  // series' own range turns any of them into a cliff, and the way to keep that
+  // off the page is to leave no caller a floor to set — not to ask them nicely.
+  const rising = plotSeries({ "2020-Q1": 80, "2020-Q2": 100, "2020-Q3": 260 });
+  assert.equal(rising.min, 0, "a positive series does not start at zero");
+  assert.equal(rising.max, 260);
+
+  // A signed series keeps its negative half: Eurostat's annual rate ran from
+  // +34.6% to −26.8%, and a plot that cropped either end would be describing a
+  // different market. What is invariant is that ZERO IS INSIDE the scale.
+  const signed = plotSeries({ "2009-Q3": -26.8, "2007-Q4": 34.6, "2026-Q1": 14.8 });
+  assert.equal(signed.min, -26.8);
+  assert.equal(signed.max, 34.6);
+
+  // Never a floor above zero, whatever the data does.
+  const narrow = plotSeries({ a: 250, b: 255, c: 260 });
+  assert.equal(narrow.min, 0, "a narrow band cropped its own axis");
+  assert.ok(narrow.min <= 0 && narrow.max >= 0);
+
+  // The reference is inside the extent, because a plot whose own rule sits off
+  // the top has drawn everything except the thing it is about.
+  const ratio = plotSeries({ 2024: 67.75 }, { reference: 100 });
+  assert.equal(ratio.max, 100);
+  assert.equal(ratio.reference, 100);
+
+  // The readings a text alternative needs, and the order the points come in.
+  const many = plotSeries({ 2021: 5, 2019: 9, 2020: 1 });
+  assert.deepEqual(
+    many.points.map((p) => p.period),
+    ["2019", "2020", "2021"]
+  );
+  assert.equal(many.peak.period, "2019");
+  assert.equal(many.trough.period, "2020");
+  assert.equal(many.first.period, "2019");
+  assert.equal(many.latest.period, "2021");
+
+  assert.deepEqual(plotSeries(null).points, []);
+  assert.equal(plotSeries(null).min, 0);
+});
+
+test("every market series a chart is drawn from contains zero in its scale", () => {
+  // The rule above, held over the functions that actually feed the page rather
+  // than over a fixture. A new series function that forgot the clamp would draw
+  // a chart nothing else on the site would question.
+  const market = read("house_market");
+  const structure = read("house_market_structure");
+  if (!market || !structure) return; // no refresh in this checkout
+
+  const all = {
+    volume: marketVolumeSeries(market),
+    index: marketPriceIndexSeries(market),
+    indexReal: marketPriceIndexRealSeries(market),
+    rate: marketPriceRateSeries(market),
+    dealNew: marketAverageDealSeries(market, "new"),
+    dealExisting: marketAverageDealSeries(market, "existing"),
+    overburden: marketOverburdenSeries(structure),
+    priceToIncome: marketPriceToIncomeSeries(structure),
+  };
+  for (const [name, series] of Object.entries(all)) {
+    assert.ok(series.points.length > 4, `${name} carries ${series.points.length} points`);
+    assert.ok(series.min <= 0, `${name} starts its axis at ${series.min}, above zero`);
+    assert.ok(series.max >= 0, `${name}'s axis stops at ${series.max}, below zero`);
+    assert.ok(series.sourceUrl, `${name} reaches a chart with no source to caption it`);
+    assert.ok(series.apiUrl, `${name} reaches a chart with no query to check it against`);
+  }
+});
+
+test("the two index lines share a base, so one axis serves both", () => {
+  // The nominal index and the deflated one are the same statistic measured two
+  // ways, and the page draws them together. That only works while they are on
+  // ONE base: `tipsho30` on a different unit would still return a plausible
+  // line, three times flatter, and the pair would read as a collapse.
+  const market = read("house_market");
+  if (!market) return;
+
+  const nominal = marketPriceIndexSeries(market);
+  const real = marketPriceIndexRealSeries(market);
+  assert.equal(nominal.reference, 100);
+  assert.equal(real.reference, 100);
+  assert.deepEqual(
+    real.points.map((p) => p.period),
+    nominal.points.map((p) => p.period),
+    "the two indices cover different quarters, so a shared x axis misaligns them"
+  );
+  // Each averages 100 over its own base year — the identity the pipeline gates
+  // and the reason the two are comparable at all.
+  for (const [name, series] of [
+    ["nominal", nominal],
+    ["deflated", real],
+  ]) {
+    const base = series.points.filter((p) => p.period.startsWith("2015-Q"));
+    assert.equal(base.length, 4, `${name} carries ${base.length} quarters of its base year`);
+    const mean = base.reduce((sum, p) => sum + p.value, 0) / 4;
+    assert.ok(Math.abs(mean - 100) < 0.05, `${name} averages ${mean} across 2015, not 100`);
+  }
+  // The deflated series has no purchase split, so asking for one must not
+  // silently return the total under a new-build label.
+  assert.equal(marketPriceIndexRealSeries(market).points.length, real.points.length);
+});
+
+test("Eurostat's flags reach the page at the periods they are on, and nowhere else", () => {
+  // A break is the publisher declining to call two stretches one measurement.
+  // Drawn at the wrong quarter it qualifies the wrong point; drawn everywhere it
+  // qualifies nothing.
+  const market = read("house_market");
+  if (!market) return;
+
+  const nominal = marketPriceIndexSeries(market);
+  const real = marketPriceIndexRealSeries(market);
+  const periods = new Set(nominal.points.map((p) => p.period));
+  for (const [name, series] of [
+    ["nominal", nominal],
+    ["deflated", real],
+  ]) {
+    assert.ok(Object.keys(series.flags).length > 0, `${name} carries no flags`);
+    for (const [period, letter] of Object.entries(series.flags)) {
+      assert.ok(periods.has(period), `${name} flags ${period}, which the series does not carry`);
+      assert.match(letter, /^[bepd]+$/, `${name} flags ${period} as ${letter}`);
+    }
+    assert.ok(
+      Object.keys(series.flags).length < series.points.length,
+      `${name} flags every point it has, which marks nothing`
+    );
+  }
+  // The key names the letters the data uses and no others: a legend naming a
+  // marker nowhere on the chart is a question a reader cannot answer.
+  const used = statusLettersUsed([nominal.flags, real.flags]);
+  assert.ok(used.length > 0);
+  assert.deepEqual(used, [...new Set(used)]);
+  for (const letter of used) {
+    assert.ok(
+      Object.values(nominal.flags).concat(Object.values(real.flags)).join("").includes(letter),
+      `the key names ${letter} and no point carries it`
+    );
+  }
+  assert.deepEqual(statusLettersUsed([{}, null]), []);
+});
+
+test("the six city sparklines are drawn against one shared scale", () => {
+  // Six charts each drawn to its own range are six pictures of the same shape,
+  // and comparing rows is the only reason to put a chart in a column.
+  const nsi = read("nsi_housing");
+  if (!nsi) return;
+
+  const cities = marketCities(nsi);
+  assert.ok(cities.cities.length >= 6);
+  for (const city of cities.cities) {
+    assert.ok(city.priceSeries.points.length > 8, `${city.code} carries no history`);
+    // Every city fits inside the shared scale, which is what makes two rows
+    // comparable: a city drawn to its own range would fill the same box
+    // whatever its numbers.
+    assert.ok(
+      city.priceSeries.min >= cities.priceScale.min - 1e-9,
+      `${city.code} falls below the shared floor`
+    );
+    assert.ok(
+      city.priceSeries.max <= cities.priceScale.max + 1e-9,
+      `${city.code} rises above the shared ceiling`
+    );
+  }
+  // The shared scale covers every city and still contains zero.
+  assert.ok(cities.priceScale.min <= 0 && cities.priceScale.max >= 0);
+  assert.equal(cities.priceScale.min, Math.min(0, ...cities.cities.map((c) => c.priceSeries.min)));
+  assert.equal(cities.priceScale.max, Math.max(0, ...cities.cities.map((c) => c.priceSeries.max)));
 });

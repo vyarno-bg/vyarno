@@ -87,30 +87,48 @@ test("every figure on the market page carries a source under it", { skip }, asyn
       // Every table cites too, and the citation is the element after its scroll
       // box rather than something inside it: a caption inside a horizontally
       // scrolling region is one a phone reader has to scroll sideways to reach.
-      for (let i = 0; i < tabled; i += 1) {
-        const cited = await tables.nth(i).evaluate((el) => {
-          const box = el.closest(".scroll") ?? el;
-          const after = box.nextElementSibling;
-          const links = after ? [...after.querySelectorAll("a[href^='http']")] : [];
-          return {
-            after: after?.className ?? null,
-            links: links.length,
-            text: after?.innerText ?? "",
-          };
-        });
-        assert.ok(
-          cited.links >= 1,
-          `figure table ${i} is followed by "${cited.after}" carrying ${cited.links} source ` +
-            "links. A table of published figures cites its publisher exactly as a card does."
-        );
-      }
+      const uncited = await tables.evaluateAll((els) =>
+        els
+          .map((el, i) => {
+            const box = el.closest(".scroll") ?? el;
+            // A numbers table publishes the series of the chart above it and is
+            // cited by that chart's own source line, which sits directly above
+            // the disclosure it lives in. Everything else cites after itself.
+            const disclosure = box.closest("details.numbers");
+            const near = disclosure ? disclosure.previousElementSibling : box.nextElementSibling;
+            const links = near ? near.querySelectorAll("a[href^='http']").length : 0;
+            return links >= 1 ? null : `table ${i} beside "${near?.className ?? "nothing"}"`;
+          })
+          .filter(Boolean)
+      );
+      assert.deepEqual(
+        uncited,
+        [],
+        `these figure tables carry no source line beside them: ${uncited.join("; ")}. ` +
+          "A table of published figures cites its publisher exactly as a card does."
+      );
 
       // Every table cell holds a figure or a visible em dash. An empty cell is
       // a payload field that stopped arriving, and it reads as a value of
       // nothing rather than as data that is missing.
-      const blanks = await tables
-        .locator("tbody td")
-        .evaluateAll((tds) => tds.filter((td) => !/[\d\u2014]/.test(td.innerText)).length);
+      //
+      // `textContent` rather than `innerText`: the numbers tables sit inside a
+      // closed `<details>`, so every cell in them renders as empty text while
+      // holding a figure. What is checked here is content, not visibility.
+      const blanks = await tables.locator("tbody td").evaluateAll(
+        (tds) =>
+          tds.filter(
+            // A cell holding a drawing is not a cell holding a figure: the
+            // six-city table's history column is a sparkline, and its
+            // accessible name carries the numbers instead. Nor is a note cell:
+            // Eurostat flag a few quarters out of eighty-five, and a marker on
+            // every row would mark nothing.
+            (td) =>
+              !td.querySelector("svg") &&
+              !td.classList.contains("flag") &&
+              !/[\d\u2014]/.test(td.textContent)
+          ).length
+      );
       assert.equal(blanks, 0, `${blanks} table cells render neither a digit nor an em dash`);
       assert.deepEqual(errors, [], errors.join(" | "));
     },
@@ -168,66 +186,194 @@ test("every figure whose table shows more than it links the query too", { skip }
   );
 });
 
-test("both charts are drawn from zero, and say what they show", { skip }, async () => {
-  // A y-axis cropped to a property series' own range turns any of them into a
-  // cliff, and it is exactly the bias this page refuses. Measured rather than
-  // read off the source: the scale lives in the component as arithmetic, and a
-  // floor introduced there draws a chart that looks entirely reasonable.
+test(
+  "every chart's scale contains zero, and none of them crops its own data",
+  { skip },
+  async () => {
+    // A y-axis cropped to a property series' own range turns any of them into a
+    // cliff, and it is exactly the bias this page refuses. Measured rather than
+    // read off the source: the scale lives in the component as arithmetic, and a
+    // floor introduced there draws a chart that looks entirely reasonable.
+    //
+    // The invariant is what a zero-containing axis actually means — **the drawn
+    // distance from the baseline is proportional to the value.** Subtract any
+    // floor and the smallest reading shrinks faster than the largest, so the two
+    // ratios part. It is checked against the published series rather than against
+    // a literal, so a refresh cannot fail it.
+    const market = payload("house_market");
+    const structure = payload("house_market_structure");
+    if (!market || !structure) return; // no refresh in this checkout
+
+    const col = (rows, f) => Object.values(rows).map((r) => (f ? r[f] : r));
+    const ratioOf = (values, reference = null) => {
+      const bounds = reference === null ? values : [...values, reference];
+      const min = Math.min(0, ...bounds);
+      const max = Math.max(0, ...bounds);
+      // The shortest and the tallest mark, as a fraction of the drawn plot.
+      const drawn = values.map((v) => Math.abs(v - Math.max(min, Math.min(max, 0))) / (max - min));
+      return Math.min(...drawn) / Math.max(...drawn);
+    };
+
+    const expected = [
+      ["dwellings sold", ratioOf(col(market.deals.series_by_period, "total"))],
+      // Both index lines share one scale, so the nominal line's extremes are
+      // drawn against whichever of the two maxima is larger.
+      [
+        "house price index",
+        ratioOf(
+          col(market.price_index.series_by_period, "total"),
+          Math.max(100, ...Object.values(market.price_index_real.series_by_period))
+        ),
+      ],
+      ["annual price change", ratioOf(col(market.price_index.annual_rate_pct, "total"), 0)],
+      // The two deal lines share one scale, and the chart's marks are the hit
+      // boxes over the NEW line — that is the series whose extremes are drawn.
+      ["average deal", ratioOf(col(market.avg_deal_eur.series_by_period, "new"))],
+      ["price to income", ratioOf(col(structure.price_to_income.series_by_period), 100)],
+      ["housing cost overburden", ratioOf(col(structure.housing_cost_overburden.series_by_period))],
+    ];
+
+    await withApp(
+      async (page, errors) => {
+        const charts = page.locator("main.market figure.chart svg");
+        const n = await charts.count();
+        assert.equal(
+          n,
+          expected.length,
+          `the market page draws ${n} charts and this test knows ${expected.length}. ` +
+            "Every plot on the page is measured here or the rule guards the ones it remembers."
+        );
+
+        for (let i = 0; i < n; i += 1) {
+          const [what, ratio] = expected[i];
+          const svg = charts.nth(i);
+
+          const label = (await svg.getAttribute("aria-label")) ?? "";
+          assert.ok(
+            label.length > 40 && /\d/.test(label),
+            `the ${what} chart has no text alternative naming its figures: "${label}"`
+          );
+          assert.equal(
+            await svg.getAttribute("role"),
+            "img",
+            `${what} is not announced as an image`
+          );
+
+          const ticks = (await svg.locator("text.plot-tick").allTextContents()).map((t) =>
+            t.trim()
+          );
+          assert.ok(ticks.includes("0"), `the ${what} chart draws no zero: ${ticks.join(", ")}`);
+
+          // How far each mark sits from the zero line, in drawn units.
+          const drawn = await svg.evaluate((el) => {
+            const zero = el.querySelector("line.plot-axis").getBBox().y;
+            const bars = [...el.querySelectorAll("rect.plot-bar")];
+            if (bars.length) {
+              const d = bars.map((b) => b.getBBox().height);
+              return { lo: Math.min(...d), hi: Math.max(...d) };
+            }
+            // The FIRST series, never a second drawn on the same scale: the
+            // index chart puts the deflated line under the nominal one so the
+            // solid stroke reads on top, and measuring whichever path comes
+            // first in the DOM would check the wrong extremes.
+            const box = el.querySelector("path.plot-line:not(.second)").getBBox();
+            const d = [Math.abs(zero - box.y), Math.abs(zero - (box.y + box.height))];
+            return { lo: Math.min(...d), hi: Math.max(...d) };
+          });
+          const drawnRatio = drawn.lo / drawn.hi;
+          assert.ok(
+            Math.abs(drawnRatio - ratio) < 0.03,
+            `the ${what} chart draws its smallest reading at ${(drawnRatio * 100).toFixed(1)}% of ` +
+              `its largest, where the published figures are ${(ratio * 100).toFixed(1)}% apart. ` +
+              "The scale does not contain zero, and a truncated y-axis on a property chart is the " +
+              "one distortion this page cannot afford."
+          );
+        }
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      "/market/",
+      {}
+    );
+  }
+);
+
+test("every chart publishes its own numbers, and every mark names itself", { skip }, async () => {
+  // A plot shows a shape and hides every value in it. Twenty-one years of an
+  // index is exactly the case where a reader wants ONE quarter and the chart
+  // cannot give it to them — and a `<title>` answers that for a pointer only,
+  // which leaves out touch, the keyboard and every screen reader.
   //
-  // The invariant is the one a zero-based axis actually means — **the drawn
-  // heights are in the same ratio as the values.** Subtract any floor and the
-  // smallest reading shrinks faster than the largest, so the two ratios part.
-  const market = payload("house_market");
-  const structure = payload("house_market_structure");
-  if (!market || !structure) return; // no refresh in this checkout
-
-  const deals = Object.values(market.deals.series_by_period).map((r) => r.total);
-  const pti = Object.values(structure.price_to_income.series_by_period);
-  const expected = [
-    ["dwellings sold", Math.min(...deals) / Math.max(...deals)],
-    // The reference rule at 100 is part of this plot's own scale, so the
-    // largest thing on it is whichever of the series and the rule is higher.
-    ["price to income", Math.min(...pti) / Math.max(100, ...pti)],
-  ];
-
+  // So each chart is also published as a real table. That is the WCAG text
+  // alternative, the way to read an exact figure off eighty-five quarters, and
+  // what makes the page quotable. A `<details>` is a disclosure and not an
+  // input: the rule that this page takes nothing from the reader is untouched,
+  // which the input test next door asserts from the other side.
   await withApp(
     async (page, errors) => {
       const charts = page.locator("main.market figure.chart svg");
       const n = await charts.count();
-      assert.equal(n, expected.length, `the market page draws ${n} charts`);
-
       for (let i = 0; i < n; i += 1) {
-        const [what, ratio] = expected[i];
-        const svg = charts.nth(i);
-
-        const label = (await svg.getAttribute("aria-label")) ?? "";
-        assert.ok(
-          label.length > 40 && /\d/.test(label),
-          `the ${what} chart has no text alternative naming its figures: "${label}"`
+        const marks = charts.nth(i).locator("rect.plot-bar, rect.plot-hit");
+        const titled = await marks.locator("title").count();
+        const total = await marks.count();
+        assert.ok(total > 4, `chart ${i} draws ${total} inspectable marks`);
+        assert.equal(
+          titled,
+          total,
+          `chart ${i} has ${titled} named marks against ${total} drawn — a bar a reader ` +
+            "cannot put a period and a value to is a shape rather than a figure"
         );
-        assert.equal(await svg.getAttribute("role"), "img", `${what} is not announced as an image`);
+      }
 
-        const ticks = (await svg.locator("text.plot-tick").allTextContents()).map((t) => t.trim());
-        assert.ok(ticks.includes("0"), `the ${what} chart draws no zero: ${ticks.join(", ")}`);
-
-        const drawn = await svg.evaluate((el) => {
-          const base = el.querySelector("line.plot-axis").getBBox().y;
-          const bars = [...el.querySelectorAll("rect.plot-bar")];
-          if (bars.length) {
-            const heights = bars.map((b) => b.getBBox().height);
-            return { lo: Math.min(...heights), hi: Math.max(...heights) };
-          }
-          const box = el.querySelector("path.plot-line").getBBox();
-          return { lo: base - (box.y + box.height), hi: base - box.y };
-        });
-        const drawnRatio = drawn.lo / drawn.hi;
-        assert.ok(
-          Math.abs(drawnRatio - ratio) < 0.03,
-          `the ${what} chart draws its smallest reading at ${(drawnRatio * 100).toFixed(1)}% of ` +
-            `its largest, where the published figures are ${(ratio * 100).toFixed(1)}% apart. ` +
-            "The axis does not start at zero, and a truncated y-axis on a property chart is the " +
-            "one distortion this page cannot afford."
+      const tables = page.locator("main.market details.numbers");
+      const count = await tables.count();
+      assert.ok(
+        count >= n,
+        `${n} charts and ${count} numbers tables. Every plot carries its own, because a ` +
+          "`<title>` is unreachable by touch, by keyboard and by a screen reader."
+      );
+      for (let i = 0; i < count; i += 1) {
+        const rows = await tables.nth(i).locator("tbody tr").count();
+        assert.ok(rows > 4, `numbers table ${i} publishes ${rows} rows`);
+        const summary = (await tables.nth(i).locator("summary").innerText()).trim();
+        assert.match(
+          summary,
+          /\d/,
+          `numbers table ${i} is headed "${summary}" and does not say how much is in it`
         );
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+});
+
+test("the six-city table draws each city's own history on one shared scale", { skip }, async () => {
+  // Six sparklines each drawn to its own range are six pictures of the same
+  // shape, and comparing rows is the only reason to put a chart in a column.
+  // They share `cities.priceScale`, so Русе falling and Бургас rising are drawn
+  // against the same yardstick — measured by checking that the zero rule sits
+  // at the same height in every one of them.
+  await withApp(
+    async (page, errors) => {
+      const sparks = page.locator("main.market table.fig-table.cities svg.spark");
+      const n = await sparks.count();
+      if (!n) return; // no нси payload in this checkout
+      assert.ok(n >= 6, `only ${n} cities carry a history`);
+
+      const zeros = await sparks.evaluateAll((els) =>
+        els.map((el) => Number(el.querySelector("line.plot-ref").getAttribute("y1")).toFixed(3))
+      );
+      assert.equal(
+        new Set(zeros).size,
+        1,
+        `the six sparklines put their zero line at ${[...new Set(zeros)].join(", ")} — they are ` +
+          "drawn on different scales, so comparing one row with another compares nothing"
+      );
+      for (let i = 0; i < n; i += 1) {
+        const label = (await sparks.nth(i).getAttribute("aria-label")) ?? "";
+        assert.ok(label.length > 20 && /\d/.test(label), `sparkline ${i} is unnamed: "${label}"`);
       }
       assert.deepEqual(errors, [], errors.join(" | "));
     },
@@ -321,13 +467,16 @@ test(
         const table = page.locator("main.market table.fig-table.cities");
         if (!(await table.count())) return; // no нси payload in this checkout
 
-        for (const col of [2, 3]) {
-          const head = (await table.locator(`thead th:nth-child(${col})`).innerText()).trim();
+        // Found by class rather than by position: the history column sits
+        // between the two figure columns and carries a range, not a quarter.
+        const heads = await table.locator("thead th.num").allInnerTexts();
+        assert.equal(heads.length, 2, `the city table has ${heads.length} figure columns`);
+        for (const head of heads) {
           assert.match(
-            head,
+            head.trim(),
             /Q[1-4]\s*\d{4}/,
-            `column ${col} of the city table is headed "${head}" with no period in it — ` +
-              "the two workbooks are released separately and either can be a quarter behind"
+            `a figure column of the city table is headed "${head.trim()}" with no period in ` +
+              "it — the two workbooks are released separately and either can be a quarter behind"
           );
         }
 

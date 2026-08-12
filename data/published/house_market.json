@@ -3,7 +3,7 @@
   "as_of": "2026-08-12",
   "source": "eurostat",
   "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsnq/default/table?lang=en",
-  "notes": "Bulgaria's residential property market as Eurostat publish it, quarterly: how many dwellings households bought, what they paid, and the official house price index with Eurostat's own annual rate of change. Scope is dwellings bought by households at the price actually paid — flats and houses, VAT included on new builds, notary and agency fees excluded, land only as the plot under a house. Standalone land, garages, shops and offices are outside it, as are state and municipal sales, gifts, inheritances, court-executor sales and self-build. MODIFICATION NOTICE, per Eurostat's reuse conditions: every figure under deals, value, price_index and annual_rate_pct is Eurostat's own, unmodified, at the unit each block names. `avg_deal_eur` is OURS — the value cube divided by the count cube, quarter by quarter and purchase type by purchase type, published only for the quarters both cubes carry. Eurostat is not responsible for that division or for any conclusion drawn from it.",
+  "notes": "Bulgaria's residential property market as Eurostat publish it, quarterly: how many dwellings households bought, what they paid, and the official house price index with Eurostat's own annual rate of change, in the money of the day AND deflated. Scope is dwellings bought by households at the price actually paid — flats and houses, VAT included on new builds, notary and agency fees excluded, land only as the plot under a house. Standalone land, garages, shops and offices are outside it, as are state and municipal sales, gifts, inheritances, court-executor sales and self-build. MODIFICATION NOTICE, per Eurostat's reuse conditions: every figure under deals, value, price_index, annual_rate_pct and price_index_real is Eurostat's own, unmodified, at the unit each block names. `avg_deal_eur` is OURS — the value cube divided by the count cube, quarter by quarter and purchase type by purchase type, published only for the quarters both cubes carry. Eurostat is not responsible for that division or for any conclusion drawn from it.",
   "payload_name": "house_market",
   "ref_period": "2026-Q1",
   "deals": {
@@ -1259,7 +1259,209 @@
         "total": 14.8
       }
     },
-    "rate_ref_period": "2026-Q1"
+    "rate_ref_period": "2026-Q1",
+    "status_by_period": {
+      "2005-Q1": {
+        "new": "e",
+        "total": "e"
+      },
+      "2005-Q2": {
+        "new": "e",
+        "total": "e"
+      },
+      "2005-Q3": {
+        "new": "e",
+        "total": "e"
+      },
+      "2005-Q4": {
+        "new": "e",
+        "total": "e"
+      },
+      "2006-Q1": {
+        "new": "e",
+        "total": "e"
+      },
+      "2006-Q2": {
+        "new": "e",
+        "total": "e"
+      },
+      "2006-Q3": {
+        "new": "e",
+        "total": "e"
+      },
+      "2006-Q4": {
+        "new": "e",
+        "total": "e"
+      },
+      "2007-Q1": {
+        "new": "e",
+        "total": "e"
+      },
+      "2007-Q2": {
+        "new": "e",
+        "total": "e"
+      },
+      "2007-Q3": {
+        "new": "e",
+        "total": "e"
+      },
+      "2007-Q4": {
+        "new": "e",
+        "total": "e"
+      },
+      "2008-Q1": {
+        "new": "e",
+        "total": "e"
+      },
+      "2008-Q2": {
+        "new": "e",
+        "total": "e"
+      },
+      "2008-Q3": {
+        "new": "e",
+        "total": "e"
+      },
+      "2008-Q4": {
+        "new": "e",
+        "total": "e"
+      },
+      "2009-Q1": {
+        "new": "e",
+        "total": "e"
+      },
+      "2015-Q1": {
+        "existing": "b",
+        "total": "b"
+      },
+      "2022-Q1": {
+        "existing": "b",
+        "new": "b",
+        "total": "b"
+      },
+      "2026-Q1": {
+        "existing": "p",
+        "new": "p",
+        "total": "p"
+      }
+    }
+  },
+  "price_index_real": {
+    "_role": "INDEX: the SAME index deflated, as published",
+    "dataset": "tipsho30",
+    "source_url": "https://ec.europa.eu/eurostat/databrowser/view/tipsho30/default/table?lang=en",
+    "api_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/tipsho30?format=JSON&lang=EN&geo=BG&unit=I15_Q",
+    "unit": "index_2015=100_deflated",
+    "base_year": 2015,
+    "series_by_period": {
+      "2005-Q1": 105.53,
+      "2005-Q2": 104.24,
+      "2005-Q3": 105.89,
+      "2005-Q4": 107.96,
+      "2006-Q1": 117.66,
+      "2006-Q2": 114.67,
+      "2006-Q3": 117.27,
+      "2006-Q4": 125.83,
+      "2007-Q1": 131.83,
+      "2007-Q2": 136.62,
+      "2007-Q3": 140.65,
+      "2007-Q4": 153.77,
+      "2008-Q1": 165.64,
+      "2008-Q2": 162.24,
+      "2008-Q3": 170.17,
+      "2008-Q4": 163.87,
+      "2009-Q1": 146.8,
+      "2009-Q2": 130.03,
+      "2009-Q3": 126.97,
+      "2009-Q4": 120.14,
+      "2010-Q1": 120.11,
+      "2010-Q2": 116.8,
+      "2010-Q3": 115.66,
+      "2010-Q4": 110.1,
+      "2011-Q1": 108.22,
+      "2011-Q2": 103.55,
+      "2011-Q3": 106.8,
+      "2011-Q4": 102.48,
+      "2012-Q1": 99.82,
+      "2012-Q2": 99.3,
+      "2012-Q3": 102.98,
+      "2012-Q4": 99.19,
+      "2013-Q1": 97.16,
+      "2013-Q2": 98.76,
+      "2013-Q3": 104.34,
+      "2013-Q4": 98.05,
+      "2014-Q1": 100.24,
+      "2014-Q2": 101.67,
+      "2014-Q3": 98.83,
+      "2014-Q4": 98.21,
+      "2015-Q1": 97.89,
+      "2015-Q2": 97.96,
+      "2015-Q3": 102.13,
+      "2015-Q4": 102.03,
+      "2016-Q1": 101.59,
+      "2016-Q2": 105.52,
+      "2016-Q3": 105.65,
+      "2016-Q4": 108.38,
+      "2017-Q1": 108.71,
+      "2017-Q2": 110.23,
+      "2017-Q3": 109.45,
+      "2017-Q4": 109.8,
+      "2018-Q1": 111.59,
+      "2018-Q2": 113.99,
+      "2018-Q3": 114.05,
+      "2018-Q4": 116.09,
+      "2019-Q1": 114.58,
+      "2019-Q2": 116.33,
+      "2019-Q3": 119.16,
+      "2019-Q4": 122.61,
+      "2020-Q1": 120.97,
+      "2020-Q2": 123.88,
+      "2020-Q3": 117.02,
+      "2020-Q4": 136.39,
+      "2021-Q1": 125.46,
+      "2021-Q2": 126.37,
+      "2021-Q3": 128.21,
+      "2021-Q4": 130.37,
+      "2022-Q1": 125.2,
+      "2022-Q2": 129.56,
+      "2022-Q3": 123.36,
+      "2022-Q4": 124.62,
+      "2023-Q1": 118.42,
+      "2023-Q2": 120.06,
+      "2023-Q3": 134.32,
+      "2023-Q4": 134.7,
+      "2024-Q1": 130.42,
+      "2024-Q2": 136.11,
+      "2024-Q3": 147.58,
+      "2024-Q4": 149.3,
+      "2025-Q1": 147.1,
+      "2025-Q2": 154.93,
+      "2025-Q3": 155.33,
+      "2025-Q4": 159.41,
+      "2026-Q1": 162.9
+    },
+    "status_by_period": {
+      "2005-Q1": "e",
+      "2005-Q2": "e",
+      "2005-Q3": "e",
+      "2005-Q4": "e",
+      "2006-Q1": "e",
+      "2006-Q2": "e",
+      "2006-Q3": "e",
+      "2006-Q4": "e",
+      "2007-Q1": "e",
+      "2007-Q2": "e",
+      "2007-Q3": "e",
+      "2007-Q4": "e",
+      "2008-Q1": "e",
+      "2008-Q2": "e",
+      "2008-Q3": "e",
+      "2008-Q4": "e",
+      "2009-Q1": "e",
+      "2015-Q1": "b",
+      "2022-Q1": "b",
+      "2026-Q1": "p"
+    },
+    "note": "The house price index divided by the national accounts deflator for private final consumption, as Eurostat publish it. Same 2015 base and same quarters as the nominal index above, so the two are read on one axis. Nothing here is computed by us: this is their deflated series, not their nominal one with our arithmetic on it."
   },
   "avg_deal_eur": {
     "_role": "DERIVED BY US: value ÷ count, per quarter and purchase type",

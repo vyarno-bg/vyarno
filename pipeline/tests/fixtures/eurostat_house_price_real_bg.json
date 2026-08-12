@@ -1,0 +1,175 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "House price index, deflated - quarterly data",
+ "source": "ESTAT",
+ "updated": "2026-07-02T11:00:00+0200",
+ "value": {
+  "0": 97.89,
+  "1": 97.96,
+  "2": 102.13,
+  "3": 102.03,
+  "4": 155.33,
+  "5": 159.41,
+  "6": 162.9
+ },
+ "status": {
+  "0": "b",
+  "6": "p"
+ },
+ "id": [
+  "freq",
+  "unit",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  1,
+  1,
+  7
+ ],
+ "dimension": {
+  "freq": {
+   "label": "Time frequency",
+   "category": {
+    "index": {
+     "Q": 0
+    },
+    "label": {
+     "Q": "Quarterly"
+    }
+   }
+  },
+  "unit": {
+   "label": "Unit of measure",
+   "category": {
+    "index": {
+     "I15_Q": 0
+    },
+    "label": {
+     "I15_Q": "Quarterly index, 2015=100"
+    }
+   }
+  },
+  "geo": {
+   "label": "Geopolitical entity (reporting)",
+   "category": {
+    "index": {
+     "BG": 0
+    },
+    "label": {
+     "BG": "Bulgaria"
+    }
+   }
+  },
+  "time": {
+   "label": "Time",
+   "category": {
+    "index": {
+     "2015-Q1": 0,
+     "2015-Q2": 1,
+     "2015-Q3": 2,
+     "2015-Q4": 3,
+     "2025-Q3": 4,
+     "2025-Q4": 5,
+     "2026-Q1": 6
+    },
+    "label": {
+     "2015-Q1": "2015-Q1",
+     "2015-Q2": "2015-Q2",
+     "2015-Q3": "2015-Q3",
+     "2015-Q4": "2015-Q4",
+     "2025-Q3": "2025-Q3",
+     "2025-Q4": "2025-Q4",
+     "2026-Q1": "2026-Q1"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "description": "The deflated house price index (or real house price index) is the ratio between the house price index (HPI) and the national accounts deflator for private final consumption expenditure (households and non-profit institutions serving households (NPISHs) ). This indicator therefore measures inflation in the house market relative to inflation in the final consumption expenditure of households and NPISHs. Eurostat HPI captures price changes of all residential properties purchased by households (flats, detached houses, terraced houses, etc.), both new and existing, independently of their final use and their previous owners. Only market prices are considered, self-build dwellings are therefore excluded. The land component is included. The data are expressed as quarterly index (2015=100), annual rate of change and quarterly rate of change.",
+  "id": "TIPSHO30",
+  "agencyId": "ESTAT",
+  "version": "1.0",
+  "datastructure": {
+   "id": "TIPSHO30",
+   "agencyId": "ESTAT",
+   "version": "39.0"
+  },
+  "annotation": [
+   {
+    "type": "CREATED",
+    "date": "2024-04-04T07:58:50+0200"
+   },
+   {
+    "type": "DISSEMINATION_DOI_XML",
+    "title": "<adms:identifier xmlns:adms=\"http://www.w3.org/ns/adms#\" xmlns:skos=\"http://www.w3.org/2004/02/skos/core.html\" xmlns:dct=\"http://purl.org/dc/terms/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><adms:Identifier rdf:about=\"https://doi.org/10.2908/TIPSHO30\"><skos:notation rdf:datatype=\"http://purl.org/spar/datacite/doi\">10.2908/TIPSHO30</skos:notation><dct:creator rdf:resource=\"http://publications.europa.eu/resource/authority/corporate-body/ESTAT\"/><dct:issued rdf:datatype=\"http://www.w3.org/2001/XMLSchema#date\">2023-01-23</dct:issued></adms:Identifier></adms:identifier>"
+   },
+   {
+    "type": "DISSEMINATION_OBJECT_TYPE",
+    "title": "DATASET"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_DATA",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_GLOBAL",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_PLANNED",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "ESMS_HTML",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/cache/metadata/en/tipsho20_esms.htm"
+   },
+   {
+    "type": "ESMS_SDMX",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/api/dissemination/files?file=metadata/tipsho20_esms.sdmx.zip"
+   },
+   {
+    "type": "OBS_COUNT",
+    "title": "6800"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_LATEST",
+    "title": "2026-Q1"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_OLDEST",
+    "title": "2005-Q1"
+   },
+   {
+    "type": "SOURCE_INSTITUTIONS",
+    "text": "Eurostat"
+   },
+   {
+    "type": "UPDATE_DATA",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "UPDATE_STRUCTURE",
+    "date": "2026-07-02T11:00:00+0200"
+   }
+  ],
+  "status": {
+   "label": {
+    "e": "estimated",
+    "b": "break in time series",
+    "p": "provisional"
+   }
+  },
+  "positions-with-no-data": {
+   "freq": [],
+   "unit": [],
+   "geo": [],
+   "time": []
+  }
+ }
+}
