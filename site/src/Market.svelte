@@ -702,14 +702,14 @@
     {@render ourSum(
       {
         bg:
-          `Числата с «×» и това в години са наша сметка, и двете от публикувани числа. «Колко ` +
+          `Числата с «×» и това в години са наша сметка, и двете стъпват на публикувани числа. «Колко ` +
           `пъти» е индексът на Евростат, разделен на нивото от ${reading.baseYear} г. — годината, ` +
           `която самият Евростат е взел за начало и е записал като 100. «Колко години заплата» е ` +
           `средната сделка на Евростат, разделена на дванадесет средни месечни заплати на НСИ за ` +
           `всички дейности. Двата файла остават отделни чак до браузъра ти и се срещат едва тук, ` +
           `така че във всеки от тях стоят числата само на един публикуващ орган. Заплатата е ` +
           `брутната, както я публикува НСИ: парите на ръка зависят от данъчната таблица на ` +
-          `годината, в която са сметнати, и биха вкарали трети закон в сметка на двама.`,
+          `годината, в която са сметнати — това би вкарало трети закон в сметка между две институции.`,
         en:
           `The multiple and the years figure are our arithmetic, both from published ` +
           `numbers. The multiple is Eurostat's index divided by its ${reading.baseYear} level — ` +
@@ -994,15 +994,15 @@
     {#if indexSeries.points.length > 8}
       <p>
         <span class="l-bg"
-          >Процентът отгоре е за една година. Следващата картинка е за целия запис и мери друго: не
-          с колко са се променили цените за последната година, а колко пъти са по-високи от една
-          година, взета за начало. Тази година е {reading.baseYear}, избрал я е Евростат, и на
-          картинката тя е линията ×1.</span
+          >Процентът отгоре е за една година. Следващата картинка е за всичките години, които
+          Евростат публикува, и мери друго: не с колко са се променили цените за последната година,
+          а колко пъти са по-високи от една година, взета за начало. Тази година е {reading.baseYear},
+          избрал я е Евростат, и на картинката тя е линията ×1.</span
         >
         <span class="l-en"
-          >The percentage above is one year's. The chart below covers the whole record and measures
-          something else: not how much prices moved in the last year, but how many times higher they
-          are than in one year taken as the starting point. That year is {reading.baseYear},
+          >The percentage above is one year's. The chart below covers every year Eurostat publish
+          and measures something else: not how much prices moved in the last year, but how many
+          times higher they are than in one year taken as the starting point. That year is {reading.baseYear},
           Eurostat chose it, and on the chart it is the ×1 line.</span
         >
       </p>
@@ -1605,20 +1605,20 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Всяка година Евростат обикаля извадка от домакинствата и ги пита, наред с всичко останало,
-        какво е жилището, в което живеят: тяхно и изплатено, тяхно, но с кредит по него, или под
-        наем. Числата в таблицата са дял от всички хора в страната и стоят на една и съща основа, за
-        да се събират: собствениците и наемателите правят сто. Ето защо таблицата е тук — редът със
-        заема е отговорът на въпроса в заглавието, и той е малък. В България жилището почти винаги
-        се предава по наследство или се купува веднъж, а не се държи на кредит.</span
+        >Всяка година част от домакинствата в страната отговарят на едно и също изследване — за
+        доходите си и за това как живеят, а наред с останалото и какво е жилището, в което са: тяхно
+        и изплатено, тяхно, но с кредит по него, или под наем. Евростат публикува резултата. Числата
+        в таблицата са дял от всички хора в страната и стоят на една и съща основа, за да се
+        събират: собствениците и наемателите правят сто. Редът със заема е отговорът на въпроса в
+        заглавието, и той е малък ред.</span
       >
       <span class="l-en"
-        >Every year Eurostat put a sample of households a set of questions, among them what the home
-        they live in is: theirs and paid off, theirs but with a loan on it, or rented. The figures
-        in the table are shares of everybody in the country, on one and the same base so that they
-        add up: owners and renters make a hundred. That is why the table is here — the row with the
-        loan on it answers the question in the heading, and it is a small row. In Bulgaria a home is
-        almost always inherited or bought once, rather than carried on credit.</span
+        >Every year a part of the country's households answer the same survey — about their income
+        and how they live, and among the rest what the home they are in is: theirs and paid off,
+        theirs but with a loan on it, or rented. Eurostat publish the result. The figures in the
+        table are shares of everybody in the country, on one and the same base so that they add up:
+        owners and renters make a hundred. The row with the loan on it answers the question in the
+        heading, and it is a small row.</span
       >
     </p>
 
@@ -2023,16 +2023,16 @@
     <p class="cap">
       <span class="l-bg"
         >Трите числа в този раздел мерят различни неща и не сочат непременно в една посока: първото
-        е цената спрямо доходите на цялата страна, второто — колко хора не смогват със сметките за
-        жилището, третото — с колко се променя наемът. Страницата дава и трите и няма да реши вместо
-        теб кое тежи повече. Твоята собствена сметка е в калкулатора.</span
+        е цената спрямо доходите на цялата страна, второто — колко хора дават над 40% от дохода си
+        за жилището, третото — с колко се променя наемът. Страницата дава и трите и няма да реши
+        вместо теб кое тежи повече. Твоята собствена сметка е в калкулатора.</span
       >
       <span class="l-en"
         >The three figures in this section measure different things and need not point the same way:
-        the first is price against the whole country's incomes, the second is how many people cannot
-        keep up with what their home costs to run, and the third is how much rent is moving. The
-        page gives all three and will not decide for you which weighs more. Your own arithmetic is
-        in the calculator.</span
+        the first is price against the whole country's incomes, the second is how many people spend
+        over 40% of their income on housing, and the third is how much rent is moving. The page
+        gives all three and will not decide for you which weighs more. Your own arithmetic is in the
+        calculator.</span
       >
     </p>
   </section>
