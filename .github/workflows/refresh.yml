@@ -162,8 +162,9 @@ jobs:
         # without affecting existing history. No force is ever used
         # here; the workflow creates a fresh branch on every run, so
         # there is no remote history to clobber.
-        run: git push -u \
-          origin "data/${{ inputs.source }}"
+        # Inline string (not `run: |`) so the trailing `\` is not
+        # ambiguous. GHA joins the args with spaces, runs through bash.
+        run: git push -u origin "data/${{ inputs.source }}"
 
       - name: Open PR
         if: steps.diff.outputs.changed != ''
