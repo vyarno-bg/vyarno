@@ -124,14 +124,20 @@ test(
     // The rate as the page prints it: Bulgarian decimal comma, one place. The
     // prerender renders in the default language, which is BG.
     const bgDecimal = (x) => x.toFixed(1).replace(".", ",");
+    // …and the period as the page prints it, from the site's own formatter
+    // rather than as the payload keys it. The strip writes «юли 2026 г.» beside
+    // a bar reading «числата са към юни 2026 г.», so what a crawler is served
+    // is the read form — and restating the rule here instead of importing it
+    // would keep passing over a strip that had stopped using it.
+    const said = (value) => periodLong(value, "bg");
     const fastest = categories.categories.reduce((a, b) =>
       b.annual_rate_pct > a.annual_rate_pct ? b : a
     );
     for (const [what, text] of [
       ["the headline inflation rate", `${bgDecimal(headline.headline_rate_pct)}%`],
-      ["the month the headline describes", headline.ref_period],
+      ["the month the headline describes", said(headline.ref_period)],
       ["the unemployment rate", `${bgDecimal(unemployment.value)}%`],
-      ["the month unemployment describes", unemployment.ref_period],
+      ["the month unemployment describes", said(unemployment.ref_period)],
       ["the fastest-rising division's name", fastest.bg_name],
     ]) {
       assert.ok(
