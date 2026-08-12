@@ -144,6 +144,61 @@ test("every figure of ours says so, and links what reproduces it", { skip }, asy
   );
 });
 
+test(
+  "the six-city table dates each column, and draws a fall as a real minus",
+  { skip },
+  async () => {
+    // Two things a reader takes off this table without being told, and both are
+    // claims the markup has to actually make.
+    //
+    // The period: HPI_2.6 and HSI_2.4.5 are separate files on НСИ's portal and
+    // either can be republished first, so one caption over both columns says
+    // something about the data rather than describing it. Every column head
+    // carries its own quarter.
+    //
+    // The sign: five of the six sales figures are falls right now, and a
+    // hand-rolled `x > 0 ? "+" : ""` renders them with `toLocaleString`'s hyphen
+    // — narrower than the U+2212 the rest of the site draws, and read as a dash
+    // rather than as a minus at 12px in a column of percentages.
+    await withApp(
+      async (page, errors) => {
+        const table = page.locator("main.market table.fig-table");
+        if (!(await table.count())) return; // no нси payload in this checkout
+
+        for (const col of [2, 3]) {
+          const head = (await table.locator(`thead th:nth-child(${col})`).innerText()).trim();
+          assert.match(
+            head,
+            /Q[1-4]\s*\d{4}/,
+            `column ${col} of the city table is headed "${head}" with no period in it — ` +
+              "the two workbooks are released separately and either can be a quarter behind"
+          );
+        }
+
+        const cells = await table.locator("tbody td").allInnerTexts();
+        assert.ok(cells.length >= 12, `the city table draws ${cells.length} cells`);
+        const ascii = cells.filter((c) => /(^|\s)-\d/.test(c));
+        assert.deepEqual(
+          ascii,
+          [],
+          `these cells draw a fall with U+002D: ${ascii.join(", ")}. format.js#percentSigned ` +
+            "uses U+2212, which is what every other figure on the site is drawn with."
+        );
+        // …and a sign is actually being drawn, so the rule above is not passing
+        // on a table of unsigned numbers.
+        assert.ok(
+          cells.some((c) => c.includes("\u2212")),
+          "no cell in the city table carries a minus at all — every НСИ city " +
+            "figure is a change, and falls are what the table exists to show"
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      "/market/",
+      {}
+    );
+  }
+);
+
 test("the market page has no input of any kind", { skip }, async () => {
   // The same rule `/how/` follows. Every derived value on this page takes
   // payloads rather than scalars precisely so a reader's own figure has no

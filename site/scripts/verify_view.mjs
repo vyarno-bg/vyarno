@@ -87,6 +87,13 @@ import {
   SHARE_COPY_KEYS,
   SHARE_ORIGIN,
   SHARE_DOMAIN,
+  marketVolume,
+  marketAverageDeal,
+  marketPriceRate,
+  marketStructure,
+  marketDealInYearsOfPay,
+  marketCities,
+  marketNsiNationalRate,
 } from "../src/lib/view.js";
 import { COPY, HOME, SECTOR_HINTS } from "../src/lib/content.js";
 import { ORIGIN as SITEMAP_ORIGIN } from "./gen-sitemap.mjs";
@@ -3090,4 +3097,318 @@ test("the all-activities row is not offered as somebody's sector", () => {
     null,
     "the all-activities row still resolves to a sector comparison"
   );
+});
+
+// ---------------------------------------------------------------------------
+// `/market/` — which published field feeds which figure
+// ---------------------------------------------------------------------------
+//
+// The page has no input on it, so nothing a reader does can reach these and
+// nothing in the calculator's suites calls them. What is left to get wrong is
+// the wiring itself: a figure read off the wrong block, a card dated by the
+// wrong publisher's clock, a table captioned with a period none of its cells
+// describes. Each of those renders a number that is correct and a claim that
+// is not, which is the failure this layer exists to make testable.
+
+/** The three Eurostat property cubes, shaped as `house_market.json` carries them. */
+const HOUSE_MARKET = Object.freeze({
+  ref_period: "2026-Q1",
+  deals: {
+    dataset: "prc_hpi_hsnq",
+    source_url: "https://example.invalid/hsnq",
+    api_url: "https://example.invalid/api/hsnq",
+    series_by_period: {
+      "2025-Q1": { total: 15000, new: 4800, existing: 10200 },
+      "2025-Q4": { total: 20000, new: 6400, existing: 13600 },
+      "2026-Q1": { total: 16227, new: 5181, existing: 11046 },
+    },
+  },
+  value: {
+    dataset: "prc_hpi_hsvq",
+    source_url: "https://example.invalid/hsvq",
+    api_url: "https://example.invalid/api/hsvq",
+    series_by_period: {
+      "2026-Q1": { total: 1343368578, new: 565446130, existing: 777922448 },
+    },
+  },
+  price_index: {
+    dataset: "prc_hpi_q",
+    source_url: "https://example.invalid/hpi",
+    api_url: "https://example.invalid/api/hpi",
+    // The rate's own reference quarter, which is NOT the payload's: Eurostat
+    // publish the index a quarter further than the transaction cubes reach.
+    rate_ref_period: "2026-Q2",
+    annual_rate_pct: {
+      "2026-Q1": { total: 14.8, new: 12.5, existing: 16.3 },
+      "2026-Q2": { total: 13.1, new: 11.0, existing: 14.4 },
+    },
+    series_by_period: { "2026-Q1": { total: 272.63 } },
+  },
+  avg_deal_eur: {
+    derived_from_api_urls: ["https://example.invalid/api/hsvq", "https://example.invalid/api/hsnq"],
+    method: "value ÷ count",
+    series_by_period: {
+      "2026-Q1": { total: 82786.01, new: 109138.42, existing: 70425.72 },
+    },
+  },
+});
+
+test("marketVolume reports the quarter the payload names, not the last key it holds", () => {
+  // `ref_period` is the quarter the gates ran against. Reading `max(keys)`
+  // instead would report whichever quarter a cube happened to reach — a real
+  // Eurostat figure for a period nothing validated, which is the shape of every
+  // silent-wrong-number failure on this page.
+  const v = marketVolume(HOUSE_MARKET);
+  assert.equal(v.period, "2026-Q1");
+  assert.equal(v.deals.value, 16227);
+  assert.equal(v.newBuild, 5181);
+  assert.equal(v.existing, 11046);
+  // Against 2025-Q1 the count is UP; against the quarter before it, down. A
+  // wiring that reached for the neighbouring key would come back negative.
+  assert.ok(v.changePct.value > 0, `year-on-year should be a rise, got ${v.changePct.value}`);
+  assert.equal(v.changePct.value, ((16227 - 15000) / 15000) * 100);
+  // The provenance travels with the figure or the page cannot print it.
+  assert.equal(v.deals.sourceUrl, "https://example.invalid/hsnq");
+  assert.deepEqual(v.changePct.derivedFrom, ["https://example.invalid/api/hsnq"]);
+  assert.ok(v.changePct.method, "the year-on-year change is ours and says nothing about itself");
+  // And a figure read verbatim discloses nothing, so the page cannot label
+  // Eurostat's own count as our arithmetic.
+  assert.equal(v.deals.method, null);
+  assert.equal(v.deals.derivedFrom, null);
+
+  const empty = marketVolume(null);
+  assert.equal(empty.deals.value, null);
+  assert.equal(empty.changePct.value, null);
+});
+
+test("marketAverageDeal carries the two figures its division is checkable from", () => {
+  const d = marketAverageDeal(HOUSE_MARKET);
+  assert.equal(d.avg.value, 82786.01);
+  // Both sides of the division, at the SAME quarter as the quotient. The page
+  // prints all three and invites the reader to do it themselves, so a numerator
+  // from one quarter and a denominator from another is a page that fails its
+  // own check while every individual figure stays a published one.
+  assert.equal(d.totalValue, 1343368578);
+  assert.equal(d.deals, 16227);
+  assert.ok(Math.abs(d.avg.value - d.totalValue / d.deals) < 0.01);
+  // Attributed to the VALUE cube, which is where the euro figure comes from,
+  // and disclosed with both queries — one of them reproduces nothing.
+  assert.equal(d.avg.sourceUrl, "https://example.invalid/hsvq");
+  assert.equal(d.avg.derivedFrom.length, 2);
+  assert.equal(d.newBuild, 109138.42);
+  assert.equal(d.existing, 70425.72);
+});
+
+test("marketPriceRate is dated by the index's own quarter, never the payload's", () => {
+  // The index cube runs a quarter ahead of the transaction cubes, so the rate's
+  // reference period is its own. Dated from `ref_period` the card would print
+  // Eurostat's 2026-Q2 rate under a 2026-Q1 heading — a real figure under a
+  // period it does not describe, and the payload carries both so nothing else
+  // would notice.
+  const r = marketPriceRate(HOUSE_MARKET);
+  assert.equal(r.period, "2026-Q2");
+  assert.equal(r.total.value, 13.1);
+  assert.equal(r.total.refPeriod, "2026-Q2");
+  assert.equal(r.newBuild, 11.0);
+  assert.equal(r.existing, 14.4);
+  // **Read, never derived.** The index level sits in the same payload and
+  // dividing two of its members would be a rate НСИ warn can differ from the
+  // one both publishers print, across their rebasing.
+  assert.equal(r.total.method, null);
+  assert.equal(r.total.derivedFrom, null);
+});
+
+test("marketStructure derives only the share, and dates each cube by its own clock", () => {
+  // Four cubes on four clocks in one payload. A census from 2021 shown under
+  // the tenure survey's year is a five-year-old dwelling count presented as
+  // this year's, on the one page whose promise is that every figure carries the
+  // period it describes.
+  const structure = {
+    tenure: {
+      ref_period: "2025",
+      owner_pct: 86.1,
+      owner_with_mortgage_pct: 1.7,
+      rent_market_price_pct: 2.2,
+    },
+    census_dwellings: {
+      ref_period: "2021",
+      total: 4258585,
+      occupied: 2600911,
+      unoccupied: 1657674,
+      api_url: "https://example.invalid/api/cens",
+    },
+    price_to_income: { ref_period: "2024", value: 67.75, unit: "PTIR_LT_AVG" },
+    housing_cost_overburden: { ref_period: "2025", value_pct: 6.9 },
+  };
+  const s = marketStructure(structure);
+  assert.equal(s.owner.refPeriod, "2025");
+  assert.equal(s.dwellings.refPeriod, "2021");
+  assert.equal(s.unoccupied.refPeriod, "2021");
+  assert.equal(s.priceToIncome.refPeriod, "2024");
+  assert.equal(s.overburden.refPeriod, "2025");
+  // The share is ours and says so; the counts are Eurostat's and do not.
+  assert.ok(Math.abs(s.unoccupiedPct.value - (1657674 / 4258585) * 100) < 1e-9);
+  assert.equal(s.unoccupiedPct.refPeriod, "2021");
+  assert.ok(s.unoccupiedPct.method, "the unoccupied share does not disclose itself");
+  assert.deepEqual(s.unoccupiedPct.derivedFrom, ["https://example.invalid/api/cens"]);
+  for (const key of [
+    "owner",
+    "ownerWithMortgage",
+    "dwellings",
+    "unoccupied",
+    "priceToIncome",
+    "overburden",
+  ]) {
+    assert.equal(s[key].method, null, `${key} is presented as our arithmetic and is not`);
+  }
+});
+
+test("marketDealInYearsOfPay reads the all-activities GROSS row, and dates both halves", () => {
+  // Two publishers, joined here because neither published file may carry the
+  // other's number. Three ways this goes wrong and none of them is visible in
+  // the figure: a sector row instead of the all-activities one, a net wage
+  // instead of the gross the caption names, and one period standing for both.
+  const sectorSalary = {
+    ref_period: "2025-Q4",
+    source_url: "https://example.invalid/nsi-wages",
+    sectors: [
+      { en_name: "Construction", value_eur: 1100 },
+      { en_name: "Total", value_eur: 1407 },
+      { en_name: "Information and communication", value_eur: 3900 },
+    ],
+  };
+  const y = marketDealInYearsOfPay(HOUSE_MARKET, sectorSalary);
+  assert.equal(y.monthlyGrossEur, 1407, "the wage is not НСИ's all-activities row");
+  assert.ok(Math.abs(y.value - 82786.01 / (1407 * 12)) < 1e-12);
+  // **Both periods, because the figure describes both.** Eurostat disseminate
+  // about a week behind НСИ publishing, so the two part for the days between
+  // two releases — and a card naming one of them describes half its own
+  // arithmetic.
+  assert.equal(y.dealPeriod, "2026-Q1");
+  assert.equal(y.wagePeriod, "2025-Q4");
+  assert.equal(y.wageUrl, "https://example.invalid/nsi-wages");
+  assert.ok(/GROSS/.test(y.method), "the method does not say which wage this divides by");
+  // The sector rows are unreachable: there is no argument to pass one through.
+  assert.equal(marketDealInYearsOfPay(HOUSE_MARKET, { ...sectorSalary, sectors: [] }).value, null);
+  assert.equal(marketDealInYearsOfPay(null, sectorSalary).value, null);
+});
+
+test("marketCities dates each column by its own workbook and each row by its own cell", () => {
+  // Three periods can disagree in this table. HPI_2.6 and HSI_2.4.5 are two
+  // files on НСИ's portal and either can be republished first; each city row is
+  // dated by the newest quarter that city carries, so one missing from the
+  // latest release keeps the quarter it has; and the payload's own
+  // `ref_period` belongs to the NATIONAL block, which this table never draws.
+  // Any of the three under a single caption is figures from two periods under a
+  // heading claiming one — a misstatement with no wrong digit in it.
+  const nsiHousing = {
+    ref_period: "2026-Q2",
+    national_price_index_yoy: { ref_period: "2026-Q2", value_pct: { total: 13.1 } },
+    city_price_index_yoy: {
+      ref_period: "2026-Q1",
+      source_url: "https://example.invalid/HPI_2.6.xlsx",
+      cities: [
+        {
+          code: "sofiya",
+          name_bg: "София",
+          name_en: "Sofia",
+          ref_period: "2026-Q1",
+          value_pct: 16.0,
+        },
+        { code: "ruse", name_bg: "Русе", name_en: "Ruse", ref_period: "2025-Q4", value_pct: -5.8 },
+      ],
+    },
+    city_deals_yoy: {
+      ref_period: "2025-Q4",
+      source_url: "https://example.invalid/HSI_2.4.5.xlsx",
+      cities: [
+        {
+          code: "sofiya",
+          name_bg: "София",
+          name_en: "Sofia",
+          ref_period: "2025-Q4",
+          value_pct: -19.2,
+        },
+      ],
+    },
+  };
+  const c = marketCities(nsiHousing);
+  assert.equal(
+    c.pricePeriod,
+    "2026-Q1",
+    "the price column is dated by something other than HPI_2.6"
+  );
+  assert.equal(
+    c.dealsPeriod,
+    "2025-Q4",
+    "the sales column is dated by something other than HSI_2.4.5"
+  );
+  assert.notEqual(c.pricePeriod, nsiHousing.ref_period, "the table is dated by the national block");
+  assert.equal(c.priceUrl, "https://example.invalid/HPI_2.6.xlsx");
+  assert.equal(c.dealsUrl, "https://example.invalid/HSI_2.4.5.xlsx");
+
+  // Joined on the city code, never zipped by position: the sales workbook
+  // covers a shorter window, so a city in one and not the other has to come
+  // back with a null rather than with its neighbour's figure.
+  assert.deepEqual(
+    c.cities.map((x) => [x.code, x.pricePct, x.pricePeriod, x.dealsPct, x.dealsPeriod]),
+    [
+      ["sofiya", 16.0, "2026-Q1", -19.2, "2025-Q4"],
+      ["ruse", -5.8, "2025-Q4", null, null],
+    ]
+  );
+  // Русе's price is a quarter behind its own column, which is exactly what the
+  // cell has to be able to say.
+  assert.notEqual(c.cities[1].pricePeriod, c.pricePeriod);
+  assert.deepEqual(marketCities(null).cities, []);
+});
+
+test("marketNsiNationalRate is НСИ's own cell, reconcilable against Eurostat's", () => {
+  // Both publishers' figure for one statistic is on the page deliberately: a
+  // reader who checks one against the other finds they agree. That only works
+  // while this reads НСИ's block rather than falling through to Eurostat's.
+  const n = marketNsiNationalRate({
+    national_price_index_yoy: {
+      ref_period: "2026-Q1",
+      source_url: "https://example.invalid/HPI_1.3.xlsx",
+      value_pct: { total: 14.8, new: 12.5, existing: 16.3 },
+    },
+  });
+  assert.equal(n.value, 14.8);
+  assert.equal(n.refPeriod, "2026-Q1");
+  assert.equal(n.sourceUrl, "https://example.invalid/HPI_1.3.xlsx");
+  assert.equal(n.newBuild, 12.5);
+  assert.equal(n.existing, 16.3);
+  // Selected, never computed: §2.1.1 of НСИ's licence forbids distributing
+  // производни произведения, so a disclosure here would be describing a breach.
+  assert.equal(n.method, null);
+  assert.equal(marketNsiNationalRate(null).value, null);
+});
+
+test("the live payloads still carry every field the market wiring reads", () => {
+  // The fixtures above pin the wiring; this pins the contract they stand for.
+  // A pipeline that stopped writing `rate_ref_period` or renamed
+  // `city_deals_yoy` leaves every fixture test green and takes cards off the
+  // published page — the one failure a fixture cannot see.
+  const market = read("house_market");
+  const structure = read("house_market_structure");
+  const nsi = read("nsi_housing");
+  const sector = read("sector_salary");
+  if (!market || !structure || !nsi || !sector) return; // no refresh in this checkout
+
+  assert.ok(marketVolume(market).deals.value > 0);
+  assert.ok(marketAverageDeal(market).avg.value > 0);
+  assert.equal(typeof marketPriceRate(market).total.value, "number");
+  assert.ok(marketPriceRate(market).period, "the published index carries no rate_ref_period");
+  assert.ok(marketStructure(structure).unoccupiedPct.value > 0);
+  assert.ok(marketDealInYearsOfPay(market, sector).value > 0);
+  assert.ok(marketNsiNationalRate(nsi).value != null);
+
+  const cities = marketCities(nsi);
+  assert.ok(cities.cities.length >= 6, `only ${cities.cities.length} cities reach the table`);
+  assert.ok(cities.pricePeriod && cities.dealsPeriod, "a column reaches the table undated");
+  for (const city of cities.cities) {
+    assert.ok(city.nameBg && city.nameEn, `${city.code} is named in one language only`);
+    assert.ok(city.pricePeriod, `${city.code}'s price cell is undated`);
+  }
 });

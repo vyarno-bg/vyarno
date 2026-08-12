@@ -42,7 +42,7 @@
     marketCities,
     marketNsiNationalRate,
   } from "./lib/view.js";
-  import { number, integer, periodLong, httpUrl } from "./lib/format.js";
+  import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
 
   const { payloads = null, servedLang = null } = $props();
 
@@ -73,6 +73,30 @@
    */
   const when = (p) => ({ bg: periodLong(p, "bg"), en: periodLong(p, "en") });
 
+  /**
+   * The period slot for a figure built from two publishers on two clocks.
+   *
+   * One quarter under a figure describing two is the caption error that needs
+   * no wrong number to mislead, and it is the likelier state rather than the
+   * exceptional one: Eurostat disseminate the transaction cubes about a week
+   * behind НСИ publishing the wage table, so for the days between two releases
+   * the years-of-pay figure is this quarter's deal over last quarter's pay.
+   * Dated by one of them the card names half its own arithmetic, and the half
+   * it names is the one a reader is least likely to go and check.
+   *
+   * Each period is spelled with the publisher it belongs to rather than left in
+   * source order beside «Евростат и НСИ». Positional pairing is a convention a
+   * reader has to already know, and the source line is the one thing on this
+   * page that may not be guessable.
+   */
+  const whenPair = (a, sa, b, sb) =>
+    a === b
+      ? when(a)
+      : {
+          bg: `${sa.bg} ${periodLong(a, "bg")}, ${sb.bg} ${periodLong(b, "bg")}`,
+          en: `${sa.en} ${periodLong(a, "en")}, ${sb.en} ${periodLong(b, "en")}`,
+        };
+
   const volume = $derived(marketVolume(data.houseMarket));
   const deal = $derived(marketAverageDeal(data.houseMarket));
   const priceRate = $derived(marketPriceRate(data.houseMarket));
@@ -81,8 +105,21 @@
   const cities = $derived(marketCities(data.nsiHousing));
   const nsiNational = $derived(marketNsiNationalRate(data.nsiHousing));
 
-  /** A signed percentage, so a rise and a fall are told apart at a glance. */
-  const signed = (x, d = 1) => (x == null ? "" : `${x > 0 ? "+" : ""}${number(x, d, $lang)}%`);
+  /**
+   * A signed percentage, from the one implementation the whole site shares.
+   *
+   * Written out here it was six characters shorter than the import and wrong in
+   * three ways at once, all of them invisible on a payload whose figures happen
+   * to be comfortably positive: a magnitude that rounds to zero took a sign, so
+   * a +0.04% quarter printed «+0,0%» — a direction the digits beside it do not
+   * support — with «−0,0%» able to sit under it asking a reader to read a
+   * difference out of two identical numbers; a fall took `toLocaleString`'s
+   * hyphen rather than the U+2212 every other figure on the site is drawn with;
+   * and a city НСИ has not published yet printed an empty cell rather than a
+   * visibly missing one. `format.js#percentSigned` is where those three rules
+   * live, and it exists because six templates each got a different one wrong.
+   */
+  const pct = (x) => percentSigned(x, 1, $lang);
 
   /** The rent line the calculator already publishes, read here rather than refetched. */
   const rent = $derived(
@@ -286,7 +323,7 @@
         )}
         {#if volume.changePct.value != null}
           {@render figure(
-            `${volume.changePct.value > 0 ? "+" : ""}${fmt(volume.changePct.value)}%`,
+            pct(volume.changePct.value),
             COPY.mktKDealsYoy,
             COPY.srcEurostat,
             volume.changePct.sourceUrl,
@@ -369,7 +406,7 @@
     {#if priceRate.total.value != null}
       <div class="stats">
         {@render figure(
-          `${priceRate.total.value > 0 ? "+" : ""}${fmt(priceRate.total.value)}%`,
+          pct(priceRate.total.value),
           COPY.mktKPriceRate,
           COPY.srcEurostat,
           priceRate.total.sourceUrl,
@@ -377,7 +414,7 @@
         )}
         {#if priceRate.newBuild != null}
           {@render figure(
-            `${priceRate.newBuild > 0 ? "+" : ""}${fmt(priceRate.newBuild)}%`,
+            pct(priceRate.newBuild),
             COPY.mktKPriceRateNew,
             COPY.srcEurostat,
             priceRate.total.sourceUrl,
@@ -386,7 +423,7 @@
         {/if}
         {#if priceRate.existing != null}
           {@render figure(
-            `${priceRate.existing > 0 ? "+" : ""}${fmt(priceRate.existing)}%`,
+            pct(priceRate.existing),
             COPY.mktKPriceRateExisting,
             COPY.srcEurostat,
             priceRate.total.sourceUrl,
@@ -424,13 +461,27 @@
                 <span class="l-bg">{COPY.mktColCity.bg}</span>
                 <span class="l-en">{COPY.mktColCity.en}</span>
               </th>
+              <!-- The period belongs to the COLUMN, not to the table. HPI_2.6
+                   and HSI_2.4.5 are two files on НСИ's portal and either can be
+                   republished first, so a caption naming one quarter for both
+                   is a claim about the data rather than a description of it —
+                   and it is wrong in the direction nothing catches, because
+                   every digit under it stays a digit НСИ published. -->
               <th scope="col" class="num">
                 <span class="l-bg">{COPY.mktColPrice.bg}</span>
                 <span class="l-en">{COPY.mktColPrice.en}</span>
+                <small class="q">
+                  <span class="l-bg">{periodLong(cities.pricePeriod, "bg")}</span>
+                  <span class="l-en">{periodLong(cities.pricePeriod, "en")}</span>
+                </small>
               </th>
               <th scope="col" class="num">
                 <span class="l-bg">{COPY.mktColDeals.bg}</span>
                 <span class="l-en">{COPY.mktColDeals.en}</span>
+                <small class="q">
+                  <span class="l-bg">{periodLong(cities.dealsPeriod, "bg")}</span>
+                  <span class="l-en">{periodLong(cities.dealsPeriod, "en")}</span>
+                </small>
               </th>
             </tr>
           </thead>
@@ -441,8 +492,30 @@
                   <span class="l-bg">{c.nameBg}</span>
                   <span class="l-en">{c.nameEn}</span>
                 </th>
-                <td class="num mono">{signed(c.pricePct)}</td>
-                <td class="num mono">{signed(c.dealsPct)}</td>
+                <!-- And a cell whose own quarter is not its column's carries
+                     it. `build_nsi_housing_payload` dates each city row by the
+                     newest quarter THAT city has, so a city missing from the
+                     latest release keeps the one it was last published in —
+                     which is the right thing for the payload to do and a
+                     silently mixed column here without this. -->
+                <td class="num mono">
+                  {pct(c.pricePct)}
+                  {#if c.pricePeriod && c.pricePeriod !== cities.pricePeriod}
+                    <small class="q">
+                      <span class="l-bg">{periodLong(c.pricePeriod, "bg")}</span>
+                      <span class="l-en">{periodLong(c.pricePeriod, "en")}</span>
+                    </small>
+                  {/if}
+                </td>
+                <td class="num mono">
+                  {pct(c.dealsPct)}
+                  {#if c.dealsPeriod && c.dealsPeriod !== cities.dealsPeriod}
+                    <small class="q">
+                      <span class="l-bg">{periodLong(c.dealsPeriod, "bg")}</span>
+                      <span class="l-en">{periodLong(c.dealsPeriod, "en")}</span>
+                    </small>
+                  {/if}
+                </td>
               </tr>
             {/each}
           </tbody>
@@ -450,19 +523,24 @@
       </div>
       <p class="cap">
         <span class="l-bg"
-          >Цените са от {COPY.srcNsi.bg}, {periodLong(cities.period, "bg")} —
-          <a href={httpUrl(cities.priceUrl)} target="_blank" rel="noopener">ИЦЖ по градове</a>;
-          броят сделки —
-          <a href={httpUrl(cities.dealsUrl)} target="_blank" rel="noopener">ППЖ по градове</a>.
-          Всяка стойност е клетка, която НСИ са публикували; нищо в тази таблица не е сметнато от
-          нас.</span
+          >Промените в цените са от {COPY.srcNsi.bg} —
+          <a href={httpUrl(cities.priceUrl)} target="_blank" rel="noopener"
+            >индексът на цените на жилищата по градове</a
+          >; броят сделки — от
+          <a href={httpUrl(cities.dealsUrl)} target="_blank" rel="noopener"
+            >продажбите на жилища по градове</a
+          >. Периодът стои над всяка колона, защото двете таблици излизат поотделно. Всяка стойност
+          е клетка, която НСИ е публикувал; нищо в тази таблица не е сметнато от нас.</span
         >
         <span class="l-en"
-          >Prices from {COPY.srcNsi.en}, {periodLong(cities.period, "en")} —
-          <a href={httpUrl(cities.priceUrl)} target="_blank" rel="noopener">the city price index</a
-          >; sales counts —
-          <a href={httpUrl(cities.dealsUrl)} target="_blank" rel="noopener">the city sales table</a
-          >. Every value is a cell НСИ published; nothing in this table is computed by us.</span
+          >The price changes are {COPY.srcNsi.en}'s —
+          <a href={httpUrl(cities.priceUrl)} target="_blank" rel="noopener"
+            >the house price index by city</a
+          >; the sales counts come from
+          <a href={httpUrl(cities.dealsUrl)} target="_blank" rel="noopener"
+            >dwelling sales by city</a
+          >. The period sits above each column because the two tables are released separately. Every
+          value is a cell НСИ published; nothing in this table is computed by us.</span
         >
       </p>
     {/if}
@@ -470,16 +548,16 @@
     {#if nsiNational.value != null && priceRate.total.value != null}
       <p class="cap">
         <span class="l-bg"
-          >Едно и също число, публикувано от двама: НСИ го изчисляват и дават {signed(
+          >Едно и също число, публикувано от двама: НСИ го изчисляват и дават {pct(
             nsiNational.value
           )} за {periodLong(nsiNational.refPeriod, "bg")}, Евростат го разпространяват и дават
-          {signed(priceRate.total.value)}. Съвпадат, и това може да се провери — затова и двете
+          {pct(priceRate.total.value)}. Съвпадат, и това може да се провери — затова и двете
           стоят тук.</span
         >
         <span class="l-en"
-          >One figure, published by two bodies: НСИ compile it and give {signed(nsiNational.value)}
+          >One figure, published by two bodies: НСИ compile it and give {pct(nsiNational.value)}
           for {periodLong(nsiNational.refPeriod, "en")}, Eurostat disseminate it and give
-          {signed(priceRate.total.value)}. They agree, and that is checkable — which is why both are
+          {pct(priceRate.total.value)}. They agree, and that is checkable — which is why both are
           here.</span
         >
       </p>
@@ -553,7 +631,12 @@
             COPY.mktKYearsOfPay,
             COPY.srcEurostatNsi,
             yearsOfPay.wageUrl,
-            when(yearsOfPay.wagePeriod)
+            whenPair(
+              yearsOfPay.dealPeriod,
+              COPY.srcEurostat,
+              yearsOfPay.wagePeriod,
+              COPY.srcNsi
+            )
           )}
         {/if}
       </div>
@@ -756,7 +839,7 @@
         )}
         {#if rent}
           {@render figure(
-            `${rent.annual_rate_pct > 0 ? "+" : ""}${fmt(rent.annual_rate_pct)}%`,
+            pct(rent.annual_rate_pct),
             COPY.mktKRentInflation,
             COPY.srcEurostat,
             rent.api_url,

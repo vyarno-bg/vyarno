@@ -2419,10 +2419,17 @@ export function marketStructure(structure) {
  * depend on the payroll table of whichever year converted it, which is a third
  * publisher's law inside a two-publisher ratio.
  *
+ * **Both periods come back, because the figure describes both.** Eurostat
+ * disseminate the transaction cubes about a week behind НСИ publishing the wage
+ * table, so the two quarters agree most of the time and part for the days
+ * between two releases. Dated by one of them the card names the period of half
+ * its own arithmetic, and the half it names is the one a reader is least likely
+ * to check.
+ *
  * @param {object|null} houseMarket
  * @param {object|null} sectorSalary
- * @returns {SourcedFigure & {monthlyGrossEur: number|null, wagePeriod: string|null,
- *                            wageUrl: string|null}}
+ * @returns {SourcedFigure & {monthlyGrossEur: number|null, dealPeriod: string|null,
+ *                            wagePeriod: string|null, wageUrl: string|null}}
  */
 export function marketDealInYearsOfPay(houseMarket, sectorSalary) {
   const period = houseMarket?.ref_period ?? null;
@@ -2441,6 +2448,7 @@ export function marketDealInYearsOfPay(houseMarket, sectorSalary) {
       derivedFrom: houseMarket?.avg_deal_eur?.derived_from_api_urls ?? null,
     }),
     monthlyGrossEur: wage,
+    dealPeriod: period,
     wagePeriod: sectorSalary?.ref_period ?? null,
     wageUrl: sectorSalary?.source_url ?? null,
   };
@@ -2460,8 +2468,20 @@ export function marketDealInYearsOfPay(houseMarket, sectorSalary) {
  * they come from two workbooks with two different coverage windows, and НСИ
  * publish the sales series over a shorter one.
  *
+ * **Each column is dated by its own workbook and each cell by its own city, and
+ * the table has no single period to be captioned with.** Three periods can
+ * disagree here: HPI_2.6 and HSI_2.4.5 are separate files on НСИ's portal and
+ * either can be republished first, and `build_nsi_housing_payload` dates every
+ * city row by the newest quarter THAT city carries rather than by the block's,
+ * so a city missing from the newest release keeps the quarter it has. The
+ * payload's own `ref_period` is a fourth thing again — it belongs to the
+ * national block, which this table does not draw. A caption naming one quarter
+ * for all of it would put figures from two periods under a heading claiming
+ * one, which is the failure that needs no wrong number to mislead.
+ *
  * @param {object|null} nsiHousing
- * @returns {{period: string|null, priceUrl: string|null, dealsUrl: string|null,
+ * @returns {{pricePeriod: string|null, dealsPeriod: string|null,
+ *            priceUrl: string|null, dealsUrl: string|null,
  *            cities: Array<object>}}
  */
 export function marketCities(nsiHousing) {
@@ -2481,7 +2501,8 @@ export function marketCities(nsiHousing) {
     };
   });
   return {
-    period: nsiHousing?.ref_period ?? null,
+    pricePeriod: price?.ref_period ?? null,
+    dealsPeriod: deals?.ref_period ?? null,
     priceUrl: price?.source_url ?? null,
     dealsUrl: deals?.source_url ?? null,
     cities,
