@@ -3719,10 +3719,33 @@ test("the range strip places every row against its own published extremes", () =
   if (!market || !structure) return; // no refresh in this checkout
 
   const strip = marketRangeStrip(market, structure);
-  assert.equal(strip.rows.length, 6, "the strip places six series");
+  assert.equal(strip.rows.length, 5, "the strip places five series");
   assert.deepEqual(
     strip.rows.map((r) => r.key),
-    ["deals", "index", "indexReal", "rate", "pti", "overburden"]
+    ["deals", "index", "indexReal", "rate", "overburden"]
+  );
+
+  // **`price_to_income` is kept out, and putting it back is the edit this
+  // guards.** It is the obvious sixth row and it is the one series whose VALUE
+  // does not read on its own: Eurostat publish `PTIR_LT_AVG` as an index where
+  // 100 is Bulgaria's own long-run average of the ratio, so «67,8» means nothing
+  // without that 100 — and a one-line row has nowhere to mark it. Placed on a
+  // track anyway it draws a dot at the left end of a line labelled «цена спрямо
+  // доходите», which reads as "housing has never been more affordable": a
+  // verdict, on the indicator whose own section spends three paragraphs on why
+  // it may not be read as one. `#ratio` draws it with the rule at 100, which is
+  // what `marketPriceToIncomeSeries` passes a `reference` for.
+  assert.ok(
+    marketPriceToIncomeSeries(structure).points.length > RANGE_MIN_POINTS,
+    "price_to_income is short enough that the length gate would exclude it anyway, " +
+      "which would make the assertion below pass for the wrong reason"
+  );
+  assert.ok(
+    !strip.rows.some((r) => r.key === "pti"),
+    "the strip places price-to-income. Its published value is already an index " +
+      "against its own long-run average, and the track cannot draw that 100 — so " +
+      "the row says 'at its lowest ever' about a figure whose reference is nowhere " +
+      "on it, which is a verdict this page does not make (docs/principles.md P6)."
   );
 
   for (const row of strip.rows) {
@@ -3765,11 +3788,11 @@ test("the range strip places every row against its own published extremes", () =
   // A series too short to have a record: the same points either side of the
   // floor, and the row appears only above it.
   const short = (n) => ({
-    price_to_income: {
+    housing_cost_overburden: {
       source_url: "https://ec.europa.eu/x",
       api_url: "https://ec.europa.eu/y",
       series_by_period: Object.fromEntries(
-        Array.from({ length: n }, (_, i) => [String(2000 + i), 100 + i])
+        Array.from({ length: n }, (_, i) => [String(2000 + i), 10 + i])
       ),
     },
   });
@@ -3778,8 +3801,8 @@ test("the range strip places every row against its own published extremes", () =
   // …and a series that never moved has no range to place anything in.
   assert.deepEqual(
     marketRangeStrip(null, {
-      price_to_income: {
-        series_by_period: { 2000: 100, 2001: 100, 2002: 100, 2003: 100, 2004: 100 },
+      housing_cost_overburden: {
+        series_by_period: { 2000: 10, 2001: 10, 2002: 10, 2003: 10, 2004: 10 },
       },
     }).rows,
     []

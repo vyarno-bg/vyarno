@@ -1826,8 +1826,8 @@ export const COPY = {
   // 1.5× its own.
   dataLateAge: { bg: "{name} (преди {n} дни)", en: "{name} ({n} days ago)" },
   dataLateHint: {
-    bg: "Числото остава последното официално публикувано — нищо тук не е предположение. Под всяко пише за кой период е.",
-    en: "The figure is still the last officially published one — nothing here is estimated. Under each one is the period it describes.",
+    bg: "Показаното е последното официално публикувано — нищо тук не е предположение. Под всяко число пише за кой период е.",
+    en: "What is shown is the last officially published figure — nothing here is estimated. Under each one is the period it describes.",
   },
 
   // Loading and failure states. A person who has just typed their salary into
@@ -2144,9 +2144,15 @@ export const COPY = {
     bg: "толкова пъти повече се плаща за жилище днес, отколкото през {year} г.",
     en: "that many times more is paid for a home today than in {year}",
   },
+  // The year is on BOTH multiples and not only on the first. A card carrying a
+  // «×N» whose base is stated on the card beside it reads correctly only while
+  // the two stay adjacent, and it is the second card that a reader quotes — the
+  // deflated figure is the one nobody else in Bulgaria publishes with a source
+  // attached. A multiple with no anchor named is the mild form of the reason
+  // price-to-income is off the range strip entirely (view.js#marketRangeStrip).
   mktKTimesReal: {
-    bg: "толкова пъти повече, след като се извади поскъпването на всичко останало",
-    en: "that many times more, once the rise in everything else is taken out",
+    bg: "толкова пъти повече от {year} г., след като се извади поскъпването на всичко останало",
+    en: "that many times more than in {year}, once the rise in everything else is taken out",
   },
   mktKDeals: {
     bg: "жилища са купили домакинствата в цялата страна за тримесечието",
@@ -2244,7 +2250,6 @@ export const COPY = {
     en: "transaction prices, with the rise in everything else taken out",
   },
   mktRangeRate: { bg: "промяната за една година", en: "the change over one year" },
-  mktRangePti: { bg: "цена спрямо доходите", en: "price against incomes" },
   mktRangeOverburden: {
     bg: "дял на хората с тежки разходи за жилище",
     en: "share of people with heavy housing costs",
