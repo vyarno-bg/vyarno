@@ -237,8 +237,23 @@ jobs:
 
       - name: Commit
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
+        # **The identity is set in this step and not in one of its own.** A
+        # runner has no git identity at all, so `git commit` aborts with "empty
+        # ident name" and exit 128 — and it aborts HERE, at the end of a job
+        # that has already installed the pipeline, fetched a live upstream and
+        # written a correct payload. Every step before this one is green, the
+        # one thing the run exists to do is the thing that does not happen, and
+        # on a schedule nobody is watching when it happens.
+        #
+        # Keeping the two lines in the same block is what makes that
+        # unrepeatable: a separate configure step is a step that can be moved,
+        # renamed, made conditional or dropped while this one still looks
+        # complete on its own. `test_cli_dispatch.py` asserts they stay
+        # together.
         run: |
           set -euo pipefail
+          git config user.name "vyarno-refresh"
+          git config user.email "vyarno-refresh@users.noreply.github.com"
           git checkout -b "data/${{ inputs.source }}"
           git add -- data/published
           git commit --signoff -m "data refresh: ${{ inputs.source }} as of ${{ steps.meta.outputs.as_of }}"
