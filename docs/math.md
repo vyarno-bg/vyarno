@@ -747,6 +747,43 @@ the same series on two bases, both answering 200, one of them putting today at
 `tipsho30` has no `purchase` dimension. Eurostat deflate the total only, so
 there is no new-build/existing split to be had and nothing may imply one.
 
+### The index said out loud
+
+```
+times      = level / base_level                     (indexTimesBase)
+below_peak = (peak − latest) / peak × 100           (shortfallPct, null if not below)
+```
+
+**An index level is an economist's object and the data was never the problem.**
+«272,63, при 100 за 2015 г.» asks a reader to hold three conventions at once —
+that an index carries no unit, that its anchor is a year somebody picked, and
+that 272,63 is a ratio written as though it were a quantity. Divided by the base
+it is defined against it becomes «×2,7 спрямо 2015 г.», which is a sentence. The
+chart's axis, its text alternative and the paragraph beside it are all in
+multiples; **the numbers table under it keeps the published index**, because
+that is the figure a sceptic checks against Eurostat's own table.
+
+`indexTimesBase` takes the base as a parameter and has no default. `/100` would
+be right for `I15_Q` and wrong for `I25_Q` — the same measurement on a later
+base, putting today at about 109 — and the failure would be a plausible number
+rather than an error.
+
+`shortfallPct` returns **null at or above the reference**, and that is the guard
+rather than a nicety. It feeds the one comparison this page can make that
+nothing else in Bulgaria publishes with sources attached — nominally the index
+is at its own highest, deflated it is below where it stood before the 2008 fall
+— and the reference is a series maximum, so the quarter that matters is the one
+the latest reading becomes that maximum. There the honest output is no sentence,
+not «0,0% под него» printed beside two identical numbers.
+
+**The base year is `price_index.base_year` and is never written into a
+sentence.** It was the literal «2015» in the chart's caption and in its text
+alternative while the payload carried it, and Eurostat rebase: the caption would
+have stayed on the page, beside a chart whose every digit was still correct,
+naming the wrong year. `verify_copy.mjs` §"the market page writes no year and no
+quarter into its own prose" holds the general form — every figure on that page
+is live, so it has no worked examples and no period belongs in its words.
+
 ### Eurostat's flags, and why the page draws them
 
 `status_by_period` carries the publisher's own letters at the quarters they

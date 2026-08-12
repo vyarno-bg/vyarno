@@ -1442,6 +1442,49 @@ export function unoccupiedSharePct(census) {
 }
 
 /**
+ * An index level read as a MULTIPLE of the base it is defined against.
+ *
+ * «272,63, при 100 за 2015 г.» is an economist's object. It has no unit, its
+ * anchor is a year the publisher picked, and the magnitude connects to nothing
+ * a reader has ever paid — so the digits are precise and the sentence they make
+ * is empty. «×2,7 спрямо 2015 г.» is a sentence: same series, same publisher,
+ * one division by the base the payload declares.
+ *
+ * **The base is a parameter and there is no default.** Writing `/100` would be
+ * right for `I15_Q` and wrong the day a caller reaches for a series on another
+ * base — `I25_Q` is the same measurement putting today at 109 — and the failure
+ * would be a plausible number rather than an error. A caller has to say which
+ * anchor it means, and `plotSeries#reference` is where it comes from.
+ *
+ * @param {number|null|undefined} level  the published index reading
+ * @param {number|null|undefined} baseLevel  what the base year is written as
+ * @returns {number|null} how many times the base the reading is
+ */
+export function indexTimesBase(level, baseLevel) {
+  if (!Number.isFinite(level) || !Number.isFinite(baseLevel) || baseLevel <= 0) return null;
+  return level / baseLevel;
+}
+
+/**
+ * How far a reading sits BELOW a reference, as a positive percentage.
+ *
+ * **Null at or above it, and that is the guard rather than a nicety.** The
+ * sentence this feeds says a level is below the highest one the publisher has
+ * ever printed, and a reading that has just passed its own previous high has to
+ * make the page say nothing rather than say «0,0% под него» — a claim the
+ * digits beside it contradict, in the direction a reader is least likely to
+ * check, on the one comparison this page can make that nobody else makes.
+ *
+ * @param {number|null|undefined} value
+ * @param {number|null|undefined} reference
+ * @returns {number|null} percent below, or null if it is not below
+ */
+export function shortfallPct(value, reference) {
+  if (!Number.isFinite(value) || !Number.isFinite(reference) || reference <= 0) return null;
+  return value >= reference ? null : ((reference - value) / reference) * 100;
+}
+
+/**
  * How many years of a wage the average dwelling transaction costs.
  *
  * **The cross-publisher join, and the reason it happens in the browser.** The

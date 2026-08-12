@@ -62,6 +62,8 @@ import {
   dealsAtQuarter,
   unoccupiedSharePct,
   dealInYearsOfPay,
+  indexTimesBase,
+  shortfallPct,
 } from "../src/lib/mirror.js";
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -1270,6 +1272,55 @@ test("dealsAtQuarter compares a quarter with the SAME quarter a year earlier", (
     yearAgo: null,
     changePct: null,
   });
+});
+
+test("indexTimesBase divides by the base it is given, never by a literal 100", () => {
+  // The whole point of the parameter. `I15_Q` writes 2015 as 100 and today as
+  // 272.63; `I25_Q` is the SAME measurement on a later base, putting today at
+  // about 109. A `/100` written into the function would turn that second series
+  // into «×1,1 spрямо 2015» — arithmetically clean, internally consistent, and
+  // off by a factor of two and a half, with nothing about the output to say so.
+  assert.ok(near(indexTimesBase(272.63, 100), 2.7263, 1e-12));
+  assert.ok(near(indexTimesBase(272.63, 250), 1.09052, 1e-12));
+  // The base year's own reading is ×1 by construction, whatever the base is.
+  for (const base of [100, 250, 1000]) assert.equal(indexTimesBase(base, base), 1);
+
+  for (const [level, base] of [
+    [null, 100],
+    [272.63, null],
+    [272.63, 0],
+    [272.63, -100],
+    [NaN, 100],
+    [undefined, undefined],
+  ]) {
+    assert.equal(indexTimesBase(level, base), null, `indexTimesBase(${level}, ${base})`);
+  }
+});
+
+test("shortfallPct says nothing at all about a reading that is not below", () => {
+  // It feeds one sentence: «нивото днес е с N% под най-високото». The reference
+  // it is measured against is a series MAXIMUM, so the case that matters is the
+  // quarter the latest reading becomes that maximum — and there the honest
+  // output is no sentence, not «0,0% под него» printed beside two identical
+  // numbers on the one comparison this page makes that nobody else makes.
+  assert.ok(near(shortfallPct(162.9, 170.17), ((170.17 - 162.9) / 170.17) * 100, 1e-12));
+  assert.ok(shortfallPct(162.9, 170.17) > 4 && shortfallPct(162.9, 170.17) < 5);
+  assert.equal(shortfallPct(170.17, 170.17), null, "a reading at its own peak reports a shortfall");
+  assert.equal(
+    shortfallPct(180, 170.17),
+    null,
+    "a reading above the reference reports a shortfall"
+  );
+
+  for (const [value, reference] of [
+    [null, 170],
+    [162.9, null],
+    [162.9, 0],
+    [162.9, -170],
+    [NaN, 170],
+  ]) {
+    assert.equal(shortfallPct(value, reference), null, `shortfallPct(${value}, ${reference})`);
+  }
 });
 
 test("unoccupiedSharePct divides the census counts by each other and nothing else", () => {
