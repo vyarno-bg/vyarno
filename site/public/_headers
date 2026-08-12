@@ -18,6 +18,15 @@
 #
 # `public/` is copied verbatim into the bundle, so this file rides along inside
 # every release. A server that does not read it should decline to serve it.
+#
+# **`Strict-Transport-Security` is deliberately not here.** HSTS is a statement
+# about the TLS connection, and it belongs where TLS terminates rather than in
+# a file the origin ships: an edge that adds its own and an origin that
+# declares one produce two answers to a question whose whole value is that
+# there is one, and the browser remembers the wrong one for as long as its
+# max-age says. So the deployment owns it, this file owns everything the
+# response body's policy needs, and `check-live-headers.mjs` reads the live
+# origin — which is where the two halves are seen together.
 
 /*
   # --- Content Security Policy -------------------------------------------

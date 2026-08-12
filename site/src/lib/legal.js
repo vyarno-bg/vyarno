@@ -48,8 +48,8 @@
  * Bump, always. The shortcut is only ever available before anything has been
  * served at all, and that moment has passed.
  */
-export const LEGAL_VERSION = "1.4";
-export const LEGAL_EFFECTIVE = { bg: "11 август 2026 г.", en: "11 August 2026" };
+export const LEGAL_VERSION = "1.5";
+export const LEGAL_EFFECTIVE = { bg: "12 август 2026 г.", en: "12 August 2026" };
 
 import { CONTACT, LEGAL_NAV, REPO_ISSUES_URL, REPO_SLUG } from "./legal-nav.js";
 
@@ -556,16 +556,16 @@ const DOC_BODIES = [
         h: { bg: "Какво не може", en: "What you may not do" },
         p: [
           {
-            bg: "Да натоварваш сайта по начин, различен от нормално ползване от човек с браузър: обхождане с бот, скриптово изтегляне в цикъл, повтарящо се теглене на файловете с данни. Вярно работи на един малък сървър и това е молба да го щадиш, а не защита на нещо тайно — виж следващия абзац за по-добрия начин.",
-            en: "Loading the site in any way other than ordinary use by a person with a browser: crawling with a bot, scripted downloading in a loop, repeatedly pulling the data files. Vyarno runs on one small server, and this is a request for courtesy rather than protection of anything secret — the next paragraph has the better route.",
+            bg: "Да натоварваш сайта по начин, различен от нормално ползване от човек с браузър: обхождане с бот, скриптово изтегляне в цикъл, повтарящо се теглене на файловете с данни. Вярно се доставя от мрежа за съдържание, а не от собствена машина, и това е молба за възпитание, а не защита на нещо тайно — виж следващия абзац за по-добрия начин.",
+            en: "Loading the site in any way other than ordinary use by a person with a browser: crawling with a bot, scripted downloading in a loop, repeatedly pulling the data files. Vyarno is delivered by a content network rather than a machine of its own, and this is a request for courtesy rather than protection of anything secret — the next paragraph has the better route.",
           },
           {
             bg: "Представяне на наши числа като чужди или на чужди като наши, вграждане на съдържание оттук, което премахва посочването на източника, както и ползване на името „Вярно“, домейна или знака по начин, който създава впечатление за връзка или одобрение. Може да кажеш, че работата ти стъпва на Вярно — това е вярно и е добре дошло; не може да наречеш своя версия „Вярно“.",
             en: "Presenting our figures as someone else's or someone else's as ours, embedding that removes the source attribution, and using the name “Вярно”, the domain or the mark in a way that suggests a connection or an endorsement. You may say your work is based on Вярно — that is accurate and welcome; you may not call your own version “Вярно”.",
           },
           {
-            bg: `Ако ти трябва достъп до данните по машинен път, не ги извличай от сайта — вземи ги от хранилището. Кодът е отворен (Apache-2.0), а публикуваните файлове с данни са в git с история, схема и дата на обновяване: ${REPO_SLUG}. Така получаваш повече, отколкото би извлякъл, и никой сървър не страда.`,
-            en: `If you need machine access to the data, do not scrape it from the site — take it from the repository. The code is open (Apache-2.0) and the published data files are in git with their history, schema and refresh date: ${REPO_SLUG}. You get more than scraping would give you, and no server suffers for it.`,
+            bg: `Ако ти трябва достъп до данните по машинен път, не ги извличай от сайта — вземи ги от хранилището. Кодът е отворен (Apache-2.0), а публикуваните файлове с данни са в git с история, схема и дата на обновяване: ${REPO_SLUG}. Така получаваш повече, отколкото би извлякъл, и никой не плаща за това с трафик.`,
+            en: `If you need machine access to the data, do not scrape it from the site — take it from the repository. The code is open (Apache-2.0) and the published data files are in git with their history, schema and refresh date: ${REPO_SLUG}. You get more than scraping would give you, and nobody pays for it in traffic.`,
             html: false,
           },
           {
@@ -595,8 +595,8 @@ const DOC_BODIES = [
             en: "We take real care that the figures are right: every publication passes automated checks, and every figure carries a source and a date. But statistics are revised by the bodies that produce them, asking prices are not transaction prices, and the pay distribution is modelled from a survey. The site is therefore provided “as is”, without warranty of accuracy, completeness or fitness for a particular purpose, and we are not liable for decisions taken on the basis of what it shows.",
           },
           {
-            bg: "Не обещаваме непрекъснат достъп. Може да променим, спрем или премахнем част от сайта. Обновяването на данните се прави ръчно и датата на последното обновяване е винаги видима на страницата — ако е остаряла, сайтът го казва сам, вместо да го скрие.",
-            en: "We do not promise uninterrupted access, and we may change, suspend or withdraw any part of the site. Data refreshes are done by hand and the date of the last refresh is always visible on the page — if it is old, the site says so itself rather than hiding it.",
+            bg: "Не обещаваме непрекъснат достъп. Може да променим, спрем или премахнем част от сайта. Обновяването на данните върви по график, а една част от него — на ръка, и датата на последното обновяване е винаги видима на страницата — ако е остаряла, сайтът го казва сам, вместо да го скрие.",
+            en: "We do not promise uninterrupted access, and we may change, suspend or withdraw any part of the site. Data refreshes run on a schedule, with one of them done by hand, and the date of the last refresh is always visible on the page — if it is old, the site says so itself rather than hiding it.",
           },
           {
             bg: "Тези условия не ограничават правата, които потребителското законодателство дава и които не могат да бъдат ограничавани по договор.",
@@ -687,8 +687,16 @@ const DOC_BODIES = [
             en: "We are precise here, because “we collect nothing” slips easily into being untrue. Like every web server, the machine that delivers the page records the ordinary log line: IP address, timestamp, requested URL and browser type. That is what it takes to get the page to you and to defend against abuse, and it is the only thing that exists about your visit.",
           },
           {
-            bg: "Тези редове може да ги четем обобщено — колко посещения има, кои страници се отварят и откъде идват хората. Това е броене, а не проследяване: не изграждаме профил за теб, не свързваме журнала с друг източник и не го предоставяме на трети лица. Журналът стои на сървър, който наемаме в Европейския съюз и администрираме сами; данните не напускат ЕС. Пазим го не повече от 14 дни, след което файловете се изтриват автоматично — не правим архив и не го копираме другаде.",
-            en: "We may read those lines in aggregate — how many visits there are, which pages get opened and where people arrive from. That is counting, not tracking: we build no profile of you, we join the log to no other source, and we pass it to no third party. The log sits on a server we rent inside the European Union and administer ourselves; the data does not leave the EU. We keep it for no more than 14 days, after which the files are deleted automatically — we keep no archive and copy it nowhere else.",
+            bg: "Тези редове може да ги четем обобщено — колко посещения има, кои страници се отварят и откъде идват хората. Това е броене, а не проследяване: не изграждаме профил за теб, не свързваме журнала с друг източник и не го предоставяме на трети лица. Ние самите не държим такъв журнал и не можем да го изтеглим: страницата се доставя от Cloudflare, Inc., планът, по който я доставяме, не дава достъп до записите за отделните заявки, и това, което виждаме, са готовите броячи в таблото на хоста — числа, не редове.",
+            en: "We may read those lines in aggregate — how many visits there are, which pages get opened and where people arrive from. That is counting, not tracking: we build no profile of you, we join the log to no other source, and we pass it to no third party. We hold no such log ourselves and cannot download one: the page is delivered by Cloudflare, Inc., the plan we deliver it on gives no access to per-request records, and what we see is the host's finished counters — figures, not lines.",
+          },
+          {
+            bg: "Колко дълго остава този запис, определя политиката на хоста, а не наша настройка: Cloudflare обработва данните за заявките в свои центрове за данни в Европейския съюз и в САЩ «за ограничен период от време» и не публикува този период в дни. Нямаме как да го удължим и не искаме: няма наше копие, няма архив и няма файл, който да го надживее. Част от обработката се извършва извън ЕС — това е достатъчно съществено, за да се каже направо, а не да се премълчи: прехвърлянето е уредено със стандартните договорни клаузи на Европейската комисия, а Cloudflare е сертифицирана и по Рамката за защита на личните данни ЕС—САЩ.",
+            en: "How long that record survives is set by the host's policy rather than by a setting of ours: Cloudflare processes request data in its own data centres in the European Union and the United States “for a limited period of time”, and publishes no figure in days. We have no way to extend it and no wish to: there is no copy of ours, no archive, and no file that outlives it. Part of the processing therefore happens outside the EU — significant enough to state plainly rather than leave out: the transfer runs on the European Commission's Standard Contractual Clauses, and Cloudflare is additionally certified under the EU-U.S. Data Privacy Framework.",
+          },
+          {
+            bg: "Още едно нещо, което не личи от кода на страницата: ако заявка към сайта се провали — прекъсната връзка, изтекло време, отказан сертификат — браузърът ти може да изпрати кратък технически доклад за самата грешка на адрес за докладване на хоста. Докладът съдържа неуспелия адрес, вида на грешката и часа; изпраща се само при грешка и стига до същия хост, който доставя страницата. Механизмът е негов, не наш, и не докосва числата, които въвеждаш — те не напускат браузъра ти при никакви обстоятелства.",
+            en: "One more thing the page's own code does not show: if a request to the site fails — a dropped connection, a timeout, a refused certificate — your browser may send a short technical report about that failure to a reporting address belonging to the host. The report carries the URL that failed, the kind of failure and the time; it is sent only on a failure and it reaches the same host that delivers the page. The mechanism is the host's rather than ours, and it does not touch the figures you type — those leave your browser under no circumstances.",
           },
         ],
       },
@@ -739,8 +747,8 @@ const DOC_BODIES = [
             en: "A promise is not enough, so it is nailed down in the page itself. The Content-Security-Policy the site is served with allows the browser to connect only to vyarno.bg and nowhere else, and to execute only our own code. If someone added a tracking script it would not quietly work — it would break.",
           },
           {
-            bg: "Шрифтовете също са наши и се доставят от нашия адрес, а не от чужда мрежа за доставка на съдържание. В тази версия браузърът ти не праща нито една заявка към трето лице. Ако някога се наложи да я разхлабим, това ще стане явно и видимо — и този раздел се сменя заедно с политиката, в същото издание.",
-            en: "The fonts are ours too and are served from our own address rather than a third-party network. As of this version your browser makes not one request to a third party. If that ever has to change, the policy must be relaxed explicitly and visibly — and this section changes with it, in the same release.",
+            bg: "Шрифтовете също са наши и се доставят от нашия адрес, а не от чужда мрежа за доставка на съдържание. В тази версия браузърът ти не праща нито една заявка към трето лице: всичко, което зарежда страницата, идва от vyarno.bg, а единственият друг адрес, до който изобщо може да стигне, е адресът за докладване на грешки на самия хост — описан по-горе и извън обхвата на политиката, защото докладите за грешки не се подчиняват на нейното правило за връзките. Ако някога се наложи да я разхлабим, това ще стане явно и видимо — и този раздел се сменя заедно с политиката, в същото издание.",
+            en: "The fonts are ours too and are served from our own address rather than a third-party network. As of this version your browser makes not one request to a third party: everything that loads the page comes from vyarno.bg, and the only other address it can reach at all is the host's own error-reporting address — described above, and outside what the policy governs, because error reports are not subject to its rule about connections. If that ever has to change, the policy must be relaxed explicitly and visibly — and this section changes with it, in the same release.",
           },
         ],
       },
@@ -748,12 +756,12 @@ const DOC_BODIES = [
         h: { bg: "Твоите права", en: "Your rights" },
         p: [
           {
-            bg: "Администратор на лични данни по смисъла на ОРЗД (GDPR) е лицето, посочено в раздел „Идентификация“ по-долу. Правното основание за краткото записване на заявките в журнала е легитимният интерес да доставим страницата, да я защитим от злоупотреба и да преценим обобщено дали изобщо някой я ползва. Единственият получател на данните от журнала е доставчикът на хостинг, който поддържа машината и обработва журнала само по наше указание, въз основа на договор по чл. 28 от ОРЗД. Няма друг получател на журнала; за дарението важи разделът по-горе.",
-            en: "The data controller for the purposes of the GDPR is the person identified in the “Identification” section below. The legal basis for briefly logging requests is the legitimate interest in delivering the page, protecting it from abuse, and judging in aggregate whether anyone is using it at all. The only recipient of the log data is the hosting provider that keeps the machine running, which processes the log solely on our instructions under a GDPR art. 28 contract. The log has no other recipient; for a donation, the section above applies.",
+            bg: "Администратор на лични данни по смисъла на ОРЗД (GDPR) е лицето, посочено в раздел „Идентификация“ по-долу. Правното основание за краткото записване на заявките е легитимният интерес да доставим страницата, да я защитим от злоупотреба и да преценим обобщено дали изобщо някой я ползва. Единственият получател на тези данни е хостът, който доставя страницата — Cloudflare, Inc. — и той ги обработва като наш обработващ, само по наше указание, въз основа на договор по чл. 28 от ОРЗД. Няма друг получател; за дарението важи разделът по-горе.",
+            en: "The data controller for the purposes of the GDPR is the person identified in the “Identification” section below. The legal basis for briefly logging requests is the legitimate interest in delivering the page, protecting it from abuse, and judging in aggregate whether anyone is using it at all. The only recipient of that data is the host that delivers the page — Cloudflare, Inc. — which processes it as our processor, solely on our instructions, under a GDPR art. 28 contract. There is no other recipient; for a donation, the section above applies.",
           },
           {
-            bg: "ОРЗД ти дава право на достъп, коригиране, изтриване, ограничаване, преносимост и възражение. Тук те опират в необичайна практическа граница: освен журнала на заявките и — ако си дарил — записа за дарението, ние не държим нищо, свързано с теб, така че няма към какво друго да се приложат. Ако все пак искаш да упражниш някое от тях или просто да провериш какво имаме, пиши на contact@vyarno.bg — отговаряме в срок до един месец.",
-            en: "The GDPR gives you rights of access, rectification, erasure, restriction, portability and objection. Here they meet an unusual practical limit: apart from the request log and — if you have donated — the record of that donation, we hold nothing connected to you, so there is nothing else for them to attach to. If you would like to exercise one anyway, or simply to check what we have, write to contact@vyarno.bg — we answer within one month.",
+            bg: "ОРЗД ти дава право на достъп, коригиране, изтриване, ограничаване, преносимост и възражение. Тук те опират в необичайна практическа граница: освен записа на заявките, който стои при хоста, и — ако си дарил — записа за дарението, ние не държим нищо, свързано с теб, така че няма към какво друго да се приложат. Ако все пак искаш да упражниш някое от тях или просто да провериш какво имаме, пиши на contact@vyarno.bg — отговаряме в срок до един месец.",
+            en: "The GDPR gives you rights of access, rectification, erasure, restriction, portability and objection. Here they meet an unusual practical limit: apart from the request record the host holds and — if you have donated — the record of that donation, we hold nothing connected to you, so there is nothing else for them to attach to. If you would like to exercise one anyway, or simply to check what we have, write to contact@vyarno.bg — we answer within one month.",
           },
           {
             bg: "Ако смяташ, че обработваме данни неправомерно, имаш право на жалба до Комисията за защита на личните данни (данните са по-долу).",
