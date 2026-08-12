@@ -235,7 +235,8 @@ test(
 
     await withApp(
       async (page, errors) => {
-        const charts = page.locator("main.market figure.chart svg");
+        const figures = page.locator("main.market figure.chart");
+        const charts = page.locator("main.market figure.chart svg.pane");
         const n = await charts.count();
         assert.equal(
           n,
@@ -259,7 +260,11 @@ test(
             `${what} is not announced as an image`
           );
 
-          const ticks = (await svg.locator("text.plot-tick").allTextContents()).map((t) =>
+          // The axis labels are HTML beside the box rather than text inside it,
+          // so they are read off the figure and not off the SVG. What is
+          // asserted is unchanged: a scale that does not print its own zero is
+          // one a reader cannot tell a truncated axis from.
+          const ticks = (await figures.nth(i).locator(".plot-tick").allTextContents()).map((t) =>
             t.trim()
           );
           assert.ok(ticks.includes("0"), `the ${what} chart draws no zero: ${ticks.join(", ")}`);
@@ -296,6 +301,80 @@ test(
     );
   }
 );
+
+test("the charts are legible on the phone, not only on the desk", { skip }, async () => {
+  // The failure this exists to refuse, measured on the built page: an SVG sized
+  // `width: 100%` against a fixed `viewBox` scales its whole coordinate system,
+  // and text is part of it. With the axis labels inside the box the six plots
+  // rendered their 11px type at 6.2px at a 360px viewport, and the plot itself
+  // came to 83px tall once the label padding was taken out of the same box.
+  //
+  // 360px is the primary target rather than the fallback, so the assertion is
+  // made there. It is on the RENDERED size — the number a reader's eye gets —
+  // which is why the labels live in HTML beside the plot: a declaration of
+  // 11px inside the box is 11px in the source and 6px on the device.
+  //
+  // The floor is the page's own smallest type. It cannot be met by moving the
+  // labels back inside and declaring 20px, because the box would then scale
+  // that to 20px only at the one width it was drawn for, and this walk runs at
+  // the narrowest.
+  await withApp(
+    async (page, errors) => {
+      const probe = await page.evaluate(() => {
+        const out = [];
+        for (const figure of document.querySelectorAll("main.market figure.chart")) {
+          const pane = figure.querySelector("svg.pane");
+          const box = pane.getBoundingClientRect();
+          const sizes = [...figure.querySelectorAll(".plot-tick")].map((el) => {
+            const declared = parseFloat(getComputedStyle(el).fontSize);
+            // What the label is drawn at. Inside the box that is the declared
+            // size times the box's own scale; in HTML the two are the same
+            // number, and the point of the measurement is that they are.
+            const scale = el.closest("svg") ? box.width / pane.viewBox.baseVal.width : 1;
+            return Number((declared * scale).toFixed(2));
+          });
+          out.push({
+            height: Math.round(box.height),
+            labels: sizes.length,
+            smallest: sizes.length ? Math.min(...sizes) : 0,
+            // A label that starts left of the page is one nobody reads either.
+            offPage: [...figure.querySelectorAll(".plot-tick")].some(
+              (el) => el.getBoundingClientRect().left < 0
+            ),
+          });
+        }
+        return { charts: out, scrollWidth: document.documentElement.scrollWidth };
+      });
+
+      assert.ok(probe.charts.length >= 5, `only ${probe.charts.length} charts found to measure`);
+      for (const [i, chart] of probe.charts.entries()) {
+        assert.ok(chart.labels >= 2, `chart ${i} draws ${chart.labels} axis labels at 360px`);
+        assert.ok(
+          chart.smallest >= 11,
+          `chart ${i} renders its smallest axis label at ${chart.smallest}px on a 360px ` +
+            "viewport. --fs-micro is 11px and it is the floor for the whole site; a chart " +
+            "that scales its own type below it is unreadable on the device most readers " +
+            "arrive on."
+        );
+        assert.ok(
+          chart.height >= 110,
+          `chart ${i} draws a plot ${chart.height}px tall at 360px — the marks have less ` +
+            "vertical room than a line of body copy"
+        );
+        assert.equal(chart.offPage, false, `chart ${i} hangs an axis label off the left edge`);
+      }
+      assert.equal(
+        probe.scrollWidth,
+        360,
+        `the page scrolls sideways at 360px (${probe.scrollWidth}px wide). A chart, a table ` +
+          "or a card is wider than the viewport and is not inside a scroll box of its own."
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    { viewport: { width: 360, height: 800 } }
+  );
+});
 
 test("every chart publishes its own numbers, and every mark names itself", { skip }, async () => {
   // A plot shows a shape and hides every value in it. Twenty-one years of an
