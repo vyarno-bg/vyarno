@@ -3,9 +3,9 @@
 # Inputs: `source` — the name passed to `vyarno-pipeline refresh --source`.
 #
 # Steps: checkout, install the pipeline, run it against live upstreams,
-# stage and capture changes, compute the latest as_of plus any payloads
+# stage and capture changes, compute the source's as_of plus any payloads
 # older than 30 days, commit with --signoff, push the data/<source>
-# branch, open a PR.
+# branch, open a PR, and dispatch CI against it.
 #
 # The pipeline's exit codes drive the rest of the workflow:
 #   0 — published, JSON written
@@ -32,15 +32,25 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # `actions: write` is what dispatches CI onto the branch this job
+      # pushes. See the "Dispatch CI" step for why that is not optional.
+      actions: write
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          # Every other checkout in this repository sets this false. This one
+          # must not: the push below authenticates with the credential helper
+          # checkout writes into `.git/config`, and nothing else here carries a
+          # token. Stated rather than left to the action's default, because a
+          # default that flips turns the push into an auth failure at the end
+          # of a fifteen-minute job.
+          persist-credentials: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
       - name: Install pipeline
@@ -49,10 +59,30 @@ jobs:
           python -m venv .venv
           .venv/bin/pip install -q -e '.[dev]'
 
-      - name: Configure git
+      - name: Trust the БНБ intermediate
+        if: inputs.source == 'mortgage'
+        # `www.bnb.bg` presents a leaf issued by GeoTrust EV RSA CA G2 and does
+        # not send that intermediate, so a default trust store cannot build the
+        # chain and the mortgage arm exits 4 with "unable to get local issuer
+        # certificate". The fix is to supply the missing link from the leaf's
+        # own AIA URL — never to disable verification, which would hand the one
+        # connector that fetches a rate over a bank's own TLS to anyone on the
+        # path (docs/data-sources.md §"TLS setup").
+        #
+        # Written into certifi's bundle AND exported as SSL_CERT_FILE, because
+        # which one httpx reads depends on how its default SSL context is
+        # built, and a runner is not the place to discover the answer once a
+        # month. Appending to certifi's own file is the belt: httpx uses that
+        # bundle whatever the environment says.
         run: |
-          git config --global user.name "vyarno-refresh"
-          git config --global user.email "vyarno-refresh@users.noreply.github.com"
+          set -euo pipefail
+          curl -sSL -o /tmp/g2.crt 'http://cacerts.digicert.com/GeoTrustEVRSACAG2.crt'
+          openssl x509 -in /tmp/g2.crt -inform DER -out /tmp/g2.pem
+          BUNDLE=$(pipeline/.venv/bin/python -c 'import certifi; print(certifi.where())')
+          cat /tmp/g2.pem >> "$BUNDLE"
+          echo "SSL_CERT_FILE=$BUNDLE" >> "$GITHUB_ENV"
+          curl -sS -o /dev/null -w 'бнб reachable: %{http_code}\n' --cacert "$BUNDLE" \
+            https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx
 
       - name: Run pipeline
         working-directory: pipeline
@@ -106,18 +136,45 @@ jobs:
           threshold_days = 30
           today = datetime.date.today()
 
-          as_ofs = []
-          for path in glob.glob(str(repo / "data/published/*.json")):
-              payload = json.load(open(path))
-              as_of = payload.get("as_of")
-              if as_of:
-                  as_ofs.append(as_of)
-          as_of = max(as_ofs) if as_ofs else "unknown"
+          # **A `--source` name is not a filename.** The CLI option is
+          # hyphenated and the payload it writes is not: `--source
+          # region-salary` produces `region_salary.json`, and `salary-dist`
+          # produces `salary_dist.json`. Matching the option name against the
+          # stem finds nothing for either, and "nothing of mine changed" is
+          # read below as a cached read — so the commit, the push and the PR
+          # are all skipped and the run goes GREEN saying so. That is the worst
+          # shape a data bug can take here: a quarterly payload that silently
+          # never publishes, reported as a successful refresh.
+          prefix = source.replace("-", "_")
+
+          def stem_of(path):
+              return os.path.basename(path).removesuffix(".json")
+
+          def is_ours(stem):
+              # `hicp` writes two files; every other arm writes one named
+              # exactly for it.
+              return stem == prefix or stem.startswith(prefix)
+
+          paths = sorted(glob.glob(str(repo / "data/published/*.json")))
+
+          # The as_of this run publishes, which is THIS source's — never the
+          # newest date in the directory. A commit message reading "mortgage as
+          # of 2026-08-10" over a payload dated 2026-06-30 dates the review
+          # wrong, and the date in a data commit is the thing a reviewer checks
+          # first.
+          mine_as_of = []
+          for path in paths:
+              if not is_ours(stem_of(path)):
+                  continue
+              value = json.load(open(path)).get("as_of")
+              if value:
+                  mine_as_of.append(value)
+          as_of = max(mine_as_of) if mine_as_of else "unknown"
 
           stale = []
-          for path in sorted(glob.glob(str(repo / "data/published/*.json"))):
-              stem = os.path.basename(path).removesuffix(".json")
-              if stem == source:
+          for path in paths:
+              stem = stem_of(path)
+              if is_ours(stem):
                   continue
               as_of_other = json.load(open(path)).get("as_of")
               if not as_of_other:
@@ -134,9 +191,8 @@ jobs:
           # exit 0 on a no-op re-publish.
           real_change = "yes"
           payload_files = []
-          for path in sorted(glob.glob(str(repo / "data/published/*.json"))):
-              stem = os.path.basename(path).removesuffix(".json")
-              if stem != source and not stem.startswith(source):
+          for path in paths:
+              if not is_ours(stem_of(path)):
                   continue
               new_payload = json.load(open(path))
               # Read the committed version via `git show`.
@@ -189,28 +245,42 @@ jobs:
 
       - name: Push
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
-        # `-u` is the right flag for the first push of a new branch.
-        # Subsequent runs of this workflow (after the branch exists on
-        # origin) still work — git updates the upstream tracking ref
-        # without affecting existing history. No force is ever used
-        # here; the workflow creates a fresh branch on every run, so
-        # there is no remote history to clobber.
+        # **The branch outlives the run that made it.** It is created fresh
+        # from `main` every time, but it is only deleted when its PR merges, so
+        # a refresh that fires while the last one is still awaiting review
+        # meets a `data/<source>` on origin whose history this branch does not
+        # contain — and a plain push is refused as non-fast-forward. The whole
+        # run then fails at the last step with a correct payload already built.
         #
-        # The push uses the credential helper that `actions/checkout`
-        # writes into `.git/config` — it reads the workflow's
-        # automatic token from the environment, so no URL injection
-        # is needed here.
-        run: git push -u origin "data/${{ inputs.source }}"
+        # `merge -s ours` resolves that without a force: it records the stale
+        # branch as an ancestor and keeps THIS tree, byte for byte, so the push
+        # fast-forwards and the PR shows the newest refresh against `main`.
+        # Nothing is lost that anyone wanted — the superseded commit holds an
+        # older read of the same upstream, and the payload it carried is the
+        # one this run just re-fetched.
+        #
+        # Never `--force`: the branch is shared with an open PR, and a force
+        # push there discards a review in progress rather than an old fetch.
+        run: |
+          set -euo pipefail
+          BRANCH="data/${{ inputs.source }}"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "::notice::$BRANCH already on origin — superseding it in place."
+            git fetch origin "$BRANCH"
+            git merge -s ours --no-edit FETCH_HEAD
+          fi
+          git push -u origin "$BRANCH"
 
       - name: Open PR
+        id: pr
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
-            const source = '${{ inputs.source }}';
-            const as_of = '${{ steps.meta.outputs.as_of }}';
-            const staleList = `${{ steps.meta.outputs.stale_list }}`;
-            const changed = `${{ steps.diff.outputs.changed }}`.trim();
+            const source = process.env.SOURCE;
+            const as_of = process.env.AS_OF;
+            const staleList = process.env.STALE_LIST;
+            const changed = (process.env.CHANGED || '').trim();
 
             const lines = [];
             lines.push(`## data refresh — ${source}`);
@@ -234,7 +304,7 @@ jobs:
             lines.push('### Review');
             lines.push('');
             lines.push('- Diff against `main` is the change.');
-            lines.push('- Pipeline gates ran locally; the seven HICP gates (or the per-source equivalent) all passed.');
+            lines.push("- The gates ran against the live upstream before anything was written — a payload that fails one exits non-zero and never reaches a PR. `docs/validation-gates.md` says what each catches.");
             lines.push('- Five required CI checks on `main` are the deployment gate.');
 
             const body = lines.join('\n');
@@ -244,10 +314,10 @@ jobs:
 
             // Idempotent: skip if a PR is already open for this branch.
             const existing = await github.rest.pulls.list({
-              owner: 'vyarno-bg',
-              repo: 'vyarno',
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               state: 'open',
-              head: `vyarno-bg:${head}`,
+              head: `${context.repo.owner}:${head}`,
             });
             if (existing.data.length > 0) {
               core.info(`PR already open for ${head} (#${existing.data[0].number}) — skipping`);
@@ -257,8 +327,8 @@ jobs:
             }
 
             const { data: pr } = await github.rest.pulls.create({
-              owner: 'vyarno-bg',
-              repo: 'vyarno',
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               title: `data refresh: ${source} as of ${as_of}`,
               head,
               base,
@@ -267,3 +337,44 @@ jobs:
             core.info(`Opened PR #${pr.number}: ${pr.html_url}`);
             core.setOutput('pr_url', pr.html_url);
             core.setOutput('pr_number', pr.number);
+        env:
+          SOURCE: ${{ inputs.source }}
+          AS_OF: ${{ steps.meta.outputs.as_of }}
+          STALE_LIST: ${{ steps.meta.outputs.stale_list }}
+          CHANGED: ${{ steps.diff.outputs.changed }}
+
+      - name: Dispatch CI
+        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        # **Nothing this job pushes triggers a workflow.** Events raised by the
+        # automatic token do not create workflow runs — that is the loop-breaker
+        # GitHub applies to every token-driven push and PR, and it is not
+        # configurable. So `ci.yml`'s `push` and `pull_request` triggers both
+        # stay silent here, no check run is ever created against this SHA, and
+        # with five checks required by name the PR is not merely unchecked: it
+        # is unmergeable, waiting on statuses that have no event to produce
+        # them. The same trap the `pull_request` trigger exists to answer for a
+        # fork, arriving from the other side.
+        #
+        # `workflow_dispatch` is the documented exception to that rule, which
+        # is why it is the one used here. The run it starts reports its checks
+        # against the branch head, which is the commit the PR is open on, so
+        # the required checks resolve against the same SHA branch protection is
+        # reading. `ci.yml` already carries the trigger; nothing there changes.
+        #
+        # A failure to dispatch does not fail the refresh — the payload is
+        # committed and pushed by this point, and a PR that needs its checks
+        # re-run by hand is a smaller problem than a red run over a good
+        # refresh. It is logged as a notice so the reason is in the log.
+        continue-on-error: true
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci.yml',
+              ref: `data/${process.env.SOURCE}`,
+            });
+            core.info(`Dispatched CI on data/${process.env.SOURCE}`);
+        env:
+          SOURCE: ${{ inputs.source }}

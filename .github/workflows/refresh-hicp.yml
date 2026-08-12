@@ -6,15 +6,19 @@
 # release window. A missed run costs a month — the headline figure
 # a month stale on a page whose entire promise is that it is not.
 #
-# This payload writes both hicp_headline.json and hicp_categories.json,
-# which is every number in the calculator.
+# This source writes both hicp_headline.json and hicp_categories.json —
+# every inflation figure on the page, including the whole personal basket.
 
 name: refresh-hicp
 
 on:
   schedule:
-    # GHA cron schedules are UTC, no DST. 04:00 UTC ≈ 06:00 EEST / 07:00 EET.
-    # GHA schedules can run 5–30 minutes late under load; acceptable here.
+    # Cron schedules here are UTC and do not observe DST, so the local hour
+    # moves twice a year: 04:00 UTC is 06:00 EET in winter and 07:00 EEST in
+    # summer. Both sit after Eurostat's 11:00 CET release window for the
+    # previous day's publish, which is what the hour is chosen against —
+    # nothing here depends on it being a particular local time.
+    # Runs can start 5–30 minutes late under load; acceptable here.
     - cron: "0 4 18 * *"
   workflow_dispatch:
 
@@ -27,6 +31,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     uses: ./.github/workflows/refresh.yml
     with:
       source: hicp
