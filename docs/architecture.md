@@ -18,7 +18,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │              sources/*.py → transform.py → validate.py → publish.py   │
 │                              │             (driven by cli.py)         │
 │                              ▼                                        │
-│                    data/published/*.json   ← 11 payloads, committed   │
+│                    data/published/*.json   ← 12 payloads, committed   │
 └──────────────────────────────┼────────────────────────────────────────┘
                                │  dev middleware, or copied into dist/
                                ▼
@@ -50,7 +50,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │   │   ├── payroll.py    # dated BG payroll-law table (no network)
 │   │   └── sources/      # eurostat · bnb · ecb · imot · nsi
 │   └── tests/       `pytest -q` offline; `-m live` hits real upstreams
-├── data/published/  11 payloads, committed — these ARE served to the site
+├── data/published/  12 payloads, committed — these ARE served to the site
 └── site/            Vite 8 + Svelte 5, five build entries · AGENTS.md
     ├── index.html · how/index.html · market/index.html ·
     │                legal/index.html · support/index.html · 404.html
@@ -135,7 +135,7 @@ those sit the suites named after an output rather than a module
 
 ## What `data/published/` carries
 
-Eleven envelopes, all committed.
+Twelve envelopes, all committed.
 
 **Five fields are on every one of them**: `schema_version`, `as_of`, `source`,
 `source_url`, `notes`. That is the provenance floor — where the figure came
@@ -241,7 +241,7 @@ it to the one thing it needs, and assume anything ever committed is permanent.
 
 `.github/workflows/ci.yml` runs on every push to every branch, on every pull
 request, and on demand: the pipeline suite (`pytest -q`, offline), the SPA
-suite (`npm run verify:math`), the production build, and a check that all eleven
+suite (`npm run verify:math`), the production build, and a check that all twelve
 published payloads are committed and parse.
 
 The two triggers cover different things. A push gates a branch before the merge

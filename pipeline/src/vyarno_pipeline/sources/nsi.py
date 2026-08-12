@@ -112,6 +112,7 @@ terminated by the first blank label, so no read can cross into the next block.
 
 from __future__ import annotations
 
+import io
 import re
 from typing import Any
 
@@ -693,4 +694,218 @@ def fetch_sector_salary_eu(
         # НСИ publish no explicit as_of on the workbook; the CLI stamps the
         # payload from the pipeline's own date.today().
         "fetched_at": None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Housing — the price and sales workbooks
+# ---------------------------------------------------------------------------
+
+# These live in the SAME directory as `Labour_1.1.2.x` above, so the fetch plan,
+# the TLS path and the licence read are already understood. What differs is that
+# the filenames are **discovered rather than hardcoded**: НСИ's portal lists each
+# workbook from a sub-page of a topic index, and a name guessed from a sibling's
+# is how this connector would 404 on a rename that a walk survives. The first
+# name guessed while researching this — `HPI_1.3.xls` — 404s where `HPI_1.3.xlsx`
+# serves.
+NSI_PORTAL = "https://www.nsi.bg"
+NSI_TIMESERIES_DIR = "https://www.nsi.bg/sites/default/files/files/data/timeseries"
+
+# The workbook each figure comes from, and the topic index that lists it.
+#
+# `topic` is the `/statistical-data/{id}` page; its sub-pages carry the actual
+# links. Held here rather than discovered from the site root because the root
+# lists every subject НСИ publish and walking it would be a crawl rather than a
+# fetch — the topic id is the smallest thing that has to be written down, and a
+# topic that stops listing its own workbook raises.
+HOUSING_WORKBOOKS: dict[str, dict[str, str]] = {
+    # National house price index, change on the same quarter a year earlier.
+    # **The cross-publisher reconciliation reads this**: it is the same
+    # statistic as Eurostat's `prc_hpi_q` RCH_A, reaching us by a second route.
+    "HPI_1.3": {"topic": "99", "role": "national price index, y/y"},
+    # The six cities over 120,000 people, price index y/y.
+    "HPI_2.6": {"topic": "98", "role": "six-city price index, y/y"},
+    # The same six cities, number of sales, y/y.
+    "HSI_2.4.5": {"topic": "93", "role": "six-city sales count, y/y"},
+}
+
+# The three rows every one of these workbooks publishes per geography, keyed by
+# НСИ's own code. `H.` is the price index and `N.` the sales count; the suffix
+# is the same split in both.
+HOUSING_ROW_CODES: dict[str, str] = {
+    "H.1.": "total",
+    "H.1.1.": "new",
+    "H.1.2.": "existing",
+    "N.1.": "total",
+    "N.1.1.": "new",
+    "N.1.2.": "existing",
+}
+
+# The six cities, in НСИ's own spelling, and the slug each maps to.
+#
+# A dated hand-authored table, like `regions.py`'s: НСИ name them in Bulgarian
+# in the workbook and nothing in the file carries a code the site could join on.
+# Read from `HPI_2.4`'s own footnote 2026-08-12: «По данни на НСИ към 31.12.2022
+# г. шестте града с население над 120 000 жители са: София, Пловдив, Варна,
+# Бургас, Русе и Стара Загора».
+#
+# **The city label carries a footnote digit** — «Варна 4» is Варна with НСИ's
+# marker glued on — so the label is matched after the marker is stripped rather
+# than compared whole. One of the six carries it today and any of them may
+# tomorrow.
+HOUSING_CITIES: dict[str, str] = {
+    "София": "sofiya",
+    "Пловдив": "plovdiv",
+    "Варна": "varna",
+    "Бургас": "burgas",
+    "Русе": "ruse",
+    "Стара Загора": "stara-zagora",
+}
+
+# A year header with НСИ's footnote markers glued on. `20263,5` is 2026 wearing
+# two of them, and `2026 3` is the same year with a space instead. A
+# `str(y).isdigit()` parse drops the newest quarter silently and reads the one
+# before it as the latest — which is a plausible number for a wrong period, the
+# worst shape a bug takes here.
+_HOUSING_YEAR_RE = re.compile(r"^\s*(\d{4})")
+
+# The quarter numerals carry footnotes too — `І6`, `І 7` — and the labour
+# workbooks' `_roman_quarter` matches the numeral exactly, so it returns None
+# for those and the column is skipped without a word. This is the same map and
+# the same Cyrillic translation with the marker stripped first.
+_HOUSING_QUARTER_RE = re.compile(r"^([IVХ]+)", re.IGNORECASE)
+
+
+def _housing_year(cell: object) -> int | None:
+    """The year a header cell names, footnote markers and all."""
+    if cell is None:
+        return None
+    m = _HOUSING_YEAR_RE.match(str(cell))
+    return int(m.group(1)) if m else None
+
+
+def _housing_quarter(cell: object) -> int | None:
+    """The quarter a header cell names, footnote markers and all."""
+    if cell is None:
+        return None
+    text = str(cell).strip().translate(_CYRILLIC_TO_LATIN)
+    m = _HOUSING_QUARTER_RE.match(text)
+    return _ROMAN_TO_QUARTER.get(m.group(1).upper()) if m else None
+
+
+def _strip_footnote(label: object) -> str:
+    """A geography label without НСИ's trailing footnote digit."""
+    return re.sub(r"\s*\d+\s*$", "", str(label or "")).strip()
+
+
+def discover_housing_workbook(stem: str, topic: str, timeout: float = 30.0) -> str:
+    """The URL НСИ currently publish `{stem}.xlsx` at, read off their own pages.
+
+    Walks the topic index to its sub-pages and takes the `timeseries/` link that
+    names this workbook. **Raises rather than falling back to a constructed
+    URL**: a guessed name that happens to 404 is a network error somebody
+    investigates, and a guessed name that happens to resolve to a DIFFERENT
+    vintage is a wrong number nobody sees.
+    """
+    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+        index = client.get(f"{NSI_PORTAL}/statistical-data/{topic}")
+        index.raise_for_status()
+        subs = sorted(set(re.findall(rf"statistical-data/{topic}/(\d+)", index.text)))
+        if not subs:
+            raise ValueError(
+                f"НСИ topic {topic} lists no sub-pages, so no workbook can be "
+                f"discovered from it. The portal's shape has changed."
+            )
+        wanted = re.compile(rf"(timeseries/{re.escape(stem)}\.xlsx)")
+        for sub in subs:
+            page = client.get(f"{NSI_PORTAL}/statistical-data/{topic}/{sub}")
+            page.raise_for_status()
+            hit = wanted.search(page.text)
+            if hit:
+                return f"{NSI_TIMESERIES_DIR}/{stem}.xlsx"
+    raise ValueError(
+        f"НСИ topic {topic} no longer lists {stem}.xlsx on any of its "
+        f"{len(subs)} sub-pages. It has been renamed, moved or withdrawn — "
+        f"find where it went rather than hardcoding a URL past this."
+    )
+
+
+def _parse_housing_sheet(ws, has_geography: bool) -> dict[str, dict[str, dict[str, float]]]:
+    """One housing workbook sheet → `{geography: {code: {"YYYY-Qn": value}}}`.
+
+    `has_geography` is False for the national files, whose rows start at the
+    НСИ code with no city column in front of them. The national result is keyed
+    under one empty geography so both shapes read the same downstream.
+
+    A city label appears once per three-row block and the rows under it inherit
+    it, which is how the workbook is laid out and why the label is carried
+    forward rather than read per row.
+    """
+    header_year_row, header_quarter_row = 4, 5
+    columns: dict[int, str] = {}
+    year: int | None = None
+    for col in range(1, ws.max_column + 1):
+        year = _housing_year(ws.cell(header_year_row, col).value) or year
+        quarter = _housing_quarter(ws.cell(header_quarter_row, col).value)
+        if year and quarter:
+            columns[col] = f"{year}-Q{quarter}"
+    if not columns:
+        raise ValueError(
+            "housing workbook: no quarter columns found. The year header carries "
+            "НСИ's footnote markers glued to the numeral and the quarter header "
+            "carries them too, so an exact-match parse finds nothing here."
+        )
+
+    out: dict[str, dict[str, dict[str, float]]] = {}
+    geography = ""
+    code_col = 2 if has_geography else 1
+    for row in range(6, ws.max_row + 1):
+        if has_geography:
+            label = ws.cell(row, 1).value
+            if label:
+                geography = _strip_footnote(label)
+        code = str(ws.cell(row, code_col).value or "").strip()
+        field = HOUSING_ROW_CODES.get(code)
+        if field is None:
+            continue
+        series: dict[str, float] = {}
+        for col, period in columns.items():
+            value = ws.cell(row, col).value
+            if isinstance(value, (int, float)):
+                # НСИ publish these to one decimal and the workbook stores the
+                # float their own subtraction produced — `-19.200000000000003`
+                # for a cell printed as `-19.2`. Rounding to the published
+                # precision is reading the cell as they publish it; carrying the
+                # artefact through would put a figure on the page that appears
+                # on no НСИ table.
+                series[period] = round(float(value), 1)
+        if series:
+            out.setdefault(geography, {})[field] = series
+    if not out:
+        raise ValueError(
+            "housing workbook: no rows matched НСИ's own row codes "
+            f"({', '.join(sorted(HOUSING_ROW_CODES))}). The sheet's layout has moved."
+        )
+    return out
+
+
+def fetch_housing_workbook(stem: str, timeout: float = 60.0) -> dict[str, Any]:
+    """One НСИ housing workbook, discovered, downloaded and parsed.
+
+    Returns `{"stem", "url", "role", "sheet", "data"}` where `data` is
+    `{geography: {total|new|existing: {"YYYY-Qn": value}}}`.
+    """
+    spec = HOUSING_WORKBOOKS[stem]
+    url = discover_housing_workbook(stem, spec["topic"], timeout=timeout)
+    wb = openpyxl.load_workbook(io.BytesIO(_get_xlsx(url, timeout=timeout)), data_only=True)
+    # Matched by parsing the name, never by index: these workbooks carry one
+    # sheet today and the family they belong to carries dozens.
+    sheet = wb.sheetnames[0]
+    has_geography = stem != "HPI_1.3"
+    return {
+        "stem": stem,
+        "url": url,
+        "role": spec["role"],
+        "sheet": sheet,
+        "data": _parse_housing_sheet(wb[sheet], has_geography),
     }

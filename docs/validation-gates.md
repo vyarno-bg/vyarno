@@ -268,10 +268,38 @@ argument rather than a footnote. It is the `api_url`s rather than the databrowse
 pages because Eurostat answer a rate-limited or malformed query with 200 OK and
 an error payload — the status code proves nothing.
 
-**What is not gated here, and is next.** The reconciliation between НСИ's
-`HPI_1.3` and Eurostat's `RCH_A` — the same statistic reaching us by two routes,
-published at one decimal each — arrives with the НСИ housing workbooks. Measured
-2026-08-12, they agree exactly: 14.8 / 12.5 / 16.3 for total, new and existing.
+## НСИ housing gates (`--source nsi-housing`)
+
+**`validate_nsi_housing` — every published figure is a cell НСИ published.**
+Gate 8's shape for the same licence reason: §2.1.1 forbids distributing
+производни произведения, so a headline this pipeline calculated rather than
+selected is a breach that reads as a correct number. The only way to tell from
+the payload alone is that the headline and the series entry at its own reference
+period are the same cell, and that is checked for the national block and for
+every city in both city blocks. An identity, not a tolerance — there is no
+arithmetic between them that could legitimately round.
+
+**`validate_hpi_across_publishers` — the strongest gate in the pipeline.** НСИ
+compile the house price index and Eurostat disseminate it, so `nsi_housing.json`
+and `house_market.json` carry **the same statistic by two routes**. They are not
+merely close; they are one number printed twice. A disagreement means we read
+the wrong quarter, the wrong column or the wrong purchase type on one side, and
+each of those produces a figure that looks entirely reasonable on the page —
+one check catches all three. Verified by mutation: swapping the two purchase
+types and shifting the quarter by one each trip it.
+
+It compares at the newest quarter **both** carry rather than at each payload's
+own latest, because Eurostat disseminate a few days behind НСИ publishing and a
+refresh landing between them would otherwise fail on a quarter one side simply
+does not have — a false alarm teaches whoever sees it to distrust the gate. **No
+overlap at all is still a failure**: two non-overlapping windows on the same
+series mean one of them is not what it is taken for.
+
+Measured 2026-08-12 they agree exactly: 14.8 / 12.5 / 16.3 for total, new and
+existing. **If it fails, the bug is ours. Do not soften it into a band.**
+
+The gate is skipped, loudly, when `house_market.json` is not in the output
+directory — a checkout that has never run `--source house-market`.
 
 ## Mortgage gates (`--source mortgage`)
 
@@ -323,6 +351,7 @@ detail.
 | `salary-dist` | P1 floored at the statutory minimum wage | — |
 | `payroll` | no network; parity-checked against the SPA sentinel. `payroll.py` raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | `test_payroll.py` reads `mirror.js` |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
+| `nsi-housing` | every published figure is a cell НСИ published, and the national price index change reconciles with Eurostat's at the newest shared quarter | The reconciliation reads `house_market.json` off disk and says so when it is absent rather than passing quietly |
 | `house-market` | the two blocks above: the derivation reproduces, the purchase codes are not swapped, the average is inside €10k–€500k, and the tenure and census identities hold. Gate 6 over the seven published `api_url`s unless `--skip-link-check` | One arm, two payloads — the stems both start `house_market` because `refresh.yml` matches them against the `--source` name, and a payload no arm owns publishes nothing while the run reports success |
 
 ## A good HICP run

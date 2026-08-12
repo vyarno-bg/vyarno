@@ -740,6 +740,27 @@ depends on the payroll table of the year that converted it, which would put a
 third publisher's law inside a two-publisher ratio. It reads НСИ's
 all-activities row, never a sector.
 
+### The six cities: change against change
+
+Nothing is computed. Both columns are НСИ's own published percentages — the
+change in transaction PRICES and the change in the NUMBER of sales, each against
+the same quarter a year earlier — selected from two of their workbooks and
+joined on the city code.
+
+**There is no level, and none can be built.** Every НСИ city series is an index
+or a percentage, and their own лв./кв.м survey ran to 2014-Q2 and was
+discontinued, so no publisher gives a transaction price per square metre for any
+Bulgarian city. The имот.bg €/m² in the calculator are ASKING prices from
+listings — a different measurement — and putting the two in one column would
+invent a comparison neither publisher supports. `/market/` says so out loud,
+which is P11: uncomputed, not concealed.
+
+**The national change is on the page twice, from two publishers**, and that is
+deliberate. НСИ compile the figure and Eurostat disseminate it; they agree to
+the decimal, the pipeline gates them against each other, and a reader who checks
+one against the other finds that out — worth more than either figure alone on a
+page whose argument is that its numbers are checkable.
+
 ## What we deliberately do not do
 
 | Idea | Why not |

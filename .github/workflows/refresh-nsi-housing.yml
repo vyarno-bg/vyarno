@@ -1,0 +1,47 @@
+# Quarterly НСИ housing refresh (ИЦЖ — the national house price index change,
+# the same figure for the six cities over 120,000 people, and the change in the
+# number of sales for those cities).
+#
+# The other half of `/market/`'s second section, and the only source of a
+# per-city figure on it. Every value is a cell НСИ published: their licence
+# forbids distributing производни и сборни произведения, so this payload carries
+# no gap, no ratio and no level — and no level exists to carry anyway, since
+# their own лв./кв.м survey ran to 2014-Q2 and was discontinued.
+#
+# **This arm also runs the cross-publisher reconciliation.** НСИ compile the
+# house price index and Eurostat disseminate it, so `nsi_housing.json` and
+# `house_market.json` carry the same statistic by two routes and must agree to
+# the decimal. That gate reads Eurostat's payload off disk, which is why the
+# order below is worth knowing: it compares at the newest quarter BOTH carry, so
+# a run landing between the two publishers' releases reconciles on the previous
+# quarter rather than failing on one nobody has yet.
+#
+# THE DAY
+#
+# НСИ publish the quarter about three months after it closes and roughly a week
+# ahead of Eurostat's dissemination of the same figures — 2026-Q1 was on their
+# site before Eurostat's 02.07 release. Their calendar puts the release on the
+# 23rd of the month after the quarter, so this fires on the 25th: two days of
+# slack against a calendar we do not control, on a series that moves four times
+# a year.
+
+name: refresh-nsi-housing
+
+on:
+  schedule:
+    # Quarterly, 25th, 05:30 UTC. 3,6,9,12 is March, June, September, December —
+    # the month НСИ publish the quarter that closed three months earlier. Half
+    # an hour off the hour so no two upstream fetches open on the same minute,
+    # the reason refresh-sector-salary sits behind refresh-region-salary.
+    - cron: "30 5 25 3,6,9,12 *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: nsi-housing

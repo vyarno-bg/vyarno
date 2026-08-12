@@ -2141,6 +2141,19 @@ export const COPY = {
     en: "spend over 40% of income on housing",
   },
   mktKRentInflation: { bg: "наеми, спрямо година по-рано", en: "rents, against a year earlier" },
+  // The six-city table's column heads and its accessible name. Short, because
+  // the columns are narrow and the sentence above the table already says these
+  // are changes rather than levels.
+  mktColCity: { bg: "Град", en: "City" },
+  mktColPrice: { bg: "Цени на сделките", en: "Transaction prices" },
+  mktColDeals: { bg: "Брой сделки", en: "Number of sales" },
+  mktTblCities: {
+    bg: "Цени и брой сделки по градове",
+    en: "Prices and number of sales by city",
+  },
+  // НСИ's name, for a caption that is otherwise Bulgarian. A Latin "NSI" inside
+  // Bulgarian caption text is the defect `srcEurostat` exists to prevent.
+  srcNsi: { bg: "НСИ", en: "NSI" },
   // The two publishers the strip never names, because no card on it cites
   // them: имот.bg is Latin in both languages, and ДВ has an English name worth
   // spelling out for a reader who has never met it.

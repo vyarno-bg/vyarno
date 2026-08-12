@@ -44,7 +44,7 @@ hreflang alternate, so quote whichever you read and cite its own URL.
 
 ## The published figures
 
-Eleven JSON payloads, refreshed by a pipeline and committed to the repository.
+Twelve JSON payloads, refreshed by a pipeline and committed to the repository.
 Each carries `as_of`, the reference period, and `source_url` to the publisher's
 own table.
 
@@ -77,6 +77,17 @@ own table.
   unoccupied, the price-to-income ratio against its own long-run average, and
   the housing-cost overburden rate. Every figure a published cell; the
   unoccupied share is derived in the browser from the two counts here
+- nsi_housing — НСИ's own housing statistics: the national house price index
+  change on the same quarter a year earlier, the same figure for the six cities
+  over 120,000 people, and the change in the NUMBER of sales for those cities.
+  Every value is a cell НСИ published — their licence forbids distributing
+  производни и сборни произведения, so there is no gap, ratio, rank or level in
+  this file. No level exists to carry: every НСИ city series is an index or a
+  percentage and their лв./кв.м survey ran to 2014-Q2 and was discontinued, so
+  **no transaction price per square metre is published for any Bulgarian city by
+  anyone**. The national change here is the same statistic Eurostat disseminate
+  in house_market.json, by a second route, and the pipeline gates them against
+  each other
 - mortgage — home-loan rates and the БНБ borrowing caps
 - unemployment — the monthly seasonally adjusted rate
 

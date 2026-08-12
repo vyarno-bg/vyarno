@@ -18,6 +18,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import json
 import sys
 import time
 from collections.abc import Callable
@@ -45,6 +46,7 @@ from vyarno_pipeline.publish import (
     HOUSE_MARKET_FILE,
     HOUSE_MARKET_STRUCTURE_FILE,
     MORTGAGE_FILE,
+    NSI_HOUSING_FILE,
     PAYROLL_FILE,
     REGION_SALARY_FILE,
     SALARY_DIST_FILE,
@@ -89,8 +91,10 @@ from vyarno_pipeline.sources.imot import (
     fetch_city_prices_for_year,
 )
 from vyarno_pipeline.sources.nsi import (
+    HOUSING_WORKBOOKS,
     SECTOR_SOURCE_URL_BG,
     SECTOR_SOURCE_URL_EN,
+    fetch_housing_workbook,
     fetch_region_salaries_eu,
     fetch_sector_salary_eu,
 )
@@ -105,6 +109,7 @@ from vyarno_pipeline.transform import (
     MissingSeriesError,
     build_house_market_payload,
     build_house_market_structure_payload,
+    build_nsi_housing_payload,
     build_region_salary_payload,
     build_sector_salary_payload,
     build_ses_shape_ladder,
@@ -124,8 +129,10 @@ from vyarno_pipeline.validate import (
     validate_headline_flash,
     validate_house_market,
     validate_house_market_structure,
+    validate_hpi_across_publishers,
     validate_link_status,
     validate_meta_labels_cover,
+    validate_nsi_housing,
     validate_reconciliation,
     validate_region_salary,
     validate_sector_salary,
@@ -200,6 +207,7 @@ def _month_before(period: str) -> str:
             "salary-dist",
             "payroll",
             "house-market",
+            "nsi-housing",
             "all",
         ]
     ),
@@ -226,7 +234,12 @@ def _month_before(period: str) -> str:
         "structure cubes (tenure, the census dwelling stock, price-to-income, "
         "housing-cost overburden) and writes BOTH house_market.json and "
         "house_market_structure.json — one arm, two files, because "
-        "refresh.yml matches payload stems against the --source name."
+        "refresh.yml matches payload stems against the --source name. "
+        "'nsi-housing' reads НСИ's own housing workbooks — the national house "
+        "price index change and the same figure for the six cities over 120,000 "
+        "people, beside the change in the number of sales for those cities. "
+        "Every figure is a cell they published; the filenames are discovered "
+        "from their portal rather than hardcoded."
     ),
 )
 @click.option(
@@ -275,6 +288,8 @@ def refresh(
         _refresh_payroll(out, as_of)
     elif source == "house-market":
         _refresh_house_market(out, geo, skip_link_check, as_of)
+    elif source == "nsi-housing":
+        _refresh_nsi_housing(out, as_of)
     elif source == "all":
         # **`all` is eight publishes, not one transaction.** Each arm writes its
         # own file the moment it has passed its own gates, so an arm that fails
@@ -305,6 +320,7 @@ def refresh(
             ("salary-dist", lambda: _refresh_salary_dist(out, as_of)),
             ("payroll", lambda: _refresh_payroll(out, as_of)),
             ("house-market", lambda: _refresh_house_market(out, geo, skip_link_check, as_of)),
+            ("nsi-housing", lambda: _refresh_nsi_housing(out, as_of)),
         ]
         for name, arm in arms:
             try:
@@ -1252,4 +1268,67 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
         f"OK: wrote {HOUSE_MARKET_STRUCTURE_FILE} "
         f"({structure_payload['tenure']['owner_pct']}% own, "
         f"{structure_payload['tenure']['owner_with_mortgage_pct']}% of them with a mortgage)"
+    )
+
+
+def _refresh_nsi_housing(out: Path, as_of: date) -> None:
+    """Publish `nsi_housing.json` — НСИ's own housing price and sales changes.
+
+    A second housing payload beside Eurostat's, and separate for a licence
+    reason rather than a tidiness one: §2.1.1 forbids distributing производни и
+    сборни произведения, so a file mixing НСИ's cells with Eurostat's would be a
+    сборно произведение however carefully it were captioned. They meet in the
+    reader's browser and never on disk.
+
+    **The cross-publisher reconciliation runs here**, against the Eurostat
+    payload already on disk. It is the strongest gate in the pipeline: the two
+    are the same statistic reaching us by two routes, so a disagreement is a
+    wrong quarter, a wrong column or a wrong purchase type on our side. It is
+    skipped only when Eurostat's payload is absent — a checkout that has never
+    run `--source house-market` — and says so rather than passing quietly.
+    """
+    try:
+        click.echo("→ discovering НСИ's housing workbooks on their portal...")
+        workbooks = {stem: fetch_housing_workbook(stem) for stem in HOUSING_WORKBOOKS}
+        for stem, wb in workbooks.items():
+            geos = len(wb["data"])
+            click.echo(
+                f"  {stem}.xlsx — {wb['role']}, {geos} geograph{'y' if geos == 1 else 'ies'}"
+            )
+    except httpx.HTTPError as e:
+        click.echo(f"ERROR: network failure: {e}", err=True)
+        sys.exit(4)
+    except ValueError as e:
+        click.echo(f"ERROR: НСИ's portal no longer lists a workbook: {e}", err=True)
+        sys.exit(2)
+
+    try:
+        payload = build_nsi_housing_payload(workbooks, as_of)
+    except ValueError as e:
+        click.echo(f"ERROR: transform failed: {e}", err=True)
+        sys.exit(2)
+
+    try:
+        validate_nsi_housing(payload)
+        click.echo("  gate: every published figure is a cell НСИ published")
+        estat_path = out / HOUSE_MARKET_FILE
+        if estat_path.exists():
+            validate_hpi_across_publishers(payload, json.loads(estat_path.read_text("utf-8")))
+            click.echo("  gate: НСИ's house price index change reconciles with Eurostat's")
+        else:
+            click.echo(
+                f"  gate SKIPPED: {HOUSE_MARKET_FILE} is not in {out}, so the "
+                f"cross-publisher reconciliation had nothing to check against. "
+                f"Run --source house-market first.",
+                err=True,
+            )
+    except ValidationError as e:
+        click.echo(f"ERROR: validation failed: {e}", err=True)
+        sys.exit(3)
+
+    write_payload(payload, out, NSI_HOUSING_FILE)
+    national = payload["national_price_index_yoy"]
+    click.echo(
+        f"OK: wrote {NSI_HOUSING_FILE} (national {national['value_pct']['total']}% y/y at "
+        f"{payload['ref_period']}, {len(payload['city_price_index_yoy']['cities'])} cities)"
     )

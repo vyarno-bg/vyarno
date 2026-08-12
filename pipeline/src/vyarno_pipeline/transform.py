@@ -48,6 +48,7 @@ from vyarno_pipeline.models import (
     GroupObservation,
     TimeSeriesObservation,
 )
+from vyarno_pipeline.regions import REGIONS
 from vyarno_pipeline.sources.eurostat import (
     CENSUS_DWELLINGS_DATASET,
     CP_DIVISIONS,
@@ -66,6 +67,7 @@ from vyarno_pipeline.sources.eurostat import (
     CubeFetch,
     HicpCube,
 )
+from vyarno_pipeline.sources.nsi import HOUSING_CITIES
 
 # Friendly names for Bulgaria's HICP basket, ECOICOP ver.2.
 #   code → (bg_name, en_name)
@@ -1114,5 +1116,120 @@ def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of:
             "census block names its own year and no newer count exists; "
             "'unoccupied' there means unoccupied on census night, which covers "
             "second homes and holiday properties alongside genuinely empty stock."
+        ),
+    }
+
+
+def build_nsi_housing_payload(workbooks: dict[str, dict], as_of: date) -> dict:
+    """Shape НСИ's housing workbooks into `nsi_housing.json`.
+
+    **Every figure here is a cell НСИ published, selected and never computed.**
+    §2.1.1 of their licence forbids distributing производни и сборни
+    произведения, so a percentage this pipeline calculated rather than read
+    would be a licence breach that looks exactly like a correct number — the
+    same reason `sector_salary.json` carries no gap, ratio or rank
+    (`docs/legal.md` §НСИ). The one arithmetic step is rounding the workbook's
+    stored float to the one decimal НСИ print, which is reading the cell as
+    published rather than deriving from it.
+
+    It is its own payload rather than more keys on `house_market.json` for the
+    same licence reason: one publisher per published artefact, so a file mixing
+    НСИ's cells with Eurostat's would be a сборно произведение however carefully
+    it were captioned. The two meet in the reader's browser, never on disk.
+
+    The city rows carry a percentage and no level, and that is the upstream
+    rather than a choice: every НСИ city series is an index or a change, and
+    their own лв./кв.м survey ended in 2014. So `/market/` compares change
+    against change and says out loud that no publisher gives a transaction price
+    per square metre for a Bulgarian city.
+    """
+    by_code = {r.code: r for r in REGIONS}
+
+    def block(stem: str, geography_keyed: bool) -> dict:
+        wb = workbooks[stem]
+        data = wb["data"]
+        out: dict[str, Any] = {
+            "dataset": f"{stem}.xlsx",
+            "source_url": wb["url"],
+            "sheet": wb["sheet"],
+            "unit": "percent_change_on_same_quarter_a_year_earlier",
+            "note": (
+                "НСИ's own published change on the same quarter of the previous "
+                "year, selected from the workbook named above and not computed "
+                "here. The workbook stores the float their subtraction produced, "
+                "so a cell printed as -19.2 is held as -19.200000000000003; the "
+                "published value is theirs at the precision they print it."
+            ),
+        }
+        if not geography_keyed:
+            series = data[""]
+            latest = max(series["total"])
+            out["ref_period"] = latest
+            out["series_by_period"] = {
+                p: {f: series[f][p] for f in ("total", "new", "existing") if p in series.get(f, {})}
+                for p in sorted(series["total"])
+            }
+            out["value_pct"] = out["series_by_period"][latest]
+            return out
+
+        cities = []
+        for bg_name, code in HOUSING_CITIES.items():
+            series = data.get(bg_name)
+            if series is None:
+                raise ValueError(
+                    f"{stem}: НСИ's workbook carries no rows for {bg_name!r}. The "
+                    f"six cities are named in the file's own footnote and a "
+                    f"missing one means the label changed or a footnote marker "
+                    f"is no longer being stripped."
+                )
+            region = by_code[code]
+            latest = max(series["total"])
+            cities.append(
+                {
+                    "code": code,
+                    "name_bg": region.city_bg,
+                    "name_en": region.city_en,
+                    "ref_period": latest,
+                    "value_pct": series["total"],
+                    "series_by_period": {p: series["total"][p] for p in sorted(series["total"])},
+                }
+            )
+        out["cities"] = cities
+        out["ref_period"] = max(c["ref_period"] for c in cities)
+        # Each city's headline is its own latest cell, so a city НСИ has not yet
+        # published for this quarter is dated by the quarter it HAS, rather than
+        # being shown under a heading naming a quarter it is missing from.
+        for city in cities:
+            city["value_pct"] = city["series_by_period"][city["ref_period"]]
+        return out
+
+    national = block("HPI_1.3", geography_keyed=False)
+    return {
+        "schema_version": "1.0",
+        "as_of": as_of.isoformat(),
+        "source": "nsi",
+        "source_url": workbooks["HPI_1.3"]["url"],
+        "notes": (
+            "НСИ's housing price and sales statistics, as published. The "
+            "national house price index change on the same quarter a year "
+            "earlier, and the same figure for the six cities over 120,000 "
+            "people, beside the change in the NUMBER of sales for those cities. "
+            "Nothing in this file is computed by us — no gap, no ratio, no rank, "
+            "and no level: every НСИ city series is an index or a percentage, "
+            "and their лв./кв.м survey ran to 2014-Q2 and was discontinued, so "
+            "no transaction price per square metre exists for any Bulgarian "
+            "city from any publisher."
+        ),
+        "payload_name": "nsi_housing",
+        "ref_period": national["ref_period"],
+        "national_price_index_yoy": national,
+        "city_price_index_yoy": block("HPI_2.6", geography_keyed=True),
+        "city_deals_yoy": block("HSI_2.4.5", geography_keyed=True),
+        "disclaimer": (
+            "Transaction prices for dwellings bought by households, and the "
+            "number of those transactions. A percentage change, never a level: "
+            "these say how much prices and volumes moved, not what anything "
+            "costs. The asking prices per square metre elsewhere on this site "
+            "are имот.bg's listings and a different measurement."
         ),
     }

@@ -1,7 +1,7 @@
 # pipeline/ — agent instructions
 
 Python 3.11 ingest. Pulls official figures from five upstreams, gates them, and
-writes the eleven JSON envelopes in `data/published/`. The root `AGENTS.md` has
+writes the twelve JSON envelopes in `data/published/`. The root `AGENTS.md` has
 the boundaries that apply everywhere; this file is the Python side.
 
 ## Commands
@@ -41,7 +41,7 @@ vyarno-pipeline refresh --source hicp --out ../data/published
 
 `--source`: `hicp`, `unemployment`, `mortgage`, `city-price`,
 `region-salary`, `sector-salary`, `salary-dist`, `payroll`, `house-market`,
-`all`. Nine arms write eleven files — `hicp` publishes the headline and the
+`all`. Ten arms write twelve files — `hicp` publishes the headline and the
 categories, and `house-market` the transaction series and the structure one. Output is
 **committed** — the diff is the review.
 

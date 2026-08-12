@@ -444,7 +444,7 @@ complete: `view.js`, `mirror.js`, `legal.js` and `support.js` are at or near
 **Python.** Everything below the CLI is 89–100%: gates, transforms, connectors,
 models. What is left is `cli.py`'s eight `_refresh_*` arms — fetch, transform,
 validate, write, print — of which two are driven end to end through `respx`
-against real trimmed cubes and six are not. Nine arms write eleven payloads —
+against real trimmed cubes and six are not. Nine arms write twelve payloads —
 `_refresh_hicp` publishes the headline and the categories — so the nine in
 `data/published/` counts files and never arms.
 
