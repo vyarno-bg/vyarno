@@ -1466,6 +1466,38 @@ export function indexTimesBase(level, baseLevel) {
 }
 
 /**
+ * Where a reading sits inside a low–high range, as a fraction of it.
+ *
+ * **This positions and it does not score, and the difference is the whole
+ * reason the function is this small.** 0 is the lowest reading a publisher has
+ * printed for that series, 1 is the highest, and what the number in between
+ * MEANS is left entirely to the reader: whether a house price index near the
+ * top of its own record is good news depends on whether they own or are buying,
+ * and nothing here may decide that for them (docs/principles.md P6). So there
+ * is no weighting, no combination across series, and no second argument that
+ * could turn into one — a caller cannot ask this to rank two indicators against
+ * each other, because it is never shown more than one.
+ *
+ * **Out of range returns null rather than clamping.** The only legitimate call
+ * passes a series' own latest reading against that same series' own extremes,
+ * where the result is in [0, 1] by construction. A value outside it therefore
+ * means two series were crossed, and a clamp would draw that at one end of the
+ * track looking exactly like a record — which is the one failure a marker on a
+ * line cannot survive.
+ *
+ * @param {number|null|undefined} value  the reading to place
+ * @param {number|null|undefined} low  the lowest the series has been
+ * @param {number|null|undefined} high  the highest it has been
+ * @returns {number|null} 0…1, or null where there is no range to place it in
+ */
+export function rangePosition(value, low, high) {
+  if (!Number.isFinite(value) || !Number.isFinite(low) || !Number.isFinite(high)) return null;
+  if (high <= low) return null;
+  const at = (value - low) / (high - low);
+  return at < 0 || at > 1 ? null : at;
+}
+
+/**
  * How far a reading sits BELOW a reference, as a positive percentage.
  *
  * **Null at or above it, and that is the guard rather than a nicety.** The

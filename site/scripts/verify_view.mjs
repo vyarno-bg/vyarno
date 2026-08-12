@@ -104,6 +104,8 @@ import {
   marketAverageDealSeries,
   marketOverburdenSeries,
   marketPriceToIncomeSeries,
+  marketRangeStrip,
+  RANGE_MIN_POINTS,
   statusLettersUsed,
 } from "../src/lib/view.js";
 import { COPY, HOME, SECTOR_HINTS } from "../src/lib/content.js";
@@ -3704,4 +3706,82 @@ test("the six city sparklines are drawn against one shared scale", () => {
   assert.ok(cities.priceScale.min <= 0 && cities.priceScale.max >= 0);
   assert.equal(cities.priceScale.min, Math.min(0, ...cities.cities.map((c) => c.priceSeries.min)));
   assert.equal(cities.priceScale.max, Math.max(0, ...cities.cities.map((c) => c.priceSeries.max)));
+});
+
+test("the range strip places every row against its own published extremes", () => {
+  // The strip at the top of `/market/` says where the newest reading of each
+  // series sits inside that series' own record. Two things make that claim
+  // true and both are here, checked against the committed payloads rather than
+  // against literals — a fixture would pass for one quarter and then report a
+  // refreshed market as a regression.
+  const market = read("house_market");
+  const structure = read("house_market_structure");
+  if (!market || !structure) return; // no refresh in this checkout
+
+  const strip = marketRangeStrip(market, structure);
+  assert.equal(strip.rows.length, 6, "the strip places six series");
+  assert.deepEqual(
+    strip.rows.map((r) => r.key),
+    ["deals", "index", "indexReal", "rate", "pti", "overburden"]
+  );
+
+  for (const row of strip.rows) {
+    // **The extremes are the series' own, and the position is the arithmetic
+    // over them.** `plotSeries` floors a chart's scale at or below zero so no
+    // axis can be cropped; measured that way each of these sits in the top
+    // fifth of its track and the strip says the same thing six times.
+    assert.ok(row.low <= row.value && row.value <= row.high, `${row.key} sits outside its range`);
+    assert.ok(near(row.at, (row.value - row.low) / (row.high - row.low), 1e-9), row.key);
+    assert.ok(row.at >= 0 && row.at <= 1, `${row.key} is placed at ${row.at}`);
+
+    // Every row carries what a caption under it has to print: the window it is
+    // a position inside, the periods of the three readings it names, and a
+    // publisher's page plus the query that returns the figure.
+    for (const field of ["from", "to", "latestPeriod", "lowPeriod", "highPeriod"]) {
+      assert.ok(row[field], `${row.key} states no ${field}`);
+    }
+    assert.match(row.sourceUrl ?? "", /^https:\/\//, `${row.key} cites no publisher page`);
+    assert.match(row.apiUrl ?? "", /^https:\/\//, `${row.key} links no query`);
+    assert.match(row.href, /^#/, `${row.key} points at ${row.href} rather than at a section`);
+  }
+
+  // The two index rows arrive as multiples of their own base, which is how the
+  // rest of the page reads them. A level of 272.63 in a column headed «сега»
+  // beside «×2,7» in the card above it is the same figure written twice, and
+  // the reader is left to work out that it is.
+  for (const key of ["index", "indexReal"]) {
+    const row = strip.rows.find((r) => r.key === key);
+    assert.ok(
+      row.value > 0.2 && row.value < 20,
+      `${key} is placed at ${row.value}, not a multiple`
+    );
+  }
+
+  // A row that cannot be placed is ABSENT rather than empty, the way the
+  // deflated-peak sentence renders nothing rather than «0,0% под него». An
+  // empty cell on a strip of positions reads as a position.
+  assert.deepEqual(marketRangeStrip(null, null).rows, []);
+  assert.deepEqual(marketRangeStrip({}, {}).rows, []);
+  // A series too short to have a record: the same points either side of the
+  // floor, and the row appears only above it.
+  const short = (n) => ({
+    price_to_income: {
+      source_url: "https://ec.europa.eu/x",
+      api_url: "https://ec.europa.eu/y",
+      series_by_period: Object.fromEntries(
+        Array.from({ length: n }, (_, i) => [String(2000 + i), 100 + i])
+      ),
+    },
+  });
+  assert.equal(marketRangeStrip(null, short(RANGE_MIN_POINTS - 1)).rows.length, 0);
+  assert.equal(marketRangeStrip(null, short(RANGE_MIN_POINTS)).rows.length, 1);
+  // …and a series that never moved has no range to place anything in.
+  assert.deepEqual(
+    marketRangeStrip(null, {
+      price_to_income: {
+        series_by_period: { 2000: 100, 2001: 100, 2002: 100, 2003: 100, 2004: 100 },
+      },
+    }).rows,
+    []
+  );
 });

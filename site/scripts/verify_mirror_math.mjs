@@ -63,6 +63,7 @@ import {
   unoccupiedSharePct,
   dealInYearsOfPay,
   indexTimesBase,
+  rangePosition,
   shortfallPct,
 } from "../src/lib/mirror.js";
 
@@ -1295,6 +1296,50 @@ test("indexTimesBase divides by the base it is given, never by a literal 100", (
   ]) {
     assert.equal(indexTimesBase(level, base), null, `indexTimesBase(${level}, ${base})`);
   }
+});
+
+test("rangePosition places a reading against the extremes it is given, and refuses the rest", () => {
+  // The whole arithmetic behind the strip at the top of `/market/`, and it is
+  // this small on purpose: it places ONE reading inside ONE series' own range
+  // and has no second series to weigh it against, so there is nothing here for
+  // a later edit to turn into a score.
+  assert.equal(rangePosition(15, 10, 20), 0.5);
+  // Both ends, exactly. A reading AT its series' record is the commonest case
+  // on this page — a nominal price index is at its own maximum every quarter it
+  // rises — and 1 is what the strip draws at the right end of the track.
+  assert.equal(rangePosition(20, 10, 20), 1);
+  assert.equal(rangePosition(10, 10, 20), 0);
+  // A signed series is placed the same way. Eurostat's annual rate ran to
+  // −26.8%, so the low end of that track is a fall and the arithmetic may not
+  // assume the range starts at zero.
+  assert.ok(near(rangePosition(14.8, -26.8, 34.6), (14.8 + 26.8) / (34.6 + 26.8), 1e-12));
+
+  // **Zero is not a floor here, and the difference is the whole strip.**
+  // `plotSeries` clamps a chart's minimum at or below zero so no axis can be
+  // cropped; measured that way every one of these series sits in the top fifth
+  // of its track and six rows say the same thing. What is asked for is the
+  // position inside the PUBLISHED range.
+  assert.ok(rangePosition(15, 10, 20) < rangePosition(15, 0, 20));
+
+  // Nothing to place a reading in: a flat series, an inverted pair, a payload
+  // that did not arrive. Null rather than a number, because the strip renders
+  // no row at all for one and would draw a marker for the other.
+  for (const [value, low, high] of [
+    [15, 20, 20],
+    [15, 20, 10],
+    [null, 10, 20],
+    [15, null, 20],
+    [15, 10, null],
+    [NaN, 10, 20],
+  ]) {
+    assert.equal(rangePosition(value, low, high), null, `rangePosition(${value}, ${low}, ${high})`);
+  }
+  // Out of the range rather than clamped to it. The only legitimate caller
+  // passes a series' own latest against that same series' own extremes, so a
+  // value outside them means two series were crossed — and a clamp would draw
+  // that at one end of the track looking exactly like a record.
+  assert.equal(rangePosition(25, 10, 20), null);
+  assert.equal(rangePosition(5, 10, 20), null);
 });
 
 test("shortfallPct says nothing at all about a reading that is not below", () => {

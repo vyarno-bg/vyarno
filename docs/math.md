@@ -835,6 +835,44 @@ pointer and leaves out touch, the keyboard and every screen reader. A `<details>
 is a disclosure and not an input, so the rule that this page takes nothing from
 the reader is untouched.
 
+### Where today sits inside a series' own record
+
+```
+position = (latest − trough) / (peak − trough)      0 = its lowest, 1 = its highest
+```
+
+`mirror.js#rangePosition`, one row per published series in the strip under the
+answer cards. **It positions and it does not score.** There is no weighting, no
+total across the rows and no second series in the signature to weigh one against
+— combining prices, volume, rates and cost burden into a single "market health"
+figure would decide on the reader's behalf which of them is the bad news, using
+credibility that belongs to Eurostat, and would produce the one number on this
+site nobody could check against anything. Whose fall counts as good news depends
+on whether a reader owns or is buying, and P6 is that the page does not answer
+that.
+
+**The extremes are the SERIES' own, never the drawn scale's.** `plotSeries`
+floors a chart's minimum at or below zero, which is right for an axis and wrong
+here: placed against zero, all six of these sit in the top fifth of their range
+and the strip says the same thing six times. `peak` and `trough` are the highest
+and lowest readings the publisher has actually printed.
+
+Out of range returns null rather than clamping, because the only legitimate call
+places a series' own latest against that same series' own extremes — a value
+outside them means two series were crossed, and a clamp would draw that at one
+end of the track looking exactly like a record. A series shorter than
+`view.js#RANGE_MIN_POINTS`, or one that never moved, produces no row at all: an
+empty cell on a strip of positions reads as a position.
+
+A row whose series only ever rises sits at its right end by construction, which
+the page says out loud under the strip — it is a property of that series and not
+a reading of this quarter, and the two price rows are drawn separately so the
+nominal one at its record and the deflated one below its own are visibly two
+different facts.
+
+`verify_render_market.mjs` measures the drawn dot against the published series
+rather than reading the attribute, so a CSS rule that offsets the box fails it.
+
 ### The unoccupied share of the dwelling stock
 
 ```
@@ -1004,6 +1042,7 @@ basket.
 | the earnings ladder ranks people, not households | `view.js#earnerRanks` returns one row per earner; there is no total to pass it |
 | the wage comparator measures a wage against a wage | `view.js#regionGap` compares earner by earner |
 | both wage comparators round and dead-band alike | `mirror.js#wageGap` is the only place either computes a distance; `verify_wiring.mjs` asserts `view.js` computes none |
+| the market strip positions and never scores | `mirror.js#rangePosition` takes one reading and one range, so there is no second series to weigh it against and no total to draw |
 | the sector card can never become a sector rank | `mirror.js#meanRungPosition` takes no anchor, so there is no parameter to hand it a sector average through |
 
 ## Cross-references
