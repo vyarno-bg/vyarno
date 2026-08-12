@@ -482,6 +482,11 @@ it meant.
   the line: assert on the rule, never on the sentence. A sentence rewritten for a
   good reason gets a rewritten sentence, not a test pinning the new one.
 - **Prose in `docs/`.** Ruled out above, with the reason.
+- **The shape of a sentence** — its length, its clause count, its reading
+  level. `verify_copy.mjs` already splits the market page into sentences for the
+  verdict rule, so a ceiling is one line away and is deliberately not there:
+  `docs/writing-style.md` §"Sentence length is a review note" argues it, and
+  says what a reviewer reads for instead.
 - **A line the coverage report shows uncovered**, where the answer to "why not"
   is written down. `data.js`'s fetch wrappers and the five `_refresh_*` arms in
   `cli.py` that no end-to-end test drives are the two, and both entries below

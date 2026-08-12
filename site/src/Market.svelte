@@ -791,16 +791,16 @@
   {#if rangeStrip.rows.length}
     <p class="lead">
       <span class="l-bg"
-        >Всеки от показателите отдолу има своя история. Точката показва къде в нея е последното
-        число: вляво е най-ниското, което Евростат изобщо е публикувал за него, вдясно —
-        най-високото. Нищо тук не се събира в една обща оценка — показателите мерят различни неща и
-        не сочат в една посока.</span
+        >Всяко от числата отдолу има своя история. Точката показва къде в нея стои последното
+        измерване: вляво е най-ниското, което Евростат изобщо е публикувал, вдясно — най-високото.
+        Нищо тук не се събира в една обща оценка. Числата мерят различни неща и не сочат в една
+        посока.</span
       >
       <span class="l-en"
-        >Each of the indicators below has a record of its own. The dot is where the newest reading
-        sits in it: the left end is the lowest Eurostat have published for it and the right end the
-        highest. Nothing here adds up to a single score — they measure different things and do not
-        point one way.</span
+        >Each of the figures below has a record of its own. The dot is where the newest reading sits
+        in it: the left end is the lowest Eurostat have ever published and the right end the
+        highest. Nothing here adds up to a single score. The figures measure different things and do
+        not point one way.</span
       >
     </p>
 
@@ -854,9 +854,17 @@
                   />
                   <circle class="rng-dot" cx={rangeX(row.at)} cy={RG_H / 2} r={RG_R} />
                 </svg>
-                <small class="q mono"
-                  >{rangeValue(row, row.low)} … {rangeValue(row, row.high)}</small
-                >
+                <!-- Each end's figure under the end it belongs to. Written as
+                     one «low … high» string the pair is a second thing to
+                     decode: a reader has to work out that the left number
+                     belongs to the left of the track, and at 360px the string
+                     is centred under a 108px line so neither number is under
+                     anything. Split and pushed apart, the picture states its
+                     own scale and the paragraph above it has one less job. -->
+                <small class="q mono ends">
+                  <span>{rangeValue(row, row.low)}</span>
+                  <span>{rangeValue(row, row.high)}</span>
+                </small>
               </td>
               <td class="num mono">{rangeValue(row, row.value)}</td>
             </tr>
@@ -866,20 +874,20 @@
     </div>
     <p class="cap">
       <span class="l-bg"
-        >Показател, който само расте, стои в десния си край, защото така се движи той, а не защото
-        нещо се е случило точно сега. Затова цените са на два реда: единият е това, което реално се
-        плаща, другият — същото, но без поскъпването на всичко останало, и точките им не са на едно
-        и също място. И двата се четат «колко пъти повече от {reading.baseYear} г.» — годината, която
-        самият Евростат е взел за начало. Всеки показател започва от различна година — всеки ред пише
-        своята под името си.</span
+        >Число, което само расте, стои в десния си край, защото така се движи то, а не защото нещо
+        се е случило точно сега. Затова цените са на два реда: единият е това, което реално се
+        плаща, другият — същото, но без поскъпването на всичко останало. Точките им не са на едно и
+        също място. И двата реда се четат «колко пъти повече от {reading.baseYear} г.» — годината, която
+        самият Евростат е взел за начало. Всеки ред се публикува от различна начална година и пише своята
+        под името си.</span
       >
       <span class="l-en"
-        >An indicator that only ever rises sits at its right end because that is what the indicator
-        does, not because of anything happening now. That is why prices are on two rows: one is what
-        is actually paid and the other is the same thing with the rise in everything else taken out,
-        and their dots are not in the same place. Both read as "how many times more than in {reading.baseYear}"
-        — the year Eurostat themselves took as the starting point. Each indicator is published from
-        a different year, and every row writes its own under its name.</span
+        >A figure that only ever rises sits at its right end because that is what it does, not
+        because of anything happening now. That is why prices are on two rows: one is what is
+        actually paid and the other is the same thing with the rise in everything else taken out.
+        Their dots are not in the same place. Both rows read as "how many times more than in {reading.baseYear}"
+        — the year Eurostat themselves took as the starting point. Each row is published from a
+        different starting year and writes its own under its name.</span
       >
     </p>
   {/if}
@@ -888,20 +896,32 @@
     <span class="l-bg"
       >Това е отговорът накратко. Всичко под него е сметката: колко жилища се купуват, на каква
       цена, как се движат цените и кой колко тежко плаща за жилището си. Не заемаме страна — числата
-      сочат в различни посоки и това е част от отговора. Под всяко число има две връзки: първата
-      отваря таблицата на публикуващия, където до нашето число стоят и всички останали мерки от
-      същия набор — брой, индекс, месечна и годишна промяна — така че там се вижда и друго число за
-      същата държава и същото тримесечие. Втората, «{COPY.mktSrcQuery.bg}», връща точно това, което
-      пише тук, и нищо друго.</span
+      сочат в различни посоки и това е част от отговора.</span
     >
     <span class="l-en"
       >That is the short answer. Everything below it is the working: how many homes change hands, at
       what price, how prices move, and who finds their housing hardest to pay for. We take no side —
-      the figures point in different directions and that is part of the answer. Every number carries
-      two links: the first opens the publisher's own table, where our figure sits beside every other
-      measure in the same dataset — a count, an index, a quarterly and an annual rate — so the same
-      country and quarter shows more than one number there. The second, "{COPY.mktSrcQuery.en}",
-      returns exactly what is printed here and nothing else.</span
+      the figures point in different directions and that is part of the answer.</span
+    >
+  </p>
+  <!-- What the two links under every figure are, and it is a `.cap` because it
+       is about METHOD. A reader who came to find out what a home costs is
+       served by the four cards above; the one who does not believe them is the
+       one who needs to know that the publisher's own table shows six measures
+       at once and only the second link narrows it to this figure. Nothing here
+       is shorter than it was — it sits where the sceptic looks. -->
+  <p class="cap">
+    <span class="l-bg"
+      >Под всяко число има две връзки. Първата отваря таблицата на публикуващия. Там до нашето число
+      стоят и всички останали мерки от същия набор: брой, индекс, месечна и годишна промяна. Затова
+      за същата държава и същото тримесечие там се вижда повече от едно число. Втората, «{COPY
+        .mktSrcQuery.bg}», връща точно това, което пише тук, и нищо друго.</span
+    >
+    <span class="l-en"
+      >Every number carries two links. The first opens the publisher's own table. Our figure sits
+      there beside every other measure in the same dataset: a count, an index, a quarterly and an
+      annual rate. So the same country and quarter shows more than one number there. The second, "{COPY
+        .mktSrcQuery.en}", returns exactly what is printed here and nothing else.</span
     >
   </p>
 
@@ -909,31 +929,32 @@
     {@render ourSum(
       {
         bg:
-          `Числата с «×» и това в години са наша сметка, и двете стъпват на публикувани числа. «Колко ` +
-          `пъти» е индексът на Евростат, разделен на нивото от ${reading.baseYear} г. — годината, ` +
-          `която самият Евростат е взел за начало и е записал като 100. «Колко години заплата» е ` +
-          `средната сделка на Евростат, разделена на дванадесет средни месечни заплати на НСИ за ` +
-          `всички дейности. Двата файла остават отделни чак до браузъра ти и се срещат едва тук, ` +
-          `така че във всеки от тях стоят числата само на един публикуващ орган. Заплатата е ` +
-          `брутната, както я публикува НСИ: парите на ръка зависят от данъчната таблица на ` +
-          `годината, в която са сметнати — това би вкарало трети закон в сметка между две ` +
-          `институции. И двете числа са средни за цялата страна, така че този резултат не е ` +
-          `сметката на конкретен купувач в конкретен град: и жилищата, и заплатите се различават ` +
-          `много по места, а средното жилище в страната и средната заплата в страната не се ` +
-          `намират непременно на едно и също място.`,
+          `Числата с «×» и това в години са наша сметка, и двете стъпват на публикувани числа. ` +
+          `«Колко пъти» е индексът на Евростат, разделен на нивото от ${reading.baseYear} г. ` +
+          `Тази година самият Евростат е взел за начало и я е записал като 100. ` +
+          `«Колко години заплата» е средната сделка на Евростат, разделена на дванадесет средни ` +
+          `месечни заплати на НСИ за всички дейности. Двата файла се срещат едва тук, в браузъра ` +
+          `ти, така че във всеки от тях стоят числата само на един публикуващ орган. ` +
+          `Заплатата е брутната, както я публикува НСИ. Парите на ръка зависят от данъчната ` +
+          `таблица на годината, в която са сметнати — това би вкарало трети закон в сметка между ` +
+          `две институции. ` +
+          `И двете числа са средни за цялата страна. Затова резултатът не е сметката на конкретен ` +
+          `купувач в конкретен град. И жилищата, и заплатите се различават много по места, а ` +
+          `средното жилище и средната заплата не са непременно на едно и също място.`,
         en:
-          `The multiple and the years figure are our arithmetic, both from published ` +
-          `numbers. The multiple is Eurostat's index divided by its ${reading.baseYear} level — ` +
-          `the year Eurostat themselves took as the starting point and wrote as 100. The years ` +
-          `figure is Eurostat's average transaction divided by twelve of НСИ's published average ` +
-          `monthly wages across all activities. The two files stay apart all the way to your ` +
-          `browser and meet only here, which is what keeps each of them one publisher's data. ` +
-          `The wage is the one before tax and contributions, as НСИ publish it: take-home pay ` +
+          `The multiple and the years figure are our arithmetic, both from published numbers. ` +
+          `The multiple is Eurostat's index divided by its ${reading.baseYear} level. That is the ` +
+          `year Eurostat themselves took as the starting point and wrote as 100. ` +
+          `The years figure is Eurostat's average transaction divided by twelve of НСИ's ` +
+          `published average monthly wages across all activities. The two files meet only here, ` +
+          `in your browser, which is what keeps each of them one publisher's data. ` +
+          `The wage is the one before tax and contributions, as НСИ publish it. Take-home pay ` +
           `depends on the payroll table of the year that computed it, which would put a third ` +
-          `body's law inside a two-publisher ratio. Both figures are country-wide averages, so ` +
-          `the result is not any particular buyer's arithmetic in any particular city: homes and ` +
-          `wages both vary a great deal by place, and the country's average dwelling and its ` +
-          `average wage are not necessarily in the same one.`,
+          `body's law inside a two-publisher ratio. ` +
+          `Both figures are country-wide averages. So the result is not any particular buyer's ` +
+          `arithmetic in any particular city. Homes and wages both vary a great deal by place, ` +
+          `and the country's average dwelling and its average wage are not necessarily in the ` +
+          `same one.`,
       },
       yearsOfPay.derivedFrom
     )}
@@ -1134,17 +1155,11 @@
     <p>
       <span class="l-bg"
         >Първо най-простото: с колко са се променили цените на сделките за една година. Числото е
-        това, което Евростат публикува, а не сметка от наша страна. НСИ по едно време смени
-        годината, от която се брои, и сам предупреждава, че процент, пресметнат наново през старата
-        и новата отправна година, може да се разминава в последния знак с този, който те печатат —
-        затова показваме техния.</span
+        това, което Евростат публикува, а не сметка от наша страна.</span
       >
       <span class="l-en"
         >The simplest figure first: how much transaction prices moved in a year. It is the number
-        Eurostat publish rather than one we worked out. НСИ at one point changed the year everything
-        is counted from, and warn themselves that a rate recomputed across the old and the new
-        starting year can differ in the last decimal from the one they print — so the one shown here
-        is theirs.</span
+        Eurostat publish rather than one we worked out.</span
       >
     </p>
     <p>
@@ -1203,6 +1218,25 @@
           {@render srcLine(COPY.srcNsi, nsiNational.sourceUrl, when(nsiNational.refPeriod))}
         {/if}
       </p>
+      <!-- Why the page prints the published rate instead of working one out of
+           the index it draws two charts of. What it protects is a discrepancy
+           in the LAST DECIMAL, so it is a `.cap`: a reader who came for the
+           price pays nothing for it and the one checking the two columns
+           against each other finds it exactly where they are looking. Delete it
+           and the page silently stops saying why it does not compute the figure
+           itself, which is a methodological commitment rather than a detail. -->
+      <p class="cap">
+        <span class="l-bg"
+          >НСИ са сменяли годината, от която се брои индексът. Процент, пресметнат наново през
+          старата и през новата, може да се разминава с публикувания в последния знак — затова тук
+          стои техният, а не наш.</span
+        >
+        <span class="l-en"
+          >НСИ have changed the year the index is counted from. A rate recomputed across the old
+          year and the new one can differ from the published one in the last decimal, so the figure
+          here is theirs rather than ours.</span
+        >
+      </p>
     {/if}
 
     <!-- The index, twenty-one years of it -------------------------------- -->
@@ -1210,13 +1244,13 @@
       <p>
         <span class="l-bg"
           >Процентът отгоре е за една година. Следващата картинка е за всичките години, които
-          Евростат публикува, и мери друго: не с колко са се променили цените за последната година,
+          Евростат публикува, и мери друго. Не с колко са се променили цените за последната година,
           а колко пъти са по-високи от една година, взета за начало. Тази година е {reading.baseYear},
           избрал я е Евростат, и на картинката тя е линията ×1.</span
         >
         <span class="l-en"
           >The percentage above is one year's. The chart below covers every year Eurostat publish
-          and measures something else: not how much prices moved in the last year, but how many
+          and measures something else. Not how much prices moved in the last year, but how many
           times higher they are than in one year taken as the starting point. That year is {reading.baseYear},
           Eurostat chose it, and on the chart it is the ×1 line.</span
         >
@@ -1227,14 +1261,14 @@
           >Двата реда са едно и също нещо, мерено по два начина, и разликата между тях е причината
           да ги има и двата. Плътният е в парите от деня на сделката — колко пъти повече пари се
           дават за жилище. Пунктираният вади от сметката това, че междувременно е поскъпнало и
-          всичко останало, и отговаря на другия въпрос: повече ли са жилищата спрямо всичко друго,
-          което купуваме. Евростат публикува и двата реда, нищо тук не е сметнато от нас.</span
+          всичко останало. Той отговаря на другия въпрос: поскъпнали ли са жилищата повече от всичко
+          друго, което купуваме. Евростат публикува и двата реда, нищо тук не е сметнато от нас.</span
         >
         <span class="l-en"
           >The two lines are the same thing measured two ways, and the difference between them is
           the reason both are here. The solid one is in the money of the day — how many times more
           money changes hands for a home. The dashed one takes out the fact that everything else got
-          dearer in the meantime, and answers the other question: have homes risen against
+          dearer in the meantime. It answers the other question: have homes got dearer than
           everything else we buy. Eurostat publish both lines; nothing here is computed by us.</span
         >
       </p>
@@ -1252,7 +1286,7 @@
             >В парите от деня жилищата днес струват <b>×{fmt(reading.times)}</b> спрямо {reading.baseYear}
             г. Извади ли се поскъпването на всичко останало, остават
             <b>×{fmt(reading.realTimes)}</b>. {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
-              И още едно нещо, което само вторият ред казва: така мерено, нивото днес е с {fmt(
+              Само вторият ред казва и още нещо. Така мерено, нивото днес е с {fmt(
                 reading.realBelowPeakPct
               )}% под най-високото, което Евростат изобщо е отчитал — през {periodLong(
                 reading.realPeakPeriod,
@@ -1262,7 +1296,7 @@
           <span class="l-en"
             >In the money of the day a home today costs <b>×{fmt(reading.times)}</b> what it did in {reading.baseYear}.
             Take out the rise in everything else and <b>×{fmt(reading.realTimes)}</b> is left. {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
-              And one thing only the second line says: measured that way, today's level is {fmt(
+              The second line says one more thing. Measured that way, today's level is {fmt(
                 reading.realBelowPeakPct
               )}% below the highest Eurostat have ever recorded — in {periodLong(
                 reading.realPeakPeriod,
@@ -1519,12 +1553,12 @@
       <p>
         <span class="l-bg"
           >НСИ публикува същото движение и за шестте града с над 120 000 жители, а до него — с колко
-          се е променил броят на сделките там. Двете колони са промени, а не нива: лявата казва с
+          се е променил броят на сделките там. Двете колони са промени, а не нива. Лявата казва с
           колко са се променили цените на сделките, не колко струва едно жилище.</span
         >
         <span class="l-en"
           >НСИ publish the same movement for the six cities over 120,000 people, and beside it how
-          much the number of sales there changed. Both columns are changes rather than levels: the
+          much the number of sales there changed. Both columns are changes rather than levels. The
           left one is how much transaction prices moved, not what anything costs.</span
         >
       </p>
@@ -1812,15 +1846,17 @@
           bg:
             `Средната сделка е наша сметка: платеното общо за тримесечието, разделено на броя ` +
             `сделки за същото тримесечие — ${fmt0(deal.totalValue)} € върху ${fmt0(deal.deals)} ` +
-            `жилища. Това е средната платена сума за едно жилище, а не цена на квадратен метър и ` +
-            `не медиана; какво се е продавало през тримесечието — къщи или апартаменти — я движи. ` +
+            `жилища. Това е средната платена сума за едно жилище — не цена на квадратен метър и ` +
+            `не цената по средата на сделките за тримесечието. Какво се е продавало през ` +
+            `тримесечието, къщи или апартаменти, я движи. ` +
             `Евростат не отговаря за делението, нито за изводите от него.`,
           en:
             `The average deal is our arithmetic: the total paid in the quarter divided by the ` +
             `number of deals in the same quarter — €${fmt0(deal.totalValue)} over ${fmt0(deal.deals)} ` +
-            `dwellings. It is a mean amount paid for a dwelling, not a price per square metre and ` +
-            `not a median; the quarter's mix of flats and houses moves it. Eurostat are not ` +
-            `responsible for the division or for conclusions drawn from it.`,
+            `dwellings. It is a mean amount paid for a dwelling — not a price per square metre and ` +
+            `not the middle price of the quarter's deals. The quarter's mix of flats and houses ` +
+            `moves it. Eurostat are not responsible for the division or for conclusions drawn ` +
+            `from it.`,
         },
         deal.avg.derivedFrom
       )}
@@ -1842,19 +1878,19 @@
     <p>
       <span class="l-bg"
         >Всяка година част от домакинствата в страната отговарят на едно и също изследване — за
-        доходите си и за това как живеят, а наред с останалото и какво е жилището, в което са: тяхно
-        и изплатено, тяхно, но с кредит по него, или под наем. Евростат публикува резултата. Числата
-        в таблицата са дял от всички хора в страната и стоят на една и съща основа, за да се
-        събират: собствениците и наемателите правят сто. Редът със заема е отговорът на въпроса в
-        заглавието, и той е малък ред.</span
+        доходите си и за това как живеят. Наред с останалото ги питат и какво е жилището, в което
+        са: тяхно и изплатено, тяхно, но с кредит по него, или под наем. Евростат публикува
+        резултата. Числата в таблицата са дял от всички хора в страната, на една и съща основа:
+        собствениците и наемателите правят сто. Редът със заема е отговорът на въпроса в заглавието,
+        и той е малък ред.</span
       >
       <span class="l-en"
         >Every year a part of the country's households answer the same survey — about their income
-        and how they live, and among the rest what the home they are in is: theirs and paid off,
-        theirs but with a loan on it, or rented. Eurostat publish the result. The figures in the
-        table are shares of everybody in the country, on one and the same base so that they add up:
-        owners and renters make a hundred. The row with the loan on it answers the question in the
-        heading, and it is a small row.</span
+        and how they live. Among the rest they are asked what the home they are in is: theirs and
+        paid off, theirs but with a loan on it, or rented. Eurostat publish the result. The figures
+        in the table are shares of everybody in the country, on one and the same base: owners and
+        renters make a hundred. The row with the loan on it answers the question in the heading, and
+        it is a small row.</span
       >
     </p>
 
@@ -1905,6 +1941,52 @@
           structure.owner.apiUrl
         )}
       </p>
+
+      <!--
+        The figure on this page a reader is likeliest to take for a mistake, and
+        it is the same repair §volume makes for the land register — «Двете мерят
+        различни неща и нито едното не е сгрешено», held in place by
+        verify_copy.mjs. A figure that READS as wrong and is right costs the
+        page as much as two figures that disagree, and it costs it silently:
+        somebody who follows the mortgage market knows how many loans are
+        signed, reads a share of the population in the low single digits, and
+        concludes the page cannot be trusted about anything else on it.
+
+        BODY COPY rather than a `.cap`, which is the whole point of where it
+        sits. The reader who has to be caught here is not the sceptic reading
+        11px mono for the method — it is the one who read the row, believed
+        their own knowledge over it, and is about to leave. What the sentences
+        say is what the figure MEANS, which is what body copy is for.
+      -->
+      <p>
+        <span class="l-bg"
+          >Този ред изглежда невъзможно малък, а не е сгрешен. Той брои хора, а не сделки: колко от
+          живеещите в страната имат заем по жилището си. Редът над него казва останалото — почти
+          всички живеят в собствено жилище, по което няма заем. Жилищата минаха у живеещите в тях
+          при приватизацията, без за това да се теглят заеми, и оттогава се наследяват.</span
+        >
+        <span class="l-en"
+          >That row looks impossibly small and it is not wrong. It counts people rather than
+          purchases: how many of those living in the country have a loan on their home. The row
+          above it says the rest — almost everybody lives in a home they own with no loan on it. The
+          homes passed to the people living in them at privatisation, with no borrowing involved,
+          and have been inherited since.</span
+        >
+      </p>
+      <p>
+        <span class="l-bg"
+          >Новите кредити са друго нещо. Те са поток — колко договора се подписват през годината.
+          Този ред е снимка на всички хора днес. Двете могат да вървят в различни посоки с години. И
+          изследването пита всички — децата и пенсионерите също, а не само тези, които биха
+          купували.</span
+        >
+        <span class="l-en"
+          >New lending is a different thing. It is a flow — how many contracts are signed in a year.
+          This row is a snapshot of everybody alive today. The two can move in opposite directions
+          for years. And the survey asks everybody — children and pensioners included, not only the
+          people who might be buying.</span
+        >
+      </p>
     {/if}
 
     <p class="cap">
@@ -1925,22 +2007,30 @@
       <span class="l-bg">Колко жилища преброи преброяването</span>
       <span class="l-en">What the census counted</span>
     </h2>
+    <!-- The examples are НСИ's own, from the enumerator's instruction: «Сграда
+         за колективно домакинство — интернати, пансиони, манастири, домове за
+         отглеждане на деца, домове за стари хора, затвори и други подобни». The
+         cube behind the table counts CONVENTIONAL dwellings, so the category
+         that sits outside it has to be named the way the publisher names it —
+         an example list assembled from the international definition instead
+         puts institutions on the page that this census does not enumerate, and
+         nothing in the payload can contradict a wrong example. -->
     <p>
       <span class="l-bg"
         >Преброяването брои жилищата, а не хората, и е единственият път, когато някой ги брои
-        всички. «Жилище» тук значи място, направено да се живее в него — апартамент или къща, със
-        собствен вход; общежития, казарми и домове за възрастни се броят отделно и не са в
-        таблицата. «Необитавано» значи, че в нощта на преброяването там не е живял никой, така че
-        вътре влизат и вилите, и вторите жилища, и жилищата на хора в чужбина — не само празният
-        фонд.</span
+        всички. «Жилище» тук значи място, направено да се живее в него — апартамент или къща със
+        собствен вход. Домовете за стари хора, интернатите, манастирите и затворите преброяването ги
+        описва отделно, като «колективни жилища», и в тази таблица ги няма. «Необитавано» значи, че
+        в нощта на преброяването там не е живял никой. Затова вътре влизат и вилите, и вторите
+        жилища, и жилищата на хора в чужбина, а не само наистина празните.</span
       >
       <span class="l-en"
         >The census counts dwellings rather than people, and it is the only time anybody counts all
         of them. "Dwelling" here means somewhere built to be lived in — a flat or a house with its
-        own entrance; halls of residence, barracks and care homes are counted separately and are not
-        in the table. "Unoccupied" means nobody was living there on census night, so holiday homes,
-        second homes and the homes of people abroad are all inside it — not only genuinely empty
-        stock.</span
+        own entrance. Care homes for the elderly, boarding schools, monasteries and prisons the
+        census describes separately, as "collective dwellings", and they are not in this table.
+        "Unoccupied" means nobody was living there on census night. So holiday homes, second homes
+        and the homes of people abroad are all inside it, not only the genuinely empty ones.</span
       >
     </p>
     <!-- The heading names the CENSUS rather than the housing stock, because the
@@ -2028,19 +2118,20 @@
     </p>
     <p>
       <span class="l-bg"
-        >Самото съотношение е неудобно число, затова Евростат го записва спрямо неговата собствена
-        средна стойност за целия ред: 100 значи «колкото средно е било в България през тези години».
-        Под 100 значи, че жилищата вземат по-малка част от дохода, отколкото средно за периода; над
-        100 — по-голяма. Мерилото е миналото на самата България. Редът не я сравнява с друга държава
-        и не казва нищо за конкретен купувач — той е за съотношението, не за нечий бюджет.</span
+        >Самото число от това деление е неудобно за четене, затова Евростат го записва спрямо
+        собствената му средна стойност за целия ред. 100 значи «колкото средно е било в България
+        през тези години». Под 100 значи, че жилищата вземат по-малка част от дохода, отколкото
+        средно за периода; над 100 — по-голяма. Мерилото е миналото на самата България. Редът не я
+        сравнява с друга държава и не казва нищо за конкретен купувач — той мери страната, не нечий
+        бюджет.</span
       >
       <span class="l-en"
-        >The ratio itself is an awkward number, so Eurostat write it against its own average across
-        the whole series: 100 means "about what it averaged in Bulgaria over those years". Below 100
-        means homes take a smaller part of income than they did on average over the period; above
-        100, a larger one. The yardstick is Bulgaria's own past. The series does not compare it with
-        anywhere else and says nothing about an individual buyer — it is about the ratio, not about
-        anyone's budget.</span
+        >The number that division gives is an awkward one to read, so Eurostat write it against its
+        own average across the whole series. 100 means "about what it averaged in Bulgaria over
+        those years". Below 100 means homes take a smaller part of income than they did on average
+        over the period; above 100, a larger one. The yardstick is Bulgaria's own past. The series
+        does not compare it with anywhere else and says nothing about an individual buyer — it
+        measures the country, not anyone's budget.</span
       >
     </p>
 
@@ -2093,6 +2184,27 @@
           <span class="l-en">{COPY.mktChartRefLine.en}</span>
         </figcaption>
       </figure>
+      <!-- Under the CHART rather than with the other qualifications below,
+           because this one is about the rule the reader is looking at. The 100
+           line is the series' own average, the years the ratio ran highest are
+           inside that average, and without those two facts a reading under the
+           rule is taken as "housing has never taken less of an income" — which
+           the series does not say and cannot be made to say.
+
+           Above the source line and not below it, because the line below cites
+           the disclosure as well as the chart: `verify_render_market.mjs` walks
+           back from a numbers table to the element before it, so a paragraph
+           between the two leaves that table reading as uncited. -->
+      <p class="cap">
+        <span class="l-bg"
+          >Линията на 100 е средното за целия ред, а в него влизат и годините с най-високо
+          съотношение. Те вдигат средното, така че «под 100» отчасти значи «под тях».</span
+        >
+        <span class="l-en"
+          >The line at 100 is the average over the whole series, and the years the ratio ran highest
+          are inside that average. They pull it up, so "below 100" partly means "below those".</span
+        >
+      </p>
       <p class="ss tsrc">
         {@render srcLine(
           COPY.srcEurostat,
@@ -2122,22 +2234,30 @@
           with its year beside it.</span
         >
       </p>
+      <!-- Two qualifications, two paragraphs, and the split is the point rather
+           than a formatting choice. Each of these is a reason a reading of this
+           series must not be taken at face value, and set as one block at 11px
+           they are read as a block — which is to say skipped, and a
+           qualification nobody reads has the same effect on a reader as one
+           that was never written. Both are load-bearing and neither may go. -->
       <p class="cap">
         <span class="l-bg"
-          >Три неща за този ред, които не си личат от картинката. Броят хора, на който се дели, е
-          намалявал през целия период, така че доходът на човек расте и когато общата сума не расте.
-          Средната, спрямо която се мери, се пресмята наново при всяко издание: излезе ли нова
-          година, всички предишни точки се разместват, без годината им да се променя. И в тази
-          средна влизат и годините, в които съотношението е било най-високото за целия ред — те я
-          вдигат, така че «под 100» отчасти значи «под тях».</span
+          >Доходът, с който се сравнява цената, е на човек, а хората в страната намаляват през целия
+          период. Затова той расте и когато общата сума не расте.</span
         >
         <span class="l-en"
-          >Three things about this series that the picture does not show. The number of people it is
-          divided by has fallen throughout the period, so income per head rises even when the total
-          does not. The average it is measured against is worked out afresh with every edition: when
-          a new year is added, every earlier point shifts without its year changing. And that
-          average includes the years the ratio was at its highest for the whole series — they pull
-          it up, so "below 100" partly means "below those".</span
+          >The income the price is compared against is per head, and the country's population falls
+          throughout the period. So it rises even when the total does not.</span
+        >
+      </p>
+      <p class="cap">
+        <span class="l-bg"
+          >Средното, спрямо което се мери, се пресмята наново при всяко издание. Излезе ли нова
+          година, всички предишни точки се разместват, без годината им да се променя.</span
+        >
+        <span class="l-en"
+          >The average it is measured against is worked out afresh with every edition. When a new
+          year is added, every earlier point shifts without its year changing.</span
         >
       </p>
     {/if}
@@ -2152,9 +2272,9 @@
            series, so the card was also the picture repeated badly. -->
       <p>
         <span class="l-bg"
-          >Другият официален показател брои хората, които живеят в домакинство, даващо над 40% от
-          дохода си за жилище. Изследването пита самите домакинства; процентът е дял от всички хора
-          в страната{#if overburdenSeries.value != null}, и за {periodLong(
+          >Другото официално число брои хората, които живеят в домакинство, даващо над 40% от дохода
+          си за жилище. Изследването пита самите домакинства; процентът е дял от всички хора в
+          страната{#if overburdenSeries.value != null}, и за {periodLong(
               overburdenSeries.refPeriod,
               "bg"
             )} е {fmt(overburdenSeries.value)}%{/if}. «Разходи за жилище» тук е всичко около него —
@@ -2170,9 +2290,9 @@
           )}.</span
         >
         <span class="l-en"
-          >The other official indicator counts people living in a household that spends more than
-          40% of its income on housing. The survey asks the households themselves; the percentage is
-          a share of everybody in the country{#if overburdenSeries.value != null}, and for {periodLong(
+          >The other official figure counts people living in a household that spends more than 40%
+          of its income on housing. The survey asks the households themselves; the percentage is a
+          share of everybody in the country{#if overburdenSeries.value != null}, and for {periodLong(
               overburdenSeries.refPeriod,
               "en"
             )} it is {fmt(overburdenSeries.value)}%{/if}. "Housing costs" here is everything around
@@ -2269,14 +2389,14 @@
 
     <p class="cap">
       <span class="l-bg"
-        >Трите числа в този раздел мерят различни неща и не сочат непременно в една посока: първото
+        >Трите числа в този раздел мерят различни неща и не сочат непременно в една посока. Първото
         е цената спрямо доходите на цялата страна, второто — колко хора дават над 40% от дохода си
         за жилището, третото — с колко се променя наемът. Страницата дава и трите и няма да реши
         вместо теб кое тежи повече. Твоята собствена сметка е в калкулатора.</span
       >
       <span class="l-en"
-        >The three figures in this section measure different things and need not point the same way:
-        the first is price against the whole country's incomes, the second is how many people spend
+        >The three figures in this section measure different things and need not point the same way.
+        The first is price against the whole country's incomes, the second is how many people spend
         over 40% of their income on housing, and the third is how much rent is moving. The page
         gives all three and will not decide for you which weighs more. Your own arithmetic is in the
         calculator.</span
@@ -2829,6 +2949,14 @@
   }
   .fig-table.range .q {
     margin-top: 2px;
+  }
+  /* The two ends, each under its own end of the track. `width: 108px` is the
+     track's own, so the row cannot drift wider than the line it labels. */
+  .fig-table.range .ends {
+    display: flex;
+    justify-content: space-between;
+    width: 108px;
+    gap: 4px;
   }
   .rng {
     width: 108px;
