@@ -1,0 +1,33 @@
+# Quarterly sector-level salary refresh (НСИ "Наети лица и средна работна
+# заплата" by economic activity — 19 NACE Rev 2 sections plus the total).
+#
+# Same НСИ quarterly release as the regional table, so it fires on the same
+# day: roughly six weeks after quarter close, on the 17th rather than the
+# 15th for the same reason the regional one does — the 15th is the historical
+# release day, and firing at 04:00 on it would read the previous quarter.
+#
+# **`sector_salary.json` is not one card's payload.** Its «Общо» all-activities
+# row is the national level the percentile ladder is re-set to in the reader's
+# browser, so this file going stale moves every rung of the salary ladder as
+# well as the sector card — which is why the payload with the widest reach was
+# also the one it was cheapest to leave without a refresh and never notice.
+
+name: refresh-sector-salary
+
+on:
+  schedule:
+    # Quarterly, 17th, 04:30 UTC. 2,5,8,11 is February, May, August, November.
+    # Half an hour behind refresh-region-salary so two НСИ fetches do not open
+    # on the same minute; nothing depends on the order.
+    - cron: "30 4 17 2,5,8,11 *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: sector-salary

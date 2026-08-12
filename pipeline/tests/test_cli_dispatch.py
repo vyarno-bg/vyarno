@@ -1,6 +1,6 @@
 """`refresh --source <name>` reaches the right arm, and `--source all` reaches every one.
 
-The seven `_refresh_*` functions are network-driven orchestration and are
+The eight `_refresh_*` functions are network-driven orchestration and are
 exercised end to end elsewhere (`test_cli.py` drives the HICP arm through respx
 against real trimmed Eurostat cubes; `test_cli_mortgage.py` does the same for
 the mortgage arm). What no test covered was the dispatcher above them — forty
@@ -21,6 +21,7 @@ offline, and indifferent to how any one of them works.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -31,12 +32,21 @@ from vyarno_pipeline import cli
 # Every arm, and the `--source` value that should reach it. This mapping is the
 # test: adding a connector means adding a line here, and the `all` test below
 # then requires it to be wired into the bulk refresh too.
+#
+# **An arm missing from here is worse than untested.** The fixture patches what
+# this names and nothing else, so an unlisted arm is not skipped by `--source
+# all` — it RUNS, against its live upstream, inside a suite that is supposed to
+# be offline and under a second. The coverage assertion below then passes
+# because the arm it forgot is not in the set it compares, and the suite stays
+# green on a network call nobody meant to make. `pytest -m live` is where a
+# fetch belongs.
 ARMS = {
     "hicp": "_refresh_hicp",
     "unemployment": "_refresh_unemployment",
     "mortgage": "_refresh_mortgage",
     "city-price": "_refresh_city_price",
     "region-salary": "_refresh_region_salary",
+    "sector-salary": "_refresh_sector_salary",
     "salary-dist": "_refresh_salary_dist",
     "payroll": "_refresh_payroll",
 }
@@ -88,12 +98,12 @@ def test_a_failed_arm_names_what_all_already_wrote_and_keeps_its_exit_code(
 ) -> None:
     """A mid-run failure has to name every payload it has already written.
 
-    `--source all` is seven publishes rather than one transaction: an arm writes
+    `--source all` is eight publishes rather than one transaction: an arm writes
     its file as soon as its own gates pass, so a failure partway through leaves
     `data/published/` holding two refresh dates. Each arm exits the process from
     inside itself, so the only thing a bare run prints is the failing arm's own
-    message — and the operator's next move (re-run one arm, or all seven)
-    depends on knowing which of the other six are current.
+    message — and the operator's next move (re-run one arm, or all eight)
+    depends on knowing which of the other seven are current.
 
     Exit code 4 is the network arm's, and it has to survive being reported on:
     swallowing it into a generic 1 loses the distinction between an upstream
@@ -116,7 +126,7 @@ def test_a_failed_arm_names_what_all_already_wrote_and_keeps_its_exit_code(
             f"`{landed}` completed but the failure report does not list it"
         )
     # Never started, and named so they are not assumed current.
-    for skipped in ("region-salary", "salary-dist", "payroll"):
+    for skipped in ("region-salary", "sector-salary", "salary-dist", "payroll"):
         assert skipped in out.split("not reached:")[1], (
             f"`{skipped}` never ran but the failure report does not list it"
         )
@@ -146,3 +156,53 @@ def test_the_output_directory_is_created_before_any_arm_runs(tmp_path: Path, cal
     result = _run(target, "payroll")
     assert result.exit_code == 0, result.output
     assert target.is_dir()
+
+
+# The workflow that refreshes an arm, or the reason there is none.
+#
+# `city-price` is the whole exception list and it is not an oversight:
+# `имот.bg` answers a datacenter IP with a 403, so the arm cannot run on a
+# hosted runner at all and is refreshed from an ordinary Bulgarian connection
+# by hand (`docs/data-sources.md` §"Where you fetch from is part of the
+# connector's design"). Anything else added here needs a reason of that kind —
+# "not written yet" is the state this test exists to fail on.
+REFRESHED_BY_HAND = {"city-price"}
+
+
+def test_every_arm_is_either_scheduled_or_named_as_manual() -> None:
+    """An arm with no workflow and no exception is a payload that never updates.
+
+    `--source all` reaching every arm proves the dispatcher is complete; it says
+    nothing about whether anything ever CALLS it. A connector can be written,
+    gated, wired into `all`, published once — and then sit at that first
+    `as_of` forever, because the file that would fire it monthly was never
+    added. Nothing else notices in time: CI does not refresh, a green pipeline
+    run is a run that happened, and the freshness check reports the age of a
+    payload rather than the absence of a schedule. The staleness banner is the
+    backstop, and by then a reader has already been shown the stale figure.
+
+    So the reconciliation is the test, in both directions. A workflow naming a
+    source the CLI does not offer is the same defect from the other side: it
+    fails every month with an invalid `--source`, in a scheduled run nobody
+    watches.
+    """
+    workflow_dir = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    scheduled = {
+        match.group(1)
+        for path in workflow_dir.glob("refresh-*.yml")
+        for match in [re.search(r"^\s+source:\s*(\S+)\s*$", path.read_text("utf-8"), re.M)]
+        if match
+    }
+
+    unscheduled = sorted(set(ARMS) - scheduled - REFRESHED_BY_HAND)
+    assert not unscheduled, (
+        f"no refresh workflow fires {unscheduled}, and nothing names them manual. "
+        f"Add .github/workflows/refresh-<source>.yml, or put the source in "
+        f"REFRESHED_BY_HAND with the reason it cannot run on a runner."
+    )
+
+    unknown = sorted(scheduled - set(ARMS))
+    assert not unknown, (
+        f"a refresh workflow passes --source {unknown}, which the CLI does not "
+        f"accept. That run fails on click's own validation, monthly, unwatched."
+    )
