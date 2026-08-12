@@ -156,10 +156,13 @@ jobs:
 
       - name: Push
         if: steps.diff.outputs.changed != ''
-        # force-with-lease refuses the push if the remote branch has
-        # moved since the last fetch — protects against a previous
-        # run leaving work behind.
-        run: git push --force-with-lease \
+        # `-u` is the right flag for the first push of a new branch.
+        # Subsequent runs of this workflow (after the branch exists on
+        # origin) still work — git updates the upstream tracking ref
+        # without affecting existing history. No force is ever used
+        # here; the workflow creates a fresh branch on every run, so
+        # there is no remote history to clobber.
+        run: git push -u \
           origin "data/${{ inputs.source }}"
 
       - name: Open PR
