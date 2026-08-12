@@ -5,7 +5,7 @@
 # Steps: checkout, install the pipeline, run it against live upstreams,
 # stage and capture changes, compute the latest as_of plus any payloads
 # older than 30 days, commit with --signoff, push the data/<source>
-# branch, open a PR, alert on failure.
+# branch, open a PR.
 #
 # The pipeline's exit codes drive the rest of the workflow:
 #   0 — published, JSON written
@@ -24,10 +24,6 @@ on:
         description: "vyarno-pipeline --source name (e.g. hicp, mortgage)"
         required: true
         type: string
-    secrets:
-      VYARNO_BOT_TOKEN:
-        description: "Fine-grained PAT with contents:write + pull-requests:write on vyarno-bg/vyarno"
-        required: true
 
 jobs:
   refresh:
@@ -41,10 +37,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # The default GITHUB_TOKEN cannot push to a protected branch
-          # or open PRs on behalf of a separate user. The PAT (passed
-          # via the remote URL below) is the pushing identity.
-          persist-credentials: false
           fetch-depth: 0
 
       - name: Set up Python
@@ -61,12 +53,6 @@ jobs:
         run: |
           git config --global user.name "vyarno-refresh"
           git config --global user.email "vyarno-refresh@users.noreply.github.com"
-          # Swap the remote URL to inject the PAT for the push step.
-          # persist-credentials: false on the checkout means there is
-          # no leaked credential helper in .git/config.
-          git remote set-url origin "https://x-access-token:${TOKEN}@github.com/vyarno-bg/vyarno.git"
-        env:
-          TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}
 
       - name: Run pipeline
         working-directory: pipeline
@@ -83,7 +69,7 @@ jobs:
         #
         # If nothing changed, the rest of the workflow is skipped via
         # the `if: steps.diff.outputs.changed != ''` gates below —
-        # no commit, no push, no PR, no alert.
+        # no commit, no push, no PR.
         run: |
           set -euo pipefail
           git add -- data/published
@@ -162,8 +148,11 @@ jobs:
         # without affecting existing history. No force is ever used
         # here; the workflow creates a fresh branch on every run, so
         # there is no remote history to clobber.
-        # Inline string (not `run: |`) so the trailing `\` is not
-        # ambiguous. GHA joins the args with spaces, runs through bash.
+        #
+        # The push uses the credential helper that `actions/checkout`
+        # writes into `.git/config` — it reads the workflow's
+        # automatic token from the environment, so no URL injection
+        # is needed here.
         run: git push -u origin "data/${{ inputs.source }}"
 
       - name: Open PR

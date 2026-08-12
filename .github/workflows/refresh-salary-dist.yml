@@ -29,5 +29,3 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: salary-dist
-    secrets:
-      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}

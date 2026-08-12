@@ -18,5 +18,3 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: mortgage
-    secrets:
-      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}
