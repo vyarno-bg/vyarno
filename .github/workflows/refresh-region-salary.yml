@@ -16,6 +16,9 @@ on:
 
 jobs:
   refresh:
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ./.github/workflows/refresh.yml
     with:
       source: region-salary
