@@ -378,6 +378,29 @@ pair used to carry was paid by the crawler, and it is not any more: the served
 document is one language, at an address of its own, with the other named as its
 `hreflang` alternate.
 
+**No `Dataset` node per figure, on `/market/` or anywhere.** It is the obvious
+next structured-data step for a page built to be quoted by people and by agents,
+and it is refused on the same ground the `license` rule is: **we do not publish
+these datasets.** Eurostat and НСИ do, and a `Dataset` node at a `vyarno.bg`
+URL is a claim that this page is a distribution of one. It is not — it is a
+reading of selected cells, with our own arithmetic beside them, disclosed as
+ours in the `p.ours` blocks and in the queries they link.
+
+Every required or expected field makes that worse rather than better. `license`
+on a node describing Eurostat's series is exactly what `verify_legal.mjs` keeps
+off the `WebPage`, because the data belongs to five publishers under their own
+terms and is not ours to characterise (`docs/legal.md`, whose own licence reads
+carry dates and retractions). `distribution` would have to point at
+`data/published/*.json`, which carries their cells and our derivations in one
+envelope. `creator: Eurostat` on a node we authored attributes our division to
+them, which is the single thing the derivation disclosures exist to prevent.
+Omitting all three leaves a node that says less than the page already does.
+
+And the one field a `Dataset` would genuinely add for an agent — the period each
+figure describes — is already in the served HTML, under every figure, in both
+languages, held there by the prerender tests. A structured claim that repeats a
+visible one while risking a licence misstatement is not a trade worth making.
+
 ## Open questions
 
 **IndexNow.** Bing and Yandex accept a ping when content changes, and this
