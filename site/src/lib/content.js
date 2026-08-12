@@ -1928,6 +1928,11 @@ export const COPY = {
   // No interior "·": the source list already separates its entries with one,
   // so "NSI · wages" reads as two sources rather than one.
   srcNsiWages: { bg: "НСИ заплати", en: "NSI wages" },
+  // Two publishers on one figure, for the one number on `/market/` that joins
+  // them. Named in full rather than as "Евростат" alone: a caption crediting
+  // one publisher for a ratio built from two is the attribution error that
+  // costs the most and shows the least.
+  srcEurostatNsi: { bg: "Евростат и НСИ", en: "Eurostat and NSI" },
   srcEcbMir: { bg: "ЕЦБ MIR", en: "ECB MIR" },
   srcBnb: { bg: "БНБ", en: "BNB" },
   // Period qualifier on the strip sub-line ("за 1 г. · Евростат" / "in 1 yr ·
@@ -1957,6 +1962,14 @@ export const COPY = {
     bg: "Всички числа за България, с източниците им",
     en: "All of Bulgaria's figures, with their sources",
   },
+  // The route out of the home row, and the wording is the difference that
+  // earns a second link: `howMoreK` offers the figures behind the calculator,
+  // this one offers what the market is doing. A reader who has just been told
+  // their home is N years of pay is asking the second question, not the first.
+  marketMoreK: {
+    bg: "Какво прави пазарът на жилища",
+    en: "What the property market is doing",
+  },
   // The page's two standing routes, and they exist because `howMoreK` was the
   // only one: a link inside a disclosure at the foot of the calculator, which
   // is open for nobody who has not already decided to read about method. A page
@@ -1969,7 +1982,12 @@ export const COPY = {
   // beside two glyph buttons on a 360px bar, and the footer line has room to
   // say which numbers.
   howNavK: { bg: "числата", en: "the numbers" },
+  // One word, because it shares the bar with `howNavK`, a theme button and a
+  // language link. «пазарът» carries the definite article: a bare «пазар»
+  // reads as a category rather than as the page about this one.
+  marketNavK: { bg: "пазарът", en: "the market" },
   howFooterK: { bg: "Числата за България", en: "Bulgaria's numbers" },
+  marketFooterK: { bg: "Пазарът на жилища →", en: "The property market →" },
 
   // Stat labels. Each one says what the number IS, so the figure above it can
   // be a bare number and the caption under it can be a source and a date.
@@ -2074,6 +2092,55 @@ export const COPY = {
   // never the day we fetched it, which is a different fact and is in the data
   // panel on the calculator.
   howSrc: { bg: "{s} · {p}", en: "{s} · {p}" },
+
+  // `/market/`'s figure labels. Inline prose on that page is written as
+  // `.l-bg` / `.l-en` pairs in the component, the way `How.svelte` writes its
+  // paragraphs; these are here because a label is passed as a value to the
+  // figure snippet rather than written into the template.
+  //
+  // Every one of them names WHAT IS COUNTED rather than what it means. "Deals
+  // this quarter", not "the market"; "owners with a mortgage", not "leverage".
+  // A label that interprets is the cheapest place for a view of the market to
+  // get onto a page that must not carry one.
+  marketTitle: {
+    bg: "Вярно — пазарът на жилища",
+    en: "Vyarno — the property market",
+  },
+  mktKDeals: { bg: "жилища, купени от домакинства", en: "dwellings bought by households" },
+  mktKDealsYoy: {
+    bg: "спрямо същото тримесечие година по-рано",
+    en: "against the same quarter a year earlier",
+  },
+  mktKDealsNew: { bg: "от тях ново строителство", en: "of them newly built" },
+  mktKDealsExisting: { bg: "от тях съществуващи", en: "of them existing" },
+  mktKPriceRate: {
+    bg: "цени на сделките, спрямо година по-рано",
+    en: "transaction prices, against a year earlier",
+  },
+  mktKPriceRateNew: { bg: "ново строителство", en: "newly built" },
+  mktKPriceRateExisting: { bg: "съществуващи жилища", en: "existing dwellings" },
+  mktKAvgDeal: { bg: "средно платено за жилище", en: "average paid per dwelling" },
+  mktKAvgDealNew: { bg: "средно за ново жилище", en: "average for a new build" },
+  mktKAvgDealExisting: { bg: "средно за съществуващо", en: "average for an existing one" },
+  mktKYearsOfPay: { bg: "години средна брутна заплата", en: "years of the average gross wage" },
+  mktKOwn: { bg: "живеят в собствено жилище", en: "live in a home they own" },
+  mktKOwnMortgage: {
+    bg: "от всички — собствено жилище със заем",
+    en: "of everyone — own a home with a loan",
+  },
+  mktKRentMarket: { bg: "плащат наем по пазарна цена", en: "rent at the market price" },
+  mktKDwellings: { bg: "жилища в страната", en: "dwellings in the country" },
+  mktKUnoccupied: { bg: "необитавани при преброяването", en: "unoccupied at the census" },
+  mktKUnoccupiedShare: { bg: "дял необитавани", en: "share unoccupied" },
+  mktKPriceToIncome: {
+    bg: "цени спрямо доходите, при 100 = собствената дългосрочна средна",
+    en: "prices against incomes, 100 = its own long-run average",
+  },
+  mktKOverburden: {
+    bg: "плащат над 40% от дохода си за жилище",
+    en: "spend over 40% of income on housing",
+  },
+  mktKRentInflation: { bg: "наеми, спрямо година по-рано", en: "rents, against a year earlier" },
   // The two publishers the strip never names, because no card on it cites
   // them: имот.bg is Latin in both languages, and ДВ has an English name worth
   // spelling out for a reader who has never met it.

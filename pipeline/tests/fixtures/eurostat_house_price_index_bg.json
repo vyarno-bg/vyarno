@@ -1,0 +1,215 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "House price index - quarterly data",
+ "source": "ESTAT",
+ "updated": "2026-07-02T11:00:00+0200",
+ "value": {
+  "24": 271.54,
+  "25": 271.83,
+  "26": 291.71,
+  "27": 103.15,
+  "28": 103.26,
+  "29": 110.81,
+  "33": 18.2,
+  "34": 15.0,
+  "35": 16.3,
+  "30": 4.9,
+  "31": 0.1,
+  "32": 7.3,
+  "12": 232.24,
+  "13": 233.51,
+  "14": 244.14,
+  "15": 102.04,
+  "16": 102.6,
+  "17": 107.27,
+  "21": 11.0,
+  "22": 9.0,
+  "23": 12.5,
+  "18": 2.1,
+  "19": 0.5,
+  "20": 4.6,
+  "0": 256.01,
+  "1": 256.71,
+  "2": 272.63,
+  "3": 102.72,
+  "4": 103.0,
+  "5": 109.39,
+  "9": 15.4,
+  "10": 12.6,
+  "11": 14.8,
+  "6": 3.8,
+  "7": 0.3,
+  "8": 6.2
+ },
+ "id": [
+  "freq",
+  "purchase",
+  "unit",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  3,
+  4,
+  1,
+  3
+ ],
+ "dimension": {
+  "freq": {
+   "label": "Time frequency",
+   "category": {
+    "index": {
+     "Q": 0
+    },
+    "label": {
+     "Q": "Quarterly"
+    }
+   }
+  },
+  "purchase": {
+   "label": "Purchases",
+   "category": {
+    "index": {
+     "TOTAL": 0,
+     "DW_NEW": 1,
+     "DW_EXST": 2
+    },
+    "label": {
+     "TOTAL": "Total",
+     "DW_NEW": "Purchases of newly built dwellings",
+     "DW_EXST": "Purchases of existing dwellings"
+    }
+   }
+  },
+  "unit": {
+   "label": "Unit of measure",
+   "category": {
+    "index": {
+     "I15_Q": 0,
+     "I25_Q": 1,
+     "RCH_Q": 2,
+     "RCH_A": 3
+    },
+    "label": {
+     "I15_Q": "Quarterly index, 2015=100",
+     "I25_Q": "Quarterly index, 2025=100",
+     "RCH_Q": "Quarterly rate of change",
+     "RCH_A": "Annual rate of change"
+    }
+   }
+  },
+  "geo": {
+   "label": "Geopolitical entity (reporting)",
+   "category": {
+    "index": {
+     "BG": 0
+    },
+    "label": {
+     "BG": "Bulgaria"
+    }
+   }
+  },
+  "time": {
+   "label": "Time",
+   "category": {
+    "index": {
+     "2025-Q3": 0,
+     "2025-Q4": 1,
+     "2026-Q1": 2
+    },
+    "label": {
+     "2025-Q3": "2025-Q3",
+     "2025-Q4": "2025-Q4",
+     "2026-Q1": "2026-Q1"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "description": "<p>The House Price Index (HPI) shows price changes of residential properties purchased by households. Available data units in this dataset (total, newly built, and existing dwellings) include the quarterly index based on 2015=100 and 2010=100, the quarterly rate of change and the annual rate of change.</p>",
+  "id": "PRC_HPI_Q",
+  "agencyId": "ESTAT",
+  "version": "1.0",
+  "datastructure": {
+   "id": "PRC_HPI_Q",
+   "agencyId": "ESTAT",
+   "version": "46.0"
+  },
+  "annotation": [
+   {
+    "type": "CREATED",
+    "date": "2013-03-25T15:00:09+0100"
+   },
+   {
+    "type": "DISSEMINATION_DOI_XML",
+    "title": "<adms:identifier xmlns:adms=\"http://www.w3.org/ns/adms#\" xmlns:skos=\"http://www.w3.org/2004/02/skos/core.html\" xmlns:dct=\"http://purl.org/dc/terms/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><adms:Identifier rdf:about=\"https://doi.org/10.2908/PRC_HPI_Q\"><skos:notation rdf:datatype=\"http://purl.org/spar/datacite/doi\">10.2908/PRC_HPI_Q</skos:notation><dct:creator rdf:resource=\"http://publications.europa.eu/resource/authority/corporate-body/ESTAT\"/><dct:issued rdf:datatype=\"http://www.w3.org/2001/XMLSchema#date\">2023-01-19</dct:issued></adms:Identifier></adms:identifier>"
+   },
+   {
+    "type": "DISSEMINATION_OBJECT_TYPE",
+    "title": "DATASET"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_DATA",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_GLOBAL",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_PLANNED",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "ESMS_HTML",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/cache/metadata/en/prc_hpi_inx_esms.htm"
+   },
+   {
+    "type": "ESMS_SDMX",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/api/dissemination/files?file=metadata/prc_hpi_inx_esms.sdmx.zip"
+   },
+   {
+    "type": "OBS_COUNT",
+    "title": "32347"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_LATEST",
+    "title": "2026-Q1"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_OLDEST",
+    "title": "2005-Q1"
+   },
+   {
+    "type": "SOURCE_INSTITUTIONS",
+    "text": "Eurostat"
+   },
+   {
+    "type": "UPDATE_DATA",
+    "date": "2026-07-02T11:00:00+0200"
+   },
+   {
+    "type": "UPDATE_STRUCTURE",
+    "date": "2026-07-02T11:00:00+0200"
+   }
+  ],
+  "status": {
+   "label": {
+    "b": "break in time series",
+    "p": "provisional"
+   }
+  },
+  "positions-with-no-data": {
+   "freq": [],
+   "purchase": [],
+   "unit": [],
+   "geo": [],
+   "time": []
+  }
+ }
+}

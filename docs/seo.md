@@ -18,10 +18,11 @@ point somebody would edit it. Everything else is here.
 | Canonical, OG, Twitter card, JSON-LD | each `.html` entry | one canonical URL per entry, a static 1200×630 preview carrying no figure, and a `WebApplication` / `WebPage` node that describes the code rather than the data — **`license` sits on the `WebApplication` and nowhere else**, because on a `WebPage` full of Eurostat's, БНБ's and НСИ's figures it states that those are Apache-2.0 (`verify_legal.mjs`, `docs/legal.md`) |
 | `noindex` on the error page | `site/404.html` | an indexed 404 is a search result that wastes a reader's click |
 | `X-Robots-Tag` on the payloads | `site/public/_headers` | the `robots.txt` rule again, in a header, for anything that reaches a JSON directly |
-| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all eight, the published figures on the four that read payloads, in the one language the entry declares — below |
+| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all ten, the published figures on the six that read payloads, in the one language the entry declares — below |
 | A second content page | `site/how/index.html` → `src/How.svelte` | the informational queries the calculator cannot rank for — below |
+| A third content page | `site/market/index.html` → `src/Market.svelte` | the property-market queries, which are asked far more often than the calculator's own and which almost nothing answers with a source attached |
 | The English tree | `site/en/*/index.html` | each of the four routes at a second address, declaring `en`, so a document exists for an English query to rank — below |
-| `hreflang`, reciprocal | each `.html` entry | `bg`, `en` and `x-default` on all eight, each set naming itself; `x-default` is the Bulgarian page. `verify_static_assets.mjs` checks the whole collection, because a one-sided set is discarded silently |
+| `hreflang`, reciprocal | each `.html` entry | `bg`, `en` and `x-default` on all ten, each set naming itself; `x-default` is the Bulgarian page. `verify_static_assets.mjs` checks the whole collection, because a one-sided set is discarded silently |
 
 Core Web Vitals need nothing: a static bundle, no third-party request at all
 (the CSP in `_headers` is what keeps that true), and self-hosted subsetted
@@ -69,13 +70,13 @@ assertion written as "there is at least one of these".
 reason, and the browser suites count the header, the footer and the heading
 exactly rather than merely finding them.
 
-It reads the nine published payloads off disk — `PAYLOADS` from
+It reads the eleven published payloads off disk — `PAYLOADS` from
 `src/lib/payloads.js`, never a directory listing — and hands them to the
 component as a prop. `data.js` is not imported and must not be: that layer is
 `fetch`, and there is no fetch in a Node build step. A payload that will not
 parse fails the build rather than being rendered around.
 
-### Eight pages, four routes, two languages
+### Ten pages, five routes, two languages
 
 **Every route is served at two addresses: `/how/` and `/en/how/`, and so on for
 all four.** The entries are nine files in `site/` — four Bulgarian, four
@@ -145,7 +146,7 @@ So `prerender.mjs` writes the language its entry declares and drops the other,
 reading `data-lang` off `<html>` rather than assuming `bg`, because that
 attribute is what `tokens.css` hides by and the two have to agree.
 `verify_render_prerender.mjs` §"the served pages carry one language, not two"
-counts the class over the raw file for all eight entries, in both directions —
+counts the class over the raw file for all ten entries, in both directions —
 the Bulgarian pages must carry no `.l-en` and the English ones no `.l-bg`, and
 each must still carry its own. It holds however a future pair is written: one of
 them is an `<a class="how-more l-en">` rather than a span today.

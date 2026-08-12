@@ -225,6 +225,54 @@ nothing here rounds.
 names. Do not widen the band — every failure it is written for puts the parse on
 a column that is not a wage.
 
+## Property-market gates (`--source house-market`)
+
+Two blocks, run before either payload is written.
+
+**`validate_house_market`** — three properties over `house_market.json`:
+
+1. **The disclosed derivation reproduces.** Every quarter of `avg_deal_eur`
+   must equal the published value over the published count for that same
+   quarter, to the cent. An identity rather than a tolerance: the payload rounds
+   the quotient to two decimals and nothing else happens to it, so anything
+   further out is a different denominator. This is the figure a reader is most
+   likely to check by hand, and it is checked the same way here.
+2. **The two purchase codes have not been swapped.** The average new-build deal
+   is above the average existing-dwelling deal in every quarter of the published
+   series. `DW_NEW` and `DW_EXST` differ by one letter, and swapped at the
+   source they keep every series plausible **and** keep the derivation
+   reproducing exactly — this is the only check that sees it.
+3. **The average is in €10k–€500k.** Measured on the real series before it was
+   written: the published run is €30,250 to €82,786, so the band is roughly
+   three times wider at each end. It is watching for a unit error, not a market
+   move, and tightening it around the current level would make it fail on the
+   market doing something.
+
+**`validate_house_market_structure`** — the identities each cube asserts about
+itself, which a wrong slice breaks while every individual number still looks
+like a percentage:
+
+- owners plus renters equals the published total, within 0.2 pp (EU-SILC
+  publishes each share to one decimal, so a split population can miss 100 by a
+  rounding step; a slice over the wrong household composition misses by whole
+  points);
+- owners-with-a-loan is a subset of owners;
+- occupied plus unoccupied does not exceed the dwelling stock;
+- price-to-income is on `PTIR_LT_AVG` and no other unit. `PTIR_I15` would make
+  the page's sentence about a country's own long-run average false while
+  rendering a perfectly ordinary index.
+
+**Gate 6 runs over the seven published `api_url`s**, body-checked. Those are the
+queries the page links for "check it yourself", so a dead one costs the page its
+argument rather than a footnote. It is the `api_url`s rather than the databrowser
+pages because Eurostat answer a rate-limited or malformed query with 200 OK and
+an error payload — the status code proves nothing.
+
+**What is not gated here, and is next.** The reconciliation between НСИ's
+`HPI_1.3` and Eurostat's `RCH_A` — the same statistic reaching us by two routes,
+published at one decimal each — arrives with the НСИ housing workbooks. Measured
+2026-08-12, they agree exactly: 14.8 / 12.5 / 16.3 for total, new and existing.
+
 ## Mortgage gates (`--source mortgage`)
 
 All five are hard-required; none degrades. The arm writes a complete
@@ -275,6 +323,7 @@ detail.
 | `salary-dist` | P1 floored at the statutory minimum wage | — |
 | `payroll` | no network; parity-checked against the SPA sentinel. `payroll.py` raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | `test_payroll.py` reads `mirror.js` |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
+| `house-market` | the two blocks above: the derivation reproduces, the purchase codes are not swapped, the average is inside €10k–€500k, and the tenure and census identities hold. Gate 6 over the seven published `api_url`s unless `--skip-link-check` | One arm, two payloads — the stems both start `house_market` because `refresh.yml` matches them against the `--source` name, and a payload no arm owns publishes nothing while the run reports success |
 
 ## A good HICP run
 

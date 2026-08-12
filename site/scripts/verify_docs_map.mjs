@@ -181,6 +181,18 @@ const NUMERALS = new Map([
   ["деветте", 9],
   ["десет", 10],
   ["десетте", 10],
+  ["11", 11],
+  ["12", 12],
+  ["13", 13],
+  ["eleven", 11],
+  ["twelve", 12],
+  ["thirteen", 13],
+  ["единадесет", 11],
+  ["единадесетте", 11],
+  ["дванадесет", 12],
+  ["дванадесетте", 12],
+  ["тринадесет", 13],
+  ["тринадесетте", 13],
 ]);
 
 const WORD = [...NUMERALS.keys()].join("|");
@@ -219,7 +231,8 @@ const PAYLOAD_COUNT = new RegExp(
  * business judging — a guard that fires on a true sentence is one somebody
  * turns off, and then the stale totals come back with it.
  */
-const NAMES_A_SUBSET = /\b(?:eighth|ninth|tenth|of the|осмият|деветият|от деветте)\b/iu;
+const NAMES_A_SUBSET =
+  /\b(?:eighth|ninth|tenth|eleventh|twelfth|of the|осмият|деветият|от деветте)\b/iu;
 
 /**
  * `docs/writing-style.md` quotes example sentences to argue about how they are

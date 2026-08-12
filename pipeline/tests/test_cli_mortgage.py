@@ -221,6 +221,7 @@ def test_refresh_advertises_exactly_the_supported_sources(tmp_path):
         "sector-salary",
         "salary-dist",
         "payroll",
+        "house-market",
         "all",
     }, f"the --source list changed: {sorted(choices)}"
     assert "mortgage-scrape" not in choices

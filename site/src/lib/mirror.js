@@ -1348,3 +1348,113 @@ export function cashErosion(cash, officialCumPct) {
   const valueToday = cash / (1 + officialCumPct / 100);
   return { valueToday, eaten: cash - valueToday };
 }
+
+// ---------------------------------------------------------------------------
+// THE PROPERTY MARKET
+// ---------------------------------------------------------------------------
+//
+// Everything here is a ratio between two published figures, and every one of
+// them is computed rather than published for the same reason: the two figures
+// come from two publishers, or the ratio is ours. `docs/legal.md` §НСИ forbids
+// distributing производни и сборни произведения, so a file mixing an НСИ cell
+// with a Eurostat one is a licence breach however carefully it is captioned —
+// and the join happens in the reader's own tab instead, exactly as the salary
+// ladder joins Eurostat's shape to НСИ's level.
+//
+// None of these takes a reader's own figure. The market page has no input on
+// it, and every function below takes payload values rather than scalars so a
+// caller cannot thread one in.
+
+/**
+ * Change between two readings of the same series, as a percentage.
+ *
+ * Null rather than zero when either side is missing, because a market that did
+ * not move and a quarter nobody published look identical once a missing value
+ * becomes 0 — and the second one is the common case here, at the edges of two
+ * series published over different windows.
+ *
+ * @param {number|null|undefined} now
+ * @param {number|null|undefined} before
+ * @returns {number|null} percent
+ */
+export function changePct(now, before) {
+  if (!Number.isFinite(now) || !Number.isFinite(before) || before === 0) return null;
+  return ((now - before) / before) * 100;
+}
+
+/**
+ * The same quarter one year earlier, as a period label.
+ *
+ * String arithmetic on the label rather than an index into the series, so a
+ * gap in the series cannot silently shift the comparison onto a neighbouring
+ * quarter — the year-ago period either exists in the data or the caller gets
+ * null and renders nothing.
+ *
+ * @param {string} period  "YYYY-Qn"
+ * @returns {string|null}
+ */
+export function quarterYearAgo(period) {
+  const m = /^(\d{4})-Q([1-4])$/.exec(String(period ?? ""));
+  return m ? `${Number(m[1]) - 1}-Q${m[2]}` : null;
+}
+
+/**
+ * Deals, and the change on the same quarter a year earlier.
+ *
+ * Year-on-year rather than quarter-on-quarter, and that is not a presentation
+ * choice: property transactions have a strong seasonal shape, so a fall from
+ * Q3 to Q4 measures the calendar. Comparing a quarter with the same quarter is
+ * what removes it — the same reason `une_rt_m` is read seasonally adjusted.
+ *
+ * @param {Record<string, {total?: number}>} series  deals.series_by_period
+ * @param {string} period  the quarter to report
+ * @returns {{count: number|null, yearAgo: number|null, changePct: number|null}}
+ */
+export function dealsAtQuarter(series, period) {
+  const count = series?.[period]?.total ?? null;
+  const before = series?.[quarterYearAgo(period) ?? ""]?.total ?? null;
+  return { count, yearAgo: before, changePct: changePct(count, before) };
+}
+
+/**
+ * The share of the dwelling stock that stood empty on census night.
+ *
+ * Computed here rather than published because the two counts are what the
+ * census carries and the share is ours — and because a reader checking it
+ * needs both numbers in front of them, which is what publishing the counts and
+ * deriving the share gives them.
+ *
+ * @param {{total?: number, unoccupied?: number}|null} census
+ * @returns {number|null} percent
+ */
+export function unoccupiedSharePct(census) {
+  const total = census?.total;
+  const unoccupied = census?.unoccupied;
+  if (!Number.isFinite(total) || !Number.isFinite(unoccupied) || total <= 0) return null;
+  return (unoccupied / total) * 100;
+}
+
+/**
+ * How many years of a wage the average dwelling transaction costs.
+ *
+ * **The cross-publisher join, and the reason it happens in the browser.** The
+ * deal value is Eurostat's and the wage is НСИ's, and neither payload may carry
+ * the other's number. Both files stay one publisher's all the way here, and
+ * this multiplication is the first place they meet.
+ *
+ * GROSS wage, deliberately, and the caller has to pass a gross figure. A price
+ * expressed in years of NET pay is the more useful number to a buyer and the
+ * more misleading one to quote, because the net figure depends on the payroll
+ * table of the year it was computed in — so the published, unmodified НСИ cell
+ * is what this divides by, and the page says which it is.
+ *
+ * @param {number|null|undefined} dealEur  average transaction, EUR
+ * @param {number|null|undefined} monthlyGrossEur  НСИ's published average
+ * @returns {number|null} years
+ */
+export function dealInYearsOfPay(dealEur, monthlyGrossEur) {
+  if (!Number.isFinite(dealEur) || !Number.isFinite(monthlyGrossEur) || monthlyGrossEur <= 0) {
+    return null;
+  }
+  return dealEur / (monthlyGrossEur * 12);
+}

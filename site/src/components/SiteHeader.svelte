@@ -63,6 +63,14 @@
            Bulgarian, since the URL is what decides the language now. -->
       <a class="pill nav l-bg" href={langHref("/how/", "bg")}>{COPY.howNavK.bg}</a>
       <a class="pill nav l-en" href={langHref("/how/", "en")}>{COPY.howNavK.en}</a>
+      <!-- The second content route, in the same slot and the same vocabulary.
+           Two nav pills, a theme button and a language link is four controls in
+           a bar that had three, and the label is one word for that reason: the
+           media rule below already drops the brand's `small` at 560px, and the
+           bar has to stay on one line at 360px rather than growing a second row
+           on every phone. -->
+      <a class="pill nav l-bg" href={langHref("/market/", "bg")}>{COPY.marketNavK.bg}</a>
+      <a class="pill nav l-en" href={langHref("/market/", "en")}>{COPY.marketNavK.en}</a>
       <button class="pill" onclick={toggleTheme} aria-label={t(COPY.themeToggle, $lang)}>
         {$theme === "dark" ? "☀" : "☾"}
       </button>

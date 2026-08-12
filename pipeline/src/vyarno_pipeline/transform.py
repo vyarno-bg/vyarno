@@ -49,11 +49,21 @@ from vyarno_pipeline.models import (
     TimeSeriesObservation,
 )
 from vyarno_pipeline.sources.eurostat import (
+    CENSUS_DWELLINGS_DATASET,
     CP_DIVISIONS,
+    HOUSE_PRICE_INDEX_BASE_YEAR,
+    HOUSE_PRICE_INDEX_UNIT,
+    HOUSE_PRICE_RATE_UNIT,
+    HOUSE_SALES_VALUE_UNIT,
+    HOUSING_OVERBURDEN_DATASET,
     INDEX_BASE_YEAR,
     INDEX_UNIT,
     IW_DATASET,
     MINR_DATASET,
+    PRICE_TO_INCOME_DATASET,
+    PRICE_TO_INCOME_UNIT,
+    TENURE_DATASET,
+    CubeFetch,
     HicpCube,
 )
 
@@ -769,5 +779,340 @@ def build_sector_salary_payload(
             "communication' is publishing, film, broadcasting and "
             "telecommunications alongside software. The Q4 figure excludes "
             "annual bonuses, which НСИ publish as a separate column."
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# The property market
+# ---------------------------------------------------------------------------
+
+# Eurostat's own purchase codes → the field names the payload uses. Publishing
+# `new` and `existing` rather than `DW_NEW` and `DW_EXST` keeps the two
+# spellings that differ by one letter out of the site entirely, where a typo
+# reads as a missing figure rather than as an error.
+PURCHASE_FIELDS: dict[str, str] = {
+    "TOTAL": "total",
+    "DW_NEW": "new",
+    "DW_EXST": "existing",
+}
+
+
+def _rows_by_period_and_purchase(
+    rows: list[dict], unit: str | None = None
+) -> dict[str, dict[str, float]]:
+    """Collapse cube rows to {period: {total|new|existing: value}}.
+
+    Rows whose purchase code is not one of the three are dropped rather than
+    carried under their upstream name — a fourth code appearing upstream is a
+    reshaped cube, and the coverage check in `build_house_market_payload` is
+    what notices it.
+    """
+    out: dict[str, dict[str, float]] = {}
+    for r in rows:
+        if unit is not None and r.get("unit") != unit:
+            continue
+        field = PURCHASE_FIELDS.get(str(r.get("purchase")))
+        if field is None or r.get("value") is None or r.get("time") is None:
+            continue
+        out.setdefault(str(r["time"]), {})[field] = float(r["value"])
+    return out
+
+
+def build_house_market_payload(
+    count: CubeFetch,
+    value: CubeFetch,
+    index: CubeFetch,
+    as_of: date,
+) -> dict:
+    """Shape the three Eurostat property cubes into `house_market.json`.
+
+    One publisher, one file. Everything here is Eurostat's — the deal counts,
+    what was paid, the index level and the annual rate — which is what lets the
+    one derived figure in it be disclosed as a derivation of Eurostat data
+    rather than as a composite of two publishers'.
+
+    **`avg_deal_eur` is ours, and it is the reason this payload carries a
+    modification notice.** Eurostat permit derivation on condition it is stated
+    clearly to the end user and carries their non-responsibility clause, so the
+    envelope says so in the same words `INDEX_DERIVATION_NOTE` uses for the
+    HICP selection. Nobody publishes an average Bulgarian dwelling transaction;
+    the two cubes that make one are both here, at the same vintage, from the
+    same publisher.
+
+    **A quarter is published only where both cubes have it.** The value series
+    starts two years before the count series, so eight quarters carry a value
+    and no count — and `value ÷ nothing` is not a small error, it is a number
+    with no denominator. Pairing on the intersection is what keeps a partial
+    quarter out rather than a zero in.
+
+    Purchase splits ride along on all three because the split is the story: new
+    builds and existing dwellings move differently in price and in volume, and
+    an average deal that mixes them hides which one moved.
+    """
+    counts = _rows_by_period_and_purchase(count.rows)
+    values = _rows_by_period_and_purchase(value.rows)
+    levels = _rows_by_period_and_purchase(index.rows, unit=HOUSE_PRICE_INDEX_UNIT)
+    rates = _rows_by_period_and_purchase(index.rows, unit=HOUSE_PRICE_RATE_UNIT)
+
+    if not counts or not values or not levels or not rates:
+        raise ValueError(
+            "house market: one of the four series came back empty "
+            f"(counts {len(counts)}, values {len(values)}, index {len(levels)}, "
+            f"rates {len(rates)}). A cube that filtered to nothing answers 200."
+        )
+
+    # The intersection, and only where BOTH sides carry a total to divide.
+    paired = sorted(
+        p
+        for p in set(counts) & set(values)
+        if counts[p].get("total") and values[p].get("total") is not None
+    )
+    if not paired:
+        raise ValueError(
+            "house market: the count and value cubes share no quarter carrying "
+            "both a deal count and a value. They are published on different "
+            "windows, so an empty intersection means one of them was filtered "
+            "to nothing rather than that the market stopped."
+        )
+
+    avg_deal: dict[str, dict[str, float]] = {}
+    for period in paired:
+        row: dict[str, float] = {}
+        for field in ("total", "new", "existing"):
+            n = counts[period].get(field)
+            v = values[period].get(field)
+            if n and v is not None:
+                # Two decimals rather than whole euro: this is an average, and
+                # rounding it to the euro invites reading it as a price
+                # somebody paid.
+                row[field] = round(v / n, 2)
+        if row:
+            avg_deal[period] = row
+
+    latest = paired[-1]
+    latest_rate_period = max(rates)
+
+    return {
+        "schema_version": "1.0",
+        "as_of": as_of.isoformat(),
+        "source": "eurostat",
+        "source_url": count.page_url,
+        "notes": (
+            "Bulgaria's residential property market as Eurostat publish it, "
+            "quarterly: how many dwellings households bought, what they paid, "
+            "and the official house price index with Eurostat's own annual rate "
+            "of change. Scope is dwellings bought by households at the price "
+            "actually paid — flats and houses, VAT included on new builds, "
+            "notary and agency fees excluded, land only as the plot under a "
+            "house. Standalone land, garages, shops and offices are outside it, "
+            "as are state and municipal sales, gifts, inheritances, "
+            "court-executor sales and self-build. "
+            "MODIFICATION NOTICE, per Eurostat's reuse conditions: every figure "
+            "under deals, value, price_index and annual_rate_pct is Eurostat's "
+            "own, unmodified, at the unit each block names. `avg_deal_eur` is "
+            "OURS — the value cube divided by the count cube, quarter by "
+            "quarter and purchase type by purchase type, published only for the "
+            "quarters both cubes carry. Eurostat is not responsible for that "
+            "division or for any conclusion drawn from it."
+        ),
+        "payload_name": "house_market",
+        "ref_period": latest,
+        "deals": {
+            "_role": "COUNT: dwellings sold, as published",
+            "dataset": count.dataset,
+            "source_url": count.page_url,
+            "api_url": count.api_url,
+            "unit": "count",
+            "series_by_period": {p: counts[p] for p in sorted(counts)},
+        },
+        "value": {
+            "_role": "VALUE: what households paid for them, as published",
+            "dataset": value.dataset,
+            "source_url": value.page_url,
+            "api_url": value.api_url,
+            "unit": HOUSE_SALES_VALUE_UNIT.lower(),
+            "series_by_period": {p: values[p] for p in sorted(values)},
+        },
+        "price_index": {
+            "_role": "INDEX + RATE: the official house price index, as published",
+            "dataset": index.dataset,
+            "source_url": index.page_url,
+            "api_url": index.api_url,
+            "unit": f"index_{HOUSE_PRICE_INDEX_BASE_YEAR}=100",
+            "base_year": HOUSE_PRICE_INDEX_BASE_YEAR,
+            "series_by_period": {p: levels[p] for p in sorted(levels)},
+            # Eurostat's published rate, never computed from the index above.
+            # НСИ rebased to 2025=100 from the start of 2026 and warn that a
+            # rate recomputed across the two bases can differ in the last
+            # decimal — which is the decimal the cross-publisher gate compares.
+            "annual_rate_pct": {p: rates[p] for p in sorted(rates)},
+            "rate_ref_period": latest_rate_period,
+        },
+        "avg_deal_eur": {
+            "_role": "DERIVED BY US: value ÷ count, per quarter and purchase type",
+            "derived_from": [value.dataset, count.dataset],
+            # The two queries a sceptic runs to reproduce every figure here.
+            # Naming the datasets alone would leave them to guess the filters,
+            # and a different filter is how two people get two answers from one
+            # dataset and both believe the other is lying.
+            "derived_from_api_urls": [value.api_url, count.api_url],
+            "unit": "eur",
+            "series_by_period": avg_deal,
+            "latest": avg_deal.get(latest, {}),
+            "method": (
+                "Eurostat's published quarterly transaction value divided by "
+                "Eurostat's published quarterly transaction count, for the "
+                "quarters both cubes carry. Not a price per square metre and "
+                "not a median: it is the mean amount paid for a dwelling, and a "
+                "quarter's mix of flats and houses moves it. Eurostat publish "
+                "neither this figure nor any per-city equivalent."
+            ),
+        },
+        "disclaimer": (
+            "Dwellings bought by HOUSEHOLDS, at the price paid. This is not a "
+            "count of all property sales: the property register records every "
+            "sale deed — land, garages, shops, offices — and runs more than "
+            "twice as high for the same quarter. The two measure different "
+            "things and neither is wrong."
+        ),
+    }
+
+
+def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of: date) -> dict:
+    """Shape the four Eurostat structure cubes into `house_market_structure.json`.
+
+    Who owns, who owes, how many homes stood empty at the census, and whether
+    any of it is expensive against what people earn. None of these is quarterly
+    and none is a transaction, which is why they are a second file rather than
+    more keys on the first: they move on four different clocks, and a payload
+    whose freshness row has to describe an annual survey and a 2021 census at
+    once can date neither honestly.
+
+    Nothing here is derived. The unoccupied SHARE a reader sees is computed in
+    their browser from the two counts published below, for the same reason
+    every other cross-figure comparison is: this file stays a set of cells
+    Eurostat published.
+    """
+    tenure_cube = structure[TENURE_DATASET]
+    census_cube = structure[CENSUS_DWELLINGS_DATASET]
+    ptir_cube = structure[PRICE_TO_INCOME_DATASET]
+    burden_cube = structure[HOUSING_OVERBURDEN_DATASET]
+    tenure_rows, census_rows = tenure_cube.rows, census_cube.rows
+    ptir_rows, burden_rows = ptir_cube.rows, burden_cube.rows
+
+    def latest_of(rows: list[dict]) -> str:
+        periods = [str(r["time"]) for r in rows if r.get("time") is not None]
+        if not periods:
+            raise ValueError("housing structure: a cube came back with no period")
+        return max(periods)
+
+    tenure_period = latest_of(tenure_rows)
+    tenure = {
+        str(r["tenure"]): float(r["value"])
+        for r in tenure_rows
+        if str(r.get("time")) == tenure_period and r.get("value") is not None
+    }
+    for code in ("TOTAL", "OWN", "OWN_L", "RENT", "RENT_MKT"):
+        if code not in tenure:
+            raise ValueError(
+                f"housing structure: tenure cube is missing {code!r} at "
+                f"{tenure_period}. The seven codes are one split of one "
+                f"population and a missing one means the slice moved."
+            )
+
+    census_period = latest_of(census_rows)
+    census = {
+        str(r["housing"]): float(r["value"])
+        for r in census_rows
+        if str(r.get("time")) == census_period and r.get("value") is not None
+    }
+    for code in ("DW", "DW_OC", "DW_NOC"):
+        if code not in census:
+            raise ValueError(f"housing structure: census cube is missing {code!r}")
+
+    ptir = _rows_to_period_map(ptir_rows)
+    burden = _rows_to_period_map(burden_rows)
+    ptir_period = max(ptir)
+    burden_period = max(burden)
+
+    return {
+        "schema_version": "1.0",
+        "as_of": as_of.isoformat(),
+        "source": "eurostat",
+        "source_url": tenure_cube.page_url,
+        "notes": (
+            "The structure of Bulgarian housing, from four Eurostat cubes on "
+            "four different clocks: tenure and housing-cost overburden are "
+            "annual EU-SILC, the dwelling counts are a census snapshot, and the "
+            "price-to-income ratio is annual. Every figure is Eurostat's own, "
+            "unmodified. Nothing here is derived — the unoccupied share and any "
+            "comparison between these figures is computed in the reader's "
+            "browser from the counts below."
+        ),
+        "payload_name": "house_market_structure",
+        "ref_period": tenure_period,
+        "tenure": {
+            "_role": "TENURE: how the population lives, % of people",
+            "dataset": tenure_cube.dataset,
+            "source_url": tenure_cube.page_url,
+            "api_url": tenure_cube.api_url,
+            "unit": "percent_of_population",
+            "ref_period": tenure_period,
+            "total_pct": tenure["TOTAL"],
+            "owner_pct": tenure["OWN"],
+            # The figure that explains the rest of the page. An owner-occupied
+            # country where almost nobody is leveraged is one where price is set
+            # at the margin by a very small number of borrowers.
+            "owner_with_mortgage_pct": tenure["OWN_L"],
+            "owner_no_mortgage_pct": tenure.get("OWN_NL"),
+            "rent_pct": tenure["RENT"],
+            "rent_market_price_pct": tenure["RENT_MKT"],
+            "rent_reduced_or_free_pct": tenure.get("RENT_FR"),
+        },
+        "census_dwellings": {
+            "_role": "STOCK: conventional dwellings by occupancy, at the census",
+            "dataset": census_cube.dataset,
+            "source_url": census_cube.page_url,
+            "api_url": census_cube.api_url,
+            "unit": "count",
+            "ref_period": census_period,
+            "total": census["DW"],
+            "occupied": census["DW_OC"],
+            "unoccupied": census["DW_NOC"],
+        },
+        "price_to_income": {
+            "_role": "RATIO: price-to-income against this country's OWN long-run average",
+            "dataset": ptir_cube.dataset,
+            "source_url": ptir_cube.page_url,
+            "api_url": ptir_cube.api_url,
+            "unit": PRICE_TO_INCOME_UNIT,
+            "ref_period": ptir_period,
+            "value": ptir[ptir_period],
+            "series_by_period": ptir,
+            "note": (
+                "100 is this country's own long-run average, not another "
+                "country's level. A reading below 100 says homes cost less "
+                "relative to Bulgarian incomes than they have on average over "
+                "the series; it says nothing about whether they are cheap."
+            ),
+        },
+        "housing_cost_overburden": {
+            "_role": "BURDEN: share of people spending over 40% of income on housing",
+            "dataset": burden_cube.dataset,
+            "source_url": burden_cube.page_url,
+            "api_url": burden_cube.api_url,
+            "unit": "percent_of_population",
+            "ref_period": burden_period,
+            "value_pct": burden[burden_period],
+            "series_by_period": burden,
+        },
+        "disclaimer": (
+            "EU-SILC is a sample survey of private households, so tenure and "
+            "overburden carry sampling error and exclude people not living in "
+            "private households. The dwelling counts are a census snapshot — the "
+            "census block names its own year and no newer count exists; "
+            "'unoccupied' there means unoccupied on census night, which covers "
+            "second homes and holiday properties alongside genuinely empty stock."
         ),
     }

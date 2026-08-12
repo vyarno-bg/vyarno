@@ -95,7 +95,10 @@ export const PAYLOADS = Object.freeze(
     {
       key: "hicpCategories",
       file: "hicp_categories",
-      pages: ["home"],
+      // `/market/` reads one group of it — CP041, rent — beside the housing
+      // figures. Cheaper than a second payload carrying the same Eurostat cell,
+      // and it cannot disagree with the calculator about what rent did.
+      pages: ["home", "market"],
       cadenceDays: 31,
       name: { bg: "Инфлация по групи", en: "Inflation by group" },
       feeds: {
@@ -137,7 +140,11 @@ export const PAYLOADS = Object.freeze(
     {
       key: "sectorSalary",
       file: "sector_salary",
-      pages: ["home"],
+      // `/market/` reads the all-activities row, and only that row: the average
+      // dwelling transaction expressed in years of pay is Eurostat's figure over
+      // НСИ's, joined in the browser because neither published file may carry
+      // the other's number.
+      pages: ["home", "market"],
       // The same НСИ quarterly release as `regionSalary` — one publisher, two
       // cuts of the same labour statistic, so they go stale together.
       cadenceDays: 92,
@@ -232,6 +239,39 @@ export const PAYLOADS = Object.freeze(
         return days[0] ?? p?.as_of ?? null;
       },
       refPeriodIsDayDate: true,
+    },
+    {
+      key: "houseMarket",
+      file: "house_market",
+      pages: ["market"],
+      // Eurostat publish the quarter about three months after it closes, and
+      // the value cube lands about a week behind the count cube. A quarter plus
+      // a week, so a refresh that waits for the slower of the two is not
+      // reported as a skipped one.
+      cadenceDays: 99,
+      name: { bg: "Сделки с жилища", en: "Home sales" },
+      feeds: {
+        bg: "колко жилища се купуват, колко се плаща за тях и средната сделка",
+        en: "how many dwellings are bought, what is paid, and the average deal",
+      },
+      refPeriod: (p) => p?.ref_period ?? null,
+    },
+    {
+      key: "houseMarketStructure",
+      file: "house_market_structure",
+      pages: ["market"],
+      // The slowest clock on the site after `salary_dist`. Tenure and
+      // overburden are annual EU-SILC and the dwelling counts are a census, so
+      // a quarterly cadence here would mark the row due three months after
+      // every refresh and raise the banner over figures no refresh can change.
+      // A year plus a day, for the reason `payroll` carries 366.
+      cadenceDays: 366,
+      name: { bg: "Жилищен фонд и собственост", en: "Housing stock and tenure" },
+      feeds: {
+        bg: "кой живее в собствено жилище, кой дължи по него и колко жилища стоят празни",
+        en: "who owns their home, who owes on it, and how many dwellings stand empty",
+      },
+      refPeriod: (p) => p?.ref_period ?? null,
     },
     {
       key: "mortgage",

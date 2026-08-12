@@ -12,9 +12,10 @@ no router and no rewrite rules (`vite.config.js#rollupOptions.input`):
 |---|---|---|
 | `index.html` → `src/main.js` → `App.svelte` | `/` | the calculator |
 | `how/index.html` → `src/how-main.js` → `How.svelte` | `/how/` | the country's figures, with their sources |
+| `market/index.html` → `src/market-main.js` → `Market.svelte` | `/market/` | the residential property market, with every figure sourced |
 | `legal/index.html` → `src/legal-main.js` → `Legal.svelte` | `/legal/` | terms, privacy, ЗЕТ чл. 4 identity, sources |
 | `support/index.html` → `src/support-main.js` → `Support.svelte` | `/support/` | how the project is paid for |
-| `en/index.html`, `en/how/…`, `en/legal/…`, `en/support/…` | `/en/…` | those four again, declaring `en` |
+| `en/index.html`, `en/how/…`, `en/market/…`, `en/legal/…`, `en/support/…` | `/en/…` | those five again, declaring `en` |
 | `404.html` → `src/notfound-main.js` → `NotFound.svelte` | `/404.html` | served for any unmatched path by name |
 
 **The `en/` four name the same bootstraps and the same components as their
@@ -98,6 +99,7 @@ site/
 │   ├── verify_render_prerender.mjs # the built HTML, as a crawler reads it
 │   ├── verify_render_shell.mjs    # it mounts, it logs nothing, both toggles
 │   ├── verify_render_country.mjs  # /how/, live over its own prerender
+│   ├── verify_render_market.mjs   # /market/ — every figure sourced, no input
 │   ├── verify_render_strip.mjs    # the national strip and the charts
 │   ├── verify_render_basket.mjs   # the thirteen rows, presets, chips
 │   ├── verify_render_results.mjs  # headline · verdict · ladder · working
@@ -112,7 +114,8 @@ site/
 │   ├── _headers · robots.txt · llms.txt · .well-known/security.txt
 │   ├── favicon.svg · og-image.png · fonts/ (self-hosted, vendored unmodified)
 └── src/
-    ├── App.svelte · How.svelte · Legal.svelte · Support.svelte · NotFound.svelte
+    ├── App.svelte · How.svelte · Market.svelte · Legal.svelte · Support.svelte
+    │   · NotFound.svelte
     ├── components/   # the calculator, one file per part
     └── lib/
         ├── payloads.js   # WHICH payloads exist at all (the manifest)

@@ -42,7 +42,7 @@ import { dirname, join } from "node:path";
 
 import { PRESETS } from "../src/lib/content.js";
 import { BG_CONTRIB_LINES } from "../src/lib/mirror.js";
-import { PAYLOAD_FILES } from "../src/lib/payloads.js";
+import { payloadsFor } from "../src/lib/payloads.js";
 import { published } from "./published-payload.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -589,7 +589,7 @@ test("the home block prices m² off the live имот.bg median, and cites imot.
 /** A Eurostat dataset id wherever one appears inside a URL on a page. */
 const ID_IN_URL = /(?:databrowser\/view\/|1\.0\/data\/)([a-z0-9_]+)/g;
 
-function datasetsInUse() {
+function datasetsInUse(page) {
   const PROVENANCE_KEYS = new Set(["dataset", "source_url", "api_url", "api_url_index"]);
   const ID = /\b((?:prc|une|ilc|earn|namq|nama|hbs)_[a-z0-9_]+)\b/g;
   const found = new Set();
@@ -610,9 +610,14 @@ function datasetsInUse() {
   };
 
   // The manifest is the set of payloads the page renders, so it is also the set
-  // whose upstreams the source line owes a citation.
-  for (const stem of PAYLOAD_FILES) {
-    const payload = published(stem);
+  // whose upstreams the source line owes a citation — **per page**, since more
+  // than one page here renders figures. The calculator owes a citation for the
+  // basket and the wage ladder; it owes none for the property cubes, which put
+  // no figure on it. Reading the whole manifest here would demand the
+  // calculator advertise a dataset a reader would find no number of ours in,
+  // which is the same defect as omitting one, from the other side.
+  for (const entry of payloadsFor(page)) {
+    const payload = published(entry.file);
     if (payload) walk(payload);
   }
   return found;
@@ -636,7 +641,7 @@ test("the source line names every Eurostat dataset the page uses, and no others"
   );
   assert.ok(cited.size, "the source line cites no Eurostat dataset at all");
 
-  const inUse = datasetsInUse();
+  const inUse = datasetsInUse("home");
   if (!inUse.size) return; // no refresh in this checkout
 
   const orphaned = [...cited].filter((d) => !inUse.has(d)).sort();
@@ -899,7 +904,7 @@ test("the country page cites every Eurostat dataset it renders, and no others", 
   const cited = new Set([...HOW.matchAll(ID_IN_URL)].map((m) => m[1]));
   assert.ok(cited.size, "the country page links no Eurostat dataset at all");
 
-  const inUse = datasetsInUse();
+  const inUse = datasetsInUse("home");
   if (!inUse.size) return; // no refresh in this checkout
 
   assert.deepEqual(
@@ -1021,5 +1026,58 @@ test("the sector figure never travels without the sentence that qualifies it", (
   assert.ok(
     src.includes("httpUrl(calc.sector.sourceUrl)"),
     "the English verify link does not point at НСИ's English edition"
+  );
+});
+
+const MARKET = live(read("Market.svelte"));
+
+test("the market page takes every source link from the payload, never from a literal", () => {
+  // `/how/` names its Eurostat datasets as module constants and a test holds
+  // that list to what the payloads carry. This page does the opposite and the
+  // difference is deliberate: every figure here renders the `source_url` and
+  // `api_url` the pipeline published beside the number, so the link a reader
+  // follows was produced by the same fetch that produced the digits.
+  //
+  // A hardcoded URL would be right on the day it was typed and would keep
+  // rendering, next to a figure it no longer describes, on the one page whose
+  // whole argument is that a sceptic can check it. So the check is that there
+  // are none.
+  const hardcoded = [...MARKET.matchAll(ID_IN_URL)].map((m) => m[1]);
+  assert.deepEqual(
+    hardcoded,
+    [],
+    `Market.svelte writes Eurostat dataset URLs into the template: ` +
+      `${hardcoded.join(", ")}. The payload carries source_url and api_url for ` +
+      `every block — render those, so the link cannot outlive the figure.`
+  );
+  // …and the figures it renders do carry one, which is the other half: a page
+  // with no hardcoded URLs and no payload URLs cites nothing at all.
+  for (const field of ["sourceUrl", "derivedFrom"]) {
+    assert.ok(
+      MARKET.includes(field),
+      `the market page never reads ${field} from the wiring layer, so its ` +
+        "figures reach the reader without the provenance the payload carries"
+    );
+  }
+});
+
+test("every derived figure on the market page is disclosed as ours", () => {
+  // Eurostat permit derivation on condition it is stated to the end user, and a
+  // sceptic needs more than the statement — they need the queries. `ourSum`
+  // renders both, so the rule is that every figure whose value came back with a
+  // `derivedFrom` has one rendered near it.
+  //
+  // Counted rather than matched pairwise: the snippet takes the queries as an
+  // argument, so a call with no `derivedFrom` behind it would render a
+  // disclosure with no link in it, and a derived figure with no call would
+  // render a figure of ours as if it were Eurostat's.
+  const disclosures = [...MARKET.matchAll(/@render ourSum\(/g)].length;
+  const derived = [...MARKET.matchAll(/\.derivedFrom\b/g)].length;
+  assert.ok(disclosures > 0, "no derived figure on the market page discloses itself");
+  assert.equal(
+    disclosures,
+    derived,
+    `${disclosures} derivation disclosures against ${derived} figures carrying ` +
+      "the queries that reproduce them. Every one of ours needs both."
   );
 });

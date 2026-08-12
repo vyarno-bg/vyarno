@@ -42,6 +42,8 @@ from vyarno_pipeline.publish import (
     CITY_PRICE_FILE,
     HICP_CATEGORIES_FILE,
     HICP_HEADLINE_FILE,
+    HOUSE_MARKET_FILE,
+    HOUSE_MARKET_STRUCTURE_FILE,
     MORTGAGE_FILE,
     PAYROLL_FILE,
     REGION_SALARY_FILE,
@@ -72,6 +74,10 @@ from vyarno_pipeline.sources.eurostat import (
     fetch_hicp_index_bg,
     fetch_hicp_rates_bg,
     fetch_hicp_weights_bg,
+    fetch_house_price_index_bg,
+    fetch_house_sales_count_bg,
+    fetch_house_sales_value_bg,
+    fetch_housing_structure_bg,
     fetch_ses_earnings_bg,
     fetch_unemployment_bg,
     group_codes_in_basket,
@@ -97,6 +103,8 @@ from vyarno_pipeline.sources.nsi import (
 from vyarno_pipeline.transform import (
     COICOP_META,
     MissingSeriesError,
+    build_house_market_payload,
+    build_house_market_structure_payload,
     build_region_salary_payload,
     build_sector_salary_payload,
     build_ses_shape_ladder,
@@ -114,6 +122,8 @@ from vyarno_pipeline.validate import (
     validate_coverage,
     validate_group_consistency,
     validate_headline_flash,
+    validate_house_market,
+    validate_house_market_structure,
     validate_link_status,
     validate_meta_labels_cover,
     validate_reconciliation,
@@ -189,6 +199,7 @@ def _month_before(period: str) -> str:
             "sector-salary",
             "salary-dist",
             "payroll",
+            "house-market",
             "all",
         ]
     ),
@@ -209,7 +220,13 @@ def _month_before(period: str) -> str:
         "section (exit 4 on network error). "
         "'salary-dist' builds the individual gross-earnings percentile ladder "
         "shape (Eurostat SES; the browser re-levels it onto NSI's national "
-        "all-activities average)."
+        "all-activities average). "
+        "'house-market' pulls the three quarterly Eurostat property cubes "
+        "(dwellings sold, what was paid, the house price index) plus the four "
+        "structure cubes (tenure, the census dwelling stock, price-to-income, "
+        "housing-cost overburden) and writes BOTH house_market.json and "
+        "house_market_structure.json — one arm, two files, because "
+        "refresh.yml matches payload stems against the --source name."
     ),
 )
 @click.option(
@@ -256,6 +273,8 @@ def refresh(
         _refresh_salary_dist(out, as_of)
     elif source == "payroll":
         _refresh_payroll(out, as_of)
+    elif source == "house-market":
+        _refresh_house_market(out, geo, skip_link_check, as_of)
     elif source == "all":
         # **`all` is eight publishes, not one transaction.** Each arm writes its
         # own file the moment it has passed its own gates, so an arm that fails
@@ -285,6 +304,7 @@ def refresh(
             ("sector-salary", lambda: _refresh_sector_salary(out, as_of)),
             ("salary-dist", lambda: _refresh_salary_dist(out, as_of)),
             ("payroll", lambda: _refresh_payroll(out, as_of)),
+            ("house-market", lambda: _refresh_house_market(out, geo, skip_link_check, as_of)),
         ]
         for name, arm in arms:
             try:
@@ -1149,3 +1169,87 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: date) -> None:
+    """Publish `house_market.json` and `house_market_structure.json`.
+
+    **One arm, two files, and that is a CI contract rather than a convenience.**
+    `refresh.yml` decides which payloads an arm owns by matching stems against
+    the `--source` name with hyphens swapped for underscores, so a second arm
+    writing a differently-prefixed file would find nothing of its own changed,
+    skip the commit and the PR, and report the run green while the payload never
+    published. Both stems start with `house_market`, so both are this arm's.
+
+    They are two files rather than one because they move on different clocks.
+    The transaction cubes are quarterly; tenure and overburden are annual
+    EU-SILC and the dwelling stock is the 2021 census. A single payload's
+    freshness row would have to date a quarterly series and a five-year-old
+    census at once, and could do neither honestly.
+    """
+    try:
+        click.echo(f"→ fetching house sales, value and price index for {geo}...")
+        count = fetch_house_sales_count_bg(geo=geo)
+        value = fetch_house_sales_value_bg(geo=geo)
+        index = fetch_house_price_index_bg(geo=geo)
+        click.echo(
+            f"  got {len(count.rows)} count rows, {len(value.rows)} value rows, "
+            f"{len(index.rows)} index rows"
+        )
+        click.echo("→ fetching tenure, census stock, price-to-income, overburden...")
+        structure = fetch_housing_structure_bg(geo=geo)
+        click.echo(f"  got {sum(len(c.rows) for c in structure.values())} structure rows")
+    except httpx.HTTPError as e:
+        click.echo(f"ERROR: network failure: {e}", err=True)
+        sys.exit(4)
+
+    try:
+        payload = build_house_market_payload(count, value, index, as_of)
+        structure_payload = build_house_market_structure_payload(structure, as_of)
+    except ValueError as e:
+        click.echo(f"ERROR: transform failed: {e}", err=True)
+        sys.exit(2)
+
+    try:
+        validate_house_market(payload)
+        click.echo("  gate: avg_deal_eur reproduces from the published count and value")
+        validate_house_market_structure(structure_payload)
+        click.echo("  gate: the tenure split and the census stock are internally consistent")
+        if not skip_link_check:
+            # The `api_url`s, not the databrowser pages. Every one of these is
+            # published so a reader can re-run the exact query behind a figure,
+            # and a link that answers 200 with an error payload proves nothing —
+            # which is why this checks the body, the same way the HICP arm does.
+            validate_link_status(
+                [
+                    payload["deals"]["api_url"],
+                    payload["value"]["api_url"],
+                    payload["price_index"]["api_url"],
+                    structure_payload["tenure"]["api_url"],
+                    structure_payload["census_dwellings"]["api_url"],
+                    structure_payload["price_to_income"]["api_url"],
+                    structure_payload["housing_cost_overburden"]["api_url"],
+                ],
+                _is_real_estat_cube,
+            )
+            click.echo("  gate: all seven published api_urls return a real cube")
+    except ValidationError as e:
+        click.echo(f"ERROR: validation failed: {e}", err=True)
+        sys.exit(3)
+
+    write_payload(payload, out, HOUSE_MARKET_FILE)
+    write_payload(structure_payload, out, HOUSE_MARKET_STRUCTURE_FILE)
+
+    latest = payload["ref_period"]
+    deals = payload["deals"]["series_by_period"][latest]["total"]
+    avg = payload["avg_deal_eur"]["latest"].get("total")
+    rate = payload["price_index"]["annual_rate_pct"][payload["price_index"]["rate_ref_period"]]
+    click.echo(
+        f"OK: wrote {HOUSE_MARKET_FILE} ({deals:,.0f} dwellings sold at {latest}, "
+        f"average deal {avg:,.0f} EUR, price index {rate.get('total')}% y/y)"
+    )
+    click.echo(
+        f"OK: wrote {HOUSE_MARKET_STRUCTURE_FILE} "
+        f"({structure_payload['tenure']['owner_pct']}% own, "
+        f"{structure_payload['tenure']['owner_with_mortgage_pct']}% of them with a mortgage)"
+    )

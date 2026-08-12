@@ -102,7 +102,7 @@ Not because we say so — because you can verify it:
 
 | Publisher | What it provides |
 |---|---|
-| **Eurostat** | HICP — inflation across 13 divisions and ~46 groups, the official basket weights, the yearly indices, and the salary-distribution shape |
+| **Eurostat** | HICP — inflation across 13 divisions and ~46 groups, the official basket weights, the yearly indices, and the salary-distribution shape. Plus the property market: how many dwellings households bought each quarter, what they paid, the house price index, tenure, the census dwelling stock and the price-to-income ratio |
 | **ЕЦБ / БНБ** | Interest rates on new home loans, APRC, and the БНБ lending limits for mortgages (LTV, DSTI, maximum term) |
 | **НСИ** | The average wage in each of the 28 области, and the average wage by economic activity — 19 NACE Rev 2 sections plus the all-activities total, which is the level the salary ladder is anchored to. Named in their own Bulgarian and their own English |
 | **имот.bg** | Average €/m² by district, in each of the 27 cities they publish |
@@ -110,6 +110,14 @@ Not because we say so — because you can verify it:
 Alongside these sit two dated tables maintained in the repository rather than
 fetched: the Bulgarian payroll law (rates and the insurance ceiling) and the
 БНБ lending limits. Both carry the date they were read.
+
+**A second page, [`/market/`](https://vyarno.bg/market/), reads the property
+series.** It has no input on it: it is the country's housing market as the
+institutions publish it, every figure carrying its publisher, the period it
+describes and a link to the exact table — and every figure that is our own
+arithmetic saying so, explaining the arithmetic, and linking the queries that
+reproduce it. It takes no position on the market; several of the figures on it
+point in different directions and all of them are shown.
 
 ## How it fits together
 
@@ -130,7 +138,7 @@ flowchart LR
     C["connectors"] --> T["transform"] --> G{"7 validation<br/>gates"}
   end
 
-  J["data/published/*.json<br/>9 payloads, committed"]
+  J["data/published/*.json<br/>11 payloads, committed"]
   S["site/ · Vite + Svelte 5<br/>static build"]
   U["the reader's browser<br/>all personal figures stay here"]
 
@@ -202,7 +210,7 @@ threshold, on purpose.
 | Path | What |
 |---|---|
 | `docs/` | **[Start here](./docs/README.md)** — the engineer entry point: architecture, data sources, math, validation gates, local dev, site structure, and which suite a test belongs in |
-| `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes nine JSONs to `data/published/` |
+| `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes eleven JSONs to `data/published/` |
 | `data/published/` | Versioned JSONs produced by the pipeline. Committed. The site reads these at runtime and never hits an upstream API. **These figures are not ours to license — see [Licence](#licence)** |
 | `site/` | Vite 8 + Svelte 5. Three pages — the calculator, `/legal/` and a 404. Builds to a static directory |
 | `.github/workflows/ci.yml` | Both test suites and the production build, on every push to every branch and on every pull request. Does not refresh data |
@@ -226,7 +234,7 @@ cd pipeline && source .venv/bin/activate
 vyarno-pipeline refresh --source all --out ../data/published
 ```
 
-That writes the nine JSONs and commits nothing — the diff is the review, and a
+That writes the eleven JSONs and commits nothing — the diff is the review, and a
 payload nobody looked at is a number nobody checked. Each `--source` can be run
 alone; `vyarno-pipeline refresh --help` lists them.
 

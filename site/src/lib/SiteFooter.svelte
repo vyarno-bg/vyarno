@@ -106,6 +106,20 @@
     {/if}
 
     <!--
+      The second content route, on the same rule as the first: reachable from
+      every page, absent on itself. Two links rather than one because they
+      answer different questions — `/how/` is how the calculator's own figures
+      are worked out, `/market/` is what the property market is doing — and a
+      reader who wants the second is not served by being sent to the first.
+    -->
+    {#if page !== "market"}
+      <a class="how-link" href="/market/">
+        <span class="l-bg">{COPY.marketFooterK.bg}</span>
+        <span class="l-en">{COPY.marketFooterK.en}</span>
+      </a>
+    {/if}
+
+    <!--
       The source, next to the build stamp and not inside the legal nav: those
       four links discharge ЗЕТ чл. 4 and this one does not, and a landmark
       labelled "legal" should hold only what is.

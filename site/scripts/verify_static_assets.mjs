@@ -219,9 +219,30 @@ test("llms.txt lists every published payload, and counts them right", () => {
 
   // The total is spelled out a paragraph above the list, so the two can
   // disagree — and a number nobody reads back only ever goes stale.
-  const said = /\b(five|six|seven|eight|nine|ten|\d+)\s+JSON payloads\b/i.exec(LLMS);
+  // Spelled out as a word, so the vocabulary has to reach as far as the
+  // manifest does. A count the regex cannot read fails as "no longer states how
+  // many", which points at the sentence rather than at this list — so the list
+  // runs well past the current total instead of being extended one payload at
+  // a time.
+  const said =
+    /\b(five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|\d+)\s+JSON payloads\b/i.exec(
+      LLMS
+    );
   assert.ok(said, "llms.txt no longer states how many payloads there are, above the list");
-  const WORDS = { five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+  const WORDS = {
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    eleven: 11,
+    twelve: 12,
+    thirteen: 13,
+    fourteen: 14,
+    fifteen: 15,
+    sixteen: 16,
+  };
   const n = WORDS[said[1].toLowerCase()] ?? Number(said[1]);
   assert.equal(
     n,
@@ -356,7 +377,18 @@ test("the generated sitemap carries every indexable page, /how/ included", () =>
   const listed = [...src.matchAll(/\{\s*loc:\s*"([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(
     listed,
-    ["/", "/how/", "/legal/", "/support/", "/en/", "/en/how/", "/en/legal/", "/en/support/"],
+    [
+      "/",
+      "/how/",
+      "/market/",
+      "/legal/",
+      "/support/",
+      "/en/",
+      "/en/how/",
+      "/en/market/",
+      "/en/legal/",
+      "/en/support/",
+    ],
     `gen-sitemap.mjs writes ${listed.join(", ")}. Every page that is not ` +
       "noindex belongs in it, and nothing robots.txt disallows does. Both " +
       "languages of a page are listed: they are separate documents with " +
@@ -523,6 +555,7 @@ test("every prerendered page has a mount point, and one place that empties it", 
     how: "how-main.js",
     legal: "legal-main.js",
     support: "support-main.js",
+    market: "market-main.js",
   };
   for (const { name, pages } of PRERENDERED) {
     // Both addresses a component answers at. A row whose English entry lost its

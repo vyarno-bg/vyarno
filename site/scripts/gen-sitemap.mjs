@@ -9,7 +9,7 @@
  * payloads, which is genuinely when the page's content last changed; the legal
  * page's is its effective date.
  *
- * Eight pages, and that is the whole site: four routes, each at a Bulgarian and
+ * Ten pages, and that is the whole site: five routes, each at a Bulgarian and
  * an English address. `/404.html` is deliberately absent (it is `noindex`, and
  * listing an error page is a crawl-budget bug), and `/data/published/*` is
  * absent because `robots.txt` disallows it — a sitemap that lists a disallowed
@@ -122,10 +122,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const pages = [
     { loc: "/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/how/", lastmod: dataLastmod, changefreq: "monthly" },
+    { loc: "/market/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/legal/", lastmod: LEGAL_LASTMOD, changefreq: "yearly" },
     { loc: "/support/", changefreq: "yearly" },
     { loc: "/en/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/en/how/", lastmod: dataLastmod, changefreq: "monthly" },
+    { loc: "/en/market/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/en/legal/", lastmod: LEGAL_LASTMOD, changefreq: "yearly" },
     { loc: "/en/support/", changefreq: "yearly" },
   ];

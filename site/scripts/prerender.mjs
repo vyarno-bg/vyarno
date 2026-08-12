@@ -162,6 +162,14 @@ export const PRERENDERED = Object.freeze(
       ],
     },
     {
+      name: "market",
+      source: "src/Market.svelte",
+      pages: [
+        ["market", "index.html"],
+        ["en", "market", "index.html"],
+      ],
+    },
+    {
       name: "legal",
       source: "src/Legal.svelte",
       pages: [

@@ -35,6 +35,9 @@ import {
   bgTaxWedge,
   buildLadder,
   composeLadder,
+  dealsAtQuarter,
+  dealInYearsOfPay,
+  unoccupiedSharePct,
   flooredCuts,
   homeYears,
   householdNetRaisePct,
@@ -2222,4 +2225,223 @@ export function barCeiling({ piPct, officialPct, anchor }) {
   const pi = Number.isFinite(piPct) ? piPct : 0;
   const official = Number.isFinite(officialPct) ? officialPct : 0;
   return Math.max(pi, official, anchor === "y1" ? 8 : official * 1.35, 1);
+}
+
+// ---------------------------------------------------------------------------
+// THE PROPERTY MARKET
+// ---------------------------------------------------------------------------
+//
+// Which published field feeds which figure on `/market/`. The arithmetic is in
+// `mirror.js` and the words are in the component; what lives here is the
+// wiring, so that "the average deal is divided by НСИ's gross wage" is a claim
+// a test can hold rather than an expression inside a `$derived` nothing can
+// reach.
+//
+// Every function takes payloads. None takes a scalar, and that is what keeps
+// the page inputless: there is no signature here a reader's own salary could
+// be threaded into, so the country page cannot quietly become a calculator.
+
+/**
+ * A figure with everything the page has to print beside it.
+ *
+ * The shape exists because the requirement is uniform: under every digit, the
+ * publisher, the period it describes, a link to the exact table, and — where
+ * the number is ours — the arithmetic that produced it and the queries that
+ * reproduce it. Returning them together means a caller cannot render the value
+ * and forget the provenance, because it arrives in the same object.
+ *
+ * `method` and `derivedFrom` are null for a figure read verbatim. A renderer
+ * shows the derivation note when they are present, so "is this ours?" is
+ * answered by the data rather than by whoever wrote the template.
+ *
+ * @typedef {object} SourcedFigure
+ * @property {number|null} value
+ * @property {string|null} refPeriod   the period the figure DESCRIBES
+ * @property {string|null} sourceUrl   the table a reader opens
+ * @property {string|null} apiUrl      the query that returns it
+ * @property {string|null} dataset
+ * @property {string|null} method      how it was computed, when it is ours
+ * @property {string[]|null} derivedFrom  the queries that reproduce it
+ */
+
+/**
+ * Wrap a published block's figure with its provenance.
+ *
+ * @param {number|null|undefined} value
+ * @param {object|null|undefined} block  the payload block the value came from
+ * @param {{method?: string, derivedFrom?: string[], refPeriod?: string}} [extra]
+ * @returns {SourcedFigure}
+ */
+function sourced(value, block, extra = {}) {
+  return {
+    value: Number.isFinite(value) ? value : null,
+    refPeriod: extra.refPeriod ?? block?.ref_period ?? null,
+    sourceUrl: block?.source_url ?? null,
+    apiUrl: block?.api_url ?? null,
+    dataset: block?.dataset ?? null,
+    method: extra.method ?? null,
+    derivedFrom: extra.derivedFrom ?? null,
+  };
+}
+
+/**
+ * How much changed hands, and how that compares with a year earlier.
+ *
+ * The quarter reported is the payload's own `ref_period` rather than the last
+ * key in the series: the two are the same today and the payload is the one
+ * that states which quarter it is describing. Reading the maximum key instead
+ * would silently report a quarter the gates never looked at.
+ *
+ * @param {object|null} houseMarket
+ * @returns {{period: string|null, deals: SourcedFigure, newBuild: number|null,
+ *            existing: number|null, changePct: SourcedFigure}}
+ */
+export function marketVolume(houseMarket) {
+  const block = houseMarket?.deals ?? null;
+  const period = houseMarket?.ref_period ?? null;
+  const series = block?.series_by_period ?? {};
+  const { count, changePct: yoy } = dealsAtQuarter(series, period ?? "");
+  const at = series?.[period ?? ""] ?? {};
+  return {
+    period,
+    deals: sourced(count, block, { refPeriod: period }),
+    newBuild: Number.isFinite(at.new) ? at.new : null,
+    existing: Number.isFinite(at.existing) ? at.existing : null,
+    changePct: sourced(yoy, block, {
+      refPeriod: period,
+      method:
+        "This quarter's dwelling count against the same quarter one year " +
+        "earlier, both as published. Year-on-year rather than against last " +
+        "quarter, because transactions have a seasonal shape and a " +
+        "quarter-on-quarter fall would partly measure the calendar.",
+      derivedFrom: block?.api_url ? [block.api_url] : null,
+    }),
+  };
+}
+
+/**
+ * What a dwelling changed hands for on average, and what it is made of.
+ *
+ * The value and the count travel with it deliberately. This is the page's
+ * signature figure and the one a sceptic reaches for first, so the two numbers
+ * it is built from are rendered beside it rather than left in the payload.
+ *
+ * @param {object|null} houseMarket
+ * @returns {{period: string|null, avg: SourcedFigure, newBuild: number|null,
+ *            existing: number|null, totalValue: number|null, deals: number|null}}
+ */
+export function marketAverageDeal(houseMarket) {
+  const block = houseMarket?.avg_deal_eur ?? null;
+  const period = houseMarket?.ref_period ?? null;
+  const at = block?.series_by_period?.[period ?? ""] ?? {};
+  return {
+    period,
+    avg: sourced(at.total, houseMarket?.value ?? null, {
+      refPeriod: period,
+      method: block?.method ?? null,
+      derivedFrom: block?.derived_from_api_urls ?? null,
+    }),
+    newBuild: Number.isFinite(at.new) ? at.new : null,
+    existing: Number.isFinite(at.existing) ? at.existing : null,
+    totalValue: houseMarket?.value?.series_by_period?.[period ?? ""]?.total ?? null,
+    deals: houseMarket?.deals?.series_by_period?.[period ?? ""]?.total ?? null,
+  };
+}
+
+/**
+ * Eurostat's own annual rate of change on the house price index.
+ *
+ * **Read, never computed.** The index level is in the same payload and the
+ * temptation is to divide two of its members — but НСИ rebased the series and
+ * warn that a rate recomputed across the two bases can differ in the last
+ * decimal from the one both publishers print. The rate we show is the rate
+ * they publish, which is also the figure the cross-publisher gate reconciles.
+ *
+ * @param {object|null} houseMarket
+ * @returns {{period: string|null, total: SourcedFigure, newBuild: number|null,
+ *            existing: number|null}}
+ */
+export function marketPriceRate(houseMarket) {
+  const block = houseMarket?.price_index ?? null;
+  const period = block?.rate_ref_period ?? null;
+  const at = block?.annual_rate_pct?.[period ?? ""] ?? {};
+  return {
+    period,
+    total: sourced(at.total, block, { refPeriod: period }),
+    newBuild: Number.isFinite(at.new) ? at.new : null,
+    existing: Number.isFinite(at.existing) ? at.existing : null,
+  };
+}
+
+/**
+ * Who owns, who owes, and how much of the stock stood empty.
+ *
+ * The unoccupied share is derived here from the two published counts; both
+ * counts come back with it so the division is checkable on the page.
+ *
+ * @param {object|null} structure
+ * @returns {object}
+ */
+export function marketStructure(structure) {
+  const tenure = structure?.tenure ?? null;
+  const census = structure?.census_dwellings ?? null;
+  const ptir = structure?.price_to_income ?? null;
+  const burden = structure?.housing_cost_overburden ?? null;
+  return {
+    owner: sourced(tenure?.owner_pct, tenure),
+    ownerWithMortgage: sourced(tenure?.owner_with_mortgage_pct, tenure),
+    renterAtMarketPrice: sourced(tenure?.rent_market_price_pct, tenure),
+    dwellings: sourced(census?.total, census),
+    unoccupied: sourced(census?.unoccupied, census),
+    unoccupiedPct: sourced(unoccupiedSharePct(census), census, {
+      method:
+        "Dwellings recorded as unoccupied at the census, over all conventional " +
+        "dwellings recorded at the same census. Both counts are published " +
+        "beside this figure. 'Unoccupied' means unoccupied on census night, " +
+        "which includes second homes and holiday properties.",
+      derivedFrom: census?.api_url ? [census.api_url] : null,
+    }),
+    priceToIncome: sourced(ptir?.value, ptir),
+    overburden: sourced(burden?.value_pct, burden),
+  };
+}
+
+/**
+ * The average deal expressed in years of the national gross wage.
+ *
+ * **The one cross-publisher figure on the page.** Eurostat's transaction value
+ * over НСИ's published average wage, joined here because neither published
+ * file may carry the other's number — the rule that keeps both of them
+ * redistributable (`docs/legal.md` §НСИ).
+ *
+ * It reads the all-activities row rather than any sector, and gross rather than
+ * net: the sector rows answer a different question, and a net figure would
+ * depend on the payroll table of whichever year converted it, which is a third
+ * publisher's law inside a two-publisher ratio.
+ *
+ * @param {object|null} houseMarket
+ * @param {object|null} sectorSalary
+ * @returns {SourcedFigure & {monthlyGrossEur: number|null, wagePeriod: string|null,
+ *                            wageUrl: string|null}}
+ */
+export function marketDealInYearsOfPay(houseMarket, sectorSalary) {
+  const period = houseMarket?.ref_period ?? null;
+  const deal = houseMarket?.avg_deal_eur?.series_by_period?.[period ?? ""]?.total ?? null;
+  const all = (sectorSalary?.sectors ?? []).find((s) => s?.en_name === "Total") ?? null;
+  const wage = all?.value_eur ?? null;
+  return {
+    ...sourced(dealInYearsOfPay(deal, wage), houseMarket?.value ?? null, {
+      refPeriod: period,
+      method:
+        "Eurostat's average dwelling transaction divided by twelve times " +
+        "НСИ's published average GROSS monthly wage across all activities. " +
+        "Two publishers, joined in your browser: neither published file " +
+        "carries the other's figure. Gross rather than net, because a net " +
+        "wage depends on the payroll table of the year it was worked out in.",
+      derivedFrom: houseMarket?.avg_deal_eur?.derived_from_api_urls ?? null,
+    }),
+    monthlyGrossEur: wage,
+    wagePeriod: sectorSalary?.ref_period ?? null,
+    wageUrl: sectorSalary?.source_url ?? null,
+  };
 }
