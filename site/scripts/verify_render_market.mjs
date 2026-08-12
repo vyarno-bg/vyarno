@@ -302,6 +302,69 @@ test(
   }
 );
 
+test(
+  "the four answers are the first figures on the page, and fit one screen",
+  { skip },
+  async () => {
+    // A reader arriving here wants four things: is it dearer than it used to be,
+    // by how much really, what does one cost in something I can picture, and are
+    // people buying. Every one of them was reachable and reaching it meant
+    // scrolling to a section and reading a chart — and the page then ENDED on a
+    // row of cards whose labels were definitions rather than statements.
+    //
+    // So the summary is above the working, and both halves of that are asserted:
+    // no chart and no table may come before it, and on the phone all four have to
+    // be on the screen at once. The second is the brittle-looking one and it is
+    // the one worth having — a paragraph added above the row is exactly the edit
+    // that undoes this, it reads as an improvement while making it, and nothing
+    // else on the page would notice.
+    await withApp(
+      async (page, errors) => {
+        const probe = await page.evaluate(() => {
+          const main = document.querySelector("main.market");
+          const cards = [...main.querySelectorAll(".answers .stat")];
+          const order = (selector) => {
+            const first = main.querySelector(selector);
+            return first ? [...main.querySelectorAll("*")].indexOf(first) : Infinity;
+          };
+          return {
+            values: cards.map((c) => c.querySelector(".sv").textContent.trim()),
+            bottom: Math.max(...cards.map((c) => c.getBoundingClientRect().bottom)),
+            screen: window.innerHeight,
+            answersAt: order(".answers"),
+            chartAt: order("figure.chart"),
+            tableAt: order("table.fig-table"),
+          };
+        });
+
+        assert.equal(
+          probe.values.length,
+          4,
+          `the answer row draws ${probe.values.length} cards. It answers the four questions a ` +
+            "reader arrives with, and a page that answers three of them has quietly picked one to drop."
+        );
+        for (const value of probe.values) {
+          assert.match(value, /\d/, `an answer card renders "${value}" with no digit in it`);
+        }
+        assert.ok(
+          probe.answersAt < probe.chartAt && probe.answersAt < probe.tableAt,
+          "a chart or a table comes before the answer row. The summary is above the working, " +
+            "or a reader has to read the working to reach the summary."
+        );
+        assert.ok(
+          probe.bottom <= probe.screen,
+          `the answer row ends ${Math.round(probe.bottom)}px down a ${probe.screen}px screen at ` +
+            "360px wide, so a reader has to scroll to see all four. Whatever sits above the row " +
+            "costs more than it gives."
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      "/market/",
+      { viewport: { width: 360, height: 800 } }
+    );
+  }
+);
+
 test("the charts are legible on the phone, not only on the desk", { skip }, async () => {
   // The failure this exists to refuse, measured on the built page: an SVG sized
   // `width: 100%` against a fixed `viewBox` scales its whole coordinate system,

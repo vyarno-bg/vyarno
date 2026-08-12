@@ -2400,8 +2400,6 @@ export function marketPriceRate(houseMarket) {
 export function marketStructure(structure) {
   const tenure = structure?.tenure ?? null;
   const census = structure?.census_dwellings ?? null;
-  const ptir = structure?.price_to_income ?? null;
-  const burden = structure?.housing_cost_overburden ?? null;
   return {
     owner: sourced(tenure?.owner_pct, tenure),
     ownerWithMortgage: sourced(tenure?.owner_with_mortgage_pct, tenure),
@@ -2422,8 +2420,12 @@ export function marketStructure(structure) {
         "which includes second homes and holiday properties.",
       derivedFrom: census?.api_url ? [census.api_url] : null,
     }),
-    priceToIncome: sourced(ptir?.value, ptir),
-    overburden: sourced(burden?.value_pct, burden),
+    // Price-to-income and the overburden share are NOT here, and their absence
+    // is the wiring saying where they belong. Both are read as series
+    // (`marketPriceToIncomeSeries`, `marketOverburdenSeries`), each of which
+    // carries its own newest reading and period — so a page drawing the chart
+    // and quoting the latest figure takes both from one call and cannot caption
+    // a chart with a period the number beside it does not share.
   };
 }
 
@@ -2895,7 +2897,16 @@ export function marketAverageDealSeries(houseMarket, purchase = "existing") {
  */
 export function marketOverburdenSeries(structure) {
   const block = structure?.housing_cost_overburden ?? null;
-  return sourcedSeries(block?.series_by_period, block);
+  return {
+    ...sourcedSeries(block?.series_by_period, block),
+    // The newest reading and the year it belongs to, so a sentence naming the
+    // figure takes it from the same place the chart does. Read off the block
+    // rather than off the last point: the payload states which year it is
+    // describing, and the last key in a series is a different fact that
+    // happens to agree.
+    value: Number.isFinite(block?.value_pct) ? block.value_pct : null,
+    refPeriod: block?.ref_period ?? null,
+  };
 }
 
 /**

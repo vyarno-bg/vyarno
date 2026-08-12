@@ -2108,16 +2108,36 @@ export const COPY = {
     bg: "Вярно — пазарът на жилища",
     en: "Vyarno — the property market",
   },
-  mktKYearsOfPay: { bg: "години средна брутна заплата", en: "years of the average gross wage" },
-  mktKPriceToIncome: {
-    bg: "цени спрямо доходите, при 100 = собствената дългосрочна средна",
-    en: "prices against incomes, 100 = its own long-run average",
+  // The four answers at the top of the page, and every one of them is a
+  // SENTENCE that names what is counted, of whom, and against what. The row
+  // they replaced was «67,8 · цени спрямо доходите, при 100 = собствената
+  // дългосрочна средна» — a definition standing in for a statement, of a ratio
+  // of a ratio to its own historical average, which the chart three paragraphs
+  // above already drew with the rule at 100 in it.
+  //
+  // «толкова» carries the figure into the sentence, so the card reads as one
+  // line out loud: «×2,7 — толкова пъти повече се плаща за жилище днес». A
+  // label that repeats the unit («×2,7 пъти повече») says «times» twice.
+  mktKTimesNominal: {
+    bg: "толкова пъти повече се плаща за жилище днес, отколкото през {year} г.",
+    en: "that many times more is paid for a home today than in {year}",
   },
-  mktKOverburden: {
-    bg: "плащат над 40% от дохода си за жилище",
-    en: "spend over 40% of income on housing",
+  mktKTimesReal: {
+    bg: "толкова пъти повече, след като се извади поскъпването на всичко останало",
+    en: "that many times more, once the rise in everything else is taken out",
   },
-  mktKRentInflation: { bg: "наеми, спрямо година по-рано", en: "rents, against a year earlier" },
+  mktKDeals: {
+    bg: "жилища са купили домакинствата в цялата страна за тримесечието",
+    en: "dwellings households across the country bought in the quarter",
+  },
+  // «бруто» is taught by not being used. What a reader has to know is that the
+  // wage in the division is the one before tax and contributions, which is not
+  // the money anybody actually receives — so the card says that, and the
+  // disclosure under the row says why a net figure would be worse.
+  mktKYearsOfPay: {
+    bg: "толкова години средна заплата струва средното жилище — заплатата преди данъци и осигуровки, не парите на ръка",
+    en: "that many years of the average wage is what the average home costs — the wage before tax and contributions, not take-home pay",
+  },
   // The figure tables. A row of loose cards is what most of this page was, and
   // it reads as a wall: four boxes of the same size, the same weight and the
   // same colour, with the thing that separates them in the smallest type on the

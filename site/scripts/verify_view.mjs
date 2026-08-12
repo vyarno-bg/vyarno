@@ -3254,21 +3254,25 @@ test("marketStructure derives only the share, and dates each cube by its own clo
   assert.equal(s.owner.refPeriod, "2025");
   assert.equal(s.dwellings.refPeriod, "2021");
   assert.equal(s.unoccupied.refPeriod, "2021");
-  assert.equal(s.priceToIncome.refPeriod, "2024");
-  assert.equal(s.overburden.refPeriod, "2025");
+  // The other two cubes are read as series, because the page draws each of them
+  // as a chart and quotes its newest reading in the sentence above it. Their
+  // own year travels with the series for that reason: two calls to get one
+  // figure and its period is how a chart ends up captioned with a year the
+  // number beside it does not share.
+  assert.equal(marketPriceToIncomeSeries(structure).refPeriod, "2024");
+  assert.equal(marketPriceToIncomeSeries(structure).value, 67.75);
+  assert.equal(marketOverburdenSeries(structure).refPeriod, "2025");
+  assert.equal(marketOverburdenSeries(structure).value, 6.9);
+  // …and neither is in `marketStructure` any more, so nothing can read one from
+  // there and caption it with the tenure survey's year.
+  assert.equal(s.priceToIncome, undefined);
+  assert.equal(s.overburden, undefined);
   // The share is ours and says so; the counts are Eurostat's and do not.
   assert.ok(Math.abs(s.unoccupiedPct.value - (1657674 / 4258585) * 100) < 1e-9);
   assert.equal(s.unoccupiedPct.refPeriod, "2021");
   assert.ok(s.unoccupiedPct.method, "the unoccupied share does not disclose itself");
   assert.deepEqual(s.unoccupiedPct.derivedFrom, ["https://example.invalid/api/cens"]);
-  for (const key of [
-    "owner",
-    "ownerWithMortgage",
-    "dwellings",
-    "unoccupied",
-    "priceToIncome",
-    "overburden",
-  ]) {
+  for (const key of ["owner", "ownerWithMortgage", "dwellings", "unoccupied"]) {
     assert.equal(s[key].method, null, `${key} is presented as our arithmetic and is not`);
   }
 });
