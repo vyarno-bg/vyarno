@@ -20,6 +20,13 @@ on:
 
 jobs:
   refresh:
+    # Permissions the called workflow needs: contents:write to push the
+    # data/<source> branch, pull-requests:write to open the PR. GHA
+    # evaluates permissions at the caller site, not in the reusable
+    # workflow — declaring them here is required.
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ./.github/workflows/refresh.yml
     with:
       source: hicp

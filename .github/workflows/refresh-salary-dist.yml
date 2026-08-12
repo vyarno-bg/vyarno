@@ -23,6 +23,9 @@ jobs:
     # this workflow does not fire; the next quarterly schedule retries
     # from region-salary again.
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ./.github/workflows/refresh.yml
     with:
       source: salary-dist
