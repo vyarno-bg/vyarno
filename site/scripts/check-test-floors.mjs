@@ -131,7 +131,7 @@ const junitAsserted = (text) => {
 /** THE ONLY TEST COUNTS IN THE REPOSITORY. Read the header before changing one. */
 export const FLOORS = {
   pytest: { floor: 399, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
-  node: { floor: 517, report: join(SITE, ".report-node.tap"), count: tapPassed },
+  node: { floor: 521, report: join(SITE, ".report-node.tap"), count: tapPassed },
   render: { floor: 124, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 

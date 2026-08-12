@@ -2211,9 +2211,13 @@ export const COPY = {
   },
   // The charts' accessible names. Built from the payload at render, because a
   // description naming a peak or a period is a figure written into prose.
+  // Told in MULTIPLES of the base year, the way the chart's own axis is. A
+  // screen reader hearing «двеста седемдесет и две цяло шейсет и три» has been
+  // read a number and told nothing; «два цяло и седем пъти повече, отколкото
+  // през две хиляди и петнайсета» is the same cell and is a sentence.
   mktChartIndex: {
-    bg: "Индекс на цените на жилищата по тримесечия, от {from} до {to}, при 100 за {base} г. В цените от деня на сделката: най-ниско {low} през {lowAt}, най-високо {peak} през {peakAt}, а за {to} — {last}. Изчистено от инфлация: най-високо {realPeak} през {realPeakAt}, а за {to} — {realLast}.",
-    en: "House price index by quarter, {from} to {to}, with 100 for {base}. In the money of the day: the lowest is {low} in {lowAt}, the highest {peak} in {peakAt}, and for {to} it is {last}. Adjusted for inflation: the highest is {realPeak} in {realPeakAt}, and for {to} it is {realLast}.",
+    bg: "Колко пъти по-скъпи са жилищата спрямо {base} г., по тримесечия от {from} до {to}. В парите от деня: най-ниско ×{low} през {lowAt}, най-високо ×{peak} през {peakAt}, а за {to} — ×{last}. Без поскъпването на всичко останало: най-високо ×{realPeak} през {realPeakAt}, а за {to} — ×{realLast}.",
+    en: "How many times dearer homes are than in {base}, by quarter from {from} to {to}. In the money of the day: the lowest is ×{low} in {lowAt}, the highest ×{peak} in {peakAt}, and for {to} it is ×{last}. With the rise in everything else taken out: the highest is ×{realPeak} in {realPeakAt}, and for {to} it is ×{realLast}.",
   },
   mktChartRate: {
     bg: "Годишна промяна на цените на жилищата по тримесечия, от {from} до {to}. Най-силен спад {low} през {lowAt}, най-силно поскъпване {peak} през {peakAt}; за {to} — {last}.",
@@ -2232,9 +2236,19 @@ export const COPY = {
     en: "{city}: annual price change by quarter, {from} to {to}. For {to} it is {last}%.",
   },
   // The deflated line, and the letters Eurostat put on their own points.
-  mktKeyNominal: { bg: "в цените от деня", en: "in the money of the day" },
-  mktKeyReal: { bg: "изчистено от инфлация", en: "adjusted for inflation" },
-  mktColIndexReal: { bg: "Изчистен от инфлация", en: "Inflation-adjusted" },
+  //
+  // «изчистено от инфлация» is the phrase a statistical release uses and a
+  // person does not. What it MEANS is that everything else got dearer too and
+  // that rise has been taken out, so the key says that instead — six words a
+  // reader can repeat to somebody else, which is the test this page is written
+  // to. The column head is short because it heads a column; the paragraph above
+  // the chart is where the idea is taught.
+  mktKeyNominal: { bg: "в парите от деня", en: "in the money of the day" },
+  mktKeyReal: {
+    bg: "без поскъпването на всичко останало",
+    en: "with the rise in everything else taken out",
+  },
+  mktColIndexReal: { bg: "Без инфлацията", en: "Without inflation" },
   mktColFlag: { bg: "Бележка", en: "Note" },
   // Eurostat mark their own numbers and the letters mean nothing to a reader
   // alone. Printed only for the letters a series actually carries — a key
@@ -2248,7 +2262,13 @@ export const COPY = {
 
   // What a rule on a plot is. Written beside the chart, because a dashed line
   // nobody explained is a line a reader has to guess at.
-  mktRefIndexBase: { bg: "100 = нивото през 2015 г.", en: "100 = the 2015 level" },
+  //
+  // **The year is a slot and it was a literal.** Eurostat rebase — `I25_Q` is
+  // the same measurement putting today at 109 instead of 273 — so «2015» typed
+  // here stays right until the day it silently stops being, next to a chart
+  // whose every digit is still correct. `price_index.base_year` is in the
+  // payload and has been all along.
+  mktRefIndexBase: { bg: "×1 = колкото през {year} г.", en: "×1 = the {year} level" },
   mktRefZero: {
     bg: "0 = без промяна спрямо година по-рано",
     en: "0 = no change on a year earlier",

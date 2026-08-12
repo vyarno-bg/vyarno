@@ -38,6 +38,8 @@ import {
   dealsAtQuarter,
   dealInYearsOfPay,
   unoccupiedSharePct,
+  indexTimesBase,
+  shortfallPct,
   flooredCuts,
   homeYears,
   householdNetRaisePct,
@@ -2705,6 +2707,13 @@ export function marketPriceIndexSeries(houseMarket, purchase = "total") {
     }),
     // Eurostat's own letters on their own points, for the quarters they flagged.
     flags: flagsFor(block?.status_by_period, purchase),
+    // **The base year travels with the series, and it is never written down.**
+    // Every sentence that makes the index readable names it — «×1 = колкото
+    // през 2015 г.» — and Eurostat rebase: `I25_Q` is the same measurement
+    // putting today at 109 instead of 273. A year typed into the copy stays
+    // right for one rebasing and is then a claim contradicted by every digit
+    // beside it, silently, because nothing recomputes prose.
+    baseYear: block?.base_year ?? null,
   };
 }
 
@@ -2731,6 +2740,47 @@ export function marketPriceIndexRealSeries(houseMarket) {
       unit: block?.unit ?? null,
     }),
     flags: flagsFor(block?.status_by_period, null),
+    baseYear: block?.base_year ?? null,
+  };
+}
+
+/**
+ * The index said out loud: how many times the base year, and where the deflated
+ * line sits against its own highest reading.
+ *
+ * **The level was the least readable thing on the page and the data was never
+ * the problem.** «Индекс на цените на жилищата, 272,63, при 100 за 2015 г.»
+ * asks a reader to hold three conventions at once — that an index has no unit,
+ * that its anchor is a year somebody chose, and that 272,63 is a ratio written
+ * as if it were a quantity. «×2,7 спрямо 2015 г.» asks nothing and says the
+ * same thing, from the same cell.
+ *
+ * The second half is the reading this page can make that nobody else in
+ * Bulgaria makes with sources attached: nominally the index is at its own
+ * highest, and deflated it is below where it stood before the 2008 fall. Both
+ * come out of the two series' own extremes, so **no year and no level is named
+ * anywhere but by the data** — `realPeakPeriod` is read off the deflated series
+ * rather than typed, and `shortfallPct` returns null where the latest reading
+ * IS the peak, which is the case that would otherwise print «0,0% под него»
+ * beside two identical numbers.
+ *
+ * @param {object|null} houseMarket
+ */
+export function marketIndexReading(houseMarket) {
+  const nominal = marketPriceIndexSeries(houseMarket);
+  const real = marketPriceIndexRealSeries(houseMarket);
+  return {
+    period: nominal.to,
+    baseYear: nominal.baseYear,
+    times: indexTimesBase(nominal.latest?.value, nominal.reference),
+    realTimes: indexTimesBase(real.latest?.value, real.reference),
+    nominalPeakPeriod: nominal.peak?.period ?? null,
+    realPeakPeriod: real.peak?.period ?? null,
+    realBelowPeakPct: shortfallPct(real.latest?.value, real.peak?.value),
+    sourceUrl: nominal.sourceUrl,
+    apiUrl: nominal.apiUrl,
+    realSourceUrl: real.sourceUrl,
+    realApiUrl: real.apiUrl,
   };
 }
 

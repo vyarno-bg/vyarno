@@ -2108,6 +2108,52 @@ test("the market page describes the market and does not judge it", () => {
   );
 });
 
+test("the market page writes no year and no quarter into its own prose", () => {
+  // The general form of the rule two sections up, held over the one page where
+  // it can be held absolutely: **every figure on `/market/` is live**, so it
+  // has no worked examples and a year in its prose is always a claim some
+  // payload can go on to contradict.
+  //
+  // The failure this was written for is the base year. «100 = нивото през
+  // 2015 г.» captioned the index chart and «при 100 за 2015 г.» was in its text
+  // alternative, both as literals, while `price_index.base_year` sat in the
+  // payload — and Eurostat rebase: `I25_Q` is the same measurement putting
+  // today at 109 instead of 273. The caption would have stayed on the page,
+  // beside a chart whose every digit was still correct, saying the wrong year.
+  //
+  // Quarters are here for the same reason and are the likelier slip of the two,
+  // because a sentence introducing a figure wants to say which quarter it is
+  // about — and that quarter moves four times a year.
+  const prose = [
+    ["Market.svelte", MARKET_SRC],
+    // The mkt* copy is the other half: a label is prose that happens to be
+    // passed as an argument, and the base-year caption lived there.
+    [
+      "content.js (mkt*)",
+      Object.entries(COPY)
+        .filter(([key]) => key.startsWith("mkt"))
+        .map(([key, pair]) => `${key}: ${pair.bg} ${pair.en}`)
+        .join("\n"),
+    ],
+  ];
+  const offenders = [];
+  for (const [name, src] of prose) {
+    for (const line of src.split("\n")) {
+      for (const re of [/\b(?:19|20)\d{2}\b/g, /\bQ[1-4][\s-]\d{4}\b/g, /\b\d{4}-Q[1-4]\b/g]) {
+        for (const m of line.matchAll(re)) offenders.push(`${name}: ${m[0]} — ${line.trim()}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `the market page freezes a period into its own words:\n  ${offenders.join("\n  ")}\n\n` +
+      "Every figure on that page is read out of a payload and every period is " +
+      "in one too — house_market.price_index.base_year, each block's ref_period, " +
+      "and a series' own from/to. Write the slot and fill it at render."
+  );
+});
+
 test("the six-city sentence names as many cities as the payload carries", () => {
   // «шестте града с над 120 000 жители» is a count in prose, and the rule two
   // sections up is that a count the payload carries does not get written into a

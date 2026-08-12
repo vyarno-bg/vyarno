@@ -98,6 +98,7 @@ import {
   marketVolumeSeries,
   marketPriceIndexSeries,
   marketPriceIndexRealSeries,
+  marketIndexReading,
   marketPriceRateSeries,
   marketAverageDealSeries,
   marketOverburdenSeries,
@@ -3465,6 +3466,74 @@ test("plotSeries clamps its own floor at zero and offers no way to raise it", ()
 
   assert.deepEqual(plotSeries(null).points, []);
   assert.equal(plotSeries(null).min, 0);
+});
+
+test("marketIndexReading takes the base year off the payload and divides by its own base", () => {
+  // Two claims the page makes in prose, both of which used to be typed. The
+  // base year was the literal «2015» in the copy and in the chart's own text
+  // alternative; Eurostat rebase, and `I25_Q` is the same measurement putting
+  // today at 109 instead of 273 — so both would have kept rendering, beside a
+  // chart whose every digit was still right.
+  const market = {
+    ref_period: "2026-Q1",
+    price_index: {
+      base_year: 2015,
+      source_url: "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_q/default/table",
+      api_url: "https://ec.europa.eu/eurostat/api/x/prc_hpi_q",
+      series_by_period: {
+        "2015-Q1": { total: 100 },
+        "2026-Q1": { total: 250 },
+      },
+    },
+    price_index_real: {
+      base_year: 2015,
+      source_url: "https://ec.europa.eu/eurostat/databrowser/view/tipsho30/default/table",
+      api_url: "https://ec.europa.eu/eurostat/api/x/tipsho30",
+      series_by_period: { "2015-Q1": 100, "2008-Q3": 170, "2026-Q1": 160 },
+    },
+  };
+  const r = marketIndexReading(market);
+  assert.equal(r.baseYear, 2015, "the base year is not read off the payload");
+  assert.equal(r.times, 2.5, "the nominal reading is not the level over its own base");
+  assert.equal(r.realTimes, 1.6);
+  assert.equal(r.period, "2026-Q1");
+
+  // The shortfall is measured against the DEFLATED series' own maximum, and the
+  // period comes back with it so the sentence names a quarter the data carries.
+  assert.equal(r.realPeakPeriod, "2008-Q3");
+  assert.ok(Math.abs(r.realBelowPeakPct - ((170 - 160) / 170) * 100) < 1e-9);
+
+  // A rebasing moves the year the sentence names AND the level the multiple is
+  // measured from, together. Eurostat write the base year as 100 whichever year
+  // it is, so the divisor does not change — what changes is which year «×2,5
+  // спрямо» is spoken about, and that is the half a literal got wrong. The
+  // divisor's own rule is held on `indexTimesBase` in verify_mirror_math.mjs,
+  // where a base other than 100 can be passed.
+  const rebased = marketIndexReading({
+    ...market,
+    price_index: {
+      ...market.price_index,
+      base_year: 2025,
+      series_by_period: { "2025-Q1": { total: 100 }, "2026-Q1": { total: 250 } },
+    },
+  });
+  assert.equal(rebased.baseYear, 2025);
+  assert.equal(rebased.times, 2.5);
+
+  // …and the quarter the deflated line makes its own high is the quarter the
+  // page has to say nothing about, rather than «0,0% под най-високото».
+  const atPeak = marketIndexReading({
+    ...market,
+    price_index_real: {
+      ...market.price_index_real,
+      series_by_period: { "2015-Q1": 100, "2008-Q3": 170, "2026-Q1": 180 },
+    },
+  });
+  assert.equal(atPeak.realPeakPeriod, "2026-Q1");
+  assert.equal(atPeak.realBelowPeakPct, null);
+
+  assert.equal(marketIndexReading(null).times, null);
+  assert.equal(marketIndexReading(null).baseYear, null);
 });
 
 test("every market series a chart is drawn from contains zero in its scale", () => {

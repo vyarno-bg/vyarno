@@ -48,9 +48,11 @@
     marketAverageDealSeries,
     marketOverburdenSeries,
     marketPriceIndexRealSeries,
+    marketIndexReading,
     statusLettersUsed,
   } from "./lib/view.js";
   import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
+  import { indexTimesBase } from "./lib/mirror.js";
 
   const { payloads = null, servedLang = null } = $props();
 
@@ -212,6 +214,18 @@
     max: Math.max(indexSeries.max, indexRealSeries.max),
     reference: 100,
   });
+  /**
+   * The index in words: how many times the base year, and where the deflated
+   * line sits against its own highest reading.
+   *
+   * The chart, the axis and every sentence about the index are drawn from this
+   * one object rather than from the raw level, so the page cannot print «272,63»
+   * in one place and «×2,7» in another and leave a reader to work out that they
+   * are the same figure.
+   */
+  const reading = $derived(marketIndexReading(data.houseMarket));
+  /** An index level as the multiple of its base the reader is shown. */
+  const times = (value) => `×${fmt(indexTimesBase(value, indexScale.reference))}`;
   const flagKey = $derived(statusLettersUsed([indexSeries.flags, indexRealSeries.flags]));
   const rateSeries = $derived(marketPriceRateSeries(data.houseMarket));
   const dealNewSeries = $derived(marketAverageDealSeries(data.houseMarket, "new"));
@@ -881,41 +895,96 @@
     {#if indexSeries.points.length > 8}
       <p>
         <span class="l-bg"
-          >Процентът отгоре е за една година. Самият индекс показва нивото на цените, а не промяната
-          им: 100 е там, където са били през базисната година. Редицата на Евростат започва оттам,
-          откъдето я публикуват — първата точка не е дъно, а началото на записа.</span
+          >Процентът отгоре е за една година. Следващата картинка е за целия запис и мери друго: не
+          с колко са се променили цените за последната година, а колко пъти са по-високи от една
+          година, взета за начало. Тази година е {reading.baseYear}, избрал я е Евростат, и на
+          картинката тя е линията ×1.</span
         >
         <span class="l-en"
-          >The percentage above is one year's. The index itself shows the LEVEL of prices rather
-          than their change: 100 is where they stood in the base year. Eurostat's series begins
-          where they publish it from — the first point is not a floor, it is the start of the
-          record.</span
+          >The percentage above is one year's. The chart below covers the whole record and measures
+          something else: not how much prices moved in the last year, but how many times higher they
+          are than in one year taken as the starting point. That year is {reading.baseYear},
+          Eurostat chose it, and on the chart it is the ×1 line.</span
         >
       </p>
 
       <p>
         <span class="l-bg"
-          >Двата реда са едно и също нещо, мерено по два начина. Тъмният е в цените от деня на
-          сделката: там 2026 г. се сравнява с 2015 г., без да се държи сметка, че междувременно е
-          поскъпнало всичко останало. Пунктираният е същият индекс, изчистен от инфлацията —
-          Евростат го публикува отделно и той отговаря на въпроса «повече ли са жилищата спрямо
-          всичко останало». Разликата между двата реда е точно инфлацията за периода, и тя е
-          причината страницата да ги показва заедно.</span
+          >Двата реда са едно и също нещо, мерено по два начина, и разликата между тях е причината
+          да ги има и двата. Плътният е в парите от деня на сделката — колко пъти повече пари се
+          дават за жилище. Пунктираният вади от сметката това, че междувременно е поскъпнало и
+          всичко останало, и отговаря на другия въпрос: повече ли са жилищата спрямо всичко друго,
+          което купуваме. Евростат публикува и двата реда, нищо тук не е сметнато от нас.</span
         >
         <span class="l-en"
-          >The two lines are the same thing measured two ways. The solid one is in the money of the
-          day: it compares 2026 with 2015 without accounting for everything else having got dearer
-          in between. The dashed one is the same index with inflation taken out — Eurostat publish
-          it separately, and it answers "have homes risen against everything else". The gap between
-          the lines is exactly the inflation of the period, which is why the page shows both.</span
+          >The two lines are the same thing measured two ways, and the difference between them is
+          the reason both are here. The solid one is in the money of the day — how many times more
+          money changes hands for a home. The dashed one takes out the fact that everything else got
+          dearer in the meantime, and answers the other question: have homes risen against
+          everything else we buy. Eurostat publish both lines; nothing here is computed by us.</span
         >
       </p>
 
+      <!-- The two readings said out loud, from the payload. A chart answers
+           «how much dearer» only for a reader who can read a line off an axis;
+           this is the same two numbers in a sentence, and the second sentence
+           is the one comparison on the page nobody else in Bulgaria publishes
+           with a source attached. Both are slots — the years, the multiples and
+           the shortfall all come out of the series' own extremes, so a quarter
+           that moves any of them moves the sentence too. -->
+      {#if reading.times != null && reading.realTimes != null}
+        <p class="reading">
+          <span class="l-bg"
+            >В парите от деня жилищата днес струват <b>×{fmt(reading.times)}</b> спрямо {reading.baseYear}
+            г. Извади ли се поскъпването на всичко останало, остават
+            <b>×{fmt(reading.realTimes)}</b
+            >.{#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
+              И още едно нещо, което само вторият ред казва: така мерено, нивото днес е с {fmt(
+                reading.realBelowPeakPct
+              )}% под най-високото, което Евростат изобщо е отчитал — през {periodLong(
+                reading.realPeakPeriod,
+                "bg"
+              )}.{/if}</span
+          >
+          <span class="l-en"
+            >In the money of the day a home today costs <b>×{fmt(reading.times)}</b> what it did in {reading.baseYear}.
+            Take out the rise in everything else and <b>×{fmt(reading.realTimes)}</b> is left.{#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
+              And one thing only the second line says: measured that way, today's level is {fmt(
+                reading.realBelowPeakPct
+              )}% below the highest Eurostat have ever recorded — in {periodLong(
+                reading.realPeakPeriod,
+                "en"
+              )}.{/if}</span
+          >
+        </p>
+        <p class="ss tsrc">
+          {@render srcLine(
+            COPY.srcEurostat,
+            reading.sourceUrl,
+            spanned(indexSeries),
+            reading.apiUrl
+          )}
+          <span class="sep">·</span>
+          {@render srcLine(
+            COPY.srcEurostat,
+            reading.realSourceUrl,
+            spanned(indexRealSeries),
+            reading.realApiUrl
+          )}
+        </p>
+      {/if}
+
       <figure class="chart">
         <div class="plot">
+          <!-- The axis is in multiples, which is what makes it readable at all.
+               «272,63» names no unit, is anchored to a year somebody picked, and
+               connects to nothing a reader has ever paid; «×2,7» is the same
+               cell divided by the base the payload declares. The numbers table
+               under the chart keeps the published index, because that is the
+               figure a sceptic checks against Eurostat. -->
           {@render yAxis([
-            { at: tickAt(indexScale.max, indexScale), label: fmt0(indexScale.max) },
-            { at: tickAt(indexScale.reference, indexScale), label: "100" },
+            { at: tickAt(indexScale.max, indexScale), label: times(indexScale.max) },
+            { at: tickAt(indexScale.reference, indexScale), label: times(indexScale.reference) },
             { at: tickAt(0, indexScale), label: "0" },
           ])}
           <svg
@@ -923,17 +992,17 @@
             viewBox="0 0 {CH_W} {CH_H}"
             role="img"
             aria-label={t(COPY.mktChartIndex, $lang, {
-              from: indexSeries.from,
-              to: indexSeries.to,
-              base: indexSeries.reference === 100 ? "2015" : "",
-              low: fmt(indexSeries.trough?.value),
-              lowAt: indexSeries.trough?.period,
-              peak: fmt(indexSeries.peak?.value),
-              peakAt: indexSeries.peak?.period,
-              last: fmt(indexSeries.latest?.value),
-              realPeak: fmt(indexRealSeries.peak?.value),
-              realPeakAt: indexRealSeries.peak?.period,
-              realLast: fmt(indexRealSeries.latest?.value),
+              from: periodLong(indexSeries.from, $lang),
+              to: periodLong(indexSeries.to, $lang),
+              base: reading.baseYear,
+              low: fmt(indexTimesBase(indexSeries.trough?.value, indexScale.reference)),
+              lowAt: periodLong(indexSeries.trough?.period, $lang),
+              peak: fmt(indexTimesBase(indexSeries.peak?.value, indexScale.reference)),
+              peakAt: periodLong(indexSeries.peak?.period, $lang),
+              last: fmt(reading.times),
+              realPeak: fmt(indexTimesBase(indexRealSeries.peak?.value, indexScale.reference)),
+              realPeakAt: periodLong(indexRealSeries.peak?.period, $lang),
+              realLast: fmt(reading.realTimes),
             })}
           >
             <line
@@ -965,7 +1034,7 @@
             {/each}
             <path class="plot-line second" d={pathOf({ ...indexRealSeries, ...indexScale })} />
             <path class="plot-line" d={pathOf({ ...indexSeries, ...indexScale })} />
-            {@render dots({ ...indexSeries, ...indexScale }, (v) => fmt(v))}
+            {@render dots({ ...indexSeries, ...indexScale }, times)}
             <line
               class="plot-axis"
               x1="0"
@@ -988,8 +1057,8 @@
             ></span
           >
           <span
-            ><span class="l-bg">{COPY.mktRefIndexBase.bg}</span><span class="l-en"
-              >{COPY.mktRefIndexBase.en}</span
+            ><span class="l-bg">{t(COPY.mktRefIndexBase, "bg", { year: reading.baseYear })}</span
+            ><span class="l-en">{t(COPY.mktRefIndexBase, "en", { year: reading.baseYear })}</span
             ></span
           >
         </figcaption>
@@ -1010,6 +1079,23 @@
         (v) => fmt(v),
         true
       )}
+      <!-- The bridge between the two forms, and it has to be written or the
+           page shows «×2,7» and «272,63» for one cell and leaves a reader to
+           work out that they are the same figure. The table keeps the published
+           form on purpose: an index level is what a sceptic checks against
+           Eurostat's own table, and the multiple is what a reader understands. -->
+      <p class="cap">
+        <span class="l-bg"
+          >В таблицата числата стоят така, както ги публикува Евростат — като индекс, където нивото
+          от {reading.baseYear} г. е записано като 100. Картинката отгоре показва същите числа, разделени
+          на това ниво, защото «×2,7» е изречение, а «272,63» не е.</span
+        >
+        <span class="l-en"
+          >In the table the figures are as Eurostat publish them — as an index, with the {reading.baseYear}
+          level written as 100. The chart above shows the same figures divided by that level, because
+          "×2.7" is a sentence and "272.63" is not.</span
+        >
+      </p>
       {#if flagKey.length}
         <p class="cap flags">
           <span class="l-bg"
@@ -1961,6 +2047,19 @@
   }
   .lead {
     margin-top: 12px;
+  }
+  /* The two readings of the index, in words. Marked as the paragraph carrying
+     the figures rather than the one explaining them — a reader who takes one
+     sentence off this section takes this one. */
+  .reading {
+    margin-top: 14px;
+    padding-left: 12px;
+    border-left: 2px solid var(--real);
+    color: var(--ink);
+  }
+  .reading b {
+    font-weight: 600;
+    white-space: nowrap;
   }
   .cap {
     margin-top: 8px;
