@@ -599,34 +599,124 @@
     <span class="l-en">The property market, in the institutions' own figures</span>
   </h1>
 
+  <!-- One sentence, and it is short because the four answers under it are what
+       a reader came for. At 360px the orientation paragraph this replaced
+       pushed the last two cards past the fold, which on a page whose first job
+       is to answer four questions is the paragraph costing more than it gives.
+       What it said is under the cards instead. -->
   <p class="lead">
     <span class="l-bg"
-      >Тук са официалните числа за жилищния пазар в България: колко сделки има, колко се плаща по
-      тях, как се движат цените и колко хора изобщо дължат нещо по жилището си. Под всяко число пише
-      кой го публикува и за кой период е. Не заемаме страна — числата тук сочат в различни посоки и
-      това е част от отговора.</span
+      >Официалните числа за жилищата в България. Под всяко пише кой го публикува и за кой период е.</span
     >
     <span class="l-en"
-      >These are the official figures for Bulgarian housing: how many deals happen, what is paid for
-      them, how prices move, and how many people owe anything on the home they live in. Under every
-      number is who publishes it and which period it describes. We take no side — these figures
-      point in different directions, and that is part of the answer.</span
+      >The official figures for housing in Bulgaria. Under each one is who publishes it and which
+      period it describes.</span
     >
   </p>
+  <!--
+    The four answers, before anything else on the page.
+
+    A reader arriving here wants to know four things and the page made them
+    earn all four: is it dearer than it used to be, by how much, really; what
+    does one cost in something I can picture; and are people buying. Each was
+    reachable — in section two, in section three, in section one — and reaching
+    it meant reading a chart. Six sections in, the page then ended on three
+    cards whose labels were definitions rather than statements.
+
+    So the summary is at the top and the working is below it, and every card
+    still carries its publisher, the period it describes and the query that
+    returns it. Nothing here is a figure the page does not go on to show whole.
+  -->
+  <div class="stats answers">
+    {#if reading.times != null}
+      {@render figure(
+        `×${fmt(reading.times)}`,
+        {
+          bg: t(COPY.mktKTimesNominal, "bg", { year: reading.baseYear }),
+          en: t(COPY.mktKTimesNominal, "en", { year: reading.baseYear }),
+        },
+        COPY.srcEurostat,
+        reading.sourceUrl,
+        when(reading.period),
+        reading.apiUrl
+      )}
+    {/if}
+    {#if reading.realTimes != null}
+      {@render figure(
+        `×${fmt(reading.realTimes)}`,
+        COPY.mktKTimesReal,
+        COPY.srcEurostat,
+        reading.realSourceUrl,
+        when(reading.period),
+        reading.realApiUrl
+      )}
+    {/if}
+    {#if volume.deals.value}
+      {@render figure(
+        fmt0(volume.deals.value),
+        COPY.mktKDeals,
+        COPY.srcEurostat,
+        volume.deals.sourceUrl,
+        when(volume.period),
+        volume.deals.apiUrl
+      )}
+    {/if}
+    {#if yearsOfPay.value != null}
+      {@render figure(
+        fmt(yearsOfPay.value),
+        COPY.mktKYearsOfPay,
+        COPY.srcEurostatNsi,
+        yearsOfPay.wageUrl,
+        whenPair(yearsOfPay.dealPeriod, COPY.srcEurostat, yearsOfPay.wagePeriod, COPY.srcNsi)
+      )}
+    {/if}
+  </div>
+
+  {#if yearsOfPay.value != null}
+    {@render ourSum(
+      {
+        bg:
+          `Числата с «×» и това в години са наша сметка, и двете от публикувани числа. «Колко ` +
+          `пъти» е индексът на Евростат, разделен на нивото от ${reading.baseYear} г. — годината, ` +
+          `която самият Евростат е взел за начало и е записал като 100. «Колко години заплата» е ` +
+          `средната сделка на Евростат, разделена на дванадесет средни месечни заплати на НСИ за ` +
+          `всички дейности. Двата файла остават отделни чак до браузъра ти и се срещат едва тук, ` +
+          `така че във всеки от тях стоят числата само на един публикуващ орган. Заплатата е ` +
+          `брутната, както я публикува НСИ: парите на ръка зависят от данъчната таблица на ` +
+          `годината, в която са сметнати, и биха вкарали трети закон в сметка на двама.`,
+        en:
+          `The «×» figures and the one in years are our arithmetic, both from published ` +
+          `numbers. The multiple is Eurostat's index divided by the ${reading.baseYear} level — ` +
+          `the year Eurostat themselves took as the starting point and wrote as 100. The years ` +
+          `figure is Eurostat's average transaction divided by twelve of НСИ's published average ` +
+          `monthly wages across all activities. The two files stay apart all the way to your ` +
+          `browser and meet only here, which is what keeps each of them one publisher's data. ` +
+          `The wage is the one before tax and contributions, as НСИ publish it: take-home pay ` +
+          `depends on the payroll table of the year that computed it, which would put a third ` +
+          `body's law inside a two-publisher ratio.`,
+      },
+      yearsOfPay.derivedFrom
+    )}
+  {/if}
+
   <p class="lead">
     <span class="l-bg"
-      >Под всяко число има две връзки. Първата води към таблицата на публикуващия, където до нашето
-      число стоят и всички останали мерки от същия набор — брой, индекс, месечна и годишна промяна —
-      така че там се вижда и друго число за същата държава и същото тримесечие. Втората връзка, «{COPY
-        .mktSrcQuery.bg}», връща точно това, което пише тук, и нищо друго. Където сметката е наша,
-      пише как е направена и стои заявката, която я връща.</span
+      >Това е отговорът накратко. Всичко под него е сметката: колко жилища се купуват, на каква
+      цена, как се движат цените и кой колко тежко плаща за жилището си. Не заемаме страна — числата
+      сочат в различни посоки и това е част от отговора. Под всяко число има две връзки: първата
+      отваря таблицата на публикуващия, където до нашето число стоят и всички останали мерки от
+      същия набор — брой, индекс, месечна и годишна промяна — така че там се вижда и друго число за
+      същата държава и същото тримесечие. Втората, «{COPY.mktSrcQuery.bg}», връща точно това, което
+      пише тук, и нищо друго.</span
     >
     <span class="l-en"
-      >Every number carries two links. The first opens the publisher's own table, where our figure
-      sits beside every other measure in the same dataset — a count, an index, a quarterly and an
-      annual rate — so the same country and quarter shows more than one number there. The second, "{COPY
-        .mktSrcQuery.en}", returns exactly what is printed here and nothing else. Where the
-      arithmetic is ours, it says so and carries the query that reproduces it.</span
+      >That is the short answer. Everything below it is the working: how many homes change hands, at
+      what price, how prices move, and who finds their housing hardest to pay for. We take no side —
+      the figures point in different directions and that is part of the answer. Every number carries
+      two links: the first opens the publisher's own table, where our figure sits beside every other
+      measure in the same dataset — a count, an index, a quarterly and an annual rate — so the same
+      country and quarter shows more than one number there. The second, "{COPY.mktSrcQuery.en}",
+      returns exactly what is printed here and nothing else.</span
     >
   </p>
 
@@ -1472,34 +1562,11 @@
         deal.avg.derivedFrom
       )}
 
-      {#if yearsOfPay.value != null}
-        <div class="stats">
-          {@render figure(
-            fmt(yearsOfPay.value),
-            COPY.mktKYearsOfPay,
-            COPY.srcEurostatNsi,
-            yearsOfPay.wageUrl,
-            whenPair(yearsOfPay.dealPeriod, COPY.srcEurostat, yearsOfPay.wagePeriod, COPY.srcNsi)
-          )}
-        </div>
-        {@render ourSum(
-          {
-            bg:
-              "Колко заплати струва едно жилище е наша сметка с числата на две институции: " +
-              "средната сделка на Евростат, разделена на дванадесет средни брутни заплати на НСИ " +
-              "за всички дейности. Двата файла остават отделни чак до браузъра ти и се срещат " +
-              "едва тук — така във всеки от тях стоят числата само на един публикуващ орган. " +
-              "Бруто, а не нето: нетото зависи от данъчната таблица на годината, в която е сметнато.",
-            en:
-              "The years of pay are arithmetic over two institutions' figures: Eurostat's average " +
-              "deal divided by twelve of НСИ's published average gross wages across all " +
-              "activities. The two files stay apart all the way to your browser and meet here, " +
-              "which is what keeps each of them one publisher's data. Gross rather than net: a " +
-              "net figure depends on the payroll table of the year it was worked out in.",
-          },
-          yearsOfPay.derivedFrom
-        )}
-      {/if}
+      <!-- «Колко години заплата струва едно жилище» is the card at the top of
+           the page rather than a second one here. It is built from this
+           section's own figure and НСИ's wage, and a reader who has just been
+           told how many years it costs is the reader already asking what the
+           market is doing — which is the order the page is now in. -->
     {/if}
   </section>
 
@@ -1660,31 +1727,35 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Цената на жилището сама по себе си не казва много: тя зависи и от това колко печелят
-        хората. Затова Евростат дели едното на другото — цените на жилищата върху доходите — и следи
-        как се движи резултатът.</span
+        >Цената сама по себе си не казва много: тя зависи и от това колко печелят хората. Затова
+        Евростат дели едното на другото и гледа как се движи резултатът. «Доход» тук не е заплата —
+        това е всичко, което влиза в домакинствата: заплати, пенсии, помощи и услугите, които
+        държавата плаща вместо тях. Общата сума се дели на всички хора в страната, от бебето до
+        пенсионера.</span
       >
       <span class="l-en"
-        >A house price on its own says little: it depends on what people earn as well. So Eurostat
-        divide one by the other — house prices over incomes — and follow how the result moves.</span
+        >A price on its own says little: it depends on what people earn as well. So Eurostat divide
+        one by the other and watch how the result moves. "Income" here is not a wage — it is
+        everything coming into households: wages, pensions, benefits and the services the state pays
+        for on their behalf. That total is divided by everyone in the country, from the baby to the
+        pensioner.</span
       >
     </p>
     <p>
       <span class="l-bg"
-        >Второто деление е това, което прави числото четимо. Съотношението за дадена година се дели
-        на средното за целия ред и се записва като 100 за средното. Затова 100 е «толкова, колкото
-        обикновено е било в България», под 100 е «по-евтино спрямо доходите, отколкото обикновено»,
-        а над 100 — «по-скъпо». Мерилото е собствената история на страната. Редът не сравнява
-        България с друга държава и не казва нищо за отделния купувач — той е за съотношението, а не
-        за нечий бюджет.</span
+        >Самото съотношение е неудобно число, затова Евростат го записва спрямо неговата собствена
+        средна стойност за целия ред: 100 значи «колкото средно е било в България през тези години».
+        Под 100 значи, че жилищата вземат по-малка част от дохода, отколкото средно за периода; над
+        100 — по-голяма. Мерилото е миналото на самата България. Редът не я сравнява с друга държава
+        и не казва нищо за конкретен купувач — той е за съотношението, не за нечий бюджет.</span
       >
       <span class="l-en"
-        >The second division is what makes the figure readable. A given year's ratio is divided by
-        the average across the whole series and written as 100 for that average. So 100 means "about
-        what it has usually been in Bulgaria", below 100 means "cheaper against incomes than usual",
-        and above 100 means dearer. The yardstick is the country's own history. The series does not
-        compare Bulgaria with anywhere else, and it says nothing about an individual buyer — it is
-        about the ratio, not about anyone's budget.</span
+        >The ratio itself is an awkward number, so Eurostat write it against its own average across
+        the whole series: 100 means "about what it averaged in Bulgaria over those years". Below 100
+        means homes take a smaller part of income than they did on average over the period; above
+        100, a larger one. The yardstick is Bulgaria's own past. The series does not compare it with
+        anywhere else and says nothing about an individual buyer — it is about the ratio, not about
+        anyone's budget.</span
       >
     </p>
 
@@ -1770,42 +1841,53 @@
       </p>
       <p class="cap">
         <span class="l-bg"
-          >Две неща за този ред, които не си личат от картинката. «Доход» тук е разполагаемият доход
-          на домакинствата на човек от населението, а не заплата — включва пенсии, помощи и услуги,
-          които държавата плаща вместо домакинството, и се дели на броя хора в страната, който за
-          периода на реда е намалял. И средната, спрямо която се мери, се преизчислява при всяко
-          ново издание: като излезе нова година, всички предишни точки се променят, без годината им
-          да се променя.</span
+          >Две неща за този ред, които не си личат от картинката. Броят хора, на който се дели, е
+          намалявал през целия период, така че доходът на човек расте и когато общата сума не расте.
+          И средната, спрямо която се мери, се пресмята наново при всяко издание: излезе ли нова
+          година, всички предишни точки се разместват, без годината им да се променя.</span
         >
         <span class="l-en"
-          >Two things about this series that the picture does not show. "Income" here is household
-          disposable income per head of population, not a wage — it includes pensions, benefits and
-          services the state pays for on a household's behalf, and it is divided by a population
-          that has fallen over the span of the series. And the average it is measured against is
-          recomputed with every edition: when a new year is added, every earlier point moves without
-          its year changing.</span
+          >Two things about this series that the picture does not show. The number of people it is
+          divided by has fallen throughout the period, so income per head rises even when the total
+          does not. And the average it is measured against is worked out afresh with every edition:
+          when a new year is added, every earlier point shifts without its year changing.</span
         >
       </p>
     {/if}
 
     <!-- Twenty years of the overburden share, which was one number ------- -->
     {#if overburdenSeries.points.length > 4}
+      <!-- The card this replaced read «6,9% · плащат над 40% от дохода си за
+           жилище», and a reader could not tell who «they» were: the figure is a
+           share of everybody in the country, while the 40% is of a HOUSEHOLD's
+           income. Two denominators in one line, neither of them named. A
+           sentence has room to say both, and the chart beside it is the same
+           series, so the card was also the picture repeated badly. -->
       <p>
         <span class="l-bg"
-          >Другият официален показател брои хората, чието домакинство дава над 40% от дохода си за
-          жилище. «Разходи за жилище» тук е всичко около него — ток, парно, вода, поддръжка и данък,
-          а наем или вноска само за тези, които плащат такива. В България огромната част от хората
-          живеят в собствено жилище без заем, така че този ред се движи най-вече от сметките, а не
-          от цените на сделките. И не върви в една посока: минавал е от най-ниската до най-високата
-          си стойност два пъти за двайсет години.</span
+          >Другият официален показател брои хората, които живеят в домакинство, даващо над 40% от
+          дохода си за жилище. Изследването пита самите домакинства; процентът е дял от всички хора
+          в страната{#if overburdenSeries.value != null}, и за {periodLong(
+              overburdenSeries.refPeriod,
+              "bg"
+            )} е {fmt(overburdenSeries.value)}%{/if}. «Разходи за жилище» тук е всичко около него —
+          ток, парно, вода, поддръжка и данък, а наем или вноска само за тези, които плащат такива.
+          Огромната част от хората в България живеят в собствено жилище без заем, така че този ред
+          се движи най-вече от сметките, а не от цените на сделките. И не върви в една посока:
+          минавал е от най-ниската до най-високата си стойност два пъти за двайсет години.</span
         >
         <span class="l-en"
-          >The other official indicator counts people whose household spends more than 40% of its
-          income on housing. "Housing costs" here is everything around it — electricity, heating,
-          water, maintenance and tax, with rent or a mortgage payment only for those who pay one.
-          Most people in Bulgaria live in a home they own outright, so this series moves mainly with
-          bills rather than with transaction prices. It does not move one way either: it has
-          travelled from its lowest reading to its highest twice in twenty years.</span
+          >The other official indicator counts people living in a household that spends more than
+          40% of its income on housing. The survey asks the households themselves; the percentage is
+          a share of everybody in the country{#if overburdenSeries.value != null}, and for {periodLong(
+              overburdenSeries.refPeriod,
+              "en"
+            )} it is {fmt(overburdenSeries.value)}%{/if}. "Housing costs" here is everything around
+          it — electricity, heating, water, maintenance and tax, with rent or a mortgage payment
+          only for those who pay one. The great majority of people in Bulgaria live in a home they
+          own outright, so this series moves mainly with bills rather than with transaction prices.
+          It does not move one way either: it has travelled from its lowest reading to its highest
+          twice in twenty years.</span
         >
       </p>
       <figure class="chart">
@@ -1860,46 +1942,47 @@
       )}
     {/if}
 
-    {#if structure.priceToIncome.value != null}
-      <div class="stats">
-        {@render figure(
-          fmt(structure.priceToIncome.value),
-          COPY.mktKPriceToIncome,
-          COPY.srcEurostat,
-          structure.priceToIncome.sourceUrl,
-          when(structure.priceToIncome.refPeriod),
-          structure.priceToIncome.apiUrl
-        )}
-        {@render figure(
-          `${fmt(structure.overburden.value)}%`,
-          COPY.mktKOverburden,
-          COPY.srcEurostat,
-          structure.overburden.sourceUrl,
-          when(structure.overburden.refPeriod),
-          structure.overburden.apiUrl
-        )}
-        {#if rent}
-          {@render figure(
-            pct(rent.annual_rate_pct),
-            COPY.mktKRentInflation,
-            COPY.srcEurostat,
-            rent.api_url,
-            when(rent.ref_period)
-          )}
-        {/if}
-      </div>
+    <!-- The renters' figure. Two of every fifteen people in the country rent,
+         and the two indicators above them are about owners for the most part —
+         so a section asking whether housing is dear against incomes that never
+         mentioned rent would be answering for the majority and calling it the
+         answer. It is the calculator's own line, read here rather than fetched
+         again. -->
+    {#if rent}
+      <p>
+        <span class="l-bg"
+          >Двата реда отгоре са най-вече за хората със собствено жилище, защото такива са почти
+          всички в България. За тези, които плащат наем, официалното число е друго: промяната в
+          наемите за {periodLong(rent.ref_period, "bg")} спрямо същия месец година по-рано е {pct(
+            rent.annual_rate_pct
+          )}. Това е цената на наема, а не цената на жилището, и се мери всеки месец, а не веднъж
+          годишно.</span
+        >
+        <span class="l-en"
+          >The two series above are mostly about people who own their home, because almost everyone
+          in Bulgaria does. For those who pay rent the official figure is a different one: the
+          change in rents for {periodLong(rent.ref_period, "en")} against the same month a year earlier
+          is {pct(rent.annual_rate_pct)}. That is the price of renting rather than the price of a
+          home, and it is measured every month rather than once a year.</span
+        >
+      </p>
+      <p class="ss tsrc">
+        {@render srcLine(COPY.srcEurostat, rent.api_url, when(rent.ref_period))}
+      </p>
     {/if}
 
     <p class="cap">
       <span class="l-bg"
-        >Тези три числа не сочат в една посока и страницата няма да реши вместо теб кое тежи повече.
-        Показателят спрямо доходите и делът на хората, чието домакинство дава над 40% от дохода си
-        за жилище, се движат в една посока; наемите — в друга. Твоята сметка е в калкулатора.</span
+        >Трите числа в този раздел мерят различни неща и не сочат непременно в една посока: първото
+        е цената спрямо доходите на цялата страна, второто — колко хора не смогват със сметките за
+        жилището, третото — с колко се променя наемът. Страницата дава и трите и няма да реши вместо
+        теб кое тежи повече. Твоята собствена сметка е в калкулатора.</span
       >
       <span class="l-en"
-        >These three figures do not point the same way, and the page will not decide for you which
-        weighs more. The income-relative indicator and the share of people whose household spends
-        over 40% of its income on housing move one way; rents move another. Your own arithmetic is
+        >The three figures in this section measure different things and need not point the same way:
+        the first is price against the whole country's incomes, the second is how many people cannot
+        keep up with what their home costs to run, and the third is how much rent is moving. The
+        page gives all three and will not decide for you which weighs more. Your own arithmetic is
         in the calculator.</span
       >
     </p>
@@ -2117,8 +2200,15 @@
   .stats:empty {
     display: none;
   }
+  /* The answer row. Four cards on one line at the page's own measure and two
+     by two at 360px, which is what a 150px basis buys — the summary a reader
+     is meant to take in at once has to fit on the screen they are holding, and
+     four stacked 190px cards ran to more than a phone shows. */
+  .answers {
+    margin-top: 20px;
+  }
   .stat {
-    flex: 1 1 190px;
+    flex: 1 1 150px;
     min-width: 0;
     background: var(--surface);
     border: 1px solid var(--line);
