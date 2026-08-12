@@ -1347,6 +1347,32 @@ mark the reader could not actually see.
   ellipse. `preserveAspectRatio="none"` anywhere on this page is the tell that
   this has been undone, and a test says so.
 
+**A third rule, and `/market/`'s six plots are what found it: no axis text goes
+inside a scaled box.** An SVG sized `width: 100%` against a fixed `viewBox`
+scales its whole coordinate system, and text is part of it. At a 360px viewport
+those plots rendered at 0.56 of the width they were declared in, so an 11px axis
+label reached the reader at **6.2px** — measured in Chromium, on six charts at
+once, on the page whose smallest type is the thing that makes every figure above
+it checkable. The padding those labels needed came out of the same box, so the
+plot itself was 83px tall on the device most readers arrive on.
+
+So the box holds marks and the labels are HTML beside it, in a two-column grid
+(`.plot` in `Market.svelte`): the gutter is `auto`, so it is as wide as the
+longest tick and no wider, and each tick carries its own height as a percentage
+— which the grid can honour because it stretches that cell to exactly the height
+the SVG resolved to. The labels are then set in the page's own type scale and
+are the same size at 360px as at 1440.
+
+Two things this constrains. The ticks are moved with `position: relative` in a
+single stacked grid area rather than taken out of flow: an absolutely positioned
+child contributes nothing to its parent's intrinsic width, so the gutter
+measures zero and every label hangs off the left edge of the page. And the SVG
+is `overflow: visible`, because a line's first and last point sit ON the left
+and right edges and the zero rule on the bottom one. `verify_render_market.mjs`
+walks the built page at 360px and fails a label rendering below `--fs-micro`, a
+plot under 110px tall, a label starting left of zero, or a page that scrolls
+sideways.
+
 **The drawer explains; it does not derive.** Each of its four items is a short
 plain sentence and a worked example in round numbers — no algebra, no `<code>`,
 no nested `<details>`. A «виж формулата» toggle under every item puts four

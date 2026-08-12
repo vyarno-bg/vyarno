@@ -145,22 +145,34 @@
    * pass in. A y-axis cropped to a property series' own range turns any of them
    * into a cliff, and this is the page that refuses to tell a reader what to
    * think.
+   *
+   * **THE BOX IS THE PLOT AND NOTHING ELSE. No axis text may be drawn inside
+   * it, and the reason is the phone.** An SVG sized `width: 100%` against a
+   * fixed `viewBox` scales its whole coordinate system, TEXT INCLUDED: at a
+   * 360px viewport this box renders at 0.56 of the width it is declared in, so
+   * an 11px axis label reaches the reader at 6.2px — measured in Chromium, on
+   * six charts at once, on the page whose smallest type is the thing that makes
+   * every figure above it checkable. Padding for the labels also came out of
+   * the same box, so the plot itself was 83px tall on the device most readers
+   * arrive on.
+   *
+   * So the labels are HTML in a grid beside the box (`.plot`), set in the
+   * page's own type scale and therefore the same size at every width, and the
+   * SVG carries marks only. `tickAt` is the whole join: a tick's height as a
+   * percentage of the plot, which is exactly what a percentage means to the
+   * gutter cell the grid stretches to the same height.
    */
-  const CH_W = 640,
-    CH_H = 190,
-    CH_PAD_L = 54,
-    CH_PAD_R = 12,
-    CH_TOP = 14,
-    CH_BASE = CH_H - 28;
-  const plotW = CH_W - CH_PAD_L - CH_PAD_R;
-  const plotH = CH_BASE - CH_TOP;
+  const CH_W = 600,
+    CH_H = 240;
   const span = (s) => s.max - s.min || 1;
-  const yOf = (value, s) => CH_TOP + plotH * (1 - (value - s.min) / span(s));
+  const yOf = (value, s) => CH_H * (1 - (value - s.min) / span(s));
   /** Evenly across the box, first point on the left edge and last on the right. */
-  const lineX = (i, n) => CH_PAD_L + (n > 1 ? (plotW * i) / (n - 1) : plotW / 2);
+  const lineX = (i, n) => (n > 1 ? (CH_W * i) / (n - 1) : CH_W / 2);
   /** A column occupies its own slot with a gap, so 85 of them still read. */
-  const colX = (i, n) => CH_PAD_L + (plotW / n) * (i + 0.12);
-  const colW = (n) => Math.max(0.8, (plotW / n) * 0.76);
+  const colX = (i, n) => (CH_W / n) * (i + 0.12);
+  const colW = (n) => Math.max(0.8, (CH_W / n) * 0.76);
+  /** Where a tick sits down the plot, as the percentage its HTML gutter takes. */
+  const tickAt = (value, s) => (yOf(value, s) / CH_H) * 100;
   /** The sparkline box, and its own mapping. Small, and drawn 1:1 like the rest. */
   const SP_W = 108,
     SP_H = 26;
@@ -433,19 +445,43 @@
   {/each}
 {/snippet}
 
+<!--
+  The y axis, as HTML beside the plot rather than as text inside it.
+
+  Each tick carries its own height as a percentage, which the grid cell it sits
+  in can honour because the browser stretches that cell to exactly the height
+  the SVG next to it resolved to. So the label lands on its own gridline at
+  every viewport, and it is set in the page's type rather than in the plot's
+  coordinate system — which is what stops it shrinking to 6px on a phone.
+
+  `aria-hidden`, because the SVG is `role="img"` with a text alternative that
+  already names the extremes and the latest reading. Read out as well, these
+  become a run of loose digits after the description of the same chart.
+-->
+{#snippet yAxis(ticks)}
+  <div class="yaxis" aria-hidden="true">
+    {#each ticks as tick (tick.label)}
+      <span class="plot-tick" style="top:{tick.at.toFixed(2)}%">{tick.label}</span>
+    {/each}
+  </div>
+{/snippet}
+
+<!-- The two ends of the window, under the plot they belong to. A series states
+     its own span, so nothing here can name a period the data does not reach. -->
+{#snippet xAxis(series)}
+  <div class="xaxis" aria-hidden="true">
+    <span class="plot-tick">{periodLong(series.from, $lang)}</span>
+    <span class="plot-tick">{periodLong(series.to, $lang)}</span>
+  </div>
+{/snippet}
+
 {#snippet dots(series, label)}
   {@const n = series.points.length}
   {#each series.points as p, i (p.period)}
     <!-- An invisible target over each point of a line. A line has no mark to
          put a `<title>` on, and a reader hunting for one quarter of eighty-five
          needs a box wide enough to hit rather than a stroke one pixel wide. -->
-    <rect
-      class="plot-hit"
-      x={lineX(i, n) - plotW / n / 2}
-      y={CH_TOP}
-      width={plotW / n}
-      height={plotH}
-    >
+    <rect class="plot-hit" x={lineX(i, n) - CH_W / n / 2} y="0" width={CH_W / n} height={CH_H}>
       <title>{p.period}: {label(p.value)}</title>
     </rect>
   {/each}
@@ -670,28 +706,34 @@
            afford. `marketVolumeSeries` offers no `min` for the same reason. -->
       {#if volumeSeries.points.length > 4}
         <figure class="chart">
-          <svg
-            viewBox="0 0 {CH_W} {CH_H}"
-            role="img"
-            aria-label={t(COPY.mktChartVolume, $lang, {
-              from: periodLong(volumeSeries.from, $lang),
-              to: periodLong(volumeSeries.to, $lang),
-              peak: fmt0(volumeSeries.peak?.value),
-              peakAt: periodLong(volumeSeries.peak?.period, $lang),
-              last: fmt0(volumeSeries.latest?.value),
-            })}
-          >
-            {@render columns(volumeSeries, (v) => `${fmt0(v)}`)}
-            <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
-            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
-              >{fmt0(volumeSeries.max)}</text
+          <div class="plot">
+            {@render yAxis([
+              { at: tickAt(volumeSeries.max, volumeSeries), label: fmt0(volumeSeries.max) },
+              { at: tickAt(0, volumeSeries), label: "0" },
+            ])}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartVolume, $lang, {
+                from: periodLong(volumeSeries.from, $lang),
+                to: periodLong(volumeSeries.to, $lang),
+                peak: fmt0(volumeSeries.peak?.value),
+                peakAt: periodLong(volumeSeries.peak?.period, $lang),
+                last: fmt0(volumeSeries.latest?.value),
+              })}
             >
-            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
-            <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{volumeSeries.from}</text>
-            <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
-              >{volumeSeries.to}</text
-            >
-          </svg>
+              {@render columns(volumeSeries, (v) => `${fmt0(v)}`)}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, volumeSeries)}
+                x2={CH_W}
+                y2={yOf(0, volumeSeries)}
+              />
+            </svg>
+            {@render xAxis(volumeSeries)}
+          </div>
         </figure>
         <p class="ss tsrc">
           {@render srcLine(
@@ -870,69 +912,70 @@
       </p>
 
       <figure class="chart">
-        <svg
-          viewBox="0 0 {CH_W} {CH_H}"
-          role="img"
-          aria-label={t(COPY.mktChartIndex, $lang, {
-            from: indexSeries.from,
-            to: indexSeries.to,
-            base: indexSeries.reference === 100 ? "2015" : "",
-            low: fmt(indexSeries.trough?.value),
-            lowAt: indexSeries.trough?.period,
-            peak: fmt(indexSeries.peak?.value),
-            peakAt: indexSeries.peak?.period,
-            last: fmt(indexSeries.latest?.value),
-            realPeak: fmt(indexRealSeries.peak?.value),
-            realPeakAt: indexRealSeries.peak?.period,
-            realLast: fmt(indexRealSeries.latest?.value),
-          })}
-        >
-          <line
-            class="plot-ref"
-            x1={CH_PAD_L}
-            y1={yOf(indexScale.reference, indexScale)}
-            x2={CH_W - CH_PAD_R}
-            y2={yOf(indexScale.reference, indexScale)}
-          />
-          <!-- A quarter Eurostat marked as a break in their own series. Drawn as
-               a rule rather than smoothed over: the line either side of it is
-               not one continuous measurement, and joining them without saying
-               so is a claim the publisher declined to make. -->
-          {#each Object.entries(indexSeries.flags) as [period, letter] (period)}
-            {#if letter.includes("b")}
-              {@const i = indexSeries.points.findIndex((p) => p.period === period)}
-              {#if i >= 0}
-                <line
-                  class="plot-break"
-                  x1={lineX(i, indexSeries.points.length)}
-                  y1={CH_TOP}
-                  x2={lineX(i, indexSeries.points.length)}
-                  y2={CH_BASE}
-                >
-                  <title>{period}: {t(COPY.mktFlagB, $lang)}</title>
-                </line>
+        <div class="plot">
+          {@render yAxis([
+            { at: tickAt(indexScale.max, indexScale), label: fmt0(indexScale.max) },
+            { at: tickAt(indexScale.reference, indexScale), label: "100" },
+            { at: tickAt(0, indexScale), label: "0" },
+          ])}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.mktChartIndex, $lang, {
+              from: indexSeries.from,
+              to: indexSeries.to,
+              base: indexSeries.reference === 100 ? "2015" : "",
+              low: fmt(indexSeries.trough?.value),
+              lowAt: indexSeries.trough?.period,
+              peak: fmt(indexSeries.peak?.value),
+              peakAt: indexSeries.peak?.period,
+              last: fmt(indexSeries.latest?.value),
+              realPeak: fmt(indexRealSeries.peak?.value),
+              realPeakAt: indexRealSeries.peak?.period,
+              realLast: fmt(indexRealSeries.latest?.value),
+            })}
+          >
+            <line
+              class="plot-ref"
+              x1="0"
+              y1={yOf(indexScale.reference, indexScale)}
+              x2={CH_W}
+              y2={yOf(indexScale.reference, indexScale)}
+            />
+            <!-- A quarter Eurostat marked as a break in their own series. Drawn as
+                 a rule rather than smoothed over: the line either side of it is
+                 not one continuous measurement, and joining them without saying
+                 so is a claim the publisher declined to make. -->
+            {#each Object.entries(indexSeries.flags) as [period, letter] (period)}
+              {#if letter.includes("b")}
+                {@const i = indexSeries.points.findIndex((p) => p.period === period)}
+                {#if i >= 0}
+                  <line
+                    class="plot-break"
+                    x1={lineX(i, indexSeries.points.length)}
+                    y1="0"
+                    x2={lineX(i, indexSeries.points.length)}
+                    y2={CH_H}
+                  >
+                    <title>{period}: {t(COPY.mktFlagB, $lang)}</title>
+                  </line>
+                {/if}
               {/if}
-            {/if}
-          {/each}
-          <path class="plot-line second" d={pathOf({ ...indexRealSeries, ...indexScale })} />
-          <path class="plot-line" d={pathOf({ ...indexSeries, ...indexScale })} />
-          {@render dots({ ...indexSeries, ...indexScale }, (v) => fmt(v))}
-          <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
-          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
-            >{fmt0(indexScale.max)}</text
-          >
-          <text
-            class="plot-tick"
-            x={CH_PAD_L - 6}
-            y={yOf(indexScale.reference, indexScale) + 4}
-            text-anchor="end">100</text
-          >
-          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
-          <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{indexSeries.from}</text>
-          <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
-            >{indexSeries.to}</text
-          >
-        </svg>
+            {/each}
+            <path class="plot-line second" d={pathOf({ ...indexRealSeries, ...indexScale })} />
+            <path class="plot-line" d={pathOf({ ...indexSeries, ...indexScale })} />
+            {@render dots({ ...indexSeries, ...indexScale }, (v) => fmt(v))}
+            <line
+              class="plot-axis"
+              x1="0"
+              y1={yOf(0, indexScale)}
+              x2={CH_W}
+              y2={yOf(0, indexScale)}
+            />
+          </svg>
+          {@render xAxis(indexSeries)}
+        </div>
         <figcaption>
           <span class="key one"
             ><span class="l-bg">{COPY.mktKeyNominal.bg}</span><span class="l-en"
@@ -998,41 +1041,37 @@
           >
         </p>
         <figure class="chart">
-          <svg
-            viewBox="0 0 {CH_W} {CH_H}"
-            role="img"
-            aria-label={t(COPY.mktChartRate, $lang, {
-              from: rateSeries.from,
-              to: rateSeries.to,
-              low: pct(rateSeries.trough?.value),
-              lowAt: rateSeries.trough?.period,
-              peak: pct(rateSeries.peak?.value),
-              peakAt: rateSeries.peak?.period,
-              last: pct(rateSeries.latest?.value),
-            })}
-          >
-            {@render columns(rateSeries, (v) => pct(v))}
-            <line
-              class="plot-axis"
-              x1={CH_PAD_L}
-              y1={yOf(0, rateSeries)}
-              x2={CH_W - CH_PAD_R}
-              y2={yOf(0, rateSeries)}
-            />
-            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
-              >{pct(rateSeries.max)}</text
+          <div class="plot">
+            {@render yAxis([
+              { at: tickAt(rateSeries.max, rateSeries), label: pct(rateSeries.max) },
+              { at: tickAt(0, rateSeries), label: "0" },
+              { at: tickAt(rateSeries.min, rateSeries), label: pct(rateSeries.min) },
+            ])}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartRate, $lang, {
+                from: rateSeries.from,
+                to: rateSeries.to,
+                low: pct(rateSeries.trough?.value),
+                lowAt: rateSeries.trough?.period,
+                peak: pct(rateSeries.peak?.value),
+                peakAt: rateSeries.peak?.period,
+                last: pct(rateSeries.latest?.value),
+              })}
             >
-            <text class="plot-tick" x={CH_PAD_L - 6} y={yOf(0, rateSeries) + 4} text-anchor="end"
-              >0</text
-            >
-            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end"
-              >{pct(rateSeries.min)}</text
-            >
-            <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{rateSeries.from}</text>
-            <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
-              >{rateSeries.to}</text
-            >
-          </svg>
+              {@render columns(rateSeries, (v) => pct(v))}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, rateSeries)}
+                x2={CH_W}
+                y2={yOf(0, rateSeries)}
+              />
+            </svg>
+            {@render xAxis(rateSeries)}
+          </div>
           <figcaption>
             <span class="l-bg">{COPY.mktRefZero.bg}</span>
             <span class="l-en">{COPY.mktRefZero.en}</span>
@@ -1270,29 +1309,35 @@
            which is what the mix caveat is about. -->
       {#if dealNewSeries.points.length > 4}
         <figure class="chart">
-          <svg
-            viewBox="0 0 {CH_W} {CH_H}"
-            role="img"
-            aria-label={t(COPY.mktChartDeal, $lang, {
-              from: dealNewSeries.from,
-              to: dealNewSeries.to,
-              new: fmt0(dealNewSeries.latest?.value),
-              existing: fmt0(dealExistingSeries.latest?.value),
-            })}
-          >
-            <path class="plot-line" d={pathOf({ ...dealNewSeries, ...dealScale })} />
-            <path class="plot-line second" d={pathOf({ ...dealExistingSeries, ...dealScale })} />
-            {@render dots(dealNewSeries, (v) => `${fmt0(v)} €`)}
-            <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
-            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
-              >{fmt0(dealScale.max)}</text
+          <div class="plot">
+            {@render yAxis([
+              { at: tickAt(dealScale.max, dealScale), label: `${fmt0(dealScale.max)} €` },
+              { at: tickAt(0, dealScale), label: "0" },
+            ])}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartDeal, $lang, {
+                from: dealNewSeries.from,
+                to: dealNewSeries.to,
+                new: fmt0(dealNewSeries.latest?.value),
+                existing: fmt0(dealExistingSeries.latest?.value),
+              })}
             >
-            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
-            <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{dealNewSeries.from}</text>
-            <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
-              >{dealNewSeries.to}</text
-            >
-          </svg>
+              <path class="plot-line" d={pathOf({ ...dealNewSeries, ...dealScale })} />
+              <path class="plot-line second" d={pathOf({ ...dealExistingSeries, ...dealScale })} />
+              {@render dots(dealNewSeries, (v) => `${fmt0(v)} €`)}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, dealScale)}
+                x2={CH_W}
+                y2={yOf(0, dealScale)}
+              />
+            </svg>
+            {@render xAxis(dealNewSeries)}
+          </div>
           <figcaption>
             <span class="key one"
               ><span class="l-bg">{COPY.mktKeyNew.bg}</span><span class="l-en"
@@ -1565,39 +1610,42 @@
            from 2004 to 2010. Zero-based for the same reason the volume chart
            is. -->
       <figure class="chart">
-        <svg
-          viewBox="0 0 {CH_W} {CH_H}"
-          role="img"
-          aria-label={t(COPY.mktChartPti, $lang, {
-            from: ptiSeries.from,
-            to: ptiSeries.to,
-            peak: fmt(ptiSeries.peak?.value),
-            peakAt: ptiSeries.peak?.period,
-            last: fmt(ptiSeries.latest?.value),
-          })}
-        >
-          <line
-            class="plot-ref"
-            x1={CH_PAD_L}
-            y1={yOf(ptiSeries.reference, ptiSeries)}
-            x2={CH_W - CH_PAD_R}
-            y2={yOf(ptiSeries.reference, ptiSeries)}
-          />
-          <path class="plot-line" d={pathOf(ptiSeries)} />
-          {@render dots(ptiSeries, (v) => fmt(v))}
-          <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
-          <text
-            class="plot-tick"
-            x={CH_PAD_L - 6}
-            y={yOf(ptiSeries.reference, ptiSeries) + 4}
-            text-anchor="end">100</text
+        <div class="plot">
+          {@render yAxis([
+            { at: tickAt(ptiSeries.reference, ptiSeries), label: "100" },
+            { at: tickAt(0, ptiSeries), label: "0" },
+          ])}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.mktChartPti, $lang, {
+              from: ptiSeries.from,
+              to: ptiSeries.to,
+              peak: fmt(ptiSeries.peak?.value),
+              peakAt: ptiSeries.peak?.period,
+              last: fmt(ptiSeries.latest?.value),
+            })}
           >
-          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
-          <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{ptiSeries.from}</text>
-          <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
-            >{ptiSeries.to}</text
-          >
-        </svg>
+            <line
+              class="plot-ref"
+              x1="0"
+              y1={yOf(ptiSeries.reference, ptiSeries)}
+              x2={CH_W}
+              y2={yOf(ptiSeries.reference, ptiSeries)}
+            />
+            <path class="plot-line" d={pathOf(ptiSeries)} />
+            {@render dots(ptiSeries, (v) => fmt(v))}
+            <line
+              class="plot-axis"
+              x1="0"
+              y1={yOf(0, ptiSeries)}
+              x2={CH_W}
+              y2={yOf(0, ptiSeries)}
+            />
+          </svg>
+          {@render xAxis(ptiSeries)}
+        </div>
         <figcaption>
           <span class="l-bg">{COPY.mktChartRefLine.bg}</span>
           <span class="l-en">{COPY.mktChartRefLine.en}</span>
@@ -1675,30 +1723,39 @@
         >
       </p>
       <figure class="chart">
-        <svg
-          viewBox="0 0 {CH_W} {CH_H}"
-          role="img"
-          aria-label={t(COPY.mktChartOverburden, $lang, {
-            from: overburdenSeries.from,
-            to: overburdenSeries.to,
-            peak: fmt(overburdenSeries.peak?.value),
-            peakAt: overburdenSeries.peak?.period,
-            low: fmt(overburdenSeries.trough?.value),
-            lowAt: overburdenSeries.trough?.period,
-            last: fmt(overburdenSeries.latest?.value),
-          })}
-        >
-          {@render columns(overburdenSeries, (v) => `${fmt(v)}%`)}
-          <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
-          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
-            >{fmt(overburdenSeries.max)}%</text
+        <div class="plot">
+          {@render yAxis([
+            {
+              at: tickAt(overburdenSeries.max, overburdenSeries),
+              label: `${fmt(overburdenSeries.max)}%`,
+            },
+            { at: tickAt(0, overburdenSeries), label: "0" },
+          ])}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.mktChartOverburden, $lang, {
+              from: overburdenSeries.from,
+              to: overburdenSeries.to,
+              peak: fmt(overburdenSeries.peak?.value),
+              peakAt: overburdenSeries.peak?.period,
+              low: fmt(overburdenSeries.trough?.value),
+              lowAt: overburdenSeries.trough?.period,
+              last: fmt(overburdenSeries.latest?.value),
+            })}
           >
-          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
-          <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{overburdenSeries.from}</text>
-          <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
-            >{overburdenSeries.to}</text
-          >
-        </svg>
+            {@render columns(overburdenSeries, (v) => `${fmt(v)}%`)}
+            <line
+              class="plot-axis"
+              x1="0"
+              y1={yOf(0, overburdenSeries)}
+              x2={CH_W}
+              y2={yOf(0, overburdenSeries)}
+            />
+          </svg>
+          {@render xAxis(overburdenSeries)}
+        </div>
       </figure>
       <p class="ss tsrc">
         {@render srcLine(
@@ -2094,10 +2151,65 @@
   .chart {
     margin: 16px 0 0;
   }
-  .chart svg {
+  /* The frame: a gutter of labels, the plot, and the window's two ends under
+     it. The gutter is `auto`, so it takes the width the longest tick needs and
+     the plot takes the rest — a fixed gutter is either too narrow for «22 366»
+     or too wide for «0», and both are decided by data nobody controls. */
+  .plot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: stretch;
+  }
+  /* The grid stretches this cell to the height the plot beside it resolved to,
+     which is what lets a tick position itself as a percentage and land on its
+     own gridline at every viewport.
+
+     THE TICKS STACK IN ONE CELL AND ARE MOVED WITH `position: relative`, never
+     taken out of flow with `position: absolute`. An out-of-flow child
+     contributes nothing to its parent's intrinsic width, so the gutter measured
+     zero, the plot took the whole measure and every label hung off the left
+     edge of the page. Stacked in a single grid area they all still size the
+     column — it is as wide as «22 366» needs and no wider — while a percentage
+     `top` resolves against this box's stretched height, which is the plot's. */
+  .yaxis {
+    grid-column: 1;
+    display: grid;
+    justify-items: end;
+    align-content: start;
+  }
+  .yaxis .plot-tick {
+    grid-area: 1 / 1;
+    position: relative;
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+  .xaxis {
+    grid-column: 2;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  /* The labels are HTML and set in the page's own type, so they are the same
+     size at 360px as at 1440. Inside the SVG they were 11px in a box that
+     renders at 0.56 of its declared width on a phone — 6.2px, on the captions
+     that make every figure above them checkable. */
+  .plot-tick {
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    line-height: 1;
+    color: var(--ink-2);
+  }
+  /* The box holds marks and no text at all. `overflow: visible` because the
+     first and last point of a line sit ON the left and right edges and the
+     zero rule on the bottom one, so half of each stroke falls outside. */
+  .chart svg.pane {
+    grid-column: 2;
     width: 100%;
     height: auto;
     display: block;
+    overflow: visible;
   }
   .chart figcaption {
     margin-top: 6px;
@@ -2215,12 +2327,6 @@
     stroke-width: 1.5;
     stroke-dasharray: 4 3;
   }
-  .plot-tick {
-    fill: var(--ink-2);
-    font-family: var(--mono);
-    font-size: 11px;
-  }
-
   @media (max-width: 560px) {
     .brand small {
       display: none;
