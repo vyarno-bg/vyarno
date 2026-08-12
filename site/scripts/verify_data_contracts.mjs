@@ -662,3 +662,69 @@ test("every manifest payload feeds a figure, not just a row in the freshness pan
       "up or drop the payload — a dated row in the panel is not a consumer."
   );
 });
+
+test("every payload's refresh fires at least as often as the cadence it is judged by", () => {
+  // `cadenceDays` is read by three surfaces now: the page's own overdue banner,
+  // the weekly freshness alert, and the "other payloads that have gone quiet"
+  // list in a data pull request. All three ask the same question — has this
+  // gone longer than its upstream's rhythm without a refresh — and none of them
+  // can see whether anything is actually scheduled to answer it in time.
+  //
+  // **A cron slower than the cadence it feeds makes the alert wrong on healthy
+  // data, and that is worse than no alert.** It fires every week on a payload
+  // behaving exactly as designed, which is how a maintainer learns to close it
+  // unread — and the alert is the only thing watching for an arm that has
+  // stopped firing altogether. `test_cli_dispatch.py` proves every source HAS a
+  // workflow; this is the other half, that the workflow runs often enough for
+  // the number the alert holds it to.
+  //
+  // Worst gap rather than the nominal interval, because the months are not the
+  // same length: 17 August to 17 November is 92 days where 17 February to 17
+  // May is 89, and the quarterly wage arms sit exactly on a 92-day cadence. The
+  // comparison is `>` on both sides, so landing on the line is on time.
+  const workflows = join(HERE, "..", "..", ".github", "workflows");
+  const DAY = 86400000;
+  const offenders = [];
+
+  for (const file of readdirSync(workflows).filter((f) => /^refresh-.+\.yml$/.test(f))) {
+    const text = readFileSync(join(workflows, file), "utf-8");
+    const source = /^\s+source:\s*(\S+)\s*$/m.exec(text)?.[1];
+    const cron = /^\s*-\s*cron:\s*"([^"]+)"\s*$/m.exec(text)?.[1];
+    if (!source || !cron) continue;
+
+    const [, , dom, months] = cron.split(/\s+/);
+    const day = Number(dom);
+    if (!Number.isFinite(day)) continue; // not a day-of-month schedule
+    const monthList =
+      months === "*" ? [...Array(12).keys()].map((i) => i + 1) : months.split(",").map(Number);
+
+    const fires = [];
+    for (const year of [2026, 2027, 2028]) {
+      for (const month of monthList) {
+        const d = new Date(Date.UTC(year, month - 1, day));
+        if (d.getUTCDate() === day) fires.push(d.getTime());
+      }
+    }
+    fires.sort((a, b) => a - b);
+    const worst = Math.max(...fires.slice(1).map((t, i) => (t - fires[i]) / DAY));
+
+    // One arm can own more than one payload, and they need not share a cadence.
+    const prefix = source.replace(/-/g, "_");
+    for (const row of PAYLOADS.filter((p) => p.file.startsWith(prefix))) {
+      if (worst > row.cadenceDays) {
+        offenders.push(
+          `${file} fires ${worst}d apart at worst; ${row.file} is judged at ${row.cadenceDays}d`
+        );
+      }
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `a refresh runs less often than the cadence its payload is held to:\n  ${offenders.join("\n  ")}\n\n` +
+      "The weekly check would report those stale while every arm behaved. Either " +
+      "the cron is too slow for the upstream or `cadenceDays` in payloads.js is " +
+      "tighter than the upstream actually publishes."
+  );
+});

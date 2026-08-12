@@ -262,37 +262,50 @@ def test_the_refresh_workflow_commits_under_an_identity() -> None:
         )
 
 
-def test_the_two_workflows_agree_on_how_old_is_too_old() -> None:
-    """Two thresholds, two files, and each comment claims they match.
+def test_neither_workflow_decides_for_itself_how_old_is_too_old() -> None:
+    """Both age checks read the manifest's cadence, and neither carries a number.
 
-    `refresh.yml` lists other payloads over the threshold in the pull-request
-    body so a reviewer sees what a reader would see; `freshness-check.yml`
-    fails the weekly run on the same line. Both say in prose that they use the
-    same number, and prose is not what makes them. Drift is silent in the worse
-    direction: raise one and the weekly alert goes quiet about payloads the PR
-    body is still listing, so the surface nobody is watching stays green while
-    the surface nobody reads keeps reporting.
+    `refresh.yml` lists the other payloads that have gone quiet in the
+    pull-request body so a reviewer sees what a reader would see;
+    `freshness-check.yml` fails the weekly run on the same line. A literal in
+    either is wrong in a way that reports green: **one threshold cannot serve
+    these rhythms.** HICP is monthly, the Eurostat property cubes and НСИ's wage
+    tables are quarterly, and the SES ladder behind `salary_dist` is
+    disseminated every four years — so a flat thirty days reports a healthy
+    quarterly payload stale for sixty-one days of every ninety-one and
+    `salary_dist` for all but a month of four. An alert wrong two weeks in three
+    is one nobody opens, and it is the only thing watching for a refresh arm
+    that has quietly stopped firing.
 
-    The site's own threshold is deliberately NOT in here. That one is per
-    payload against its own cadence (`site/src/lib/payloads.js`), because a
-    single site-wide number cannot serve a monthly HICP release and a quarterly
-    НСИ wage series at once; the two workflows are the ones claiming to be one
-    number.
+    Holding the two to each other is what this used to do and it is not enough:
+    a number they agree on still drifts from the manifest both of them are
+    describing. So each has to READ `payload-cadence.mjs`, which prints
+    `PAYLOADS`' own `cadenceDays`. The site's banner is the same table at 1.5×
+    (`view/freshness.js#payloadStatus`), which is the headroom between the alert
+    and anything a reader sees.
     """
-    workflow_dir = Path(__file__).resolve().parents[2] / ".github" / "workflows"
-    thresholds = {}
+    root = Path(__file__).resolve().parents[2]
+    workflow_dir = root / ".github" / "workflows"
+
+    emitter = root / "site" / "scripts" / "payload-cadence.mjs"
+    assert emitter.exists(), (
+        f"{emitter} is gone. Both workflows shell out to it for the per-payload "
+        f"cadence; without it each has to carry its own number again."
+    )
+
     for name in ("refresh.yml", "freshness-check.yml"):
         text = (workflow_dir / name).read_text("utf-8")
-        found = re.findall(r"^\s*threshold_days = (\d+)\s*$", text, re.M)
-        assert found, f"{name} sets no `threshold_days` — has the age check moved?"
-        assert len(set(found)) == 1, f"{name} sets threshold_days to {sorted(set(found))}"
-        thresholds[name] = found[0]
-
-    assert len(set(thresholds.values())) == 1, (
-        f"the two workflows disagree about how old a payload may be: {thresholds}. "
-        f"Both comment that they use the same number; raise one and the weekly "
-        f"alert goes quiet about payloads the pull-request body still lists."
-    )
+        assert "payload-cadence.mjs" in text, (
+            f"{name} does not read the payload manifest's cadence. A threshold it "
+            f"picks for itself cannot serve a monthly release and a four-yearly "
+            f"survey at once, and it fails by crying stale on healthy data."
+        )
+        literal = re.findall(r"^\s*threshold_days = (\d+)\s*$", text, re.M)
+        assert not literal, (
+            f"{name} assigns threshold_days = {literal[0]} rather than reading it "
+            f"per payload. That is the shape this test exists to keep out: it is "
+            f"silently wrong for every payload whose upstream is not monthly."
+        )
 
 
 def test_the_weekly_check_reads_the_data_pull_requests_and_never_merges_them() -> None:
