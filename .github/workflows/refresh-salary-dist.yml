@@ -1,0 +1,30 @@
+# Quarterly salary distribution refresh (Eurostat SES, re-levelled to NSI).
+#
+# Dependency: salary_dist.json is built by re-levelling the SES shape
+# to the live NSI region-level wage, so it reads what region-salary
+# wrote. Running this before region-salary re-publishes at the old
+# wage level and the ladder disagrees with the wage card on the page.
+#
+# Triggered by workflow_run on refresh-region-salary finishing
+# successfully. The dependency is explicit in the trigger rather
+# than implied by time-of-day arithmetic.
+
+name: refresh-salary-dist
+
+on:
+  workflow_run:
+    workflows: ["refresh-region-salary"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    # Only run if region-salary succeeded. On failure or cancellation
+    # this workflow does not fire; the next quarterly schedule retries
+    # from region-salary again.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: salary-dist
+    secrets:
+      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}

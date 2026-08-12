@@ -1,0 +1,19 @@
+# Monthly unemployment refresh (Eurostat une_rt_m).
+#
+# Cadence must match the series. A monthly schedule firing monthly is
+# the only shape that keeps the file from being a month stale.
+
+name: refresh-unemployment
+
+on:
+  schedule:
+    - cron: "0 4 8 * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: unemployment
+    secrets:
+      VYARNO_BOT_TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}

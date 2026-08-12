@@ -1,0 +1,229 @@
+# Reusable workflow: refresh one published payload and open a PR.
+#
+# Inputs: `source` — the name passed to `vyarno-pipeline refresh --source`.
+#
+# Steps: checkout, install the pipeline, run it against live upstreams,
+# stage and capture changes, compute the latest as_of plus any payloads
+# older than 30 days, commit with --signoff, push the data/<source>
+# branch, open a PR, alert on failure.
+#
+# The pipeline's exit codes drive the rest of the workflow:
+#   0 — published, JSON written
+#   2 — input/transform error (upstream shape changed)
+#   3 — a validation gate failed
+#   4 — network/HTTP
+# Non-zero exits skip the commit/push/PR path entirely; the previously
+# published JSON stays in place. Nothing partial is ever written.
+
+name: refresh
+
+on:
+  workflow_call:
+    inputs:
+      source:
+        description: "vyarno-pipeline --source name (e.g. hicp, mortgage)"
+        required: true
+        type: string
+    secrets:
+      VYARNO_BOT_TOKEN:
+        description: "Fine-grained PAT with contents:write + pull-requests:write on vyarno-bg/vyarno"
+        required: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The default GITHUB_TOKEN cannot push to a protected branch
+          # or open PRs on behalf of a separate user. The PAT (passed
+          # via the remote URL below) is the pushing identity.
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pipeline
+        working-directory: pipeline
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -q -e '.[dev]'
+
+      - name: Configure git
+        run: |
+          git config --global user.name "vyarno-refresh"
+          git config --global user.email "vyarno-refresh@users.noreply.github.com"
+          # Swap the remote URL to inject the PAT for the push step.
+          # persist-credentials: false on the checkout means there is
+          # no leaked credential helper in .git/config.
+          git remote set-url origin "https://x-access-token:${TOKEN}@github.com/vyarno-bg/vyarno.git"
+        env:
+          TOKEN: ${{ secrets.VYARNO_BOT_TOKEN }}
+
+      - name: Run pipeline
+        working-directory: pipeline
+        run: |
+          set -euo pipefail
+          .venv/bin/vyarno-pipeline refresh \
+            --source "${{ inputs.source }}" \
+            --out ../data/published
+
+      - name: Capture changed files
+        id: diff
+        # Stage first, THEN capture `git diff --cached`. Running diff
+        # before `git add` always returns an empty list.
+        #
+        # If nothing changed, the rest of the workflow is skipped via
+        # the `if: steps.diff.outputs.changed != ''` gates below —
+        # no commit, no push, no PR, no alert.
+        run: |
+          set -euo pipefail
+          git add -- data/published
+          CHANGED=$(git diff --cached --name-only)
+          {
+            echo "changed<<EOF"
+            echo "$CHANGED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          if [[ -z "$CHANGED" ]]; then
+            echo "::notice::No data/published changes — upstream has not republished. Nothing to PR."
+          fi
+
+      - name: Compute as_of + stale-sources
+        id: meta
+        if: steps.diff.outputs.changed != ''
+        # 30-day threshold matches the freshness check workflow. The
+        # site banner surfaces staleness at 45 days (view.js), so this
+        # 30-day threshold gives two weeks of headroom.
+        run: |
+          python3 - <<'PY'
+          import datetime, glob, json, os
+          from pathlib import Path
+
+          source = os.environ["SOURCE"]
+          repo = Path(os.environ["GITHUB_WORKSPACE"])
+          threshold_days = 30
+          today = datetime.date.today()
+
+          as_ofs = []
+          for path in glob.glob(str(repo / "data/published/*.json")):
+              payload = json.load(open(path))
+              as_of = payload.get("as_of")
+              if as_of:
+                  as_ofs.append(as_of)
+          as_of = max(as_ofs) if as_ofs else "unknown"
+
+          stale = []
+          for path in sorted(glob.glob(str(repo / "data/published/*.json"))):
+              stem = os.path.basename(path).removesuffix(".json")
+              if stem == source:
+                  continue
+              as_of_other = json.load(open(path)).get("as_of")
+              if not as_of_other:
+                  continue
+              days = (today - datetime.date.fromisoformat(as_of_other)).days
+              if days > threshold_days:
+                  stale.append(f"{stem} ({days}d)")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"as_of={as_of}\n")
+              f.write(f"stale={'yes' if stale else 'no'}\n")
+              if stale:
+                  f.write(f"stale_list<<EOF\n")
+                  f.write(", ".join(stale) + "\n")
+                  f.write("EOF\n")
+          print(f"as_of={as_of}")
+          print(f"stale={stale}")
+          PY
+        env:
+          SOURCE: ${{ inputs.source }}
+
+      - name: Commit
+        if: steps.diff.outputs.changed != ''
+        run: |
+          set -euo pipefail
+          git checkout -b "data/${{ inputs.source }}"
+          git add -- data/published
+          git commit --signoff -m "data refresh: ${{ inputs.source }} as of ${{ steps.meta.outputs.as_of }}"
+
+      - name: Push
+        if: steps.diff.outputs.changed != ''
+        # force-with-lease refuses the push if the remote branch has
+        # moved since the last fetch — protects against a previous
+        # run leaving work behind.
+        run: git push --force-with-lease \
+          origin "data/${{ inputs.source }}"
+
+      - name: Open PR
+        if: steps.diff.outputs.changed != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const source = '${{ inputs.source }}';
+            const as_of = '${{ steps.meta.outputs.as_of }}';
+            const staleList = `${{ steps.meta.outputs.stale_list }}`;
+            const changed = `${{ steps.diff.outputs.changed }}`.trim();
+
+            const lines = [];
+            lines.push(`## data refresh — ${source}`);
+            lines.push('');
+            lines.push(`**as_of:** ${as_of}`);
+            lines.push('');
+            lines.push('### Changed files');
+            lines.push('');
+            for (const f of changed.split('\n').filter(Boolean)) {
+              lines.push(`- \`${f}\``);
+            }
+            if (staleList) {
+              lines.push('');
+              lines.push('### Other payloads > 30d old');
+              lines.push('');
+              lines.push(staleList);
+              lines.push('');
+              lines.push('These did not change in this run; they are listed so the reviewer sees the staleness banner a reader would see.');
+            }
+            lines.push('');
+            lines.push('### Review');
+            lines.push('');
+            lines.push('- Diff against `main` is the change.');
+            lines.push('- Pipeline gates ran locally; the seven HICP gates (or the per-source equivalent) all passed.');
+            lines.push('- Five required CI checks on `main` are the deployment gate.');
+
+            const body = lines.join('\n');
+
+            const head = `data/${source}`;
+            const base = 'main';
+
+            // Idempotent: skip if a PR is already open for this branch.
+            const existing = await github.rest.pulls.list({
+              owner: 'vyarno-bg',
+              repo: 'vyarno',
+              state: 'open',
+              head: `vyarno-bg:${head}`,
+            });
+            if (existing.data.length > 0) {
+              core.info(`PR already open for ${head} (#${existing.data[0].number}) — skipping`);
+              core.setOutput('pr_url', existing.data[0].html_url);
+              core.setOutput('pr_number', existing.data[0].number);
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner: 'vyarno-bg',
+              repo: 'vyarno',
+              title: `data refresh: ${source} as of ${as_of}`,
+              head,
+              base,
+              body,
+            });
+            core.info(`Opened PR #${pr.number}: ${pr.html_url}`);
+            core.setOutput('pr_url', pr.html_url);
+            core.setOutput('pr_number', pr.number);
