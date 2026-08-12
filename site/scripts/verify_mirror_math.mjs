@@ -57,6 +57,11 @@ import {
   bgHouseholdPayroll,
   householdNetRaisePct,
   BG_PAYROLL_DEFAULT,
+  changePct,
+  quarterYearAgo,
+  dealsAtQuarter,
+  unoccupiedSharePct,
+  dealInYearsOfPay,
 } from "../src/lib/mirror.js";
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -1181,4 +1186,126 @@ test("meanRungPosition says where an average sits, and takes no anchor", () => {
 
   assert.equal(meanRungPosition(distOf({ P50: 1 }, 949)), null);
   assert.equal(meanRungPosition(null), null);
+});
+
+// ---------------------------------------------------------------------------
+// The property market — the five formulas behind `/market/`
+// ---------------------------------------------------------------------------
+//
+// None of these takes a reader's figure, so none of them is reachable from the
+// calculator's suites, and the page that renders them draws every one inside an
+// `{#if …}`: a formula that starts returning null takes its card off the page
+// rather than showing a wrong number. That is the right failure and it is also
+// an invisible one, which is what these cases are for.
+
+test("changePct is null where a side is missing, and 0 only where nothing moved", () => {
+  // The distinction the page depends on. `/market/` sits at the edge of two
+  // series published over different windows — the value cube starts two years
+  // before the count cube, НСИ's city sales table starts seven years after
+  // their city price table — so "the year-ago quarter is not in this series"
+  // is the ordinary case, not the exceptional one. Coalesced to 0 it renders
+  // as «0,0%», a market that did not move.
+  assert.equal(changePct(16227, 18000), (-1773 / 18000) * 100);
+  assert.equal(changePct(18000, 18000), 0);
+  for (const [now, before] of [
+    [16227, null],
+    [null, 18000],
+    [16227, undefined],
+    [16227, 0],
+    [NaN, 18000],
+  ]) {
+    assert.equal(changePct(now, before), null, `changePct(${now}, ${before}) is not null`);
+  }
+  // A fall is negative and a rise is positive, in that order. An inverted
+  // subtraction keeps every magnitude and reverses the page's whole reading of
+  // the market.
+  assert.ok(changePct(10, 20) < 0);
+  assert.ok(changePct(20, 10) > 0);
+});
+
+test("quarterYearAgo names the same quarter one year back, or nothing", () => {
+  // Label arithmetic rather than an index into the series, so a gap cannot
+  // shift the comparison onto a neighbouring quarter — the year-ago period is
+  // either in the data under this exact key or the caller renders no figure.
+  assert.equal(quarterYearAgo("2026-Q1"), "2025-Q1");
+  assert.equal(quarterYearAgo("2020-Q4"), "2019-Q4");
+  // The quarter is carried across, never reset or decremented: "2026-Q1" →
+  // "2025-Q4" would be the previous quarter wearing a year-on-year label, and
+  // on a seasonal series that is the exact comparison this exists to refuse.
+  for (const q of [1, 2, 3, 4]) assert.equal(quarterYearAgo(`2026-Q${q}`), `2025-Q${q}`);
+  for (const bad of ["2026", "2026-Q5", "2026-M01", "26-Q1", "", null, undefined]) {
+    assert.equal(quarterYearAgo(bad), null, `quarterYearAgo(${bad}) invented a period`);
+  }
+});
+
+test("dealsAtQuarter compares a quarter with the SAME quarter a year earlier", () => {
+  // Transactions have a strong seasonal shape, so quarter-on-quarter measures
+  // the calendar. The fixture makes the two answers disagree in SIGN: against
+  // 2025-Q1 the count is up, against the quarter before it the count is down,
+  // so a regression to the neighbouring key cannot pass by arithmetic luck.
+  const series = {
+    "2025-Q1": { total: 15000 },
+    "2025-Q4": { total: 20000 },
+    "2026-Q1": { total: 16227 },
+  };
+  const at = dealsAtQuarter(series, "2026-Q1");
+  assert.equal(at.count, 16227);
+  assert.equal(at.yearAgo, 15000);
+  assert.ok(at.changePct > 0, `year-on-year should be a rise here, got ${at.changePct}`);
+  assert.equal(at.changePct, ((16227 - 15000) / 15000) * 100);
+
+  // The first quarter of a series has no year-ago reading, and the count is
+  // still published. A change of null takes one card off the page; a count of
+  // null would take the section.
+  const first = dealsAtQuarter(series, "2025-Q1");
+  assert.equal(first.count, 15000);
+  assert.equal(first.changePct, null);
+  assert.deepEqual(dealsAtQuarter(series, "2019-Q1"), {
+    count: null,
+    yearAgo: null,
+    changePct: null,
+  });
+  assert.deepEqual(dealsAtQuarter(null, "2026-Q1"), {
+    count: null,
+    yearAgo: null,
+    changePct: null,
+  });
+});
+
+test("unoccupiedSharePct divides the census counts by each other and nothing else", () => {
+  // Both counts come off the same census and the page prints them beside the
+  // share, so this is the one derivation on `/market/` a reader can check
+  // without leaving the page. 1,657,674 over 4,258,585 is 38.93%.
+  const census = { total: 4258585, occupied: 2600911, unoccupied: 1657674 };
+  assert.ok(near(unoccupiedSharePct(census), (1657674 / 4258585) * 100, 1e-9));
+  assert.ok(unoccupiedSharePct(census) > 38 && unoccupiedSharePct(census) < 39);
+  // The denominator is the WHOLE stock, never the occupied part. Dividing by
+  // `occupied` returns 63.7% — a plausible-looking share of a population that
+  // is not the one the label names.
+  assert.ok(
+    Math.abs(unoccupiedSharePct(census) - (1657674 / 2600911) * 100) > 20,
+    "the fixture no longer tells the two denominators apart"
+  );
+  for (const bad of [null, {}, { total: 0, unoccupied: 10 }, { total: 100 }, { unoccupied: 10 }]) {
+    assert.equal(unoccupiedSharePct(bad), null, `unoccupiedSharePct(${JSON.stringify(bad)})`);
+  }
+});
+
+test("dealInYearsOfPay divides by a YEAR of the monthly wage, not by the month", () => {
+  // The factor of twelve is the whole figure: 82,786 over a 1,407 monthly wage
+  // is 4.9 years, and over the same figure taken as annual it is 58.8 — a
+  // number that would still look like a plausible property statistic.
+  assert.ok(near(dealInYearsOfPay(82786.01, 1407), 82786.01 / (1407 * 12), 1e-12));
+  assert.ok(dealInYearsOfPay(82786.01, 1407) > 4.8 && dealInYearsOfPay(82786.01, 1407) < 5);
+  // Linear in both arguments, so nothing in it can be a level in disguise.
+  assert.ok(near(dealInYearsOfPay(160000, 2000), dealInYearsOfPay(80000, 1000), 1e-12));
+  for (const [deal, wage] of [
+    [null, 1407],
+    [82786, null],
+    [82786, 0],
+    [82786, -1407],
+    [NaN, 1407],
+  ]) {
+    assert.equal(dealInYearsOfPay(deal, wage), null, `dealInYearsOfPay(${deal}, ${wage})`);
+  }
 });
