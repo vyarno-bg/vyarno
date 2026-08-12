@@ -38,7 +38,7 @@ data.js               WHICH published number, and what if it is missing
 | You are adding…                                                        | It goes in            | With a test in                                                 |
 | ---------------------------------------------------------------------- | --------------------- | -------------------------------------------------------------- |
 | a formula — a rate, a real-terms change, an annuity                    | `mirror.js`           | `verify_mirror_math.mjs` (`verify_net_salary.mjs` for payroll) |
-| which published field feeds that formula, which fallback, which anchor | `view.js`             | `verify_view.mjs`                                              |
+| which published field feeds that formula, which fallback, which anchor | `view.js`             | the `verify_view_*.mjs` suite for that subject                 |
 | a fallback chain over the payloads                                     | `data.js`             | `verify_data_contracts.mjs`                                    |
 | markup, colour, or a language choice                                   | `components/*.svelte` | `verify_render_*.mjs`, wiring in `verify_wiring.mjs`           |
 

@@ -135,9 +135,11 @@ then `site/src/lib/mirror.js`, then a case in
 `site/scripts/verify_mirror_math.mjs`.
 
 **Changing which number feeds a formula.** `site/src/lib/view.js`, then
-`site/scripts/verify_view.mjs`. Never inside a `$derived`, and that did not
-relax when the reactive graph moved into `calculator.svelte.js`.
-`docs/site.md` §"A correct formula fed the wrong number" is why.
+one of the `site/scripts/verify_view_*.mjs` suites — one subject each, and
+`docs/testing-strategy.md` §"Where a test belongs" says which. Never inside a
+`$derived`, and that did not relax when the reactive graph moved into
+`calculator.svelte.js`. `docs/site.md` §"A correct formula fed the wrong
+number" is why.
 
 **Refactoring.** Behaviour-preserving means the suites are untouched. If a test
 had to change it was not a refactor — say so, and say which behaviour moved.

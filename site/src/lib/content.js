@@ -2637,9 +2637,9 @@ export const COPY = {
  * after them. **The name is never replaced**, here or anywhere: the moment a
  * section is picked, every sentence stating a figure uses `bg_name` / `en_name`
  * straight from the payload, and the source line credits НСИ over their own
- * label. This is navigation; the claims stay theirs. `verify_view.mjs` holds
- * both halves — the option ends with НСИ's name in full, and no hint reaches a
- * figure.
+ * label. This is navigation; the claims stay theirs. `verify_view_payroll.mjs`
+ * holds both halves — the option ends with НСИ's name in full, and no hint
+ * reaches a figure.
  *
  * **Every item is a division inside the section it describes**, off НСИ's own
  * КИД-2008 structure — «кол центрове» is 82, «зъболекари» is 86, «кино и ТВ»

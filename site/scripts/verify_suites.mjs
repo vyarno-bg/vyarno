@@ -106,12 +106,12 @@ test("every payload a suite opens is one this repository publishes", () => {
   // Nothing but this notices the day it happens again.
   // **The scan has to follow the local alias, or it reads almost nothing.**
   // Most suites here do `const read = published;` and then call `read("…")`,
-  // which is the whole of `verify_data_contracts.mjs` and `verify_view.mjs` —
-  // so a scan for the exported name alone collects a handful of stems and
-  // reports a pass over the files it was written for. `read` is NOT a reserved
-  // word here either: `verify_legal.mjs` and `verify_static_assets.mjs` bind it
-  // to a file reader, so the alias is resolved per file rather than matched by
-  // name.
+  // which is the whole of `verify_data_contracts.mjs` and of every
+  // `verify_view_*.mjs` suite — so a scan for the exported name alone collects
+  // a handful of stems and reports a pass over the files it was written for.
+  // `read` is NOT a reserved word here either: `verify_legal.mjs` and
+  // `verify_static_assets.mjs` bind it to a file reader, so the alias is
+  // resolved per file rather than matched by name.
   const stems = new Set();
   for (const file of onDisk) {
     const text = readFileSync(join(SITE, "scripts", file), "utf8");

@@ -79,9 +79,22 @@ site/
 │   ├── strip-sourcemaps.mjs   # moves maps OUT of dist/; fails if source survives
 │   ├── check-identity.mjs     # release guard on the ЗЕТ чл. 4 identity
 │   ├── published-payload.mjs  # the suites' reader for data/published/*.json
+│   ├── near.mjs               # the float comparator, and the tolerance it carries
 │   ├── verify_net_salary.mjs      # gross ↔ net payroll pair
 │   ├── verify_mirror_math.mjs     # every formula in mirror.js
-│   ├── verify_view.mjs            # every derived value in view.js ← the wiring
+│   │                              # view.js is the wiring, and each line below
+│   │                              # is one subject of it — a sentence needing
+│   │                              # an "and" is two files
+│   ├── verify_view_freshness.mjs  # whether the figures on the page are still current
+│   ├── verify_view_basket.mjs     # the published divisions the basket is built from
+│   ├── verify_view_spend.mjs      # what the price rise is charged against
+│   ├── verify_view_results.mjs    # what the results card claims
+│   ├── verify_view_share.mjs      # what leaves the page when a reader shares it
+│   ├── verify_view_payroll.mjs    # where a household's pay stands once it is taxed
+│   ├── verify_view_region.mjs     # what is published about the област a reader picked
+│   ├── verify_view_home.mjs       # what a home costs the reader buying one
+│   ├── verify_view_country.mjs    # the figures /how/ renders with nobody in them
+│   ├── verify_view_market.mjs     # which published field feeds which market figure
 │   ├── verify_wiring.mjs          # which value the template feeds which function
 │   ├── verify_copy.mjs            # copy invariants, against the imported COPY
 │   ├── verify_format.mjs          # how a number or a date is written
@@ -150,7 +163,7 @@ question.
 |---|---|---|---|
 | **Data** | `data.js` | *Which* published number, and what if it is missing? | `verify_data_contracts.mjs` |
 | **Formula** | `mirror.js` | Given these inputs, what is the arithmetic? | `verify_mirror_math.mjs`, `verify_net_salary.mjs` |
-| **Wiring** | `view.js` | *Which* inputs go into that formula? | `verify_view.mjs` |
+| **Wiring** | `view.js` | *Which* inputs go into that formula? | the `verify_view_*.mjs` suite for that subject |
 | **State** | `calculator.svelte.js` | What holds the result, and when does it recompute? | the `verify_render_*.mjs` suites (it is the only layer with no pure function to test) |
 | **Render** | `components/*.svelte` | Where does it go, what colour, which language? | the `verify_render_*.mjs` suite for that region; template wiring in `verify_wiring.mjs` |
 
@@ -164,8 +177,8 @@ of the formula.
 - a new **formula** (a real-terms change, a rate, an annuity) → `mirror.js`,
   with a case in `verify_mirror_math.mjs`;
 - a new **derived value** (which published field feeds that formula, which
-  fallback applies, which anchor it uses) → `view.js`, with a case in
-  `verify_view.mjs`.
+  fallback applies, which anchor it uses) → `view.js`, with a case in the
+  `verify_view_*.mjs` suite that owns the subject.
 
 A component keeps only display-shape helpers that cannot produce a wrong number
 on their own — `fmt`/`fmt0`/`fmtDate`, per-row share normalisation in the slider
@@ -471,7 +484,7 @@ the tests live beside the code they protect:
 |---|---|
 | `verify_net_salary.mjs` | `bgNetSalary`, `bgGrossFromNet` — the cap boundary, the flat tax, the round-trip above the contribution cap, cross-checks against published BG payroll references |
 | `verify_mirror_math.mjs` | everything else in `mirror.js` — the anchor contract, personal vs official inflation, the real-wage division, `percentile`'s direction, `buildLadder`, annuity + inverse, `cashErosion`, `payrollParams`, the tax wedge |
-| `verify_view.mjs` | every derived value in `view.js` — which input reaches which formula, and the two boundaries below |
+| `verify_view_*.mjs` | every derived value in `view.js` — which input reaches which formula, one subject per file, and the two boundaries below |
 | `verify_stores.mjs` | every persisted key — the three preferences, and the reader's own figures behind the switch that has to be turned on first |
 | `verify_contrast.mjs` | WCAG AA ratios for every ink × surface pair, both themes, computed from `tokens.css` itself |
 | `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down — and every control boundary at the 3:1 WCAG 1.4.11 asks. Both themes, both languages |
@@ -543,10 +556,10 @@ would catch it. **APRC is for comparing, AAR is for computing.**
 that's €48/month" reveals the salary to everyone who reads the message. The
 function that decides what may cross onto a share surface therefore has no
 salary parameter at all — there is nothing for a caller to pass and nothing
-downstream to invert. `verify_view.mjs` still asserts no `€`, `EUR`, `евро` or
-`лв` reaches the finished string in either language at any anchor, and reads
-the signature back to check the parameter list has not grown; the assertion is
-the second lock rather than the only one.
+downstream to invert. `verify_view_share.mjs` still asserts no `€`, `EUR`,
+`евро` or `лв` reaches the finished string in either language at any
+anchor, and reads the signature back to check the parameter list has not grown;
+the assertion is the second lock rather than the only one.
 
 **Two figures the site already computes are excluded by the same rule, and
 neither carries a currency symbol.** The ladder position inverts:
@@ -558,9 +571,10 @@ effective rate falls with every extra euro of gross. **Check a new share
 surface against the inversion, not against the presence of a euro sign** — the
 dangerous fields are the ones that look safe.
 
-`SHARE_FIELDS` is the closed list of what does travel, and `verify_view.mjs`
-compares it against the returned object key for key. Adding a figure to a card
-means adding it there first, which is where the argument happens.
+`SHARE_FIELDS` is the closed list of what does travel, and
+`verify_view_share.mjs` compares it against the returned object key for key.
+Adding a figure to a card means adding it there first, which is where the
+argument happens.
 
 **`basketBudget` decides what the € column is a share of, and the two entry
 modes measure the remainder differently on purpose.** A person who is careful
@@ -587,8 +601,8 @@ derived from thirteen typed amounts, the other is a sentence the reader wrote
 about themselves — and a page carrying both would put two answers to "how much
 do you not spend" in front of the same reader. So `basketBudget` ignores the
 stated claim in euro mode, and `BasketEditor` does not render the control there.
-Neither of those alone is the guarantee; `verify_view.mjs` pins the first and
-`verify_wiring.mjs` the second.
+Neither of those alone is the guarantee; `verify_view_spend.mjs` pins the first
+and `verify_wiring.mjs` the second.
 
 What that money *is* — savings, investment, help sent home, something they
 forgot — is not ours to say. The row that renders it states its size, the year
@@ -697,9 +711,9 @@ you spend ≈ €216/mo · it rose 11.0% · that costs you ≈ €21 more a mont
   `contributions` makes that true of *all* of them — but twelve divisions clear
   the drawing threshold on the default Bulgarian basket, so a capped column
   stops at 5.1 under a sentence saying 5.4. `view.js#rankedSplit` returns the
-  folded tail with the rows, `verify_view.mjs` asserts `Σshown + restPp === π`,
-  and the template draws it. Capping a list that a sentence promises adds up is
-  only safe if the tail is rendered.
+  folded tail with the rows, `verify_view_results.mjs` asserts
+  `Σshown + restPp === π`, and the template draws it. Capping a list that a
+  sentence promises adds up is only safe if the tail is rendered.
 
 **The source line under the table names only upstreams that put a number on
 this page.** A dataset that sounds like it belongs — `ilc_di01`,
@@ -1153,7 +1167,7 @@ Two properties make the cap safe, and neither is optional:
 - `view.js#rankedSplit` folds whatever is not drawn into a remainder, so
   Σshown + restPp === π **at any limit**. The cap changes a number in a call,
   not the arithmetic. Capping a list that `rankLead` promises adds up, without
-  rendering the tail, is the defect `verify_view.mjs` exists to catch.
+  rendering the tail, is the defect `verify_view_results.mjs` exists to catch.
 - The limit comes from the list's **own measured width**
   (`bind:clientWidth`), not from a `matchMedia` on 820px. A second copy of the
   layout breakpoint in a file that cannot see the first is a drift waiting to
@@ -1275,8 +1289,8 @@ so "18% below Information and communication" is one net wage to the euro, and
 naming the sector has already narrowed the sender to one of the nineteen
 sections the picker offers.
 `sharePayload` takes no sector, and `sharePayload_cannot_be_handed_a_salary`
-in `verify_view.mjs` pins its whole parameter list, so it cannot acquire one
-without a red test.
+in `verify_view_share.mjs` pins its whole parameter list, so it cannot acquire
+one without a red test.
 
 ### More than one income, and which figures know it
 
