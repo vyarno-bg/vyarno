@@ -1804,8 +1804,30 @@ export const COPY = {
   // of a next update date — Eurostat's HICP release is mid-month but not fixed
   // to a date, and the nine payloads run on three different cadences.
   dataStaleHint: {
-    bg: "Показаните числа са последните официално публикувани, които имаме — нищо тук не е предположение. Обновяваме ги ръчно.",
-    en: "The figures shown are the last officially published ones we hold — nothing here is estimated. Refreshed by hand.",
+    bg: "Показаните числа са последните официално публикувани, които имаме — нищо тук не е предположение.",
+    en: "The figures shown are the last officially published ones we hold — nothing here is estimated.",
+  },
+
+  // The same warning for `/market/` and `/how/`, which have no data panel to
+  // open — so it NAMES what is late instead of counting it. See DataLate.svelte
+  // for why that is a second sentence rather than a parameter on the first.
+  dataLateOne: {
+    bg: "Едно от числата на тази страница е закъсняло: {names}.",
+    en: "One of the figures on this page is overdue: {names}.",
+  },
+  dataLateSome: {
+    bg: "{n} от числата на тази страница са закъснели: {names}.",
+    en: "{n} of the figures on this page are overdue: {names}.",
+  },
+  // A payload's own name and its own age. «(преди {n} дни)» rather than a
+  // participle agreeing with the name, which every one of the twelve would
+  // decline differently; and it is never asked for a singular, because the
+  // shortest cadence on the site is a month and a row is overdue only past
+  // 1.5× its own.
+  dataLateAge: { bg: "{name} (преди {n} дни)", en: "{name} ({n} days ago)" },
+  dataLateHint: {
+    bg: "Числото остава последното официално публикувано — нищо тук не е предположение. Под всяко пише за кой период е.",
+    en: "The figure is still the last officially published one — nothing here is estimated. Under each one is the period it describes.",
   },
 
   // Loading and failure states. A person who has just typed their salary into
@@ -2209,19 +2231,23 @@ export const COPY = {
     en: "Where each figure sits in its own record",
   },
   mktColRangeWhat: { bg: "Показател", en: "Indicator" },
-  mktColRangeWhere: { bg: "В собствената си история", en: "Within its own record" },
+  mktColRangeWhere: { bg: "Спрямо своята история", en: "Against its own history" },
   mktColRangeNow: { bg: "Сега", en: "Now" },
   mktRangeDeals: { bg: "продадени жилища", en: "dwellings sold" },
-  mktRangeIndex: { bg: "цените, в парите на деня", en: "prices, in the money of the day" },
+  // The two price rows are the same measurement twice, so the pair has to read
+  // as a pair: the second is the first with the rise in everything else taken
+  // out. «в парите на деня» carries that only for a reader who has already read
+  // the paragraph it comes from — as a label on its own it names nothing.
+  mktRangeIndex: { bg: "цените на сделките", en: "transaction prices" },
   mktRangeIndexReal: {
-    bg: "цените, без поскъпването на всичко друго",
-    en: "prices, with everything else's rise taken out",
+    bg: "цените на сделките, без поскъпването на всичко останало",
+    en: "transaction prices, with the rise in everything else taken out",
   },
   mktRangeRate: { bg: "промяната за една година", en: "the change over one year" },
   mktRangePti: { bg: "цена спрямо доходите", en: "price against incomes" },
   mktRangeOverburden: {
-    bg: "дял с тежки разходи за жилище",
-    en: "share with heavy housing costs",
+    bg: "дял на хората с тежки разходи за жилище",
+    en: "share of people with heavy housing costs",
   },
   // The track's own text alternative. A dot on a line is unreadable without
   // one, and the three readings it names are the three a reader would take off

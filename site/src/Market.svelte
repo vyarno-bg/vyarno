@@ -31,8 +31,10 @@
   import { onMount } from "svelte";
   import { lang, theme, chooseLang, langHref, toggleTheme } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
+  import DataLate from "./components/DataLate.svelte";
   import { COPY, t } from "./lib/content.js";
   import { loadAll } from "./lib/data.js";
+  import { payloadsFor } from "./lib/payloads.js";
   import {
     marketVolume,
     marketAverageDeal,
@@ -48,6 +50,7 @@
     marketAverageDealSeries,
     marketOverburdenSeries,
     marketPriceIndexRealSeries,
+    dataAge,
     marketIndexReading,
     marketRangeStrip,
     marketRent,
@@ -68,8 +71,20 @@
    * a reader of this page paying for them (`payloads.js`).
    */
   let data = $state(payloads ?? {});
+  /**
+   * Which of this page's payloads have fallen past their own cadence.
+   *
+   * **Set in `onMount` and never seeded from the prop, for the reason
+   * `calculator.svelte.js`'s constructor gives.** The verdict is a function of
+   * the clock, and the build's clock is not the reader's: computed at prerender
+   * it would be frozen into the served HTML, so a page built the day a payload
+   * was fresh goes on calling it fresh for as long as it is served — which is
+   * the exact failure this line exists to report.
+   */
+  let late = $state([]);
   onMount(async () => {
     data = await loadAll("market");
+    late = dataAge(data, payloadsFor("market")).overdue;
   });
 
   const fmt = (x, d = 1) => number(x, d, $lang);
@@ -736,6 +751,15 @@
     {/if}
   </div>
 
+  <!-- Under the four answers rather than above the page, and measured rather
+       than chosen: at 360px the cards already end 710px down an 800px screen,
+       and a full-bleed band above them costs 74px with one payload late and
+       113px with three — so the summary a reader came for is what would go off
+       the bottom on exactly the day the page most needs reading. Here it is the
+       first thing after the row, in the erode accent, and it qualifies
+       everything below it. Each card carries its own period either way. -->
+  <DataLate rows={late} inset />
+
   <!--
     Where today sits inside each series' own record — the whole page, on one
     screen, without a verdict in it.
@@ -765,16 +789,16 @@
   {#if rangeStrip.rows.length}
     <p class="lead">
       <span class="l-bg"
-        >Всеки от редовете отдолу има своя история. Точката показва къде в нея е последното число:
-        най-лявото е най-ниското, което Евростат е публикувал за този ред, най-дясното —
-        най-високото. Нищо тук не се събира в една обща оценка — редовете мерят различни неща и не
-        сочат в една посока.</span
+        >Всеки от показателите отдолу има своя история. Точката показва къде в нея е последното
+        число: най-лявото е най-ниското, което Евростат е публикувал за него, най-дясното —
+        най-високото. Нищо тук не се сумира в една обща оценка — показателите мерят различни неща и
+        не сочат в една посока.</span
       >
       <span class="l-en"
-        >Each of the series below has a record of its own. The dot is where the newest reading sits
-        in it: the left end is the lowest Eurostat have published for that series and the right end
-        the highest. Nothing here adds up to a single score — the series measure different things
-        and do not point one way.</span
+        >Each of the indicators below has a record of its own. The dot is where the newest reading
+        sits in it: the left end is the lowest Eurostat have published for it and the right end the
+        highest. Nothing here adds up to a single score — they measure different things and do not
+        point one way.</span
       >
     </p>
 
@@ -840,16 +864,17 @@
     </div>
     <p class="cap">
       <span class="l-bg"
-        >Ред, който само расте, стои в десния си край, защото такъв е редът, а не защото нещо се е
-        случило точно сега. Затова двата реда за цените стоят поотделно: единият е в парите на деня,
-        другият — без поскъпването на всичко останало, и точките им не са на едно и също място.
-        Първата и последната година на всеки ред са различни; всяка пише своята под името си.</span
+        >Показател, който само расте, стои в десния си край, защото такъв е самият показател, а не
+        защото нещо се е случило точно сега. Затова цените са на два реда: единият е това, което
+        реално се плаща, другият — същото, но без поскъпването на всичко останало, и точките им не
+        са на едно и също място. Всеки показател започва от различна година и всеки ред пише своята
+        под името си.</span
       >
       <span class="l-en"
-        >A series that only ever rises sits at its right end because that is what the series does,
-        not because of anything happening now. That is why the two price lines are here separately:
-        one is in the money of the day and the other takes out the rise in everything else, and
-        their dots are not in the same place. Each record starts and ends in a different year, and
+        >An indicator that only ever rises sits at its right end because that is what the indicator
+        does, not because of anything happening now. That is why prices are on two rows: one is what
+        is actually paid and the other is the same thing with the rise in everything else taken out,
+        and their dots are not in the same place. Each one is published from a different year, and
         every row writes its own under its name.</span
       >
     </p>

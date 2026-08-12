@@ -40,6 +40,25 @@ const payload = (stem) => {
 
 test.after(shutdown);
 
+/**
+ * A `before` hook that serves one payload with an `as_of` far in the past.
+ *
+ * The freshness verdict is the one thing on these pages that no fixture and no
+ * committed file can produce: it is computed against the reader's own clock, so
+ * a suite running on green data can only ever see the state where nothing is
+ * late. Ageing the file on its way to the tab is what puts the other state on
+ * screen — and that state is the whole point of the line under test.
+ *
+ * The rest of the payload is served verbatim, so every figure on the page is
+ * still the published one and the page under measurement is the real page.
+ */
+const servedStale = (stem) => async (page) => {
+  const aged = { ...payload(stem), as_of: "2019-01-01" };
+  await page.route(`**/data/published/${stem}.json`, (route) =>
+    route.fulfill({ contentType: "application/json", body: JSON.stringify(aged) })
+  );
+};
+
 test("every figure on the market page carries a source under it", { skip }, async () => {
   // Cards and tables both, because most of this page's figures moved into
   // tables and a rule that only walks `.stat` would have gone on passing over a
@@ -385,6 +404,79 @@ test(
       },
       "/market/",
       { viewport: { width: 360, height: 800 } }
+    );
+  }
+);
+
+test(
+  "a payload that stopped refreshing says so on the page, and names itself",
+  { skip },
+  async () => {
+    // `/market/` and `/how/` are the two pages built to be quoted and cited, and
+    // neither could tell a reader their figures were late. A payload whose
+    // workflow stops firing shows an old period caption and nothing else: the
+    // caption is correct — it is what the figure describes — and the page goes on
+    // looking exactly as it does on the day of a refresh.
+    //
+    // It NAMES the payload rather than counting it, which is the difference from
+    // the calculator's own banner. There the count sits above a disclosure
+    // listing every payload with its own date; here there is no panel, and «едно
+    // от числата е закъсняло» with no way to find out which is a warning a reader
+    // can do nothing with.
+    if (!payload("house_market")) return; // no refresh in this checkout
+
+    await withApp(
+      async (page, errors) => {
+        const note = page.locator(".late");
+        assert.equal(await note.count(), 1, "an overdue payload raises no warning on /market/");
+        const text = (await note.innerText()).trim();
+        // The manifest's own name for it, so a row renamed there renames this.
+        assert.ok(
+          text.includes("Сделки с жилища"),
+          `the warning does not name the late payload: "${text}"`
+        );
+        assert.match(text, /\d+/, `the warning does not say how late it is: "${text}"`);
+
+        // …and the four answers still fit the phone with it up. This is the one
+        // that makes the placement honest: a warning between the header and the
+        // page pushes everything under it down, and the summary a reader came for
+        // is what would go off the bottom.
+        const probe = await page.evaluate(() => {
+          const cards = [...document.querySelectorAll("main.market .answers .stat")];
+          return {
+            bottom: Math.max(...cards.map((c) => c.getBoundingClientRect().bottom)),
+            screen: window.innerHeight,
+          };
+        });
+        assert.ok(
+          probe.bottom <= probe.screen,
+          `with the overdue warning up the answer row ends ${Math.round(probe.bottom)}px down a ` +
+            `${probe.screen}px screen at 360px. The warning belongs above the page and the four ` +
+            "answers belong on the first screen; if both cannot hold, the warning is not what moves."
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      "/market/",
+      { viewport: { width: 360, height: 800 } },
+      servedStale("house_market")
+    );
+
+    // Nothing at all while every payload is inside its own cadence, which is the
+    // ordinary state and the one the rest of this file runs in. A warning that is
+    // always up is one nobody reads on the day it means something.
+    await withApp(
+      async (page, errors) => {
+        assert.equal(
+          await page.locator(".late").count(),
+          0,
+          "the overdue warning is up on /market/ with every committed payload inside its own " +
+            "cadence. Either a payload has genuinely gone stale — refresh it — or the verdict " +
+            "is being computed against something other than `as_of` and the manifest."
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      "/market/",
+      {}
     );
   }
 );

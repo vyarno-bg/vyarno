@@ -565,8 +565,17 @@ export class Calculator {
    */
   asOfDisplay = $derived(this.basketRefPeriod || this.headlineRefPeriod);
   showStaleBanner = $derived(this.dataReady && this.dataStale);
+  /**
+   * The payloads overdue against their own cadence.
+   *
+   * The rows rather than the count, because `/how/` names them: it has no data
+   * panel to open, so a warning there that says how many are late and not which
+   * is one a reader can do nothing with. The calculator's banner counts off
+   * this, so the two can never disagree about how many there are.
+   */
+  dataOverdue = $derived(this.dataRows.filter((r) => r.status === "overdue"));
   /** How many payloads are overdue against their own cadence — what the banner counts. */
-  dataOverdueCount = $derived(this.dataRows.filter((r) => r.status === "overdue").length);
+  dataOverdueCount = $derived(this.dataOverdue.length);
 
   // Eurostat's all-items figure, verbatim. `headlineRate` takes only the
   // headline payload so it cannot be handed `categories` and quietly become
