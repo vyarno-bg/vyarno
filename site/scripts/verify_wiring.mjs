@@ -1061,6 +1061,37 @@ test("the market page takes every source link from the payload, never from a lit
   }
 });
 
+test("no page rolls its own signed percentage", () => {
+  // `format.js#percentSigned` carries three rules that took six templates to
+  // find, and every one of them is invisible on a payload whose figures happen
+  // to be comfortably positive: a magnitude rounding to zero takes NO sign, so
+  // a +0.04% quarter does not print «+0,0%» beside a «−0,0%» and ask a reader
+  // to read a difference out of two identical numbers; a fall takes U+2212
+  // rather than `toLocaleString`'s narrower hyphen, which reads as a dash
+  // mid-sentence; and a missing figure prints an em dash rather than an empty
+  // cell that looks like a value of nothing.
+  //
+  // Written inline the expression is shorter than the import, which is why it
+  // keeps being written inline. It is banned by shape rather than by review.
+  const offenders = [];
+  for (const [name, src] of [
+    ["App.svelte", live(read("App.svelte"))],
+    ["How.svelte", HOW],
+    ["Market.svelte", MARKET],
+  ]) {
+    for (const m of src.matchAll(/[><]\s*0\s*\?\s*["'`]\s*[+\u2212-]/g)) {
+      offenders.push(`${name}: ${src.slice(Math.max(0, m.index - 40), m.index + 20).trim()}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a template builds its own sign:\n  ${offenders.join("\n  ")}\n\n` +
+      "Call format.js#percentSigned (or #signed for points). The three rules it " +
+      "holds are each a figure that reads wrong rather than one that reads odd."
+  );
+});
+
 test("every derived figure on the market page is disclosed as ours", () => {
   // Eurostat permit derivation on condition it is stated to the end user, and a
   // sceptic needs more than the statement — they need the queries. `ourSum`
