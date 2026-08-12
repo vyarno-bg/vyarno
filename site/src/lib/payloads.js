@@ -15,6 +15,16 @@
  * itself beats nine that can drift from each other. `docs/data-sources.md` is
  * the authority on each upstream's rhythm; every row below names the one it
  * follows.
+ *
+ * `pages` is what keeps that list from becoming a tax. The site has more than
+ * one page that reads data, and a manifest with no route on it means every
+ * reader fetches every payload — somebody opening the calculator pays for the
+ * property market's quarterly series, and somebody reading the market page
+ * pays for the payroll table. Neither renders a figure from what it downloaded.
+ * So each row names the routes that need it, `payloadsFor` is the only way to
+ * ask, and it **throws on a route no row names** rather than returning nothing:
+ * a typo'd page key would otherwise fetch an empty list, render every fallback
+ * sentinel, and look exactly like an upstream outage.
  */
 
 /**
@@ -41,6 +51,12 @@ function isoDay(value) {
  * - `key`         the property name in the `loadAll()` result. The rest of the
  *                 SPA reads `data.<key>`, so this is part of the contract.
  * - `file`        the published filename stem, `data/published/<file>.json`.
+ * - `pages`       the routes that render a figure from it. Not "the routes it
+ *                 may appear on": a row listing a page that shows nothing from
+ *                 it is a request every visitor to that page pays for and
+ *                 nobody sees. `/legal/` and `/support/` name no payload at all
+ *                 and fetch nothing, which is why they are absent from every
+ *                 row rather than present with an empty list.
  * - `cadenceDays` how long after a refresh a newer upstream figure is expected.
  *                 Past it the row is "due"; past 1.5× it is "overdue" and the
  *                 page raises the banner. See `view.js#payloadStatus`.
@@ -66,6 +82,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "hicpHeadline",
       file: "hicp_headline",
+      pages: ["home"],
       // Eurostat's HICP release is monthly, mid-month, not pinned to a date.
       cadenceDays: 31,
       name: { bg: "Официална инфлация", en: "Official inflation" },
@@ -78,6 +95,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "hicpCategories",
       file: "hicp_categories",
+      pages: ["home"],
       cadenceDays: 31,
       name: { bg: "Инфлация по групи", en: "Inflation by group" },
       feeds: {
@@ -91,6 +109,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "payroll",
       file: "payroll",
+      pages: ["home"],
       // Legislative, not statistical: the table changes on 1 January and when
       // parliament amends it. A year plus a day, so a January refresh landing
       // late is not reported as a skipped one.
@@ -105,6 +124,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "regionSalary",
       file: "region_salary",
+      pages: ["home"],
       // НСИ publishes the regional wage series quarterly.
       cadenceDays: 92,
       name: { bg: "Средна заплата по области", en: "Average wage by oblast" },
@@ -117,6 +137,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "sectorSalary",
       file: "sector_salary",
+      pages: ["home"],
       // The same НСИ quarterly release as `regionSalary` — one publisher, two
       // cuts of the same labour statistic, so they go stale together.
       cadenceDays: 92,
@@ -130,6 +151,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "salaryDist",
       file: "salary_dist",
+      pages: ["home"],
       // The SES cycle, four years and a day, and nothing shorter is honest.
       //
       // This file is Eurostat's shape at Eurostat's own level — one publisher
@@ -180,6 +202,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "cityPrice",
       file: "city_price",
+      pages: ["home"],
       // imot.bg publishes no release calendar, so this is our own refresh
       // expectation rather than a schedule anyone promised us. A quarter,
       // because a €/m² average moves slowly enough that a month's lag is not a
@@ -213,6 +236,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "mortgage",
       file: "mortgage",
+      pages: ["home"],
       // ECB MIR and БНБ both publish monthly.
       cadenceDays: 31,
       name: { bg: "Лихва по жилищни кредити", en: "Home loan rate" },
@@ -227,6 +251,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "unemployment",
       file: "unemployment",
+      pages: ["home"],
       // `une_rt_m` is monthly, seasonally adjusted.
       cadenceDays: 31,
       name: { bg: "Безработица", en: "Unemployment" },
@@ -244,3 +269,35 @@ export const PAYLOAD_KEYS = Object.freeze(PAYLOADS.map((p) => p.key));
 
 /** The published filename stems, in panel order. */
 export const PAYLOAD_FILES = Object.freeze(PAYLOADS.map((p) => p.file));
+
+/**
+ * Every route named by a row, derived from the rows rather than declared beside
+ * them — a second list of page names is one more thing that can disagree with
+ * the manifest, and the disagreement would be silent.
+ */
+export const PAYLOAD_PAGES = Object.freeze([...new Set(PAYLOADS.flatMap((p) => p.pages))].sort());
+
+/**
+ * The rows one route needs — the only way to ask, so `loadAll` and the panel
+ * cannot answer it differently.
+ *
+ * That pairing is the point. `view.js#dataAge` reports a row it was given no
+ * payload for as `absent`, and `absent` is what the page renders its "some data
+ * is missing" state from. Hand the panel the whole manifest while fetching one
+ * route's share of it and every unfetched payload reads as an upstream that
+ * failed — a permanent warning about data the page was never going to show.
+ *
+ * @param {string} page  a route key; every one in use appears in `PAYLOAD_PAGES`
+ * @returns {ReadonlyArray<object>} the matching rows, in panel order
+ */
+export function payloadsFor(page) {
+  const rows = PAYLOADS.filter((entry) => entry.pages.includes(page));
+  if (!rows.length) {
+    throw new Error(
+      `payloadsFor: no payload names the route "${page}". Routes in use are ` +
+        `${PAYLOAD_PAGES.join(", ")}. A route that genuinely needs no data does not ` +
+        "call this — /legal/ and /support/ fetch nothing at all."
+    );
+  }
+  return Object.freeze(rows);
+}

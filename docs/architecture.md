@@ -208,7 +208,7 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 | `mortgage.py` / `payroll.py` | The dated legislative tables and the mortgage gates |
 | `publish.py` | The envelopes and the provenance frame |
 | `cli.py` | One arm per `--source`; exit codes **2** transform, **3** gate, **4** network |
-| `site/src/lib/payloads.js` | Which payloads the page depends on — the one list `loadAll`, the freshness verdict, `/version.json` and the sitemap all derive from |
+| `site/src/lib/payloads.js` | Which payloads the page depends on, and which routes need each — the one list `loadAll`, the freshness verdict, `/version.json` and the sitemap all derive from |
 | `site/src/lib/data.js` | Which published number, including every fallback chain |
 | `site/src/lib/view.js` | Which input feeds which formula |
 | `site/src/lib/mirror.js` | The arithmetic — the only domain math in the front end |

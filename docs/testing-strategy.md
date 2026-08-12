@@ -195,7 +195,7 @@ than regexing it out of a file: `COPY`, `PRESETS`, `BG_CONTRIB_LINES`,
 | Template wiring | `verify_wiring.mjs` | Source checks; there is nothing else to check them against |
 | Licence and legal claims | `verify_legal.mjs` | Against the imported `legal.js` module |
 | The `{@html}` contracts | `verify_template_safety.mjs` | Both directions — the expressions, and the values fed to them |
-| The `loadAll` contract | `verify_data_contracts.mjs` | Reads `payloads.js#PAYLOADS` as the manifest it is, and calls `loadAll` with `fetch` stubbed |
+| The `loadAll` contract | `verify_data_contracts.mjs` | Reads `payloads.js#PAYLOADS` as the manifest it is, and calls `loadAll` per route with `fetch` stubbed |
 
 **Layout is asserted as an effect, never as a cause.** `.stats { flex-wrap:
 wrap }` is a grep for the cause; "no row of the strip stops short of the
