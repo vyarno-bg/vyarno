@@ -41,6 +41,8 @@
     marketDealInYearsOfPay,
     marketCities,
     marketNsiNationalRate,
+    marketVolumeSeries,
+    marketPriceToIncomeSeries,
   } from "./lib/view.js";
   import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
 
@@ -104,6 +106,43 @@
   const yearsOfPay = $derived(marketDealInYearsOfPay(data.houseMarket, data.sectorSalary));
   const cities = $derived(marketCities(data.nsiHousing));
   const nsiNational = $derived(marketNsiNationalRate(data.nsiHousing));
+  const volumeSeries = $derived(marketVolumeSeries(data.houseMarket));
+  const ptiSeries = $derived(marketPriceToIncomeSeries(data.houseMarketStructure));
+
+  /**
+   * The plot box, and the mapping from a published figure to a coordinate in
+   * it.
+   *
+   * Geometry rather than domain math, which is why it is here and not in
+   * `mirror.js` — `systemWedgeLadder` draws the same line, returning the rates
+   * and leaving the pixels to the component that knows how wide its box is.
+   *
+   * **`barH` takes a maximum and no minimum, and that is the honesty
+   * constraint rather than a simplification.** Both plots are drawn from zero.
+   * A y-axis cropped to a series' own range turns every property chart into a
+   * cliff, and this is the page that refuses to tell a reader what to think —
+   * so there is no floor parameter for a later edit to introduce.
+   */
+  const CH_W = 640,
+    CH_H = 190,
+    CH_PAD_L = 52,
+    CH_PAD_R = 10,
+    CH_TOP = 12,
+    CH_BASE = CH_H - 26;
+  const plotW = CH_W - CH_PAD_L - CH_PAD_R;
+  const barH = (value, max) => (max > 0 ? ((CH_BASE - CH_TOP) * value) / max : 0);
+  const barW = (n) => Math.max(1, (plotW / n) * 0.72);
+  const barX = (i, n) => CH_PAD_L + (plotW / n) * (i + 0.14);
+  /** The line, with the first point moved to and the rest drawn through. */
+  const ptiPath = $derived(
+    ptiSeries.points
+      .map((p, i) => {
+        const n = ptiSeries.points.length;
+        const x = CH_PAD_L + (n > 1 ? (plotW * i) / (n - 1) : plotW / 2);
+        return `${i ? "L" : "M"}${x.toFixed(2)} ${(CH_BASE - barH(p.value, ptiSeries.max)).toFixed(2)}`;
+      })
+      .join(" ")
+  );
 
   /**
    * A signed percentage, from the one implementation the whole site shares.
@@ -198,7 +237,7 @@
   mitigation: a figure that has fallen behind is visibly behind rather than
   silently wrong.
 -->
-{#snippet figure(value, label, source, href, period)}
+{#snippet figure(value, label, source, href, period, apiHref = null)}
   <div class="stat">
     <div class="sv mono">{value}</div>
     <div class="sl">
@@ -206,12 +245,38 @@
       <span class="l-en">{label.en}</span>
     </div>
     <div class="ss">
-      <a href={httpUrl(href)} target="_blank" rel="noopener">
-        <span class="l-bg">{t(COPY.howSrc, "bg", { s: source.bg, p: period.bg })}</span>
-        <span class="l-en">{t(COPY.howSrc, "en", { s: source.en, p: period.en })}</span>
-      </a>
+      {@render srcLine(source, href, period, apiHref)}
     </div>
   </div>
+{/snippet}
+
+<!--
+  The publisher, the period and the two links, under a figure or under a table.
+
+  THE SECOND LINK IS NOT A CONVENIENCE. Eurostat's table view opens a dataset
+  with every unit it carries at once, and `prc_hpi_hsnq` carries a count, two
+  indices and three rates — so a reader following «16 227 · Евростат» arrives
+  at a table reading −19.8 for the same country and the same quarter, which is
+  the quarter-on-quarter rate of change. One click from the page's argument to
+  a figure that appears to contradict it, on the page whose entire claim is
+  that a sceptic can check it.
+
+  Fixing that by deep-linking the unit would mean pinning a URL shape nobody
+  documents and this container cannot reach a browser to verify against. So
+  both links are here and each says what it is: the publisher's own table to
+  browse, and the query that returns this number and nothing else.
+-->
+{#snippet srcLine(source, href, period, apiHref = null)}
+  <a href={httpUrl(href)} target="_blank" rel="noopener">
+    <span class="l-bg">{t(COPY.howSrc, "bg", { s: source.bg, p: period.bg })}</span>
+    <span class="l-en">{t(COPY.howSrc, "en", { s: source.en, p: period.en })}</span>
+  </a>
+  {#if apiHref}
+    <a class="q-link" href={httpUrl(apiHref)} target="_blank" rel="noopener">
+      <span class="l-bg">{COPY.mktSrcQuery.bg} ↗</span>
+      <span class="l-en">{COPY.mktSrcQuery.en} ↗</span>
+    </a>
+  {/if}
 {/snippet}
 
 <!--
@@ -247,6 +312,20 @@
   </p>
 {/snippet}
 
+<!-- A column head with the quarter its own workbook or cube is at. Two
+     publishers on four release calendars reach this page, and the period is
+     what tells two adjacent columns apart when one of them falls behind. -->
+{#snippet colHead(label, period)}
+  <span class="l-bg">{label.bg}</span>
+  <span class="l-en">{label.en}</span>
+  {#if period}
+    <small class="q">
+      <span class="l-bg">{periodLong(period, "bg")}</span>
+      <span class="l-en">{periodLong(period, "en")}</span>
+    </small>
+  {/if}
+{/snippet}
+
 <main id="main" class="wrap market">
   <h1>
     <span class="l-bg">Пазарът на жилища, с числата на институциите</span>
@@ -257,16 +336,30 @@
     <span class="l-bg"
       >Тук са официалните числа за жилищния пазар в България: колко сделки има, колко се плаща по
       тях, как се движат цените и колко хора изобщо дължат нещо по жилището си. Под всяко число пише
-      кой го публикува, за кой период е и къде да го провериш. Където сметката е наша, пише как е
-      направена и има връзка към заявката, която я връща. Не заемаме страна — числата тук сочат в
-      различни посоки и това е част от отговора.</span
+      кой го публикува и за кой период е. Не заемаме страна — числата тук сочат в различни посоки и
+      това е част от отговора.</span
     >
     <span class="l-en"
       >These are the official figures for Bulgarian housing: how many deals happen, what is paid for
       them, how prices move, and how many people owe anything on the home they live in. Under every
-      number is who publishes it, which period it describes and where to check it. Where the
-      arithmetic is ours, it says so, explains it, and links the query that returns it. We take no
-      side — these figures point in different directions, and that is part of the answer.</span
+      number is who publishes it and which period it describes. We take no side — these figures
+      point in different directions, and that is part of the answer.</span
+    >
+  </p>
+  <p class="lead">
+    <span class="l-bg"
+      >Под всяко число има две връзки. Първата води към таблицата на публикуващия, където до нашето
+      число стоят и всички останали мерки от същия набор — брой, индекс, месечна и годишна промяна —
+      така че там се вижда и друго число за същата държава и същото тримесечие. Втората връзка, «{COPY
+        .mktSrcQuery.bg}», връща точно това, което пише тук, и нищо друго. Където сметката е наша,
+      пише как е направена и стои заявката, която я връща.</span
+    >
+    <span class="l-en"
+      >Every number carries two links. The first opens the publisher's own table, where our figure
+      sits beside every other measure in the same dataset — a count, an index, a quarterly and an
+      annual rate — so the same country and quarter shows more than one number there. The second, "{COPY
+        .mktSrcQuery.en}", returns exactly what is printed here and nothing else. Where the
+      arithmetic is ours, it says so and carries the query that reproduces it.</span
     >
   </p>
 
@@ -313,48 +406,103 @@
     </p>
 
     {#if volume.deals.value}
-      <div class="stats">
-        {@render figure(
-          fmt0(volume.deals.value),
-          COPY.mktKDeals,
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblVolume, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktColKind, null)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColCount, volume.period)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColYoy, volume.period)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
+              <td class="num mono">{fmt0(volume.deals.value)}</td>
+              <td class="num mono">{pct(volume.changePct.value)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
+              <td class="num mono">{fmt0(volume.newBuild)}</td>
+              <td class="num mono">{pct(volume.changeNewPct)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
+              <td class="num mono">{fmt0(volume.existing)}</td>
+              <td class="num mono">{pct(volume.changeExistingPct)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(
           COPY.srcEurostat,
           volume.deals.sourceUrl,
-          when(volume.period)
+          when(volume.period),
+          volume.deals.apiUrl
         )}
-        {#if volume.changePct.value != null}
-          {@render figure(
-            pct(volume.changePct.value),
-            COPY.mktKDealsYoy,
-            COPY.srcEurostat,
-            volume.changePct.sourceUrl,
-            when(volume.period)
-          )}
-        {/if}
-        {#if volume.newBuild != null}
-          {@render figure(
-            fmt0(volume.newBuild),
-            COPY.mktKDealsNew,
+      </p>
+
+      <!-- The volume series, which IS this section's finding. One quarter and a
+           percentage state it; thirty-seven quarters show the shape it sits in,
+           and the shape is what the year-on-year figure is a single reading of.
+
+           Columns start at zero and there is no axis minimum to set: a count
+           chart cropped to its own range makes any series look like a cliff,
+           and on this subject that is the one distortion the page cannot
+           afford. `marketVolumeSeries` offers no `min` for the same reason. -->
+      {#if volumeSeries.points.length > 4}
+        <figure class="chart">
+          <svg
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.mktChartVolume, $lang, {
+              from: periodLong(volumeSeries.from, $lang),
+              to: periodLong(volumeSeries.to, $lang),
+              peak: fmt0(volumeSeries.peak?.value),
+              peakAt: periodLong(volumeSeries.peak?.period, $lang),
+              last: fmt0(volumeSeries.latest?.value),
+            })}
+          >
+            {#each volumeSeries.points as p, i (p.period)}
+              <rect
+                class="plot-bar"
+                x={barX(i, volumeSeries.points.length)}
+                y={CH_BASE - barH(p.value, volumeSeries.max)}
+                width={barW(volumeSeries.points.length)}
+                height={Math.max(1, barH(p.value, volumeSeries.max))}
+              />
+            {/each}
+            <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
+            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_TOP + 9} text-anchor="end"
+              >{fmt0(volumeSeries.max)}</text
+            >
+            <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
+            <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{volumeSeries.from}</text>
+            <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
+              >{volumeSeries.to}</text
+            >
+          </svg>
+        </figure>
+        <p class="ss tsrc">
+          {@render srcLine(
             COPY.srcEurostat,
             volume.deals.sourceUrl,
-            when(volume.period)
+            {
+              bg: `${periodLong(volumeSeries.from, "bg")} – ${periodLong(volumeSeries.to, "bg")}`,
+              en: `${periodLong(volumeSeries.from, "en")} – ${periodLong(volumeSeries.to, "en")}`,
+            },
+            volume.deals.apiUrl
           )}
-        {/if}
-        {#if volume.existing != null}
-          {@render figure(
-            fmt0(volume.existing),
-            COPY.mktKDealsExisting,
-            COPY.srcEurostat,
-            volume.deals.sourceUrl,
-            when(volume.period)
-          )}
-        {/if}
-      </div>
+        </p>
+      {/if}
+
       {#if volume.changePct.value != null}
         {@render ourSum(
           {
             bg:
-              "Промяната спрямо година по-рано е наша сметка: броят за това тримесечие срещу " +
-              "броя за същото тримесечие на предходната година, и двете числа така, както са " +
+              "Промяната спрямо година по-рано е наша сметка: броят за това тримесечие срещу броя " +
+              "за същото тримесечие на предходната година, и двете числа така, както са " +
               "публикувани. Спрямо същото тримесечие, а не спрямо предходното, защото сделките " +
               "имат сезонен ритъм и спадът от лято към зима мери календара, а не пазара.",
             en:
@@ -402,35 +550,62 @@
         last decimal from the one they publish.</span
       >
     </p>
+    <p>
+      <span class="l-bg"
+        >Едно и също число стига дотук по два пътя: НСИ го изчислява, Евростат го разпространява.
+        Затова таблицата има две колони — за да се види, че съвпадат.</span
+      >
+      <span class="l-en"
+        >One figure reaches this page by two routes: НСИ compile it and Eurostat disseminate it. The
+        table has two columns so that a reader can see they agree.</span
+      >
+    </p>
 
     {#if priceRate.total.value != null}
-      <div class="stats">
-        {@render figure(
-          pct(priceRate.total.value),
-          COPY.mktKPriceRate,
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblPrices, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktColKind, null)}</th>
+              <th scope="col" class="num"
+                >{@render colHead(COPY.mktColEurostat, priceRate.period)}</th
+              >
+              <th scope="col" class="num"
+                >{@render colHead(COPY.mktColNsi, nsiNational.refPeriod)}</th
+              >
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
+              <td class="num mono">{pct(priceRate.total.value)}</td>
+              <td class="num mono">{pct(nsiNational.value)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
+              <td class="num mono">{pct(priceRate.newBuild)}</td>
+              <td class="num mono">{pct(nsiNational.newBuild)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
+              <td class="num mono">{pct(priceRate.existing)}</td>
+              <td class="num mono">{pct(nsiNational.existing)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(
           COPY.srcEurostat,
           priceRate.total.sourceUrl,
-          when(priceRate.period)
+          when(priceRate.period),
+          priceRate.total.apiUrl
         )}
-        {#if priceRate.newBuild != null}
-          {@render figure(
-            pct(priceRate.newBuild),
-            COPY.mktKPriceRateNew,
-            COPY.srcEurostat,
-            priceRate.total.sourceUrl,
-            when(priceRate.period)
-          )}
+        {#if nsiNational.value != null}
+          <span class="sep">·</span>
+          {@render srcLine(COPY.srcNsi, nsiNational.sourceUrl, when(nsiNational.refPeriod))}
         {/if}
-        {#if priceRate.existing != null}
-          {@render figure(
-            pct(priceRate.existing),
-            COPY.mktKPriceRateExisting,
-            COPY.srcEurostat,
-            priceRate.total.sourceUrl,
-            when(priceRate.period)
-          )}
-        {/if}
-      </div>
+      </p>
     {/if}
 
     {#if cities.cities.length}
@@ -454,35 +629,22 @@
            are the other half — a tab stop that announces nothing is worse than
            no tab stop. -->
       <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblCities, $lang)}>
-        <table class="fig-table">
+        <table class="fig-table cities">
           <thead>
             <tr>
-              <th scope="col">
-                <span class="l-bg">{COPY.mktColCity.bg}</span>
-                <span class="l-en">{COPY.mktColCity.en}</span>
-              </th>
+              <th scope="col">{@render colHead(COPY.mktColCity, null)}</th>
               <!-- The period belongs to the COLUMN, not to the table. HPI_2.6
                    and HSI_2.4.5 are two files on НСИ's portal and either can be
                    republished first, so a caption naming one quarter for both
                    is a claim about the data rather than a description of it —
                    and it is wrong in the direction nothing catches, because
                    every digit under it stays a digit НСИ published. -->
-              <th scope="col" class="num">
-                <span class="l-bg">{COPY.mktColPrice.bg}</span>
-                <span class="l-en">{COPY.mktColPrice.en}</span>
-                <small class="q">
-                  <span class="l-bg">{periodLong(cities.pricePeriod, "bg")}</span>
-                  <span class="l-en">{periodLong(cities.pricePeriod, "en")}</span>
-                </small>
-              </th>
-              <th scope="col" class="num">
-                <span class="l-bg">{COPY.mktColDeals.bg}</span>
-                <span class="l-en">{COPY.mktColDeals.en}</span>
-                <small class="q">
-                  <span class="l-bg">{periodLong(cities.dealsPeriod, "bg")}</span>
-                  <span class="l-en">{periodLong(cities.dealsPeriod, "en")}</span>
-                </small>
-              </th>
+              <th scope="col" class="num"
+                >{@render colHead(COPY.mktColPrice, cities.pricePeriod)}</th
+              >
+              <th scope="col" class="num"
+                >{@render colHead(COPY.mktColDeals, cities.dealsPeriod)}</th
+              >
             </tr>
           </thead>
           <tbody>
@@ -545,24 +707,6 @@
       </p>
     {/if}
 
-    {#if nsiNational.value != null && priceRate.total.value != null}
-      <p class="cap">
-        <span class="l-bg"
-          >Едно и също число, публикувано от две институции: НСИ го изчислява и дава {pct(
-            nsiNational.value
-          )} за {periodLong(nsiNational.refPeriod, "bg")}, Евростат го разпространява и дава {pct(
-            priceRate.total.value
-          )}. Съвпадат — и това може да се провери, затова и двете стоят тук.</span
-        >
-        <span class="l-en"
-          >One figure, published by two bodies: НСИ compile it and give {pct(nsiNational.value)}
-          for {periodLong(nsiNational.refPeriod, "en")}, Eurostat disseminate it and give
-          {pct(priceRate.total.value)}. They agree, and that is checkable — which is why both are
-          here.</span
-        >
-      </p>
-    {/if}
-
     <p class="cap">
       <span class="l-bg"
         >Обявената цена и платената цена са различни неща. Обявените цени на кв. м по градове са в
@@ -589,52 +733,51 @@
       <span class="l-bg"
         >Евростат публикува колко жилища са купени и колко е платено общо за тях. Едното, разделено
         на другото, дава средната сделка — число, което никой не публикува наготово. Двете числа, от
-        които идва, стоят до него, за да може делението да се провери.</span
+        които идва, стоят на същия ред, за да може делението да се провери.</span
       >
       <span class="l-en"
         >Eurostat publish how many dwellings were bought and how much was paid for them in total.
         One divided by the other gives the average deal — a figure nobody publishes ready-made. The
-        two numbers it comes from are beside it so the division can be checked by eye.</span
+        two numbers it comes from are on the same row, so the division can be checked.</span
       >
     </p>
 
     {#if deal.avg.value}
-      <div class="stats">
-        {@render figure(
-          `${fmt0(deal.avg.value)} €`,
-          COPY.mktKAvgDeal,
-          COPY.srcEurostat,
-          deal.avg.sourceUrl,
-          when(deal.period)
-        )}
-        {#if deal.newBuild != null}
-          {@render figure(
-            `${fmt0(deal.newBuild)} €`,
-            COPY.mktKAvgDealNew,
-            COPY.srcEurostat,
-            deal.avg.sourceUrl,
-            when(deal.period)
-          )}
-        {/if}
-        {#if deal.existing != null}
-          {@render figure(
-            `${fmt0(deal.existing)} €`,
-            COPY.mktKAvgDealExisting,
-            COPY.srcEurostat,
-            deal.avg.sourceUrl,
-            when(deal.period)
-          )}
-        {/if}
-        {#if yearsOfPay.value != null}
-          {@render figure(
-            fmt(yearsOfPay.value),
-            COPY.mktKYearsOfPay,
-            COPY.srcEurostatNsi,
-            yearsOfPay.wageUrl,
-            whenPair(yearsOfPay.dealPeriod, COPY.srcEurostat, yearsOfPay.wagePeriod, COPY.srcNsi)
-          )}
-        {/if}
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblDeal, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktColKind, null)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColAvgPaid, deal.period)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColTotalPaid, deal.period)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColCount, deal.period)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
+              <td class="num mono">{fmt0(deal.avg.value)} €</td>
+              <td class="num mono">{fmt0(deal.totalValue)} €</td>
+              <td class="num mono">{fmt0(deal.deals)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
+              <td class="num mono">{fmt0(deal.newBuild)} €</td>
+              <td class="num mono">{fmt0(deal.newValue)} €</td>
+              <td class="num mono">{fmt0(deal.newDeals)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
+              <td class="num mono">{fmt0(deal.existing)} €</td>
+              <td class="num mono">{fmt0(deal.existingValue)} €</td>
+              <td class="num mono">{fmt0(deal.existingDeals)}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      <p class="ss tsrc">
+        {@render srcLine(COPY.srcEurostat, deal.avg.sourceUrl, when(deal.period), deal.avg.apiUrl)}
+      </p>
 
       {@render ourSum(
         {
@@ -655,6 +798,15 @@
       )}
 
       {#if yearsOfPay.value != null}
+        <div class="stats">
+          {@render figure(
+            fmt(yearsOfPay.value),
+            COPY.mktKYearsOfPay,
+            COPY.srcEurostatNsi,
+            yearsOfPay.wageUrl,
+            whenPair(yearsOfPay.dealPeriod, COPY.srcEurostat, yearsOfPay.wagePeriod, COPY.srcNsi)
+          )}
+        </div>
         {@render ourSum(
           {
             bg:
@@ -685,40 +837,57 @@
     <p>
       <span class="l-bg"
         >Изследването на доходите и условията на живот пита хората какво е жилището им: собствено
-        без заем, собствено със заем или под наем. Делът на тези, които дължат нещо по жилището си,
-        е контекстът, в който се четат числата по-горе.</span
+        без заем, собствено със заем или под наем. Всички числа тук са дял от хората в страната, на
+        една и съща основа — затова собствениците и наемателите се събират на сто. Делът на тези,
+        които дължат нещо по жилището си, е контекстът, в който се четат числата по-горе.</span
       >
       <span class="l-en"
         >The income and living-conditions survey asks people what their housing is: owned outright,
-        owned with a loan, or rented. The share of owners who owe anything on their home is small —
-        and that is the context the figures above are read in.</span
+        owned with a loan, or rented. Every figure here is a share of the country's people on one
+        and the same base, which is why owners and renters add to a hundred. The share of people who
+        owe anything on their home is the context the figures above are read in.</span
       >
     </p>
 
     {#if structure.owner.value != null}
-      <div class="stats">
-        {@render figure(
-          `${fmt(structure.owner.value)}%`,
-          COPY.mktKOwn,
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblTenure, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktColHowLive, null)}</th>
+              <th scope="col" class="num"
+                >{@render colHead(COPY.mktColShareOfPeople, structure.owner.refPeriod)}</th
+              >
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowOwn, null)}</th>
+              <td class="num mono">{fmt(structure.owner.value)}%</td>
+            </tr>
+            <tr>
+              <th scope="row" class="sub">{@render colHead(COPY.mktRowOwnLoan, null)}</th>
+              <td class="num mono">{fmt(structure.ownerWithMortgage.value)}%</td>
+            </tr>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowRent, null)}</th>
+              <td class="num mono">{fmt(structure.renter.value)}%</td>
+            </tr>
+            <tr>
+              <th scope="row" class="sub">{@render colHead(COPY.mktRowRentMarket, null)}</th>
+              <td class="num mono">{fmt(structure.renterAtMarketPrice.value)}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(
           COPY.srcEurostat,
           structure.owner.sourceUrl,
-          when(structure.owner.refPeriod)
+          when(structure.owner.refPeriod),
+          structure.owner.apiUrl
         )}
-        {@render figure(
-          `${fmt(structure.ownerWithMortgage.value)}%`,
-          COPY.mktKOwnMortgage,
-          COPY.srcEurostat,
-          structure.ownerWithMortgage.sourceUrl,
-          when(structure.ownerWithMortgage.refPeriod)
-        )}
-        {@render figure(
-          `${fmt(structure.renterAtMarketPrice.value)}%`,
-          COPY.mktKRentMarket,
-          COPY.srcEurostat,
-          structure.renterAtMarketPrice.sourceUrl,
-          when(structure.renterAtMarketPrice.refPeriod)
-        )}
-      </div>
+      </p>
     {/if}
 
     <p class="cap">
@@ -753,40 +922,55 @@
     </p>
 
     {#if structure.dwellings.value}
-      <div class="stats">
-        {@render figure(
-          fmt0(structure.dwellings.value),
-          COPY.mktKDwellings,
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblStock, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktColDwelling, null)}</th>
+              <th scope="col" class="num"
+                >{@render colHead(COPY.mktColHowMany, structure.dwellings.refPeriod)}</th
+              >
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowAllDwellings, null)}</th>
+              <td class="num mono">{fmt0(structure.dwellings.value)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowOccupied, null)}</th>
+              <td class="num mono">{fmt0(structure.occupied.value)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowUnoccupied, null)}</th>
+              <td class="num mono">{fmt0(structure.unoccupied.value)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowUnoccupiedShare, null)}</th>
+              <td class="num mono">{fmt(structure.unoccupiedPct.value)}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(
           COPY.srcEurostat,
           structure.dwellings.sourceUrl,
-          when(structure.dwellings.refPeriod)
+          when(structure.dwellings.refPeriod),
+          structure.dwellings.apiUrl
         )}
-        {@render figure(
-          fmt0(structure.unoccupied.value),
-          COPY.mktKUnoccupied,
-          COPY.srcEurostat,
-          structure.unoccupied.sourceUrl,
-          when(structure.unoccupied.refPeriod)
-        )}
-        {@render figure(
-          `${fmt(structure.unoccupiedPct.value)}%`,
-          COPY.mktKUnoccupiedShare,
-          COPY.srcEurostat,
-          structure.unoccupiedPct.sourceUrl,
-          when(structure.unoccupiedPct.refPeriod)
-        )}
-      </div>
+      </p>
 
       {@render ourSum(
         {
           bg:
             `Делът е наша сметка: необитаваните жилища върху всички конвенционални жилища от същото ` +
             `преброяване — ${fmt0(structure.unoccupied.value)} върху ` +
-            `${fmt0(structure.dwellings.value)}. И двете числа стоят до него.`,
+            `${fmt0(structure.dwellings.value)}. И двете числа са в таблицата отгоре.`,
           en:
             `The share is our arithmetic: unoccupied dwellings over all conventional dwellings from ` +
             `the same census — ${fmt0(structure.unoccupied.value)} over ` +
-            `${fmt0(structure.dwellings.value)}. Both counts are beside it.`,
+            `${fmt0(structure.dwellings.value)}. Both counts are in the table above.`,
         },
         structure.unoccupiedPct.derivedFrom
       )}
@@ -801,20 +985,88 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Има един официален показател, който сравнява цените на жилищата с доходите и после сравнява
-        резултата с дългосрочната средна стойност на същото съотношение за същата страна. Стойност
-        100 означава, че съотношението е точно колкото средното за целия период, който показателят
-        обхваща. Под 100 значи, че спрямо доходите жилищата излизат по-евтино, отколкото средно за
-        собствената им история — не че са евтини, и не спрямо друга държава.</span
+        >Цената на жилището сама по себе си не казва много: тя зависи и от това колко печелят
+        хората. Затова Евростат дели едното на другото — цените на жилищата върху доходите — и следи
+        как се движи резултатът.</span
       >
       <span class="l-en"
-        >There is one official indicator that compares house prices with incomes and then compares
-        the result with its own long-run average for the same country. At 100 the ratio is exactly
-        its own average over the series. Below 100 means that against incomes, housing works out
-        cheaper than it has over its own history — not that it is cheap, and not against another
-        country.</span
+        >A house price on its own says little: it depends on what people earn as well. So Eurostat
+        divide one by the other — house prices over incomes — and follow how the result moves.</span
       >
     </p>
+    <p>
+      <span class="l-bg"
+        >Второто деление е това, което прави числото четимо. Съотношението за дадена година се дели
+        на средното за целия ред и се записва като 100 за средното. Затова 100 е «толкова, колкото
+        обикновено е било в България», под 100 е «по-евтино спрямо доходите, отколкото обикновено»,
+        а над 100 — «по-скъпо». Мерилото е собствената история на страната. Редът не сравнява
+        България с друга държава и не казва нищо за отделния купувач — той е за съотношението, а не
+        за нечий бюджет.</span
+      >
+      <span class="l-en"
+        >The second division is what makes the figure readable. A given year's ratio is divided by
+        the average across the whole series and written as 100 for that average. So 100 means "about
+        what it has usually been in Bulgaria", below 100 means "cheaper against incomes than usual",
+        and above 100 means dearer. The yardstick is the country's own history. The series does not
+        compare Bulgaria with anywhere else, and it says nothing about an individual buyer — it is
+        about the ratio, not about anyone's budget.</span
+      >
+    </p>
+
+    {#if ptiSeries.points.length > 4}
+      <!-- The one figure on the page whose meaning is hard to state and easy to
+           show. The rule at 100 is the whole indicator, so the axis is built to
+           include it: a plot cropped to the data would leave its own reference
+           off the top in the years the ratio ran above it, which is every year
+           from 2004 to 2010. Zero-based for the same reason the volume chart
+           is. -->
+      <figure class="chart">
+        <svg
+          viewBox="0 0 {CH_W} {CH_H}"
+          role="img"
+          aria-label={t(COPY.mktChartPti, $lang, {
+            from: ptiSeries.from,
+            to: ptiSeries.to,
+            peak: fmt(ptiSeries.peak?.value),
+            peakAt: ptiSeries.peak?.period,
+            last: fmt(ptiSeries.latest),
+          })}
+        >
+          <line
+            class="plot-ref"
+            x1={CH_PAD_L}
+            y1={CH_BASE - barH(ptiSeries.reference, ptiSeries.max)}
+            x2={CH_W - CH_PAD_R}
+            y2={CH_BASE - barH(ptiSeries.reference, ptiSeries.max)}
+          />
+          <path class="plot-line" d={ptiPath} />
+          <line class="plot-axis" x1={CH_PAD_L} y1={CH_BASE} x2={CH_W - CH_PAD_R} y2={CH_BASE} />
+          <text
+            class="plot-tick"
+            x={CH_W - CH_PAD_R}
+            y={CH_BASE - barH(ptiSeries.reference, ptiSeries.max) - 5}
+            text-anchor="end">100</text
+          >
+          <text class="plot-tick" x={CH_PAD_L - 6} y={CH_BASE} text-anchor="end">0</text>
+          <text class="plot-tick" x={CH_PAD_L} y={CH_BASE + 15}>{ptiSeries.from}</text>
+          <text class="plot-tick" x={CH_W - CH_PAD_R} y={CH_BASE + 15} text-anchor="end"
+            >{ptiSeries.to}</text
+          >
+        </svg>
+        <figcaption>
+          <span class="l-bg">{COPY.mktChartRefLine.bg}</span>
+          <span class="l-en">{COPY.mktChartRefLine.en}</span>
+        </figcaption>
+      </figure>
+      <p class="ss tsrc">
+        {@render srcLine(
+          COPY.srcEurostat,
+          structure.priceToIncome.sourceUrl,
+          { bg: `${ptiSeries.from} – ${ptiSeries.to}`, en: `${ptiSeries.from} – ${ptiSeries.to}` },
+          structure.priceToIncome.apiUrl
+        )}
+      </p>
+    {/if}
 
     {#if structure.priceToIncome.value != null}
       <div class="stats">
@@ -823,14 +1075,16 @@
           COPY.mktKPriceToIncome,
           COPY.srcEurostat,
           structure.priceToIncome.sourceUrl,
-          when(structure.priceToIncome.refPeriod)
+          when(structure.priceToIncome.refPeriod),
+          structure.priceToIncome.apiUrl
         )}
         {@render figure(
           `${fmt(structure.overburden.value)}%`,
           COPY.mktKOverburden,
           COPY.srcEurostat,
           structure.overburden.sourceUrl,
-          when(structure.overburden.refPeriod)
+          when(structure.overburden.refPeriod),
+          structure.overburden.apiUrl
         )}
         {#if rent}
           {@render figure(
@@ -874,169 +1128,364 @@
 <SiteFooter page="market" />
 
 <style>
-  /* The masthead is `/how/`'s, for the reason that page carries: `SiteHeader`
-     belongs to the calculator and leads with controls this page has none of. */
-  .skip {
-    position: absolute;
-    left: -9999px;
-    top: 0;
-    z-index: 100;
-    background: var(--card);
-    color: var(--ink);
-    padding: 0.6rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-  }
-  .skip:focus {
-    left: 0.75rem;
-    top: 0.75rem;
-  }
+  /* `/how/`'s chrome, and deliberately the same one: three pages a reader
+     reaches from the same footer row should not each have their own header.
+     Sharing the rules rather than the file is not possible — a Svelte
+     component's styles are scoped to it. */
   header.site {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--hdr);
+    backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
-    background: var(--card);
   }
+  /* The masthead row. Scoped styles reach every element in THIS component, so
+     a chart mark named `.bar` would take this `height: 54px` and every column
+     on the volume plot would be drawn the same height — a chart that renders,
+     looks plausible and is not the data. The plot marks are `.plot-*` for that
+     reason and not for tidiness. */
   .bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-top: 0.7rem;
-    padding-bottom: 0.7rem;
+    gap: 16px;
+    height: 54px;
   }
   .brand {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    color: inherit;
-  }
-  .wm {
-    font-weight: 600;
+    gap: 9px;
+    font-weight: 700;
+    font-size: var(--fs-h3);
     letter-spacing: -0.01em;
+    text-decoration: none;
   }
-  .wm small {
-    display: block;
-    font-weight: 400;
-    font-size: 0.72rem;
+  .brand .wm {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+  .brand small {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: var(--fs-micro);
     color: var(--muted);
-    letter-spacing: 0;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
   }
   .controls {
+    margin-left: auto;
     display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 0.4rem;
   }
   .pill {
-    font: inherit;
-    font-size: 0.8rem;
-    padding: 0.3rem 0.6rem;
-    border: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: var(--fs-small);
+    padding: 5px 9px;
+    border: 1px solid var(--control-line);
     border-radius: 999px;
-    background: var(--bg);
-    color: var(--ink);
-    text-decoration: none;
+    background: var(--surface);
+    color: var(--ink-2);
     cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
   }
   .pill:hover {
     border-color: var(--muted);
+    color: var(--ink);
+  }
+  .skip {
+    position: absolute;
+    left: -999px;
+  }
+  .skip:focus {
+    left: 16px;
+    top: 10px;
+    z-index: 99;
+    background: var(--surface);
+    padding: 8px 12px;
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    color: var(--ink);
+    text-decoration: none;
   }
 
+  /* `.wrap` centres itself and stops at `--maxw`, which is 1120px — a measure
+     for the calculator's three-column card and far too wide for prose. The
+     column was capped per SECTION instead, at 46rem with no auto margin, so
+     every heading and every table sat against the left edge of a container
+     twice their width and the page read as though it had slipped. One measure
+     on the main element, the same 760px `/how/` uses, and the sections inherit
+     it. */
   main.market {
-    padding-top: 1.5rem;
-    padding-bottom: 3rem;
+    padding: 30px 0 10px;
+    max-width: 760px;
+    /* The skip link's target, offset by the same amount the sections are: a
+       bare `#main` jump parks the h1 under the 54px sticky header. */
+    scroll-margin-top: 64px;
   }
   h1 {
-    font-size: 1.6rem;
+    font-family: var(--serif);
+    font-size: clamp(1.5625rem, 4vw, 2rem);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-size: var(--fs-h3);
     line-height: 1.25;
-    margin: 0 0 0.75rem;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  section {
+    margin-top: 38px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 64px;
+  }
+  p {
+    margin: 12px 0 0;
+    font-size: var(--fs-lead);
+    line-height: 1.62;
+    color: var(--ink-2);
   }
   .lead {
+    margin-top: 12px;
+  }
+  .cap {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    line-height: 1.55;
     color: var(--muted);
-    max-width: 44rem;
-    margin: 0 0 1.5rem;
+  }
+  /* The disclosure that a figure is ours. Marked, not buried: it sits directly
+     under the number it is about, in the erode accent the app already uses for
+     "this one costs you something to believe". */
+  .ours {
+    margin-top: 10px;
+    padding-left: 10px;
+    border-left: 2px solid var(--erode);
+    font-size: var(--fs-meta);
+    line-height: 1.55;
+    color: var(--muted);
   }
   .toc {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
+    gap: 6px 14px;
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: var(--fs-small);
   }
-  .toc a {
-    font-size: 0.8rem;
-    padding: 0.25rem 0.6rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
+  .toc a,
+  .cap a,
+  .ours a,
+  .onward a {
+    color: var(--real-ink);
     text-decoration: none;
-    color: var(--muted);
+    border-bottom: 1px solid var(--real-soft);
   }
-  .toc a:hover {
-    color: var(--ink);
-    border-color: var(--muted);
+  .toc a:hover,
+  .cap a:hover,
+  .ours a:hover,
+  .onward a:hover {
+    border-bottom-color: var(--real);
   }
-  section {
-    margin: 0 0 2.75rem;
-    max-width: 46rem;
+  .onward {
+    margin: 34px 0 0;
+    font-family: var(--mono);
+    font-size: var(--fs-small);
   }
-  h2 {
-    font-size: 1.15rem;
-    margin: 0 0 0.6rem;
-  }
-  section p {
-    margin: 0 0 1rem;
-    line-height: 1.6;
-  }
+
   .stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    margin: 1.25rem 0;
+    gap: 12px;
+    align-items: stretch;
+    margin-top: 16px;
+  }
+  .stats:empty {
+    display: none;
   }
   .stat {
-    flex: 1 1 10rem;
-    min-width: 9rem;
+    flex: 1 1 190px;
+    min-width: 0;
+    background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 0.7rem 0.8rem;
-    background: var(--card);
+    border-radius: 6px;
+    padding: 13px 15px;
+    display: flex;
+    flex-direction: column;
   }
-  .sv {
-    font-size: 1.25rem;
+  .stat .sv {
+    font-size: var(--fs-h2);
     font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
   }
-  .sl {
-    font-size: 0.82rem;
-    margin-top: 0.15rem;
+  .stat .sl {
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+    margin-top: 6px;
+    line-height: 1.35;
   }
-  /* The source line is the smallest thing on the card and the one that makes
-     the figure above it usable. It stays a link and stays legible: a provenance
-     caption nobody can read is the same as none. */
+  /* Pinned to the foot, so the source captions line up across a row whatever
+     the labels above them wrapped to. */
+  .stat .ss {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+  }
+  /* The source line is the smallest thing on the page and the one that makes
+     the figure above it usable. It stays legible: a provenance caption nobody
+     can read is the same as none. */
   .ss {
-    font-size: 0.72rem;
-    margin-top: 0.35rem;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    line-height: 1.5;
     color: var(--muted);
   }
   .ss a {
     color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--muted);
   }
-  .ours,
-  .cap {
-    font-size: 0.8rem;
+  .ss a:hover {
+    color: var(--real-ink);
+    border-bottom-color: var(--real);
+  }
+  /* The source line under a table or a chart, rather than inside a card. */
+  .tsrc {
+    margin-top: 8px;
+  }
+  .tsrc .sep {
+    margin: 0 6px;
+  }
+  .q-link {
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+
+  /* The scroll box sits on the wrapper, so a wide table never makes the page
+     body scroll sideways on a phone. IT IS A TAB STOP (`tabindex="0"` in the
+     markup): a scroll container is not focusable on its own and no browser
+     makes it so, and at 360px the four-column deal table runs past the box
+     carrying no link at all — a keyboard-only reader could reach none of it. */
+  .scroll {
+    overflow-x: auto;
+    margin-top: 16px;
+  }
+  .scroll:focus-visible {
+    outline: 2px solid var(--real);
+    outline-offset: 2px;
+  }
+  .fig-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-meta);
+  }
+  .fig-table th,
+  .fig-table td {
+    text-align: left;
+    padding: 7px 10px 7px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: baseline;
+  }
+  .fig-table thead th {
+    font-weight: 600;
     color: var(--muted);
-    line-height: 1.55;
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
-  .onward {
-    margin-top: 2.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--line);
-    font-size: 0.9rem;
+  .fig-table tbody th {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .fig-table tbody th.sub {
+    font-weight: 400;
+    color: var(--muted);
+    padding-left: 10px;
+  }
+  .fig-table td {
+    color: var(--ink-2);
+  }
+  .fig-table .num {
+    text-align: right;
+    white-space: nowrap;
+  }
+  /* The row a section's headline figure is on. The same `--real-soft` wash
+     `/how/` marks the reader's own row with: one row per table, or the mark
+     means nothing. */
+  .fig-table tr.mark {
+    background: var(--real-soft);
+  }
+  /* A period that belongs to one column, or to one cell that is behind its
+     column. Set small and quiet on purpose — it is a qualifier on the figure
+     beside it, not a second figure. */
+  .q {
+    display: block;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+  }
+
+  /* Inline SVG, no chart library and no third-party script: `site/package.json`
+     declares no runtime dependencies and the CSP the privacy notice rests on
+     forbids one. No `preserveAspectRatio="none"` either — the box scales
+     uniformly, so a stroke stays the width it was drawn at. */
+  .chart {
+    margin: 16px 0 0;
+  }
+  .chart svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .chart figcaption {
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    color: var(--muted);
+  }
+  .plot-bar {
+    fill: var(--real);
+  }
+  .plot-line {
+    fill: none;
+    stroke: var(--real);
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+  .plot-axis {
+    stroke: var(--muted);
+    stroke-width: 1;
+  }
+  /* The reference is a threshold rather than a gridline, so it is the one
+     dashed rule on the plot — the same distinction the tax wedge draws
+     between its baseline and the contribution ceiling. */
+  .plot-ref {
+    stroke: var(--erode);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+  }
+  .plot-tick {
+    fill: var(--ink-2);
+    font-family: var(--mono);
+    font-size: 11px;
   }
 
   @media (max-width: 560px) {
-    .wm small {
+    .brand small {
       display: none;
-    }
-    h1 {
-      font-size: 1.35rem;
     }
   }
 </style>

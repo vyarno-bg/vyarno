@@ -1406,13 +1406,20 @@ export function quarterYearAgo(period) {
  * Q3 to Q4 measures the calendar. Comparing a quarter with the same quarter is
  * what removes it — the same reason `une_rt_m` is read seasonally adjusted.
  *
- * @param {Record<string, {total?: number}>} series  deals.series_by_period
+ * `field` picks the purchase type, because new builds and existing dwellings
+ * move differently in volume and an aggregate that hides which one moved is the
+ * reason the payload splits them at all. It defaults to the total rather than
+ * being required: a caller that forgets it gets the headline, never a silently
+ * partial count of one purchase type presented as the market.
+ *
+ * @param {Record<string, Record<string, number>>} series  deals.series_by_period
  * @param {string} period  the quarter to report
+ * @param {"total"|"new"|"existing"} [field]
  * @returns {{count: number|null, yearAgo: number|null, changePct: number|null}}
  */
-export function dealsAtQuarter(series, period) {
-  const count = series?.[period]?.total ?? null;
-  const before = series?.[quarterYearAgo(period) ?? ""]?.total ?? null;
+export function dealsAtQuarter(series, period, field = "total") {
+  const count = series?.[period]?.[field] ?? null;
+  const before = series?.[quarterYearAgo(period) ?? ""]?.[field] ?? null;
   return { count, yearAgo: before, changePct: changePct(count, before) };
 }
 

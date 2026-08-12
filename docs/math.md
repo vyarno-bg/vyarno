@@ -673,6 +673,16 @@ we computed says so, states the arithmetic in words, and links the query that
 returns its inputs.** The page's readers are the ones most likely to disbelieve
 it, which is exactly why nothing there rests on being trusted.
 
+**Every figure carries two links, and the second one is not a convenience.**
+Eurostat's databrowser opens a dataset with all of its units at once —
+`prc_hpi_hsnq` carries a count, two indices and three rates — so a reader
+following the table link under «16 227 dwellings sold» arrives at a view reading
+−19.8 for the same country and quarter, which is that dataset's
+quarter-on-quarter rate. One click from the page's argument to a figure that
+appears to contradict it. Deep-linking the unit would mean pinning a URL shape
+Eurostat do not document, so the answer is the `api_url` the payload already
+carries: it returns that figure and nothing else.
+
 ### The average dwelling transaction
 
 ```
@@ -711,6 +721,29 @@ calendar. The year-ago quarter is found by **label arithmetic** on the period
 string rather than by stepping back four entries in the series — a gap in the
 data then yields null and renders nothing, instead of silently comparing against
 a neighbouring quarter.
+
+Computed per purchase type as well as in total, for the reason the average deal
+is: new builds and existing dwellings move differently in volume, and one
+year-on-year figure for the total leaves the table's other two rows reading as
+though they had not moved.
+
+### The two charts, and the axis rule they are drawn under
+
+`marketVolumeSeries` and `marketPriceToIncomeSeries` return the published points
+and the maximum over them. Neither returns a minimum, **and that absence is the
+guarantee**: both plots are drawn from zero, and there is no floor parameter for
+a later edit to introduce. A y-axis cropped to a property series' own range
+turns any of them into a cliff, which is the distortion this page exists not to
+make.
+
+The price-to-income plot's scale covers its own reference line as well as its
+data, because the rule at 100 IS the indicator — a plot that cropped it out
+would be missing the thing it is about in every year from 2004 to 2010, when the
+ratio ran above its own average.
+
+`verify_render_market.mjs` measures it rather than reading the source: the drawn
+heights of the smallest and the largest reading have to be in the same ratio as
+the published figures, which no floor can survive.
 
 ### The unoccupied share of the dwelling stock
 

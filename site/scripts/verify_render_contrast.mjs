@@ -276,7 +276,81 @@ const OPEN_DETAILS = () => {
  * the state WCAG is about. A longer sleep would be the same bet at a higher
  * stake, and the machine that loses it is CI.
  */
+/**
+ * Every page worth auditing, with the floor each probe has to clear.
+ *
+ * The floors travel with the sweep because they are page facts rather than
+ * site facts: the calculator carries more than twenty controls and `/market/`
+ * has four pills and a theme button, so one number would either pass an empty
+ * calculator or fail a correct market page. **What they are for is the empty
+ * probe** — a walk that matched nothing reports no failures, which is what
+ * every green assertion over an unrendered page looks like.
+ */
 async function sweep(collect) {
+  await sweepHome((where, probe) => collect(where, probe, { audited: 100, controls: 20 }));
+  await sweepMarket((where, probe) => collect(where, probe, { audited: 100, controls: 4 }));
+}
+
+/**
+ * `/market/`, in both themes and both languages.
+ *
+ * It is a second page of published figures and it went unaudited entirely,
+ * which matters more than the count suggests: the smallest type on this site is
+ * that page's source captions, they are painted from `--muted` at
+ * `--fs-micro`, and they are the thing that makes every figure above them
+ * usable — a provenance caption nobody can read is the same as none. The
+ * charts' axis labels are the other reason: SVG text is painted from `fill`,
+ * it is the kind of thing that gets faded, and the walk reads `fill` for
+ * exactly this.
+ *
+ * No interaction to drive first, unlike the calculator. The page has no input
+ * on it, so nothing on it is gated on a reader answering — every region it will
+ * ever show is on screen at load.
+ */
+async function sweepMarket(collect) {
+  await withApp(
+    async (page, errors) => {
+      const theme = page.locator("header.site .controls button").first();
+      const settled = () =>
+        page.waitForFunction(() =>
+          document
+            .getAnimations()
+            .every((a) => a.playState === "finished" || a.playState === "idle")
+        );
+      for (const inDark of [false, true]) {
+        collect(`market ${inDark ? "dark" : "light"}/bg`, await page.evaluate(AUDIT));
+        await theme.click();
+        await settled();
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    { reducedMotion: "reduce" }
+  );
+  // The other language is the other URL — this page's control is an anchor, not
+  // a store flip, so the English half is audited by opening it.
+  await withApp(
+    async (page, errors) => {
+      const theme = page.locator("header.site .controls button").first();
+      const settled = () =>
+        page.waitForFunction(() =>
+          document
+            .getAnimations()
+            .every((a) => a.playState === "finished" || a.playState === "idle")
+        );
+      for (const inDark of [false, true]) {
+        collect(`market ${inDark ? "dark" : "light"}/en`, await page.evaluate(AUDIT));
+        await theme.click();
+        await settled();
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/en/market/",
+    { reducedMotion: "reduce" }
+  );
+}
+
+async function sweepHome(collect) {
   await withApp(
     async (page, errors) => {
       const theme = page.locator("header .controls button").first();
@@ -340,10 +414,10 @@ async function sweep(collect) {
 
 test("no text on the page is painted below its WCAG floor", { skip }, async () => {
   const failures = [];
-  await sweep((where, probe) => {
+  await sweep((where, probe, floor) => {
     // A probe that matched nothing is a green test for a page that rendered
     // nothing, which is the shape every empty assertion in this repo takes.
-    assert.ok(probe.audited > 100, `${where}: only ${probe.audited} elements carry text`);
+    assert.ok(probe.audited > floor.audited, `${where}: only ${probe.audited} elements carry text`);
     for (const f of probe.text) {
       failures.push(
         `${where}  ${f.where}  "${f.text}"  ${f.ratio}:1 (needs ${f.need}:1) ` +
@@ -367,8 +441,11 @@ test("no text on the page is painted below its WCAG floor", { skip }, async () =
 
 test("every control that draws its own edge draws it at 3:1", { skip }, async () => {
   const failures = [];
-  await sweep((where, probe) => {
-    assert.ok(probe.controls > 20, `${where}: only ${probe.controls} controls on the page`);
+  await sweep((where, probe, floor) => {
+    assert.ok(
+      probe.controls >= floor.controls,
+      `${where}: only ${probe.controls} controls on the page`
+    );
     for (const f of probe.edges) {
       failures.push(
         `${where}  ${f.where}  border-${f.side.toLowerCase()}  ${f.ratio}:1 (needs 3:1)`
