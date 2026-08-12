@@ -2108,6 +2108,59 @@ test("the market page describes the market and does not judge it", () => {
   );
 });
 
+test("the market page writes no live figure into its own prose", () => {
+  // The rule `/how/` keeps, held over the page that carries the most of them.
+  // «защото «×2,7» е изречение, а «272,63» не е» was a good sentence and both
+  // of its numbers were this quarter's — right when typed, and by the next
+  // refresh a caption naming a level the table beside it no longer shows, on
+  // the page whose entire argument is that a reader can check it.
+  //
+  // Scoped to the CURRENTLY published values rather than to every number, for
+  // the reason the sibling rules are: 100 is what an index writes its base as,
+  // 40% is the threshold inside an indicator's definition and 120 000 is НСИ's
+  // own population cut for the city set. None of those moves when a workflow
+  // fires. Every figure below does.
+  const market = published("house_market");
+  const structure = published("house_market_structure");
+  const nsi = published("nsi_housing");
+  if (!market || !structure || !nsi) return; // no refresh in this checkout
+
+  const at = market.ref_period;
+  const index = market.price_index.series_by_period[market.price_index.rate_ref_period]?.total;
+  const live = [
+    ["the dwelling count", market.deals.series_by_period[at]?.total],
+    ["the average deal", market.avg_deal_eur.series_by_period[at]?.total],
+    ["the published index level", index],
+    ["the index as a multiple", index == null ? null : (index / 100).toFixed(1)],
+    ["the deflated index level", market.price_index_real.series_by_period[at]],
+    ["the annual price change", market.price_index.annual_rate_pct[at]?.total],
+    ["НСИ's own annual change", nsi.national_price_index_yoy.value_pct?.total],
+    ["the price-to-income reading", structure.price_to_income.value],
+    ["the overburden share", structure.housing_cost_overburden.value_pct],
+    ["the owner-occupier share", structure.tenure.owner_pct],
+  ];
+
+  const offenders = [];
+  for (const [what, value] of live) {
+    if (value == null) continue;
+    // Both notations, because the page is written in a language that uses the
+    // comma and reviewed by people who type the point.
+    for (const form of [String(value), String(value).replace(".", ",")]) {
+      // A figure of one or two digits is not evidence of anything — 1.7 and 6.9
+      // occur in ordinary prose and in every other number on the page.
+      if (form.replace(/\D/g, "").length < 3) continue;
+      if (MARKET_SRC.includes(form)) offenders.push(`${form} — ${what}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `the market page writes a currently-published figure into its own words:\n  ` +
+      `${offenders.join("\n  ")}\n\nEvery one of them moves when its workflow fires and the ` +
+      "sentence around it does not. Render the figure into the sentence instead."
+  );
+});
+
 test("the market page writes no year and no quarter into its own prose", () => {
   // The general form of the rule two sections up, held over the one page where
   // it can be held absolutely: **every figure on `/market/` is live**, so it

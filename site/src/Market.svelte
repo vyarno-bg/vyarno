@@ -1186,12 +1186,17 @@
         <span class="l-bg"
           >В таблицата числата стоят така, както ги публикува Евростат — като индекс, където нивото
           от {reading.baseYear} г. е записано като 100. Картинката отгоре показва същите числа, разделени
-          на това ниво, защото «×2,7» е изречение, а «272,63» не е.</span
+          на това ниво: за {periodLong(reading.period, "bg")} индексът е {fmt(
+            indexSeries.latest?.value
+          )}, което е ×{fmt(reading.times)} — второто е изречение, първото не е.</span
         >
         <span class="l-en"
           >In the table the figures are as Eurostat publish them — as an index, with the {reading.baseYear}
-          level written as 100. The chart above shows the same figures divided by that level, because
-          "×2.7" is a sentence and "272.63" is not.</span
+          level written as 100. The chart above shows the same figures divided by that level: for {periodLong(
+            reading.period,
+            "en"
+          )} the index is {fmt(indexSeries.latest?.value)}, which is ×{fmt(reading.times)} — the second
+          is a sentence and the first is not.</span
         >
       </p>
       {#if flagKey.length}
@@ -1923,7 +1928,9 @@
           ток, парно, вода, поддръжка и данък, а наем или вноска само за тези, които плащат такива.
           Огромната част от хората в България живеят в собствено жилище без заем, така че този ред
           се движи най-вече от сметките, а не от цените на сделките. И не върви в една посока:
-          минавал е от най-ниската до най-високата си стойност два пъти за двайсет години.</span
+          най-ниското му е {fmt(overburdenSeries.trough?.value)}% през {overburdenSeries.trough
+            ?.period}, а най-високото — {fmt(overburdenSeries.peak?.value)}% през {overburdenSeries
+            .peak?.period}.</span
         >
         <span class="l-en"
           >The other official indicator counts people living in a household that spends more than
@@ -1935,8 +1942,11 @@
           it — electricity, heating, water, maintenance and tax, with rent or a mortgage payment
           only for those who pay one. The great majority of people in Bulgaria live in a home they
           own outright, so this series moves mainly with bills rather than with transaction prices.
-          It does not move one way either: it has travelled from its lowest reading to its highest
-          twice in twenty years.</span
+          It does not move one way either: its lowest reading is {fmt(
+            overburdenSeries.trough?.value
+          )}% in {overburdenSeries.trough?.period} and its highest {fmt(
+            overburdenSeries.peak?.value
+          )}% in {overburdenSeries.peak?.period}.</span
         >
       </p>
       <figure class="chart">
