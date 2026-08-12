@@ -5,7 +5,7 @@
    * The fifth route, built like `/how/`: prerendered in both languages, every
    * figure carrying its publisher, the period it describes and a link to the
    * table it came from. **No input on it, ever.** Every derived value takes
-   * payloads rather than scalars (`view.js`), so a reader's own salary has no
+   * payloads rather than scalars (`view/market.js`), so a reader's own salary has no
    * signature to be threaded into and this page cannot drift into a calculator.
    *
    * THE PAGE TAKES NO VIEW ON THE MARKET, and that is a design constraint
@@ -24,7 +24,7 @@
    * have to take our word for it, and the people most likely to doubt this page
    * are the ones it is most worth convincing.
    *
-   * The words are here and the wiring is in `view.js`, which is the split the
+   * The words are here and the wiring is in `view/market.js`, which is the split the
    * rest of the SPA uses: a claim about which payload field feeds which figure
    * is one a test can hold, and an expression inside a `$derived` is not.
    */
@@ -35,6 +35,7 @@
   import { COPY, t } from "./lib/content.js";
   import { loadAll } from "./lib/data.js";
   import { payloadsFor } from "./lib/payloads.js";
+  import { dataAge } from "./lib/view/freshness.js";
   import {
     marketVolume,
     marketAverageDeal,
@@ -50,12 +51,11 @@
     marketAverageDealSeries,
     marketOverburdenSeries,
     marketPriceIndexRealSeries,
-    dataAge,
     marketIndexReading,
     marketRangeStrip,
     marketRent,
     statusLettersUsed,
-  } from "./lib/view.js";
+  } from "./lib/view/market.js";
   import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
   import { indexTimesBase } from "./lib/mirror.js";
 
@@ -304,7 +304,7 @@
    * Where the newest reading of each series sits inside that series' own range.
    *
    * The arithmetic is `mirror.js#rangePosition` and the wiring is
-   * `view.js#marketRangeStrip`; what is here is the box it is drawn in, the
+   * `view/market.js#marketRangeStrip`; what is here is the box it is drawn in, the
    * same split every plot on this page follows.
    */
   const rangeStrip = $derived(marketRangeStrip(data.houseMarket, data.houseMarketStructure));

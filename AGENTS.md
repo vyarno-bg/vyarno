@@ -134,9 +134,10 @@ checklist: `docs/data-sources.md` §"Checklist for adding a connector".
 then `site/src/lib/mirror.js`, then a case in
 `site/scripts/verify_mirror_math.mjs`.
 
-**Changing which number feeds a formula.** `site/src/lib/view.js`, then
-one of the `site/scripts/verify_view_*.mjs` suites — one subject each, and
-`docs/testing-strategy.md` §"Where a test belongs" says which. Never inside a
+**Changing which number feeds a formula.** The `site/src/lib/view/` module that
+owns the subject, then the `site/scripts/verify_view_*.mjs` suite of the same
+stem — ten modules, ten suites, and `docs/testing-strategy.md` §"Where a test
+belongs" says which. Never inside a
 `$derived`, and that did not relax when the reactive graph moved into
 `calculator.svelte.js`. `docs/site.md` §"A correct formula fed the wrong
 number" is why.

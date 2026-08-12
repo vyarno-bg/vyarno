@@ -212,7 +212,7 @@ if (typeof document !== "undefined") {
 // **What is NOT validated here**, deliberately: whether the saved code is a
 // real област. `stores.js` knows nothing about the payloads and must not start
 // fetching them to answer that — a code that no longer exists resolves to no
-// row in `view.js#regionRow`, which is the same empty state as no choice at
+// row in `view/region.js#regionRow`, which is the same empty state as no choice at
 // all. The shape check below is only that it could be a code.
 // ---------------------------------------------------------------------------
 const isRegionCode = (v) => typeof v === "string" && /^[a-z][a-z-]{1,30}$/.test(v);

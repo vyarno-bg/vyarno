@@ -52,7 +52,7 @@ export const LEGAL_LASTMOD = "2026-08-01";
  *
  * Newest, not oldest: this answers "when did what a visitor sees last change",
  * and one refreshed payload does change the page. (The staleness banner asks
- * the opposite question and correctly uses the oldest — see `view.js#dataAge`.)
+ * the opposite question and correctly uses the oldest — see `view/freshness.js#dataAge`.)
  * Falls back to `null` when there is nothing to read, and a `lastmod` is then
  * omitted rather than invented.
  *

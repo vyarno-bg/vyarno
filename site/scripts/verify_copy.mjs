@@ -29,14 +29,8 @@ import { dirname, join } from "node:path";
 
 import { COPY } from "../src/lib/content.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
-import {
-  SHARE_COPY_KEYS,
-  SHARE_DOMAIN,
-  SHARE_ORIGIN,
-  regionRow,
-  cityRow,
-  SOFIA_CITY_CODE,
-} from "../src/lib/view.js";
+import { regionRow, cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
+import { SHARE_COPY_KEYS, SHARE_DOMAIN, SHARE_ORIGIN } from "../src/lib/view/share.js";
 import { shareCardText, SHARE_CARD_COPY_KEYS } from "../src/lib/share-card.js";
 import { published } from "./published-payload.mjs";
 
@@ -1306,7 +1300,7 @@ test("the copy that leaves the device speaks in the first person", () => {
 });
 
 test("the share surfaces call the comparison figure a basket", () => {
-  // The second number on every share surface is `view.js#officialInflation` —
+  // The second number on every share surface is `mirror.js#officialInflation` —
   // Σ(weight × rate) over the thirteen published divisions — and it is NOT the
   // all-items rate Eurostat publishes. The two differ by the December chain
   // link, and by a whole month while the flash is ahead of the divisions: 5,4%
@@ -1598,7 +1592,7 @@ test("the country page says the НСИ series is selected, never averaged", () =
   // the architecture that answers it is: select from published cells, never
   // compute over them. The quarterly wage table is the one place on the site
   // that prints a whole НСИ series, so the page says out loud which of the two
-  // it is doing — and `view.js#seriesCells` is what makes the sentence true.
+  // it is doing — and `view/country.js#seriesCells` is what makes the sentence true.
   for (const claim of [
     "избираме клетка, не смятаме средни",
     "a cell is selected, never averaged",

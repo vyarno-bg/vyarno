@@ -22,14 +22,15 @@
  * This is a fifth layer under the four in `docs/site.md`, and it is a thin
  * one on purpose:
  *
- *   Data (`data.js`) → Formula (`mirror.js`) → Wiring (`view.js`)
+ *   Data (`data.js`) → Formula (`mirror.js`) → Wiring (`view/*.js`)
  *     → **State (this file)** → Render (the components)
  *
- * Nothing here computes. Every derived value is a call into `view.js` or
+ * Nothing here computes. Every derived value is a call into a `view/` module or
  * `mirror.js` with named arguments; this file decides *when* those functions
  * run and *what holds their result*, and that is all it is allowed to decide.
  * Arithmetic that appears here is arithmetic no test can reach — the rule
- * `view.js` was extracted to enforce, and moving the graph does not relax it.
+ * the wiring layer was extracted to enforce, and moving the graph does not
+ * relax it.
  *
  * Language does not belong here either. `cityPriceDated`, the preset label
  * and the share sentence all pick words, so they stay in the components that
@@ -71,46 +72,47 @@ import {
 } from "./mirror.js";
 // The derived values below live in $lib/view as pure functions, so the wiring
 // between a formula and its input is testable. Wiring that lives in a
-// `$derived(...)` is wiring nothing can test — see view.js's header.
+// `$derived(...)` is wiring nothing can test — see the header of any `view/`
+// module, and docs/site.md §"`src/lib/view/` — one module per subject".
+import { officialBasketWeights, verifyUrl } from "./view/basket.js";
 import {
-  officialBasketWeights,
-  convertPay,
-  dataAge,
-  earnerRanks,
-  headlineIsFlash,
-  headlineRate,
-  householdRaise,
-  netsOf,
   payLadder,
   quarterGrid,
-  sectorComparison,
-  sectorOptions as publishedSectorOptions,
-  regionGap,
   cityHomeAtAverageWage,
-  regionQuarter as publishedRegionQuarter,
   nationalQuarter as publishedNationalQuarter,
   nationalRow,
   cityTrend,
+  systemWedgeLadder,
+} from "./view/country.js";
+import { dataAge } from "./view/freshness.js";
+import { homePriceFor, homePriceBasis, clampTerm, mortgagePanel } from "./view/home.js";
+import {
+  convertPay,
+  earnerRanks,
+  householdRaise,
+  netsOf,
+  sectorComparison,
+  sectorOptions as publishedSectorOptions,
+  regionGap,
+  taxWedgePanel,
+  payslipPanel,
+} from "./view/payroll.js";
+import {
+  regionQuarter as publishedRegionQuarter,
   regionNames,
   cityCoverage,
   cityRow,
   SOFIA_CITY_CODE,
-  systemWedgeLadder,
-  savingsSince2020,
+} from "./view/region.js";
+import { headlineIsFlash, headlineRate, savingsSince2020 } from "./view/results.js";
+import { sharePayload } from "./view/share.js";
+import {
   housingCarveOut,
   basketBudget,
   clampSpendShare,
   exposedSpend,
   leftoverIfHeldAsCash,
-  homePriceFor,
-  homePriceBasis,
-  clampTerm,
-  mortgagePanel,
-  verifyUrl,
-  taxWedgePanel,
-  payslipPanel,
-  sharePayload,
-} from "./view.js";
+} from "./view/spend.js";
 
 /**
  * The route this module serves, and the one argument `loadAll` and the panel
@@ -165,7 +167,7 @@ export class Calculator {
   dataStale = $state(false);
   dataDaysOld = $state(0);
   dataOldestAsOf = $state("");
-  /** One row per manifest payload: status, dates, what it feeds. See view.js#dataAge. */
+  /** One row per manifest payload: status, dates, what it feeds. See view/freshness.js#dataAge. */
   dataRows = $state([]);
   reloading = $state(false);
 
@@ -304,7 +306,7 @@ export class Calculator {
    * source, and it would still be the wrong one: it is a different household's
    * answer to a question this reader is standing in front of.
    *
-   * In euro mode this is ignored — `view.js#basketBudget` measures the
+   * In euro mode this is ignored — `view/spend.js#basketBudget` measures the
    * remainder off the thirteen typed amounts instead, so the stated claim and
    * the measured one are never both live.
    */
@@ -370,7 +372,7 @@ export class Calculator {
     // payload against that payload's own cadence, so a quarterly series two
     // months old is fresh while a monthly one two months old is not. The banner
     // fires when some payload is genuinely overdue, and the panel shows which.
-    // See view.js#dataAge and the cadences in payloads.js.
+    // See view/freshness.js#dataAge and the cadences in payloads.js.
     const age = dataAge(this.data, payloadsFor(PAGE));
     this.dataDaysOld = age.daysOld;
     this.dataStale = age.stale;
@@ -411,7 +413,7 @@ export class Calculator {
       // rounded — rounding each division to a whole percent made the default
       // basket sum to 97 and put a third inflation figure (5.30%) on screen
       // next to Eurostat's 5.20% and the official basket's 5.36%. See
-      // view.js#officialBasketWeights.
+      // view/basket.js#officialBasketWeights.
       this.weights = officialBasketWeights(this.data.hicpCategories.categories);
       this.splits = this.data.hicpCategories.categories.map(() => null);
       // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -424,7 +426,7 @@ export class Calculator {
       // Only adopt the live default while the user hasn't touched the input.
       if (!this.rateTouched) this.rate = this.mortgageRateData.pct;
     }
-    // Clamp the term to the BNB maturity cap (view.js#clampTerm).
+    // Clamp the term to the BNB maturity cap (view/home.js#clampTerm).
     this.term = clampTerm(this.term, this.limits);
     // Do not auto-fill raise. We don't have a nominal wage index.
   };
@@ -579,10 +581,10 @@ export class Calculator {
 
   // Eurostat's all-items figure, verbatim. `headlineRate` takes only the
   // headline payload so it cannot be handed `categories` and quietly become
-  // Σ(w·r) — a different number by ~0.16 pp. See view.js#headlineRate.
+  // Σ(w·r) — a different number by ~0.16 pp. See view/results.js#headlineRate.
   headline = $derived(headlineRate(this.data.hicpHeadline));
   // Whether that figure is Eurostat's early estimate for the month. Off the
-  // payload's own field — see view.js#headlineIsFlash for why the two months
+  // payload's own field — see view/results.js#headlineIsFlash for why the two months
   // are not the thing to read it from.
   headlineIsFlash = $derived(headlineIsFlash(this.data.hicpHeadline));
 
@@ -629,7 +631,7 @@ export class Calculator {
   );
   // The rise since this city's own baseline year, that year, and whether the
   // run behind them is long enough to be called a trend. All three off
-  // `view.js#cityTrend`, on the READER's город.
+  // `view/country.js#cityTrend`, on the READER's город.
   //
   // **The baseline is per city and is not a constant.** How far back имот.bg's
   // coverage of a city supports a comparison differs by two decades between
@@ -659,8 +661,8 @@ export class Calculator {
   //
   // **There is no default and the empty string is a real state.** P7: a
   // preselected София hands a Бургас reader Sofia's average wage and Sofia's
-  // €/m² wearing the appearance of a choice they made. `view.js#regionQuarter`
-  // and `view.js#cityRow` both answer with nothing for "", so every figure
+  // €/m² wearing the appearance of a choice they made. `view/region.js#regionQuarter`
+  // and `view/region.js#cityRow` both answer with nothing for "", so every figure
   // downstream is zero and the two cards render what they are waiting for,
   // while every national figure on the page renders in full.
   regionCode = $state("");
@@ -674,7 +676,7 @@ export class Calculator {
   cityCode = $derived(this.regionCode);
 
   /** НСИ's own name for the chosen област, or "" — never a transliteration,
-      and disambiguated by `view.js#regionDisplayName` where their own label
+      and disambiguated by `view/region.js#regionDisplayName` where their own label
       cannot stand alone in a list. */
   regionNamesNow = $derived(regionNames(this.data.regionSalary, this.regionCode));
   regionNameBg = $derived(this.regionNamesNow.bg);
@@ -691,7 +693,7 @@ export class Calculator {
   /** Which of the three coverage states the chosen област's €/m² is in —
       имот.bg publish it and we have it, they publish it and this refresh did
       not reach it, or they publish no page for it at all. The last is the only
-      one that may be stated in имот.bg's name, and `view.js#cityCoverage`
+      one that may be stated in имот.bg's name, and `view/region.js#cityCoverage`
       carries why. */
   cityCoverageNow = $derived(cityCoverage(this.data.cityPrice, this.cityCode));
 
@@ -724,7 +726,7 @@ export class Calculator {
   // The average monthly GROSS pay in that област — the comparator on the strip,
   // and the one number two cards and the whole percentile ladder hang off.
   // `region_salary.json` publishes НСИ's own quarterly series per област, so
-  // `view.js#regionQuarter` selects the headline rather than computing one —
+  // `view/region.js#regionQuarter` selects the headline rather than computing one —
   // that function carries why it is a quarter (the March bonus spike) and why
   // nothing here is allowed to average it (docs/legal.md §НСИ).
   // The offline sentinel goes through the same function as the live payload,
@@ -821,12 +823,12 @@ export class Calculator {
    */
   /**
    * What the reader typed, and what it is. One object, so nothing downstream
-   * can receive an amount without its basis — see view.js#payslipPanel.
+   * can receive an amount without its basis — see view/payroll.js#payslipPanel.
    */
   pay = $derived({ basis: this.payBasis, amounts: this.earners.map((e) => e.amount) });
   /**
    * Every earner's take-home, whichever basis they typed in. The ONE place a
-   * gross becomes a net (view.js#netsOf); everything below reads this and never
+   * gross becomes a net (view/payroll.js#netsOf); everything below reads this and never
    * `pay` — rent, the basket and the 30% mortgage line are all statements about
    * take-home, and fed a gross each is wrong by around 29%.
    */
@@ -882,8 +884,8 @@ export class Calculator {
    * reach one without saying which basis it is on — a net read as a gross is
    * ~29% out, in the flattering direction on the mortgage line — and
    * `verify_wiring.mjs` holds that by reading the call. A ternary in the
-   * argument list is wiring inside a `$derived`, which is what `view.js`'s
-   * header exists to keep out; naming it leaves one identifier at the call site
+   * argument list is wiring inside a `$derived`, which is what the wiring
+   * layer exists to keep out; naming it leaves one identifier at the call site
    * and one place where the empty case is built.
    */
   wedgePay = $derived(this.earnersDirty ? this.pay : { basis: this.payBasis, amounts: [] });
@@ -891,7 +893,7 @@ export class Calculator {
 
   // How each earner compares with the chosen област's average wage — per
   // earner, because НСИ publish a wage rather than a household income. See
-  // view.js#regionGap.
+  // view/payroll.js#regionGap.
   regionGaps = $derived(regionGap({ nets: this.nets, regionNet: this.regionNet }));
 
   /** The reader's chosen NACE Rev 2 section, by НСИ's own English row name. */
@@ -981,7 +983,7 @@ export class Calculator {
   // mode `spendBase` is the share of `spendable` the reader claims they spend —
   // all of it until they say otherwise; in € mode it is the euros they actually
   // typed, so nothing on screen rescales their basket up to fill their pay.
-  // See view.js#basketBudget.
+  // See view/spend.js#basketBudget.
   budget = $derived(
     basketBudget({
       spendMode: this.spendMode,
@@ -996,7 +998,7 @@ export class Calculator {
   // What the same life costs now — measured on the money that is actually
   // spent, not on the whole pay packet. Identical to `extraPerMonth(salary, π)`
   // for anyone in share mode or with a full € basket; smaller, and truer, for
-  // someone who told us they put money aside. See view.js#exposedSpend.
+  // someone who told us they put money aside. See view/spend.js#exposedSpend.
   extra = $derived(
     extraPerMonth(
       exposedSpend({ housingCost: this.housingCost, spendBase: this.budget.spendBase }),
@@ -1015,7 +1017,7 @@ export class Calculator {
 
   // What a year of unplaced money would be worth held as cash. Takes the
   // HEADLINE payload, never π — money that is not being spent on the user's
-  // basket is not measured by the user's basket. See view.js#leftoverIfHeldAsCash.
+  // basket is not measured by the user's basket. See view/spend.js#leftoverIfHeldAsCash.
   leftoverCash = $derived(
     leftoverIfHeldAsCash({
       leftoverPerYear: this.budget.leftoverPerYear,
@@ -1102,7 +1104,7 @@ export class Calculator {
   // of hicp_headline.json (~39.9% today) and only rebuilds the cumulative from
   // the divisions (~41.8%) if that payload has no index — `basis` says which,
   // and the drawer copy follows it rather than claiming the official figure
-  // either way. See view.js#savingsSince2020.
+  // either way. See view/results.js#savingsSince2020.
   cashEroded = $derived(savingsSince2020(this.cash, this.data.hicpHeadline, this.categories));
 
   // ---------------------------------------------------------------------
@@ -1146,7 +1148,7 @@ export class Calculator {
   // ONE RANK PER EARNER. The rungs are individual full-time earnings, so a
   // household total read off them is the unit mismatch that once pushed every
   // Sofia salary to the 99th percentile — two people on €900 each are not a
-  // person on €1,800. See view.js#earnerRanks.
+  // person on €1,800. See view/payroll.js#earnerRanks.
   //
   // Position from the BOTTOM: "you're ahead of {ahead}% of earners".
   // percentile() returns 1 = bottom 1%, 99 = top 1%. We render that directly
@@ -1193,7 +1195,7 @@ export class Calculator {
   );
   /** The €/m² the price on screen is built from, and whether it is the
       reader's own. Same arguments as `homePrice` above, so the two cannot
-      answer about different prices — see `view.js#homePriceBasis`. */
+      answer about different prices — see `view/home.js#homePriceBasis`. */
   homeBasis = $derived(
     homePriceBasis({
       priceMode: this.priceMode,
@@ -1219,7 +1221,7 @@ export class Calculator {
   // business) — the interest rate the annuity needs. The APRC lives beside it
   // as "what it really costs" and must never enter this formula; the down
   // payment and both DSTI figures come out of the published BNB limits rather
-  // than being passed in. See view.js#mortgagePanel and docs/math.md
+  // than being passed in. See view/home.js#mortgagePanel and docs/math.md
   // §"Which rate goes into the annuity".
   home = $derived(
     mortgagePanel({
@@ -1349,7 +1351,7 @@ export class Calculator {
    * Which extract follows the ANCHOR, not the row: at "last 12 months" the
    * number beside the link is the published RCH_A rate, at a year anchor it
    * comes from the I15 index. Sending someone to the index cube to check a
-   * rate means they cannot find the figure they clicked. See view.js#verifyUrl.
+   * rate means they cannot find the figure they clicked. See view/basket.js#verifyUrl.
    */
   estatCatUrl = (cat) => verifyUrl(cat, this.anchor);
 
@@ -1477,7 +1479,7 @@ export class Calculator {
   /**
    * How much of what is left after housing the reader says they actually spend.
    *
-   * Clamped through `view.js#clampSpendShare` on the way into state rather than
+   * Clamped through `view/spend.js#clampSpendShare` on the way into state rather than
    * on the way out, because the label beside the control renders this number
    * and the € figures are carved out of it — a value only one of them rejects
    * is a screen where the claim and the arithmetic describe different people.

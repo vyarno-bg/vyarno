@@ -2,7 +2,7 @@
  * The payloads this page depends on — the one list that answers "which data?".
  *
  * Everything derives from it: `data.js#loadAll`, the freshness verdict in
- * `view.js#dataAge`, the data panel, `/version.json`, the sitemap's `lastmod`,
+ * `view/freshness.js#dataAge`, the data panel, `/version.json`, the sitemap's `lastmod`,
  * and the contract tests that hold pipeline, payload and page together. A
  * payload absent from this list is not fetched, not dated and not shown, so
  * adding one means adding a row — which is also what gives it a name, a source
@@ -59,7 +59,7 @@ function isoDay(value) {
  *                 row rather than present with an empty list.
  * - `cadenceDays` how long after a refresh a newer upstream figure is expected.
  *                 Past it the row is "due"; past 1.5× it is "overdue" and the
- *                 page raises the banner. See `view.js#payloadStatus`.
+ *                 page raises the banner. See `view/freshness.js#payloadStatus`.
  * - `name`        the panel's row label.
  * - `feeds`       what this payload produces ON THE PAGE. Not decoration: it is
  *                 the reader-facing half of the rule `verify_wiring.mjs` holds
@@ -336,7 +336,7 @@ export const PAYLOAD_PAGES = Object.freeze([...new Set(PAYLOADS.flatMap((p) => p
  * The rows one route needs — the only way to ask, so `loadAll` and the panel
  * cannot answer it differently.
  *
- * That pairing is the point. `view.js#dataAge` reports a row it was given no
+ * That pairing is the point. `view/freshness.js#dataAge` reports a row it was given no
  * payload for as `absent`, and `absent` is what the page renders its "some data
  * is missing" state from. Hand the panel the whole manifest while fetching one
  * route's share of it and every unfetched payload reads as an upstream that

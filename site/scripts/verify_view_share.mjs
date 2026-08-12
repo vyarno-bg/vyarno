@@ -28,7 +28,7 @@ import {
   SHARE_COPY_KEYS,
   SHARE_ORIGIN,
   SHARE_DOMAIN,
-} from "../src/lib/view.js";
+} from "../src/lib/view/share.js";
 import { COPY } from "../src/lib/content.js";
 import { ORIGIN as SITEMAP_ORIGIN } from "./gen-sitemap.mjs";
 
@@ -82,7 +82,12 @@ test("sharePayload cannot be handed a salary", () => {
   // `mirror.js#extraPerMonth` is salary × r/(100+r) and inverts exactly, so a
   // function that never receives the salary cannot leak one however it is
   // called. Break it by adding a `salary` parameter and this goes red.
-  const source = readFileSync(join(HERE, "..", "src", "lib", "view.js"), "utf8");
+  //
+  // The file read has to be the one that DECLARES it. A path pointing at a
+  // module the function has moved out of finds no signature at all, and the
+  // `assert.ok` below is what turns that into a failure rather than a green
+  // run over an empty match.
+  const source = readFileSync(join(HERE, "..", "src", "lib", "view", "share.js"), "utf8");
   const signature = /export function sharePayload\(\{([^}]*)\}/.exec(source);
   assert.ok(signature, "sharePayload no longer takes a destructured object");
   const params = signature[1]

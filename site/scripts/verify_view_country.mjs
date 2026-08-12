@@ -26,14 +26,10 @@ import {
   seriesCells,
   quarterGrid,
   QUARTERS,
-  sectorOptions,
-  SECTOR_TOTAL_KEY,
-  regionQuarter,
   nationalQuarter,
-  regionRow,
-  cityRow,
-  SOFIA_CITY_CODE,
-} from "../src/lib/view.js";
+} from "../src/lib/view/country.js";
+import { sectorOptions, SECTOR_TOTAL_KEY } from "../src/lib/view/payroll.js";
+import { regionQuarter, regionRow, cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 import { HOME } from "../src/lib/content.js";
 import { payrollParams } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";

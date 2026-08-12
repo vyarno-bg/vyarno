@@ -3,8 +3,8 @@
  * Post-build step: move source maps OUT of the deploy artefact.
  *
  * `build.sourcemap: true` emits `dist/assets/index-*.js.map` — hundreds of
- * kilobytes carrying `sourcesContent` for every module, `mirror.js` and
- * `view.js` verbatim, comments included. Minification is cosmetic while that
+ * kilobytes carrying `sourcesContent` for every module, `mirror.js` and every
+ * `view/` module verbatim, comments included. Minification is cosmetic while that
  * file is deployed: anyone opening devtools reads the original source.
  *
  * So the config sets `sourcemap: 'hidden'`, which still WRITES the maps but

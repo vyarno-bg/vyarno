@@ -67,7 +67,7 @@
   import { lang, theme } from "../lib/stores.js";
   import { COPY, t } from "../lib/content.js";
   import { number } from "../lib/format.js";
-  import { SHARE_ORIGIN, shareSentence } from "../lib/view.js";
+  import { SHARE_ORIGIN, shareSentence } from "../lib/view/share.js";
   import { SHARE_CARD, drawShareCard, readPalette } from "../lib/share-card.js";
 
   /** @type {{ share: object|null }} */

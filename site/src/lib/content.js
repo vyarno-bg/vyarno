@@ -57,7 +57,7 @@ export const HOME = {
     "Per-city median across imot.bg/sredni-ceni district averages (data/published/city_price.json)",
   m2Default: 70,
   // Offline sentinel for the wage comparator, in the shape `region_salary.json`
-  // publishes and read through the same `view.js#regionQuarter` the live payload
+  // publishes and read through the same `view/region.js#regionQuarter` the live payload
   // is — one implementation, so the offline figure cannot drift from the online
   // one.
   //
@@ -96,13 +96,13 @@ export const HOME = {
   regionMeanGrossSourceUrl: "https://www.nsi.bg/en/statistical-data/179/569",
   // Offline sentinel for the LEVEL the percentile ladder is re-levelled onto —
   // НСИ's all-activities «Общо» row, in the shape `sector_salary.json`
-  // publishes and read through the same `view.js#nationalQuarter` the live
+  // publishes and read through the same `view/country.js#nationalQuarter` the live
   // payload is. One implementation, so the pre-load rungs cannot be composed
   // differently from the loaded ones.
   //
   // A DIFFERENT figure from `regionSalaryFallback` above, and the difference is
   // the point: that one is one област's mean and this one is the country's, and
-  // the ladder may only ever take the second (view.js#payLadder).
+  // the ladder may only ever take the second (view/country.js#payLadder).
   //
   // Refresh via `vyarno-pipeline refresh --source sector-salary`, then copy
   // `value_eur` and `ref_period` across from the payload's «Total» row.
@@ -286,7 +286,7 @@ export const COPY = {
   // two a reader knows is not something to guess at. The toggle changes only
   // which one they type: the amounts convert in place, so the number in the box
   // moves and nothing below it does. Everything downstream runs on the net
-  // either way (view.js#netsOf).
+  // either way (view/payroll.js#netsOf).
   basisNet: { bg: "нето", en: "net" },
   basisGross: { bg: "бруто", en: "gross" },
   basisGroup: { bg: "Каква заплата въвеждаш", en: "Which figure you are entering" },
@@ -312,7 +312,7 @@ export const COPY = {
   // under the salary input states a gross, a contributions figure and a tax
   // figure; this is the same arithmetic opened out, so a reader can check it
   // against their own payslip line by line instead of taking one number on
-  // trust. Rendered from mirror.js#bgPayslipFromNet via view.js#payslipPanel —
+  // trust. Rendered from mirror.js#bgPayslipFromNet via view/payroll.js#payslipPanel —
   // every euro below is computed, never written here.
   //
   // Every row is cent-exact and the column balances: the five fund lines sum
@@ -494,7 +494,7 @@ export const COPY = {
   // So the combined figure is named, once, and it is the one bolded: the rent
   // and the payment are on the two controls the reader just used, and the total
   // is the number nothing else on the page has told them yet. It has to be
-  // `view.js#housingCarveOut`'s `housingCost` — the same sum the € column is
+  // `view/spend.js#housingCarveOut`'s `housingCost` — the same sum the € column is
   // actually carved out of, and the same one the leftover row states one
   // control further down. A sentence adding two figures the reader can also see
   // is a sentence that can disagree with the arithmetic beside it.
@@ -1049,7 +1049,7 @@ export const COPY = {
   // Rendered with {@html} because it carries links.
   //
   // The level is НСИ's own published quarterly average, selected by
-  // view.js#regionQuarter — so this line attributes it to them without
+  // view/region.js#regionQuarter — so this line attributes it to them without
   // qualification, which is only true while nothing here averages anything.
   pctSrc: {
     bg: 'източник: <a href="{shapeUrl}" target="_blank" rel="noopener">Евростат · структура на заплатите {shapeYear}</a> · нивото е от <a href="{anchorUrl}" target="_blank" rel="noopener">НСИ · средна заплата {anchorPeriod}</a>',
@@ -2092,7 +2092,7 @@ export const COPY = {
   howColBasis: { bg: "измерено или пресметнато", en: "surveyed or modelled" },
   // The wage series is laid out a year to a row and a quarter to a column, so
   // the row header names the year and the four column headings are "Q1".."Q4",
-  // which need no translation and are generated from `view.js#QUARTERS`.
+  // which need no translation and are generated from `view/country.js#QUARTERS`.
   howColYear: { bg: "година", en: "year" },
   howColWage: { bg: "средна брутна заплата", en: "average gross wage" },
   howColCheck: { bg: "проверка", en: "check" },
@@ -2149,7 +2149,7 @@ export const COPY = {
   // the two stay adjacent, and it is the second card that a reader quotes — the
   // deflated figure is the one nobody else in Bulgaria publishes with a source
   // attached. A multiple with no anchor named is the mild form of the reason
-  // price-to-income is off the range strip entirely (view.js#marketRangeStrip).
+  // price-to-income is off the range strip entirely (view/market.js#marketRangeStrip).
   mktKTimesReal: {
     bg: "толкова пъти повече от {year} г., след като се извади поскъпването на всичко останало",
     en: "that many times more than in {year}, once the rise in everything else is taken out",
@@ -2231,7 +2231,7 @@ export const COPY = {
   // The range strip: one row per published series, saying where the newest
   // reading sits inside that series' own record. Positions, never scores —
   // nothing here weighs one row against another, and there is no combined
-  // figure for a label to name (view.js#marketRangeStrip).
+  // figure for a label to name (view/market.js#marketRangeStrip).
   mktTblRange: {
     bg: "Къде е всяко число в собствената си история",
     en: "Where each figure sits in its own record",
@@ -2476,7 +2476,7 @@ export const COPY = {
   // than a stylistic one: `mirror.js#extraPerMonth` is salary × r/(100+r), so
   // a euro figure printed beside the rate it came from publishes the sender's
   // pay to everyone the message reaches (docs/principles.md P2, and
-  // `view.js#sharePayload` is where the rule is made unexpressible rather than
+  // `view/share.js#sharePayload` is where the rule is made unexpressible rather than
   // merely asserted).
   //
   // A noun phrase, never «поскъпна с {p}%»: a basket weighted onto the groups

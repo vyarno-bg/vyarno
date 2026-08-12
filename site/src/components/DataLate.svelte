@@ -30,7 +30,7 @@
 
   const {
     /**
-     * The overdue rows from `view.js#dataAge`, each carrying the manifest's own
+     * The overdue rows from `view/freshness.js#dataAge`, each carrying the manifest's own
      * `name` pair and how many days old it is. Empty is the ordinary case and
      * draws nothing.
      */

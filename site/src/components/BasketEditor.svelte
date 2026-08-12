@@ -37,7 +37,7 @@
   // Every figure the carve-out sentence can name, formatted once. Each of the
   // three strings takes the slots it needs and bolds the one it is about, so a
   // shared set cannot hand a sentence a figure formatted a different way from
-  // its neighbour's. `housingCost` is view.js#housingCarveOut's — the amount
+  // its neighbour's. `housingCost` is view/spend.js#housingCarveOut's — the amount
   // the € column is genuinely carved out of, and the same total the leftover
   // row states one control further down.
   const carvedArgs = $derived({
@@ -211,7 +211,7 @@
   </p>
 {/if}
 <!-- The € tally, and the bar under it. Both read `budget`
-     (view.js#basketBudget) rather than subtracting inline: the
+     (view/spend.js#basketBudget) rather than subtracting inline: the
      leftover is stated in three places on this page and they have to
      be one number. The bar deliberately does NOT fill to 100% when
      money is unplaced — the empty part IS the point, and a progress

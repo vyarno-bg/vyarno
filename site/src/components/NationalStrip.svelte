@@ -18,7 +18,8 @@
     safeText,
     yearText,
   } from "$lib/format.js";
-  import { fastestRisingDivision, CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE } from "$lib/view.js";
+  import { fastestRisingDivision } from "$lib/view/basket.js";
+  import { CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE } from "$lib/view/region.js";
 
   const {
     /** Published HICP divisions, for the fastest-rising card. */
@@ -64,7 +65,7 @@
         and "the payload did not load" are different claims and the copy says
         different things about them. */
     regionChosen = false,
-    /** Which of `view.js`'s three coverage states the chosen област's €/m² is
+    /** Which of `view/region.js`'s three coverage states the chosen област's €/m² is
         in. The card says three different things and only one of them may be
         said in имот.bg's name — «имот.bg не публикува цени за Варна» is false,
         and it is what a single flag prints for every city a refresh missed. */

@@ -17,7 +17,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { officialBasketWeights, verifyUrl, fastestRisingDivision } from "../src/lib/view.js";
+import { officialBasketWeights, verifyUrl, fastestRisingDivision } from "../src/lib/view/basket.js";
 import { officialInflation } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";

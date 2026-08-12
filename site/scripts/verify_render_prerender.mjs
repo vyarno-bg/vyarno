@@ -58,7 +58,7 @@ import { periodLong } from "../src/lib/format.js";
 import { DOCS } from "../src/lib/legal.js";
 import { SUPPORT_COPY } from "../src/lib/support.js";
 import { PAYLOAD_FILES } from "../src/lib/payloads.js";
-import { cityRow, SOFIA_CITY_CODE } from "../src/lib/view.js";
+import { cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 // The date a crawler reads off the JSON-LD is the same value the sitemap's
 // <lastmod> carries, so the assertion computes it the same way rather than
 // restating the rule.

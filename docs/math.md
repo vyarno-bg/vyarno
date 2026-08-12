@@ -187,13 +187,13 @@ strip shows Eurostat's headline, and `/how/` §инфлацията prints the t
 side. Three shapes keep that honest:
 
 - The sliders are seeded with the **exact** published `weight_pct`
-  (`view.js#officialBasketWeights`), never rounded — rounding makes the default
+  (`view/basket.js#officialBasketWeights`), never rounded — rounding makes the default
   basket sum to 97 and puts a third figure on screen.
-- The strip headline comes from `view.js#headlineRate`, which takes only
+- The strip headline comes from `view/results.js#headlineRate`, which takes only
   `hicp_headline.json`, so it cannot be handed the categories and quietly
   become Σ(w·r).
 - **The prose that explains the gap branches on the two months**
-  (`view.js#monthsSplit`), because the 0.156 pp above is a SAME-MONTH figure.
+  (`view/results.js#monthsSplit`), because the 0.156 pp above is a SAME-MONTH figure.
   During Eurostat's flash the headline is a month ahead of every division and
   the two on screen are several times further apart — 1.26 pp at 2026-07
   against 2026-06 — with almost all of the extra being the fortnight. Copy that
@@ -251,7 +251,7 @@ Eurostat publishes: an annually re-chained index is not the same object as one
 set of current weights applied across six years, and the fixed-weight version
 runs high.
 
-**The savings card takes the first.** `view.js#savingsSince2020` reads
+**The savings card takes the first.** `view/results.js#savingsSince2020` reads
 `hicp_headline.json`'s TOTAL index and falls back to the divisions
 reconstruction only if that payload has no index — returning `basis` so the
 copy can say which it used. On €100,000 the two differ by €960, and the card's
@@ -307,7 +307,7 @@ so the UI never totals the column.
 **What `a_i` is a share of, and what the whole-basket € figure is charged on.**
 `π` normalises by `Σa`, so it does not care whether the basket is in percent or
 in euro. The **€ figures do** care, and they are carved out of
-`view.js#basketBudget`'s `spendBase`:
+`view/spend.js#basketBudget`'s `spendBase`:
 
 ```
 spendBase = spendable × s/100            in share mode  (s = the stated share, default 100)
@@ -543,7 +543,7 @@ does not care who earned it.
 
 The payslip states a net and the contract states a gross. Which one a reader
 knows is not something to guess at, so the pay field takes both and
-`view.js#netsOf` is the **only** place one becomes the other. Everything below
+`view/payroll.js#netsOf` is the **only** place one becomes the other. Everything below
 it — the basket, rent as a share of pay, the 30%-of-net mortgage line, the
 position on the earnings ladder — is a statement about take-home, and each is
 wrong by around 29% when fed a gross. The mortgage one is wrong in the direction
@@ -600,7 +600,7 @@ not fetch or publish the national CPI.
 
 ## A sector average, and why the card says what an average is
 
-`view.js#sectorComparison` feeds `mirror.js#wageGap(net, sectorNet)` — the reader's
+`view/payroll.js#sectorComparison` feeds `mirror.js#wageGap(net, sectorNet)` — the reader's
 take-home against НСИ's published average for the NACE Rev 2 section they
 picked, both net, `(net − ref) / ref` rounded to whole percent. Nothing else.
 
@@ -861,7 +861,7 @@ Out of range returns null rather than clamping, because the only legitimate call
 places a series' own latest against that same series' own extremes — a value
 outside them means two series were crossed, and a clamp would draw that at one
 end of the track looking exactly like a record. A series shorter than
-`view.js#RANGE_MIN_POINTS`, or one that never moved, produces no row at all: an
+`view/market.js#RANGE_MIN_POINTS`, or one that never moved, produces no row at all: an
 empty cell on a strip of positions reads as a position.
 
 **`price_to_income` is deliberately not one of the rows**, and it is the one
@@ -1037,26 +1037,26 @@ basket.
 ## Where the SPA does each of these
 
 `mirror.js` holds the formulas; **which** published number goes into each is
-`view.js`. The load-bearing pairings:
+`src/lib/view/`. The load-bearing pairings:
 
 | This doc says | Enforced by |
 |---|---|
-| the rate is verbatim, never derived | `view.js#headlineRate` takes only the headline payload |
-| the annuity gets the AAR, never the APRC | `view.js#mortgagePanel` (`verify_view_home.mjs`) |
-| savings erosion is since-2020, not the user's rate | `view.js#savingsSince2020` takes the payloads, not a rate |
-| the savings card deflates by Eurostat's own all-items index | `view.js#savingsSince2020` prefers `hicp_headline.json`'s TOTAL index and returns `basis` |
+| the rate is verbatim, never derived | `view/results.js#headlineRate` takes only the headline payload |
+| the annuity gets the AAR, never the APRC | `view/home.js#mortgagePanel` (`verify_view_home.mjs`) |
+| savings erosion is since-2020, not the user's rate | `view/results.js#savingsSince2020` takes the payloads, not a rate |
+| the savings card deflates by Eurostat's own all-items index | `view/results.js#savingsSince2020` prefers `hicp_headline.json`'s TOTAL index and returns `basis` |
 | the loan is bounded by regulation | `mortgagePanel` reads `lending_limits`; it does not accept a down payment |
-| a verify link resolves to the number beside it | `view.js#verifyUrl(row, anchor)` |
-| a shared number must not reconstruct a private one | `view.js#sharePayload` takes no salary; `SHARE_FIELDS` is the closed list of what travels, and no € reaches `shareSentence` in either language |
+| a verify link resolves to the number beside it | `view/basket.js#verifyUrl(row, anchor)` |
+| a shared number must not reconstruct a private one | `view/share.js#sharePayload` takes no salary; `SHARE_FIELDS` is the closed list of what travels, and no € reaches `shareSentence` in either language |
 | a shared ranking must not reconstruct a private one either | the ladder position is kept off every share surface: `mirror.js#percentile` inverts through the published rungs, so "ahead of 34%" IS the salary |
-| the payslip itemises the GROSS, never the typed net | `view.js#payslipPanel` inverts internally; it does not accept a gross |
+| the payslip itemises the GROSS, never the typed net | `view/payroll.js#payslipPanel` inverts internally; it does not accept a gross |
 | the breakdown's rates are the published ones | `payslipPanel` takes `payroll.json`, not a params object |
 | the insurance ceiling is per contract, never per household | `payslipPanel` and `taxWedgePanel` take a list and have no scalar parameter |
-| an amount never travels without its basis | both take `pay = { basis, amounts }`; `view.js#netsOf` is the only net↔gross conversion |
+| an amount never travels without its basis | both take `pay = { basis, amounts }`; `view/payroll.js#netsOf` is the only net↔gross conversion |
 | a household's raise is weighted by the earlier pay | `mirror.js#householdNetRaisePct`; a blank raise returns NaN rather than reading as 0% |
-| the earnings ladder ranks people, not households | `view.js#earnerRanks` returns one row per earner; there is no total to pass it |
-| the wage comparator measures a wage against a wage | `view.js#regionGap` compares earner by earner |
-| both wage comparators round and dead-band alike | `mirror.js#wageGap` is the only place either computes a distance; `verify_wiring.mjs` asserts `view.js` computes none |
+| the earnings ladder ranks people, not households | `view/payroll.js#earnerRanks` returns one row per earner; there is no total to pass it |
+| the wage comparator measures a wage against a wage | `view/payroll.js#regionGap` compares earner by earner |
+| both wage comparators round and dead-band alike | `mirror.js#wageGap` is the only place either computes a distance; `verify_wiring.mjs` asserts no `view/` module computes one |
 | the market strip positions and never scores | `mirror.js#rangePosition` takes one reading and one range, so there is no second series to weigh it against and no total to draw |
 | the sector card can never become a sector rank | `mirror.js#meanRungPosition` takes no anchor, so there is no parameter to hand it a sector average through |
 

@@ -26,7 +26,7 @@ import {
   pocketVerdictState,
   answerLine,
   RANK_ROWS_SHOWN,
-} from "../src/lib/view.js";
+} from "../src/lib/view/results.js";
 import { officialInflation, contributions, personalInflationDetailed } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";

@@ -34,7 +34,8 @@
   import DataLate from "./components/DataLate.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
-  import { QUARTERS, monthsSplit as monthsAreSplit } from "./lib/view.js";
+  import { QUARTERS } from "./lib/view/country.js";
+  import { monthsSplit as monthsAreSplit } from "./lib/view/results.js";
   import { number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
 
   /**
@@ -75,7 +76,7 @@
   // Whether Eurostat's flash has the all-items rate a month ahead of the
   // divisions. §инфлацията prints both figures and then explains the gap
   // between them, and which explanation is TRUE depends on this — see
-  // `view.js#monthsSplit`, which the calculator's explainer branches on too.
+  // `view/results.js#monthsSplit`, which the calculator's explainer branches on too.
   const monthsSplit = $derived(
     monthsAreSplit({ headlineMonth: calc.headlineRefPeriod, basketMonth: calc.basketRefPeriod })
   );
@@ -1103,7 +1104,7 @@
          a scroll box on a reference page hides the half of the series a reader
          came for behind an affordance they have to notice first.
 
-         `view.js#quarterGrid` does the placing. Nothing is combined on the way:
+         `view/country.js#quarterGrid` does the placing. Nothing is combined on the way:
          a year row is four cells НСИ published, side by side, and the column a
          reader would expect at the end of it — the year's average — is exactly
          what their licence does not allow us to distribute. -->

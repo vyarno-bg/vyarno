@@ -29,21 +29,28 @@ trust. `npm run preview -- --port 4173 --strictPort` serves the built bundle.
 
 ```
 data.js               WHICH published number, and what if it is missing
-  → view.js           WHICH inputs go into which formula   ← the wiring
+  → view/*.js         WHICH inputs go into which formula   ← the wiring
     → mirror.js       THE ARITHMETIC (the only domain math here)
       → calculator.svelte.js   the $state and the $derived graph. No arithmetic.
         → components/ where it goes, what colour, which language
 ```
 
+**`view/` is ten modules, one per subject, each paired with the suite of the
+same stem** — `view/home.js` with `verify_view_home.mjs`, and so on. There is no
+barrel: a component imports from the subject it is reaching into, so an import
+block naming five of them says the component is doing five things. `docs/site.md`
+§"`src/lib/view/` — one module per subject" is the table and the argument,
+bundle measurements included.
+
 | You are adding…                                                        | It goes in            | With a test in                                                 |
 | ---------------------------------------------------------------------- | --------------------- | -------------------------------------------------------------- |
 | a formula — a rate, a real-terms change, an annuity                    | `mirror.js`           | `verify_mirror_math.mjs` (`verify_net_salary.mjs` for payroll) |
-| which published field feeds that formula, which fallback, which anchor | `view.js`             | the `verify_view_*.mjs` suite for that subject                 |
+| which published field feeds that formula, which fallback, which anchor | `view/<subject>.js`   | `verify_view_<subject>.mjs`, the suite of the same stem        |
 | a fallback chain over the payloads                                     | `data.js`             | `verify_data_contracts.mjs`                                    |
 | markup, colour, or a language choice                                   | `components/*.svelte` | `verify_render_*.mjs`, wiring in `verify_wiring.mjs`           |
 
 **Never in a `$derived`.** Every `$derived` in `calculator.svelte.js` is a call
-into `view.js` or `mirror.js` with named arguments — that layer has no pure
+into a `view/` module or `mirror.js` with named arguments — that layer has no pure
 function behind it, so anything computed there is computed where no unit test
 can reach. Moving the reactive graph out of `App.svelte` into a rune module did
 not relax this.

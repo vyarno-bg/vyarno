@@ -7,7 +7,7 @@
   import { lang } from "../lib/stores.js";
   import { number, integer, percentSigned } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
-  import { pocketVerdictState } from "../lib/view.js";
+  import { pocketVerdictState } from "../lib/view/results.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
@@ -38,7 +38,8 @@
       .join(" · ");
   }
 
-  // Which sentence the row tells. The STATE is decided in `view.js`, where a
+  // Which sentence the row tells. The STATE is decided in `view/results.js`,
+  // where a
   // unit test can reach it and where the answer block at the top of the card
   // reads the same one — two ladders of thresholds a screen apart drift, and
   // they drift silently, the summary calling a raise ahead while the row calls

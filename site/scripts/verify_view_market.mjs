@@ -38,7 +38,7 @@ import {
   marketRangeStrip,
   RANGE_MIN_POINTS,
   statusLettersUsed,
-} from "../src/lib/view.js";
+} from "../src/lib/view/market.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
 

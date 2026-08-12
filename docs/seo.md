@@ -193,7 +193,7 @@ computed from it into served HTML publishes an answer to a question nobody
 asked, and a search result would quote it. `App.svelte` renders that region
 empty under `prerender`; the bundle fills it.
 
-**The freshness verdict.** `view.js#dataAge` judges each payload against its
+**The freshness verdict.** `view/freshness.js#dataAge` judges each payload against its
 cadence and the current time, and the build's clock is not the reader's — a page
 stamped "fresh" the day it was built goes on saying so for as long as it is
 served. `Calculator`'s seeded constructor therefore leaves `dataRows` empty and
@@ -312,7 +312,7 @@ explanation is true depends on whether the two payloads describe one month, and
 during Eurostat's flash they do not (`math.md` §"Two reconciliations"). Static
 prose over a payload-decided figure is a figure the build froze in a form no
 refresh can correct — the failure the rule refuses everywhere else, wearing
-sentences instead of digits. So the paragraph branches on `view.js#monthsSplit`,
+sentences instead of digits. So the paragraph branches on `view/results.js#monthsSplit`,
 which the calculator's explainer already did, and the served HTML is checked
 against the months the same `dist/` shipped.
 

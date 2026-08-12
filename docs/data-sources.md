@@ -304,7 +304,7 @@ being multiplied by one област's mean and the result called that обла�
 ranking. Anchored on София's €1915 instead of the country's €1407, a €900 net
 wage reads as ahead of 30% of earners where the country's own ladder puts it at
 49% — every rung stays plausible, the ladder stays monotonic, and nothing on
-screen shows the difference. `view.js#nationalQuarter` is where the level is
+screen shows the difference. `view/country.js#nationalQuarter` is where the level is
 selected, out of `sector_salary.json`'s all-activities «Общо» row, and
 `the ladder is anchored on the country's average and never on one област's` is
 what holds it.
@@ -313,7 +313,7 @@ what holds it.
 `COPY.pctCaveat` in both languages, and `verify_copy.mjs` requires it. That is
 P11: a figure nobody publishes is uncomputed rather than concealed.
 
-**«Общо» is not a sector**, which is why `view.js#sectorOptions` drops it from
+**«Общо» is not a sector**, which is why `view/payroll.js#sectorOptions` drops it from
 the picker and `sectorComparison` refuses it by name. This is the one place in
 the app that row is what is wanted, and it is wanted precisely because it is
 not one activity.
@@ -331,7 +331,7 @@ So the two halves stay apart all the way to the reader's browser:
 **Method.** Steps 1–2 run in the pipeline
 (`transform.py#build_ses_shape_ladder`, restated in the JSON's `shape.method`);
 steps 3–4 run in the reader's tab (`mirror.js#composeLadder`, over the level
-`view.js#regionQuarter` selects out of the НСИ payload).
+`view/region.js#regionQuarter` selects out of the НСИ payload).
 
 1. Fill the intermediate deciles by piecewise-lognormal interpolation in the
    standard-normal quantile z, matching the D1/median/D9 anchors exactly.
@@ -647,7 +647,7 @@ they are separate fields because they are separate claims. `city_pages` is every
 absences are indistinguishable in the file, and the SPA prints имот.bg's name
 over both: «имот.bg не публикува цени за Варна» is false about a publisher who
 does publish Варна, in the wording borrowed from the one област it is true of.
-`view.js#cityCoverage` is the three-way answer the cards and the picker share,
+`view/region.js#cityCoverage` is the three-way answer the cards and the picker share,
 and only its `nopage` state may be stated in имот.bg's name.
 
 **`all_districts` is not published.** The per-district dict was carried for
@@ -786,7 +786,7 @@ two cuts of one quarterly release, and marking one without the other leaves a
 reader unable to tell the two claims are the same claim.
 
 **Every figure in it is one НСИ published**, headline included, and nothing
-computes over it afterwards: `view.js#regionQuarter` selects the headline rather
+computes over it afterwards: `view/region.js#regionQuarter` selects the headline rather
 than deriving one, and it answers for the област asked for or for none —
 never for a first row, a largest област or София.
 `no НСИ payload carries a second publisher's figures` in
@@ -862,8 +862,8 @@ the connector's regression guard is that it sits inside their range — but it i
 not an economic activity anybody works in. Offered in a list labelled «Твоят
 сектор» it collects the reader who cannot find their own line and answers them
 with a distance from the whole economy, under a caveat calling the options
-broad КИД-2008 sections. `view.js#sectorOptions` leaves it out and
-`view.js#sectorComparison` refuses it at the lookup, so one list's contents are
+broad КИД-2008 sections. `view/payroll.js#sectorOptions` leaves it out and
+`view/payroll.js#sectorComparison` refuses it at the lookup, so one list's contents are
 not the whole guarantee.
 
 ---

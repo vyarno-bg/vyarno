@@ -323,7 +323,7 @@ test("a row built on an optional figure waits until there is one", { skip }, asy
   // does — that note sits on the figure it produced and says whose salary it
   // is — so a stand-in balance renders as a finding about a visitor who has
   // typed nothing. The rule both rows keep is `payslipPanel`'s: there is no
-  // receipt for a number nobody entered (view.js).
+  // receipt for a number nobody entered (view/payroll.js).
   //
   // Over both rows rather than over the one that broke it. A check naming
   // «спестеното» stays green when the rent field acquires a friendly default

@@ -98,9 +98,24 @@ const FLAT = flat(APP);
 const CONTENT = read("lib", "content.js");
 // Two sources read on their own, where an assertion is about ONE file rather
 // than about the graph: the pay card is the only component that may compute a
-// comparison, and `view.js` is where it must have been computed instead.
+// comparison, and the wiring layer is where it must have been computed instead.
 const PAY = live(read("components", "PayField.svelte"));
-const VIEW = read("lib", "view.js");
+
+/**
+ * The whole wiring layer as one string — every module under `src/lib/view/`.
+ *
+ * `VIEW` carries a NEGATIVE assertion, and a negative over a named file is the
+ * one that fails by going absent rather than by going red: point it at one of
+ * ten modules and it still passes, having stopped covering the other nine, and
+ * nothing anywhere reports the loss. So the list is read off the directory
+ * rather than written down, and a module added tomorrow is covered on the day
+ * it lands. The count guard below is what makes an empty read a failure.
+ */
+const VIEW_DIR = join(SRC, "lib", "view");
+const VIEW_MODULES = readdirSync(VIEW_DIR)
+  .filter((f) => f.endsWith(".js"))
+  .sort();
+const VIEW = VIEW_MODULES.map((f) => read("lib", "view", f)).join("\n");
 
 /**
  * The formulas the explainer band publishes, as they appear on the page.
@@ -207,7 +222,7 @@ test("the basket accepts euros as well as percentages", () => {
 // summing to a total the reader deliberately avoided. Every figure downstream
 // — the € column, the ranked rows, "the biggest bite" — inherits it.
 //
-// `view.js#basketBudget` fixes the arithmetic and `verify_view_spend.mjs`
+// `view/spend.js#basketBudget` fixes the arithmetic and `verify_view_spend.mjs`
 // proves it. These guard the WIRING: the template must feed `budget.spendBase`
 // to the consumers, not `spendable`.
 // ---------------------------------------------------------------------------
@@ -305,7 +320,7 @@ test("the price rise is charged only on money that is actually spent", () => {
 // The payslip breakdown
 // ---------------------------------------------------------------------------
 
-test("the payslip renders view.js#payslipPanel and does no arithmetic of its own", () => {
+test("the payslip renders view/payroll.js#payslipPanel and does no arithmetic of its own", () => {
   // Composing `bgNetSalary(bgGrossFromNet(salary))` inline in a `$derived` puts
   // arithmetic in the render layer, where nothing can test it (docs/site.md
   // §"A correct formula fed the wrong number"). With the same numbers shown
@@ -313,13 +328,16 @@ test("the payslip renders view.js#payslipPanel and does no arithmetic of its own
   // typed NET instead of the recovered gross would put a plausible,
   // uniformly-light column on
   // screen.
-  assert.ok(LIVE.includes("payslipPanel({"), "the breakdown must come from view.js#payslipPanel");
+  assert.ok(
+    LIVE.includes("payslipPanel({"),
+    "the breakdown must come from view/payroll.js#payslipPanel"
+  );
   assert.ok(LIVE.includes("payslip.lines"), "the fund rows are not rendered from the panel");
   for (const forbidden of ["bgGrossFromNet(", "bgPayrollBreakdown(", "bgPayslipFromNet("]) {
     assert.ok(
       !LIVE.includes(forbidden),
       `the calculator calls ${forbidden} directly — the gross↔net wiring belongs ` +
-        "in view.js#payslipPanel, where a test can reach it"
+        "in view/payroll.js#payslipPanel, where a test can reach it"
     );
   }
 });
@@ -374,13 +392,13 @@ test("every basket row carries its own verify link", () => {
   // Divisions link to their own extract; groups link to theirs. A group that
   // inherited its parent's link would send the reader to a different number
   // than the one on their screen. Both levels resolve through `estatCatUrl`,
-  // which is `view.js#verifyUrl` bound to the current anchor, so the extract
+  // which is `view/basket.js#verifyUrl` bound to the current anchor, so the extract
   // behind the "↗" contains the figure printed beside it.
   assert.ok(LIVE.includes("estatCatUrl(c)"), "division rows lost their verify link");
   assert.ok(LIVE.includes("estatCatUrl(g)"), "group rows lost their own verify link");
   assert.ok(
     LIVE.includes("estatCatUrl = (cat) => verifyUrl(cat, anchor)"),
-    "estatCatUrl must resolve through view.js#verifyUrl against the live anchor, " +
+    "estatCatUrl must resolve through view/basket.js#verifyUrl against the live anchor, " +
       "not pick an extract on its own"
   );
 });
@@ -393,7 +411,7 @@ test("the percentile marker is bound to the bottom-referenced rank, per earner",
   // lives in verify_copy.mjs.
   assert.ok(
     LIVE.includes("earnerRanks({ nets: nets, ladder: ladder })"),
-    "the calculator no longer ranks through view.js#earnerRanks"
+    "the calculator no longer ranks through view/payroll.js#earnerRanks"
   );
   assert.ok(
     LIVE.includes('style="left:{r.ahead}%"'),
@@ -421,7 +439,7 @@ test("a gross becomes a net in exactly one place", () => {
   // affordable — which AGENTS.md forbids in as many words.
   assert.ok(
     LIVE.includes("nets = $derived(netsOf(pay, data.payroll))"),
-    "the calculator no longer converts through view.js#netsOf"
+    "the calculator no longer converts through view/payroll.js#netsOf"
   );
   // Every per-person panel takes a `pay` OBJECT, which carries the basis with
   // the amounts, so an amount cannot arrive anywhere without saying what it is.
@@ -466,7 +484,7 @@ test("every income is asked for its own raise", () => {
   // the flattering direction (mirror.js#householdNetRaisePct).
   assert.ok(
     LIVE.includes("householdRaise({"),
-    "the calculator no longer combines the raises through view.js#householdRaise"
+    "the calculator no longer combines the raises through view/payroll.js#householdRaise"
   );
   assert.ok(
     !LIVE.includes("raise = $state("),
@@ -544,13 +562,13 @@ test("the Sofia comparator reads the live НСИ wage and links to it", () => {
   for (const name of ["regionMeanGrossEur", "regionMeanGrossUrl"]) {
     assert.ok(LIVE.includes(name), `the calculator no longer derives \`${name}\``);
   }
-  // The gap itself is decided in view.js#regionGap, per earner, and the
+  // The gap itself is decided in view/payroll.js#regionGap, per earner, and the
   // component only picks the word and the colour. Both halves matter: НСИ
   // publish a WAGE, so measuring a two-earner total against it reports a
   // household of two on €900 each as above the average worker.
   assert.ok(
     LIVE.includes("regionGap({ nets: nets, regionNet: regionNet })"),
-    "the comparator no longer computes the (earner − Sofia) gap through view.js"
+    "the comparator no longer computes the (earner − Sofia) gap through view/payroll.js"
   );
   assert.ok(
     !PAY.includes("householdNet - regionNet"),
@@ -677,7 +695,7 @@ test("the ranked column draws the remainder its sentence promises", () => {
   // capped at eight rows. On the default Bulgarian basket twelve divisions
   // clear the drawing threshold, so the visible points summed to 5.1 under a
   // sentence saying 5.4 — false on screen while `mirror.js#contributions` was
-  // exactly right. The arithmetic lives in `view.js#rankedSplit`
+  // exactly right. The arithmetic lives in `view/results.js#rankedSplit`
   // (verify_view_results.mjs asserts Σshown + rest === π); this asserts the
   // template actually draws the remainder it is handed.
   // Two halves, because the row cap is no longer one number. A narrow column
@@ -685,13 +703,13 @@ test("the ranked column draws the remainder its sentence promises", () => {
   // `rankedSplit` has always taken and `verify_view_results.mjs` already
   // exercises at 3 and at 8. What must not change is WHERE the slicing happens,
   // so the check is now the property the exact-string match stood in for: the
-  // split goes through view.js, and the template does none of its own. That is
+  // split goes through view/results.js, and the template does none of its own. That is
   // strictly more than the old assertion caught — a template that called
   // `rankedSplit(ranked)` and then sliced the result again passed it.
   assert.match(
     LIVE,
     /rankedSplit\(ranked(,\s*[A-Za-z_$][\w$]*)?\)/,
-    "the ranked list no longer goes through view.js#rankedSplit — the slicing " +
+    "the ranked list no longer goes through view/results.js#rankedSplit — the slicing " +
       "arithmetic has moved back into the template, where nothing can test that " +
       "the column still sums to π"
   );
@@ -878,9 +896,18 @@ test("the Sofia comparator states the gap once, not twice", () => {
     MIRROR.includes("magnitudePct: Math.abs(diffPct)"),
     "mirror.js#wageGap no longer publishes an unsigned magnitude"
   );
+  // The scan covers the whole wiring layer rather than the module the gap is
+  // nearest to. A negative asserted over one file passes the moment the code it
+  // forbids is written in a sibling, so the read is proved non-empty first: a
+  // directory that came back empty would satisfy `!includes` for every module
+  // there is.
+  assert.ok(
+    VIEW_MODULES.length >= 10,
+    `only ${VIEW_MODULES.length} modules read out of src/lib/view/ — the scan lost its root`
+  );
   assert.ok(
     !VIEW.includes("Math.abs(diffPct)"),
-    "view.js computes a gap magnitude again — there is one implementation, in mirror.js"
+    "the wiring layer computes a gap magnitude again — there is one implementation, in mirror.js"
   );
 });
 
@@ -920,7 +947,7 @@ test("the country page cites every Eurostat dataset it renders, and no others", 
   );
 });
 
-test("the country page renders no figure it did not get from view.js", () => {
+test("the country page renders no figure it did not get from the wiring layer", () => {
   // The rule the whole five-layer split exists for, on the page furthest from
   // the calculator's own tests. Every figure here comes off one of the four
   // `Calculator` values that take payloads and no scalar — so an arithmetic
@@ -936,7 +963,8 @@ test("the country page renders no figure it did not get from view.js", () => {
     arithmetic,
     [],
     `the country page computes in its markup: ${arithmetic.join(" | ")}. ` +
-      "Derived values belong in view.js with a test in a verify_view_*.mjs suite."
+      "Derived values belong in a src/lib/view/ module with a test in the " +
+      "verify_view_*.mjs suite of the same stem."
   );
 });
 

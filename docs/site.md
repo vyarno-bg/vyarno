@@ -82,9 +82,9 @@ site/
 │   ├── near.mjs               # the float comparator, and the tolerance it carries
 │   ├── verify_net_salary.mjs      # gross ↔ net payroll pair
 │   ├── verify_mirror_math.mjs     # every formula in mirror.js
-│   │                              # view.js is the wiring, and each line below
-│   │                              # is one subject of it — a sentence needing
-│   │                              # an "and" is two files
+│   │                              # one suite per module under src/lib/view/,
+│   │                              # same stem — a sentence needing an "and"
+│   │                              # is two files on both sides of the pair
 │   ├── verify_view_freshness.mjs  # whether the figures on the page are still current
 │   ├── verify_view_basket.mjs     # the published divisions the basket is built from
 │   ├── verify_view_spend.mjs      # what the price rise is charged against
@@ -134,7 +134,17 @@ site/
         ├── payloads.js   # WHICH payloads exist at all (the manifest)
         ├── data.js       # fetch wrappers + the fallback chains
         ├── mirror.js     # pure FORMULAS (the only domain math)
-        ├── view.js       # pure DERIVED VALUES (the wiring)  ← read this
+        ├── view/         # pure DERIVED VALUES (the wiring)  ← read this
+        │   ├── freshness.js  # whether the figures are still current
+        │   ├── basket.js     # the published divisions the sliders start from
+        │   ├── region.js     # the област a reader picked, and its published rows
+        │   ├── results.js    # what the results card claims about their year
+        │   ├── spend.js      # what the price rise is charged against
+        │   ├── home.js       # what a home costs the reader buying one
+        │   ├── payroll.js    # where a household's pay stands once taxed
+        │   ├── country.js    # the figures /how/ renders with nobody in them
+        │   ├── share.js      # what leaves the page when a reader shares it
+        │   └── market.js     # which published field feeds which figure on /market/
         ├── calculator.svelte.js  # the STATE the components read
         ├── content.js    # BG/EN copy + presets + HOME constants
         ├── share-card.js # the PNG a reader sends, drawn on a canvas
@@ -163,7 +173,7 @@ question.
 |---|---|---|---|
 | **Data** | `data.js` | *Which* published number, and what if it is missing? | `verify_data_contracts.mjs` |
 | **Formula** | `mirror.js` | Given these inputs, what is the arithmetic? | `verify_mirror_math.mjs`, `verify_net_salary.mjs` |
-| **Wiring** | `view.js` | *Which* inputs go into that formula? | the `verify_view_*.mjs` suite for that subject |
+| **Wiring** | `view/*.js` | *Which* inputs go into that formula? | `verify_view_<stem>.mjs`, one suite per module |
 | **State** | `calculator.svelte.js` | What holds the result, and when does it recompute? | the `verify_render_*.mjs` suites (it is the only layer with no pure function to test) |
 | **Render** | `components/*.svelte` | Where does it go, what colour, which language? | the `verify_render_*.mjs` suite for that region; template wiring in `verify_wiring.mjs` |
 
@@ -177,8 +187,8 @@ of the formula.
 - a new **formula** (a real-terms change, a rate, an annuity) → `mirror.js`,
   with a case in `verify_mirror_math.mjs`;
 - a new **derived value** (which published field feeds that formula, which
-  fallback applies, which anchor it uses) → `view.js`, with a case in the
-  `verify_view_*.mjs` suite that owns the subject.
+  fallback applies, which anchor it uses) → the `src/lib/view/` module that owns
+  the subject, with a case in the suite of the same stem.
 
 A component keeps only display-shape helpers that cannot produce a wrong number
 on their own — `fmt`/`fmt0`/`fmtDate`, per-row share normalisation in the slider
@@ -187,11 +197,12 @@ down. Both destinations carry their test in the same commit.
 
 **The State layer is thin on purpose and it is the one to be suspicious of.**
 It is the only layer with no pure function behind it, so anything computed
-there is computed where no unit test can reach — which is exactly the rule
-`view.js` was extracted to enforce. Every `$derived` in `calculator.svelte.js`
-is a call into `view.js` or `mirror.js` with named arguments; if you find
-yourself writing arithmetic in one, it belongs one layer down. That rule did
-not relax when the `$derived`s moved out of `App.svelte` into a rune module.
+there is computed where no unit test can reach — which is exactly the rule the
+wiring layer was extracted to enforce. Every `$derived` in
+`calculator.svelte.js` is a call into a `view/` module or `mirror.js` with
+named arguments; if you find yourself writing arithmetic in one, it belongs one
+layer down. That rule did not relax when the `$derived`s moved out of
+`App.svelte` into a rune module.
 
 ### A correct formula fed the wrong number
 
@@ -201,8 +212,8 @@ correct number reaches which correct formula, and it is what the split above
 exists to make impossible rather than merely testable.
 
 1. **Where a wrong wiring would be a wrong number, make the wrong wiring
-   impossible to express — do not merely test against it.** `view.js` is built
-   that way: `savingsSince2020` takes the *categories*, not a rate, so the
+   impossible to express — do not merely test against it.** Every `view/` module
+   is built that way: `savingsSince2020` takes the *categories*, not a rate, so the
    user's basket rate cannot be substituted; `headlineRate` takes only the
    headline payload, so it cannot become Σ(w·r); `mortgagePanel` reads the
    regulatory caps out of the published limits instead of accepting them.
@@ -232,7 +243,7 @@ exists to make impossible rather than merely testable.
    year and its since-baseline percentage off `cityHome` — the reference one —
    and printed София's 2015 and София's +232% beside Варна's €/m², under Варна's
    name, with the chart's own end labels correctly Варна's. Every number was
-   real. `view.js#cityTrend` is the one selection both surfaces call, and it
+   real. `view/country.js#cityTrend` is the one selection both surfaces call, and it
    takes the code as an argument so a caller has to say which city it means.
 
 ## Boot path
@@ -248,7 +259,7 @@ exists to make impossible rather than merely testable.
    `payloads.js#PAYLOADS`, not a copy of it (below).
 5. `Calculator#load` computes `dataAge(data, PAYLOADS)` and raises the staleness
    banner if **any payload is overdue against its own cadence** — see
-   `payloads.js` and `view.js#payloadStatus`.
+   `payloads.js` and `view/freshness.js#payloadStatus`.
 
 ## `vite.config.js` — the data middleware
 
@@ -300,14 +311,14 @@ Three helpers on the same module:
   and mirror `mortgage.py#BNB_LENDING_LIMITS`.
 
 The wage comparator reads the chosen област's row out of
-`data.regionSalary` through `view.js#regionQuarter`, in
+`data.regionSalary` through `view/region.js#regionQuarter`, in
 `calculator.svelte.js#regionMeanGrossEur`, falling back to
 `HOME.regionSalaryFallback` — which goes through that same function, so the
 offline figure cannot be selected differently from the live one.
 
 The percentile ladder takes a **different** level, and the two must not be
 crossed: `calculator.svelte.js#ladderAnchorGross` reads НСИ's all-activities
-«Общо» row out of `data.sectorSalary` through `view.js#nationalQuarter`. The
+«Общо» row out of `data.sectorSalary` through `view/country.js#nationalQuarter`. The
 spread it re-levels is national, so the level has to be
 ([`data-sources.md`](./data-sources.md) §"Salary distribution"). Both names
 state a **mean**: `mirror.js#composeLadder` divides by SES's own mean, and a
@@ -394,7 +405,7 @@ the page, which was measured rather than chosen — at 360px the cards already e
 payload late and 113px with three.
 
 **`pages` is what stops the manifest costing every reader every payload**, and
-the route it names has to be the one the panel is dated from. `view.js#dataAge`
+the route it names has to be the one the panel is dated from. `view/freshness.js#dataAge`
 calls a row it holds no payload for `absent`, and `absent` is what the "some
 data is missing" state renders from — so fetching one route's share while
 handing the panel the whole list turns every unfetched payload into a standing
@@ -439,7 +450,8 @@ What is in it:
   `annuityPayment`, `annuityReverse`, `homeYears`.
 - **Wage comparators:** `wageGap(net, ref)` — one signed distance with one
   rounding and one dead band, used by the област comparison and the
-  sector one alike. It lives here rather than in `view.js` because two callers computing
+  sector one alike. It lives here rather than in the wiring layer because two
+  callers computing
   their own `(a − b) / b` is two dead bands that drift apart, and the drift
   shows up as one card saying "the same" while the other says "1% below".
   `meanRungPosition(shape)` is the sector card's correction: which rung of
@@ -457,7 +469,7 @@ What is in it:
   SPA collects **net** take-home (most people know that, not their contract
   gross), back-computes the gross for the област comparator, and applies the same
   formula to that област's gross — so the comparison is net vs net.
-- **Net or gross:** the pay field takes either, and `view.js#netsOf` is the one
+- **Net or gross:** the pay field takes either, and `view/payroll.js#netsOf` is the one
   place one becomes the other. Amounts travel as `pay = { basis, amounts }` so
   none can arrive without saying what it is; flipping the toggle converts in
   place, and what was typed in the outgoing basis is stashed so a round trip
@@ -484,7 +496,7 @@ the tests live beside the code they protect:
 |---|---|
 | `verify_net_salary.mjs` | `bgNetSalary`, `bgGrossFromNet` — the cap boundary, the flat tax, the round-trip above the contribution cap, cross-checks against published BG payroll references |
 | `verify_mirror_math.mjs` | everything else in `mirror.js` — the anchor contract, personal vs official inflation, the real-wage division, `percentile`'s direction, `buildLadder`, annuity + inverse, `cashErosion`, `payrollParams`, the tax wedge |
-| `verify_view_*.mjs` | every derived value in `view.js` — which input reaches which formula, one subject per file, and the two boundaries below |
+| `verify_view_*.mjs` | every derived value under `src/lib/view/` — which input reaches which formula, one suite per module, and the two boundaries below |
 | `verify_stores.mjs` | every persisted key — the three preferences, and the reader's own figures behind the switch that has to be turned on first |
 | `verify_contrast.mjs` | WCAG AA ratios for every ink × surface pair, both themes, computed from `tokens.css` itself |
 | `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down — and every control boundary at the 3:1 WCAG 1.4.11 asks. Both themes, both languages |
@@ -499,7 +511,7 @@ claims the copy makes; they are not a substitute for exercising a formula.
 **The standard a new test has to meet: break the function on purpose and watch
 it go red.**
 
-## `src/lib/view.js` — the derived values
+## `src/lib/view/` — the derived values
 
 Every number the components render, as a pure function. This is the layer between
 "what is the arithmetic" and "where does it go on the page", and its functions
@@ -514,6 +526,81 @@ are shaped to make a wrong wiring *unexpressible*:
   figures out of the published `lending_limits` rather than accepting them, so a
   caller cannot quote a 0%-down loan or adopt the regulator's 50% ceiling in
   place of our 30% line.
+
+### `src/lib/view/` — one module per subject
+
+**Ten modules, ten suites, same stem.** `view/home.js` is what
+`verify_view_home.mjs` tests, `view/market.js` is what `verify_view_market.mjs`
+tests, and so on for all ten.
+
+| Module | What it answers | Its suite |
+|---|---|---|
+| `freshness.js` | Are the figures on the page still current? | `verify_view_freshness.mjs` |
+| `basket.js` | Which published divisions do the sliders start from, and where does a row verify? | `verify_view_basket.mjs` |
+| `region.js` | Which област did the reader pick, and what is published about it? | `verify_view_region.mjs` |
+| `results.js` | What does the results card claim about their year? | `verify_view_results.mjs` |
+| `spend.js` | How much of their money is the price rise charged against? | `verify_view_spend.mjs` |
+| `home.js` | What does a home cost the reader buying one? | `verify_view_home.mjs` |
+| `payroll.js` | Where does a household's pay stand once it has been taxed? | `verify_view_payroll.mjs` |
+| `country.js` | What does `/how/` render with nobody in it? | `verify_view_country.mjs` |
+| `share.js` | What leaves the page when a reader shares it? | `verify_view_share.mjs` |
+| `market.js` | Which published field feeds which figure on `/market/`? | `verify_view_market.mjs` |
+
+What the pairing buys is not tidiness. It makes *where is the test for this
+function* answerable from the filename, and it makes moving a function between
+modules force its test to move — which is the rule
+[`AGENTS.md`](../AGENTS.md) §Tests states and which nothing else enforces.
+**A module whose sentence in that table needs an "and" is two modules**, the
+same standard [`testing-strategy.md`](./testing-strategy.md) §"When one suite
+file has become two" applies to the suites.
+
+Three exports are exercised by more than one suite and that is not a boundary
+failure: `region.js#regionQuarter` is `verify_view_region.mjs`'s subject and
+`verify_view_country.mjs` and `verify_view_payroll.mjs` call it to build a
+fixture, and `results.js#headlineRate` is `verify_view_results.mjs`'s subject
+and `verify_view_spend.mjs`'s cross-check. The rule is that each export has one
+module and one suite that OWNS it, never that no other suite may call it.
+
+Imports between the modules run one way — `country.js` reads `region.js` and
+`payroll.js`, `spend.js` reads `results.js`, and nothing else crosses. **A
+cycle appearing here is the split telling you two subjects are one**, and the
+fix is to move the shared thing into whichever subject the tests already treat
+as its owner, never to break the cycle with a third module.
+
+### No re-export barrel, and the reason is measured
+
+Keeping `src/lib/view.js` as a barrel over the ten would have cost nothing
+visible: every import site would read the same, and every `view.js#symbol`
+reference in the docs would stay literally true. It is not there for two
+reasons.
+
+**A barrel makes the reach invisible.** With one specifier for all 87 exports, a
+component reaching across four subjects looks exactly like one reaching into
+one — which is the property that let this layer grow to 3,106 lines before
+anybody counted. `import { mortgagePanel } from "$lib/view/home.js"` says which
+subject the file is in, and an import block with five of them says the component
+is doing five things.
+
+**And a barrel hands back the whole bundle saving.** Measured on this tree, both
+ways, from `npm run build:release`:
+
+| Entry | One `view.js` | Barrel over ten | Ten modules, no barrel |
+|---|---|---|---|
+| `main` (`/`) | 360,620 B | 360,588 B | **352,224 B** |
+| `how-main` (`/how/`) | 244,062 B | 244,032 B | **235,673 B** |
+| `market-main` (`/market/`) | 256,631 B | 256,299 B | **244,352 B** |
+
+Transitive JS per entry, `dist/assets`, uncompressed. The barrel column is the
+finding: Rollup resolves a re-export module into one chunk reached by all three
+entries, so `view-*.js` comes back at 38 kB and `/market/` downloads the
+freshness rows, the payroll panels, the mortgage panel and the share payload to
+render a page that calls none of them. Split with no barrel, each entry carries
+the modules it reaches and the shared chunk falls to 18.6 kB. The chunk count
+per entry does not move, so this is not bytes traded for requests.
+
+**It is still a by-product and not the goal.** A subject boundary moved to shave
+bytes is a boundary that will not survive its first real edit; if a future
+Rollup chunks this differently the split stands on the paragraph above it.
 
 | Function | Returns | The wrong number it prevents |
 |---|---|---|
@@ -710,7 +797,7 @@ you spend ≈ €216/mo · it rose 11.0% · that costs you ≈ €21 more a mont
   `rankLead` tells the reader the rows sum to exactly their number, and
   `contributions` makes that true of *all* of them — but twelve divisions clear
   the drawing threshold on the default Bulgarian basket, so a capped column
-  stops at 5.1 under a sentence saying 5.4. `view.js#rankedSplit` returns the
+  stops at 5.1 under a sentence saying 5.4. `view/results.js#rankedSplit` returns the
   folded tail with the rows, `verify_view_results.mjs` asserts
   `Σshown + restPp === π`, and the template draws it. Capping a list that a
   sentence promises adds up is only safe if the tail is rendered.
@@ -885,14 +972,14 @@ Three copy rules this file has to keep:
   chip is real published data and is deliberately not caveated.
 
 Staleness is **not** driven by a hardcoded date, and not by a single
-threshold either. `Calculator#load` calls `view.js#dataAge(data, PAYLOADS)`,
+threshold either. `Calculator#load` calls `view/freshness.js#dataAge(data, PAYLOADS)`,
 which judges each payload against the cadence its own manifest row declares:
 past it the row is *due*, past 1.5× it is *overdue*, and the banner fires when
 something is overdue — naming how many rather than implying all nine are. One
 flat threshold could not serve four release rhythms; 45 days is late for the
 monthly HICP release, perfectly normal for the quarterly НСИ wage series, and
 meaningless against a survey Eurostat runs every four years.
-`view.js#STALE_AFTER_DAYS` survives only as the fallback for a manifest row with
+`view/freshness.js#STALE_AFTER_DAYS` survives only as the fallback for a manifest row with
 no declared cadence.
 
 ## `src/App.svelte` — the composition root
@@ -911,7 +998,7 @@ the state out from under it.
 
 Runes are not confined to `.svelte` files, so the whole reactive graph lives in
 a `Calculator` class here: the `$state` the reader types into, the `$derived`
-graph over `data.js`/`mirror.js`/`view.js`, the loader, and the handlers.
+graph over `data.js`/`mirror.js`/`view/`, the loader, and the handlers.
 
 The reason it exists is testability, by way of prop count. The inputs card and
 most of the result rows read some sixty values out of one graph. While that
@@ -922,12 +1009,12 @@ takes one `calc` prop, and its prop list stops describing the graph's internals.
 
 Two rules it holds to:
 
-- **Nothing computes here.** Every `$derived` is a call into `view.js` or
-  `mirror.js` with named arguments. See the note under the layer table.
+- **Nothing computes here.** Every `$derived` is a call into a `view/` module
+  or `mirror.js` with named arguments. See the note under the layer table.
 - **Nothing picks words here.** The module is language-agnostic, so
   `cityPriceDated` and the preset label live in the components that render
   them — where `$lang` auto-subscription works anyway. `shareSentence` is the
-  shape this takes for a string built in `view.js`: the words arrive as an
+  shape this takes for a string built in `view/share.js`: the words arrive as an
   argument and the component chooses which language to ask for.
 
 One convention, with no exception to remember: **every mutating handler is an
@@ -1129,7 +1216,7 @@ dearer or cheaper, and the card answered all three — in the pocket row, the
 ladder row and the ranked list, each under its own derivation, two and three
 screens down.
 
-It introduces no arithmetic. `view.js#answerLine` decides which of the three can
+It introduces no arithmetic. `view/results.js#answerLine` decides which of the three can
 honestly be stated and in what state, and the component picks the words. Three
 things about it are load-bearing:
 
@@ -1140,7 +1227,7 @@ things about it are load-bearing:
   `PercentileRow` keeps in its own corner. The answer block sits a screen above
   that row, so a summary that outran it would move the defect up the page rather
   than remove it.
-- **The pay verdict comes from `view.js#pocketVerdictState`, which `PocketRow`
+- **The pay verdict comes from `view/results.js#pocketVerdictState`, which `PocketRow`
   also reads.** Two ladders of thresholds a screen apart drift, and silently:
   the summary calling a raise ahead while the row below calls it level, over one
   number that neither of them moved. The row keeps all seven states because it
@@ -1164,7 +1251,7 @@ points, and `покажи всички 13 групи` unfolds the rest.
 
 Two properties make the cap safe, and neither is optional:
 
-- `view.js#rankedSplit` folds whatever is not drawn into a remainder, so
+- `view/results.js#rankedSplit` folds whatever is not drawn into a remainder, so
   Σshown + restPp === π **at any limit**. The cap changes a number in a call,
   not the arithmetic. Capping a list that `rankLead` promises adds up, without
   rendering the tail, is the defect `verify_view_results.mjs` exists to catch.
@@ -1221,7 +1308,7 @@ The render tests that hold all of this are
 
 Under the област comparator sits a picker of НСИ's 19 NACE Rev 2 sections and,
 once one is chosen, the reader's distance from that section's published average
-— net against net, `view.js#sectorComparison` over `mirror.js#wageGap`. The
+— net against net, `view/payroll.js#sectorComparison` over `mirror.js#wageGap`. The
 figures are small; the copy around them is most of the work, and every line of
 it is answering something the number would otherwise imply on its own.
 
@@ -1673,7 +1760,7 @@ a dashed baseline between them — and is text-free.
 data/published/hicp_categories.json          ← published by the pipeline
    │ fetch (data.js#loadHicpCategories) — the full envelope
    ▼
-view.js decides WHICH number this formula gets
+view/results.js decides WHICH number this formula gets
    │ e.g. savingsSince2020 takes the CATEGORIES, not a rate
    ▼
 mirror.js#personalInflation(weights, categories, anchor, fallback)
@@ -1684,7 +1771,7 @@ the rendered number
 
 The mortgage path is the same shape with one extra hazard:
 `data.js#mortgageDefaultRate` walks the fallback chain and returns a **label**
-with the rate, so tier 2 re-captions the UI; `view.js#mortgagePanel` then feeds
+with the rate, so tier 2 re-captions the UI; `view/home.js#mortgagePanel` then feeds
 `annuityPayment` the **AAR and only the AAR**, reads the LTV/DSTI/maturity caps
 out of the published `lending_limits`, and cannot be handed the APRC or a 0%
 down payment.

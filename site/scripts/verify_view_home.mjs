@@ -18,7 +18,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { homePriceFor, homePriceBasis, clampTerm, mortgagePanel } from "../src/lib/view.js";
+import { homePriceFor, homePriceBasis, clampTerm, mortgagePanel } from "../src/lib/view/home.js";
 import { annuityPayment } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";

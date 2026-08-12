@@ -24,7 +24,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
                                ▼
 ┌─ Runtime (the user's browser) ────────────────────────────────────────┐
 │   site/ — Vite 8 + Svelte 5, static                                   │
-│   data.js → view.js → mirror.js → calculator.svelte.js → components   │
+│   data.js → view/*.js → mirror.js → calculator.svelte.js → components │
 │   personal figures are computed in the tab and sent nowhere           │
 └───────────────────────────────────────────────────────────────────────┘
 ```
@@ -75,7 +75,8 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
         │                ExplainerBand
         └── lib/     payloads.js   WHICH payloads exist at all (the manifest)
                      data.js       WHICH published number (fallback chains)
-                     view.js       WHICH input feeds which formula (the wiring)
+                     view/         WHICH input feeds which formula (the wiring),
+                                   ten modules, one per subject
                      mirror.js     THE ARITHMETIC (the only domain math)
                      calculator.svelte.js  the STATE everything reads
                      format.js     how a number or a date is written
@@ -183,8 +184,9 @@ data/published/*.json
    │
    ▼  data.js     WHICH published number, and what if it is missing
    │              (the fallback chains, relabelling as they degrade)
-   ▼  view.js     WHICH inputs go into which formula
-   │              (dataAge, headlineRate, mortgagePanel, verifyUrl, …)
+   ▼  view/*.js   WHICH inputs go into which formula
+   │              (freshness.js#dataAge, results.js#headlineRate,
+   │               home.js#mortgagePanel, basket.js#verifyUrl, …)
    ▼  mirror.js   THE ARITHMETIC
    │              (annuityPayment, personalInflation, pocketReal, …)
    ▼  calculator.svelte.js
@@ -211,7 +213,7 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 | `cli.py` | One arm per `--source`; exit codes **2** transform, **3** gate, **4** network |
 | `site/src/lib/payloads.js` | Which payloads the page depends on, and which routes need each — the one list `loadAll`, the freshness verdict, `/version.json` and the sitemap all derive from |
 | `site/src/lib/data.js` | Which published number, including every fallback chain |
-| `site/src/lib/view.js` | Which input feeds which formula |
+| `site/src/lib/view/` | Which input feeds which formula — ten modules, one per subject, each paired with the suite of the same stem |
 | `site/src/lib/mirror.js` | The arithmetic — the only domain math in the front end |
 
 ## Hosting and headers
