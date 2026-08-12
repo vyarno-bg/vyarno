@@ -672,6 +672,27 @@
     {/if}
   </div>
 
+  <p class="lead">
+    <span class="l-bg"
+      >Това е отговорът накратко. Всичко под него е сметката: колко жилища се купуват, на каква
+      цена, как се движат цените и кой колко тежко плаща за жилището си. Не заемаме страна — числата
+      сочат в различни посоки и това е част от отговора. Под всяко число има две връзки: първата
+      отваря таблицата на публикуващия, където до нашето число стоят и всички останали мерки от
+      същия набор — брой, индекс, месечна и годишна промяна — така че там се вижда и друго число за
+      същата държава и същото тримесечие. Втората, «{COPY.mktSrcQuery.bg}», връща точно това, което
+      пише тук, и нищо друго.</span
+    >
+    <span class="l-en"
+      >That is the short answer. Everything below it is the working: how many homes change hands, at
+      what price, how prices move, and who finds their housing hardest to pay for. We take no side —
+      the figures point in different directions and that is part of the answer. Every number carries
+      two links: the first opens the publisher's own table, where our figure sits beside every other
+      measure in the same dataset — a count, an index, a quarterly and an annual rate — so the same
+      country and quarter shows more than one number there. The second, "{COPY.mktSrcQuery.en}",
+      returns exactly what is printed here and nothing else.</span
+    >
+  </p>
+
   {#if yearsOfPay.value != null}
     {@render ourSum(
       {
@@ -699,27 +720,6 @@
     )}
   {/if}
 
-  <p class="lead">
-    <span class="l-bg"
-      >Това е отговорът накратко. Всичко под него е сметката: колко жилища се купуват, на каква
-      цена, как се движат цените и кой колко тежко плаща за жилището си. Не заемаме страна — числата
-      сочат в различни посоки и това е част от отговора. Под всяко число има две връзки: първата
-      отваря таблицата на публикуващия, където до нашето число стоят и всички останали мерки от
-      същия набор — брой, индекс, месечна и годишна промяна — така че там се вижда и друго число за
-      същата държава и същото тримесечие. Втората, «{COPY.mktSrcQuery.bg}», връща точно това, което
-      пише тук, и нищо друго.</span
-    >
-    <span class="l-en"
-      >That is the short answer. Everything below it is the working: how many homes change hands, at
-      what price, how prices move, and who finds their housing hardest to pay for. We take no side —
-      the figures point in different directions and that is part of the answer. Every number carries
-      two links: the first opens the publisher's own table, where our figure sits beside every other
-      measure in the same dataset — a count, an index, a quarterly and an annual rate — so the same
-      country and quarter shows more than one number there. The second, "{COPY.mktSrcQuery.en}",
-      returns exactly what is printed here and nothing else.</span
-    >
-  </p>
-
   <nav class="toc" aria-label="contents">
     <a href="#volume"
       ><span class="l-bg">колко се търгува</span><span class="l-en">how much changes hands</span></a
@@ -734,7 +734,9 @@
       ><span class="l-bg">кой купува с кредит</span><span class="l-en">who borrows</span></a
     >
     <a href="#stock"
-      ><span class="l-bg">колко жилища има</span><span class="l-en">the housing stock</span></a
+      ><span class="l-bg">колко жилища преброиха</span><span class="l-en"
+        >what the census counted</span
+      ></a
     >
     <a href="#ratio"
       ><span class="l-bg">скъпо ли е спрямо доходите</span><span class="l-en"
@@ -911,16 +913,18 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Индексът на цените на жилищата мери с колко се е променила цената на сделките спрямо година
-        по-рано. Показваме числото, което Евростат публикува, а не сметка от индекса: НСИ смени
-        базисната година и сам предупреждава, че процент, преизчислен между двете бази, може да се
-        различава в последния знак от този, който публикува.</span
+        >Първо най-простото: с колко са се променили цените на сделките за една година. Числото е
+        това, което Евростат публикува, а не сметка от наша страна. НСИ по едно време смени
+        годината, от която се брои, и сам предупреждава, че процент, пресметнат наново през старата
+        и новата отправна година, може да се разминава в последния знак с този, който те печатат —
+        затова показваме техния.</span
       >
       <span class="l-en"
-        >The house price index measures how much transaction prices moved against a year earlier. We
-        show the figure Eurostat publish rather than one worked out from the index: НСИ changed the
-        base year and warn themselves that a rate recomputed across the two bases can differ in the
-        last decimal from the one they publish.</span
+        >The simplest figure first: how much transaction prices moved in a year. It is the number
+        Eurostat publish rather than one we worked out. НСИ at one point changed the year everything
+        is counted from, and warn themselves that a rate recomputed across the old and the new
+        starting year can differ in the last decimal from the one they print — so the one shown here
+        is theirs.</span
       >
     </p>
     <p>
@@ -1027,8 +1031,7 @@
           <span class="l-bg"
             >В парите от деня жилищата днес струват <b>×{fmt(reading.times)}</b> спрямо {reading.baseYear}
             г. Извади ли се поскъпването на всичко останало, остават
-            <b>×{fmt(reading.realTimes)}</b
-            >.{#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
+            <b>×{fmt(reading.realTimes)}</b>. {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
               И още едно нещо, което само вторият ред казва: така мерено, нивото днес е с {fmt(
                 reading.realBelowPeakPct
               )}% под най-високото, което Евростат изобщо е отчитал — през {periodLong(
@@ -1038,7 +1041,7 @@
           >
           <span class="l-en"
             >In the money of the day a home today costs <b>×{fmt(reading.times)}</b> what it did in {reading.baseYear}.
-            Take out the rise in everything else and <b>×{fmt(reading.realTimes)}</b> is left.{#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
+            Take out the rise in everything else and <b>×{fmt(reading.realTimes)}</b> is left. {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
               And one thing only the second line says: measured that way, today's level is {fmt(
                 reading.realBelowPeakPct
               )}% below the highest Eurostat have ever recorded — in {periodLong(
@@ -1393,7 +1396,7 @@
         >
       </p>
       {@render numbersTable(
-        countLabel(COPY.mktOpenQuarters, cities.cities[0]?.priceSeries.points.length ?? 0),
+        countLabel(COPY.mktOpenCityPrices, cities.cities[0]?.priceSeries.points.length ?? 0),
         COPY.mktTblCityNumbers,
         cities.cities.map((c) => ({ bg: c.nameBg, en: c.nameEn })),
         rowsOf(
@@ -1402,6 +1405,25 @@
         ),
         (v) => pct(v)
       )}
+      <!-- The sales history, which НСИ publish per city and the page carried
+           without drawing. It has no sparkline column of its own on purpose:
+           a fifth column puts the six-city table past a phone's width for a
+           second picture of a shorter series, and HSI_2.4.5 starts years after
+           the price workbook — so a row of two sparklines would invite a
+           comparison across two different windows. The table has room to say
+           where each one starts. -->
+      {#if cities.cities[0]?.dealsSeries.points.length > 2}
+        {@render numbersTable(
+          countLabel(COPY.mktOpenCityDeals, cities.cities[0].dealsSeries.points.length),
+          COPY.mktTblCityDealNumbers,
+          cities.cities.map((c) => ({ bg: c.nameBg, en: c.nameEn })),
+          rowsOf(
+            cities.cities[0].dealsSeries,
+            cities.cities.slice(1).map((c) => c.dealsSeries)
+          ),
+          (v) => pct(v)
+        )}
+      {/if}
     {/if}
 
     <p class="cap">
@@ -1611,6 +1633,10 @@
               <th scope="row" class="sub">{@render colHead(COPY.mktRowOwnLoan, null)}</th>
               <td class="num mono">{fmt(structure.ownerWithMortgage.value)}%</td>
             </tr>
+            <tr>
+              <th scope="row" class="sub">{@render colHead(COPY.mktRowOwnNoLoan, null)}</th>
+              <td class="num mono">{fmt(structure.ownerNoMortgage.value)}%</td>
+            </tr>
             <tr class="mark">
               <th scope="row">{@render colHead(COPY.mktRowRent, null)}</th>
               <td class="num mono">{fmt(structure.renter.value)}%</td>
@@ -1618,6 +1644,10 @@
             <tr>
               <th scope="row" class="sub">{@render colHead(COPY.mktRowRentMarket, null)}</th>
               <td class="num mono">{fmt(structure.renterAtMarketPrice.value)}%</td>
+            </tr>
+            <tr>
+              <th scope="row" class="sub">{@render colHead(COPY.mktRowRentReduced, null)}</th>
+              <td class="num mono">{fmt(structure.renterReducedOrFree.value)}%</td>
             </tr>
           </tbody>
         </table>
@@ -1647,21 +1677,31 @@
   <!-- 5 ------------------------------------------------------------------ -->
   <section id="stock">
     <h2>
-      <span class="l-bg">Колко жилища има</span>
-      <span class="l-en">The housing stock</span>
+      <span class="l-bg">Колко жилища преброи преброяването</span>
+      <span class="l-en">What the census counted</span>
     </h2>
     <p>
       <span class="l-bg"
-        >Преброяването брои жилищата, не хората: колко конвенционални жилища има в страната и колко
-        от тях са били необитавани в нощта на преброяването. «Необитавано» включва вторите жилища и
-        вилите, не само празния фонд.</span
+        >Преброяването брои жилищата, а не хората, и е единственият път, когато някой ги брои
+        всички. «Жилище» тук значи място, направено да се живее в него — апартамент или къща, със
+        собствен вход; общежития, казарми и домове за възрастни се броят отделно и не са в
+        таблицата. «Необитавано» значи, че в нощта на преброяването там не е живял никой, така че
+        вътре влизат и вилите, и вторите жилища, и жилищата на хора в чужбина — не само празният
+        фонд.</span
       >
       <span class="l-en"
-        >The census counts dwellings rather than people: how many conventional dwellings the country
-        has, and how many stood unoccupied on census night. "Unoccupied" includes second homes and
-        holiday properties, not only genuinely empty stock.</span
+        >The census counts dwellings rather than people, and it is the only time anybody counts all
+        of them. "Dwelling" here means somewhere built to be lived in — a flat or a house with its
+        own entrance; halls of residence, barracks and care homes are counted separately and are not
+        in the table. "Unoccupied" means nobody was living there on census night, so holiday homes,
+        second homes and the homes of people abroad are all inside it — not only genuinely empty
+        stock.</span
       >
     </p>
+    <!-- The heading names the CENSUS rather than the housing stock, because the
+         page has no current stock figure and «Колко жилища има» invites a reader
+         to take a count from one night years ago as one. The date is under every
+         figure; the heading is what a reader skimming the contents reads. -->
 
     {#if structure.dwellings.value}
       <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblStock, $lang)}>
@@ -1706,11 +1746,11 @@
       {@render ourSum(
         {
           bg:
-            `Делът е наша сметка: необитаваните жилища върху всички конвенционални жилища от същото ` +
+            `Делът е наша сметка: необитаваните жилища върху всички жилища от същото ` +
             `преброяване — ${fmt0(structure.unoccupied.value)} върху ` +
             `${fmt0(structure.dwellings.value)}. И двете числа са в таблицата отгоре.`,
           en:
-            `The share is our arithmetic: unoccupied dwellings over all conventional dwellings from ` +
+            `The share is our arithmetic: unoccupied dwellings over all the dwellings from ` +
             `the same census — ${fmt0(structure.unoccupied.value)} over ` +
             `${fmt0(structure.dwellings.value)}. Both counts are in the table above.`,
         },

@@ -2175,11 +2175,21 @@ export const COPY = {
   mktColShareOfPeople: { bg: "Дял от хората", en: "Share of people" },
   mktRowOwn: { bg: "В собствено жилище", en: "In a home they own" },
   mktRowOwnLoan: { bg: "— от тях със заем по жилището", en: "— of them with a loan on it" },
+  mktRowOwnNoLoan: { bg: "— от тях без заем", en: "— of them with no loan" },
   mktRowRent: { bg: "Под наем", en: "Renting" },
   mktRowRentMarket: { bg: "— от тях по пазарна цена", en: "— of them at the market price" },
+  // «на намален наем или без наем» rather than Eurostat's «reduced price or
+  // free»: what it covers is a flat from a relative, a service flat, or living
+  // where nobody charges you, and a reader has to be able to place themselves
+  // in the row. It is by far the larger half of renting in Bulgaria, so a table
+  // that showed only the market-price half described the smaller case.
+  mktRowRentReduced: {
+    bg: "— от тях на намален наем или без наем",
+    en: "— of them at a reduced rent or none",
+  },
   mktColDwelling: { bg: "Жилища", en: "Dwellings" },
   mktColHowMany: { bg: "Колко", en: "How many" },
-  mktRowAllDwellings: { bg: "Всички конвенционални жилища", en: "All conventional dwellings" },
+  mktRowAllDwellings: { bg: "Всички жилища", en: "All dwellings" },
   mktRowOccupied: { bg: "Обитавани", en: "Occupied" },
   mktRowUnoccupied: { bg: "Необитавани", en: "Unoccupied" },
   mktRowUnoccupiedShare: { bg: "Дял необитавани", en: "Share unoccupied" },
@@ -2200,7 +2210,7 @@ export const COPY = {
   mktColSold: { bg: "Продадени жилища", en: "Dwellings sold" },
   mktColAvgNew: { bg: "Ново, средно", en: "New, average" },
   mktColAvgExisting: { bg: "Съществуващо, средно", en: "Existing, average" },
-  mktColRatio: { bg: "Спрямо собствената средна", en: "Against its own average" },
+  mktColRatio: { bg: "Спрямо средното за периода", en: "Against the period's average" },
   mktTblIndexNumbers: {
     bg: "Индекс на цените на жилищата по тримесечия",
     en: "House price index by quarter",
@@ -2228,6 +2238,21 @@ export const COPY = {
   mktTblCityNumbers: {
     bg: "Годишна промяна на цените по градове и тримесечия",
     en: "Annual price change by city and quarter",
+  },
+  mktTblCityDealNumbers: {
+    bg: "Годишна промяна на броя сделки по градове и тримесечия",
+    en: "Annual change in the number of sales by city and quarter",
+  },
+  // Two disclosures under one table, so each has to say which series it opens.
+  // «виж числата — всички 45 тримесечия» twice over is two identical labels on
+  // two different sets of figures.
+  mktOpenCityPrices: {
+    bg: "виж цените по градове — всички {n} тримесечия",
+    en: "read the prices by city — all {n} quarters",
+  },
+  mktOpenCityDeals: {
+    bg: "виж броя сделки по градове — всички {n} тримесечия",
+    en: "read the sales counts by city — all {n} quarters",
   },
   // The charts' accessible names. Built from the payload at render, because a
   // description naming a peak or a period is a figure written into prose.
@@ -2274,10 +2299,19 @@ export const COPY = {
   // alone. Printed only for the letters a series actually carries — a key
   // naming a marker that is nowhere on the chart is a question nobody can
   // answer.
-  mktFlagB: { bg: "b — прекъсване в реда", en: "b — break in series" },
-  mktFlagE: { bg: "e — оценка", en: "e — estimate" },
-  mktFlagP: { bg: "p — предварително", en: "p — provisional" },
-  mktFlagD: { bg: "d — различна дефиниция", en: "d — definition differs" },
+  //
+  // Each says what the letter MEANS for the number under it, rather than
+  // naming it. «b — прекъсване в реда» is what a statistical release calls a
+  // break and it tells a reader nothing about what to do with the figure;
+  // «оттук нататък се мери по друг начин» tells them the two halves of the line
+  // are not one measurement, which is the only reason the mark is drawn.
+  mktFlagB: {
+    bg: "b — оттук нататък се мери по друг начин",
+    en: "b — measured a different way from here on",
+  },
+  mktFlagE: { bg: "e — изчислено, не измерено", en: "e — worked out rather than measured" },
+  mktFlagP: { bg: "p — още не е окончателно", en: "p — not final yet" },
+  mktFlagD: { bg: "d — броено по друго определение", en: "d — counted to a different definition" },
   mktFlagsLead: { bg: "Бележките са на Евростат:", en: "The notes are Eurostat's:" },
 
   // What a rule on a plot is. Written beside the chart, because a dashed line
@@ -2317,10 +2351,13 @@ export const COPY = {
     en: "Dwellings sold per quarter, {from} to {to}. The highest is {peak} in {peakAt}; in {to} it is {last}.",
   },
   mktChartPti: {
-    bg: "Цени спрямо доходите по години, от {from} до {to}, срещу дългосрочната средна стойност на същия показател, отбелязана със 100. Най-високо {peak} през {peakAt}, а за {to} — {last}.",
-    en: "Prices against incomes by year, {from} to {to}, against the same indicator's own long-run average marked at 100. The highest is {peak} in {peakAt}; for {to} it is {last}.",
+    bg: "Цени спрямо доходите по години, от {from} до {to}, срещу средното за самия ред, отбелязано със 100. Най-високо {peak} през {peakAt}, а за {to} — {last}.",
+    en: "Prices against incomes by year, {from} to {to}, against the series' own average marked at 100. The highest is {peak} in {peakAt}; for {to} it is {last}.",
   },
-  mktChartRefLine: { bg: "100 = дългосрочната средна", en: "100 = its long-run average" },
+  mktChartRefLine: {
+    bg: "100 = средното за България за целия ред",
+    en: "100 = Bulgaria's own average across the whole series",
+  },
 
   // The six-city table's column heads and its accessible name. Short, because
   // the columns are narrow and the sentence above the table already says these

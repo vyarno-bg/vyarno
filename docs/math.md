@@ -884,6 +884,89 @@ the decimal, the pipeline gates them against each other, and a reader who checks
 one against the other finds that out — worth more than either figure alone on a
 page whose argument is that its numbers are checkable.
 
+### Every field the page loads, and what happens to it
+
+Every payload the page loads is below, field by field: **drawn, or not drawn
+with the reason.** A field that is neither is a gap, and the way one appears is
+that nobody ever wrote the list down — `nsi_housing.city_deals_yoy` carried
+seventeen quarters per city for as long as the page existed and only the newest
+cell of it ever reached a reader.
+
+Envelope fields — `schema_version`, `as_of`, `source`, `payload_name`, `notes`,
+`disclaimer`, `_role`, `dataset`, `unit`, `method`, `note` — are machine-facing
+or feed the staleness banner, and are not listed per block below.
+
+**`house_market.json`**
+
+| Field | Where it goes |
+|---|---|
+| `deals.series_by_period.total` | the volume chart and its numbers table |
+| `deals.series_by_period.{new,existing}` | the volume table's two rows, at `ref_period` |
+| `value.series_by_period.{total,new,existing}` | the average-deal table's «Платено общо», at `ref_period` |
+| `price_index.series_by_period.total` | the index chart as a multiple, and the numbers table as the published level |
+| `price_index.annual_rate_pct.{total,new,existing}` | the rate table, all three at `rate_ref_period`; the total also as the rate chart |
+| `price_index.status_by_period` | the break rules on the chart, the flag column, and the key |
+| `price_index.base_year` | «×1 = колкото през {year} г.», the disclosure and the chart's text alternative |
+| `price_index_real.series_by_period` | the second index line and its column |
+| `price_index_real.status_by_period` | the flag key |
+| `avg_deal_eur.series_by_period.{new,existing}` | the average-deal chart and its numbers table |
+| `avg_deal_eur.series_by_period.total` | the average-deal table and the years-of-pay card |
+| `avg_deal_eur.derived_from_api_urls` | the two disclosure links, twice |
+| `ref_period`, `rate_ref_period` | every period caption in the section |
+
+Not drawn, and why. **`value`'s forty-five quarters of total turnover**: it is
+the count times the average and both of those are already plotted, so a third
+chart would restate two the page has. **The index and the rate split by purchase
+type as SERIES**: `tipsho30` has no purchase dimension, so a split nominal line
+would have no deflated twin beside it and the pair is the point of that chart;
+the split is on the page as the tables' three rows. **`avg_deal_eur` as a total
+LINE**: a mean over whatever sold that quarter moves with the mix, and a line
+invites the reading the mix will not support. **`avg_deal_eur.latest`**: the
+same cell as `series_by_period[ref_period]`, which is the one the payload dates.
+
+**`house_market_structure.json`**
+
+| Field | Where it goes |
+|---|---|
+| `tenure.{owner,owner_with_mortgage,owner_no_mortgage,rent,rent_market_price,rent_reduced_or_free}_pct` | all six, the tenure table |
+| `census_dwellings.{total,occupied,unoccupied}` | the census table; the unoccupied share is derived from two of them |
+| `price_to_income.series_by_period`, `value`, `ref_period` | the ratio chart, its numbers table, and the caption naming the year it stops at |
+| `housing_cost_overburden.series_by_period`, `value_pct`, `ref_period` | the overburden chart, its numbers table, and the sentence above it |
+
+Not drawn: **`tenure.total_pct`**, which is 100 by construction. The two marked
+rows add to it in front of the reader, which is the check; a row reading 100.0
+is the arithmetic printed rather than shown.
+
+**`nsi_housing.json`**
+
+| Field | Where it goes |
+|---|---|
+| `national_price_index_yoy.value_pct.{total,new,existing}` | the НСИ column of the rate table |
+| `city_price_index_yoy.cities[].{value_pct, ref_period}` | the city table's price column, each cell dated by its own city |
+| `city_price_index_yoy.cities[].series_by_period` | the six sparklines and the city price numbers table |
+| `city_deals_yoy.cities[].{value_pct, ref_period}` | the city table's sales column |
+| `city_deals_yoy.cities[].series_by_period` | the city sales numbers table |
+
+Not drawn: **`national_price_index_yoy.series_by_period`**. It is the same
+statistic as the rate chart, from the body that compiles it rather than the body
+that disseminates it, and the pipeline gates the two against each other. Drawn
+twice it would be one chart presented as two. The cross-publisher claim is made
+where it is checkable — one table, two columns, same quarter.
+
+The sales series has **no sparkline column of its own**, and that is a layout
+decision rather than an omission: a fifth column puts the six-city table past a
+phone's width, and `HSI_2.4.5` starts years after the price workbook, so two
+sparklines per row would invite a comparison across two different windows. The
+numbers table has room to state where each one begins.
+
+**`sector_salary.json`** — the `Total` row's `value_eur` and the payload's
+`ref_period` and `source_url`, for the years-of-pay card. Everything else in
+that file belongs to the calculator's sector comparison.
+
+**`hicp_categories.json`** — `CP041`'s `annual_rate_pct`, `ref_period` and
+`api_url`, for the renters' sentence. Everything else is the calculator's
+basket.
+
 ## What we deliberately do not do
 
 | Idea | Why not |
