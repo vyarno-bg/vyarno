@@ -21,7 +21,7 @@
     forgetInputs,
   } from "./lib/stores.js";
   import { Calculator } from "./lib/calculator.svelte.js";
-  import { regionOptions } from "./lib/view.js";
+  import { regionOptions } from "./lib/view/region.js";
   // The footer is shared with /legal/ and /404.html so the upstream
   // attribution and the legal links cannot be present on one page and missing
   // from another. See lib/SiteFooter.svelte.

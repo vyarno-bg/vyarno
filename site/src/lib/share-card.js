@@ -26,7 +26,7 @@
  *
  * ## What may be on it
  *
- * Not this file's decision. `view.js#sharePayload` returns the closed set of
+ * Not this file's decision. `view/share.js#sharePayload` returns the closed set of
  * shareable fields and takes no salary; this draws what it is given. If you
  * are here to add a figure to the card, the field has to exist in that payload
  * first, which is where P2 is argued.
@@ -34,7 +34,7 @@
 
 import { number, periodLong } from "./format.js";
 import { t } from "./content.js";
-import { barCeiling } from "./view.js";
+import { barCeiling } from "./view/share.js";
 
 /**
  * The export size, and why it is this one.
@@ -75,7 +75,7 @@ const PAD = 64;
 const TRACK_HEIGHT = 16;
 const CONTENT_WIDTH = SHARE_CARD.width - PAD * 2;
 
-/** Which verdict gets which serif line. String literals: see `view.js`. */
+/** Which verdict gets which serif line. String literals: see `view/share.js`. */
 const CARD_VERDICT_KEY = Object.freeze({
   dearer: "shareCardVerdictDearer",
   cheaper: "shareCardVerdictCheaper",
@@ -148,7 +148,7 @@ export function readPalette(el) {
  * than a rendering one.
  *
  * @param {object} args
- * @param {object} args.share  `view.js#sharePayload` output
+ * @param {object} args.share  `view/share.js#sharePayload` output
  * @param {object} args.copy   the `COPY` object
  * @param {'bg'|'en'} args.lang
  */
@@ -191,7 +191,7 @@ export function shareCardText({ share, copy, lang = "bg" }) {
 /**
  * How much of the track each bar fills, as fractions of 1.
  *
- * The ceiling comes from `view.js#barCeiling`, which the results card's own
+ * The ceiling comes from `view/share.js#barCeiling`, which the results card's own
  * pair of bars is drawn against too — an image that disagrees with the screen
  * it was generated from is the defect worth spending an import on.
  *
@@ -300,7 +300,7 @@ function drawBar(ctx, palette, { label, value, fraction, labelY, trackY, fill })
  *
  * @param {HTMLCanvasElement} canvas
  * @param {object} args
- * @param {object} args.share  `view.js#sharePayload` output
+ * @param {object} args.share  `view/share.js#sharePayload` output
  * @param {object} args.copy
  * @param {'bg'|'en'} args.lang
  * @param {Record<string,string>} args.palette  `readPalette()`

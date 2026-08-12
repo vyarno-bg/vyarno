@@ -16,7 +16,7 @@
    * two answer the same question about money that is not being spent — one
    * forward on an assumption, one backward on published indices.
    */
-  import { rankedSplit } from "../lib/view.js";
+  import { rankedSplit } from "../lib/view/results.js";
   import RankedContributions from "./RankedContributions.svelte";
   import ResultsSummary from "./ResultsSummary.svelte";
   import ResultsAnswer from "./ResultsAnswer.svelte";

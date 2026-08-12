@@ -34,7 +34,7 @@
    */
   import { lang, region } from "../lib/stores.js";
   import { COPY, t } from "../lib/content.js";
-  import { CITY_PRICED } from "../lib/view.js";
+  import { CITY_PRICED } from "../lib/view/region.js";
 
   /**
    * @type {{

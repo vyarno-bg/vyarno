@@ -117,7 +117,7 @@ jobs:
         id: meta
         if: steps.diff.outputs.changed != ''
         # 30-day threshold matches the freshness check workflow. The
-        # site banner surfaces staleness at 45 days (view.js), so this
+        # site banner surfaces staleness at 45 days (view/freshness.js), so this
         # 30-day threshold gives two weeks of headroom.
         #
         # Also detects a "cached read" — a pipeline run that produced

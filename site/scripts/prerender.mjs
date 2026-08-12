@@ -38,7 +38,7 @@
  *     (docs/principles.md P7). Freezing a result computed from it into served
  *     HTML publishes an answer to a question nobody asked. `App.svelte`
  *     renders that region empty under `prerender`;
- *   - **the freshness verdict.** `view.js#dataAge` compares each payload's
+ *   - **the freshness verdict.** `view/freshness.js#dataAge` compares each payload's
  *     `as_of` against its cadence and the current time, and the build's clock
  *     is not the reader's. A page stamped "fresh" at build time still says so
  *     three months later. `Calculator`'s seeded constructor therefore leaves

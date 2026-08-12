@@ -32,9 +32,8 @@ import {
   householdRaise,
   scheduledMaxInsurable,
   scheduledMaxInsurableFrom,
-  regionQuarter,
-  SOFIA_CITY_CODE,
-} from "../src/lib/view.js";
+} from "../src/lib/view/payroll.js";
+import { regionQuarter, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 import { SECTOR_HINTS } from "../src/lib/content.js";
 import {
   composeLadder,

@@ -21,9 +21,9 @@
 #
 # 30-day payload threshold matches the per-source refresh workflow, and
 # `test_cli_dispatch.py` holds the two to each other. The site's own overdue
-# line is per payload against its own cadence (view.js#payloadStatus), and the
-# shortest of those is 31 days with a 1.5× multiple — so this fires at least a
-# fortnight before any reader sees anything.
+# line is per payload against its own cadence (view/freshness.js#payloadStatus),
+# and the shortest of those is 31 days with a 1.5× multiple — so this fires at
+# least a fortnight before any reader sees anything.
 #
 # Failure handling: a non-zero exit surfaces in the GitHub Actions UI
 # and (when configured in repo Notifications) emails the maintainer.

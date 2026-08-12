@@ -12,7 +12,8 @@ import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 import { buildLadder, payrollParams } from "../src/lib/mirror.js";
-import { earnerRanks, nationalQuarter } from "../src/lib/view.js";
+import { nationalQuarter } from "../src/lib/view/country.js";
+import { earnerRanks } from "../src/lib/view/payroll.js";
 
 test("the placeholder's payslip and comparator wait for a salary", { skip }, async () => {
   // The gross, the deductions and the Sofia comparison are facts about

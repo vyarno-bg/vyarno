@@ -46,7 +46,7 @@ to do to count is §"The standard a test has to meet".
 | `pipeline/tests/test_*.py` | pytest | Connectors, transforms, publish gates, the models, the CLI |
 | `pipeline/tests/test_published_contracts.py` | pytest | The JSON committed under `data/published/`, re-checked offline |
 | `site/scripts/verify_mirror_math.mjs` · `verify_net_salary.mjs` | `node:test` | Every formula, against worked examples |
-| `site/scripts/verify_view_*.mjs` | `node:test` | Every derived value — which number feeds which formula, one subject per file (§"Which `view.js` suite a test belongs in") |
+| `site/scripts/verify_view_*.mjs` | `node:test` | Every derived value — which number feeds which formula, one suite per `src/lib/view/` module (§"Which `view/` module a test belongs to") |
 | `site/scripts/verify_copy.mjs` | `node:test` | Copy invariants, against the imported `COPY` object |
 | `site/scripts/verify_data_contracts.mjs` | `node:test` | `data.js` fallback chains and the shipped payloads |
 | `site/scripts/verify_legal.mjs` | `node:test` | The legal documents, the ЗЕТ чл. 4 identity, the licence claim, upstream attribution |
@@ -142,7 +142,7 @@ documentation actually has.
 | A CLI arm or an exit code | `test_cli*.py` |
 | A published-JSON field | `test_published_contracts.py`, and `verify_data_contracts.mjs` if the SPA reads it |
 | A formula in `mirror.js` | `verify_mirror_math.mjs` (or `verify_net_salary.mjs` for payroll) |
-| A derived value in `view.js` | the `verify_view_*.mjs` suite for its subject — §"Which `view.js` suite a test belongs in" |
+| A derived value in a `view/` module | `verify_view_<stem>.mjs`, the suite of the same stem — §"Which `view/` module a test belongs to" |
 | A fallback chain in `data.js` | `verify_data_contracts.mjs` |
 | A number or date the UI formats | `verify_format.mjs` |
 | A UI string, or a rule about what a string may claim | `verify_copy.mjs` |
@@ -151,24 +151,31 @@ documentation actually has.
 | A legal document, the identity, or the licence claim | `verify_legal.mjs` |
 | Anything persisted to `localStorage` | `verify_stores.mjs` |
 
-### Which `view.js` suite a test belongs in
+### Which `view/` module a test belongs to
 
-`view.js` is one module and its suites are not, because the questions it answers
-are not one question. Each file below is one subject, and the sentence beside it
-is the whole of its remit.
+The wiring layer is ten modules and ten suites, because the questions it answers
+are not one question. Each row below is one subject, and the sentence beside it
+is the whole of its remit — **on both sides of the pair**, so a function that
+moves between modules moves its test with it.
 
-| The subject | The suite |
-|---|---|
-| Whether the figures on the page are still current | `verify_view_freshness.mjs` |
-| The published divisions the basket is built from | `verify_view_basket.mjs` |
-| What the price rise is charged against | `verify_view_spend.mjs` |
-| What the results card claims | `verify_view_results.mjs` |
-| What leaves the page when a reader shares it | `verify_view_share.mjs` |
-| Where a household's pay stands once it is taxed | `verify_view_payroll.mjs` |
-| What is published about the област a reader picked | `verify_view_region.mjs` |
-| What a home costs the reader buying one | `verify_view_home.mjs` |
-| The figures `/how/` renders with nobody in them | `verify_view_country.mjs` |
-| Which published field feeds which figure on `/market/` | `verify_view_market.mjs` |
+| The subject | The module | The suite |
+|---|---|---|
+| Whether the figures on the page are still current | `view/freshness.js` | `verify_view_freshness.mjs` |
+| The published divisions the basket is built from | `view/basket.js` | `verify_view_basket.mjs` |
+| What the price rise is charged against | `view/spend.js` | `verify_view_spend.mjs` |
+| What the results card claims | `view/results.js` | `verify_view_results.mjs` |
+| What leaves the page when a reader shares it | `view/share.js` | `verify_view_share.mjs` |
+| Where a household's pay stands once it is taxed | `view/payroll.js` | `verify_view_payroll.mjs` |
+| What is published about the област a reader picked | `view/region.js` | `verify_view_region.mjs` |
+| What a home costs the reader buying one | `view/home.js` | `verify_view_home.mjs` |
+| The figures `/how/` renders with nobody in them | `view/country.js` | `verify_view_country.mjs` |
+| Which published field feeds which figure on `/market/` | `view/market.js` | `verify_view_market.mjs` |
+
+A suite may CALL an export another suite owns — `verify_view_country.mjs` builds
+fixtures through `region.js#regionQuarter`, `verify_view_spend.mjs` cross-checks
+against `results.js#headlineRate` — and that is not a boundary failure. What the
+table fixes is which suite each export is the subject OF, so there is one place
+to add a case and one place to look for it.
 
 **The fixtures are the seam.** Each suite opens the payloads its own subject
 needs and builds its own shapes, which is what makes them separable at all;
@@ -513,7 +520,7 @@ for is the question a reviewer should be able to ask about any uncovered line �
 *why not?* — and get an answer.
 
 **JavaScript.** The layers that can produce a wrong number are effectively
-complete: `view.js`, `mirror.js`, `legal.js` and `support.js` are at or near
+complete: `src/lib/view/`, `mirror.js`, `legal.js` and `support.js` are at or near
 100%. Two real gaps:
 
 | File | Why |

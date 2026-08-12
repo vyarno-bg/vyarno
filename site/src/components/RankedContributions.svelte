@@ -96,7 +96,7 @@
 {#if ranked.length > 0 && enteredTotal > 0}
   <!-- The list is capped so it stays readable, and the lead sentence
        says the rows add up to exactly the user's number — so the
-       remainder has to be on screen. `view.js#rankedSplit` owns that
+       remainder has to be on screen. `view/results.js#rankedSplit` owns that
        arithmetic (Σshown + restPp === π, asserted in
        verify_view_results.mjs); the template only draws it. -->
   {@const { shown, restN, restPp } = rankedSplit(ranked, limit)}

@@ -11,12 +11,13 @@
   import { lang } from "../lib/stores.js";
   import { number, integer } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
-  import { barCeiling } from "../lib/view.js";
+  import { barCeiling } from "../lib/view/share.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
 
-  // The value both bars are drawn against, from `view.js` rather than written
+  // The value both bars are drawn against, from `view/share.js` rather than
+  // written
   // into the two `style=` expressions below. The share image draws the same
   // pair, and a scale computed in a template is a scale no test can reach — so
   // the two would drift with nothing to notice, and the picture a reader sends

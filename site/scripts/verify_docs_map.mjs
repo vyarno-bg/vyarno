@@ -111,8 +111,14 @@ test("every script in site/scripts is named in the docs/site.md tree", () => {
 
 test("every page component and lib module is named in the docs/site.md tree", () => {
   const pages = readdirSync(join(SITE, "src")).filter((f) => f.endsWith(".svelte"));
-  const lib = readdirSync(join(SITE, "src", "lib"));
-  const missing = [...pages, ...lib].filter((f) => !NAMES_IN_TREE.has(f)).sort();
+  // `src/lib` has a subdirectory in it, so the listing is recursive and yields
+  // files only. A flat read would name the directory itself — which the tree
+  // draws without an extension and this check would report as missing — while
+  // saying nothing about the modules inside it, which are the part a reader
+  // opening the map is looking for.
+  const missing = [...pages, ...filesUnder(join(SITE, "src", "lib"))]
+    .filter((f) => !NAMES_IN_TREE.has(f))
+    .sort();
   assert.deepEqual(missing, [], `${missing.join(", ")} is in site/src/ and not in the tree`);
 });
 

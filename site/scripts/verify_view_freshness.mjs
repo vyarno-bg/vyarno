@@ -17,7 +17,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { dataAge, payloadStatus, STALE_AFTER_DAYS } from "../src/lib/view.js";
+import { dataAge, payloadStatus, STALE_AFTER_DAYS } from "../src/lib/view/freshness.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
 import { published } from "./published-payload.mjs";
 

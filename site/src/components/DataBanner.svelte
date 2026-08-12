@@ -44,7 +44,7 @@
     /** How many payloads are overdue — the banner counts them, not days. */
     dataOverdueCount = 0,
     dataOldestAsOf = "",
-    /** One row per payload, for the panel. See view.js#dataAge. */
+    /** One row per payload, for the panel. See view/freshness.js#dataAge. */
     dataRows = [],
     /** Bound: the panel's open state, persisted by App alongside the drawer's. */
     panelOpen = $bindable(false),

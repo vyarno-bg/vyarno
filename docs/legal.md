@@ -291,7 +291,7 @@ happens.
 The workbook НСИ publish carries both a monthly sheet and one sheet per year of
 their own quarterly averages, `2020trimes` … `2026trimes`. `region_salary.json`
 carries each област's quarterly series, every row's `value_eur` is НСИ's cell at
-the payload's own `ref_period`, and `view.js#regionQuarter` selects that
+the payload's own `ref_period`, and `view/region.js#regionQuarter` selects that
 headline rather than computing one. `sector_salary.json` is the same arrangement over their sibling
 by-activity table `Labour_1.1.2.1`: twenty rows, each carrying the quarters НСИ
 printed and a headline that IS one of them. Every НСИ figure this project ships
@@ -301,7 +301,7 @@ printed and a headline that IS one of them. Every НСИ figure this project shi
   НСИ print. It is also more accurate than the alternative: the mean of their
   three rounded monthly cells gives 1914.7. The level the percentile ladder is
   re-levelled onto — 1407 EUR at the same quarter — is their all-activities
-  «Общо» cell from the sibling table, selected by `view.js#nationalQuarter` for
+  «Общо» cell from the sibling table, selected by `view/country.js#nationalQuarter` for
   the same reason and under the same rule.
 - `pctSrc` therefore attributes the level to НСИ without qualification —
   «нивото е от НСИ · средна заплата {quarter}» — which is a true statement only
@@ -359,7 +359,7 @@ cells: the pipeline selects, and every НСИ payload is a straight reproduction
 cells they printed. What the browser does with those cells once they are on the
 reader's screen is the paragraph above — a comparison the reader asked for,
 against a figure that is still НСИ's, computed nowhere we could distribute it
-from. `view.js#regionGap` and `view.js#sectorComparison` are both that: a
+from. `view/payroll.js#regionGap` and `view/payroll.js#sectorComparison` are both that: a
 percentage between the reader's own pay and a published average, existing only
 in their tab.
 

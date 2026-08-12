@@ -13,7 +13,7 @@
   are eight of them on three different release rhythms. So the answer is the
   eight, visible.
 
-  Rows come from `view.js#dataAge`, computed from the manifest in `payloads.js`.
+  Rows come from `view/freshness.js#dataAge`, computed from the manifest in `payloads.js`.
   This component picks words and colours and nothing else.
 -->
 <script>
@@ -22,7 +22,7 @@
   import { dateShort, period, periodLong, httpUrl } from "$lib/format.js";
 
   let {
-    /** Rows from `view.js#dataAge`. One per manifest payload, in panel order. */
+    /** Rows from `view/freshness.js#dataAge`. One per manifest payload, in panel order. */
     rows = [],
     /** Bound: the panel's own open state, which App persists like the drawer's. */
     open = $bindable(false),

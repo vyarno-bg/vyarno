@@ -51,10 +51,10 @@
     cityNameEn = "",
     /** Whether the price has a source: имот.bg's median for the reader's own
         град, or one they typed. There is no third answer — see
-        `view.js#homePriceFor`. */
+        `view/home.js#homePriceFor`. */
     priceIsSourced = false,
     /** The €/m² the price above is built from, and whether it is the reader's
-        own — `view.js#homePriceBasis`, so the bracket and the total cannot end
+        own — `view/home.js#homePriceBasis`, so the bracket and the total cannot end
         up describing different prices. */
     basisEurPerM2 = 0,
     basisIsOwn = false,

@@ -8,7 +8,7 @@
    * This says them once, in the order they were asked, before the ranked table
    * starts.
    *
-   * It computes nothing. `view.js#answerLine` decides which of the three can
+   * It computes nothing. `view/results.js#answerLine` decides which of the three can
    * honestly be stated and in what state; this file picks the words for those
    * states, which is the one thing a component is allowed to decide.
    *
@@ -21,7 +21,7 @@
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
   import { number, integer, percentSigned } from "$lib/format.js";
-  import { answerLine } from "$lib/view.js";
+  import { answerLine } from "$lib/view/results.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();

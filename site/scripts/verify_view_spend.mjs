@@ -17,14 +17,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
+import { headlineRate } from "../src/lib/view/results.js";
 import {
-  headlineRate,
   housingCarveOut,
   basketBudget,
   clampSpendShare,
   exposedSpend,
   leftoverIfHeldAsCash,
-} from "../src/lib/view.js";
+} from "../src/lib/view/spend.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
 
@@ -156,7 +156,7 @@ test("the spend share holds at both ends and refuses junk", () => {
 
   // Out of range and unusable both land on 100. NaN is the app failing to read
   // an answer, and answering "you spend nothing" on the reader's behalf would
-  // empty every € figure on the page (view.js#clampSpendShare).
+  // empty every € figure on the page (view/spend.js#clampSpendShare).
   assert.equal(at(-30).spendBase, 0, "a negative claim was not clamped to nothing spent");
   assert.equal(at(130).spendBase, 1250, "a claim over 100% spent more than there is");
   assert.equal(at(NaN).spendBase, 1250);

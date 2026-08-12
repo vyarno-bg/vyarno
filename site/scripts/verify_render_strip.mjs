@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
-import { regionQuarter, regionRow, SOFIA_CITY_CODE } from "../src/lib/view.js";
+import { regionQuarter, regionRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 import { periodLong } from "../src/lib/format.js";
 
 /**

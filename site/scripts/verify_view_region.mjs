@@ -28,7 +28,7 @@ import {
   CITY_UNREAD,
   CITY_NO_PAGE,
   SOFIA_CITY_CODE,
-} from "../src/lib/view.js";
+} from "../src/lib/view/region.js";
 import { HOME } from "../src/lib/content.js";
 import { published } from "./published-payload.mjs";
 

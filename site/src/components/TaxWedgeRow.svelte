@@ -5,7 +5,7 @@
   The finding is the shape — the effective rate PEAKS at the social-insurance
   ceiling and falls above it — so the chart is inline SVG with no chart library
   and no third-party request. Every number is decided in
-  $lib/view.js#taxWedgePanel and arrives as one `wedge` prop; this component
+  $lib/view/payroll.js#taxWedgePanel and arrives as one `wedge` prop; this component
   only maps those numbers onto a plot box.
 -->
 <script>
@@ -14,7 +14,7 @@
   import { number, integer } from "$lib/format.js";
 
   const {
-    /** The whole panel from view.js#taxWedgePanel: points, cap, peak, earners. */
+    /** The whole panel from view/payroll.js#taxWedgePanel: points, cap, peak, earners. */
     wedge,
   } = $props();
 

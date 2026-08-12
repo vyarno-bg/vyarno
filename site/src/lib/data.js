@@ -158,7 +158,7 @@ export function mortgageLendingLimits(mortgage) {
 }
 
 /*
- * Freshness is not computed here. `view.js#dataAge` owns it, and returns both
+ * Freshness is not computed here. `view/freshness.js#dataAge` owns it, and returns both
  * aggregates together with the per-payload rows behind them — so a caller
  * reaching for "the site's date" has to say which one it means, next to the
  * eight it was derived from.

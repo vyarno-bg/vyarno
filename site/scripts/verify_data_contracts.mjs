@@ -37,7 +37,7 @@ import {
   loadAll,
 } from "../src/lib/data.js";
 import { PAYLOAD_KEYS, PAYLOAD_PAGES, PAYLOADS, payloadsFor } from "../src/lib/payloads.js";
-import { cityRow, regionQuarter, SOFIA_CITY_CODE } from "../src/lib/view.js";
+import { cityRow, regionQuarter, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 import { HOME, PRESETS } from "../src/lib/content.js";
 import {
   officialInflation,
@@ -444,7 +444,7 @@ test("no НСИ payload carries a second publisher's figures", () => {
 
   // And the other half: region_salary.json must publish only what НСИ
   // published. Each `value_eur` is that област's latest published quarter,
-  // verbatim, and view.js#regionQuarter selects it rather than deriving
+  // verbatim, and view/region.js#regionQuarter selects it rather than deriving
   // anything from the series beside it. Twenty-eight rows means twenty-eight
   // places a derived headline could hide, and none of them would look wrong on
   // screen — every one is a plausible Bulgarian wage.
