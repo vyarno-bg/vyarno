@@ -1,0 +1,52 @@
+# Quarterly property-market refresh (Eurostat prc_hpi_* — dwellings sold, what
+# was paid for them, and the official house price index; plus the four
+# structure cubes behind tenure, the census stock, price-to-income and
+# housing-cost overburden).
+#
+# **One arm writes two payloads**, `house_market.json` and
+# `house_market_structure.json`, and that is a constraint rather than a
+# convenience: `refresh.yml` decides which files an arm owns by matching
+# payload stems against the `--source` name with hyphens swapped for
+# underscores. A structure payload named anything not starting `house_market`
+# would be owned by no arm, so the workflow would find nothing of its own
+# changed, skip the commit and the PR, and report the run GREEN while the
+# payload never published.
+#
+# THE DAY, AND WHY IT IS NOT THE 8TH
+#
+# Eurostat release the quarter about three months after it closes: 2026-Q1
+# landed on 02.07.2026 for the count and index cubes. The obvious cron is
+# therefore the first week of January, April, July and October.
+#
+# It is wrong, and the way it fails is silent. `prc_hpi_hsvq` — the value cube,
+# and half of the average deal — updated its data on **09.07.2026**, a week
+# behind the other two, while its structure timestamp still read 02.07. A run
+# on the 8th would have fetched a count cube carrying 2026-Q1 and a value cube
+# that did not, and the transform pairs the two on the quarters they share: the
+# published payload's newest complete quarter would have been 2025-Q4, correct
+# in every figure, gated green, and one quarter stale until October.
+#
+# So the 15th, six days clear of the slowest of the three observed releases. A
+# refresh that runs late costs a few days of an already-quarterly figure; one
+# that runs early costs a whole quarter and says nothing.
+
+name: refresh-house-market
+
+on:
+  schedule:
+    # Quarterly, 15th, 05:00 UTC. 1,4,7,10 is January, April, July, October —
+    # the month after Eurostat publish the quarter that closed three months
+    # earlier. On the hour rather than :30, and an hour after the НСИ arms, so
+    # no two upstream fetches open on the same minute.
+    - cron: "0 5 15 1,4,7,10 *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: house-market

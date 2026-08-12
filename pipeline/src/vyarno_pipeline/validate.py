@@ -727,3 +727,152 @@ def validate_city_price(cities: list[dict], covered_codes: list[str]) -> None:
                     f"is not its newest published year's. The headline and the "
                     f"chart would disagree, and only one of them can be right."
                 )
+
+
+# ---------------------------------------------------------------------------
+# The property market gates — Eurostat, prc_hpi_*
+# ---------------------------------------------------------------------------
+
+# What an average Bulgarian dwelling transaction can plausibly be, in euro.
+#
+# **Measured on the real series before it was written, which is the only way a
+# band means anything.** The published nine-year run is €30,250 (2017-Q3) to
+# €82,786 (2026-Q1), so the floor sits a third below the low and the ceiling
+# six times above the high. That is deliberately loose: this gate is not
+# watching the market, it is watching for a unit error. Dividing euro by nothing,
+# reading the count cube as the value cube, or picking up a value in the
+# hundreds of millions without its denominator all land orders of magnitude
+# outside it, and every one of those looks like an ordinary number on screen.
+#
+# Tightening it around the current level would make it fail on a genuine market
+# move, which is the failure that teaches people to widen tolerances.
+AVG_DEAL_MIN_EUR: float = 10_000.0
+AVG_DEAL_MAX_EUR: float = 500_000.0
+
+
+def validate_house_market(payload: dict) -> None:
+    """Gate `house_market.json` before it is written.
+
+    Three properties, and the first is the one that would be invisible on the
+    page: **the derived average has to be the published value divided by the
+    published count, at the same quarter**. The payload carries all three
+    numbers, so a reader can check it — and so can this. An average assembled
+    from a different quarter's denominator is arithmetically fine, internally
+    consistent, and wrong in a way no band would catch.
+    """
+    deals = payload.get("deals", {}).get("series_by_period", {})
+    values = payload.get("value", {}).get("series_by_period", {})
+    avg = payload.get("avg_deal_eur", {}).get("series_by_period", {})
+    if not deals or not values or not avg:
+        raise ValidationError(
+            "house market: the payload is missing one of deals, value or "
+            "avg_deal_eur. Each of the three is what makes the other two "
+            "checkable by a reader."
+        )
+
+    for period, row in sorted(avg.items()):
+        for field, derived in row.items():
+            n = deals.get(period, {}).get(field)
+            v = values.get(period, {}).get(field)
+            if not n or v is None:
+                raise ValidationError(
+                    f"house market: avg_deal_eur has {field} at {period} but the "
+                    f"published count or value for that quarter does not. The "
+                    f"average would be the only figure of the three a reader "
+                    f"could not check."
+                )
+            # Identity, not a tolerance: the payload rounds the quotient to two
+            # decimals and nothing else happens to it, so anything further out
+            # is a different denominator rather than a rounding difference.
+            if abs(derived - v / n) > 0.01:
+                raise ValidationError(
+                    f"house market: avg_deal_eur[{period}][{field}] is {derived}, "
+                    f"but the published value {v} over the published count {n} is "
+                    f"{v / n:.2f}. The disclosed derivation does not reproduce."
+                )
+            if not AVG_DEAL_MIN_EUR <= derived <= AVG_DEAL_MAX_EUR:
+                raise ValidationError(
+                    f"house market: avg_deal_eur[{period}][{field}] is {derived:,.0f} "
+                    f"EUR, outside the {AVG_DEAL_MIN_EUR:,.0f}–{AVG_DEAL_MAX_EUR:,.0f} "
+                    f"band. That band is three times wider than the observed "
+                    f"series at each end, so a figure outside it is a unit error "
+                    f"rather than a market move — find which cube was read wrong."
+                )
+
+    # New builds cost more than existing dwellings per transaction, every
+    # quarter of the published series, and by a wide margin. This is not a
+    # market opinion: it is the arithmetic check that the two purchase codes
+    # have not been swapped, which is otherwise a silent relabelling — both
+    # series stay plausible and every figure on the page moves.
+    for period, row in sorted(avg.items()):
+        new, existing = row.get("new"), row.get("existing")
+        if new is not None and existing is not None and new <= existing:
+            raise ValidationError(
+                f"house market: at {period} the average NEW dwelling deal "
+                f"({new:,.0f}) is not above the average EXISTING one "
+                f"({existing:,.0f}). DW_NEW and DW_EXST differ by one letter and "
+                f"swapping them keeps both series plausible — check the codes "
+                f"before assuming the market did this."
+            )
+
+    rates = payload.get("price_index", {}).get("annual_rate_pct", {})
+    if not rates:
+        raise ValidationError(
+            "house market: no annual rate of change. It is Eurostat's own "
+            "published figure and the one the НСИ cross-check reconciles against."
+        )
+
+
+def validate_house_market_structure(payload: dict) -> None:
+    """Gate `house_market_structure.json` before it is written.
+
+    Every figure here is a published cell, so there is no derivation to
+    reproduce. What there is instead is a set of identities each cube asserts
+    about itself — the tenure split is one population and the census counts are
+    one stock — and a cube sliced on the wrong dimension breaks them while every
+    individual number still looks like a percentage.
+    """
+    tenure = payload.get("tenure", {})
+    own, rent = tenure.get("owner_pct"), tenure.get("rent_pct")
+    total = tenure.get("total_pct")
+    if own is None or rent is None or total is None:
+        raise ValidationError("housing structure: the tenure split is incomplete")
+    # EU-SILC publishes each share to one decimal, so the two halves of a split
+    # population can miss 100 by a rounding step. 0.2 pp allows that and
+    # nothing more — a slice taken over the wrong household composition misses
+    # by whole points.
+    if abs(own + rent - total) > 0.2:
+        raise ValidationError(
+            f"housing structure: owners ({own}) plus renters ({rent}) is "
+            f"{own + rent}, not the published total {total}. These are one "
+            f"population split two ways, so a gap means the slice is not the "
+            f"whole population — check hhcomp and rskpovth."
+        )
+    if tenure.get("owner_with_mortgage_pct", 0) > own:
+        raise ValidationError(
+            "housing structure: more owners carry a mortgage than there are "
+            "owners. OWN_L is a subset of OWN."
+        )
+
+    census = payload.get("census_dwellings", {})
+    total_dw = census.get("total")
+    occupied, unoccupied = census.get("occupied"), census.get("unoccupied")
+    if not total_dw or occupied is None or unoccupied is None:
+        raise ValidationError("housing structure: the census dwelling counts are incomplete")
+    # The census also carries an "unknown occupancy" bucket, so occupied plus
+    # unoccupied is at most the total rather than exactly it.
+    if occupied + unoccupied > total_dw:
+        raise ValidationError(
+            f"housing structure: occupied ({occupied:,.0f}) plus unoccupied "
+            f"({unoccupied:,.0f}) exceeds the total dwelling stock "
+            f"({total_dw:,.0f}). They are subsets of it."
+        )
+
+    ptir = payload.get("price_to_income", {})
+    if ptir.get("unit") != "PTIR_LT_AVG":
+        raise ValidationError(
+            f"housing structure: price_to_income is on unit {ptir.get('unit')!r}. "
+            f"Only PTIR_LT_AVG indexes the ratio against this country's OWN "
+            f"long-run average, which is the only reading that supports the "
+            f"sentence the page puts beside it."
+        )

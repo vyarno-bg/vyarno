@@ -399,6 +399,267 @@ def fetch_ses_earnings_bg(geo: str = "BG") -> dict[str, Any]:
     }
 
 
+# -------------------------------------------------------------------
+# The property market
+# -------------------------------------------------------------------
+
+# Three quarterly cubes, all fed by НСИ, all describing the same thing from
+# different angles: how many dwellings households bought, what they paid in
+# total, and how the price per dwelling moved.
+#
+# **What is in them is narrower than "House sales" suggests, and the page's
+# wording depends on getting this right.** Both the Eurostat ESMS
+# (`prc_hpi_inx_esms`) and НСИ's ППЖ metadata (nsi.bg/bg/content/19699) scope
+# these to dwellings bought by households at the price actually paid: flats and
+# houses, VAT included on new builds, notary and agency fees excluded, land only
+# as the plot under a house. Standalone land, agricultural land, garages, shops
+# and offices are out, as are state and municipal sales, gifts, inheritances,
+# court-executor sales and self-build. That is why the register's «Продажби»
+# column may never be quoted beside these — it counts every sale deed and runs
+# more than twice as high.
+HOUSE_SALES_COUNT_DATASET = "prc_hpi_hsnq"  # number of dwellings sold
+HOUSE_SALES_VALUE_DATASET = "prc_hpi_hsvq"  # what was paid for them
+HOUSE_PRICE_INDEX_DATASET = "prc_hpi_q"  # the official house price index
+
+# `DW_EXST`, not `DW_EXIST`. A misspelled purchase code filters the cube to
+# nothing and Eurostat answers 200 with an empty `value` — the query fails
+# successfully, which is the failure mode `_require_periods` exists to catch.
+PURCHASE_CODES: tuple[str, ...] = ("TOTAL", "DW_NEW", "DW_EXST")
+
+# No `sinceTimePeriod` on any of these, deliberately.
+#
+# The two sales cubes start at different quarters — the value series runs
+# several years further back than the count series — and pinning either window
+# in code puts a date in the source that has to be maintained against an
+# upstream nobody controls. Asking for everything costs one small response and
+# means the series extends by itself, backwards as well as forwards: a
+# backfilled quarter appears without an edit, and no year in this file can go
+# stale.
+#
+# What makes that safe is already here. `_cube_to_rows` emits nothing for an
+# absent cell rather than a zero, and `build_house_market_payload` pairs the
+# two cubes on the quarters they SHARE — so the quarters that carry a value and
+# no count simply do not produce an average, instead of producing one divided
+# by nothing.
+
+# The value unit, pinned by name rather than taken as it comes.
+#
+# The cube offers `EUR` and `NAC`, and today they return identical figures for
+# every quarter back to 2015-Q1 — Eurostat restated the whole national-currency
+# series when Bulgaria adopted the euro. That equality is a fact about their
+# current restatement policy, not a property of the units: `NAC` means
+# "whatever this country's currency is", so its meaning is defined outside this
+# cube and can be redefined without the cube changing shape. `EUR` cannot mean
+# anything else. Pinning it costs nothing while they agree and is the whole
+# defence if they ever stop, and `_require_periods` raises rather than falling
+# back if it is absent — the discipline `sources/ecb.py` applies at the same
+# boundary.
+HOUSE_SALES_VALUE_UNIT = "EUR"
+
+# The index unit, and the same argument as `INDEX_UNIT` above: the cube offers
+# I15_Q and I25_Q, and the whole back-series sits on one base at I15_Q. НСИ
+# themselves moved to 2025=100 from the start of 2026 under Regulation (EU)
+# 2025/1182 and warn that rates recomputed across the two bases can differ by
+# rounding — which is a reason to read the RATE they publish rather than to
+# compute one from the index, and `RCH_A` is exactly that figure.
+HOUSE_PRICE_INDEX_UNIT = "I15_Q"
+HOUSE_PRICE_INDEX_BASE_YEAR = 2015
+HOUSE_PRICE_RATE_UNIT = "RCH_A"
+
+
+def _require_periods(rows: list[dict[str, Any]], dataset: str, unit: str, minimum: int) -> None:
+    """The response must carry a plausible number of periods, or fail loudly.
+
+    Eurostat answers a filter that matches nothing with 200 OK and an empty
+    `value` map, so a mistyped unit or purchase code produces a successful HTTP
+    call, no rows, and — without this — a payload with an empty series in it.
+    `_cube_to_rows` emits nothing for an absent cell rather than a zero, which
+    is the right behaviour and also the silent one.
+    """
+    periods = {str(r["time"]) for r in rows}
+    if len(periods) < minimum:
+        raise ValueError(
+            f"{dataset} (unit={unit}): got {len(periods)} periods, expected at "
+            f"least {minimum}. A 200 with too few rows is what a wrong unit or "
+            f"purchase code looks like — Eurostat filters to nothing and still "
+            f"answers OK."
+        )
+
+
+class CubeFetch(NamedTuple):
+    """One fetched cube, with the query that produced it.
+
+    The rows and the URL come out of the same call and cannot drift apart,
+    which is the whole reason this is a return value rather than a pair of
+    functions a caller has to keep in step. Every published figure names the
+    query it came from, and a reader who does not believe the figure can run
+    the query.
+    """
+
+    rows: list[dict[str, Any]]
+    dataset: str
+    api_url: str
+    page_url: str
+
+
+def house_dataset_url(dataset: str) -> str:
+    """The databrowser table a reader clicking through lands on."""
+    return f"https://ec.europa.eu/eurostat/databrowser/view/{dataset}/default/table?lang=en"
+
+
+def house_api_url(dataset: str, params: dict[str, Any]) -> str:
+    """The exact API query behind a published figure, as a URL anyone can open.
+
+    Published beside the databrowser link rather than instead of it, because
+    the two answer different people. The databrowser page is where a reader
+    goes to look; this is what a sceptic runs to get the same digits back, and
+    it is the one a machine can check — `validate_link_status` fetches it and
+    inspects the BODY, because Eurostat answer a rate-limited or malformed
+    query with 200 OK and an error payload.
+
+    It carries the filters the fetcher used, so "where did this come from" has
+    a complete answer rather than a dataset name and a shrug.
+    """
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return f"{BASE}/{dataset}?{query}"
+
+
+def fetch_house_sales_count_bg(geo: str = "BG") -> CubeFetch:
+    """Dwellings SOLD per quarter, split new / existing / total.
+
+    The count half of the average deal, and the series that carries the part of
+    this market nobody states out loud: transactions have been falling while
+    prices rise. Rows are {freq, unit, geo, time, purchase, value}.
+    """
+    params = {"format": "JSON", "lang": "EN", "geo": geo, "unit": "NR"}
+    rows = _cube_to_rows(_get(f"{BASE}/{HOUSE_SALES_COUNT_DATASET}", params, timeout=60.0))
+    _require_periods(rows, HOUSE_SALES_COUNT_DATASET, "NR", minimum=30)
+    return CubeFetch(
+        rows,
+        HOUSE_SALES_COUNT_DATASET,
+        house_api_url(HOUSE_SALES_COUNT_DATASET, params),
+        house_dataset_url(HOUSE_SALES_COUNT_DATASET),
+    )
+
+
+def fetch_house_sales_value_bg(geo: str = "BG") -> CubeFetch:
+    """What households PAID for those dwellings per quarter, in euro.
+
+    The value half of the average deal. This cube reaches further back than the
+    count cube, so the two overlap on fewer quarters than either one carries —
+    the transform pairs them and keeps only the quarters that have both.
+    """
+    params = {"format": "JSON", "lang": "EN", "geo": geo, "unit": HOUSE_SALES_VALUE_UNIT}
+    rows = _cube_to_rows(_get(f"{BASE}/{HOUSE_SALES_VALUE_DATASET}", params, timeout=60.0))
+    _require_periods(rows, HOUSE_SALES_VALUE_DATASET, HOUSE_SALES_VALUE_UNIT, minimum=40)
+    return CubeFetch(
+        rows,
+        HOUSE_SALES_VALUE_DATASET,
+        house_api_url(HOUSE_SALES_VALUE_DATASET, params),
+        house_dataset_url(HOUSE_SALES_VALUE_DATASET),
+    )
+
+
+def fetch_house_price_index_bg(geo: str = "BG") -> CubeFetch:
+    """The official house price index: the level, and Eurostat's own annual rate.
+
+    Two units in one call — the index on `HOUSE_PRICE_INDEX_UNIT`'s base and
+    `RCH_A`, the annual rate of change. The rate is fetched rather than computed
+    from the index for a reason НСИ state themselves: the two bases round
+    differently, so a rate derived here would disagree in the last decimal with
+    the rate both publishers print. That last decimal is what the НСИ↔Eurostat
+    reconciliation gate compares.
+    """
+    params = {"format": "JSON", "lang": "EN", "geo": geo}
+    rows = _cube_to_rows(_get(f"{BASE}/{HOUSE_PRICE_INDEX_DATASET}", params, timeout=60.0))
+    for unit in (HOUSE_PRICE_INDEX_UNIT, HOUSE_PRICE_RATE_UNIT):
+        _require_periods(
+            [r for r in rows if r.get("unit") == unit],
+            HOUSE_PRICE_INDEX_DATASET,
+            unit,
+            minimum=40,
+        )
+    return CubeFetch(
+        rows,
+        HOUSE_PRICE_INDEX_DATASET,
+        house_api_url(HOUSE_PRICE_INDEX_DATASET, params),
+        house_dataset_url(HOUSE_PRICE_INDEX_DATASET),
+    )
+
+
+# The four structure cubes. None is quarterly and none is about a transaction —
+# together they answer "who owns, who owes, how many homes stand empty, and is
+# any of this expensive relative to what people earn", which is the half of the
+# market the transaction series cannot see.
+TENURE_DATASET = "ilc_lvho02"  # own / own-with-mortgage / rent
+CENSUS_DWELLINGS_DATASET = "cens_21dwob_r3"  # occupied vs unoccupied, 2021 census
+PRICE_TO_INCOME_DATASET = "tipsho60"  # price-to-income against its own long-run average
+HOUSING_OVERBURDEN_DATASET = "ilc_lvho07a"  # households spending >40% of income on housing
+
+# `tipsho60` publishes three units and only one of them answers the question the
+# page asks. `PTIR_LT_AVG` indexes the price-to-income ratio against that
+# country's OWN long-run average (100 = its own norm), which is what makes a
+# reading below 100 mean "cheaper relative to income than this country's own
+# history" rather than "cheaper than Germany". `PTIR_I15` is a 2015-based index
+# and `RCH_A_AVG` an annual rate — neither supports that sentence.
+PRICE_TO_INCOME_UNIT = "PTIR_LT_AVG"
+
+
+def fetch_housing_structure_bg(geo: str = "BG") -> dict[str, CubeFetch]:
+    """The four structure cubes, each over its own slice, keyed by dataset.
+
+    Four calls rather than one, because they share no dimensions beyond `geo`
+    and each needs its own filter. Every one of those filters has a wrong answer
+    that returns 200:
+
+    - **tenure** is a seven-way split (`TOTAL`, `OWN`, `OWN_L`, `OWN_NL`,
+      `RENT`, `RENT_MKT`, `RENT_FR`) crossed with household composition and
+      poverty status. `hhcomp=TOTAL` and `rskpovth=TOTAL` are the whole
+      population; leaving either unpinned returns 357 cells and the transform
+      would have to guess which one is the country.
+    - **the census** splits by occupancy AND building type, so `building=TOTAL`
+      is what "all dwellings" means. `housing=DW_NOC` alone is the unoccupied
+      count; against `DW` it is the share that stood empty.
+    - **overburden** is crossed with age, sex and poverty status, and the
+      headline is all three at `TOTAL`/`T`/`TOTAL`. The below-poverty slice runs
+      several times higher and is not the figure anyone quotes.
+
+    Returns raw rows per dataset; the transform picks the cells.
+    """
+    calls: dict[str, dict[str, Any]] = {
+        TENURE_DATASET: {
+            "geo": geo,
+            "hhcomp": "TOTAL",
+            "rskpovth": "TOTAL",
+            "unit": "PC",
+            "lastTimePeriod": 1,
+        },
+        CENSUS_DWELLINGS_DATASET: {"geo": geo, "building": "TOTAL", "unit": "NR"},
+        PRICE_TO_INCOME_DATASET: {"geo": geo, "unit": PRICE_TO_INCOME_UNIT},
+        HOUSING_OVERBURDEN_DATASET: {
+            "geo": geo,
+            "age": "TOTAL",
+            "sex": "T",
+            "rskpovth": "TOTAL",
+            "unit": "PC",
+        },
+    }
+    out: dict[str, CubeFetch] = {}
+    for dataset, filters in calls.items():
+        params = {"format": "JSON", "lang": "EN", **filters}
+        rows = _cube_to_rows(_get(f"{BASE}/{dataset}", params, timeout=60.0))
+        if not rows:
+            raise ValueError(
+                f"{dataset}: no rows for {geo}. Every filter above has a spelling "
+                f"that returns 200 with an empty cube, so an empty response here "
+                f"is a wrong dimension code rather than a country with no data."
+            )
+        out[dataset] = CubeFetch(
+            rows, dataset, house_api_url(dataset, params), house_dataset_url(dataset)
+        )
+    return out
+
+
 UNEMPLOYMENT_DATASET = "une_rt_m"
 
 

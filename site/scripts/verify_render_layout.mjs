@@ -51,20 +51,26 @@ test("the country page is reachable without opening anything", { skip }, async (
 });
 
 test("the header still fits a phone with the route on it", { skip }, async () => {
-  // The bar is a fixed 54px holding a wordmark and three controls, and the
-  // route to `/how/` is the third. At 360px the brand's tagline wrapped to two
-  // lines inside that fixed height — the promise «икономиката, честно»
-  // rendered as a layout fault — so under 400px the tagline is what gives.
-  // Nothing about that is visible from the markup, which is why it is measured.
+  // The bar is a fixed 54px holding a wordmark and four controls: two content
+  // routes, the theme button and the language link. At 360px the brand's
+  // tagline wrapped to two lines inside that fixed height — the promise
+  // «икономиката, честно» rendered as a layout fault — so under 400px the
+  // tagline is what gives. Nothing about that is visible from the markup,
+  // which is why it is measured.
+  //
+  // The fourth control is the one that makes the measurement matter rather
+  // than merely repeat itself. Adding a nav pill to a bar that already fits is
+  // exactly the change that fits on a laptop and wraps to a second row on a
+  // phone, and the only place that shows is a real viewport.
   await withApp(
     async (page, errors) => {
       const bar = await page.evaluate(() => {
         const vw = document.documentElement.clientWidth;
         const brand = document.querySelector("header.site .brand");
-        // What a reader can see. Two of the bar's controls are written as a
-        // `.l-bg` / `.l-en` pair — the route into `/how/` and the language
-        // link, whose hrefs differ by language — so the DOM holds five
-        // elements and draws three. A count over the DOM would measure how the
+        // What a reader can see. Three of the bar's controls are written as a
+        // `.l-bg` / `.l-en` pair — the two content routes and the language
+        // link, whose hrefs differ by language — so the DOM holds seven
+        // elements and draws four. A count over the DOM would measure how the
         // markup is assembled; what has to fit is what is drawn.
         const controls = [...document.querySelectorAll("header.site .controls > *")].filter(
           (el) => el.offsetParent !== null
@@ -82,7 +88,7 @@ test("the header still fits a phone with the route on it", { skip }, async () =>
           ),
         };
       });
-      assert.equal(bar.controls, 3, `the header carries ${bar.controls} controls, expected 3`);
+      assert.equal(bar.controls, 4, `the header carries ${bar.controls} controls, expected 4`);
       assert.ok(
         bar.rightmost <= bar.vw + 1,
         `a header control reaches ${bar.rightmost}px past the ${bar.vw}px viewport`

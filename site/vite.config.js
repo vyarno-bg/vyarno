@@ -127,10 +127,12 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         how: resolve(__dirname, "how/index.html"),
+        market: resolve(__dirname, "market/index.html"),
         legal: resolve(__dirname, "legal/index.html"),
         support: resolve(__dirname, "support/index.html"),
         enMain: resolve(__dirname, "en/index.html"),
         enHow: resolve(__dirname, "en/how/index.html"),
+        enMarket: resolve(__dirname, "en/market/index.html"),
         enLegal: resolve(__dirname, "en/legal/index.html"),
         enSupport: resolve(__dirname, "en/support/index.html"),
         notFound: resolve(__dirname, "404.html"),

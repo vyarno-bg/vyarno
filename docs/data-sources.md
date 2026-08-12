@@ -40,13 +40,20 @@ Every entry carries a provenance tag:
 | **Average gross wage by област** — НСИ `Labour_1.1.2.2_EUR_EN.xlsx` + `_EUR.xlsx` | VERIFIED | `region_salary.json`. All 28 области, both language editions, НСИ's published quarters from 2020-Q1. |
 | **€/m² by city** — `imot.bg/sredni-ceni` | VERIFIED | `city_price.json`. 27 cities, each with its own district count and its own year window. |
 | **Unemployment rate** — `une_rt_m` | VERIFIED | `unemployment.json`. **Monthly**, seasonally adjusted, 2020-01–. 2.9% at 2026-05. |
+| **Dwellings sold** — `prc_hpi_hsnq` (unit=NR) | VERIFIED | `house_market.json → deals`. Quarterly, split `TOTAL` / `DW_NEW` / `DW_EXST`. Households only, at the price paid. |
+| **Value of those sales** — `prc_hpi_hsvq` (unit=EUR) | VERIFIED | `house_market.json → value`, and the numerator of `avg_deal_eur`. Reaches further back than the count cube, so the two are paired on the quarters they share. |
+| **House price index** — `prc_hpi_q` (units I15_Q + RCH_A) | VERIFIED | `house_market.json → price_index`. The level and **Eurostat's own annual rate**, never a rate we computed from the level. |
+| **Tenure** — `ilc_lvho02` | VERIFIED | `house_market_structure.json → tenure`. Own / own-with-loan / rent, at `hhcomp=TOTAL` × `rskpovth=TOTAL`. |
+| **Census dwelling stock** — `cens_21dwob_r3` | VERIFIED | `house_market_structure.json → census_dwellings`. Total, occupied and unoccupied at `building=TOTAL`. |
+| **Price-to-income** — `tipsho60` (unit=PTIR_LT_AVG) | VERIFIED | `house_market_structure.json → price_to_income`. Indexed against **this country's own long-run average**, which is the only unit that supports the sentence beside it. |
+| **Housing-cost overburden** — `ilc_lvho07a` | VERIFIED | `house_market_structure.json → housing_cost_overburden`. Share spending over 40% of income on housing, at `age`/`sex`/`rskpovth` = TOTAL. |
 
 ## Not available (do not cite as a working source)
 
 | Source | Tag | What the probe found |
 |---|---|---|
 | НСИ SDMX-RI (`nsi.bg/ddb2.1/rest/*`) | WRONG | Every path 404s. `infostat.nsi.bg` redirects to marketing; `datacatalog.nsi.bg` is CMS-only. |
-| `data.egov.bg` | WRONG | Not CKAN, no JSON API surface. Good for pointing users at datasets, useless programmatically. |
+| `data.egov.bg` | WRONG, and unprobeable from a cloud host | Not CKAN, no JSON API surface. Good for pointing users at datasets, useless programmatically. Re-probed 2026-08-12 from a datacenter IP: **403 with a 199-byte `iso-8859-1` Apache body on every path including `/robots.txt`** — the same datacenter-block signature имот.bg answers with, so it can be ruled neither in nor out from a hosted runner. Anything it might carry needs a probe from an ordinary Bulgarian connection. |
 | БНБ real-estate section | WRONG | A Site Studio shell returning identical bytes for every URL. **БНБ does not publish residential property prices machine-readably** — which is why the €/m² level comes from имот.bg. |
 | НСИ city-level housing €/m² | WRONG | PDF press releases only; not structurally machine-readable. |
 | A **city**-level average wage, for anywhere but София | WRONG | НСИ publish the wage by **област** and by statistical region, and nothing below. София-city is the exception by accident of geography: it is its own statistical region, BG411, so there the област and the град are the same area. Everywhere else the €/m² is a city's and the wage beside it is its област's, which is why the two cards name their own geographies rather than sharing a heading. |
@@ -56,7 +63,9 @@ Every entry carries a provenance tag:
 | A pay **distribution** by sector for BG (any publisher) | WRONG | Probed 2026-08-06. `earn_ses_monthly` with `nace_r2=J&geo=BG` returns HTTP 200, `"value": {}`, `nace_r2` size **0** — section J is not a category in the cube. Its five `nace_r2` categories for BG are all broad groupings and none is a NACE section: `B-S_X_O` (whole economy), `B-N`, `B-F`, `G-N`, `P-S`. At the 2022 vintage `salary_dist.json` reads, only `B-S_X_O` carries any values; the other four stop at 2018. **So no section-level median, decile or spread exists at any vintage.** НСИ's `Labour_1.1.2.1` publishes a sector **average** and nothing else, which is why the sector card compares against an average and says so. |
 | Per-decile HBS weights | WRONG | Eurostat publishes BG household budget structure by **quintile** (`hbs_str_t223`), not decile, in ECOICOP ver.1, latest vintage 2020. |
 | An offered-rate ("best offer") mortgage tier | WRONG | Rate-comparison sites and per-bank pages publish advertised promotional "from" rates: conditional on terms they do not state, editorially curated, with no methodology and no revision policy. Nothing in that class can carry the five properties in [`README.md`](../README.md) §"Who this is for", so the class is excluded rather than any particular site being judged. ЕЦБ MIR **APRC** answers the same question officially — and comes out higher. `test_mortgage.py` asserts the `indicative_offer` key is absent from the published JSON. |
-| `prc_hpi_q` as the home block's source | VERIFIED, unusable for a level | A transaction-based **index** with no absolute €/m². Kept as an availability hedge only. |
+| `prc_hpi_q` **as a €/m² level** | VERIFIED, unusable for a level | A transaction-based **index** and an annual rate, with no absolute €/m² at any geography. Both are published — `house_market.json` carries them — and neither can price a square metre, which is why the home block's level still comes from имот.bg. |
+| A **transaction** price per m² for any Bulgarian city, from anyone | WRONG | Probed 2026-08-12. Every НСИ city series is an index or a percentage (`HPI_2.4` 2025=100, `HPI_2.6` y/y, `HSI_2.4.5` y/y), and their own лв./кв.м survey «Пазарни цени на жилища» ran «I тримесечие 1993 - II тримесечие 2014» and was discontinued. So `/market/` compares **change against change** — имот.bg's asking-price movement beside НСИ's transaction-price movement, each labelled as the different measurement it is — and never a € level against a € level. The page says so out loud (P11). |
+| Average city rents — `prc_colc_rents` | WRONG | Probed 2026-08-12. `geo` dimension size **0** for Bulgaria: it is the EU-staff correction-coefficient survey and covers no Bulgarian city. |
 
 ---
 
@@ -193,6 +202,77 @@ returns nothing. `une_rt_m` does not carry it at all, so a fallback that
 reaches for it fails the fetch rather than mislabelling one.
 
 ---
+
+### The property cubes — `prc_hpi_hsnq`, `prc_hpi_hsvq`, `prc_hpi_q`
+
+Three quarterly cubes fed by НСИ, describing the same market from three angles:
+how many dwellings households bought, what they paid in total, and how the price
+per dwelling moved. `house_market.json` carries all three.
+
+**What is in them is narrower than "House sales" suggests, and the page's
+wording depends on it.** Both the Eurostat ESMS (`prc_hpi_inx_esms`) and НСИ's
+ППЖ metadata (`nsi.bg/bg/content/19699`) scope these to dwellings bought by
+households at the price actually paid — flats and houses, VAT included on new
+builds, notary and agency fees excluded, land only as the plot under a house.
+Read 2026-08-12. **Excluded**: «сделки с нежилищни имоти», state and municipal
+sales, gifts and inheritances, court-executor sales, self-build.
+
+That scope is why the property register may never be quoted beside these. Its
+«Продажби» column counts every sale deed — land, agricultural land, garages,
+shops, offices — and came to 45,144 in 2025-Q1 against Eurostat's 19,916
+dwellings for the same quarter, a ratio of 2.27.
+
+Four traps, all probed:
+
+- **`DW_EXST`, not `DW_EXIST`.** A misspelled purchase code filters the cube to
+  nothing and Eurostat answers 200 with an empty `value` map — the query fails
+  *successfully*. `_require_periods` is what turns that into an error.
+- **The two sales cubes are published over different windows**, the value series
+  reaching several years further back than the count series. An unfiltered count
+  fetch returns 111 values in a 243-cell cube, and a transform reading an absent
+  cell as zero publishes a quarter in which Bulgaria sold no dwellings. The
+  transform pairs the two on the quarters they **share**.
+- **No `sinceTimePeriod` on any of them, deliberately.** A window pinned in code
+  is a date somebody has to maintain against an upstream nobody controls; asking
+  for everything costs one small response and lets the series grow by itself,
+  backwards on a backfill as well as forwards.
+- **`EUR` and `NAC` return identical figures** for every quarter of the value
+  series — Eurostat restated the whole national-currency series when Bulgaria
+  adopted the euro. `EUR` is pinned anyway: `NAC` means "whatever this country's
+  currency is", so its meaning is defined outside the cube, and the equality is
+  a fact about a restatement policy rather than a property of the unit.
+
+**The rate is read, never computed from the index.** НСИ rebased to 2025=100
+from the start of 2026 under Regulation (EU) 2025/1182 and warn in the workbook
+footnotes that rates recomputed across the two bases can differ by rounding. So
+`annual_rate_pct` is Eurostat's `RCH_A`, which is also the figure the
+cross-publisher reconciliation compares: at 2026-Q1 both НСИ's `HPI_1.3` and
+Eurostat's `RCH_A` read 14.8 / 12.5 / 16.3 for total / new / existing.
+
+### The structure cubes — `ilc_lvho02`, `cens_21dwob_r3`, `tipsho60`, `ilc_lvho07a`
+
+Four cubes on four clocks, which is why they are a second payload rather than
+more keys on the first: a freshness row cannot honestly date an annual EU-SILC
+survey and a census snapshot at once.
+
+Every one of them crosses several dimensions and every one has a wrong `TOTAL`
+that returns 200:
+
+- **tenure** is a seven-way split crossed with household composition and poverty
+  status. `hhcomp=TOTAL` and `rskpovth=TOTAL` are the whole population; leaving
+  either unpinned returns 357 cells and the transform would be guessing which
+  one is the country.
+- **the census** splits by occupancy **and** building type, so `building=TOTAL`
+  is what "all dwellings" means.
+- **price-to-income** publishes three units and only `PTIR_LT_AVG` indexes the
+  ratio against that country's **own** long-run average. That is what makes a
+  reading below 100 mean "cheaper relative to Bulgarian incomes than over its
+  own history" rather than "cheaper than Germany". `PTIR_I15` is 2015-based and
+  `RCH_A_AVG` an annual rate; neither supports the sentence the page puts beside
+  it, and a gate refuses the payload on any other unit.
+- **overburden** is crossed with age, sex and poverty status. The below-poverty
+  slice runs several times higher than the headline and is not the figure
+  anybody quotes.
 
 ## Salary distribution — `salary_dist.json`
 

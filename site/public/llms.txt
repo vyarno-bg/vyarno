@@ -23,18 +23,28 @@ hreflang alternate, so quote whichever you read and cite its own URL.
   distribution, mortgage rates, Sofia €/m² and unemployment. The pay
   distribution and the wages there are the country's; the €/m² is Sofia's,
   because имот.bg publish by city and no national level exists.
+- https://vyarno.bg/market/ — the residential property market, from the
+  institutions' own figures: how many dwellings households bought in the
+  quarter, what was paid for them, Eurostat's own annual rate of change on the
+  house price index, who owns and who owes, the census dwelling stock and the
+  price-to-income ratio against its own long-run average. No input on the page.
+  Every figure carries its publisher, the period it describes and a link; every
+  figure that is our arithmetic states the arithmetic and links the queries
+  that reproduce it. The page takes no position on the market — several of the
+  figures on it point in different directions and all of them are shown.
 - https://vyarno.bg/legal/ — terms of use, privacy, the provider's identity
   under ЗЕТ чл. 4, and each upstream's own licence wording.
 - https://vyarno.bg/support/ — who pays for the project. It is free for
   everyone, has no paid tier, and donations buy nothing.
 - https://vyarno.bg/en/ — the calculator, in English
 - https://vyarno.bg/en/how/ — the country's figures, in English
+- https://vyarno.bg/en/market/ — the residential property market, in English
 - https://vyarno.bg/en/legal/ — terms, privacy and the sources, in English
 - https://vyarno.bg/en/support/ — who pays for the project, in English
 
 ## The published figures
 
-Nine JSON payloads, refreshed by a pipeline and committed to the repository.
+Eleven JSON payloads, refreshed by a pipeline and committed to the repository.
 Each carries `as_of`, the reference period, and `source_url` to the publisher's
 own table.
 
@@ -54,6 +64,19 @@ own table.
   имот.bg's coverage of that city supports a comparison. `city_pages` lists
   every city имот.bg serve a page for, so a city a refresh has not reached is
   never reported as one they do not publish
+- house_market — Eurostat's quarterly property series: dwellings sold split
+  new and existing, what was paid for them in euro, the house price index and
+  Eurostat's own annual rate of change. `avg_deal_eur` is OURS — value divided
+  by count, per quarter and purchase type — disclosed as a derivation under
+  Eurostat's reuse conditions, with `derived_from_api_urls` carrying the two
+  queries that reproduce it. These are dwellings bought by households at the
+  price paid; the land register counts every sale deed and runs more than twice
+  as high for the same quarter
+- house_market_structure — tenure (who owns, who owns with a loan, who rents at
+  a market price), the census dwelling stock and how much of it stood
+  unoccupied, the price-to-income ratio against its own long-run average, and
+  the housing-cost overburden rate. Every figure a published cell; the
+  unoccupied share is derived in the browser from the two counts here
 - mortgage — home-loan rates and the БНБ borrowing caps
 - unemployment — the monthly seasonally adjusted rate
 

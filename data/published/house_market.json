@@ -1,0 +1,1470 @@
+{
+  "schema_version": "1.0",
+  "as_of": "2026-08-12",
+  "source": "eurostat",
+  "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsnq/default/table?lang=en",
+  "notes": "Bulgaria's residential property market as Eurostat publish it, quarterly: how many dwellings households bought, what they paid, and the official house price index with Eurostat's own annual rate of change. Scope is dwellings bought by households at the price actually paid — flats and houses, VAT included on new builds, notary and agency fees excluded, land only as the plot under a house. Standalone land, garages, shops and offices are outside it, as are state and municipal sales, gifts, inheritances, court-executor sales and self-build. MODIFICATION NOTICE, per Eurostat's reuse conditions: every figure under deals, value, price_index and annual_rate_pct is Eurostat's own, unmodified, at the unit each block names. `avg_deal_eur` is OURS — the value cube divided by the count cube, quarter by quarter and purchase type by purchase type, published only for the quarters both cubes carry. Eurostat is not responsible for that division or for any conclusion drawn from it.",
+  "payload_name": "house_market",
+  "ref_period": "2026-Q1",
+  "deals": {
+    "_role": "COUNT: dwellings sold, as published",
+    "dataset": "prc_hpi_hsnq",
+    "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsnq/default/table?lang=en",
+    "api_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hpi_hsnq?format=JSON&lang=EN&geo=BG&unit=NR",
+    "unit": "count",
+    "series_by_period": {
+      "2017-Q1": {
+        "existing": 8769.0,
+        "new": 2900.0,
+        "total": 11669.0
+      },
+      "2017-Q2": {
+        "existing": 12546.0,
+        "new": 4261.0,
+        "total": 16807.0
+      },
+      "2017-Q3": {
+        "existing": 13039.0,
+        "new": 4276.0,
+        "total": 17315.0
+      },
+      "2017-Q4": {
+        "existing": 14184.0,
+        "new": 5212.0,
+        "total": 19396.0
+      },
+      "2018-Q1": {
+        "existing": 9965.0,
+        "new": 3565.0,
+        "total": 13530.0
+      },
+      "2018-Q2": {
+        "existing": 12350.0,
+        "new": 4417.0,
+        "total": 16767.0
+      },
+      "2018-Q3": {
+        "existing": 13722.0,
+        "new": 4485.0,
+        "total": 18207.0
+      },
+      "2018-Q4": {
+        "existing": 14151.0,
+        "new": 4933.0,
+        "total": 19084.0
+      },
+      "2019-Q1": {
+        "existing": 9730.0,
+        "new": 3392.0,
+        "total": 13122.0
+      },
+      "2019-Q2": {
+        "existing": 12743.0,
+        "new": 4761.0,
+        "total": 17504.0
+      },
+      "2019-Q3": {
+        "existing": 14056.0,
+        "new": 4783.0,
+        "total": 18839.0
+      },
+      "2019-Q4": {
+        "existing": 14495.0,
+        "new": 6277.0,
+        "total": 20772.0
+      },
+      "2020-Q1": {
+        "existing": 9317.0,
+        "new": 3728.0,
+        "total": 13045.0
+      },
+      "2020-Q2": {
+        "existing": 7976.0,
+        "new": 4566.0,
+        "total": 12542.0
+      },
+      "2020-Q3": {
+        "existing": 13155.0,
+        "new": 5219.0,
+        "total": 18374.0
+      },
+      "2020-Q4": {
+        "existing": 13575.0,
+        "new": 5949.0,
+        "total": 19524.0
+      },
+      "2021-Q1": {
+        "existing": 10099.0,
+        "new": 4436.0,
+        "total": 14535.0
+      },
+      "2021-Q2": {
+        "existing": 14307.0,
+        "new": 6472.0,
+        "total": 20779.0
+      },
+      "2021-Q3": {
+        "existing": 17292.0,
+        "new": 6511.0,
+        "total": 23803.0
+      },
+      "2021-Q4": {
+        "existing": 21313.0,
+        "new": 7817.0,
+        "total": 29130.0
+      },
+      "2022-Q1": {
+        "existing": 13759.0,
+        "new": 5558.0,
+        "total": 19317.0
+      },
+      "2022-Q2": {
+        "existing": 18447.0,
+        "new": 7891.0,
+        "total": 26338.0
+      },
+      "2022-Q3": {
+        "existing": 18628.0,
+        "new": 6855.0,
+        "total": 25483.0
+      },
+      "2022-Q4": {
+        "existing": 15249.0,
+        "new": 7029.0,
+        "total": 22278.0
+      },
+      "2023-Q1": {
+        "existing": 13113.0,
+        "new": 4703.0,
+        "total": 17816.0
+      },
+      "2023-Q2": {
+        "existing": 16217.0,
+        "new": 6028.0,
+        "total": 22245.0
+      },
+      "2023-Q3": {
+        "existing": 17557.0,
+        "new": 5718.0,
+        "total": 23275.0
+      },
+      "2023-Q4": {
+        "existing": 19284.0,
+        "new": 7260.0,
+        "total": 26544.0
+      },
+      "2024-Q1": {
+        "existing": 13815.0,
+        "new": 5545.0,
+        "total": 19360.0
+      },
+      "2024-Q2": {
+        "existing": 17183.0,
+        "new": 7255.0,
+        "total": 24438.0
+      },
+      "2024-Q3": {
+        "existing": 18044.0,
+        "new": 6877.0,
+        "total": 24921.0
+      },
+      "2024-Q4": {
+        "existing": 19070.0,
+        "new": 7055.0,
+        "total": 26125.0
+      },
+      "2025-Q1": {
+        "existing": 13894.0,
+        "new": 6022.0,
+        "total": 19916.0
+      },
+      "2025-Q2": {
+        "existing": 17577.0,
+        "new": 7554.0,
+        "total": 25131.0
+      },
+      "2025-Q3": {
+        "existing": 19577.0,
+        "new": 7628.0,
+        "total": 27205.0
+      },
+      "2025-Q4": {
+        "existing": 13637.0,
+        "new": 6608.0,
+        "total": 20245.0
+      },
+      "2026-Q1": {
+        "existing": 11046.0,
+        "new": 5181.0,
+        "total": 16227.0
+      }
+    }
+  },
+  "value": {
+    "_role": "VALUE: what households paid for them, as published",
+    "dataset": "prc_hpi_hsvq",
+    "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsvq/default/table?lang=en",
+    "api_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hpi_hsvq?format=JSON&lang=EN&geo=BG&unit=EUR",
+    "unit": "eur",
+    "series_by_period": {
+      "2015-Q1": {
+        "total": 311033081.0
+      },
+      "2015-Q2": {
+        "total": 422466880.0
+      },
+      "2015-Q3": {
+        "total": 430707355.0
+      },
+      "2015-Q4": {
+        "total": 525349213.0
+      },
+      "2016-Q1": {
+        "total": 350081828.0
+      },
+      "2016-Q2": {
+        "total": 475505619.0
+      },
+      "2016-Q3": {
+        "total": 484780647.0
+      },
+      "2016-Q4": {
+        "total": 591304347.0
+      },
+      "2017-Q1": {
+        "existing": 233747314.0,
+        "new": 128275644.0,
+        "total": 362022958.0
+      },
+      "2017-Q2": {
+        "existing": 346943643.0,
+        "new": 184575067.0,
+        "total": 531518710.0
+      },
+      "2017-Q3": {
+        "existing": 340259289.0,
+        "new": 183513949.0,
+        "total": 523773237.0
+      },
+      "2017-Q4": {
+        "existing": 408112305.0,
+        "new": 263491412.0,
+        "total": 671603717.0
+      },
+      "2018-Q1": {
+        "existing": 278912662.0,
+        "new": 164304266.0,
+        "total": 443216928.0
+      },
+      "2018-Q2": {
+        "existing": 364131415.0,
+        "new": 200280133.0,
+        "total": 564411548.0
+      },
+      "2018-Q3": {
+        "existing": 387686117.0,
+        "new": 204829376.0,
+        "total": 592515493.0
+      },
+      "2018-Q4": {
+        "existing": 428522535.0,
+        "new": 246122263.0,
+        "total": 674644798.0
+      },
+      "2019-Q1": {
+        "existing": 296791945.0,
+        "new": 181378700.0,
+        "total": 478170644.0
+      },
+      "2019-Q2": {
+        "existing": 405739582.0,
+        "new": 237194704.0,
+        "total": 642934286.0
+      },
+      "2019-Q3": {
+        "existing": 436380076.0,
+        "new": 222097478.0,
+        "total": 658477554.0
+      },
+      "2019-Q4": {
+        "existing": 485294760.0,
+        "new": 332048000.0,
+        "total": 817342760.0
+      },
+      "2020-Q1": {
+        "existing": 317866982.0,
+        "new": 184449055.0,
+        "total": 502316037.0
+      },
+      "2020-Q2": {
+        "existing": 255712861.0,
+        "new": 242787210.0,
+        "total": 498500071.0
+      },
+      "2020-Q3": {
+        "existing": 397576254.0,
+        "new": 248662220.0,
+        "total": 646238473.0
+      },
+      "2020-Q4": {
+        "existing": 464790627.0,
+        "new": 342278585.0,
+        "total": 807069212.0
+      },
+      "2021-Q1": {
+        "existing": 353133203.0,
+        "new": 258197995.0,
+        "total": 611331198.0
+      },
+      "2021-Q2": {
+        "existing": 538098593.0,
+        "new": 349890808.0,
+        "total": 887989401.0
+      },
+      "2021-Q3": {
+        "existing": 618480732.0,
+        "new": 339587892.0,
+        "total": 958068625.0
+      },
+      "2021-Q4": {
+        "existing": 818909466.0,
+        "new": 442958549.0,
+        "total": 1261868015.0
+      },
+      "2022-Q1": {
+        "existing": 533286235.0,
+        "new": 338748806.0,
+        "total": 872035041.0
+      },
+      "2022-Q2": {
+        "existing": 746191412.0,
+        "new": 478875777.0,
+        "total": 1225067189.0
+      },
+      "2022-Q3": {
+        "existing": 703449893.0,
+        "new": 426330154.0,
+        "total": 1129780047.0
+      },
+      "2022-Q4": {
+        "existing": 660348742.0,
+        "new": 453099101.0,
+        "total": 1113447844.0
+      },
+      "2023-Q1": {
+        "existing": 536183421.0,
+        "new": 289361129.0,
+        "total": 825544550.0
+      },
+      "2023-Q2": {
+        "existing": 728155239.0,
+        "new": 420825815.0,
+        "total": 1148981054.0
+      },
+      "2023-Q3": {
+        "existing": 719701372.0,
+        "new": 392946975.0,
+        "total": 1112648347.0
+      },
+      "2023-Q4": {
+        "existing": 866798257.0,
+        "new": 543154741.0,
+        "total": 1409952998.0
+      },
+      "2024-Q1": {
+        "existing": 695123459.0,
+        "new": 469034634.0,
+        "total": 1164158093.0
+      },
+      "2024-Q2": {
+        "existing": 893676412.0,
+        "new": 602460287.0,
+        "total": 1496136699.0
+      },
+      "2024-Q3": {
+        "existing": 897516481.0,
+        "new": 596489018.0,
+        "total": 1494005498.0
+      },
+      "2024-Q4": {
+        "existing": 1053637410.0,
+        "new": 641926740.0,
+        "total": 1695564150.0
+      },
+      "2025-Q1": {
+        "existing": 836696612.0,
+        "new": 577984330.0,
+        "total": 1414680942.0
+      },
+      "2025-Q2": {
+        "existing": 1078499869.0,
+        "new": 761301516.0,
+        "total": 1839801385.0
+      },
+      "2025-Q3": {
+        "existing": 1174804149.0,
+        "new": 700978057.0,
+        "total": 1875782205.0
+      },
+      "2025-Q4": {
+        "existing": 873410984.0,
+        "new": 649338435.0,
+        "total": 1522749419.0
+      },
+      "2026-Q1": {
+        "existing": 777922448.0,
+        "new": 565446130.0,
+        "total": 1343368578.0
+      }
+    }
+  },
+  "price_index": {
+    "_role": "INDEX + RATE: the official house price index, as published",
+    "dataset": "prc_hpi_q",
+    "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_q/default/table?lang=en",
+    "api_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hpi_q?format=JSON&lang=EN&geo=BG",
+    "unit": "index_2015=100",
+    "base_year": 2015,
+    "series_by_period": {
+      "2005-Q1": {
+        "existing": 78.73,
+        "new": 63.79,
+        "total": 76.01
+      },
+      "2005-Q2": {
+        "existing": 82.1,
+        "new": 66.52,
+        "total": 79.26
+      },
+      "2005-Q3": {
+        "existing": 84.47,
+        "new": 68.44,
+        "total": 81.55
+      },
+      "2005-Q4": {
+        "existing": 86.51,
+        "new": 70.09,
+        "total": 83.52
+      },
+      "2006-Q1": {
+        "existing": 90.6,
+        "new": 73.41,
+        "total": 87.47
+      },
+      "2006-Q2": {
+        "existing": 92.09,
+        "new": 74.62,
+        "total": 88.91
+      },
+      "2006-Q3": {
+        "existing": 96.29,
+        "new": 78.02,
+        "total": 92.96
+      },
+      "2006-Q4": {
+        "existing": 101.6,
+        "new": 82.32,
+        "total": 98.09
+      },
+      "2007-Q1": {
+        "existing": 111.07,
+        "new": 89.99,
+        "total": 107.23
+      },
+      "2007-Q2": {
+        "existing": 117.02,
+        "new": 94.81,
+        "total": 112.97
+      },
+      "2007-Q3": {
+        "existing": 125.77,
+        "new": 101.91,
+        "total": 121.42
+      },
+      "2007-Q4": {
+        "existing": 136.79,
+        "new": 110.83,
+        "total": 132.06
+      },
+      "2008-Q1": {
+        "existing": 146.13,
+        "new": 118.4,
+        "total": 141.08
+      },
+      "2008-Q2": {
+        "existing": 154.71,
+        "new": 125.36,
+        "total": 149.36
+      },
+      "2008-Q3": {
+        "existing": 159.43,
+        "new": 129.18,
+        "total": 153.92
+      },
+      "2008-Q4": {
+        "existing": 152.82,
+        "new": 123.82,
+        "total": 147.53
+      },
+      "2009-Q1": {
+        "existing": 133.85,
+        "new": 121.44,
+        "total": 130.77
+      },
+      "2009-Q2": {
+        "existing": 120.84,
+        "new": 110.5,
+        "total": 118.17
+      },
+      "2009-Q3": {
+        "existing": 114.82,
+        "new": 107.82,
+        "total": 112.62
+      },
+      "2009-Q4": {
+        "existing": 112.61,
+        "new": 98.52,
+        "total": 109.58
+      },
+      "2010-Q1": {
+        "existing": 110.01,
+        "new": 97.26,
+        "total": 107.18
+      },
+      "2010-Q2": {
+        "existing": 109.18,
+        "new": 97.85,
+        "total": 106.52
+      },
+      "2010-Q3": {
+        "existing": 107.89,
+        "new": 97.6,
+        "total": 105.38
+      },
+      "2010-Q4": {
+        "existing": 106.32,
+        "new": 98.74,
+        "total": 104.15
+      },
+      "2011-Q1": {
+        "existing": 103.84,
+        "new": 99.06,
+        "total": 102.03
+      },
+      "2011-Q2": {
+        "existing": 102.18,
+        "new": 96.05,
+        "total": 100.23
+      },
+      "2011-Q3": {
+        "existing": 101.32,
+        "new": 96.53,
+        "total": 99.54
+      },
+      "2011-Q4": {
+        "existing": 99.77,
+        "new": 95.74,
+        "total": 98.1
+      },
+      "2012-Q1": {
+        "existing": 99.37,
+        "new": 96.57,
+        "total": 98.23
+      },
+      "2012-Q2": {
+        "existing": 99.53,
+        "new": 97.37,
+        "total": 98.67
+      },
+      "2012-Q3": {
+        "existing": 99.05,
+        "new": 97.77,
+        "total": 98.57
+      },
+      "2012-Q4": {
+        "existing": 98.36,
+        "new": 94.62,
+        "total": 96.82
+      },
+      "2013-Q1": {
+        "existing": 97.43,
+        "new": 93.97,
+        "total": 96.0
+      },
+      "2013-Q2": {
+        "existing": 97.37,
+        "new": 95.2,
+        "total": 96.48
+      },
+      "2013-Q3": {
+        "existing": 97.23,
+        "new": 93.1,
+        "total": 95.52
+      },
+      "2013-Q4": {
+        "existing": 97.17,
+        "new": 93.5,
+        "total": 95.66
+      },
+      "2014-Q1": {
+        "existing": 97.39,
+        "new": 95.62,
+        "total": 96.66
+      },
+      "2014-Q2": {
+        "existing": 97.71,
+        "new": 95.92,
+        "total": 96.97
+      },
+      "2014-Q3": {
+        "existing": 97.65,
+        "new": 96.58,
+        "total": 97.21
+      },
+      "2014-Q4": {
+        "existing": 98.3,
+        "new": 98.35,
+        "total": 98.32
+      },
+      "2015-Q1": {
+        "existing": 99.73,
+        "new": 97.48,
+        "total": 98.85
+      },
+      "2015-Q2": {
+        "existing": 99.88,
+        "new": 99.45,
+        "total": 99.71
+      },
+      "2015-Q3": {
+        "existing": 98.55,
+        "new": 100.24,
+        "total": 99.21
+      },
+      "2015-Q4": {
+        "existing": 101.85,
+        "new": 102.83,
+        "total": 102.23
+      },
+      "2016-Q1": {
+        "existing": 103.5,
+        "new": 103.12,
+        "total": 103.38
+      },
+      "2016-Q2": {
+        "existing": 107.35,
+        "new": 104.28,
+        "total": 106.24
+      },
+      "2016-Q3": {
+        "existing": 107.75,
+        "new": 108.21,
+        "total": 107.94
+      },
+      "2016-Q4": {
+        "existing": 110.77,
+        "new": 110.03,
+        "total": 110.52
+      },
+      "2017-Q1": {
+        "existing": 112.55,
+        "new": 112.83,
+        "total": 112.66
+      },
+      "2017-Q2": {
+        "existing": 117.23,
+        "new": 111.91,
+        "total": 115.37
+      },
+      "2017-Q3": {
+        "existing": 119.47,
+        "new": 114.17,
+        "total": 117.62
+      },
+      "2017-Q4": {
+        "existing": 121.84,
+        "new": 115.24,
+        "total": 119.53
+      },
+      "2018-Q1": {
+        "existing": 123.43,
+        "new": 115.46,
+        "total": 120.65
+      },
+      "2018-Q2": {
+        "existing": 126.21,
+        "new": 120.0,
+        "total": 124.03
+      },
+      "2018-Q3": {
+        "existing": 126.41,
+        "new": 122.41,
+        "total": 124.99
+      },
+      "2018-Q4": {
+        "existing": 128.24,
+        "new": 122.3,
+        "total": 126.15
+      },
+      "2019-Q1": {
+        "existing": 129.6,
+        "new": 129.23,
+        "total": 129.45
+      },
+      "2019-Q2": {
+        "existing": 130.96,
+        "new": 129.02,
+        "total": 130.26
+      },
+      "2019-Q3": {
+        "existing": 133.31,
+        "new": 129.5,
+        "total": 131.97
+      },
+      "2019-Q4": {
+        "existing": 134.55,
+        "new": 133.0,
+        "total": 133.99
+      },
+      "2020-Q1": {
+        "existing": 137.72,
+        "new": 131.83,
+        "total": 135.54
+      },
+      "2020-Q2": {
+        "existing": 136.43,
+        "new": 130.06,
+        "total": 134.07
+      },
+      "2020-Q3": {
+        "existing": 141.6,
+        "new": 134.07,
+        "total": 138.81
+      },
+      "2020-Q4": {
+        "existing": 144.28,
+        "new": 136.04,
+        "total": 141.23
+      },
+      "2021-Q1": {
+        "existing": 148.67,
+        "new": 140.67,
+        "total": 145.72
+      },
+      "2021-Q2": {
+        "existing": 150.31,
+        "new": 139.43,
+        "total": 146.23
+      },
+      "2021-Q3": {
+        "existing": 154.12,
+        "new": 145.44,
+        "total": 150.9
+      },
+      "2021-Q4": {
+        "existing": 158.64,
+        "new": 147.52,
+        "total": 154.48
+      },
+      "2022-Q1": {
+        "existing": 168.44,
+        "new": 152.88,
+        "total": 162.52
+      },
+      "2022-Q2": {
+        "existing": 174.41,
+        "new": 156.55,
+        "total": 167.58
+      },
+      "2022-Q3": {
+        "existing": 180.95,
+        "new": 163.82,
+        "total": 174.43
+      },
+      "2022-Q4": {
+        "existing": 183.36,
+        "new": 161.98,
+        "total": 175.14
+      },
+      "2023-Q1": {
+        "existing": 189.17,
+        "new": 160.41,
+        "total": 177.93
+      },
+      "2023-Q2": {
+        "existing": 194.34,
+        "new": 171.35,
+        "total": 185.5
+      },
+      "2023-Q3": {
+        "existing": 197.21,
+        "new": 179.31,
+        "total": 190.48
+      },
+      "2023-Q4": {
+        "existing": 201.32,
+        "new": 179.02,
+        "total": 192.78
+      },
+      "2024-Q1": {
+        "existing": 215.78,
+        "new": 191.35,
+        "total": 206.42
+      },
+      "2024-Q2": {
+        "existing": 223.12,
+        "new": 198.08,
+        "total": 213.53
+      },
+      "2024-Q3": {
+        "existing": 229.71,
+        "new": 209.17,
+        "total": 221.91
+      },
+      "2024-Q4": {
+        "existing": 236.43,
+        "new": 214.27,
+        "total": 228.0
+      },
+      "2025-Q1": {
+        "existing": 250.81,
+        "new": 217.08,
+        "total": 237.55
+      },
+      "2025-Q2": {
+        "existing": 258.85,
+        "new": 227.55,
+        "total": 246.65
+      },
+      "2025-Q3": {
+        "existing": 271.54,
+        "new": 232.24,
+        "total": 256.01
+      },
+      "2025-Q4": {
+        "existing": 271.83,
+        "new": 233.51,
+        "total": 256.71
+      },
+      "2026-Q1": {
+        "existing": 291.71,
+        "new": 244.14,
+        "total": 272.63
+      }
+    },
+    "annual_rate_pct": {
+      "2006-Q1": {
+        "existing": 15.0,
+        "new": 15.1,
+        "total": 15.0
+      },
+      "2006-Q2": {
+        "existing": 12.2,
+        "new": 12.1,
+        "total": 12.2
+      },
+      "2006-Q3": {
+        "existing": 14.0,
+        "new": 14.0,
+        "total": 14.0
+      },
+      "2006-Q4": {
+        "existing": 17.4,
+        "new": 17.4,
+        "total": 17.5
+      },
+      "2007-Q1": {
+        "existing": 22.6,
+        "new": 22.6,
+        "total": 22.6
+      },
+      "2007-Q2": {
+        "existing": 27.1,
+        "new": 27.1,
+        "total": 27.1
+      },
+      "2007-Q3": {
+        "existing": 30.6,
+        "new": 30.6,
+        "total": 30.6
+      },
+      "2007-Q4": {
+        "existing": 34.6,
+        "new": 34.6,
+        "total": 34.6
+      },
+      "2008-Q1": {
+        "existing": 31.6,
+        "new": 31.6,
+        "total": 31.6
+      },
+      "2008-Q2": {
+        "existing": 32.2,
+        "new": 32.2,
+        "total": 32.2
+      },
+      "2008-Q3": {
+        "existing": 26.8,
+        "new": 26.8,
+        "total": 26.8
+      },
+      "2008-Q4": {
+        "existing": 11.7,
+        "new": 11.7,
+        "total": 11.7
+      },
+      "2009-Q1": {
+        "existing": -8.4,
+        "new": 2.6,
+        "total": -7.3
+      },
+      "2009-Q2": {
+        "existing": -21.9,
+        "new": -11.9,
+        "total": -20.9
+      },
+      "2009-Q3": {
+        "existing": -28.0,
+        "new": -16.5,
+        "total": -26.8
+      },
+      "2009-Q4": {
+        "existing": -26.3,
+        "new": -20.4,
+        "total": -25.7
+      },
+      "2010-Q1": {
+        "existing": -17.8,
+        "new": -19.9,
+        "total": -18.0
+      },
+      "2010-Q2": {
+        "existing": -9.7,
+        "new": -11.5,
+        "total": -9.9
+      },
+      "2010-Q3": {
+        "existing": -6.1,
+        "new": -9.5,
+        "total": -6.4
+      },
+      "2010-Q4": {
+        "existing": -5.6,
+        "new": 0.2,
+        "total": -5.0
+      },
+      "2011-Q1": {
+        "existing": -5.6,
+        "new": 1.9,
+        "total": -4.8
+      },
+      "2011-Q2": {
+        "existing": -6.4,
+        "new": -1.8,
+        "total": -5.9
+      },
+      "2011-Q3": {
+        "existing": -6.1,
+        "new": -1.1,
+        "total": -5.5
+      },
+      "2011-Q4": {
+        "existing": -6.2,
+        "new": -3.0,
+        "total": -5.8
+      },
+      "2012-Q1": {
+        "existing": -4.3,
+        "new": -2.5,
+        "total": -3.7
+      },
+      "2012-Q2": {
+        "existing": -2.6,
+        "new": 1.4,
+        "total": -1.6
+      },
+      "2012-Q3": {
+        "existing": -2.3,
+        "new": 1.3,
+        "total": -1.0
+      },
+      "2012-Q4": {
+        "existing": -1.4,
+        "new": -1.2,
+        "total": -1.3
+      },
+      "2013-Q1": {
+        "existing": -2.0,
+        "new": -2.7,
+        "total": -2.3
+      },
+      "2013-Q2": {
+        "existing": -2.2,
+        "new": -2.2,
+        "total": -2.2
+      },
+      "2013-Q3": {
+        "existing": -1.8,
+        "new": -4.8,
+        "total": -3.1
+      },
+      "2013-Q4": {
+        "existing": -1.2,
+        "new": -1.2,
+        "total": -1.2
+      },
+      "2014-Q1": {
+        "existing": -0.1,
+        "new": 1.7,
+        "total": 0.7
+      },
+      "2014-Q2": {
+        "existing": 0.4,
+        "new": 0.8,
+        "total": 0.5
+      },
+      "2014-Q3": {
+        "existing": 0.4,
+        "new": 3.8,
+        "total": 1.7
+      },
+      "2014-Q4": {
+        "existing": 1.2,
+        "new": 5.2,
+        "total": 2.8
+      },
+      "2015-Q1": {
+        "existing": 2.4,
+        "new": 2.0,
+        "total": 2.3
+      },
+      "2015-Q2": {
+        "existing": 2.2,
+        "new": 3.7,
+        "total": 2.8
+      },
+      "2015-Q3": {
+        "existing": 0.9,
+        "new": 3.8,
+        "total": 2.1
+      },
+      "2015-Q4": {
+        "existing": 3.6,
+        "new": 4.6,
+        "total": 4.0
+      },
+      "2016-Q1": {
+        "existing": 3.8,
+        "new": 5.8,
+        "total": 4.6
+      },
+      "2016-Q2": {
+        "existing": 7.5,
+        "new": 4.9,
+        "total": 6.5
+      },
+      "2016-Q3": {
+        "existing": 9.4,
+        "new": 7.9,
+        "total": 8.8
+      },
+      "2016-Q4": {
+        "existing": 8.8,
+        "new": 7.0,
+        "total": 8.1
+      },
+      "2017-Q1": {
+        "existing": 8.8,
+        "new": 9.4,
+        "total": 9.0
+      },
+      "2017-Q2": {
+        "existing": 9.2,
+        "new": 7.3,
+        "total": 8.6
+      },
+      "2017-Q3": {
+        "existing": 10.9,
+        "new": 5.5,
+        "total": 9.0
+      },
+      "2017-Q4": {
+        "existing": 10.0,
+        "new": 4.7,
+        "total": 8.2
+      },
+      "2018-Q1": {
+        "existing": 9.7,
+        "new": 2.3,
+        "total": 7.1
+      },
+      "2018-Q2": {
+        "existing": 7.7,
+        "new": 7.2,
+        "total": 7.5
+      },
+      "2018-Q3": {
+        "existing": 5.8,
+        "new": 7.2,
+        "total": 6.3
+      },
+      "2018-Q4": {
+        "existing": 5.3,
+        "new": 6.1,
+        "total": 5.5
+      },
+      "2019-Q1": {
+        "existing": 5.0,
+        "new": 11.9,
+        "total": 7.3
+      },
+      "2019-Q2": {
+        "existing": 3.8,
+        "new": 7.5,
+        "total": 5.0
+      },
+      "2019-Q3": {
+        "existing": 5.5,
+        "new": 5.8,
+        "total": 5.6
+      },
+      "2019-Q4": {
+        "existing": 4.9,
+        "new": 8.7,
+        "total": 6.2
+      },
+      "2020-Q1": {
+        "existing": 6.3,
+        "new": 2.0,
+        "total": 4.7
+      },
+      "2020-Q2": {
+        "existing": 4.2,
+        "new": 0.8,
+        "total": 2.9
+      },
+      "2020-Q3": {
+        "existing": 6.2,
+        "new": 3.5,
+        "total": 5.2
+      },
+      "2020-Q4": {
+        "existing": 7.2,
+        "new": 2.3,
+        "total": 5.4
+      },
+      "2021-Q1": {
+        "existing": 8.0,
+        "new": 6.7,
+        "total": 7.5
+      },
+      "2021-Q2": {
+        "existing": 10.2,
+        "new": 7.2,
+        "total": 9.1
+      },
+      "2021-Q3": {
+        "existing": 8.8,
+        "new": 8.5,
+        "total": 8.7
+      },
+      "2021-Q4": {
+        "existing": 9.9,
+        "new": 8.4,
+        "total": 9.4
+      },
+      "2022-Q1": {
+        "existing": 13.3,
+        "new": 8.7,
+        "total": 11.5
+      },
+      "2022-Q2": {
+        "existing": 16.0,
+        "new": 12.3,
+        "total": 14.6
+      },
+      "2022-Q3": {
+        "existing": 17.4,
+        "new": 12.6,
+        "total": 15.6
+      },
+      "2022-Q4": {
+        "existing": 15.6,
+        "new": 9.8,
+        "total": 13.4
+      },
+      "2023-Q1": {
+        "existing": 12.3,
+        "new": 4.9,
+        "total": 9.5
+      },
+      "2023-Q2": {
+        "existing": 11.4,
+        "new": 9.4,
+        "total": 10.7
+      },
+      "2023-Q3": {
+        "existing": 9.0,
+        "new": 9.5,
+        "total": 9.2
+      },
+      "2023-Q4": {
+        "existing": 9.8,
+        "new": 10.5,
+        "total": 10.1
+      },
+      "2024-Q1": {
+        "existing": 14.1,
+        "new": 19.3,
+        "total": 16.0
+      },
+      "2024-Q2": {
+        "existing": 14.8,
+        "new": 15.6,
+        "total": 15.1
+      },
+      "2024-Q3": {
+        "existing": 16.5,
+        "new": 16.6,
+        "total": 16.5
+      },
+      "2024-Q4": {
+        "existing": 17.4,
+        "new": 19.7,
+        "total": 18.3
+      },
+      "2025-Q1": {
+        "existing": 16.2,
+        "new": 13.4,
+        "total": 15.1
+      },
+      "2025-Q2": {
+        "existing": 16.0,
+        "new": 14.9,
+        "total": 15.5
+      },
+      "2025-Q3": {
+        "existing": 18.2,
+        "new": 11.0,
+        "total": 15.4
+      },
+      "2025-Q4": {
+        "existing": 15.0,
+        "new": 9.0,
+        "total": 12.6
+      },
+      "2026-Q1": {
+        "existing": 16.3,
+        "new": 12.5,
+        "total": 14.8
+      }
+    },
+    "rate_ref_period": "2026-Q1"
+  },
+  "avg_deal_eur": {
+    "_role": "DERIVED BY US: value ÷ count, per quarter and purchase type",
+    "derived_from": [
+      "prc_hpi_hsvq",
+      "prc_hpi_hsnq"
+    ],
+    "derived_from_api_urls": [
+      "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hpi_hsvq?format=JSON&lang=EN&geo=BG&unit=EUR",
+      "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hpi_hsnq?format=JSON&lang=EN&geo=BG&unit=NR"
+    ],
+    "unit": "eur",
+    "series_by_period": {
+      "2017-Q1": {
+        "total": 31024.33,
+        "new": 44232.98,
+        "existing": 26656.1
+      },
+      "2017-Q2": {
+        "total": 31624.84,
+        "new": 43317.31,
+        "existing": 27653.73
+      },
+      "2017-Q3": {
+        "total": 30249.68,
+        "new": 42917.2,
+        "existing": 26095.5
+      },
+      "2017-Q4": {
+        "total": 34625.89,
+        "new": 50554.76,
+        "existing": 28772.72
+      },
+      "2018-Q1": {
+        "total": 32758.09,
+        "new": 46088.15,
+        "existing": 27989.23
+      },
+      "2018-Q2": {
+        "total": 33662.05,
+        "new": 45343.02,
+        "existing": 29484.33
+      },
+      "2018-Q3": {
+        "total": 32543.28,
+        "new": 45669.87,
+        "existing": 28252.89
+      },
+      "2018-Q4": {
+        "total": 35351.33,
+        "new": 49893.02,
+        "existing": 30282.14
+      },
+      "2019-Q1": {
+        "total": 36440.38,
+        "new": 53472.49,
+        "existing": 30502.77
+      },
+      "2019-Q2": {
+        "total": 36730.71,
+        "new": 49820.35,
+        "existing": 31840.19
+      },
+      "2019-Q3": {
+        "total": 34952.89,
+        "new": 46434.76,
+        "existing": 31045.82
+      },
+      "2019-Q4": {
+        "total": 39348.29,
+        "new": 52899.16,
+        "existing": 33480.15
+      },
+      "2020-Q1": {
+        "total": 38506.4,
+        "new": 49476.68,
+        "existing": 34116.88
+      },
+      "2020-Q2": {
+        "total": 39746.46,
+        "new": 53172.84,
+        "existing": 32060.29
+      },
+      "2020-Q3": {
+        "total": 35171.35,
+        "new": 47645.57,
+        "existing": 30222.44
+      },
+      "2020-Q4": {
+        "total": 41337.29,
+        "new": 57535.48,
+        "existing": 34238.72
+      },
+      "2021-Q1": {
+        "total": 42059.25,
+        "new": 58205.14,
+        "existing": 34967.15
+      },
+      "2021-Q2": {
+        "total": 42734.94,
+        "new": 54062.24,
+        "existing": 37610.86
+      },
+      "2021-Q3": {
+        "total": 40249.91,
+        "new": 52156.03,
+        "existing": 35766.87
+      },
+      "2021-Q4": {
+        "total": 43318.5,
+        "new": 56666.05,
+        "existing": 38423.0
+      },
+      "2022-Q1": {
+        "total": 45143.4,
+        "new": 60947.97,
+        "existing": 38759.08
+      },
+      "2022-Q2": {
+        "total": 46513.3,
+        "new": 60686.32,
+        "existing": 40450.56
+      },
+      "2022-Q3": {
+        "total": 44334.66,
+        "new": 62192.58,
+        "existing": 37763.04
+      },
+      "2022-Q4": {
+        "total": 49979.7,
+        "new": 64461.39,
+        "existing": 43304.4
+      },
+      "2023-Q1": {
+        "total": 46337.26,
+        "new": 61526.93,
+        "existing": 40889.45
+      },
+      "2023-Q2": {
+        "total": 51651.2,
+        "new": 69811.85,
+        "existing": 44900.74
+      },
+      "2023-Q3": {
+        "total": 47804.44,
+        "new": 68721.05,
+        "existing": 40992.27
+      },
+      "2023-Q4": {
+        "total": 53117.58,
+        "new": 74814.7,
+        "existing": 44949.09
+      },
+      "2024-Q1": {
+        "total": 60132.13,
+        "new": 84586.95,
+        "existing": 50316.57
+      },
+      "2024-Q2": {
+        "total": 61221.73,
+        "new": 83040.7,
+        "existing": 52009.34
+      },
+      "2024-Q3": {
+        "total": 59949.66,
+        "new": 86736.81,
+        "existing": 49740.44
+      },
+      "2024-Q4": {
+        "total": 64901.98,
+        "new": 90988.91,
+        "existing": 55251.04
+      },
+      "2025-Q1": {
+        "total": 71032.38,
+        "new": 95978.8,
+        "existing": 60220.0
+      },
+      "2025-Q2": {
+        "total": 73208.44,
+        "new": 100781.24,
+        "existing": 61358.59
+      },
+      "2025-Q3": {
+        "total": 68949.91,
+        "new": 91895.39,
+        "existing": 60009.41
+      },
+      "2025-Q4": {
+        "total": 75216.07,
+        "new": 98265.5,
+        "existing": 64047.15
+      },
+      "2026-Q1": {
+        "total": 82786.01,
+        "new": 109138.42,
+        "existing": 70425.72
+      }
+    },
+    "latest": {
+      "total": 82786.01,
+      "new": 109138.42,
+      "existing": 70425.72
+    },
+    "method": "Eurostat's published quarterly transaction value divided by Eurostat's published quarterly transaction count, for the quarters both cubes carry. Not a price per square metre and not a median: it is the mean amount paid for a dwelling, and a quarter's mix of flats and houses moves it. Eurostat publish neither this figure nor any per-city equivalent."
+  },
+  "disclaimer": "Dwellings bought by HOUSEHOLDS, at the price paid. This is not a count of all property sales: the property register records every sale deed — land, garages, shops, offices — and runs more than twice as high for the same quarter. The two measure different things and neither is wrong."
+}

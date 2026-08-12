@@ -345,7 +345,40 @@
   </div>
 {/if}
 
+<!--
+  The route to `/market/`, at the foot of the row that priced a home.
+
+  This is the entry point that converts, and it is here rather than in the
+  header for that reason: a reader who has just been shown how many years of
+  their own pay a home costs is the one reader on the site already asking what
+  the market is doing. The header pill serves everyone; this one serves them.
+
+  Drawn as `ExplainerBand`'s `.how-more` link rather than as a card. A new
+  treatment at the end of a results row reads as an advertisement, and the
+  thing being linked to is a page of national statistics.
+-->
+<p class="market-more">
+  <a class="how-more l-bg" href="/market/">{COPY.marketMoreK.bg} →</a>
+  <a class="how-more l-en" href="/market/">{COPY.marketMoreK.en} →</a>
+</p>
+
 <style>
+  /* Spaced off the mortgage block above it, not boxed: the row already carries
+     two bordered blocks and a third border would read as a third figure. */
+  .market-more {
+    margin: 10px 0 0;
+    font-size: var(--fs-small);
+  }
+  .how-more {
+    color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .how-more:hover {
+    color: var(--ink);
+    border-bottom-color: var(--muted);
+  }
+
   /* Mortgage cap bar: 0–100% of salary scale with a vertical line at the
      prudentDstiPct% cap and a marker dot where the user's
      actual payment lands. The fill (left segment) is colored red when

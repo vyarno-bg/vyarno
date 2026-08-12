@@ -106,10 +106,10 @@ exception, and it is a cost rather than a pattern to extend. A rule changes in
 - **No upstream notifications.** Nothing tells us a publisher released a new
   figure. If a refresh is forgotten the site keeps rendering the previous
   `as_of` date, and the line of defence is the per-payload age check in
-  `view.js#dataAge`: each of the nine is judged against the cadence its
-  manifest row declares (`site/src/lib/payloads.js`), and the banner fires when
-  any is overdue. Which also means automating eight of the nine would not clear
-  it — the panel would still show the ninth going red on its own.
+  `view.js#dataAge`: every payload is judged against the cadence its manifest
+  row declares (`site/src/lib/payloads.js`), and the banner fires when any is
+  overdue. Which also means automating all but one of them would not clear it —
+  the panel would still show the last one going red on its own.
 - **A correct formula fed the wrong number.** The class of bug the pipeline
   gates structurally cannot see, because everything they check is already right
   on disk. `view.js` + `verify_view.mjs` are the answer.

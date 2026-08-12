@@ -666,6 +666,80 @@ publishes. There is no parameter to attempt it through, which is the same device
 multiply a sector average by 0.7429 to produce a sector median: sector
 dispersions differ from the national one and nothing published says by how much.
 
+## The property market
+
+Four figures on `/market/`, and the provenance rule they exist under: **a figure
+we computed says so, states the arithmetic in words, and links the query that
+returns its inputs.** The page's readers are the ones most likely to disbelieve
+it, which is exactly why nothing there rests on being trusted.
+
+### The average dwelling transaction
+
+```
+avg_deal_eur[q] = value[q] / deals[q]
+```
+
+Both sides are Eurostat's own published quarterly figures for the same quarter,
+from `prc_hpi_hsvq` and `prc_hpi_hsnq`. Computed **per purchase type** as well
+as in total, so new builds and existing dwellings can be read apart.
+
+Published in `house_market.json` rather than derived in the browser, and that is
+the one derivation on the page that is: both inputs are one publisher's, so the
+file stays one publisher's data, and a published figure is one a **gate** can
+check. `validate_house_market` re-derives every quarter of it from the two
+published series and refuses a payload where the division does not reproduce —
+an average built from a different quarter's denominator is arithmetically fine,
+internally consistent, and wrong in a way no plausibility band would catch.
+
+Eurostat permit derivation on condition it is stated clearly to the end user, so
+the envelope carries a modification notice and their non-responsibility clause,
+and `derived_from_api_urls` carries the two queries that reproduce it.
+
+**It is a mean, not a median, and not a price per square metre.** A quarter's
+mix of flats and houses moves it, which the payload's `method` says and the page
+repeats.
+
+### Deals against the same quarter a year earlier
+
+```
+change_pct = (deals[q] − deals[q−4 quarters]) / deals[q−4 quarters] × 100
+```
+
+Year-on-year rather than quarter-on-quarter, and not for presentation: property
+transactions have a strong seasonal shape, so a fall from Q3 to Q4 measures the
+calendar. The year-ago quarter is found by **label arithmetic** on the period
+string rather than by stepping back four entries in the series — a gap in the
+data then yields null and renders nothing, instead of silently comparing against
+a neighbouring quarter.
+
+### The unoccupied share of the dwelling stock
+
+```
+unoccupied_pct = census.unoccupied / census.total × 100
+```
+
+Derived in the browser from the two counts the census publishes, which are shown
+beside it so the division is checkable by eye. "Unoccupied" is unoccupied **on
+census night** and includes second homes and holiday properties.
+
+### The average deal in years of pay
+
+```
+years = avg_deal_eur / (nsi_monthly_gross_eur × 12)
+```
+
+**The one cross-publisher figure on the page**, and the reason it is computed in
+the reader's tab: the numerator is Eurostat's and the denominator is НСИ's, and
+`docs/legal.md` §НСИ forbids distributing производни и сборни произведения — so
+neither published file may carry the other's number. The two stay apart all the
+way to the browser and meet in `mirror.js`, the same pattern the salary ladder
+uses.
+
+**Gross, not net**, and the caller has to pass a gross figure. A net wage
+depends on the payroll table of the year that converted it, which would put a
+third publisher's law inside a two-publisher ratio. It reads НСИ's
+all-activities row, never a sector.
+
 ## What we deliberately do not do
 
 | Idea | Why not |

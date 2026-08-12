@@ -32,6 +32,14 @@ REGION_SALARY_FILE: str = "region_salary.json"
 SECTOR_SALARY_FILE: str = "sector_salary.json"
 SALARY_DIST_FILE: str = "salary_dist.json"
 PAYROLL_FILE: str = "payroll.json"
+HOUSE_MARKET_FILE: str = "house_market.json"
+# The stem has to START with `house_market`, and that is a CI contract rather
+# than a naming preference. `refresh.yml` decides which payloads an arm owns by
+# matching stems against `--source` with the hyphens swapped for underscores, so
+# a file called `housing_structure.json` is owned by no arm: the workflow finds
+# nothing of its own changed, skips the commit and the PR, and reports the run
+# green while the payload never publishes. One arm writes both these files.
+HOUSE_MARKET_STRUCTURE_FILE: str = "house_market_structure.json"
 
 
 def write_payload(payload: dict, target_dir: Path, filename: str) -> Path:

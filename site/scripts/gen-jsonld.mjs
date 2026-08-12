@@ -69,9 +69,11 @@ export const DATED = Object.freeze(
   [
     { page: ["index.html"], slot: "__DATA_LASTMOD__" },
     { page: ["how", "index.html"], slot: "__DATA_LASTMOD__" },
+    { page: ["market", "index.html"], slot: "__DATA_LASTMOD__" },
     { page: ["legal", "index.html"], slot: "__LEGAL_LASTMOD__" },
     { page: ["en", "index.html"], slot: "__DATA_LASTMOD__" },
     { page: ["en", "how", "index.html"], slot: "__DATA_LASTMOD__" },
+    { page: ["en", "market", "index.html"], slot: "__DATA_LASTMOD__" },
     { page: ["en", "legal", "index.html"], slot: "__LEGAL_LASTMOD__" },
   ].map(Object.freeze)
 );

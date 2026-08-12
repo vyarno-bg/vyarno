@@ -49,6 +49,22 @@ ARMS = {
     "sector-salary": "_refresh_sector_salary",
     "salary-dist": "_refresh_salary_dist",
     "payroll": "_refresh_payroll",
+    "house-market": "_refresh_house_market",
+}
+
+# What each arm is allowed to write. `refresh.yml` derives this from the source
+# name itself, so this table restates the rule the workflow applies rather than
+# adding one — see the test below for why it is worth restating.
+ARM_PAYLOADS = {
+    "hicp": ["hicp_headline.json", "hicp_categories.json"],
+    "unemployment": ["unemployment.json"],
+    "mortgage": ["mortgage.json"],
+    "city-price": ["city_price.json"],
+    "region-salary": ["region_salary.json"],
+    "sector-salary": ["sector_salary.json"],
+    "salary-dist": ["salary_dist.json"],
+    "payroll": ["payroll.json"],
+    "house-market": ["house_market.json", "house_market_structure.json"],
 }
 
 
@@ -242,3 +258,40 @@ def test_the_refresh_workflow_commits_under_an_identity() -> None:
         assert re.search(r"^\s+git config user\.name\b", block, re.M), (
             f"the `{name}` step commits without setting user.name in the same block."
         )
+
+
+def test_every_payload_an_arm_writes_is_owned_by_that_arm() -> None:
+    """A payload whose stem does not match its arm never publishes, and CI goes green.
+
+    `refresh.yml` works out which files a run owns by taking the `--source`
+    name, swapping hyphens for underscores, and keeping payload stems that
+    equal it or start with it. Nothing checks the other direction, and the
+    failure that leaves is the worst-behaved one in the pipeline: an arm writes
+    a correct, fully-gated payload to disk, the workflow finds nothing of its
+    own changed, the commit and the PR are skipped, and the run reports a
+    successful refresh. The payload sits at its first `as_of` for ever and the
+    only thing that ever notices is the staleness banner, months later, in
+    front of a reader.
+
+    `hicp` is the reason the rule is `startswith` rather than equality — one
+    arm, two files. `house-market` is the same shape and the reason this test
+    exists: `housing_structure.json` was the natural name for its second
+    payload and is owned by no arm at all.
+    """
+    for source, payloads in sorted(ARM_PAYLOADS.items()):
+        prefix = source.replace("-", "_")
+        for filename in payloads:
+            stem = filename.removesuffix(".json")
+            assert stem == prefix or stem.startswith(prefix), (
+                f"`--source {source}` writes {filename}, but refresh.yml only "
+                f"claims stems equal to or starting with {prefix!r}. That run "
+                f"publishes nothing and still reports success."
+            )
+
+
+def test_the_payload_table_names_every_arm() -> None:
+    """Otherwise an arm added without a payload row is checked by nothing above."""
+    assert sorted(ARM_PAYLOADS) == sorted(ARMS), (
+        "ARM_PAYLOADS and ARMS disagree about which arms exist, so one of the "
+        "two tests above is silently skipping an arm."
+    )

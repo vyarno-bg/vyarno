@@ -1,0 +1,238 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "Housing cost overburden rate by age, sex and poverty status",
+ "source": "ESTAT",
+ "updated": "2026-06-08T23:00:00+0200",
+ "value": {
+  "0": 14.8,
+  "1": 20.7,
+  "2": 18.9,
+  "3": 17.9,
+  "4": 16.0,
+  "5": 14.4,
+  "6": 11.6,
+  "7": 15.1,
+  "8": 11.1,
+  "9": 8.0,
+  "10": 6.9
+ },
+ "id": [
+  "freq",
+  "unit",
+  "rskpovth",
+  "age",
+  "sex",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  11
+ ],
+ "dimension": {
+  "freq": {
+   "label": "Time frequency",
+   "category": {
+    "index": {
+     "A": 0
+    },
+    "label": {
+     "A": "Annual"
+    }
+   }
+  },
+  "unit": {
+   "label": "Unit of measure",
+   "category": {
+    "index": {
+     "PC": 0
+    },
+    "label": {
+     "PC": "Percentage"
+    }
+   }
+  },
+  "rskpovth": {
+   "label": "Risk of poverty threshold",
+   "category": {
+    "index": {
+     "TOTAL": 0
+    },
+    "label": {
+     "TOTAL": "Total"
+    }
+   }
+  },
+  "age": {
+   "label": "Age class",
+   "category": {
+    "index": {
+     "TOTAL": 0
+    },
+    "label": {
+     "TOTAL": "Total"
+    }
+   }
+  },
+  "sex": {
+   "label": "Sex",
+   "category": {
+    "index": {
+     "T": 0
+    },
+    "label": {
+     "T": "Total"
+    }
+   }
+  },
+  "geo": {
+   "label": "Geopolitical entity (reporting)",
+   "category": {
+    "index": {
+     "BG": 0
+    },
+    "label": {
+     "BG": "Bulgaria"
+    }
+   }
+  },
+  "time": {
+   "label": "Time",
+   "category": {
+    "index": {
+     "2015": 0,
+     "2016": 1,
+     "2017": 2,
+     "2018": 3,
+     "2019": 4,
+     "2020": 5,
+     "2021": 6,
+     "2022": 7,
+     "2023": 8,
+     "2024": 9,
+     "2025": 10
+    },
+    "label": {
+     "2015": "2015",
+     "2016": "2016",
+     "2017": "2017",
+     "2018": "2018",
+     "2019": "2019",
+     "2020": "2020",
+     "2021": "2021",
+     "2022": "2022",
+     "2023": "2023",
+     "2024": "2024",
+     "2025": "2025"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "ILC_LVHO07A",
+  "agencyId": "ESTAT",
+  "version": "1.0",
+  "datastructure": {
+   "id": "ILC_LVHO07A",
+   "agencyId": "ESTAT",
+   "version": "75.0"
+  },
+  "annotation": [
+   {
+    "type": "CREATED",
+    "date": "2010-07-14T14:31:02+0200"
+   },
+   {
+    "type": "DISSEMINATION_DOI_XML",
+    "title": "<adms:identifier xmlns:adms=\"http://www.w3.org/ns/adms#\" xmlns:skos=\"http://www.w3.org/2004/02/skos/core.html\" xmlns:dct=\"http://purl.org/dc/terms/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><adms:Identifier rdf:about=\"https://doi.org/10.2908/ILC_LVHO07A\"><skos:notation rdf:datatype=\"http://purl.org/spar/datacite/doi\">10.2908/ILC_LVHO07A</skos:notation><dct:creator rdf:resource=\"http://publications.europa.eu/resource/authority/corporate-body/ESTAT\"/><dct:issued rdf:datatype=\"http://www.w3.org/2001/XMLSchema#date\">2023-01-19</dct:issued></adms:Identifier></adms:identifier>"
+   },
+   {
+    "type": "DISSEMINATION_EXPLANATORY_LINK",
+    "title": "info-category",
+    "href": "https://ec.europa.eu/eurostat/databrowser-backend/api/public/explanatory-notes/get/Info_note_ILC_20251009.pdf",
+    "text": "Information note"
+   },
+   {
+    "type": "DISSEMINATION_EXPLANATORY_LINK",
+    "title": "info-category",
+    "href": "https://ec.europa.eu/eurostat/databrowser-backend/api/public/explanatory-notes/get/Info_note_ILC_20251009.pdf"
+   },
+   {
+    "type": "DISSEMINATION_EXPLANATORY_LINK",
+    "title": "info-category",
+    "href": "https://ec.europa.eu/eurostat/databrowser-backend/api/public/explanatory-notes/get/Info_note_ILC_20251009.pdf"
+   },
+   {
+    "type": "DISSEMINATION_OBJECT_TYPE",
+    "title": "DATASET"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_DATA",
+    "date": "2026-06-08T23:00:00+0200"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_GLOBAL",
+    "date": "2026-06-08T23:00:00+0200"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_PLANNED",
+    "date": "2026-06-08T23:00:00+0200"
+   },
+   {
+    "type": "ESMS_HTML",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/cache/metadata/en/ilc_sieusilc.htm"
+   },
+   {
+    "type": "ESMS_SDMX",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/api/dissemination/files?file=metadata/ilc_sieusilc.sdmx.zip"
+   },
+   {
+    "type": "OBS_COUNT",
+    "title": "126094"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_LATEST",
+    "title": "2025"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_OLDEST",
+    "title": "2003"
+   },
+   {
+    "type": "SOURCE_INSTITUTIONS",
+    "text": "Eurostat"
+   },
+   {
+    "type": "UPDATE_DATA",
+    "date": "2026-06-08T23:00:00+0200"
+   },
+   {
+    "type": "UPDATE_STRUCTURE",
+    "date": "2026-05-21T23:00:00+0200"
+   }
+  ],
+  "status": {
+   "label": {
+    "b": "break in time series"
+   }
+  },
+  "positions-with-no-data": {
+   "freq": [],
+   "unit": [],
+   "rskpovth": [],
+   "age": [],
+   "sex": [],
+   "geo": [],
+   "time": []
+  }
+ }
+}

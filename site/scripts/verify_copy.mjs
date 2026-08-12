@@ -2002,3 +2002,158 @@ test("every НСИ credit line marks a preliminary quarter as preliminary", () =
     );
   }
 });
+
+// ---------------------------------------------------------------------------
+// The market page takes no side
+// ---------------------------------------------------------------------------
+
+/**
+ * `/market/`'s prose, comments stripped.
+ *
+ * Read as source rather than through `COPY`, because that page's paragraphs are
+ * inlined `.l-bg` / `.l-en` pairs the way `How.svelte` writes its own. Comments
+ * go first for the reason every source-reading rule here strips them: a comment
+ * explaining which words are banned must not be the thing that fails the check.
+ */
+const MARKET_SRC = readFileSync(join(HERE, "..", "src", "Market.svelte"), "utf8")
+  .replace(/<!--[\s\S]*?-->/g, "")
+  .replace(/\/\*[\s\S]*?\*\//g, "")
+  .split("\n")
+  .map((line) => {
+    const t = line.trimStart();
+    return t.startsWith("*") || t.startsWith("//") ? "" : line;
+  })
+  .join("\n");
+
+/** The same, as one line — wrapped prose is read by sentence, never by line. */
+const MARKET_FLAT = MARKET_SRC.replace(/\s*\n\s*/g, " ");
+
+test("the market page describes the market and does not judge it", () => {
+  // P6, on the page most exposed to losing it. Every figure there is one
+  // somebody has an argument about, and a page of official statistics that
+  // calls a market overheated has stopped being a page of official statistics:
+  // it has taken a position using the credibility the statistics lent it.
+  //
+  // A vocabulary rule rather than a proofread, because this is not lost in a
+  // paragraph anybody would notice. It goes one adjective at a time, in an edit
+  // that improves the sentence — "prices rose 14.8%" becomes "prices surged
+  // 14.8%" — and nothing about that edit looks like a change of position.
+  //
+  // **`\b` is useless on the Bulgarian half and that is not a detail.** In
+  // JavaScript `\w` is `[A-Za-z0-9_]` whatever flags are set, so no Cyrillic
+  // letter is a word character and `\b` never finds a boundary between a space
+  // and a «б» — `/\bбалон/u` matches nothing, in a rule whose whole job is to
+  // fire. The BG patterns use `\p{L}` lookbehind, which the `u` flag does
+  // understand; the EN ones keep `\b`, where it works.
+  const bg = (alts) => new RegExp(`(?<!\\p{L})(?:${alts})\\p{L}*`, "giu");
+  const VERDICT = [
+    /\b(?:crash|collapse|collapsing|plummet|plunge|soar|surge|skyrocket)\w*/gi,
+    /\b(?:bubble|overheat\w*|overvalued|undervalued|unsustainable)\b/gi,
+    /\b(?:cheap|expensive|affordable|unaffordable)\b/gi,
+    /\b(?:should|ought to|good time to|bad time to|worth buying)\b/gi,
+    bg("срив|сгромолясв|рухв|бум|балон"),
+    bg("прегрят|надцене|подцене|неустойчив"),
+    bg("евтин|изгодн|подходящ момент"),
+  ];
+
+  // Scanned by SENTENCE. This file wraps at 100 columns and Prettier breaks a
+  // `.l-bg` span wherever it must, so «не че са евтини» lands with the negation
+  // on one line and the word on the next — a line-at-a-time scan reads the
+  // second half as a bare verdict. `verify_docs_map.mjs`'s payload-count rule
+  // hit the same thing and solved it the same way.
+  const offenders = [];
+  for (const sentence of MARKET_FLAT.split(/(?<=[.!?])\s+/)) {
+    // Three exemptions, each for a sentence using the word in order NOT to make
+    // the claim:
+    //
+    //   a question the page then declines to answer — «Скъпо ли е спрямо
+    //   доходите» heads the section that gives the ratio and stops;
+    //
+    //   an explicit refusal — "cheaper than it has over its own history, not
+    //   that it is cheap" is the one place the page says out loud what it is
+    //   NOT claiming, and banning the word there deletes the disclaimer;
+    //
+    //   a comparative against a named baseline — «по-евтино, отколкото средно
+    //   за собствената им история» is a measurement with its yardstick stated,
+    //   which is the opposite of a verdict.
+    if (/[?？]|\bли\b/u.test(sentence)) continue;
+    if (/(?:not that|nor that|не че|нито че)/iu.test(sentence)) continue;
+    for (const re of VERDICT) {
+      for (const m of sentence.matchAll(re)) {
+        if (/по-$/u.test(sentence.slice(0, m.index))) continue;
+        offenders.push(`${m[0]} — ${sentence.trim().slice(0, 90)}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `the market page uses verdict vocabulary:\n  ${offenders.join("\n  ")}\n\n` +
+      "State the measurement and let the reader draw the conclusion. A page " +
+      "telling them what to think about the property market has spent the " +
+      "credibility the official figures lent it (docs/principles.md P6)."
+  );
+});
+
+test("the market page never lets a register count read as a housing count", () => {
+  // The single mistake on this subject that would cost the project its
+  // credibility. The property register records every sale deed — land,
+  // garages, shops, offices — and runs more than twice as high as the dwelling
+  // count for the same quarter. Put the two side by side without the sentence
+  // between them and the page reads as self-contradicting; quote the register's
+  // figure as a housing volume and it is simply wrong.
+  //
+  // The register is not a source on this page yet. What this holds is the
+  // qualification that has to survive it arriving.
+  assert.match(
+    MARKET_FLAT,
+    /регист|regist/iu,
+    "the market page never mentions the property register, so a reader " +
+      "comparing its deal count against the register's own finds no " +
+      "explanation of why the two differ by more than a factor of two"
+  );
+  assert.match(
+    MARKET_FLAT,
+    /домакинства/u,
+    "the BG copy does not say the counts are dwellings bought by HOUSEHOLDS, " +
+      "which is the scope that separates them from the register's"
+  );
+  assert.match(
+    MARKET_FLAT,
+    /households/i,
+    "the EN copy does not say the counts are dwellings bought by households"
+  );
+});
+
+test("the market page states that no per-city transaction price exists", () => {
+  // P11: uncomputed, not concealed. Every НСИ city series is an index or a
+  // percentage and their лв./кв.м survey was discontinued, so a transaction
+  // price per square metre for a Bulgarian city cannot be built from anything.
+  // The calculator carries имот.bg's ASKING prices per city; a reader who takes
+  // those for the missing half of this page has been misled by omission.
+  //
+  // The claim has to be about a per-city price, so this looks for a sentence
+  // carrying all three halves rather than for the word "nobody" anywhere on the
+  // page — the average-deal section says "a figure nobody publishes ready-made"
+  // two sections earlier, and a looser rule would go on passing with this
+  // sentence deleted.
+  const statesIt = MARKET_FLAT.split(/(?<=[.!?])\s+/).some(
+    (line) =>
+      /никой|nobody|no publisher/iu.test(line) &&
+      /кв\. м|квадрат|square metre|square meter|per m²/iu.test(line) &&
+      /град|city/iu.test(line)
+  );
+  assert.ok(
+    statesIt,
+    "no sentence on the market page says that nobody publishes a transaction " +
+      "price per square metre for a Bulgarian city. Without it the имот.bg " +
+      "asking prices in the calculator read as the missing half of this page."
+  );
+  for (const asking of [/обявен/iu, /asking/i]) {
+    assert.match(
+      MARKET_FLAT,
+      asking,
+      "the market page does not distinguish an asking price from a paid price"
+    );
+  }
+});
