@@ -2437,7 +2437,16 @@ export const COPY = {
   // starts, and a column head saying «От 2015 г.» is a claim about the data
   // that the next republication can falsify while every figure under it stays
   // right.
-  mktColCityTrend: { bg: "От {from}", en: "Since {from}" },
+  // **The sparkline column's head describes the COLUMN, never a span the figure
+  // beside it covers.** «От Q1 2015» sat between two percentage columns and was
+  // read as the period those percentages were measured over — so a reader took
+  // «Цени на сделките · Q1 2026 · От Q1 2015» as one claim, that prices had
+  // moved by that much since 2015. Every cell in this table is a change on the
+  // same quarter a year earlier, and the little chart is that same reading
+  // plotted once per quarter, so naming the quarters is what the head has to
+  // do. A bare «От {from}» names a starting point, and a starting point is
+  // exactly what a cumulative reading needs to look plausible.
+  mktColCityTrend: { bg: "Всяко тримесечие от {from}", en: "Every quarter since {from}" },
 
   // The second link under every figure, and it exists because the first one
   // does not land where a reader expects. Eurostat's table view opens with all
@@ -2467,8 +2476,25 @@ export const COPY = {
   // the columns are narrow and the sentence above the table already says these
   // are changes rather than levels.
   mktColCity: { bg: "Град", en: "City" },
-  mktColPrice: { bg: "Цени на сделките", en: "Transaction prices" },
-  mktColDeals: { bg: "Брой сделки", en: "Number of sales" },
+  // **Both figure columns name the comparison, not just the subject.** Every
+  // cell under them is НСИ's «изменение спрямо съответното тримесечие на
+  // предходната година» — a change on a year earlier — and «Цени на сделките»
+  // and «Брой сделки» are the names of LEVELS. A head naming a level over a
+  // column of changes leaves the correction to the paragraph above the table,
+  // and a table is read without its paragraph. The column head is where a
+  // reader who scrolled straight to their own city meets the figure.
+  //
+  // Long enough to wrap, which the `.fig-table thead th.num` rule below already
+  // permits and the cells still refuse — the same trade «Спрямо година по-рано»
+  // bought on the volume table.
+  mktColPrice: {
+    bg: "Цени на сделките, спрямо година по-рано",
+    en: "Transaction prices, against a year earlier",
+  },
+  mktColDeals: {
+    bg: "Брой сделки, спрямо година по-рано",
+    en: "Number of sales, against a year earlier",
+  },
   mktTblCities: {
     bg: "Цени и брой сделки по градове",
     en: "Prices and number of sales by city",
