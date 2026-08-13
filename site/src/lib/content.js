@@ -2355,7 +2355,14 @@ export const COPY = {
     bg: "без поскъпването на всичко останало",
     en: "with the rise in everything else taken out",
   },
-  mktColIndexReal: { bg: "Без инфлацията", en: "Without inflation" },
+  // **Not «Без инфлацията».** On this site "inflation" is a specific published
+  // series — the HICP the whole calculator is built on — and Eurostat deflate
+  // this index by the national accounts household consumption deflator, which
+  // is a near neighbour and not that. A head naming the reader's own figure
+  // invites them to check one series against another and find a discrepancy
+  // that is not an error. The page's own phrase for the pair is «без
+  // поскъпването на всичко останало», and this is its short form.
+  mktColIndexReal: { bg: "Без поскъпването", en: "Rise taken out" },
   mktColFlag: { bg: "Бележка", en: "Note" },
   // Eurostat mark their own numbers and the letters mean nothing to a reader
   // alone. Printed only for the letters a series actually carries — a key
@@ -2384,7 +2391,11 @@ export const COPY = {
   // here stays right until the day it silently stops being, next to a chart
   // whose every digit is still correct. `price_index.base_year` is in the
   // payload and has been all along.
-  mktRefIndexBase: { bg: "×1 = колкото през {year} г.", en: "×1 = the {year} level" },
+  // «средното за», not «нивото от». The base is the year's ANNUAL AVERAGE and
+  // no single quarter of it equals 100, so the ×1 rule passes between that
+  // year's own points rather than through one — and a caption promising "the
+  // {year} level" sends a reader looking for the quarter that touches the line.
+  mktRefIndexBase: { bg: "×1 = средното за {year} г.", en: "×1 = the {year} average" },
   mktRefZero: {
     bg: "0 = без промяна спрямо година по-рано",
     en: "0 = no change on a year earlier",

@@ -203,7 +203,7 @@
   const yOf = (value, s) => CH_H * (1 - (value - s.min) / span(s));
   /** Evenly across the box, first point on the left edge and last on the right. */
   const lineX = (i, n) => (n > 1 ? (CH_W * i) / (n - 1) : CH_W / 2);
-  /** A column occupies its own slot with a gap, so 85 of them still read. */
+  /** A column occupies its own slot with a gap, so a long series still reads. */
   const colX = (i, n) => (CH_W / n) * (i + 0.12);
   const colW = (n) => Math.max(0.8, (CH_W / n) * 0.76);
   /** Where a tick sits down the plot, as the percentage its HTML gutter takes. */
@@ -225,12 +225,15 @@
   /**
    * Every series the page draws, and the ones it draws a table of.
    *
-   * Twenty-one years of the official index, twenty of Eurostat's own annual
-   * rate, thirty-seven quarters of what a dwelling actually changed hands for
-   * and twenty of the overburden share were all in the payloads and none of
-   * them reached the page — it rendered the newest reading of each and threw
-   * the history away. A single reading of a figure that has swung by fifteen
-   * points twice tells a reader almost nothing about it.
+   * **A page that renders only the newest reading of each throws the history
+   * away**, and every one of these payloads carries decades of it. A single
+   * reading of a figure that has swung by fifteen points twice tells a reader
+   * almost nothing about it, and the swing is what they came to see.
+   *
+   * The four series are on four different windows and no two start in the same
+   * year. Nothing here states a span in words: each carries its own `from` and
+   * `to`, the source lines print them, and a count written into a comment is
+   * one the next backfilled quarter makes wrong with nothing to catch it.
    */
   const indexSeries = $derived(marketPriceIndexSeries(data.houseMarket));
   const indexRealSeries = $derived(marketPriceIndexRealSeries(data.houseMarket));
@@ -571,7 +574,7 @@
   {@const n = series.points.length}
   {#each series.points as p, i (p.period)}
     <!-- An invisible target over each point of a line. A line has no mark to
-         put a `<title>` on, and a reader hunting for one quarter of eighty-five
+         put a `<title>` on, and a reader hunting for one quarter out of decades
          needs a box wide enough to hit rather than a stroke one pixel wide. -->
     <rect class="plot-hit" x={lineX(i, n) - CH_W / n / 2} y="0" width={CH_W / n} height={CH_H}>
       <title>{p.period}: {label(p.value)}</title>
@@ -878,16 +881,17 @@
         се е случило точно сега. Затова цените са на два реда: единият е това, което реално се
         плаща, другият — същото, но без поскъпването на всичко останало. Точките им не са на едно и
         също място. И двата реда се четат «колко пъти повече от {reading.baseYear} г.» — годината, която
-        самият Евростат е взел за начало. Всеки ред се публикува от различна начална година и пише своята
-        под името си.</span
+        самият Евростат е приравнил на 100. Тя е мерилото, а не началото — редицата тръгва много преди
+        нея. Всеки ред се публикува от различна начална година и пише своята под името си.</span
       >
       <span class="l-en"
         >A figure that only ever rises sits at its right end because that is what it does, not
         because of anything happening now. That is why prices are on two rows: one is what is
         actually paid and the other is the same thing with the rise in everything else taken out.
         Their dots are not in the same place. Both rows read as "how many times more than in {reading.baseYear}"
-        — the year Eurostat themselves took as the starting point. Each row is published from a
-        different starting year and writes its own under its name.</span
+        — the year Eurostat themselves set to 100. That is the yardstick, not the beginning: the
+        record starts well before it. Each row is published from a different starting year and
+        writes its own under its name.</span
       >
     </p>
   {/if}
@@ -931,7 +935,8 @@
         bg:
           `Числата с «×» и това в години са наша сметка, и двете стъпват на публикувани числа. ` +
           `«Колко пъти» е индексът на Евростат, разделен на нивото от ${reading.baseYear} г. ` +
-          `Тази година самият Евростат е взел за начало и я е записал като 100. ` +
+          `Средното за тази година самият Евростат е приравнил на 100. Тя е мерилото, а не ` +
+          `началото на редицата — Евростат публикува индекса от доста по-рано. ` +
           `«Колко години заплата» е средната сделка на Евростат, разделена на дванадесет средни ` +
           `месечни заплати на НСИ за всички дейности. Двата файла се срещат едва тук, в браузъра ` +
           `ти, така че във всеки от тях стоят числата само на един публикуващ орган. ` +
@@ -944,7 +949,8 @@
         en:
           `The multiple and the years figure are our arithmetic, both from published numbers. ` +
           `The multiple is Eurostat's index divided by its ${reading.baseYear} level. That is the ` +
-          `year Eurostat themselves took as the starting point and wrote as 100. ` +
+          `year whose average Eurostat themselves set to 100. It is the yardstick rather than the ` +
+          `start of the series — Eurostat publish the index from a good deal earlier. ` +
           `The years figure is Eurostat's average transaction divided by twelve of НСИ's ` +
           `published average monthly wages across all activities. The two files meet only here, ` +
           `in your browser, which is what keeps each of them one publisher's data. ` +
@@ -1044,8 +1050,8 @@
       </p>
 
       <!-- The volume series, which IS this section's finding. One quarter and a
-           percentage state it; thirty-seven quarters show the shape it sits in,
-           and the shape is what the year-on-year figure is a single reading of.
+           percentage state it; the whole series shows the shape it sits in, and
+           the shape is what the year-on-year figure is a single reading of.
 
            Columns start at zero and there is no axis minimum to set: a count
            chart cropped to its own range makes any series look like a cliff,
@@ -1227,32 +1233,60 @@
            itself, which is a methodological commitment rather than a detail. -->
       <p class="cap">
         <span class="l-bg"
-          >НСИ са сменяли годината, от която се брои индексът. Процент, пресметнат наново през
-          старата и през новата, може да се разминава с публикувания в последния знак — затова тук
-          стои техният, а не наш.</span
+          >НСИ са сменяли базата на индекса — годината, приравнена на 100. Процент, пресметнат
+          наново през старата и през новата, може да се разминава с публикувания в последния знак —
+          затова тук стои техният, а не наш.</span
         >
         <span class="l-en"
-          >НСИ have changed the year the index is counted from. A rate recomputed across the old
-          year and the new one can differ from the published one in the last decimal, so the figure
+          >НСИ have changed the index's base — the year set to 100. A rate recomputed across the old
+          base and the new one can differ from the published one in the last decimal, so the figure
           here is theirs rather than ours.</span
         >
       </p>
     {/if}
 
-    <!-- The index, twenty-one years of it -------------------------------- -->
+    <!-- The index, and the one thing the base year may not be called.
+
+         `base_year` is the year Eurostat SET TO 100. It is not where the record
+         begins: the series runs from long before it, and its early quarters are
+         under the reference rule. Call it the start and the sentence contradicts
+         the picture beside it — every digit stays correct, the axis stays
+         correct, and a reader concludes we hold no data before that year and
+         cannot read a point drawn below ×1. `verify_copy.mjs` §"the index's base
+         year is never called the start of the series" is the guard.
+
+         The base is also an ANNUAL average and no single quarter equals it, so
+         the ×1 rule passes between the base year's own points rather than
+         through one of them. A reader who goes looking for the quarter where
+         the line touches ×1 does not find it. -->
     {#if indexSeries.points.length > 8}
       <p>
         <span class="l-bg"
           >Процентът отгоре е за една година. Следващата картинка е за всичките години, които
           Евростат публикува, и мери друго. Не с колко са се променили цените за последната година,
-          а колко пъти са по-високи от една година, взета за начало. Тази година е {reading.baseYear},
+          а колко пъти са по-високи от една година, взета за мерило. Тази година е {reading.baseYear},
           избрал я е Евростат, и на картинката тя е линията ×1.</span
         >
         <span class="l-en"
           >The percentage above is one year's. The chart below covers every year Eurostat publish
           and measures something else. Not how much prices moved in the last year, but how many
-          times higher they are than in one year taken as the starting point. That year is {reading.baseYear},
+          times higher they are than one year taken as the yardstick. That year is {reading.baseYear},
           Eurostat chose it, and on the chart it is the ×1 line.</span
+        >
+      </p>
+      <p class="cap">
+        <span class="l-bg"
+          >{reading.baseYear} г. е мерилото, а не началото на редицата — тя тръгва доста преди нея. Затова
+          в лявата ѝ част има точки под ×1: тогава жилищата са стрували по-малко, отколкото през {reading.baseYear}
+          г. На 100 е приравнено средното за цялата {reading.baseYear} г., а не отделно тримесечие, така
+          че линията ×1 минава между точките на самата {reading.baseYear} г., а не през някоя от тях.</span
+        >
+        <span class="l-en"
+          >{reading.baseYear} is the yardstick rather than the start of the record, which begins a good
+          deal earlier. That is why its left-hand points sit below ×1: homes cost less then than they
+          did in {reading.baseYear}. What is set to 100 is the average of the whole of {reading.baseYear},
+          not any single quarter, so the ×1 line passes between that year's own points rather than
+          through one of them.</span
         >
       </p>
 
@@ -1270,6 +1304,32 @@
           money changes hands for a home. The dashed one takes out the fact that everything else got
           dearer in the meantime. It answers the other question: have homes got dearer than
           everything else we buy. Eurostat publish both lines; nothing here is computed by us.</span
+        >
+      </p>
+      <!--
+        WHICH price rise the dashed line takes out, named because on this site
+        the reader arrives with a different one in mind. The headline figure the
+        calculator is built on is the HICP, so «без поскъпването на всичко
+        останало» reads as "without THAT". Eurostat deflate `tipsho30` by the
+        national accounts deflator for household final consumption instead — a
+        near neighbour of the HICP and not the same series, and their own
+        Statistics Explained says the scoreboard indicator uses the deflator
+        rather than the HICP. A reader checking this line against our published
+        inflation gets figures that nearly agree, which is the worst way to find
+        out they are different measurements.
+      -->
+      <p class="cap">
+        <span class="l-bg"
+          >Кое точно поскъпване се вади: Евростат дели индекса на дефлатора за крайното потребление
+          на домакинствата от националните сметки. Той е роднина на инфлацията, която този сайт
+          показва, но не е същият ред — сметнеш ли пунктирания ред с нея, ще излезе близко число, а
+          не същото.</span
+        >
+        <span class="l-en"
+          >Which price rise, exactly: Eurostat divide the index by the national accounts deflator
+          for household final consumption. It is a near relative of the inflation figure this site
+          publishes rather than the same series — work the dashed line out against ours and you get
+          a close number, not the same one.</span
         >
       </p>
 
@@ -1433,15 +1493,15 @@
            Eurostat's own table, and the multiple is what a reader understands. -->
       <p class="cap">
         <span class="l-bg"
-          >В таблицата числата стоят така, както ги публикува Евростат — като индекс, където нивото
-          от {reading.baseYear} г. е записано като 100. Картинката отгоре показва същите числа, разделени
-          на това ниво: за {periodLong(reading.period, "bg")} индексът е {fmt(
+          >В таблицата числата стоят така, както ги публикува Евростат — като индекс, където
+          средното за {reading.baseYear} г. е записано като 100. Картинката отгоре показва същите числа,
+          разделени на това 100: за {periodLong(reading.period, "bg")} индексът е {fmt(
             indexSeries.latest?.value
           )}, което е ×{fmt(reading.times)} — второто е изречение, първото не е.</span
         >
         <span class="l-en"
-          >In the table the figures are as Eurostat publish them — as an index, with the {reading.baseYear}
-          level written as 100. The chart above shows the same figures divided by that level: for {periodLong(
+          >In the table the figures are as Eurostat publish them — as an index, with the average for {reading.baseYear}
+          written as 100. The chart above shows the same figures divided by that 100: for {periodLong(
             reading.period,
             "en"
           )} the index is {fmt(indexSeries.latest?.value)}, which is ×{fmt(reading.times)} — the second
@@ -1536,11 +1596,11 @@
 
   <!-- 2b -----------------------------------------------------------------
        Its own section, because section two had grown into the longest on the
-       page: two publishers' rate table, the index chart with two lines and its
-       85-row disclosure, the annual rate chart with its 81-row disclosure, and
-       then six cities with two more — read end to end, the city table arrives
-       after four charts and a reader looking for their own city has no way to
-       jump to it. It is also a different subject and a different publisher:
+       page: two publishers' rate table, the index chart with two lines and a
+       disclosure of every quarter behind it, the annual rate chart with another,
+       and then six cities with two more — read end to end, the city table
+       arrives after four charts and a reader looking for their own city has no
+       way to jump to it. It is also a different subject and a different publisher:
        everything above is Eurostat's national series, and every cell below is a
        cell НСИ published for one city. -->
   <section id="cities">
@@ -2862,7 +2922,7 @@
 
   /* The numbers under a chart. Closed, because it is the long form and the plot
      is the short one; a real <table>, because it is the WCAG text alternative
-     and the only way to read one quarter off an eighty-five-quarter line. */
+     and the only way to read an exact quarter off a line drawn from decades. */
   .numbers {
     margin-top: 8px;
   }
@@ -2903,7 +2963,7 @@
   }
   /* The hit target over each point of a line. It carries the `<title>` a
      pointer needs and paints nothing — a line has no mark to hang one on, and a
-     reader hunting for one quarter of eighty-five needs a box to aim at rather
+     reader hunting for one quarter out of decades needs a box to aim at rather
      than a two-pixel stroke. */
   .plot-hit {
     fill: transparent;

@@ -486,7 +486,9 @@ it meant.
   level. `verify_copy.mjs` already splits the market page into sentences for the
   verdict rule, so a ceiling is one line away and is deliberately not there:
   `docs/writing-style.md` §"Sentence length is a review note" argues it, and
-  says what a reviewer reads for instead.
+  says what a reviewer reads for instead. What a sentence *claims* is a
+  different question with a different answer — §"When a prose test IS right"
+  above has the case that earns a test, and what separates the two.
 - **A line the coverage report shows uncovered**, where the answer to "why not"
   is written down. `data.js`'s fetch wrappers and the five `_refresh_*` arms in
   `cli.py` that no end-to-end test drives are the two, and both entries below
@@ -515,6 +517,50 @@ without reading it. **The line: assert on the rule, never on the sentence.**
 Where a rule is really "this word must not appear", write it as a regex over
 the imported string; where it is "this sentence must say X", it is usually a
 commitment or it is nothing.
+
+### When a prose test IS right: the claim is about a payload field
+
+There is one shape of copy assertion that earns its place every time, and
+`verify_copy.mjs` §"the index's base year is never called the start of the
+series" is the worked example. **The test is available because both halves of
+the claim are in the payload.**
+
+`house_market.price_index` carries a `base_year` and a series with its own
+`from`. They are different fields and they are years apart: Eurostat set the
+index to 100 at the base and publish it from a decade earlier. Copy that calls
+the base "the year taken as the starting point" is therefore *false against the
+payload beside it* — the chart draws ten years to the left of the year the words
+call the beginning, and those early quarters sit UNDER the ×1 rule. Every digit
+on the page stays correct while a reader is told the record does not go back
+that far and is given no way to read a point below the reference line.
+
+Nothing else could catch it, which is the test for whether a new assertion is a
+second guard or a second thing to update. The "no prose freezes a period" rule
+passes, because the year renders from a slot and the slot is right. The render
+suite checks that every figure carries a source, and every one does. **What was
+missing was any comparison between a claim about a series and the series.**
+
+Contrast it with the ceiling on sentence length, which `docs/writing-style.md`
+§"Sentence length is a review note" declines. That one fails on the
+measurement: a page's "sentences" have to be recovered from `.l-bg` spans
+interleaved with slots, headings and nav links, so the check invents offenders
+nobody wrote. Here there is nothing to recover — `base_year` and `from` are two
+JSON fields, and the only judgement is which words assert one is the other.
+
+Two rules of thumb come out of it:
+
+- **Ban the construction, not the co-occurrence.** A rule reading "a sentence
+  naming the base year may not also contain a start-word" fires on the sentence
+  written to say the base is *not* the start, and needs an exemption list to
+  survive its own subject. A rule listing the phrasings that make the claim
+  needs none, and reads honestly as the regression guard it is.
+- **Pin the clarification that has one home.** The page says "yardstick, not a
+  beginning" in more than one section, so asserting it page-wide is loose by
+  design — any of them serves a reader who lands there. The sentence explaining
+  why points sit below ×1 exists once, reads as spare prose next to a chart that
+  looks self-explanatory, and is therefore the one an editor cuts. That one is
+  asserted in both languages, and the mutation that removes either half goes
+  red.
 
 ## Coverage, and what is deliberately not covered
 
