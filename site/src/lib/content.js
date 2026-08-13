@@ -1035,9 +1035,23 @@ export const COPY = {
   // keeps saying the old round after the payload has moved to the next one, on
   // the card whose whole claim is that it tells you what the figure is built
   // from. Nothing on this page may state a date the data does not.
+  // **The two halves do not cover the same people, and the card has to say so.**
+  // The shape is SES: full-time employees, firms of ten or more, NACE B–S
+  // excluding O. The level it is scaled onto is НСИ's all-activities average —
+  // every firm size, public administration and agriculture included. A scalar
+  // re-level fixes the MEAN of the two by construction, so the level mismatch
+  // costs nothing; what is left is whether the wider group's pay is spread the
+  // same way, and no publisher measures that. SES carries no firm-size
+  // dimension for BG at any vintage, and neither section A nor section O is a
+  // category in the cube at any vintage, so the gap cannot be closed and cannot
+  // be signed: including firms under ten would widen the bottom, including
+  // section O would probably narrow it — at the 2018 vintage, the one where BG
+  // still carries activity groupings, D9/D1 runs 2.71 for education-health-arts
+  // against 5.18 for business services. That is P11 — uncomputed and said out
+  // loud, never quietly corrected by a factor nobody publishes.
   pctCaveat: {
-    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, само във фирми с поне 10 души, без държавната администрация), а нивото е днешната средна заплата за страната. Затова числото показва приблизително къде си, а не точно. Подредбата не се мести с това къде живееш — никой не публикува как са разпределени заплатите вътре в една област — така че там, където заплатите са по-ниски, същата заплата те нарежда по-нагоре, отколкото пише тук.",
-    en: "We compare each take-home pay with what people earn across the whole country. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, in firms with 10 or more staff, public administration excluded), and the level is today's average wage for the country. So the figure shows roughly where you stand, not exactly. The ranking does not move with where you live — nobody publishes how pay is spread inside one oblast — so where wages are lower the same pay places you higher than it says here.",
+    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, само във фирми с поне 10 души, без държавната администрация), а нивото е днешната средна заплата за страната — а тя е за всички наети, включително в малките фирми, в администрацията и в земеделието. Двете не са едни и същи хора, а как са разпределени заплатите в по-широката група никой не мери, така че колко мести това подредбата не може да се пресметне. Затова числото показва приблизително къде си, а не точно. Подредбата не се мести и с това къде живееш — никой не публикува как са разпределени заплатите вътре в една област — така че там, където заплатите са по-ниски, същата заплата те нарежда по-нагоре, отколкото пише тук.",
+    en: "We compare each take-home pay with what people earn across the whole country. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, in firms with 10 or more staff, public administration excluded), and the level is today's average wage for the country — which covers every employee, small firms, public administration and agriculture included. The two are not the same people, and nobody measures how pay is spread across the wider group, so how far that moves the ranking cannot be worked out. So the figure shows roughly where you stand, not exactly. The ranking does not move with where you live either — nobody publishes how pay is spread inside one oblast — so where wages are lower the same pay places you higher than it says here.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE
@@ -1606,18 +1620,26 @@ export const COPY = {
   // the published median sitting below the published mean, and the card renders
   // this only where that holds — see the gate in PayField.
   //
-  // «Заети» / EMPLOYEES, because that is who Eurostat's SES surveys, and
-  // person-first in both languages: the people are the subject and the wage is
+  // **«Наети», not «заети».** In Bulgarian official statistics «заети» is
+  // employed PERSONS, the self-employed among them, and SES surveys neither
+  // them nor everybody who is employed: its population is employees, full-time
+  // here, in firms of ten or more, NACE B–S excluding O. The claim itself —
+  // more than half earn under the average — is the survey's own median sitting
+  // under its own mean (€705 against €949 at 2022), so it is true OF THAT
+  // POPULATION and of no wider one, and the sentence has to name the population
+  // it is true of.
+  //
+  // Person-first in both languages: the people are the subject and the wage is
   // what they are compared against. «Стои на X-ия процентил» is jargon a reader
-  // is entitled not to know, and «средната изпреварва X% от заетите» hands a
+  // is entitled not to know, and «средната изпреварва X% от наетите» hands a
   // wage a verb that wants a person — it overtakes nobody.
   //
   // The level is named GROSS because the credit line above this one ends in a
   // net. Two adjacent sentences pairing a country-wide gross with a local net
   // on unstated bases invite a comparison neither supports.
   sectorAverageFlatters: {
-    bg: "Средната не е средата: в България повече от половината заети изкарват под средната брутна заплата (Евростат, {shapeYear} г.), затова „под средната за сектора“ не значи „под средата“.",
-    en: "An average is not a middle: in Bulgaria more than half of employees earn less than the average GROSS wage (Eurostat, {shapeYear}), so below your sector's average does not mean below the middle.",
+    bg: "Средната не е средата: в България повече от половината наети на пълен работен ден изкарват под средната брутна заплата (Евростат, {shapeYear} г.), затова „под средната за сектора“ не значи „под средата“.",
+    en: "An average is not a middle: in Bulgaria more than half of full-time employees earn less than the average GROSS wage (Eurostat, {shapeYear}), so below your sector's average does not mean below the middle.",
   },
   // The English has to name «служебно правоотношение» too. НСИ count both
   // employment relationships, and «Държавно управление» is one of the sections
@@ -1911,15 +1933,24 @@ export const COPY = {
   // that it is deliberately unflattering (docs/principles.md P7). A caveat that
   // lives one page away from the verdict it qualifies protects nobody.
   homeMortExcludes: {
-    bg: "Това е само вноската по кредита. Застраховките и таксата по сметката вървят отгоре, всеки месец — те са в ГПР, не в тази сума.",
-    en: "That is the loan instalment alone. Insurance and the account fee run on top of it every month — they are in the APRC, not in this figure.",
+    bg: "Това е само вноската по кредита. Застраховките и таксата по сметката вървят отгоре, всеки месец — влизат в ГПР, когато банката ги иска, за да отпусне кредита, но в тази сума ги няма.",
+    en: "That is the loan instalment alone. Insurance and the account fee run on top of it every month — they count towards the APRC where the bank requires them in order to lend, but they are not in this figure.",
   },
-  // The all-in cost of the same loans (APRC / ГПР): interest plus fees.
-  // Shown under the rate input so the cheaper headline number is never the
-  // only one the user sees.
+  // The total cost of the same credit (APRC / ГПР): interest plus the charges
+  // the bank requires in order to lend. Shown under the rate input so the
+  // cheaper headline number is never the only one the user sees.
+  //
+  // **«Всички такси» is a promise the indicator does not keep.** The APRC is
+  // defined by Directives 2008/48/EC and 2014/17/EU, which take in «interest,
+  // commissions, taxes and any other kind of fees which the consumer is
+  // required to pay in connection with the credit agreement … except for
+  // notarial costs» and the valuation «but excluding registration fees for the
+  // transfer of ownership». A Bulgarian buyer pays both of those, so a caption
+  // saying every fee is in the figure sends them to a notary they were told
+  // they had already counted.
   rateAprc: {
-    bg: "с всички такси (ГПР) излиза <b>{pct}%</b> · ЕЦБ, нови кредити {p}",
-    en: "with all fees (APRC) it comes to <b>{pct}%</b> · ECB, new loans {p}",
+    bg: "с таксите по кредита (ГПР) излиза <b>{pct}%</b> · ЕЦБ, нови кредити {p}",
+    en: "with the loan's charges (APRC) it comes to <b>{pct}%</b> · ECB, new loans {p}",
   },
   // Why 15% down and a 30-year ceiling are not our choices but the law's.
   limitsNote: {
@@ -2290,8 +2321,8 @@ export const COPY = {
     en: "Average paid per dwelling by quarter",
   },
   mktTblOverburdenNumbers: {
-    bg: "Дял на хората с разходи за жилище над 40% от дохода, по години",
-    en: "Share of people spending over 40% of income on housing, by year",
+    bg: "Дял на хората с разходи за жилище над 40% от разполагаемия доход, по години",
+    en: "Share of people spending over 40% of disposable income on housing, by year",
   },
   mktTblPtiNumbers: {
     bg: "Цени спрямо доходите по години",
@@ -2335,8 +2366,8 @@ export const COPY = {
     en: "Average paid per dwelling by quarter, {from} to {to}, new builds and existing dwellings apart. For {to} it is €{new} for a new build and €{existing} for an existing one.",
   },
   mktChartOverburden: {
-    bg: "Дял на хората, чието домакинство дава над 40% от дохода си за жилище, по години от {from} до {to}. Най-високо {peak}% през {peakAt}, най-ниско {low}% през {lowAt}; за {to} — {last}%.",
-    en: "Share of people whose household spends over 40% of its income on housing, by year {from} to {to}. The highest is {peak}% in {peakAt} and the lowest {low}% in {lowAt}; for {to} it is {last}%.",
+    bg: "Дял на хората, чието домакинство дава над 40% от разполагаемия си доход за жилище, по години от {from} до {to}. Най-високо {peak}% през {peakAt}, най-ниско {low}% през {lowAt}; за {to} — {last}%.",
+    en: "Share of people whose household spends over 40% of its disposable income on housing, by year {from} to {to}. The highest is {peak}% in {peakAt} and the lowest {low}% in {lowAt}; for {to} it is {last}%.",
   },
   mktChartCity: {
     bg: "{city}: годишна промяна на цените по тримесечия, от {from} до {to}. За {to} — {last}%.",

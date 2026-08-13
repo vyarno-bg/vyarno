@@ -3,7 +3,7 @@
   "as_of": "2026-08-10",
   "source": "eurostat",
   "source_url": "https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/default/table?lang=en",
-  "notes": "Monthly unemployment rate, seasonally adjusted, total × both sexes × 15-74, PC_ACT (percentage of the labour force).",
+  "notes": "Monthly unemployment rate, seasonally adjusted, total × both sexes × 15-74, PC_ACT (percentage of the labour force). ILO definition: not employed in the reference week, actively looking for the past four weeks, and available to start within two — so somebody who has given up looking counts as neither unemployed nor in the labour force, and one paid hour in the week counts as employed. The LFS behind it covers the usually-resident population outside collective and institutional households.",
   "payload_name": "unemployment",
   "dataset": "une_rt_m:s_adj=SA:sex=T:age=TOTAL:unit=PC_ACT",
   "ref_period": "2026-06",

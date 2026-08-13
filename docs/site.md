@@ -98,6 +98,8 @@ site/
 │   ├── verify_view_market.mjs     # which published field feeds which market figure
 │   ├── verify_wiring.mjs          # which value the template feeds which function
 │   ├── verify_copy.mjs            # copy invariants, against the imported COPY
+│   ├── verify_payload_prose.mjs   # retired claims, across payload prose and page alike
+│   ├── live-copy.mjs              # the comment-blanking source reader, shared
 │   ├── verify_format.mjs          # how a number or a date is written
 │   ├── verify_stores.mjs          # what this device keeps, and what it never does
 │   ├── verify_contrast.mjs        # WCAG ratios computed from tokens.css

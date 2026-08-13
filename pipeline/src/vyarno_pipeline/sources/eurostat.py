@@ -421,13 +421,15 @@ def fetch_ses_earnings_bg(geo: str = "BG") -> dict[str, Any]:
 # **What is in them is narrower than "House sales" suggests, and the page's
 # wording depends on getting this right.** Both the Eurostat ESMS
 # (`prc_hpi_inx_esms`) and НСИ's ППЖ metadata (nsi.bg/bg/content/19699) scope
-# these to dwellings bought by households at the price actually paid: flats and
-# houses, VAT included on new builds, notary and agency fees excluded, land only
-# as the plot under a house. Standalone land, agricultural land, garages, shops
-# and offices are out, as are state and municipal sales, gifts, inheritances,
-# court-executor sales and self-build. That is why the register's «Продажби»
-# column may never be quoted beside these — it counts every sale deed and runs
-# more than twice as high.
+# these to dwellings bought by households AT MARKET PRICES: flats and houses,
+# VAT included on new builds, notary and agency fees excluded, the land
+# component of the dwelling included. A market price is the test rather than a
+# price that changed hands, which is what rules out a sale to a sitting tenant
+# at a discount and a sale between family members — both have a price actually
+# paid. Standalone land, agricultural land, garages, shops and offices are out,
+# as are gifts, inheritances, court-executor sales and self-build. That is why
+# the register's «Продажби» column may never be quoted beside these — it counts
+# every sale deed and runs more than twice as high.
 HOUSE_SALES_COUNT_DATASET = "prc_hpi_hsnq"  # number of dwellings sold
 HOUSE_SALES_VALUE_DATASET = "prc_hpi_hsvq"  # what was paid for them
 HOUSE_PRICE_INDEX_DATASET = "prc_hpi_q"  # the official house price index

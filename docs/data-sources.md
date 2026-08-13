@@ -31,7 +31,7 @@ Every entry carries a provenance tag:
 | **HICP rate per code** — `prc_hicp_minr` (unit=RCH_A) | VERIFIED | Every `annual_rate_pct` and the headline. ECOICOP ver.2, dim `coicop18`. One unfiltered call for the whole BG slice. |
 | **HICP index per code** — `prc_hicp_minr` (unit=I15) | VERIFIED | `index_by_year` and `latest_index`. Same cube, `sinceTimePeriod=2020-01`. 555 codes × 78 months in one response. |
 | **HICP basket weights** — `prc_hicp_iw` | VERIFIED | `weight_pct`. ECOICOP ver.2 item weights, dim `coicop18` — the same dimension the rate cube uses. Per-thousand ÷ 10. |
-| **ЕЦБ MIR new-business AAR** — `M.BG.B.A2C.A.R.A.2250.{BGN,EUR}.N` | VERIFIED | `mortgage.json → new_business.value_pct`. **The mortgage headline**, 2.43% at 2026-05. |
+| **ЕЦБ MIR new-business rate** — `M.BG.B.A2C.A.R.A.2250.{BGN,EUR}.N` | VERIFIED | `mortgage.json → new_business.value_pct`. **The mortgage headline**, 2.43% at 2026-05. The rate excluding charges; `R` is AAR-or-NDER and which one BG reports is unsettled. |
 | **ЕЦБ MIR new-business APRC** — `M.BG.B.A2C.A.C.A.2250.{BGN,EUR}.N` | VERIFIED | `new_business.aprc.value_pct` — the same loans' all-in cost with fees (ГПР), 2.77%. |
 | **БНБ housing-loan rate** — `s_ir_loan_oa_hh_bg.xlsx` | VERIFIED | `outstanding_stock.value_pct` — 2.6717% at 2026-05 on an €18.2 bn book, monthly back to 2007-01. |
 | **БНБ lending limits** — dated table in `mortgage.py` | VERIFIED | `mortgage.json → lending_limits`. Borrower-based measures, not scraped. |
@@ -133,6 +133,22 @@ one `statinfo` member (`IW`).
   answer is the calculator's whole subject. Note also that HFMCE «is adjusted to
   exclude … imputed rentals for housing», so CP04 is what people pay out and not
   what an owner-occupier would notionally pay themselves.
+- **Who makes the Bulgarian index, in one sentence, and every surface has to
+  describe the chain the same way.** `prc_hicp_esms` §3.1, read **2026-08-13**:
+  «National HICPs are produced by National Statistical Institutes (NSIs), while
+  European aggregates (EU, EA and EEA) are produced by Eurostat.» Eurostat's own
+  part is the method and the audit of it, not the arithmetic: §6.1 names
+  Regulation (EU) 2016/792 as «the legal basis for establishing a harmonised
+  methodology for the compilation of the HICP», and §11.1 has «Eurostat is
+  checking that the statistical practices used to compile the national HICP are
+  compliant with the HICP methodological requirements». So НСИ collect the
+  Bulgarian prices AND build the Bulgarian index; Eurostat set the rules, check
+  they were followed, aggregate Europe and disseminate. Copy saying Eurostat
+  «сглобява» the Bulgarian index credits them with НСИ's work and is the loose
+  half of a chain the rest of the site describes correctly — `verify_copy.mjs`
+  §"no surface says Eurostat build Bulgaria's index" bans the construction in
+  both languages, after a rule asserting only the collecting half let it stand
+  on two pages at once.
 - `lastTimePeriod=1` takes the latest vintage, and the connector returns the
   weight year alongside. HICP re-weights every January while Eurostat publishes
   the new item weights around late February, so there is a real window each year
@@ -220,8 +236,27 @@ coarser version of the same one — hence no fallback branch:**
 | Dim | Values | Why this one |
 |---|---|---|
 | `s_adj` | `SA` · `NSA` · `TC` | **`SA`** is Eurostat's headline. `NSA` swings with the season, so a month-on-month read of it measures the calendar; `TC` is a smoothed trend, not an observation. |
-| `age` | `TOTAL` · `Y_LT25` · `Y25-74` | **`TOTAL` here IS 15-74.** There is no `Y15-74` code in this cube — that spelling belongs to `une_rt_a`, and a transform ported across without checking filters to nothing. |
+| `age` | `TOTAL` · `Y_LT25` · `Y25-74` | **`TOTAL` here IS 15-74**, and that is the metadata's word rather than the label's: the cube renders `TOTAL` as «Total» and nothing else. `une_rt_m_esms` §3.4, read **2026-08-13**: «For the unemployment rate, only persons from 15 to 74 years of age are used.» There is no `Y15-74` code in this cube — that spelling belongs to `une_rt_a`, and a transform ported across without checking filters to nothing. |
 | `unit` | `PC_ACT` · `THS_PER` | **`PC_ACT`** is the percentage of the labour force. `THS_PER` is thousands of people. |
+
+**«Unemployed» is the ILO test, not «has no job», and that is the claim a
+reader is most likely to get wrong about this figure.** Same page, §3.4:
+
+> Unemployed persons are all persons 15 to 74 years of age who were not employed
+> during the reference week, had actively sought work during the past four weeks
+> and were ready to begin working immediately or within two weeks. … Employed
+> persons are all persons who worked at least one hour for pay or profit during
+> the reference week or were temporarily absent from such work.
+
+Both ends of that are surprising. Somebody who stopped looking is in neither the
+numerator nor the denominator, so discouragement LOWERS the rate; and one paid
+hour in the week is employment. §3.6 draws the population the same way EU-SILC
+does — «The EU LFS results cover the total population usually residing in
+Member States, except for persons living in collective or institutional
+households.» The app's own surfaces say «безработица · 15-74 г.» and
+«безработица, сезонно изгладена» and claim nothing beyond the pins, which is why
+this read moved no copy; `unemployment.json`'s `notes` carries the definition,
+because that field's job is to say what the upstream measures.
 
 **Never fall back to `PC_POP`.** It is a percentage of the *whole population*,
 including everyone outside the labour force — a materially lower number wearing
@@ -281,7 +316,24 @@ correction this read produced.** The test is a *market* price: a discounted sale
 between relatives has a price actually paid and is excluded, as are social
 schemes and court-executor sales. The page therefore says «на пазарна цена» and
 names the four exclusions rather than describing the count with the value
-series' price concept.
+series' price concept. `house_market.json`'s own `notes` and `disclaimer` said
+«at the price actually paid» for a round after the page stopped, which is the
+drift §"Why there is no gate on any of this" now has a second half about.
+
+**Which non-market cases, in Eurostat's own words**, because "non-market" reads
+like it means gifts and stops there. `prc_hpi_inx_esms` §3.4, read
+**2026-08-13**:
+
+> The HPI is based on market prices of dwellings. Non-marketed dwelling prices
+> are ruled out from the scope of this indicator. Examples of the later include
+> **self-build dwellings, dwellings purchased by sitting tenants at discount
+> prices, or dwellings transacted between family members.**
+
+That is what carries the self-build exclusion, which until this read was
+asserted here with nothing behind it. §3.1 also settles a claim the payload was
+making more narrowly than the publisher: «The land component of the dwelling is
+included» — the whole land component, not only the plot under a house, which is
+the reading a flat has no room for.
 
 **Three things this read could not settle**, and none of them may be written up
 as though it had been:
@@ -498,6 +550,46 @@ selected, out of `sector_salary.json`'s all-activities «Общо» row, and
 `the ladder is anchored on the country's average and never on one област's` is
 what holds it.
 
+**The two halves are two populations, and how much that costs cannot be worked
+out from anything published.** The shape is SES — full-time employees, firms of
+ten or more, NACE B–S excluding O. The level is НСИ's all-activities average of
+employees under a labour contract or in the civil service: every firm size,
+public administration and agriculture included. Three things are worth being
+precise about, because "the populations differ" invites either a shrug or an
+invented correction and neither is right.
+
+1. **The level mismatch costs nothing, by construction.** `f = НСИ_mean /
+   ses_mean` sets the composed ladder's mean to НСИ's, so whatever the two
+   populations' mean pay differs by is exactly what `f` absorbs. What survives
+   the re-level is the SHAPE, and only the shape can be wrong.
+2. **A coverage change of this size moves the level far more than the shape —
+   on the one such change SES publishes for BG.** At the 2022 vintage, adding
+   part-timers to the same cube (`worktime=TOTAL` against `FT`) moves the mean
+   949 → 904, **−4.7%**, and moves D9/D1 from 4.521 to 4.527, **+0.1%**. That is
+   the encouraging direction and it is one data point.
+3. **It does not generalise, and the same cube says why.** At the 2018 vintage —
+   the last one where BG carries activity groupings at all — D9/D1 runs **2.713**
+   for `P-S` (education, health, arts) against **5.177** for `G-N` (services of
+   the business economy), around a whole-economy **4.179**. Composition can move
+   dispersion by a factor of two. Section O is a public-sector pay structure and
+   would most likely pull towards the `P-S` end, narrowing the true spread;
+   firms under ten pay less and would widen the bottom. **The two omissions push
+   opposite ways, so not even the SIGN is available.**
+
+And it cannot be closed by probing harder. `earn_ses_monthly` has **no firm-size
+dimension** for BG at any vintage — the dimensions are `freq × nace_r2 × isco08
+× worktime × age × sex × indic_se × geo × time` and that is all — and neither
+section A nor section O is a category in `nace_r2` at any vintage, the five
+BG categories being `B-S_X_O`, `B-N`, `B-F`, `G-N`, `P-S`. So the distribution
+of the population the level is drawn from is not measured by anyone.
+
+That makes it P11: **uncomputed, not concealed.** `COPY.pctCaveat` names the
+mismatch and says the size of it cannot be worked out, in both languages.
+Multiplying the ladder by a dispersion factor nobody publishes would replace a
+disclosed unknown with an invented number, which is the failure this repository
+is built against — `docs/principles.md` and §"A plausible number is not a
+verified number" above.
+
 **The reader's own област does not move the ladder**, and the copy says so —
 `COPY.pctCaveat` in both languages, and `verify_copy.mjs` requires it. That is
 P11: a figure nobody publishes is uncomputed rather than concealed.
@@ -620,6 +712,28 @@ raising if the labels move:
 We take the maturity **total**, not a bucket, because the honest answer to "what
 does the average mortgage holder pay" is the whole book.
 
+**«Жилищни кредити» is a purpose, and it is wider than buying a home.** БНБ's
+методологически бележки, read **2026-08-13**:
+
+> Жилищни кредити – кредити, предоставени на домакинствата с цел инвестиране в
+> жилища за собствено ползване или наем, включително за строителство и за
+> подобрения на жилища.
+
+So building a house and renovating one are inside the column, and so is
+buy-to-let. What is **not** inside it is the loan a reader might expect to be:
+a consumer loan secured on a home goes to the consumption category instead —
+«Кредити за потребление … Тук се включват и кредитите за потребление, отпуснати
+срещу ипотека.» The distinction is by what the money is for, never by what
+secures it.
+
+**And the stock is not every household still repaying something.** The same
+notes exclude, from both the balances and the rates over them, «кредитите, които
+са необслужвани или преструктурирани с мерки, които пряко или косвено водят до
+снижаване на лихвения процент под пазарното ниво за съответния пазарен сегмент».
+A defaulted mortgage and one restructured below market are outside the average,
+which is the direction that matters: the published rate is over the performing
+book, so it is if anything an understatement of what the country is paying.
+
 **Cross-check against ЕЦБ MIR:** БНБ **2.6717%** vs
 `M.BG.B.A22.A.R.A.2250.EUR.O` **2.67%** — 0.002 pp apart, because they are the
 same data (БНБ is the institution that reports MIR to the ЕЦБ).
@@ -667,21 +781,111 @@ FREQ . REF_AREA . BS_REP_SECTOR . BS_ITEM . MATURITY_NOT_IRATE
 
 | Role | Series key | 2026-05 |
 |---|---|---|
-| **Headline** — AAR, new business | `M.BG.B.A2C.A.R.A.2250.EUR.N` | **2.43%** |
+| **Headline** — rate excluding charges, new business | `M.BG.B.A2C.A.R.A.2250.EUR.N` | **2.43%** |
 | All-in cost — APRC (ГПР), fees included | `M.BG.B.A2C.A.C.A.2250.EUR.N` | **2.77%** |
 | New-business volume (splice evidence) | `M.BG.B.A2C.A.B.A.2250.EUR.N` | 599 m€/mo |
 | Outstanding stock (cross-check gate only) | `M.BG.B.A22.A.R.A.2250.EUR.O` | 2.67% |
-| Pre-2026 legs of the three above | same keys with `BGN` | AAR 2.48% @ 2025-12 |
+| Pre-2026 legs of the three above | same keys with `BGN` | 2.48% @ 2025-12 |
 
-- **`A2C`, not `A22`, for new business.** `A22` ("Lending for house purchase")
-  exists for BG **outstanding only**; `A2C` is new business — 28 BG series,
-  monthly, current.
-- **`DATA_TYPE_MIR`:** `R` = annualised agreed rate, `C` = APRC (with fees),
-  `B` = volume. Swapping `R` and `C` is a live risk, so a gate asserts
-  APRC ≥ AAR − 0.05 pp, the tolerance being the two series' independent
+- **`A2C`, not `A22`, for new business.** `A22` exists for BG **outstanding
+  only**; `A2C` is new business — 28 BG series, monthly, current. The two codes
+  are not "outstanding" and "new business", though: that split is the last
+  dimension, `IR_BUS_COV` (`O` / `N`). What separates the codes is the
+  instrument set, and the ЕЦБ's `CL_BS_ITEM`, read **2026-08-13**, says so —
+  `A22` is «Lending for house purchase», `A2C` is «Lending for house purchase
+  **excluding revolving loans and overdrafts, convenience and extended credit
+  card debt**». So the new-business figure is over term lending, and a credit
+  card drawn to furnish the flat is not in it.
+- **`DATA_TYPE_MIR`:** `C` = APRC (with charges), `B` = volume, and `R` is **two
+  concepts under one code**. The ЕЦБ's own `CL_DATA_TYPE_MIR`, read
+  **2026-08-13**, names it «Annualised agreed rate (AAR) / Narrowly defined
+  effective rate (NDER)», and the Manual §4.2.2 says why: «Instead of the
+  annualised agreed rate, NCBs may require their reporting agents to implement
+  the narrowly defined effective rate (NDER) for all or some deposit or loan
+  instruments referring to new business and outstanding amounts.» **Which of the
+  two Bulgaria reports is unsettled.** БНБ's own методологически бележки say
+  only «Лихвените проценти са ефективни годишни проценти», and §4.1 of the same
+  Manual warns that «effective interest rate» has «a range of different meanings
+  depending on the Member State» and that both AAR and NDER are ways of
+  annualising. Both exclude charges, so nothing about which formula the rate
+  feeds turns on it; what turns on it is whether a payload may print «AAR», and
+  it may not. What would settle it: БНБ naming the concept in Наредба № 17 or in
+  the Указание it cites for лихвена статистика, or the ЕЦБ publishing the
+  per-country choice. Swapping `R` and `C` is a live risk either way, so a gate
+  asserts APRC ≥ R − 0.05 pp, the tolerance being the two series' independent
   rounding (`mortgage.py#APRC_BELOW_AAR_TOLERANCE_PP`).
-- **`BS_COUNT_SECTOR=2250`** = households + NPISH. `2240` is non-financial
-  corporations.
+- **`BS_COUNT_SECTOR=2250`** is «Households and non-profit institutions serving
+  households (S.14 and S.15)» in `CL_BS_COUNT_SECTOR`, read **2026-08-13** —
+  households **and NPISH**, which БНБ spell out as «синдикати, политически
+  партии, фондации, сдружения, църкви и религиозни общества, читалища, културни
+  и спортни клубове». That is a wider counterparty than «домакинства» means
+  anywhere else in this app, so both `rate_basis` strings in `mortgage.json` name
+  the pair. `2240` is non-financial corporations.
+
+**«New business» is not «new lending», and this is the claim the whole mortgage
+headline rests on.** БНБ's методологически бележки for лихвена статистика
+(`s_irs_meth_historical_data_bg.pdf`), read **2026-08-13**:
+
+> Нов бизнес – всяко ново споразумение между клиента и отчетната единица. Нови
+> споразумения са договори, които за първи път определят лихвения процент,
+> сроковете и условията по депозита, репо-сделката или кредита. Ново
+> споразумение е и всяко предоговаряне на лихвения процент, сроковете и/или
+> други условия по вече съществуващ договор, когато възможността за такова
+> предоговаряне не е заложена в него, както и предоговаряне на срок с активното
+> участие на клиента.
+
+and, on the volumes:
+
+> Обемът по нов бизнес по предоговорени кредити и кредити за рефинансиране се
+> включва в общия обем на новия бизнес по кредити, различни от овърдрафт.
+
+The ЕЦБ Manual §5.4.2 gives the purpose of the separate renegotiated-amounts
+series: «to have a measure of "pure new loans" in the sense of gross "fresh
+money" arriving on the credit market, distinguishing these from renegotiated
+loans where, by definition, no new money is arriving on the credit market». So
+«лихвата по нови жилищни кредити» describes a population that includes a
+household which bought nothing and merely re-cut the loan it already had, and
+every surface naming the figure has to leave room for them.
+
+**Two claims that came out TRUE, and neither was safe to assume**, because the
+Regulation permits the other answer in both cases:
+
+- **Every bank, not a sample.** MIR allows an NCB to sample its reporting
+  population and gross the result up (Manual §12.2–12.5). БНБ do not: «Отчетни
+  единици са всички банки в Република България, в т.ч. клоновете на чуждестранни
+  банки.» So «across every bank in Bulgaria» is exact rather than approximate.
+- **Volume-weighted, and by which volumes.** «Лихвените проценти са ефективни
+  годишни проценти. Те са среднопретеглени съответно с обемите по нов бизнес
+  през отчетния период или със салдата към края на отчетния период.» New
+  business is weighted by the month's new-business volumes and the stock by
+  end-of-month balances — two different weights, which is part of why the two
+  tiers may never be averaged together.
+
+**What the APRC covers, and the two things a Bulgarian buyer pays that it does
+not.** ЕЦБ Manual §4.4.1, read **2026-08-13**:
+
+> On the costs that have to be included, the Directives mention expressly the
+> following: interest, commissions, taxes and any other kind of fees which the
+> consumer is required to pay in connection with the credit agreement and which
+> are known to the creditor, **except for notarial costs**; costs in respect of
+> ancillary services relating to the credit agreement, in particular insurance
+> premiums, are also included if, in addition, the conclusion of a service
+> contract is compulsory in order to obtain the credit or to obtain it on the
+> terms and conditions marketed; the cost of valuation of property where such
+> valuation is necessary to obtain the credit, but **excluding registration fees
+> for the transfer of ownership of the immovable property**.
+
+БНБ state the same test in one line — «всички такси, комисиони и други разходи за
+сметка на клиента, извършването на които е условие за отпускането на кредита» —
+and add that the ГПР «се изчислява само за кредити за потребление и за жилищни
+кредити», which is why only these two instrument categories carry a `C` series
+at all. So the ГПР is the total cost of the **credit** and not of the purchase,
+and «с всички такси» is a promise it does not keep. §4.4.3 of the Manual also
+notes that «the composition of the fees to be taken into account in the APRC may
+differ across countries», so the Bulgarian set cannot be enumerated here from
+anything either publisher has written — the boundary above is what can be
+stated, and it is what [`math.md`](./math.md) §"The payment is the annuity and
+nothing else" reasons from.
 - **Two response-identity guards in `parse_mir_series`, both required:** a
   fully-specified key must return exactly one series, and the response's own
   dimension metadata must match the key we requested. Together they make a
@@ -696,7 +900,7 @@ against the EUR leg's 36 m/month; at 2026-05 the EUR series is 599 m/month.
 
 So the published series is **BGN through 2025-12 spliced with EUR from
 2026-01** — the rate in the currency of the day. The splice is continuous, which
-is the evidence it is the right one: AAR 2.48% → 2.46%, APRC 2.90% → 2.74%
+is the evidence it is the right one: the rate 2.48% → 2.46%, APRC 2.90% → 2.74%
 across the boundary. `EURO_SWITCH_PERIOD` in `sources/ecb.py` is the single
 knob; `test_ecb.py` asserts the splice stays gap-free and step-free.
 
@@ -718,6 +922,32 @@ var raioniAvgPrice = {'Банишора': 2504, 'Борово': 3000, ...};
 
 We regex-extract that one literal — no JS execution — which makes the parse
 robust to layout changes in the surrounding HTML.
+
+**What имот.bg say the number is, and what they do not — unsettled, and the
+reason it cannot be settled from here.** Every figure this connector publishes
+rests on `raioniAvgPrice` being an average asking price per district, and имот.bg
+publish no methodology for it: not what population of listings it averages, not
+over what window, not whether a flat advertised by three agencies counts once or
+three times, and not whether it is a mean or something else. The variable name
+and the page's own «Средни цени» heading are all there is, and neither is a
+method statement. `/sredni-ceni/prodazhbi-` versus `/sredni-ceni/naemi-` is a
+sale-versus-rent split of a classifieds portal's own listings rather than of
+concluded deals — имот.bg have no deed data — which is the evidence behind
+«цени по обяви, не по сделки» and it is an inference from what имот.bg is, not a
+sentence they wrote.
+
+**This one cannot be re-read from a build environment at all**, which is a
+finding rather than an excuse: `www.imot.bg` answers a datacenter IP with 403 on
+every path including `/robots.txt` (re-probed **2026-08-13**, 4,543 bytes on
+`/sredni-ceni`, `/robots.txt` and `/pcgi/imot.cgi` alike), and the fixtures under
+`pipeline/tests/fixtures/` are **built rather than saved**, so the repository
+deliberately holds no copy of their page to read a caption off. What would
+settle it: one read of a `sredni-ceni` page from an ordinary Bulgarian
+connection, looking for any statement of method, plus a look at
+`/obshti-uslovia` for the same. Until then the copy may describe the figure's
+CLASS — an asking price, imot.bg's own, not a transaction — and may not describe
+a method, and `city_price.json`'s `notes` is careful to attribute only the
+median and the since-baseline percentages to us.
 
 **27 cities**, each at `https://www.imot.bg/sredni-ceni/prodazhbi-{slug}`.
 София is the exception: her canonical page is the bare `/sredni-ceni`, and
@@ -1229,7 +1459,7 @@ from key order.
 | Key | Carries |
 |---|---|
 | `schema_version`, `as_of`, `source`, `headline` | Envelope. `headline: "new_business"`. |
-| `new_business` | ЕЦБ. `_role`, `dataset` (the BGN key spliced with the EUR key), `source_url`, `ref_period`, `value_pct`, `rate_basis` (AAR), `series_by_period` (77 months), `currency`, `currency_history`, `methodology_change`. |
+| `new_business` | ЕЦБ. `_role`, `dataset` (the BGN key spliced with the EUR key), `source_url`, `ref_period`, `value_pct`, `rate_basis` (the charge-free rate), `series_by_period` (77 months), `currency`, `currency_history`, `methodology_change`. |
 | `new_business.aprc` | The same loans' all-in cost with fees (ГПР): `value_pct` + `series_by_period`. |
 | `new_business.monthly_volume` | How much was lent — the evidence for the splice. |
 | `outstanding_stock` | БНБ. `_role`, the XLSX + sheet + cell in `dataset`, `value_pct`, `book_volume_eur_m`, 233 months back to 2007-01, `methodology_change`. |
@@ -1244,11 +1474,11 @@ it without this document.
 
 | Shown as | From | 2026-05 | Label the user reads |
 |---|---|---|---|
-| The default rate in the input | `new_business.value_pct` (AAR) | **2.43%** | "ЕЦБ · new home loans" |
-| Sub-caption under it | `new_business.aprc.value_pct` | **2.77%** | "with all fees (APRC/ГПР)" |
+| The default rate in the input | `new_business.value_pct` (charge-free) | **2.43%** | "ЕЦБ · new home loans" |
+| Sub-caption under it | `new_business.aprc.value_pct` | **2.77%** | "with the loan's charges (APRC/ГПР)" |
 | Learn-more only | `outstanding_stock.value_pct` | **2.67%** | "БНБ · loans already being repaid" |
 
-The default is the **AAR, not the APRC**: the annuity formula needs an interest
+The default is the **charge-free rate, not the APRC**: the annuity formula needs an interest
 rate. The fallback chain in `data.js#mortgageDefaultRate` is
 `new_business → outstanding_stock → HOME.rateDefaultPct`, and tier 2 answers a
 different question, so the returned `label` re-captions the UI rather than

@@ -349,16 +349,18 @@
       <span class="l-bg"
         >Официалната инфлация е едно число за цялата страна: с колко са по-скъпи нещата днес спрямо
         преди година. Не всичко тежи еднакво — храната тежи повече от учебниците, защото за нея
-        отиват повече пари. Цените ги събира НСИ всеки месец, Евростат ги сглобява по единните
-        европейски правила и публикува резултата, а Вярно го взима дословно — не го пресмята наново,
-        за да не се разминава с публикуваното.</span
+        отиват повече пари. Цените ги събира НСИ всеки месец и НСИ изчислява от тях българския
+        индекс; единните европейски правила и проверката дали са спазени са на Евростат, който
+        публикува резултата. Вярно го взима дословно — не го пресмята наново, за да не се разминава
+        с публикуваното.</span
       >
       <span class="l-en"
         >Official inflation is one number for the whole country: how much dearer things are today
         than a year ago. Not everything counts the same — food moves the figure more than textbooks
-        do, because more money goes to it. NSI collects the prices every month, Eurostat assembles
-        them under one common European method and publishes the result, and Vyarno takes it verbatim
-        — never recomputed, so it cannot drift from what is published.</span
+        do, because more money goes to it. NSI collects the prices every month and builds Bulgaria's
+        index from them; the one common European method, and the check that it was followed, are
+        Eurostat's, and Eurostat publishes the result. Vyarno takes it verbatim — never recomputed,
+        so it cannot drift from what is published.</span
       >
     </p>
 
@@ -862,30 +864,39 @@
         >Три числа се наричат „лихвата по жилищен кредит“ и отговарят на три различни въпроса. <b
           >Лихвата по нови кредити</b
         >
-        е средното по договорите, подписани миналия месец — това е числото, с което се смята вноската.
-        <b>ГПР</b> е за същите кредити, но с прибавените такси: той служи за сравняване на оферти. С
-        него не се смята вноска — месечната вноска се смята само върху лихвата, така че сметка с ГПР
-        дава вноска, каквато никоя банка не събира. Това не значи, че таксите не се плащат: част от
-        тях са еднократни в началото, а друга част върви всеки месец покрай вноската — застраховка
-        на имота, често и застраховка живот, и такса по сметката, от която се събира вноската.
-        Затова това, което реално излиза от джоба ти всеки месец, е малко повече от вноската.
-        <b>Лихвата по изплащаните кредити</b> е средното по всички кредити, които се изплащат в момента,
-        включително подписани преди години; то описва какво плащат хората сега, не какво би подписал новият
-        кредитополучател.</span
+        е средното по споразуменията, подписани миналия месец — това е числото, с което се смята вноската.
+        „Ново“ тук е по-широко, отколкото звучи: БНБ брои като ново споразумение и предоговарянето на
+        вече съществуващ кредит, така че вътре влизат и хора, които не са купували нищо.
+        <b>ГПР</b> е за същите споразумения, но с прибавените такси, които банката иска, за да
+        отпусне кредита: той служи за сравняване на оферти. С него не се смята вноска — месечната
+        вноска се смята само върху лихвата, така че сметка с ГПР дава вноска, каквато никоя банка не
+        събира. Това не значи, че таксите не се плащат: част от тях са еднократни в началото, а
+        друга част върви всеки месец покрай вноската — застраховка на имота, често и застраховка
+        живот, и такса по сметката, от която се събира вноската. А нотариусът и таксата за вписване
+        на прехвърлянето на собствеността изобщо не влизат в ГПР — директивите, които го определят,
+        ги изключват изрично. Затова това, което реално излиза от джоба ти, е повече от вноската и
+        повече от ГПР.
+        <b>Лихвата по изплащаните кредити</b> е средното по кредитите, които се изплащат в момента, включително
+        подписани преди години; необслужваните и преструктурираните под пазарна лихва са извън него. То
+        описва какво плащат хората сега, не какво би подписал новият кредитополучател.</span
       >
       <span class="l-en"
         >Three numbers all go by "the mortgage rate" and they answer three different questions. The
-        <b>rate on new loans</b> is the average across contracts signed last month — the one the
-        monthly payment is computed from. The <b>APRC</b> is those same loans with the fees added
-        in: it is for comparing offers. It is not what a payment is computed from — the monthly
-        instalment is computed from the interest alone, so working it out from the APRC gives an
-        instalment no bank collects. That does not mean the fees go away: some are one-off at the
-        start, and some run every month alongside the instalment — insurance on the property, often
-        life cover too, and a fee on the account the instalment is collected from. So what actually
-        leaves your pocket each month is a little more than the instalment.
-        <b>The rate on loans being repaid</b> averages every loan currently being paid off, including
-        ones signed years ago; it describes what people are paying now, not what a new borrower would
-        sign.</span
+        <b>rate on new loans</b> is the average across the agreements signed last month — the one
+        the monthly payment is computed from. "New" is wider than it sounds: БНБ count renegotiating
+        an existing loan as a new agreement too, so people who bought nothing are inside the
+        average. The <b>APRC</b> is those same agreements with the charges the bank requires in
+        order to lend added in: it is for comparing offers. It is not what a payment is computed
+        from — the monthly instalment is computed from the interest alone, so working it out from
+        the APRC gives an instalment no bank collects. That does not mean the charges go away: some
+        are one-off at the start, and some run every month alongside the instalment — insurance on
+        the property, often life cover too, and a fee on the account the instalment is collected
+        from. And the notary and the fee for registering the transfer of ownership are not in the
+        APRC at all — the directives that define it exclude them by name. So what actually leaves
+        your pocket is more than the instalment and more than the APRC.
+        <b>The rate on loans being repaid</b> averages the loans currently being paid off, including ones
+        signed years ago; those that are non-performing or restructured below market rates are outside
+        it. It describes what people are paying now, not what a new borrower would sign.</span
       >
     </p>
 

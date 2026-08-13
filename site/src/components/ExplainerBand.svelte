@@ -74,19 +74,20 @@
           <span class="l-bg"
             >Евростат е официалната статистическа служба на Европейския съюз. Цените в България —
             хляб, ток, наеми, гориво, лекарства — ги събира всеки месец НСИ, българската статистика,
-            и ги изпраща на Евростат, който ги сглобява по единните европейски правила и публикува
-            резултата безплатно за всички. Това приложение не измисля цени: то копира официалните
-            числа на Евростат и ти ги показва. Затова до всяко число има връзка (иконата ↗) към
-            точната таблица на Евростат — за да провериш сам.</span
+            и НСИ сглобява от тях българския индекс. Единните европейски правила и проверката дали
+            са спазени са на Евростат, който публикува резултата безплатно за всички. Това
+            приложение не измисля цени: то копира официалните числа на Евростат и ти ги показва.
+            Затова до всяко число има връзка (иконата ↗) към точната таблица на Евростат — за да
+            провериш сам.</span
           >
           <span class="l-en"
             >Eurostat is the official statistics office of the European Union. The prices in
             Bulgaria - bread, electricity, rent, fuel, medicine - are collected every month by NSI,
-            the Bulgarian statistics office, and sent to Eurostat, which assembles them under one
-            common European method and publishes the result free for everyone. This app invents no
-            prices: it copies Eurostat's official numbers and shows them to you. That's why every
-            figure carries a link (the ↗ icon) to the exact Eurostat table - so you can check it
-            yourself.</span
+            the Bulgarian statistics office, which builds Bulgaria's index from them. The one common
+            European method, and the check that it was followed, are Eurostat's, and Eurostat
+            publishes the result free for everyone. This app invents no prices: it copies Eurostat's
+            official numbers and shows them to you. That's why every figure carries a link (the ↗
+            icon) to the exact Eurostat table - so you can check it yourself.</span
           >
         </p>
 

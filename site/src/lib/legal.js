@@ -418,9 +418,13 @@ export const UPSTREAMS = [
   {
     id: "ecb",
     name: { bg: "Европейска централна банка (ЕЦБ)", en: "European Central Bank (ECB)" },
+    // «Новоотпуснат» is narrower than the series. MIR new business is every new
+    // AGREEMENT, and a renegotiation of an existing loan is one — so a
+    // disclosure saying «новоотпуснати» names a population the ЕЦБ do not
+    // publish and the panel does not show.
     provides: {
-      bg: "Лихвата по новоотпуснатите жилищни кредити в България и годишният процент на разходите (ГПР) по същите кредити — числата зад ипотечния панел.",
-      en: "The interest rate on newly granted Bulgarian home loans and the annual percentage rate of charge (APRC) on the same loans — the figures behind the mortgage panel.",
+      bg: "Лихвата по новите споразумения за жилищни кредити в България — включително предоговарянето на съществуващ кредит — и годишният процент на разходите (ГПР) по същите споразумения: числата зад ипотечния панел.",
+      en: "The interest rate on new Bulgarian home-loan agreements — renegotiations of existing loans included — and the annual percentage rate of charge (APRC) on the same agreements: the figures behind the mortgage panel.",
     },
     requires: {
       bg: "Информацията трябва да се възпроизвежда точно и ЕЦБ да е посочена като източник. Всяка промяна в нея се обявява. Данните са публично достъпни и безплатни на страницата на ЕЦБ.",

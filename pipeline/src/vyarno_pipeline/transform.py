@@ -668,9 +668,24 @@ def rows_to_unemployment_observation(
         unit="percent",
         value=series[latest_period],
         series_by_period=series,
+        # The pins are the easy half and were all this said. The hard half is
+        # that «unemployed» is the ILO test, not "has no job": `une_rt_m_esms`
+        # §3.4 — "Unemployed persons are all persons 15 to 74 years of age who
+        # were not employed during the reference week, had actively sought work
+        # during the past four weeks and were ready to begin working immediately
+        # or within two weeks", against an "employed" that is satisfied by one
+        # hour of paid work in the week. Somebody who stopped looking is in
+        # neither the numerator nor the denominator, so a low reading is not the
+        # same claim as "almost everyone has work".
         notes=(
             "Monthly unemployment rate, seasonally adjusted, total × both "
-            "sexes × 15-74, PC_ACT (percentage of the labour force)."
+            "sexes × 15-74, PC_ACT (percentage of the labour force). ILO "
+            "definition: not employed in the reference week, actively looking "
+            "for the past four weeks, and available to start within two — so "
+            "somebody who has given up looking counts as neither unemployed "
+            "nor in the labour force, and one paid hour in the week counts as "
+            "employed. The LFS behind it covers the usually-resident "
+            "population outside collective and institutional households."
         ),
     )
 
@@ -945,12 +960,16 @@ def build_house_market_payload(
             "quarterly: how many dwellings households bought, what they paid, "
             "and the official house price index with Eurostat's own annual rate "
             "of change, in the money of the day AND deflated. Scope is "
-            "dwellings bought by households at the price "
-            "actually paid — flats and houses, VAT included on new builds, "
-            "notary and agency fees excluded, land only as the plot under a "
-            "house. Standalone land, garages, shops and offices are outside it, "
-            "as are state and municipal sales, gifts, inheritances, "
-            "court-executor sales and self-build. "
+            "dwellings bought by households AT MARKET PRICES — flats and "
+            "houses, VAT included on new builds, notary and agency fees "
+            "excluded, the land component of the dwelling included. Standalone "
+            "land, garages, shops and offices are outside it, as are gifts, "
+            "inheritances, court-executor sales, sales to a sitting tenant at a "
+            "discount, sales between family members and self-build. НСИ also "
+            "remove «сделки на държавата и общините» without saying which side "
+            "of the deal that is, and Eurostat scope the universe regardless of "
+            "the sector a dwelling was bought FROM, so what that line excludes "
+            "is not settled here. "
             "MODIFICATION NOTICE, per Eurostat's reuse conditions: every figure "
             "under deals, value, price_index, annual_rate_pct and "
             "price_index_real is Eurostat's own, unmodified, at the unit each "
@@ -1036,8 +1055,14 @@ def build_house_market_payload(
                 "neither this figure nor any per-city equivalent."
             ),
         },
+        # «At the price paid» is the wording this scope was written from and it
+        # is wider than either publisher. The test is a MARKET price:
+        # `prc_hpi_inx_esms` §3.4 rules out «non-marketed dwelling prices …
+        # self-build dwellings, dwellings purchased by sitting tenants at
+        # discount prices, or dwellings transacted between family members», each
+        # of which has a price that was actually paid.
         "disclaimer": (
-            "Dwellings bought by HOUSEHOLDS, at the price paid. This is not a "
+            "Dwellings bought by HOUSEHOLDS, at market prices. This is not a "
             "count of all property sales: the property register records every "
             "sale deed — land, garages, shops, offices — and runs more than "
             "twice as high for the same quarter. The two measure different "
