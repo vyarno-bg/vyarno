@@ -2297,6 +2297,16 @@ export const COPY = {
     en: "read the numbers — all {n} quarters",
   },
   mktOpenYears: { bg: "виж числата — всички {n} години", en: "read the numbers — all {n} years" },
+  // The two disclosure labels that hold METHOD rather than numbers, and both
+  // are plain statements of what is inside. A summary phrased as a question
+  // («Как е сметнато?») asks the reader to decide whether they have the
+  // question before it tells them what the answer is about; a reader skimming
+  // for the derivation is looking for the noun.
+  mktHowMade: { bg: "Как е сметнато", en: "How it is worked out" },
+  mktHowLinks: {
+    bg: "Какво отварят двете връзки под всяко число",
+    en: "What the two links under every figure open",
+  },
   mktColIndex: { bg: "Индекс", en: "Index" },
   mktColChange: { bg: "Промяна", en: "Change" },
   mktColShare: { bg: "Дял", en: "Share" },
