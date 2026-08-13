@@ -70,7 +70,7 @@
     "note": "100 is this country's own long-run average, not another country's level. A reading below 100 says homes cost less relative to Bulgarian incomes than they have on average over the series; it says nothing about whether they are cheap."
   },
   "housing_cost_overburden": {
-    "_role": "BURDEN: share of people spending over 40% of income on housing",
+    "_role": "BURDEN: share of people in households paying over 40% of disposable income for housing, an owner's mortgage interest counting but never the capital",
     "dataset": "ilc_lvho07a",
     "source_url": "https://ec.europa.eu/eurostat/databrowser/view/ilc_lvho07a/default/table?lang=en",
     "api_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/ilc_lvho07a?format=JSON&lang=EN&geo=BG&age=TOTAL&sex=T&rskpovth=TOTAL&unit=PC",
@@ -100,5 +100,5 @@
       "2025": 6.9
     }
   },
-  "disclaimer": "EU-SILC is a sample survey of private households, so tenure and overburden carry sampling error and exclude people not living in private households. The dwelling counts are a census snapshot — the census block names its own year and no newer count exists; 'unoccupied' there means unoccupied on census night, which covers second homes and holiday properties alongside genuinely empty stock."
+  "disclaimer": "EU-SILC is a sample survey of private households, so tenure and overburden carry sampling error and exclude people not living in private households. The dwelling counts are a census snapshot — the census block names its own year and no newer count exists; 'unoccupied' there means the dwelling was nobody's usual residence at the census rather than that nobody was in it, so second homes, holiday properties and the homes of people counted elsewhere are all inside the figure."
 }

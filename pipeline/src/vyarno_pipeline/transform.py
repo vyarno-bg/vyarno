@@ -1165,7 +1165,17 @@ def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of:
             ),
         },
         "housing_cost_overburden": {
-            "_role": "BURDEN: share of people spending over 40% of income on housing",
+            # Both halves of that sentence are the indicator's, and both were
+            # loose here. The 40% is of DISPOSABLE income net of housing
+            # allowances, and an owner's mortgage INTEREST is what counts
+            # towards it — never the capital they are repaying, which is what
+            # a reader of this file would otherwise assume from "spending on
+            # housing" (`docs/data-sources.md` §"The structure cubes").
+            "_role": (
+                "BURDEN: share of people in households paying over 40% of "
+                "disposable income for housing, an owner's mortgage interest "
+                "counting but never the capital"
+            ),
             "dataset": burden_cube.dataset,
             "source_url": burden_cube.page_url,
             "api_url": burden_cube.api_url,
@@ -1174,13 +1184,21 @@ def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of:
             "value_pct": burden[burden_period],
             "series_by_period": burden,
         },
+        # **'Unoccupied' is a usual-residence test, not a presence test**, and
+        # writing it as census night states the one reading Eurostat's census
+        # metadata names to rule out: «conventional dwellings with persons
+        # present but not included in the census» are unoccupied too. So a flat
+        # with somebody asleep in it can sit in this count, and «genuinely
+        # empty» is not a share of it anybody has measured.
         "disclaimer": (
             "EU-SILC is a sample survey of private households, so tenure and "
             "overburden carry sampling error and exclude people not living in "
             "private households. The dwelling counts are a census snapshot — the "
             "census block names its own year and no newer count exists; "
-            "'unoccupied' there means unoccupied on census night, which covers "
-            "second homes and holiday properties alongside genuinely empty stock."
+            "'unoccupied' there means the dwelling was nobody's usual residence "
+            "at the census rather than that nobody was in it, so second homes, "
+            "holiday properties and the homes of people counted elsewhere are "
+            "all inside the figure."
         ),
     }
 
