@@ -693,6 +693,31 @@ Both sides are Eurostat's own published quarterly figures for the same quarter,
 from `prc_hpi_hsvq` and `prc_hpi_hsnq`. Computed **per purchase type** as well
 as in total, so new builds and existing dwellings can be read apart.
 
+**A quotient of two published series is only a mean if the two describe one
+population, and no gate here can see whether they do.** `validate_house_market`
+proves the division reproduces; it would prove exactly as much over two cubes
+about different things. What settles it is the publishers' own scope statements,
+which are prose and are therefore read and dated rather than checked:
+
+- Eurostat, `prc_hpi_inx_esms` §3.4, read 2026-08-13 — «The number **and** value
+  of house sales cover dwellings transacted at national level where the
+  purchaser is a household», and «The house sales value reflects the prices paid
+  by household buyers and include both the price of land and the price of the
+  structure of the dwelling. The prices for new dwellings include VAT. Other
+  costs related to the acquisition of the dwelling (e.g. notary fees,
+  registration fees, real estate agency commission, bank fees) are excluded.»
+- НСИ, ППЖ metadata, read 2026-08-13 — the two are compiled from one pass over
+  one register: «стойност на продажбите – измерена като общата сума на
+  стойността на всички жилищни продажби в рамките на тримесечието; брой сключени
+  сделки - измерва се чрез броя на всички жилищни продажби в рамките на
+  тримесечието».
+
+So the quotient is the mean price paid per dwelling sale, land included, VAT
+included on new builds, and the buyer's own purchase costs excluded — which is
+why the page calls it what a home costs rather than what buying one costs. Both
+scope reads are in [`data-sources.md`](./data-sources.md) §"The property cubes"
+with their URLs.
+
 Published in `house_market.json` rather than derived in the browser, and that is
 the one derivation on the page that is: both inputs are one publisher's, so the
 file stays one publisher's data, and a published figure is one a **gate** can
@@ -873,10 +898,17 @@ says nothing without that 100 and a one-line row has nowhere to mark it. Drawn
 anyway, the dot lands at the left end of a line labelled «цена спрямо доходите»
 and reads as "housing has never been more affordable" — a verdict, on the
 indicator whose own section spends three paragraphs on why it may not be read as
-one: the denominator is the whole population's income including pensions,
-benefits and services the state pays for, divided by a population that has
-fallen throughout the period, and the average it is measured against is pulled
-up by the years the ratio was at its highest. `#ratio` draws it whole, with the
+one: the denominator is **adjusted** gross disposable income — Eurostat's
+`tipsho20_esms`, read 2026-08-13, «Income used in the auxiliary indicator
+standardised house price-to-income ratio is defined as adjusted household gross
+disposable income (B7G from ESA 2010) per head of population» — so it carries
+pensions, benefits and the services the state pays for on households' behalf,
+net of income tax and social contributions, over a population that has fallen
+throughout the period; and the average it is measured against is pulled up by
+the years the ratio was at its highest. **B.7G rather than B.6G is the whole of
+that first clause**: social transfers in kind are in the adjusted measure and in
+no other, and a page that named plain disposable income would be describing a
+series Eurostat do not publish here. `#ratio` draws it whole, with the
 rule at 100 that `plotSeries#reference` exists for.
 
 A row whose series only ever rises sits at its right end by construction, which
@@ -895,8 +927,19 @@ unoccupied_pct = census.unoccupied / census.total × 100
 ```
 
 Derived in the browser from the two counts the census publishes, which are shown
-beside it so the division is checkable by eye. "Unoccupied" is unoccupied **on
-census night** and includes second homes and holiday properties.
+beside it so the division is checkable by eye.
+
+**"Unoccupied" is a residence test, not a presence test**, and the two give
+different answers for the same dwelling. Eurostat's census metadata
+(`cens_21_esms`, read 2026-08-13): «'Unoccupied conventional dwellings' are
+conventional dwellings which are not the usual residence of any person at the
+time of the census», and «Dwellings reserved for seasonal or secondary use,
+vacant dwellings, as well as conventional dwellings **with persons present but
+not included in the census** are classified under the category 'Unoccupied
+conventional dwellings'». So second homes and holiday properties are inside the
+figure — and so is a flat with somebody sleeping in it who is counted at their
+own address. Copy that dates the test to the census night describes a count
+nobody took.
 
 ### The average deal in years of pay
 
@@ -915,6 +958,14 @@ uses.
 depends on the payroll table of the year that converted it, which would put a
 third publisher's law inside a two-publisher ratio. It reads НСИ's
 all-activities row, never a sector.
+
+**The denominator is an employee's wage, and "average wage" claims more than
+that.** `Labour_1.1.2.1`'s own sheet title is `AVERAGE GROSS MONTHLY WAGES AND
+SALARIES OF THE EMPLOYEES UNDER LABOUR CONTRACT` (read 2026-08-13), so anybody
+working for themselves is outside it — and the numerator's buyers are all
+households, self-employed ones included. The ratio is still one both publishers
+support; the disclosure under the card names the population rather than letting
+«средна заплата» stand for everyone earning.
 
 ### The six cities: change against change
 

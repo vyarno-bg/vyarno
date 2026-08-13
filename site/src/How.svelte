@@ -458,17 +458,18 @@
     <p>
       <span class="l-bg"
         >Цените се групират по европейска класификация (ECOICOP), която за България дава тринадесет
-        групи. Делът на всяка група е каква част от парите на средния човек отива за нея — Евростат
-        го публикува веднъж годишно. По-старите български таблици имат дванадесет групи, защото
-        последната беше сборна: сега CP12 е застраховки и банкови услуги, а новата CP13 покрива
-        лична хигиена и социални услуги. Затова двете подредби не се припокриват.</span
+        групи. Делът на всяка група е каква част от всички пари, които домакинствата в страната
+        харчат, отива за нея — Евростат го публикува веднъж годишно. По-старите български таблици
+        имат дванадесет групи, защото последната беше сборна: сега CP12 е застраховки и банкови
+        услуги, а новата CP13 покрива лична хигиена и социални услуги. Затова двете подредби не се
+        припокриват.</span
       >
       <span class="l-en"
         >Prices are grouped by a European classification (ECOICOP), which for Bulgaria gives
-        thirteen groups. A group's share is how much of the average person's money goes to it;
-        Eurostat publishes it once a year. Older Bulgarian tables show twelve groups because the
-        last one was a catch-all: CP12 is now insurance and financial services and a new CP13 covers
-        personal care and social protection. That is why the two do not line up.</span
+        thirteen groups. A group's share is how much of everything the country's households spend
+        goes to it; Eurostat publishes it once a year. Older Bulgarian tables show twelve groups
+        because the last one was a catch-all: CP12 is now insurance and financial services and a new
+        CP13 covers personal care and social protection. That is why the two do not line up.</span
       >
     </p>
 

@@ -43,14 +43,14 @@ Every entry carries a provenance tag:
 | **НСИ house price index, national** — `HPI_1.3.xlsx` | VERIFIED | `nsi_housing.json`. Change on the same quarter a year earlier. **The cross-publisher reconciliation reads this** against Eurostat's `RCH_A`. |
 | **НСИ house price index, six cities** — `HPI_2.6.xlsx` | VERIFIED | `nsi_housing.json`. The six cities over 120,000 people, y/y. A percentage, never a level. |
 | **НСИ sales count, six cities** — `HSI_2.4.5.xlsx` | VERIFIED | `nsi_housing.json`. The change in the NUMBER of sales in those cities, y/y. |
-| **Dwellings sold** — `prc_hpi_hsnq` (unit=NR) | VERIFIED | `house_market.json → deals`. Quarterly, split `TOTAL` / `DW_NEW` / `DW_EXST`. Households only, at the price paid. |
-| **Value of those sales** — `prc_hpi_hsvq` (unit=EUR) | VERIFIED | `house_market.json → value`, and the numerator of `avg_deal_eur`. Reaches further back than the count cube, so the two are paired on the quarters they share. |
+| **Dwellings sold** — `prc_hpi_hsnq` (unit=NR) | VERIFIED | `house_market.json → deals`. Quarterly, split `TOTAL` / `DW_NEW` / `DW_EXST`. Purchases by households at **market** prices — gifts, inheritances, discounted family sales and self-build are outside it. |
+| **Value of those sales** — `prc_hpi_hsvq` (unit=EUR) | VERIFIED | `house_market.json → value`, and the numerator of `avg_deal_eur`. The consideration for the population the count counts — land in, VAT in on new builds, notary and agency out. Reaches further back than the count cube, so the two are paired on the quarters they share. |
 | **House price index** — `prc_hpi_q` (units I15_Q + RCH_A) | VERIFIED | `house_market.json → price_index`. The level and **Eurostat's own annual rate**, never a rate we computed from the level. Carries Eurostat's own flags per quarter in `status_by_period` — `b` break, `e` estimate, `p` provisional — because a line drawn unbroken across a break they declared is a claim they did not make. |
 | **House price index, deflated** — `tipsho30` (unit I15_Q) | VERIFIED | `house_market.json → price_index_real`. The same index divided by the national accounts deflator for private final consumption, on the **same base year and the same quarters**, so the two are drawn on one axis with nothing rescaled. Neither is the HICP: the page says which deflator this is, because on this site "inflation" already names a different published series. No `purchase` dimension: Eurostat deflate the total only, so no new-build/existing split exists and the page may not imply one. Nominally the index sits far above its 2008 peak; deflated it does not, and a site whose subject is the gap between a number and what it buys cannot publish only the first. |
-| **Tenure** — `ilc_lvho02` | VERIFIED | `house_market_structure.json → tenure`. Own / own-with-loan / rent, at `hhcomp=TOTAL` × `rskpovth=TOTAL`. |
-| **Census dwelling stock** — `cens_21dwob_r3` | VERIFIED | `house_market_structure.json → census_dwellings`. Total, occupied and unoccupied at `building=TOTAL`. |
-| **Price-to-income** — `tipsho60` (unit=PTIR_LT_AVG) | VERIFIED | `house_market_structure.json → price_to_income`. Indexed against **this country's own long-run average**, which is the only unit that supports the sentence beside it. |
-| **Housing-cost overburden** — `ilc_lvho07a` | VERIFIED | `house_market_structure.json → housing_cost_overburden`. Share spending over 40% of income on housing, at `age`/`sex`/`rskpovth` = TOTAL. |
+| **Tenure** — `ilc_lvho02` | VERIFIED | `house_market_structure.json → tenure`. Own / own-with-loan / rent, at `hhcomp=TOTAL` × `rskpovth=TOTAL`. A share of the population **in private households** — EU-SILC reaches no institution. |
+| **Census dwelling stock** — `cens_21dwob_r3` | VERIFIED | `house_market_structure.json → census_dwellings`. Total, occupied and unoccupied at `building=TOTAL`. «Occupied» means somebody's usual residence, never who slept there. |
+| **Price-to-income** — `tipsho60` (unit=PTIR_LT_AVG) | VERIFIED | `house_market_structure.json → price_to_income`. Indexed against **this country's own long-run average** over 2000→latest, which is the only unit that supports the sentence beside it. Its denominator is B.7G, adjusted gross disposable income per head. |
+| **Housing-cost overburden** — `ilc_lvho07a` | VERIFIED | `house_market_structure.json → housing_cost_overburden`. Share of people in households spending over 40% of **disposable** income on housing, at `age`/`sex`/`rskpovth` = TOTAL. An owner's mortgage **interest** counts, never the capital. |
 
 ## Not available (do not cite as a working source)
 
@@ -122,6 +122,17 @@ one `statinfo` member (`IW`).
   lets a weight and a rate for one code be about the same bucket.
 - Values are **per-thousand** (CP01..CP13 ≈ 1000, TOTAL = 1000); the CLI divides
   by 10.
+- **A weight is a share of what all households spend, not of what one of them
+  does.** `prc_hicp_esms`, read 2026-08-13: «The main data source for the HFMCE
+  used for the compilation of the weights are National Accounts data (from y-2 or
+  y-1) further complemented with data from the Household Budget Survey», where
+  HFMCE is «household final monetary consumption expenditure» for the country.
+  The aggregate is spending-weighted, so a household spending twice as much
+  moves a weight twice as far — «каква част от парите на средния човек» describes
+  a survey nobody ran, and the difference between that and the reader's own
+  answer is the calculator's whole subject. Note also that HFMCE «is adjusted to
+  exclude … imputed rentals for housing», so CP04 is what people pay out and not
+  what an owner-occupier would notionally pay themselves.
 - `lastTimePeriod=1` takes the latest vintage, and the connector returns the
   weight year alongside. HICP re-weights every January while Eurostat publishes
   the new item weights around late February, so there is a real window each year
@@ -157,6 +168,19 @@ the same fields a division gets.
 Multi-dimension **single-value** filters all work together. The slice is the
 whole economy, all occupations, full-time, both sexes, all ages — part-time
 dilutes a monthly figure.
+
+**That slice is narrower than "what people earn in Bulgaria", and the caveat has
+to name all of it.** `earn_ses_main_esms` §3.5–3.6, read 2026-08-13: the survey
+«provides information on employees in enterprises with **10 or more employees**»
+and «The statistics refer to enterprises with at least 10 employees operating in
+economic activities defined by **NACE Rev. 2 sections B to S excluding O**». So
+three cuts sit between this ladder and the country: full-time only (ours, and
+the reason is above), firms of ten or more, and no public administration,
+defence or compulsory social security — plus agriculture, which is section A and
+outside B–S. `COPY.pctCaveat` names the three that are the survey's; a reader who
+works for a five-person firm is being ranked against a distribution they are not
+in, and the level the shape is re-levelled onto (НСИ's all-activities average)
+does not have the same coverage either.
 
 `indic_se` carries the four points we use — `D1_E_EUR`, `MED_E_EUR`,
 `MEAN_E_EUR`, `D9_E_EUR`, in EUR. **BG 2022: D1 €376 · median €705 · mean €949 ·
@@ -214,17 +238,82 @@ how many dwellings households bought, what they paid in total, and how the price
 per dwelling moved. `house_market.json` carries all three.
 
 **What is in them is narrower than "House sales" suggests, and the page's
-wording depends on it.** Both the Eurostat ESMS (`prc_hpi_inx_esms`) and НСИ's
-ППЖ metadata (`nsi.bg/bg/content/19699`) scope these to dwellings bought by
-households at the price actually paid — flats and houses, VAT included on new
-builds, notary and agency fees excluded, land only as the plot under a house.
-Read 2026-08-12. **Excluded**: «сделки с нежилищни имоти», state and municipal
-sales, gifts and inheritances, court-executor sales, self-build.
+wording depends on it.** The scope read below is what the copy on `/market/`
+rests on, and it is quoted rather than summarised because none of it is in the
+machine-readable response — see §"Why there is no gate on any of this" at the
+end of this section.
 
-That scope is why the property register may never be quoted beside these. Its
-«Продажби» column counts every sale deed — land, agricultural land, garages,
-shops, offices — and came to 45,144 in 2025-Q1 against Eurostat's 19,916
-dwellings for the same quarter, a ratio of 2.27.
+Eurostat, [`prc_hpi_inx_esms`](https://ec.europa.eu/eurostat/cache/metadata/en/prc_hpi_inx_esms.htm)
+§3.4–3.6, read **2026-08-13**:
+
+> The number and value of house sales cover dwellings transacted at national
+> level where the purchaser is a household. Transactions between households are
+> included. Transfers in dwellings due to donations and inheritances are
+> excluded.
+>
+> The house sales value reflects the prices paid by household buyers and include
+> both the price of land and the price of the structure of the dwelling. The
+> prices for new dwellings include VAT. Other costs related to the acquisition
+> of the dwelling (e.g. notary fees, registration fees, real estate agency
+> commission, bank fees) are excluded.
+>
+> The target universe is all transacted dwellings purchased **at market prices**
+> by households regardless of which institutional sector they were bought from
+> and of the purchase purpose.
+
+НСИ's own ППЖ metadata (`nsi.bg/bg/content/19699`, which now redirects to
+`nsi.bg/metadata/pokazateli-za-prodajbite-na-jilishta-ppj-364`), read
+**2026-08-13**, on how the two series are compiled:
+
+> стойност на продажбите – измерена като общата сума на стойността на всички
+> жилищни продажби в рамките на тримесечието; брой сключени сделки - измерва се
+> чрез броя на всички жилищни продажби в рамките на тримесечието.
+
+and on what is removed before either is counted:
+
+> Изключени са следните записи: - сделки на държавата и общините; - „непазарни”
+> сделки, като наследства и дарения, социални схеми, продажби от съдия-изпълнител
+> и др.; - сделки с нежилищни имоти; - продажби от физически лица (домакинства)
+> към други сектори.
+
+**"At the price actually paid" is wider than either publisher, and that is the
+correction this read produced.** The test is a *market* price: a discounted sale
+between relatives has a price actually paid and is excluded, as are social
+schemes and court-executor sales. The page therefore says «на пазарна цена» and
+names the four exclusions rather than describing the count with the value
+series' price concept.
+
+**Three things this read could not settle**, and none of them may be written up
+as though it had been:
+
+- **One deed or one dwelling.** Eurostat's unit is «Number of transacted
+  dwellings» and BG's own national metadata calls the same series «number of
+  transactions in dwellings», while НСИ describe the compilation as «броя на
+  всички жилищни продажби» over transactions that may carry more than one
+  property («вида на сделките … в зависимост от предназначението на имотите,
+  включени във всяка сделка»). Nothing published says which a two-flat deed
+  counts as. It does not move `avg_deal_eur` — numerator and denominator are over
+  the same set either way — but it is the reason no sentence here promises that
+  the count and the number of homes that changed hands are the same integer.
+- **Whether НСИ's price-band trimming reaches the sales series.** Their accuracy
+  section says «НСИ полага усилия да намали … като … изключвайки от изчисленията
+  транзакции под и над лимитите», stated about the index. Whether the same
+  exclusion applies to the ППЖ count and value is not said.
+- **Who «сделки на държавата и общините» excludes.** Eurostat scope the universe
+  «regardless of which institutional sector they were bought from», so a
+  household buying a municipal flat is inside theirs; НСИ list state and
+  municipal transactions among the removed records without saying on which side
+  of the deal. The previous edition of this file stated the exclusion flatly —
+  it is one reading of an ambiguous line, not something a publisher wrote.
+
+That scope is why the property register may never be quoted beside these — and
+the two are the **same source read differently**, which is what makes the
+comparison tempting: НСИ's national metadata for the index says «The HPI uses
+the real transaction prices registered in Property Register of Registry Agency»
+(`prc_hpi_inx_esmshpi_bg`, read 2026-08-13). The register's own «Продажби»
+column counts every sale deed — land, agricultural land, garages, shops,
+offices — and came to 45,144 in 2025-Q1 against Eurostat's 19,916 dwellings for
+the same quarter, a ratio of 2.27.
 
 Four traps, all probed:
 
@@ -253,6 +342,56 @@ footnotes that rates recomputed across the two bases can differ by rounding. So
 cross-publisher reconciliation compares: at 2026-Q1 both НСИ's `HPI_1.3` and
 Eurostat's `RCH_A` read 14.8 / 12.5 / 16.3 for total / new / existing.
 
+**The index covers every household purchase, not owner-occupation.** BG's own
+national metadata, read 2026-08-13: «All transactions are included (both cash
+and mortgage) acquired by households regardless of its final use, so dwellings
+bought by households for uses other than owner-occupancy are included (for
+investment, e.g. to rent it out). Price include land value. Luxury properties
+are not excluded from the HPI/HSI.» So «цените на сделките» is the right label
+and any wording that narrows it to homes people live in is not.
+
+#### Why there is no gate on any of this
+
+The obvious guard is a connector-level assertion that a cube's own metadata
+still says what we relied on, so a definition change upstream fails a refresh
+instead of quietly changing what the page means. **It cannot be built where the
+risk is, and the cubes say so themselves.** Probed 2026-08-13, the two series
+the average deal divides carry these labels and nothing else:
+
+| Cube | Dataset label | Unit label |
+|---|---|---|
+| `prc_hpi_hsnq` | House sales - number and index, quarterly data | `NR` → **Number** |
+| `prc_hpi_hsvq` | House sales - value and index, quarterly data | `EUR` → **Euro** |
+
+Every claim this section spent a page establishing — the purchaser is a
+household, the price is a market price, VAT is in and the notary is out, the two
+series cover one population — is absent from that. «Number» and «Euro» are
+compatible with any two cubes in the catalogue. A guard over the machine-readable
+metadata would pass unchanged through the exact failure this section exists to
+catch, and would put a green check beside "definitions verified".
+
+A hash over the ESMS page fails the other way: Eurostat revise that prose without
+versioning it, so the guard goes red on a typo fix and the next person raises the
+tolerance until it is off.
+
+Three of the eleven cubes **do** carry their meaning in their own labels —
+`tipsho60`'s `PTIR_LT_AVG` is «Price-to-income ratio relative to long-term
+average», `ilc_lvho02` is «Distribution of **population** by tenure status», and
+`cens_21dwob_r3`'s `DW_NOC` is «Unoccupied conventional dwellings». Gating those
+three is possible and is still not worth doing: they are the three where the
+wrong reading is already refused by a pinned unit code, and a guard whose
+coverage is the easy third certifies the whole while watching none of the part
+that moved.
+
+**So this stays a dated read, the pattern [`legal.md`](./legal.md) uses for
+licence terms**: the publisher's sentence, quoted verbatim, with the URL and the
+date it was read, in this file. Re-read it when a connector is retargeted, when
+a payload's shape changes, or when a claim on a page is being written from a
+cube's title — which is how the wrong ones got written. The cost of the pattern
+is that nothing fails when an upstream re-scopes a series between reads; that is
+the cost, it is stated here rather than papered over, and no cheaper guard
+removes it.
+
 ### The structure cubes — `ilc_lvho02`, `cens_21dwob_r3`, `tipsho60`, `ilc_lvho07a`
 
 Four cubes on four clocks, which is why they are a second payload rather than
@@ -277,6 +416,56 @@ that returns 200:
 - **overburden** is crossed with age, sex and poverty status. The below-poverty
   slice runs several times higher than the headline and is not the figure
   anybody quotes.
+
+**What each of the four measures**, quoted, because three of the four sentences
+on `/market/` that describe them were written from a cube title and two of those
+were wrong. All read **2026-08-13**.
+
+- **Both EU-SILC cubes are a share of the population in PRIVATE households, not
+  of everybody in the country.**
+  [`ilc_sieusilc`](https://ec.europa.eu/eurostat/cache/metadata/en/ilc_sieusilc.htm)
+  §3.6: «The reference population of EU-SILC is private households and all
+  persons composing these households having their usual residence in the
+  national territory … **Persons living in collective households and in
+  institutions are generally excluded from the target population.**» That is the
+  same boundary the census draws in the other direction — its «колективни
+  жилища» are what EU-SILC leaves out — so the two sections have to say it in the
+  same words or the page contradicts itself between them.
+- **tenure** exhausts its base: `ilc_lvho02`'s own dataset label is
+  «Distribution of **population** by tenure status, type of household and income
+  group» and its `tenure` dimension carries `OWN` (with `OWN_L` / `OWN_NL`
+  beneath it) and `RENT` (with `RENT_MKT` / `RENT_FR`) and no third status. At
+  2025 the payload reads 86.1 + 13.9 = 100.0, so «собствениците и наемателите
+  правят сто» is the cube's structure and not an arithmetic coincidence.
+- **overburden's numerator is not a mortgage payment.** Eurostat's glossary
+  entry for the rate: «the percentage of the population living in households
+  where the total housing costs ('net' of housing allowances) represent more
+  than 40 % of **disposable** income ('net' of housing allowances) … For
+  homeowners, the housing cost calculation includes **mortgage interest payments
+  net of any tax relief**». The Bulgarian «вноска» means the whole instalment,
+  so copy using it overstates the numerator for exactly the households the
+  indicator is about. It is «лихвата, не главницата», in as many words.
+- **price-to-income's denominator is the ADJUSTED measure**, which is the one
+  containing social transfers in kind.
+  [`tipsho20_esms`](https://ec.europa.eu/eurostat/cache/metadata/en/tipsho20_esms.htm)
+  §3.4: «Income used in the auxiliary indicator standardised house
+  price-to-income ratio is defined as **adjusted** household gross disposable
+  income (B7G from ESA 2010) per head of population». B.6G would not carry them
+  and the page's «услугите, които държавата плаща вместо тях» would then be
+  false; on B.7G it is exactly right. The same file fixes the 100:
+  «Price-to-income ratio relative to the long-term average price-to-income
+  ratio, **calculated over the period 2000 to the most recent data available**»
+  — which is also why every earlier point moves when a year is added.
+- **the census's «unoccupied» is a usual-residence test.**
+  [`cens_21_esms`](https://ec.europa.eu/eurostat/cache/metadata/en/cens_21_esms.htm):
+  «'Unoccupied conventional dwellings' are conventional dwellings which are not
+  the usual residence of any person at the time of the census. Dwellings reserved
+  for seasonal or secondary use, vacant dwellings, as well as conventional
+  dwellings **with persons present but not included in the census** are
+  classified under the category 'Unoccupied conventional dwellings'.» A dwelling
+  with somebody asleep in it can be unoccupied, so census-night presence is not
+  merely a loose paraphrase of the test — it is the case the regulation names to
+  rule out.
 
 ## Salary distribution — `salary_dist.json`
 
@@ -798,7 +987,12 @@ reader could check, so nothing else would notice it.
 ### `Labour_1.1.2.1_EUR_EN.xlsx` + `_EUR.xlsx` — gross wage by economic activity
 
 The sibling table, same directory and same terms: 19 NACE Rev 2 sections plus
-`Total`, quarterly. **Both language editions are read** — `_EUR_EN.xlsx` carries
+`Total`, quarterly. Its own title, read 2026-08-13, is `AVERAGE GROSS MONTHLY
+WAGES AND SALARIES OF THE EMPLOYEES UNDER LABOUR CONTRACT` — **employees under a
+labour contract**, so the self-employed are outside every figure this workbook
+feeds: the sector card, the ladder's national anchor and the years-of-pay card
+on `/market/` alike. Both the sector coverage line and that card's disclosure
+say so, and neither may be shortened to «средната заплата». **Both language editions are read** — `_EUR_EN.xlsx` carries
 English section names, `_EUR.xlsx` (no language suffix) the Bulgarian ones, with
 identical figures. 2026-Q1: all activities **1407 EUR**, Information and
 communication **3176 EUR**, as published.
@@ -872,6 +1066,28 @@ not the whole guarantee.
 
 Same host and directory as `Labour_1.1.2.x`, so the fetch plan, the TLS path and
 the licence read are already understood. Three things differ.
+
+**What each workbook's cells are**, from their own title rows, read 2026-08-13 —
+because "index or rate" is the one thing about them that cannot be told from a
+plausible-looking number:
+
+| Workbook | Its own title | A cell is |
+|---|---|---|
+| `HPI_1.3` | «ИЦЖ, национално ниво - съответното тримесечие на предходната година = 100 (изменение спрямо съответното тримесечие на предходната година) (%)» | the y/y **change** in %, by dwelling type (`H.1.` общ, `H.1.1.` нови, `H.1.2.` съществуващи) |
+| `HPI_2.6` | «ИЦЖ за шестте града в България с население над 120 000 жители — …» | the same change, per city, same three `H.1.*` rows |
+| `HSI_2.4.5` | «ППЖ според броя на продажбите, за шестте града … — …» | the y/y change in the **number of sales**, per city, `N.1.*` rows, headed «Тип на закупените имоти» |
+
+The header says «= 100» and the second line says «изменение», which read
+together mean the change and not the index: София's newest `HPI_2.6` cell is 6.7
+rather than 106.7. Both readings are plausible percentages, so nothing
+downstream would catch the wrong one — `HOUSING_ROW_CODES` matches the code
+column rather than the label, and the value is published as `value_pct`.
+
+**«НСИ го изчислява, Евростат го разпространява» is the publisher's own account
+of the chain**, not an inference from the two columns agreeing.
+`prc_hpi_inx_esms` §3.1, read 2026-08-13: «The national HPIs are produced by
+National Statistical Offices (NSIs) and the European aggregates by Eurostat, by
+combining the national indices.»
 
 **The filenames are discovered, never hardcoded.** `discover_housing_workbook`
 walks `/statistical-data/{topic}` to its sub-pages and takes the `timeseries/`

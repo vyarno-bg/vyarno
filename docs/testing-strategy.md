@@ -489,6 +489,21 @@ it meant.
   says what a reviewer reads for instead. What a sentence *claims* is a
   different question with a different answer — §"When a prose test IS right"
   above has the case that earns a test, and what separates the two.
+- **Whether an upstream still means what a sentence says it means.** The
+  tempting guard is a connector-level assertion over a cube's own metadata, so a
+  definition change upstream fails a refresh instead of quietly changing what the
+  page means. It is ruled out on evidence rather than on effort:
+  `prc_hpi_hsnq`'s unit label is «Number» and `prc_hpi_hsvq`'s is «Euro», so
+  every claim the average deal rests on — the purchaser is a household, the price
+  is a market price, the two cover one population — is nowhere in the response,
+  and a guard over it would pass through exactly the failure it was written for
+  while printing a green check beside "definitions verified".
+  [`data-sources.md`](./data-sources.md) §"Why there is no gate on any of this"
+  is the argument in full, including the three cubes that *do* carry their meaning
+  in a label and why gating that third is worse than gating none. What replaces
+  it is the dated read: the publisher's own sentence, quoted with its URL and the
+  day it was read, in `data-sources.md` — the pattern
+  [`legal.md`](./legal.md) uses for licence terms, and for the same reason.
 - **A line the coverage report shows uncovered**, where the answer to "why not"
   is written down. `data.js`'s fetch wrappers and the five `_refresh_*` arms in
   `cli.py` that no end-to-end test drives are the two, and both entries below
