@@ -188,9 +188,24 @@ So what a reviewer reads a page for, in this order:
 1. **Which layer is this sentence in?** `/market/` is the worked example and its
    hierarchy is load-bearing: `p.lead` is the answer, `p` is what the figure
    means, `p.ours` is «наша сметка» and the links that reproduce it, `p.cap` is
-   the qualifications, and a `<details>` holds the numbers. **A sentence about
-   METHOD in body copy is in the wrong layer**, and moving it costs nothing
-   while deleting it would cost the page a claim it has to keep making.
+   the qualifications, and a `<details>` holds the numbers and the derivations.
+   **A sentence about METHOD in body copy is in the wrong layer**, and moving it
+   costs nothing while deleting it would cost the page a claim it has to keep
+   making.
+
+   The line between the two, because it decides what may be moved: **a caveat
+   changes how the figure on screen should be read** — an asking price that is
+   not a paid price, a mean that is not a middle, a smaller rise that is not a
+   fall — and a reader who never sees it draws a wrong conclusion from a number
+   they can see, so it stays beside that number whatever it costs in length.
+   **Method is how the figure was produced**, and a reader who skips it draws no
+   wrong conclusion at all. Where the two are in one paragraph, the caveat is
+   usually one clause of it and the rest is the derivation.
+
+   A caveat that qualifies nothing a reader can see is a third thing and the
+   cheapest to lose: the year the base is set to, said once beside the chart
+   that draws it, is a fact; said again under a strip whose own row labels
+   carry it, it is a paragraph nobody finishes.
 2. **Two ideas joined by a dash or a colon?** That is what most long sentences
    are, and splitting one loses nothing at all.
 3. **An abstract noun used before it is explained?** «индекс», «съотношение»,
