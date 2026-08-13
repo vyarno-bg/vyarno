@@ -23,9 +23,11 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+
+import { blankComments, readSources } from "./live-copy.mjs";
 
 import { COPY } from "../src/lib/content.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
@@ -38,47 +40,18 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, "..", "src");
 
 /**
- * A source file with its comments blanked.
+ * Every .svelte and .js source under src/, comments blanked, concatenated.
  *
- * A comment describing a bug must never satisfy the test for its fix — the
- * explainer carries a comment naming the exact literals it must not print,
- * which is precisely the trap. Markup comments, block comments and whole-line
- * `//` comments all go; trailing `//` is left alone so a `https://` inside a
- * string literal survives.
+ * Read once: nothing here mutates the tree, and several tests scan it.
+ *
+ * **This surface is `src/` and nothing else**, which is a boundary rather than
+ * an oversight but is also narrower than a reader of these tests expects. The
+ * static entry shells under `site/` and `site/en/` carry `og:description` and
+ * `twitter:description` — reader-facing sentences no component renders — and no
+ * rule in this file can see one. `verify_payload_prose.mjs` is the suite whose
+ * subject spans them.
  */
-function blankComments(src) {
-  return src
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .split("\n")
-    .map((line) => (line.trimStart().startsWith("//") ? "" : line))
-    .join("\n");
-}
-
-/** Every .svelte and .js source under src/, comments blanked, concatenated. */
-function readLiveSources() {
-  const parts = [];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const path = join(dir, entry.name);
-      if (entry.isDirectory()) walk(path);
-      // Blanked per FILE, before anything is joined or collapsed. The `//`
-      // pass above works line by line, so it has to see line breaks — hand it
-      // whitespace-normalised text and it gets one line to look at, blanks
-      // nothing, and every `//` comment in src/ counts as live code for the
-      // rest of this file.
-      else if (/\.(svelte|js)$/.test(entry.name))
-        parts.push(blankComments(readFileSync(path, "utf8")));
-    }
-  };
-  walk(SRC);
-  // Whitespace-normalised: these checks are about which names appear near
-  // each other, not about where Prettier chose to break the line.
-  return parts.join("\n").replace(/\s+/g, " ");
-}
-
-/** Read once: nothing here mutates the tree, and several tests scan it. */
-const LIVE_SOURCES = readLiveSources();
+const LIVE_SOURCES = readSources(SRC);
 
 /** The `{ bg, en }` entries of COPY, as [key, value] pairs. */
 function bilingualEntries() {
@@ -768,10 +741,23 @@ test("the over-budget line describes rather than advises", () => {
   }
 });
 
-test("the explainer credits НСИ with collecting Bulgarian prices, not Eurostat", () => {
-  // НСИ collects the prices; Eurostat harmonises and publishes them. Saying
-  // Eurostat collects them is wrong about who does the work, and it is the kind
-  // of error a Bulgarian reader spots immediately.
+test("no surface says Eurostat build Bulgaria's index, and the explainer credits НСИ with the prices", () => {
+  // Two halves of one chain, and the rule used to cover only the first. НСИ
+  // collect the prices AND compile the Bulgarian index; Eurostat set the
+  // method, check it was followed, produce the European aggregates and
+  // disseminate. `prc_hicp_esms`, read 2026-08-13: "National HICPs are produced
+  // by National Statistical Institutes (NSIs), while European aggregates (EU,
+  // EA and EEA) are produced by Eurostat."
+  //
+  // Asserting only the collecting half left «Евростат ги сглобява» standing on
+  // two surfaces — /how/ §инфлацията and the explainer band — because a page
+  // can credit НСИ with the prices in one clause and hand Eurostat the
+  // compilation in the next, which is exactly what both did. So the second
+  // assertion bans the construction rather than requiring a phrasing: a verb
+  // putting Eurostat in charge of assembling, computing or compiling the index.
+  // Naming the phrasings that make the claim needs no exception list, where a
+  // co-occurrence rule over «Евростат» and «индекс» would fire on every honest
+  // sentence about who publishes what.
   assert.ok(
     LIVE_SOURCES.includes("ги събира всеки месец НСИ"),
     "the BG explainer no longer says НСИ collects the prices"
@@ -780,6 +766,21 @@ test("the explainer credits НСИ with collecting Bulgarian prices, not Eurosta
     LIVE_SOURCES.includes("collected every month by NSI"),
     "the EN explainer no longer says NSI collects the prices"
   );
+  const compiledByEurostat = [
+    "Евростат ги сглобява",
+    "Евростат го сглобява",
+    "който ги сглобява",
+    "Евростат ги изчислява",
+    "Eurostat assembles them",
+    "Eurostat compiles",
+    "which assembles them",
+  ];
+  for (const claim of compiledByEurostat) {
+    assert.ok(
+      !LIVE_SOURCES.includes(claim),
+      `a live surface hands Eurostat the compilation of Bulgaria's own index: ${claim}`
+    );
+  }
 });
 
 test("the €/m² caption says which date it is showing", () => {

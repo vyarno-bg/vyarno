@@ -48,6 +48,7 @@ to do to count is §"The standard a test has to meet".
 | `site/scripts/verify_mirror_math.mjs` · `verify_net_salary.mjs` | `node:test` | Every formula, against worked examples |
 | `site/scripts/verify_view_*.mjs` | `node:test` | Every derived value — which number feeds which formula, one suite per `src/lib/view/` module (§"Which `view/` module a test belongs to") |
 | `site/scripts/verify_copy.mjs` | `node:test` | Copy invariants, against the imported `COPY` object |
+| `site/scripts/verify_payload_prose.mjs` | `node:test` | Claims retired for being false, across the payloads' prose, `src/` and the entry shells (§"The second case") |
 | `site/scripts/verify_data_contracts.mjs` | `node:test` | `data.js` fallback chains and the shipped payloads |
 | `site/scripts/verify_legal.mjs` | `node:test` | The legal documents, the ЗЕТ чл. 4 identity, the licence claim, upstream attribution |
 | `site/scripts/verify_wiring.mjs` | `node:test` | Template wiring — which value the markup passes to which function |
@@ -561,6 +562,56 @@ measurement: a page's "sentences" have to be recovered from `.l-bg` spans
 interleaved with slots, headings and nav links, so the check invents offenders
 nobody wrote. Here there is nothing to recover — `base_year` and `from` are two
 JSON fields, and the only judgement is which words assert one is the other.
+
+### The second case: a payload's prose and the page's, about one figure
+
+`data/published/*.json` carries forty prose fields — `notes`, `method`,
+`disclaimer`, `_role`, `note`, `rate_basis` — all written by the pipeline to say
+what an upstream measures, and **none of them rendered by the SPA**. So nobody
+reads them in the normal course of things, and a sentence in one can go false
+and stay false with every gate green. That happened: `transform.py` wrote
+«'unoccupied' there means unoccupied on census night» into
+`house_market_structure.json` and kept writing it after `/market/` had been
+corrected to the usual-residence test the census applies. The page and the
+payload contradicted each other inside one repository for a round.
+
+**The general guard is not buildable, and it is worth being exact about why**,
+because "prose cannot be tested" is the wrong reason and would rule out
+§"When a prose test IS right" above. The obvious rule is "a payload's prose and
+the page's sentence about the same figure must agree". Those are two free-text
+paragraphs written for two different readers — one machine-facing and English,
+one bilingual and addressed to somebody who did not come for the statistics —
+and no rule decides whether two paragraphs make the same claim. Any check strong
+enough to catch a real drift fails on every honest rewrite, which is the shape
+this document rejects three times over: a guard that fires on legitimate text is
+one somebody silences.
+
+**A narrower one is buildable and it has teeth**, and the difference from the
+upstream-definition guard below is that both halves are inside the repository.
+`verify_payload_prose.mjs` holds a table of claims found false against a
+publisher's own definition, and asserts none survives — in a payload's prose, in
+`src/`, or in the static entry shells. Three things make it worth its place:
+
+- **It goes red on both defects that actually shipped.** Restore the census-night
+  sentence to the payload and test 1 fails; restore «празен фонд» to
+  `market/index.html`'s `og:description` and test 2 does. Checked by mutation
+  rather than by argument, per §"The standard a test has to meet".
+- **It bans the construction, never the co-occurrence** — the rule §"When a
+  prose test IS right" arrives at. A list of phrasings that MAKE a retired claim
+  needs no exception list. A rule over words appearing near each other needs one
+  immediately, and its first entry is the sentence written to correct the claim.
+- **It reaches two surfaces nothing else does.** `verify_copy.mjs` walks `src/`,
+  so the entry shells under `site/` and `site/en/` are outside its roots — which
+  is exactly why «празен фонд» survived a sweep. Payload prose is outside every
+  suite's roots entirely.
+
+**What it does not catch, and nothing could.** Payload prose that has merely gone
+stale in words nobody has banned: an upstream re-scopes a series, the page is
+rewritten, the payload keeps a sentence now wrong in a phrasing no list
+anticipated. That is the dated read's problem in a smaller box, and the read is
+what answers it. The table grows by one entry per claim found false, which is
+the standing rule's own exception — *a bug we actually shipped and could
+plausibly reintroduce: keep the guard and name the bug.*
 
 Two rules of thumb come out of it:
 

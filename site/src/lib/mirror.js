@@ -1424,7 +1424,15 @@ export function dealsAtQuarter(series, period, field = "total") {
 }
 
 /**
- * The share of the dwelling stock that stood empty on census night.
+ * The share of the dwelling stock that was nobody's usual residence at the
+ * census.
+ *
+ * Not "stood empty on census night". The census classifies a dwelling as
+ * unoccupied when it is not the usual residence of any person at the time of
+ * the census, and `cens_21_esms` puts dwellings «with persons present but not
+ * included in the census» in that same category — so somebody can be asleep in
+ * one. A presence test is the reading the definition exists to rule out, and
+ * every surface describing this share has to keep saying so.
  *
  * Computed here rather than published because the two counts are what the
  * census carries and the share is ours — and because a reader checking it

@@ -355,18 +355,46 @@ homeYears(price, salary) = price / (salary × 12)      # net monthly pay
 
 ### Which rate goes into the annuity
 
-The **AAR** (annualised agreed rate) from `new_business.value_pct` — the
-interest rate on home loans BG banks actually signed last month.
+The **rate excluding charges** from `new_business.value_pct` — `DATA_TYPE_MIR=R`
+on the ЕЦБ's new-business key, over the home-loan agreements Bulgarian banks
+signed last month.
+
+**"New business" is wider than "new loan", and the annuity is fed the wider
+figure.** БНБ's методологически бележки for лихвена статистика, read
+**2026-08-13**: «Нов бизнес – всяко ново споразумение между клиента и отчетната
+единица … Ново споразумение е и всяко предоговаряне на лихвения процент,
+сроковете и/или други условия по вече съществуващ договор, когато възможността
+за такова предоговаряне не е заложена в него». So a household renegotiating the
+mortgage it already has is inside this average alongside one buying a first
+home, and the ЕЦБ keep a separate renegotiated-amounts series precisely because
+new agreements and fresh lending are not the same population. Nothing about the
+formula changes; what changes is what may be said about the input, and `/how/`
+says it.
+
+**It is not established that this is the AAR**, and the payload no longer claims
+it is. The ЕЦБ's own codelist names `R` «Annualised agreed rate (AAR) /
+Narrowly defined effective rate (NDER)» — one code, two concepts — and Reg (EU)
+1072/2013 lets each national central bank choose: «Instead of the annualised
+agreed rate, NCBs may require their reporting agents to implement the narrowly
+defined effective rate (NDER) for all or some deposit or loan instruments»
+(ЕЦБ, *Manual on MFI interest rate statistics*, January 2017, §4.2.2, read
+2026-08-13). БНБ describe theirs only as «ефективни годишни проценти», a phrase
+the same manual calls ambiguous by name. Both concepts annualise and both
+exclude charges, so the annuity is fed the right KIND of rate either way — which
+of the two Bulgaria reports is unsettled, and no publisher has written it down.
 
 **Not the APRC.** The APRC (`new_business.aprc.value_pct`, 2.77% vs 2.43% at
-2026-05) folds fees into an annualised figure; feeding it into the annuity
-compounds fees monthly as if they were interest and overstates the payment.
-**APRC is for comparing, AAR is for computing.**
+2026-05) folds charges into an annualised figure; feeding it into the annuity
+compounds them monthly as if they were interest and overstates the payment.
+**APRC is for comparing, the charge-free rate is for computing.**
 
 **Not the outstanding-stock rate either.** `mortgage.json` carries a third
 figure — the БНБ rate on the existing housing book — which is published, gated
-and cross-checked but not rendered. New business, outstanding stock and all-in
-cost answer three different questions, and the UI must never let them blur.
+and cross-checked but not rendered. New business, outstanding stock and total
+cost of credit answer three different questions, and the UI must never let them
+blur. Each of the three is the question its publisher says it is; what the round
+that checked them moved was the description of the first and the third, never
+which formula they feed.
 
 ### The loan is bounded by regulation
 
@@ -411,15 +439,42 @@ affordable      €118,098  ≈ 47 m² at the 30% line
 ```
 
 **The payment is the annuity and nothing else**, which is what the 44.5% is a
-share of. Part of what the ГПР folds in beside it is one-off — valuation, the
-mortgage itself, arrangement — and part runs monthly alongside the instalment:
-property insurance is mandatory on a mortgaged home, life cover is often
-required or required for the advertised rate, and the account the instalment is
-collected from usually carries a fee. So a reader's real monthly outgoing sits
-above this line. It is not added here because nobody publishes a figure for it
-that this project could cite, and inventing a plausible one is the failure the
-whole repository is built against — but the share on screen is a floor rather
-than the whole of it, and the copy says so.
+share of. Part of what the ГПР folds in beside it is one-off — the valuation,
+arrangement — and part runs monthly alongside the instalment: property insurance
+is mandatory on a mortgaged home, life cover is often required or required for
+the advertised rate, and the account the instalment is collected from usually
+carries a fee. So a reader's real monthly outgoing sits above this line. It is
+not added here because nobody publishes a figure for it that this project could
+cite, and inventing a plausible one is the failure the whole repository is built
+against — but the share on screen is a floor rather than the whole of it, and
+the copy says so.
+
+**The ГПР is a floor as well, and the boundary is drawn by law rather than by
+what a buyer pays out.** The ЕЦБ's MIR manual §4.4.1, read **2026-08-13**, lists
+what the two Directives defining the figure take in and leave out:
+
+> On the costs that have to be included, the Directives mention expressly the
+> following: interest, commissions, taxes and any other kind of fees which the
+> consumer is required to pay in connection with the credit agreement and which
+> are known to the creditor, **except for notarial costs**; costs in respect of
+> ancillary services relating to the credit agreement, in particular insurance
+> premiums, are also included if, in addition, the conclusion of a service
+> contract is compulsory in order to obtain the credit …; the cost of valuation
+> of property where such valuation is necessary to obtain the credit, but
+> **excluding registration fees for the transfer of ownership of the immovable
+> property**.
+
+A Bulgarian buyer pays a notary and pays to register the transfer, and neither
+is in the ГПР. Two constraints on the copy follow. The insurance and the account
+fee belong in it only where the bank requires them in order to lend — «всички
+такси, комисиони и други разходи за сметка на клиента, извършването на които е
+условие за отпускането на кредита», in БНБ's own words — so a sentence putting
+them inside unconditionally overstates the indicator. And no caption may promise
+every fee: the sub-caption under the rate field names **the loan's** charges,
+because the notary's is a fee the buyer pays and is not one of them. The same
+manual adds that «the composition of the fees to be taken into account in the
+APRC may differ across countries», so the set is not one this project can
+enumerate for Bulgaria from anything either publisher has written.
 
 БНБ's DSTI-O is debt service too, so those costs sit outside the regulator's
 ratio as well and the comparison against 50% is like for like. The gap is

@@ -3,10 +3,10 @@
   "as_of": "2026-08-10",
   "source": "ecb+bnb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-  "notes": "BG mortgage panel. Two tiers: new_business (ECB MIR — what a home loan costs if you sign one now; AAR plus APRC with fees) and outstanding_stock (BNB — what everyone already repaying a home loan averages). Both official and monthly. No scraped offered-rate tier by design.",
+  "notes": "BG mortgage panel. Two tiers: new_business (ECB MIR — what a home loan costs if you sign one now, over the agreements signed in the month, a renegotiated existing loan among them; the rate excluding charges plus the APRC with them) and outstanding_stock (BNB — what a housing loan already on the books averages). Both official and monthly. No scraped offered-rate tier by design.",
   "headline": "new_business",
   "new_business": {
-    "_role": "what a home loan costs if you sign one now — sector-wide average across all BG banks, volume-weighted, for loans actually signed in the reference month",
+    "_role": "what a home loan costs if you sign one now — the average across every bank in Bulgaria, weighted by what each of them lent, over the agreements signed in the reference month; a renegotiation of an existing loan is one of those agreements",
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2C.A.R.A.2250.BGN.N (to 2025-12) spliced with M.BG.B.A2C.A.R.A.2250.EUR.N (from 2026-01)",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
@@ -92,9 +92,9 @@
       "2026-05": 2.43,
       "2026-06": 2.41
     },
-    "rate_basis": "annualised agreed rate (AAR), new business, households and NPISH, lending for house purchase, all initial rate-fixation periods — this is the interest rate the monthly payment is computed from",
+    "rate_basis": "the MIR rate excluding charges (DATA_TYPE_MIR=R — the ECB name that code for the annualised agreed rate AND the narrowly defined effective rate, and neither publisher says which of the two Bulgaria reports), new business, households and NPISH, lending for house purchase, all initial rate-fixation periods — this is the interest rate the monthly payment is computed from",
     "aprc": {
-      "_role": "the same loans' all-in annual cost with fees included (ГПР in Bulgarian) — what the loan really costs",
+      "_role": "the same agreements' total cost of credit (ГПР in Bulgarian) — interest plus the charges the bank requires in order to lend. The notary and the fee for registering the transfer of ownership are outside it by the Directives that define it",
       "dataset": "MIR M.BG.B.A2C.A.C.A.2250.BGN.N spliced with M.BG.B.A2C.A.C.A.2250.EUR.N",
       "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.C.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
       "ref_period": "2026-06",
@@ -179,7 +179,7 @@
         "2026-05": 2.77,
         "2026-06": 2.75
       },
-      "rate_basis": "annual percentage rate of charge (APRC), new business, households, lending for house purchase"
+      "rate_basis": "annual percentage rate of charge (APRC), new business, households and NPISH, lending for house purchase"
     },
     "monthly_volume": {
       "_role": "how much was lent in the reference month; the evidence for the BGN→EUR splice (pre-2026 EUR lending was a ~36 m/month niche, post-2026 it is the whole ~600 m/month market)",
@@ -274,7 +274,7 @@
     "methodology_change": "Bulgaria adopted the euro on 2026-01-01. Before then home loans were written in BGN and the EUR series covered a ~36 m/month niche; from 2026-01 everything is EUR (~600 m/month) and the BGN series stops. This series is therefore BGN through 2025-12 spliced with EUR from 2026-01 — the rate in the currency of the day. The splice is continuous (AAR 2.48% → 2.46%, APRC 2.90% → 2.74%), which is the evidence it is the right one. Reading the EUR series alone across the changeover would report the pre-2026 niche as the national mortgage market."
   },
   "outstanding_stock": {
-    "_role": "what everyone already repaying a BG home loan averages, across every vintage in the ~€18 bn book — NOT what a new borrower is quoted today",
+    "_role": "what a housing loan already on the books averages, across every vintage in the ~€18 bn book — NOT what a new borrower is quoted today. БНБ's housing purpose covers building and improving a home as well as buying one, and leaves out loans that are non-performing or restructured below market rates",
     "source": "bnb",
     "dataset": "s_ir_loan_oa_hh_bg.xlsx, sheet LOAN_OA_HH, Жилищни кредити (housing loans) × в евро (EUR) × maturity total",
     "source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx",
@@ -518,7 +518,7 @@
     },
     "book_volume_eur_m": 18580.075,
     "currency": "EUR",
-    "rate_basis": "effective annual rate on the outstanding stock of EUR housing loans to households — includes older vintages still being amortised, so it moves slowly and lags new-business rates",
+    "rate_basis": "annual rate on the outstanding stock of EUR housing loans to households and NPISH, weighted by the balances at the end of the month — includes older vintages still being amortised, so it moves slowly and lags new-business rates",
     "methodology_change": "Bulgaria adopted the euro on 2026-01-01. Per the BNB methodological note (st_m_instr_irs_new_2026_bg.pdf, published 19 Feb 2026), OLP and LEONIA Plus (BG's old base rates) were retired, the BGN column was dropped from interest tables, and pre-2026 EUR series were reconstructed by BNB from BGN+EUR aggregates. So the EUR outstanding-stock figures before 2026-01 are a BNB reconstruction, not a contemporaneous observation. See https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/st_m_instr_irs_new_2026_bg.pdf"
   },
   "cross_check": {

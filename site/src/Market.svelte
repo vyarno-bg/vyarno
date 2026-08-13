@@ -487,18 +487,36 @@
   reader sees belong to the component that renders them (`site/AGENTS.md`).
 -->
 {#snippet ourSum(explain, urls)}
+  <!-- **The number is a list marker, so a list of one does not get one.** Half
+       these derivations divide one published series by another and need both
+       queries — «провери 1» and «провери 2» are different cubes, and a division
+       is not reproducible from one of them. The other half are computed from a
+       single series, and there the «1» announces a second link that does not
+       exist: a reader looks for it, and what they find nearby is the same URL
+       again under the card's own «точно това число ↗».
+
+       The link itself stays either way, duplicate or not. Eurostat permit
+       derivation on condition it is stated to the end user, and the disclosure
+       has to carry its own way to re-run the sum — a query one paragraph up
+       discharges the licence but not the sceptic, which is the split
+       `verify_render_market.mjs` §"every figure of ours says so" holds. -->
+  {@const queries = urls ?? []}
   <p class="ours">
     <span class="l-bg"
       >{explain.bg}
-      {#each urls ?? [] as url, i (url)}
-        <a href={httpUrl(url)} target="_blank" rel="noopener">провери {i + 1}</a>&nbsp;
+      {#each queries as url, i (url)}
+        <a href={httpUrl(url)} target="_blank" rel="noopener"
+          >провери{queries.length > 1 ? ` ${i + 1}` : ""}</a
+        >&nbsp;
       {/each}
       <a href="/legal/#sources">{COPY.oursMoreK.bg} →</a></span
     >
     <span class="l-en"
       >{explain.en}
-      {#each urls ?? [] as url, i (url)}
-        <a href={httpUrl(url)} target="_blank" rel="noopener">check {i + 1}</a>&nbsp;
+      {#each queries as url, i (url)}
+        <a href={httpUrl(url)} target="_blank" rel="noopener"
+          >check{queries.length > 1 ? ` ${i + 1}` : ""}</a
+        >&nbsp;
       {/each}
       <a href="/legal/#sources">{COPY.oursMoreK.en} →</a></span
     >
@@ -877,21 +895,22 @@
     </div>
     <p class="cap">
       <span class="l-bg"
-        >Число, което само расте, стои в десния си край, защото така се движи то, а не защото нещо
-        се е случило точно сега. Затова цените са на два реда: единият е това, което реално се
-        плаща, другият — същото, но без поскъпването на всичко останало. Точките им не са на едно и
-        също място. И двата реда се четат «колко пъти повече от {reading.baseYear} г.» — годината, която
-        самият Евростат е приравнил на 100. Тя е мерилото, а не началото — редицата тръгва много преди
-        нея. Всеки ред се публикува от различна начална година и пише своята под името си.</span
+        >Число, което само расте, винаги стои в десния си край на тази лента — това е свойство на
+        самата редица, а не знак, че точно сега се случва нещо. Затова цените са на два реда:
+        единият е това, което реално се плаща, другият — същото, но без поскъпването на всичко
+        останало. Точките им не са на едно и също място. И двата реда се четат «колко пъти повече от {reading.baseYear}
+        г.» — годината, която самият Евростат е приравнил на 100. Тя е мерилото, а не началото — редицата
+        тръгва много преди нея. Всеки ред се публикува от различна начална година и пише своята под името
+        си.</span
       >
       <span class="l-en"
-        >A figure that only ever rises sits at its right end because that is what it does, not
-        because of anything happening now. That is why prices are on two rows: one is what is
-        actually paid and the other is the same thing with the rise in everything else taken out.
-        Their dots are not in the same place. Both rows read as "how many times more than in {reading.baseYear}"
-        — the year Eurostat themselves set to 100. That is the yardstick, not the beginning: the
-        record starts well before it. Each row is published from a different starting year and
-        writes its own under its name.</span
+        >A figure that only ever rises always sits at the right-hand end of this strip — that is a
+        property of the series itself, not a sign that something is happening now. That is why
+        prices are on two rows: one is what is actually paid and the other is the same thing with
+        the rise in everything else taken out. Their dots are not in the same place. Both rows read
+        as "how many times more than in {reading.baseYear}" — the year Eurostat themselves set to
+        100. That is the yardstick, not the beginning: the record starts well before it. Each row is
+        published from a different starting year and writes its own under its name.</span
       >
     </p>
   {/if}

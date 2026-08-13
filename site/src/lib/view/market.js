@@ -210,8 +210,10 @@ export function marketStructure(structure) {
       method:
         "Dwellings recorded as unoccupied at the census, over all conventional " +
         "dwellings recorded at the same census. Both counts are published " +
-        "beside this figure. 'Unoccupied' means unoccupied on census night, " +
-        "which includes second homes and holiday properties.",
+        "beside this figure. 'Unoccupied' is a usual-residence test rather " +
+        "than a presence one: the dwelling was nobody's usual residence at the " +
+        "census, so second homes, holiday properties and dwellings whose " +
+        "occupants were counted elsewhere are all inside it.",
       derivedFrom: census?.api_url ? [census.api_url] : null,
     }),
     // Price-to-income and the overburden share are NOT here, and their absence

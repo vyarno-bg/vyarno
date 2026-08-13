@@ -1085,10 +1085,20 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
     # ---- 4. Publish ------------------------------------------------------
     aprc_ref = latest_period(aprc)
     new_business = {
+        # «Нов бизнес» is wider than «нов кредит», and the gap is the reason
+        # this string names it. БНБ's own methodological notes for лихвена
+        # статистика: «Нов бизнес – всяко ново споразумение между клиента и
+        # отчетната единица … Ново споразумение е и всяко предоговаряне на
+        # лихвения процент, сроковете и/или други условия по вече съществуващ
+        # договор». So a household that renegotiated the loan it already had is
+        # inside this average, and the ECB keep a separate renegotiated-amounts
+        # series precisely because new agreements and «fresh money» are not the
+        # same population.
         "_role": (
-            "what a home loan costs if you sign one now — sector-wide average "
-            "across all BG banks, volume-weighted, for loans actually signed "
-            "in the reference month"
+            "what a home loan costs if you sign one now — the average across "
+            "every bank in Bulgaria, weighted by what each of them lent, over "
+            "the agreements signed in the reference month; a renegotiation of "
+            "an existing loan is one of those agreements"
         ),
         "source": "ecb",
         "dataset": (
@@ -1100,15 +1110,40 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         "ref_period": aar_ref,
         "value_pct": aar[aar_ref],
         "series_by_period": aar,
+        # DATA_TYPE_MIR=R carries TWO concepts under one code, and the ECB's own
+        # codelist name says so: «Annualised agreed rate (AAR) / Narrowly
+        # defined effective rate (NDER)». Reg (EU) 1072/2013 lets each NCB pick
+        # — «Instead of the annualised agreed rate, NCBs may require their
+        # reporting agents to implement the narrowly defined effective rate» —
+        # and БНБ describe theirs only as «ефективни годишни проценти», which
+        # the ECB manual itself calls an ambiguous term. Both exclude charges
+        # and both annualise, so the annuity is fed the right KIND of rate
+        # either way; which of the two it is, is not something either publisher
+        # has written down.
         "rate_basis": (
-            "annualised agreed rate (AAR), new business, households and NPISH, "
-            "lending for house purchase, all initial rate-fixation periods — "
-            "this is the interest rate the monthly payment is computed from"
+            "the MIR rate excluding charges (DATA_TYPE_MIR=R — the ECB name "
+            "that code for the annualised agreed rate AND the narrowly defined "
+            "effective rate, and neither publisher says which of the two "
+            "Bulgaria reports), new business, households and NPISH, lending "
+            "for house purchase, all initial rate-fixation periods — this is "
+            "the interest rate the monthly payment is computed from"
         ),
         "aprc": {
+            # The APRC is the total cost of the CREDIT, not of the purchase,
+            # and the boundary is drawn by the two Directives it is defined in
+            # rather than by what a buyer pays out. The ECB's MIR manual lists
+            # it: interest, commissions, taxes and any other fees the consumer
+            # must pay in connection with the credit agreement «except for
+            # notarial costs», compulsory ancillary services such as insurance,
+            # and the valuation «but excluding registration fees for the
+            # transfer of ownership of the immovable property». A Bulgarian
+            # buyer pays the notary and the transfer registration, and neither
+            # is in this figure.
             "_role": (
-                "the same loans' all-in annual cost with fees included "
-                "(ГПР in Bulgarian) — what the loan really costs"
+                "the same agreements' total cost of credit (ГПР in Bulgarian) "
+                "— interest plus the charges the bank requires in order to "
+                "lend. The notary and the fee for registering the transfer of "
+                "ownership are outside it by the Directives that define it"
             ),
             "dataset": (
                 f"MIR {SERIES_KEYS['new_business_aprc_bgn']} spliced with "
@@ -1118,9 +1153,15 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
             "ref_period": aprc_ref,
             "value_pct": aprc[aprc_ref],
             "series_by_period": aprc,
+            # The counterparty sector is 2250 on this key exactly as it is on
+            # the AAR key beside it, and 2250 is «Households and non-profit
+            # institutions serving households (S.14 and S.15)». Naming only
+            # households on one of the two describes a narrower population than
+            # the series key asks for, in the file whose job is to say which
+            # series each figure came from.
             "rate_basis": (
                 "annual percentage rate of charge (APRC), new business, "
-                "households, lending for house purchase"
+                "households and NPISH, lending for house purchase"
             ),
         },
         "monthly_volume": {
@@ -1145,10 +1186,21 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
     }
 
     outstanding_stock = {
+        # Two boundaries a reader would not guess from «жилищни кредити», both
+        # БНБ's own. The purpose covers more than buying: «кредити, предоставени
+        # на домакинствата с цел инвестиране в жилища за собствено ползване или
+        # наем, включително за строителство и за подобрения на жилища» — so
+        # building and improving are inside it, while a consumer loan secured on
+        # a home is counted under consumption instead. And the stock leaves out
+        # «кредитите, които са необслужвани или преструктурирани с мерки, които
+        # … водят до снижаване на лихвения процент под пазарното ниво», so it is
+        # not an average over every household still repaying something.
         "_role": (
-            "what everyone already repaying a BG home loan averages, across "
-            "every vintage in the ~€18 bn book — NOT what a new borrower is "
-            "quoted today"
+            "what a housing loan already on the books averages, across every "
+            "vintage in the ~€18 bn book — NOT what a new borrower is quoted "
+            "today. БНБ's housing purpose covers building and improving a home "
+            "as well as buying one, and leaves out loans that are "
+            "non-performing or restructured below market rates"
         ),
         "source": "bnb",
         "dataset": (
@@ -1162,9 +1214,10 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         "book_volume_eur_m": bnb_volume.get(bnb_ref),
         "currency": "EUR",
         "rate_basis": (
-            "effective annual rate on the outstanding stock of EUR housing "
-            "loans to households — includes older vintages still being "
-            "amortised, so it moves slowly and lags new-business rates"
+            "annual rate on the outstanding stock of EUR housing loans to "
+            "households and NPISH, weighted by the balances at the end of the "
+            "month — includes older vintages still being amortised, so it "
+            "moves slowly and lags new-business rates"
         ),
         "methodology_change": BNB_METHODOLOGY_CHANGE_NOTE,
     }

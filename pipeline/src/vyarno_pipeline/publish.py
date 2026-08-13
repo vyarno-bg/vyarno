@@ -424,10 +424,11 @@ def write_mortgage_payload(
         source_url=new_business["source_url"],
         notes=(
             "BG mortgage panel. Two tiers: new_business (ECB MIR — what a "
-            "home loan costs if you sign one now; AAR plus APRC with fees) "
-            "and outstanding_stock (BNB — what everyone already repaying a "
-            "home loan averages). Both official and monthly. No scraped "
-            "offered-rate tier by design."
+            "home loan costs if you sign one now, over the agreements signed "
+            "in the month, a renegotiated existing loan among them; the rate "
+            "excluding charges plus the APRC with them) and outstanding_stock "
+            "(BNB — what a housing loan already on the books averages). Both "
+            "official and monthly. No scraped offered-rate tier by design."
         ),
     )
     payload["schema_version"] = "2.0"

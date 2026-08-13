@@ -385,11 +385,14 @@
               >
             {/if}
           </div>
-          <!-- The all-in cost of the same loans: APRC (ГПР), fees
-             included — the official monthly ЕЦБ answer to "what does
-             it really cost", rather than an advertised promotional
-             from-rate. Shown as a sub-caption so the cheaper
-             headline rate is never the only number on screen. -->
+          <!-- The total cost of the same credit: APRC (ГПР), the
+             charges the bank requires in order to lend included. An
+             official monthly ЕЦБ figure rather than an advertised
+             promotional from-rate, and the cost of the CREDIT rather
+             than of the purchase — the directives defining it exclude
+             notarial costs and the transfer-registration fee. Shown as
+             a sub-caption so the cheaper headline rate is never the
+             only number on screen. -->
           {#if calc.mortgageAprcData}
             <div class="hint" style="margin-top:2px">
               <span class="l-bg"
