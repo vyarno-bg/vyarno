@@ -474,6 +474,15 @@
 
   /** The rent line the calculator already publishes, read here rather than refetched. */
   const rent = $derived(marketRent(data.hicpCategories));
+  /**
+   * The scale the six city rows are drawn against, rounded out to round numbers.
+   *
+   * One scale across the six is what makes the rows comparable at all, and the
+   * rounding is what lets the column head label the ends: an axis running to
+   * «−30,5%» is the deepest fall a city happens to have this quarter, and it
+   * reads as a figure about that city rather than as the edge of the picture.
+   */
+  const cityNowAxis = $derived(niceTicks(cities.changeScale.min, cities.changeScale.max, 3));
 
   /**
    * Where the newest reading of each series sits inside that series' own range.
@@ -496,6 +505,18 @@
    */
   const RG_R = 3.5;
   const rangeX = (at) => RG_R + at * (RG_W - 2 * RG_R);
+
+  /**
+   * The city column's own box, and it is drawn in a different unit from the
+   * strip's on purpose.
+   *
+   * The range strip places ONE reading inside a record and needs room for a
+   * marker centred on the end of a line; this draws TWO bars from a shared zero
+   * and needs no inset at all — a bar at the extreme of the scale is meant to
+   * reach the edge, which is what a length read from a baseline means.
+   */
+  const NOW_W = 100,
+    NOW_H = 18;
 
   /** A strip row's figure, written the way the section it links to writes it. */
   const rangeValue = (row, value) => {
@@ -900,6 +921,65 @@
       />
     </svg>
   {/if}
+{/snippet}
+
+<!--
+  One city's quarter, as two bars from a common zero.
+
+  **Length from a shared baseline is the comparison a reader makes without being
+  taught it**, which is why this is two bars rather than two dots on a line: a
+  dot pair says where two figures are and leaves the reader to measure the gap
+  between them by eye, and the gap is a quantity nobody published. Each bar here
+  is one published cell drawn from zero, and the six rows are drawn on ONE scale
+  (`cities.changeScale`, rounded out to `niceTicks`), so the only comparison the
+  picture invites — this city against the next one — is the one it supports.
+
+  The two tones are the page's two series tones, the pair every chart key already
+  uses, and the column head names them. Zero is a rule through the full height
+  rather than a mark on a line, because on a column of signed changes the side of
+  it a bar falls on is the whole reading; the ticks either side of it are drawn
+  at the same values the head labels, so the bars sit against a scale rather than
+  against nothing.
+-->
+{#snippet cityNow(city, axis)}
+  {@const span = axis.max - axis.min || 1}
+  {@const xOf = (v) => ((v - axis.min) / span) * NOW_W}
+  {@const bar = (v) => ({
+    x: Math.min(xOf(0), xOf(v)),
+    // A change that rounds to nothing still gets a mark, for the reason the
+    // column charts floor their own height: a bar of zero width is a row that
+    // looks like missing data rather than like a city that did not move.
+    width: Math.max(0.8, Math.abs(xOf(v) - xOf(0))),
+  })}
+  {@const price = bar(city.pricePct)}
+  {@const deals = bar(city.dealsPct)}
+  <svg
+    class="now"
+    viewBox="0 0 {NOW_W} {NOW_H}"
+    preserveAspectRatio="none"
+    role="img"
+    aria-label={t(COPY.mktChartCityNow, $lang, {
+      city: $lang === "bg" ? city.nameBg : city.nameEn,
+      price: pct(city.pricePct),
+      deals: pct(city.dealsPct),
+      at: at(city.pricePeriod),
+    })}
+  >
+    {#each axis.values as value (value)}
+      {#if value !== 0}
+        <line class="now-grid" x1={xOf(value)} y1="0" x2={xOf(value)} y2={NOW_H} />
+      {/if}
+    {/each}
+    <rect class="now-price" x={price.x} y="1" width={price.width} height={NOW_H / 2 - 2} />
+    <rect
+      class="now-deals"
+      x={deals.x}
+      y={NOW_H / 2 + 1}
+      width={deals.width}
+      height={NOW_H / 2 - 2}
+    />
+    <line class="now-zero" x1={xOf(0)} y1="0" x2={xOf(0)} y2={NOW_H} />
+  </svg>
 {/snippet}
 
 <!--
@@ -2136,6 +2216,41 @@
               <th scope="col" class="num"
                 >{@render colHead(COPY.mktColDeals, cities.dealsPeriod)}</th
               >
+              <!-- NOT `.num`: this column holds a drawing rather than a figure,
+                   and the two figure columns are found by that class — they are
+                   the ones that have to carry a quarter in their head, because
+                   they come from two workbooks that are released separately. -->
+              <!-- The key lives IN the head, which is the only place it can:
+                   below the table it would sit between the table and its source
+                   line, and a citation that is not the next element leaves the
+                   table reading as uncited. It is also where the reader who
+                   needs it is already looking — two dots on a track name
+                   nothing on their own. -->
+              <th scope="col" class="now-col">
+                {@render colHead(COPY.mktColCityNow, null)}
+                <!-- The scale, once, in the head — the six rows share it, so it
+                     is a property of the column rather than of a row. Both ends
+                     and the zero between them: three labels is what 108px holds,
+                     and the exact figure for every row is in the two columns
+                     either side. -->
+                <span class="nowaxis" aria-hidden="true">
+                  <span>{pctAxis(cityNowAxis.min)}</span>
+                  <span>0</span>
+                  <span>{pctAxis(cityNowAxis.max)}</span>
+                </span>
+                <span class="keys">
+                  <span class="key one"
+                    ><span class="l-bg">{COPY.mktKeyCityPrice.bg}</span><span class="l-en"
+                      >{COPY.mktKeyCityPrice.en}</span
+                    ></span
+                  >
+                  <span class="key two"
+                    ><span class="l-bg">{COPY.mktKeyCityDeals.bg}</span><span class="l-en"
+                      >{COPY.mktKeyCityDeals.en}</span
+                    ></span
+                  >
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -2179,6 +2294,27 @@
                       <span class="l-bg">{periodLong(c.dealsPeriod, "bg")}</span>
                       <span class="l-en">{periodLong(c.dealsPeriod, "en")}</span>
                     </small>
+                  {/if}
+                </td>
+                <!-- The two figures already in the row, drawn on one track.
+                     What the numbers cannot do is let a reader compare six
+                     cities at a glance — and the thing worth comparing here is
+                     the GAP between the two marks, which is the same divergence
+                     §volume draws for the country and the only place on the page
+                     it exists city by city.
+
+                     **A row whose two cells are not from the same quarter draws
+                     nothing.** Two marks on one track assert they describe one
+                     quarter; the columns either side may disagree and say so in
+                     their own cells, and a picture has nowhere to put that. An
+                     em dash is the honest cell — `view/market.js` decides,
+                     because a template comparing the periods itself is a claim
+                     no test would reach. -->
+                <td class="now-col">
+                  {#if c.comparable}
+                    {@render cityNow(c, cityNowAxis)}
+                  {:else}
+                    <span class="mono">—</span>
                   {/if}
                 </td>
               </tr>
@@ -3314,12 +3450,37 @@
     border-bottom: 1px solid var(--rule);
     vertical-align: baseline;
   }
+  /* **The head is separated from the data by a real rule, not by the same
+     hairline every row carries.** `--rule` is a ledger line at 5% ink and it
+     divides row from row; used for the head as well it made a column label and
+     the first cell under it one continuous list, and the place that showed
+     worst is where the cell below is a PICTURE — «всяко тримесечие от Q1 2015»
+     sat directly on the first sparkline with nothing between them, so the
+     caption read as part of the drawing. `--line` is the border the site's own
+     cards and header are drawn with, and two pixels of it at the foot of the
+     head says where the table's data starts. */
   .fig-table thead th {
     font-weight: 600;
     color: var(--muted);
     font-size: var(--fs-micro);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--line);
+  }
+  /* …and a column of pictures is a panel rather than a column of cells. The
+     rule down its left edge is what makes a sparkline or a bar chart read as
+     something drawn INSIDE a cell — without it the marks float between two
+     columns of figures and belong to neither. Padded either side so nothing is
+     drawn against the border. */
+  .fig-table .spark-col,
+  .fig-table .now-col {
+    border-left: 1px solid var(--rule);
+    padding-left: 12px;
+  }
+  .fig-table thead .spark-col,
+  .fig-table thead .now-col {
+    border-left: 1px solid var(--line);
   }
   .fig-table tbody th {
     font-weight: 500;
@@ -3528,8 +3689,15 @@
   .pair .plot {
     grid-template-columns: 5.5ch minmax(0, 1fr);
   }
+  /* The panel label is separated from its own plot the same way the table's
+     head is separated from its cells: a rule, so the words read as a caption
+     ABOUT the box rather than as the top line of it. It runs the full measure
+     rather than stopping at the plot's left edge, because the label belongs to
+     the whole panel — the axis in the gutter included. */
   .pair .panel {
     margin-top: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
     font-family: var(--mono);
     font-size: var(--fs-micro);
     color: var(--muted);
@@ -3727,9 +3895,65 @@
   .spark .plot-ref {
     stroke-width: 1;
   }
-  .fig-table .spark-col {
+  .fig-table .spark-col,
+  .fig-table .now-col {
     width: 108px;
     padding-right: 12px;
+  }
+  /* The two marks of one city's quarter. Round, the size the range strip's are,
+     and in the page's two series tones — the same pair the chart keys name, so
+     a reader meeting a solid accent dot has already been told what it is. */
+  .now-price {
+    fill: var(--real);
+  }
+  .now-deals {
+    fill: var(--ink-2);
+  }
+  /* Zero, on a column whose whole reading is which side of it a bar falls. Drawn
+     LAST, so it sits on top of a bar that crosses it rather than under one, and
+     stronger than the ticks either side: it is what the bars are read from, not
+     one more gridline. */
+  .now-zero {
+    stroke: var(--muted);
+    stroke-width: 1;
+  }
+  .now-grid {
+    stroke: var(--rule);
+    stroke-width: 1;
+  }
+  /* `preserveAspectRatio="none"` is safe here for the reason it is on the census
+     bar and nowhere else: this box draws horizontal lengths and vertical rules
+     only, so stretching it distorts nothing that carries a value. It buys a row
+     18px tall at every table width instead of one that shrinks with the column.
+     */
+  .now {
+    width: 108px;
+    height: 20px;
+    display: block;
+  }
+  /* Both ends of the shared scale and the zero between them, under the head. */
+  .fig-table .nowaxis {
+    display: flex;
+    justify-content: space-between;
+    width: 108px;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--muted);
+  }
+  /* The key to that column, laid out as a chart's figcaption is, inside the
+     head it belongs to. Lower case and unemphasised against the head above it:
+     it names two marks, it is not a second column heading. */
+  .fig-table .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+    margin-top: 4px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
   }
   .plot-axis {
     stroke: var(--muted);

@@ -724,6 +724,50 @@ test("the six city sparklines are drawn against one shared scale", () => {
   assert.equal(cities.priceScale.max, Math.max(0, ...cities.cities.map((c) => c.priceSeries.max)));
 });
 
+test("a city's two changes are drawable only when they describe one quarter", () => {
+  // The table prints the two figures in two columns whatever their quarters
+  // are, because each column carries its own and a cell behind its column says
+  // so. A picture cannot: two marks on one track assert one quarter, and the
+  // two НСИ workbooks are released separately — so the wiring decides, and a
+  // template cannot make the claim on its own.
+  const nsi = read("nsi_housing");
+  if (!nsi) return; // no refresh in this checkout
+
+  const cities = marketCities(nsi);
+  for (const city of cities.cities) {
+    assert.equal(
+      city.comparable,
+      Boolean(city.pricePeriod) && city.pricePeriod === city.dealsPeriod,
+      `${city.code} is marked comparable against ${city.pricePeriod} and ${city.dealsPeriod}`
+    );
+  }
+
+  // The shared scale covers every mark the column can draw and contains zero,
+  // which is the whole reading: which side of it each figure sits on.
+  const drawn = cities.cities.flatMap((c) => [c.pricePct, c.dealsPct]).filter(Number.isFinite);
+  assert.ok(drawn.length >= 6, `${drawn.length} city figures to place`);
+  assert.ok(cities.changeScale.min <= Math.min(...drawn));
+  assert.ok(cities.changeScale.max >= Math.max(...drawn));
+  assert.ok(cities.changeScale.min <= 0 && cities.changeScale.max >= 0);
+
+  // A city whose two files are a quarter apart is not comparable, whichever
+  // side is behind. Built from the payload's own rows so the case is real
+  // rather than invented, and asserted in both directions.
+  const one = nsi.city_price_index_yoy.cities[0];
+  const behind = {
+    ...nsi,
+    city_deals_yoy: {
+      ...nsi.city_deals_yoy,
+      cities: nsi.city_deals_yoy.cities.map((c) =>
+        c.code === one.code ? { ...c, ref_period: "1999-Q1" } : c
+      ),
+    },
+  };
+  const parted = marketCities(behind).cities.find((c) => c.code === one.code);
+  assert.equal(parted.comparable, false, "a city whose two workbooks disagree is still drawn");
+  assert.equal(parted.pricePct, one.value_pct, "the figures themselves stop being published");
+});
+
 test("the range strip places every row against its own published extremes", () => {
   // The strip at the top of `/market/` says where the newest reading of each
   // series sits inside that series' own record. Two things make that claim
