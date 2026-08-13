@@ -1640,13 +1640,17 @@
       <p>
         <span class="l-bg"
           >НСИ публикува същото движение и за шестте града с над 120 000 жители, а до него — с колко
-          се е променил броят на сделките там. Двете колони са промени, а не нива. Лявата казва с
-          колко са се променили цените на сделките, не колко струва едно жилище.</span
+          се е променил броят на сделките там. Всяко число тук е промяна спрямо същото тримесечие
+          година по-рано — не ниво и не натрупване от началото на редицата. Графиката в средата
+          показва същото това число за всяко тримесечие поотделно. Лявата колона казва с колко са се
+          променили цените на сделките, не колко струва едно жилище.</span
         >
         <span class="l-en"
           >НСИ publish the same movement for the six cities over 120,000 people, and beside it how
-          much the number of sales there changed. Both columns are changes rather than levels. The
-          left one is how much transaction prices moved, not what anything costs.</span
+          much the number of sales there changed. Every figure here is a change on the same quarter
+          a year earlier — not a level, and not a total accumulated from the start of the series.
+          The chart in the middle shows that same figure for each quarter on its own. The left
+          column is how much transaction prices moved, not what anything costs.</span
         >
       </p>
 
