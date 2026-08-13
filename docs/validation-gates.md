@@ -258,11 +258,8 @@ like a percentage:
   points);
 - owners-with-a-loan is a subset of owners;
 - occupied plus unoccupied does not exceed the dwelling stock;
-- price-to-income is on `PTIR_LT_AVG` and no other unit. `PTIR_I15` would make
-  the page's sentence about a country's own long-run average false while
-  rendering a perfectly ordinary index.
 
-**Gate 6 runs over the eight published `api_url`s**, body-checked. Those are the
+**Gate 6 runs over the seven published `api_url`s**, body-checked. Those are the
 queries the page links for "check it yourself", so a dead one costs the page its
 argument rather than a footnote. It is the `api_url`s rather than the databrowser
 pages because Eurostat answer a rate-limited or malformed query with 200 OK and

@@ -10,12 +10,12 @@
    *
    * THE PAGE TAKES NO VIEW ON THE MARKET, and that is a design constraint
    * rather than a tone. Some of these figures point one way and some the other
-   * — prices rising while transactions fall, a price-to-income ratio below its
-   * own long-run average while rent inflation runs ahead of the headline — and
-   * the page's job is to put them where a reader can see all of them at once.
-   * It gives the ratio and stops. `verify_copy.mjs` holds it to that with a
-   * vocabulary rule, because "describe, do not advise" is easy to agree with
-   * and easy to lose one adjective at a time.
+   * — prices rising while transactions fall, rent inflation running ahead of
+   * the headline while the share of people over the housing-cost line sits near
+   * its own low — and the page's job is to put them where a reader can see all
+   * of them at once. It gives the figures and stops. `verify_copy.mjs` holds it
+   * to that with a vocabulary rule, because "describe, do not advise" is easy
+   * to agree with and easy to lose one adjective at a time.
    *
    * WHERE A NUMBER COMES FROM IS PART OF THE NUMBER. Under every digit: the
    * publisher, the period, and a link. Where the figure is ours rather than
@@ -45,7 +45,6 @@
     marketCities,
     marketNsiNationalRate,
     marketVolumeSeries,
-    marketPriceToIncomeSeries,
     marketPriceIndexSeries,
     marketPriceRateSeries,
     marketVolumeAgainstPrices,
@@ -200,7 +199,6 @@
    */
   const sameQuarter = $derived(String(volumeSeries.to ?? "").slice(-2));
   const isSameQuarter = (period) => Boolean(sameQuarter) && String(period).endsWith(sameQuarter);
-  const ptiSeries = $derived(marketPriceToIncomeSeries(data.houseMarketStructure));
 
   /**
    * The plot box, and the mapping from a published figure to a coordinate in it.
@@ -2907,141 +2905,29 @@
       <span class="l-bg">Скъпо ли е спрямо доходите</span>
       <span class="l-en">Expensive against incomes?</span>
     </h2>
+    <!-- The section answers its own heading with ONE indicator, and which one
+         is a judgement about what a reader can use. Eurostat also publish a
+         price-to-income ratio for Bulgaria and this page drew it: a line, a rule
+         at 100, and three paragraphs saying why none of the obvious readings of
+         it hold — it stops two years behind everything else here, its
+         denominator is a per-head income falling with the population throughout,
+         and the 100 it is measured against is recomputed with every edition, so
+         every earlier point moves without its year changing. A figure that needs
+         all three said before it may be used is one a reader cannot take away,
+         and it sat under a heading promising an answer. The cube is still
+         published and still gated; nothing on the page reads it. -->
     <p>
       <span class="l-bg"
-        >Цената сама по себе си не казва много: тя зависи и от това колко печелят хората. Затова
-        Евростат дели едното на другото. «Доход» тук не е заплата, а всичко, което остава на
-        домакинствата след данъци и осигуровки, разделено на всички хора в страната. 100 значи
-        «колкото средно е било в България през тези години»: под 100 жилищата вземат по-малка част
-        от дохода, над 100 — по-голяма. Мерилото е миналото на самата България, а не друга държава,
-        и редът мери страната, не нечий бюджет.</span
+        >Цената сама по себе си не казва много: тя зависи и от това колко печелят хората. Числото
+        отдолу мери точно това — не цената на едно жилище, а колко хора дават за жилище повече,
+        отколкото домакинството им може да носи.</span
       >
       <span class="l-en"
-        >A price on its own says little: it depends on what people earn as well. So Eurostat divide
-        one by the other. "Income" here is not a wage but everything households are left with after
-        tax and contributions, divided by everyone in the country. 100 means "about what it averaged
-        in Bulgaria over those years": below 100 homes take a smaller part of income, above 100 a
-        larger one. The yardstick is Bulgaria's own past rather than another country, and the series
-        measures the country rather than anyone's budget.</span
+        >A price on its own says little: it depends on what people earn as well. The figure below
+        measures exactly that — not what one home costs, but how many people pay more for housing
+        than their household can carry.</span
       >
     </p>
-    {@render howMade({
-      bg:
-        `Самото число от делението е неудобно за четене, затова Евростат го записва спрямо ` +
-        `собствената му средна стойност за целия ред. В дохода влизат и услугите, които държавата ` +
-        `плаща вместо домакинствата.`,
-      en:
-        `The number that division gives is an awkward one to read, so Eurostat write it against ` +
-        `its own average across the whole series. The income counts the services the state pays ` +
-        `for on a household's behalf as well.`,
-    })}
-
-    {#if ptiSeries.points.length > 4}
-      <!-- The one figure on the page whose meaning is hard to state and easy to
-           show. The rule at 100 is the whole indicator, so the axis is built to
-           include it: a plot cropped to the data would leave its own reference
-           off the top in the years the ratio ran above it, which is every year
-           from 2004 to 2010. Zero-based for the same reason the volume chart
-           is. -->
-      {@const ptiAxis = niceTicks(ptiSeries.min, ptiSeries.max, 4)}
-      <figure class="chart">
-        <div class="plot">
-          {@render yAxis(
-            ptiAxis.values.map((v) => ({ at: tickAt(v, ptiAxis), label: v === 0 ? "0" : fmt0(v) }))
-          )}
-          <svg
-            class="pane"
-            viewBox="0 0 {CH_W} {CH_H}"
-            role="img"
-            aria-label={t(COPY.mktChartPti, $lang, {
-              from: at(ptiSeries.from),
-              to: at(ptiSeries.to),
-              peak: fmt(ptiSeries.peak?.value),
-              peakAt: at(ptiSeries.peak?.period),
-              last: fmt(ptiSeries.latest?.value),
-            })}
-          >
-            {@render gridlines(ptiAxis, ptiSeries.reference)}
-            {@render yearRules(xTicks(ptiSeries))}
-            <line
-              class="plot-ref"
-              x1="0"
-              y1={yOf(ptiSeries.reference, ptiAxis)}
-              x2={CH_W}
-              y2={yOf(ptiSeries.reference, ptiAxis)}
-            />
-            <path class="plot-line" d={pathOf({ ...ptiSeries, ...ptiAxis })} />
-            {@render dots({ ...ptiSeries, ...ptiAxis }, (v) => fmt(v))}
-            <line class="plot-axis" x1="0" y1={yOf(0, ptiAxis)} x2={CH_W} y2={yOf(0, ptiAxis)} />
-          </svg>
-          {@render xYears(xTicks(ptiSeries))}
-        </div>
-        <figcaption>
-          <span class="l-bg">{COPY.mktChartRefLine.bg}</span>
-          <span class="l-en">{COPY.mktChartRefLine.en}</span>
-        </figcaption>
-      </figure>
-      <!-- Under the CHART rather than with the other qualifications below,
-           because this one is about the rule the reader is looking at. The 100
-           line is the series' own average, the years the ratio ran highest are
-           inside that average, and without those two facts a reading under the
-           rule is taken as "housing has never taken less of an income" — which
-           the series does not say and cannot be made to say.
-
-           Above the source line and not below it, because the line below cites
-           the disclosure as well as the chart: `verify_render_market.mjs` walks
-           back from a numbers table to the element before it, so a paragraph
-           between the two leaves that table reading as uncited. -->
-      <p class="cap">
-        <span class="l-bg"
-          >Линията на 100 е средното за целия ред, а в него влизат и годините с най-високо
-          съотношение. Те вдигат средното, така че «под 100» отчасти значи «под тях».</span
-        >
-        <span class="l-en"
-          >The line at 100 is the average over the whole series, and the years the ratio ran highest
-          are inside that average. They pull it up, so "below 100" partly means "below those".</span
-        >
-      </p>
-      <p class="ss tsrc">
-        {@render srcLine(
-          COPY.srcEurostat,
-          ptiSeries.sourceUrl,
-          spanned(ptiSeries),
-          ptiSeries.apiUrl
-        )}
-      </p>
-      {@render numbersTable(
-        countLabel(COPY.mktOpenYears, ptiSeries.points.length),
-        COPY.mktTblPtiNumbers,
-        [COPY.mktColRatio],
-        rowsOf(ptiSeries),
-        (v) => fmt(v)
-      )}
-      <!-- Three reasons a reading of this series must not be taken at face
-           value, and all three are load-bearing: the date it stops at, the
-           denominator that shrinks under it, and the reference that moves. They
-           are ONE paragraph because they share that job — three quiet blocks in
-           a column are read as three things to skip, and a qualification nobody
-           reads has the same effect on a reader as one nobody wrote. -->
-      <p class="cap">
-        <span class="l-bg"
-          >Този ред спира на {periodLong(ptiSeries.to, "bg")} г., докато другите числа на страницата са
-          за {periodLong(priceRate.period, "bg")}: показателят излиза веднъж годишно. Доходът, с
-          който се сравнява цената, е на човек, а хората в страната намаляват през целия период —
-          затова той расте и когато общата сума не расте. А средното, спрямо което се мери, се
-          пресмята наново при всяко издание: излезе ли нова година, всички предишни точки се
-          разместват, без годината им да се променя.</span
-        >
-        <span class="l-en"
-          >This series stops at {periodLong(ptiSeries.to, "en")} while the other figures on the page are
-          for {periodLong(priceRate.period, "en")}: the indicator comes out once a year. The income
-          the price is compared against is per head, and the country's population falls throughout
-          the period — so it rises even when the total does not. And the average it is measured
-          against is worked out afresh with every edition: when a new year is added, every earlier
-          point shifts without its year changing.</span
-        >
-      </p>
-    {/if}
 
     <!-- Twenty years of the overburden share, which was one number ------- -->
     {#if overburdenSeries.points.length > 4}
@@ -3055,7 +2941,7 @@
            the same series a card would have repeated. -->
       <p>
         <span class="l-bg"
-          >Другото официално число брои хората, които живеят в домакинство, даващо над 40% от
+          >Официалното число брои хората, които живеят в домакинство, даващо над 40% от
           разполагаемия си доход за жилище; процентът е дял от хората в частни домакинства{#if overburdenSeries.value != null},
             а за {periodLong(overburdenSeries.refPeriod, "bg")} е {fmt(
               overburdenSeries.value
@@ -3065,8 +2951,8 @@
           се движи най-вече от сметките, а не от цените на сделките.</span
         >
         <span class="l-en"
-          >The other official figure counts people living in a household that spends more than 40%
-          of its disposable income on housing; the percentage is a share of the people in private
+          >The official figure counts people living in a household that spends more than 40% of its
+          disposable income on housing; the percentage is a share of the people in private
           households{#if overburdenSeries.value != null}, and for {periodLong(
               overburdenSeries.refPeriod,
               "en"
@@ -3133,12 +3019,12 @@
 
     <p class="cap">
       <span class="l-bg"
-        >Двете числа в този раздел мерят различни неща и не сочат непременно в една посока. Наемите
-        са при <a href="#credit">таблицата кой как живее</a>.</span
+        >Наемите са при <a href="#credit">таблицата кой как живее</a>, а цените на самите жилища —
+        при <a href="#prices">колко струва</a>.</span
       >
       <span class="l-en"
-        >The two figures in this section measure different things and need not point the same way.
-        Rents are beside <a href="#credit">the table of how people live</a>.</span
+        >Rents are beside <a href="#credit">the table of how people live</a>, and the price of the
+        homes themselves is under <a href="#prices">what it costs</a>.</span
       >
     </p>
   </section>

@@ -217,12 +217,12 @@ export function marketStructure(structure) {
         "occupants were counted elsewhere are all inside it.",
       derivedFrom: census?.api_url ? [census.api_url] : null,
     }),
-    // Price-to-income and the overburden share are NOT here, and their absence
-    // is the wiring saying where they belong. Both are read as series
-    // (`marketPriceToIncomeSeries`, `marketOverburdenSeries`), each of which
-    // carries its own newest reading and period — so a page drawing the chart
-    // and quoting the latest figure takes both from one call and cannot caption
-    // a chart with a period the number beside it does not share.
+    // The overburden share is NOT here, and its absence is the wiring saying
+    // where it belongs. It is read as a series (`marketOverburdenSeries`),
+    // which carries its own newest reading and its own period — so a page
+    // drawing the chart and quoting the latest figure takes both from one call
+    // and cannot caption a chart with a period the number beside it does not
+    // share.
   };
 }
 
@@ -837,32 +837,6 @@ export function marketRent(hicpCategories) {
 }
 
 /**
- * Price-to-income against its own long-run average, as a series.
- *
- * The one figure on the page whose meaning is genuinely hard to state in a
- * sentence and trivial to show: a line, a rule at 100, and where the reading
- * sits against its own history is answered without a paragraph.
- *
- * `reference` is 100 by construction — it is what `PTIR_LT_AVG` indexes against.
- *
- * @param {object|null} structure
- */
-export function marketPriceToIncomeSeries(structure) {
-  const block = structure?.price_to_income ?? null;
-  return {
-    ...sourcedSeries(block?.series_by_period, block, {
-      reference: 100,
-      // The unit is the whole claim: only PTIR_LT_AVG indexes the ratio against
-      // this country's own long-run average, and a caller drawing a rule at 100
-      // over any other unit has drawn a line through nothing.
-      unit: block?.unit ?? null,
-    }),
-    value: Number.isFinite(block?.value) ? block.value : null,
-    refPeriod: block?.ref_period ?? null,
-  };
-}
-
-/**
  * The fewest points a series needs before the page will place a reading in it.
  *
  * Five, which is the gate every chart on `/market/` already draws behind. A
@@ -910,8 +884,8 @@ const RANGE_ROWS = Object.freeze(
  * **Where today's reading sits inside each published series' own range.**
  *
  * The page answers four questions at the top and then spends six sections and
- * six charts on the working, and a reader who wants the whole picture at once
- * has to read all six. This is that picture: one line per series, each saying
+ * eight charts on the working, and a reader who wants the whole picture at once
+ * has to read all of it. This is that picture: one line per series, each saying
  * how far along its own record the newest reading is — and nothing else.
  *
  * **IT POSITIONS AND IT DOES NOT SCORE.** There is no weighting, no total, and
@@ -931,23 +905,12 @@ const RANGE_ROWS = Object.freeze(
  * thing six times. `peak` and `trough` are the highest and lowest readings the
  * publisher has actually printed, which is what "inside its own range" means.
  *
- * **`price_to_income` is deliberately NOT here, and the reason is the one thing
- * this strip cannot draw.** Every value in a row above reads on its own — a
- * count, «×2,7», «+14,8%», «6,9%» — so the position beside it adds a second
- * fact. `PTIR_LT_AVG` is not a level: Eurostat publish it as an index where
- * **100 is Bulgaria's own long-run average of the ratio**, so «67,8» means
- * nothing at all without that 100, and the track has no room to mark it. A dot
- * at the left end of a line labelled «цена спрямо доходите», with the reference
- * it is defined against nowhere on the row, reads as "housing has never been
- * more affordable" — a verdict, on the indicator whose own section spends two
- * paragraphs on why it may not be read that way: the denominator is the whole
- * population's income including pensions and benefits, divided by a population
- * that has fallen throughout the period, and the average it is measured against
- * is pulled up by the years the ratio was at its highest.
- *
- * `#ratio` draws it whole, with the rule at 100 on the plot — which is exactly
- * the mark `marketPriceToIncomeSeries` passes a `reference` for, and exactly
- * what a one-line row has nowhere to put.
+ * **A series whose VALUE does not read on its own does not get a row**, whatever
+ * else recommends it. Every figure in a row here stands alone — a count, «×2,7»,
+ * «+14,8%», «6,9%» — so the position beside it adds a second fact. An index
+ * defined against a reference the row has nowhere to print reads as a verdict
+ * instead: a dot at one end of a labelled line, with the level it is measured
+ * from nowhere on it.
  *
  * **A row that cannot be placed is absent rather than empty.** A series with
  * fewer than `RANGE_MIN_POINTS` readings, a payload that failed to fetch, a
@@ -968,7 +931,6 @@ export function marketRangeStrip(houseMarket, structure) {
     index: nominal,
     indexReal: real,
     rate: marketPriceRateSeries(houseMarket),
-    pti: marketPriceToIncomeSeries(structure),
     overburden: marketOverburdenSeries(structure),
   };
 

@@ -231,8 +231,8 @@ def _month_before(period: str) -> str:
         "shape (Eurostat SES; the browser re-levels it onto NSI's national "
         "all-activities average). "
         "'house-market' pulls the three quarterly Eurostat property cubes "
-        "(dwellings sold, what was paid, the house price index) plus the four "
-        "structure cubes (tenure, the census dwelling stock, price-to-income, "
+        "(dwellings sold, what was paid, the house price index) plus the three "
+        "structure cubes (tenure, the census dwelling stock, "
         "housing-cost overburden) and writes BOTH house_market.json and "
         "house_market_structure.json — one arm, two files, because "
         "refresh.yml matches payload stems against the --source name. "
@@ -1267,7 +1267,7 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
             f"  got {len(count.rows)} count rows, {len(value.rows)} value rows, "
             f"{len(index.rows)} index rows, {len(real_index.rows)} deflated rows"
         )
-        click.echo("→ fetching tenure, census stock, price-to-income, overburden...")
+        click.echo("→ fetching tenure, census stock, overburden...")
         structure = fetch_housing_structure_bg(geo=geo)
         click.echo(f"  got {sum(len(c.rows) for c in structure.values())} structure rows")
     except httpx.HTTPError as e:
@@ -1300,12 +1300,11 @@ def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: dat
                     payload["price_index_real"]["api_url"],
                     structure_payload["tenure"]["api_url"],
                     structure_payload["census_dwellings"]["api_url"],
-                    structure_payload["price_to_income"]["api_url"],
                     structure_payload["housing_cost_overburden"]["api_url"],
                 ],
                 _is_real_estat_cube,
             )
-            click.echo("  gate: all eight published api_urls return a real cube")
+            click.echo("  gate: all seven published api_urls return a real cube")
     except ValidationError as e:
         click.echo(f"ERROR: validation failed: {e}", err=True)
         sys.exit(3)

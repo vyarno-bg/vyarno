@@ -2179,8 +2179,9 @@ export const COPY = {
   // «×N» whose base is stated on the card beside it reads correctly only while
   // the two stay adjacent, and it is the second card that a reader quotes — the
   // deflated figure is the one nobody else in Bulgaria publishes with a source
-  // attached. A multiple with no anchor named is the mild form of the reason
-  // price-to-income is off the range strip entirely (view/market.js#marketRangeStrip).
+  // attached. A multiple with no anchor named is the mild form of what keeps a
+  // figure off the range strip: a value that does not read on its own
+  // (view/market.js#marketRangeStrip).
   mktKTimesReal: {
     bg: "толкова пъти повече от {year} г., след като се извади поскъпването на всичко останало",
     en: "that many times more than in {year}, once the rise in everything else is taken out",
@@ -2332,7 +2333,6 @@ export const COPY = {
   mktColSold: { bg: "Продадени жилища", en: "Dwellings sold" },
   mktColAvgNew: { bg: "Ново, средно", en: "New, average" },
   mktColAvgExisting: { bg: "Съществуващо, средно", en: "Existing, average" },
-  mktColRatio: { bg: "Спрямо средното за периода", en: "Against the period's average" },
   mktTblIndexNumbers: {
     bg: "Индекс на цените на жилищата по тримесечия",
     en: "House price index by quarter",
@@ -2352,10 +2352,6 @@ export const COPY = {
   mktTblOverburdenNumbers: {
     bg: "Дял на хората с разходи за жилище над 40% от разполагаемия доход, по години",
     en: "Share of people spending over 40% of disposable income on housing, by year",
-  },
-  mktTblPtiNumbers: {
-    bg: "Цени спрямо доходите по години",
-    en: "Prices against incomes by year",
   },
   mktTblCityNumbers: {
     bg: "Годишна промяна на цените по градове и тримесечия",
@@ -2554,14 +2550,6 @@ export const COPY = {
   mktChartVolume: {
     bg: "Брой продадени жилища по тримесечия, от {from} до {to}. Най-много са {peak} през {peakAt}, а през {to} — {last}.",
     en: "Dwellings sold per quarter, {from} to {to}. The highest is {peak} in {peakAt}; in {to} it is {last}.",
-  },
-  mktChartPti: {
-    bg: "Цени спрямо доходите по години, от {from} до {to}, срещу средното за самия ред, отбелязано със 100. Най-високо {peak} през {peakAt}, а за {to} — {last}.",
-    en: "Prices against incomes by year, {from} to {to}, against the series' own average marked at 100. The highest is {peak} in {peakAt}; for {to} it is {last}.",
-  },
-  mktChartRefLine: {
-    bg: "100 = средното за България за целия ред",
-    en: "100 = Bulgaria's own average across the whole series",
   },
 
   // The six-city table's column heads and its accessible name. Short, because
