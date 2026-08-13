@@ -2273,8 +2273,9 @@ export const COPY = {
   mktRangeDeals: { bg: "продадени жилища", en: "dwellings sold" },
   // The two price rows are the same measurement twice, so the pair has to read
   // as a pair: the second is the first with the rise in everything else taken
-  // out. «в парите на деня» carries that only for a reader who has already read
-  // the paragraph it comes from — as a label on its own it names nothing.
+  // out. A term of art in either half breaks that — a label on a strip is read
+  // with nothing around it, so it may not depend on a paragraph elsewhere on
+  // the page having been read first.
   mktRangeIndex: { bg: "цените на сделките", en: "transaction prices" },
   mktRangeIndexReal: {
     bg: "цените на сделките, без поскъпването на всичко останало",
@@ -2364,8 +2365,8 @@ export const COPY = {
   // read a number and told nothing; «два цяло и седем пъти повече, отколкото
   // през две хиляди и петнайсета» is the same cell and is a sentence.
   mktChartIndex: {
-    bg: "Колко пъти по-скъпи са жилищата спрямо {base} г., по тримесечия от {from} до {to}. В парите от деня: най-ниско ×{low} през {lowAt}, най-високо ×{peak} през {peakAt}, а за {to} — ×{last}. Без поскъпването на всичко останало: най-високо ×{realPeak} през {realPeakAt}, а за {to} — ×{realLast}.",
-    en: "How many times dearer homes are than in {base}, by quarter from {from} to {to}. In the money of the day: the lowest is ×{low} in {lowAt}, the highest ×{peak} in {peakAt}, and for {to} it is ×{last}. With the rise in everything else taken out: the highest is ×{realPeak} in {realPeakAt}, and for {to} it is ×{realLast}.",
+    bg: "Колко пъти по-скъпи са жилищата спрямо {base} г., по тримесечия от {from} до {to}. Повече пари: най-ниско ×{low} през {lowAt}, най-високо ×{peak} през {peakAt}, а за {to} — ×{last}. По-скъпо от всичко друго: най-високо ×{realPeak} през {realPeakAt}, а за {to} — ×{realLast}.",
+    en: "How many times dearer homes are than in {base}, by quarter from {from} to {to}. More money: the lowest is ×{low} in {lowAt}, the highest ×{peak} in {peakAt}, and for {to} it is ×{last}. Dearer than everything else: the highest is ×{realPeak} in {realPeakAt}, and for {to} it is ×{realLast}.",
   },
   mktChartRate: {
     bg: "Годишна промяна на цените на жилищата по тримесечия, от {from} до {to}. Най-силен спад {low} през {lowAt}, най-силно поскъпване {peak} през {peakAt}; за {to} — {last}.",
@@ -2391,10 +2392,23 @@ export const COPY = {
   // reader can repeat to somebody else, which is the test this page is written
   // to. The column head is short because it heads a column; the paragraph above
   // the chart is where the idea is taught.
-  mktKeyNominal: { bg: "в парите от деня", en: "in the money of the day" },
+  // **A key says what its line counts, in words a reader needs no paragraph to
+  // decode.** The economists' name for the first is a nominal index, «в парите
+  // от деня», and the phrase teaches nobody — it is a fixed expression whose
+  // parts do not add up, and a reader who has not met it reads past the chart
+  // rather than asking. What the line actually counts is money handed over.
+  //
+  // The pair has to be a pair, and «повече» in both halves is what makes it
+  // one: more money against dearer-than-everything-else. That is also the whole
+  // distinction — the price rose 2.7 times while money itself buys less, so
+  // against the rest of a household's spending the rise is smaller. A key
+  // naming the operation instead («без поскъпването на всичко останало») says
+  // what was DONE to the line rather than what it now measures, which leaves a
+  // reader holding a subtraction and no result.
+  mktKeyNominal: { bg: "повече пари", en: "more money" },
   mktKeyReal: {
-    bg: "без поскъпването на всичко останало",
-    en: "with the rise in everything else taken out",
+    bg: "по-скъпо от всичко друго",
+    en: "dearer than everything else",
   },
   // **Not «Без инфлацията».** On this site "inflation" is a specific published
   // series — the HICP the whole calculator is built on — and Eurostat deflate
