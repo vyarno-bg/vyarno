@@ -257,8 +257,36 @@ test(
       return Math.min(...drawn) / Math.max(...drawn);
     };
 
+    // The count's year-on-year change, worked out here rather than imported —
+    // a test that called the wiring's own function would agree with it however
+    // wrong both were. Read off the LABEL a year back, which is the property
+    // `verify_mirror_math.mjs` holds from the other side.
+    const counts = market.deals.series_by_period;
+    const yoy = {};
+    for (const period of Object.keys(counts).sort()) {
+      const [year, quarter] = period.split("-");
+      const before = counts[`${Number(year) - 1}-${quarter}`]?.total;
+      if (Number.isFinite(before) && before !== 0) {
+        yoy[period] = ((counts[period].total - before) / before) * 100;
+      }
+    }
+    // The two panels are drawn over the quarters they SHARE, so the price panel
+    // is a slice of the published rate rather than the whole record.
+    const shared = Object.keys(yoy).filter((p) =>
+      Number.isFinite(market.price_index.annual_rate_pct[p]?.total)
+    );
+    const pairPrice = shared.map((p) => market.price_index.annual_rate_pct[p].total);
+
     const expected = [
       ["dwellings sold", ratioOf(col(market.deals.series_by_period, "total"))],
+      [
+        "the change in dwellings sold",
+        ratioOf(
+          shared.map((p) => yoy[p]),
+          0
+        ),
+      ],
+      ["prices over the same quarters", ratioOf(pairPrice, 0)],
       // Both index lines share one scale, so the nominal line's extremes are
       // drawn against whichever of the two maxima is larger.
       [
@@ -620,8 +648,24 @@ test("the range strip puts every marker where the published figures put it", { s
   const col = (rows, f) =>
     Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, f ? r[f] : r]));
 
+  // The count is placed twice: once as a level, and once as the change against
+  // the same quarter a year earlier. The second row exists because the first
+  // one carries the calendar — transactions peak in fourth quarters, so a
+  // first-quarter reading sits low in its own record whatever the market is
+  // doing, and the marker moves with the month of the year.
+  const yoy = {};
+  const counts = market.deals.series_by_period;
+  for (const period of Object.keys(counts).sort()) {
+    const [year, quarter] = period.split("-");
+    const before = counts[`${Number(year) - 1}-${quarter}`]?.total;
+    if (Number.isFinite(before) && before !== 0) {
+      yoy[period] = ((counts[period].total - before) / before) * 100;
+    }
+  }
+
   const expected = [
     ["dwellings sold", at(col(market.deals.series_by_period, "total"))],
+    ["the change in dwellings sold", at(yoy)],
     ["house price index", at(col(market.price_index.series_by_period, "total"))],
     ["deflated index", at(col(market.price_index_real.series_by_period))],
     ["annual price change", at(col(market.price_index.annual_rate_pct, "total"))],
@@ -685,6 +729,150 @@ test("the range strip puts every marker where the published figures put it", { s
     },
     "/market/",
     {}
+  );
+});
+
+test("the marked columns are the quarters the year-on-year figure compares", { skip }, async () => {
+  // The sawtooth on the count chart is the loudest thing on the page and it is
+  // the calendar. The tint is what says so — and a tint on the wrong columns is
+  // worse than none, because it makes a claim: THESE are the comparable ones.
+  //
+  // The failure it guards is drawing every fourth column by position. That is
+  // the same quarter each year only while nothing is missing, and it is exactly
+  // the mistake `yearOnYearChanges` refuses to make with the numbers — a chart
+  // marked one way and a percentage computed the other would disagree with
+  // nothing to say which was right.
+  const market = payload("house_market");
+  if (!market) return; // no refresh in this checkout
+
+  const periods = Object.keys(market.deals.series_by_period).sort();
+  const quarter = periods[periods.length - 1].slice(-2);
+  const want = periods.filter((p) => p.endsWith(quarter));
+
+  await withApp(
+    async (page, errors) => {
+      const marked = await page.evaluate(() =>
+        [...document.querySelectorAll("main.market #volume figure.chart rect.plot-bar")]
+          .filter((r) => r.classList.contains("season"))
+          .map((r) => r.querySelector("title").textContent.split(":")[0])
+      );
+      assert.deepEqual(
+        marked,
+        want,
+        "the tinted columns are not the quarters that share the newest reading's place in the " +
+          "year. A mark on a chart is a claim about which columns are comparable."
+      );
+      assert.ok(
+        marked.length > 1 && marked.length < periods.length,
+        `${marked.length} of ${periods.length} columns are marked — a mark on all of them or on ` +
+          "one of them names nothing."
+      );
+
+      // …and the key names it. A tint nobody can look up is decoration.
+      const keys = await page
+        .locator("main.market #volume figure.chart figcaption .key")
+        .allInnerTexts();
+      assert.equal(keys.length, 1, `the count chart draws ${keys.length} keys`);
+      assert.ok(keys[0].trim().length > 8, `the key reads "${keys[0]}"`);
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+
+  // **The committed payload cannot tell the two rules apart, and a test that
+  // cannot go red is not a guard.** Its quarters run unbroken, so every fourth
+  // column by POSITION is also the same quarter by LABEL — the mutation this
+  // test exists to catch passes against the shipped data. So one quarter is
+  // dropped on the way to the tab: positional marking then walks onto the
+  // quarters either side of the gap, and label marking does not move at all.
+  // The same device `servedStale` uses for the freshness verdict, and the same
+  // reason — the state under test is one no committed file can produce.
+  const gapped = periods.find((p, i) => i > 4 && !p.endsWith(quarter));
+  await withApp(
+    async (page, errors) => {
+      const marked = await page.evaluate(() =>
+        [...document.querySelectorAll("main.market #volume figure.chart rect.plot-bar")]
+          .filter((r) => r.classList.contains("season"))
+          .map((r) => r.querySelector("title").textContent.split(":")[0])
+      );
+      assert.deepEqual(
+        marked,
+        want.filter((p) => p !== gapped),
+        `with ${gapped} missing from the series, the tint no longer lands on the quarters that ` +
+          "share the newest reading's place in the year — so it is counting columns rather than " +
+          "reading their periods, which is the mistake the year-on-year arithmetic refuses to make."
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {},
+    async (page) => {
+      const series = { ...market.deals.series_by_period };
+      delete series[gapped];
+      const served = { ...market, deals: { ...market.deals, series_by_period: series } };
+      await page.route("**/data/published/house_market.json", (route) =>
+        route.fulfill({ contentType: "application/json", body: JSON.stringify(served) })
+      );
+    }
+  );
+});
+
+test("the two panels drawn together are drawn over the same box", { skip }, async () => {
+  // Two plots stacked one above the other claim their columns describe the same
+  // quarters. `marketVolumeAgainstPrices` makes that true of the DATA; this is
+  // the other half, and it fails for a reason no wiring test can see: the label
+  // gutter beside a plot is sized to that plot's own longest tick, so two
+  // panels whose axes read «−28,3%» and «0» are drawn at different widths and
+  // the same quarter lands at two different x positions. Every figure stays
+  // published and every axis stays honest, and the picture makes a comparison
+  // nobody can trust.
+  await withApp(
+    async (page, errors) => {
+      const boxes = await page.evaluate(() =>
+        [...document.querySelectorAll("main.market .pair svg.pane")].map((el) => {
+          const r = el.getBoundingClientRect();
+          return { left: r.left, right: r.right };
+        })
+      );
+      assert.equal(boxes.length, 2, `the pair draws ${boxes.length} panels`);
+      // A pixel of tolerance for sub-pixel layout, and nothing like the eight a
+      // differently-sized gutter opens.
+      assert.ok(
+        Math.abs(boxes[0].left - boxes[1].left) < 1 &&
+          Math.abs(boxes[0].right - boxes[1].right) < 1,
+        `the two panels are drawn over [${boxes[0].left.toFixed(1)}, ${boxes[0].right.toFixed(1)}] ` +
+          `and [${boxes[1].left.toFixed(1)}, ${boxes[1].right.toFixed(1)}]. They share one row of ` +
+          "quarters, so a quarter in the top panel sits above a different quarter in the bottom one."
+      );
+
+      // …and the window is drawn once, under the lower panel. Two axes read as
+      // two windows that happen to agree.
+      assert.equal(
+        await page.locator("main.market .pair .xyears").count(),
+        1,
+        "the pair draws its own window twice"
+      );
+      assert.equal(
+        await page.locator("main.market .pair .xaxis").count(),
+        0,
+        "the pair labels only the two ends of a window a reader has to read a middle out of"
+      );
+
+      // Every year in the window is a rule in BOTH panels, at the same place.
+      // The rules are what carry a column down onto the line under it, and one
+      // panel ruled and the other not is an alignment a reader cannot check.
+      const rules = await page.evaluate(() =>
+        [...document.querySelectorAll("main.market .pair svg.pane")].map((el) =>
+          [...el.querySelectorAll("line.plot-year")].map((l) => Number(l.getAttribute("x1")))
+        )
+      );
+      assert.deepEqual(rules[0], rules[1], "the two panels rule different years");
+      assert.ok(rules[0].length > 3, `the pair draws ${rules[0].length} year rules`);
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    { viewport: { width: 360, height: 800 } }
   );
 });
 

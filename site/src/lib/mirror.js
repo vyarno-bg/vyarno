@@ -1424,6 +1424,38 @@ export function dealsAtQuarter(series, period, field = "total") {
 }
 
 /**
+ * Every year-on-year change a quarterly series can state, keyed by the quarter
+ * it describes.
+ *
+ * `dealsAtQuarter` answers this for one quarter, and one quarter is a reading
+ * rather than a finding: whether a fall of that size is an ordinary one is a
+ * question only the series' own record of changes can answer. So the whole
+ * record is available in the same unit the headline figure is in.
+ *
+ * **Computed off the LABEL, never off position in the series, and the reason is
+ * the same one `quarterYearAgo` exists for.** Four places back is the same
+ * quarter a year earlier only while nothing is missing; a series with one gap
+ * in it silently starts comparing a winter against an autumn, and the answer
+ * that produces is a plausible percentage with no question behind it.
+ *
+ * **Sparse out.** A quarter with no year-ago counterpart gets no entry rather
+ * than a null one, so the first year of any series is absent instead of empty —
+ * a year-on-year change needs a year behind it, and a plotted zero there is a
+ * measurement nobody made.
+ *
+ * @param {Record<string, number>|null|undefined} entries  {"YYYY-Qn": value}
+ * @returns {Record<string, number>} percent, at the quarters that have one
+ */
+export function yearOnYearChanges(entries) {
+  const out = {};
+  for (const [period, value] of Object.entries(entries ?? {})) {
+    const change = changePct(value, entries[quarterYearAgo(period) ?? ""]);
+    if (change !== null) out[period] = change;
+  }
+  return out;
+}
+
+/**
  * The share of the dwelling stock that was nobody's usual residence at the
  * census.
  *

@@ -26,6 +26,7 @@ import {
   rangePosition,
   shortfallPct,
   unoccupiedSharePct,
+  yearOnYearChanges,
 } from "../mirror.js";
 
 /**
@@ -477,6 +478,75 @@ export function marketVolumeSeries(houseMarket) {
 }
 
 /**
+ * The count as a year-on-year change, every quarter that has one.
+ *
+ * The headline figure beside the count answers "against a year earlier" for one
+ * quarter. This is the same arithmetic over the whole record, and it is what
+ * lets a reader tell an ordinary quarter from an unusual one — a single −18%
+ * places nothing until the other thirty-two changes are beside it.
+ *
+ * **It is ours, so it carries what reproduces it.** The count is Eurostat's and
+ * the division is not, which is the same disclosure `avg_deal_eur` travels
+ * with.
+ *
+ * @param {object|null} houseMarket
+ */
+export function marketVolumeChangeSeries(houseMarket) {
+  const block = houseMarket?.deals ?? null;
+  return {
+    ...sourcedSeries(yearOnYearChanges(field(block?.series_by_period, "total")), block, {
+      reference: 0,
+      unit: "percent_change_on_same_quarter_a_year_earlier",
+    }),
+    derivedFrom: block?.api_url ? [block.api_url] : null,
+  };
+}
+
+/**
+ * The two series a reader has to hold at once, on one row of quarters.
+ *
+ * How much changed hands and what it changed hands for are the page's first two
+ * sections, and what everybody actually argues about is what the two are doing
+ * AT THE SAME TIME — which the page could only say by asking a reader to carry
+ * one chart to another. Both are already here: the count's own year-on-year
+ * change and Eurostat's published annual rate, both percentages, both quarterly.
+ *
+ * **The window is the INTERSECTION, and that is what makes this wiring rather
+ * than two calls in a template.** Eurostat publish the rate from long before
+ * they publish the transaction counts, so the two records are of different
+ * lengths — and two panels drawn one above the other on different windows put
+ * a quarter above a quarter eleven years away from it. The picture would be
+ * wrong in the way nothing catches: every digit published, every axis honest,
+ * and the one thing the arrangement claims — that these columns and that line
+ * describe the same quarters — false. Restricted here, the wrong pairing is not
+ * expressible by a caller.
+ *
+ * **Neither series is captioned as the cause of the other, and nothing here
+ * computes a relationship between them.** They are returned apart, on one
+ * window, each with its own publisher and its own scale.
+ *
+ * @param {object|null} houseMarket
+ * @returns {{volume: object, price: object}}
+ */
+export function marketVolumeAgainstPrices(houseMarket) {
+  const deals = houseMarket?.deals ?? null;
+  const index = houseMarket?.price_index ?? null;
+  const volumeAll = yearOnYearChanges(field(deals?.series_by_period, "total"));
+  const priceAll = field(index?.annual_rate_pct, "total");
+  const shared = Object.keys(volumeAll)
+    .filter((period) => Number.isFinite(priceAll[period]))
+    .sort();
+  const only = (entries) => Object.fromEntries(shared.map((period) => [period, entries[period]]));
+  return {
+    volume: {
+      ...sourcedSeries(only(volumeAll), deals, { reference: 0 }),
+      derivedFrom: deals?.api_url ? [deals.api_url] : null,
+    },
+    price: sourcedSeries(only(priceAll), index, { reference: 0 }),
+  };
+}
+
+/**
  * **Twenty-one years of the official house price index**, as НСИ compile it and
  * Eurostat disseminate it.
  *
@@ -792,6 +862,17 @@ export const RANGE_MIN_POINTS = 5;
 const RANGE_ROWS = Object.freeze(
   [
     { key: "deals", format: "count", href: "#volume" },
+    // **The count's own row is placed by a LEVEL, and a level of this series
+    // carries the calendar in it.** Transactions have a season, so a first
+    // quarter sits low inside a record whose highest readings are fourth
+    // quarters — the marker moves with the month of the year and reads as news
+    // about the market. The change against the same quarter a year earlier has
+    // the season divided out of it by construction, so this row places what the
+    // level row cannot: whether a quarter's movement is an ordinary one.
+    //
+    // Signed, for the reason the price rate is: every reading of it is a
+    // direction, and «18,5%» without its sign is two different quarters.
+    { key: "dealsChange", format: "signedPct", href: "#volume" },
     { key: "index", format: "times", href: "#prices" },
     { key: "indexReal", format: "times", href: "#prices" },
     // Signed, because every reading of it is a direction: the series runs
@@ -861,6 +942,7 @@ export function marketRangeStrip(houseMarket, structure) {
   const real = marketPriceIndexRealSeries(houseMarket);
   const series = {
     deals: marketVolumeSeries(houseMarket),
+    dealsChange: marketVolumeChangeSeries(houseMarket),
     index: nominal,
     indexReal: real,
     rate: marketPriceRateSeries(houseMarket),
