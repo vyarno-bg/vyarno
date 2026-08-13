@@ -521,9 +521,9 @@ export function marketPriceIndexSeries(houseMarket, purchase = "total") {
  * **The one line without which the nominal one can mislead.** Nominally the
  * index sits far above its 2008 peak; deflated it sits below it, and a site
  * whose subject is the gap between a number and what it buys cannot draw
- * twenty-one years of property prices in the money of the day with the other
- * line unavailable — that is the correction it exists to make, applied to
- * everything except this.
+ * twenty-one years of property prices in current prices with the other line
+ * unavailable — that is the correction it exists to make, applied to everything
+ * except this.
  *
  * `tipsho30` has no purchase dimension: Eurostat deflate the total only, so
  * there is no split to be had and nothing here may imply one.

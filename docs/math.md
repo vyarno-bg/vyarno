@@ -809,7 +809,7 @@ though they had not moved.
 
 ### The nominal index and the deflated one
 
-`prc_hpi_q` at `I15_Q` is the house price index in the money of the day.
+`prc_hpi_q` at `I15_Q` is the house price index in current prices.
 `tipsho30` at the same unit is the same index divided by the national accounts
 deflator for private final consumption. **Both are Eurostat's, neither is
 computed here**, and they are published together because either one alone

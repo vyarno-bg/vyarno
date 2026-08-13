@@ -1319,41 +1319,18 @@
 
       <p>
         <span class="l-bg"
-          >Двата реда са едно и също нещо, мерено по два начина. Пунктираният отговаря на другия
-          въпрос: поскъпнали ли са жилищата повече от всичко друго, което купуваме. Евростат
-          публикува и двата.</span
+          >Двата реда мерят едно и също по два начина. Плътният брои пари — колко пъти повече пари
+          се дават за жилище. Но парите междувременно купуват по-малко от всичко; пунктираният маха
+          точно това и отговаря на другия въпрос: поскъпнали ли са жилищата повече от всичко друго,
+          което купуваме. Евростат публикува и двата.</span
         >
         <span class="l-en"
-          >The two lines are the same thing measured two ways. The dashed one answers the other
-          question: have homes got dearer than everything else we buy. Eurostat publish both.</span
+          >The two lines measure the same thing two ways. The solid one counts money — how many
+          times more of it changes hands for a home. But money buys less of everything than it did;
+          the dashed one takes exactly that out and answers the other question: have homes got
+          dearer than everything else we buy. Eurostat publish both.</span
         >
       </p>
-      <!--
-        WHICH price rise the dashed line takes out, named because on this site
-        the reader arrives with a different one in mind. The headline figure the
-        calculator is built on is the HICP, so «без поскъпването на всичко
-        останало» reads as "without THAT". Eurostat deflate `tipsho30` by the
-        national accounts deflator for household final consumption instead — a
-        near neighbour of the HICP and not the same series, and their own
-        Statistics Explained says the scoreboard indicator uses the deflator
-        rather than the HICP. A reader checking this line against our published
-        inflation gets figures that nearly agree, which is the worst way to find
-        out they are different measurements.
-      -->
-      <p class="cap">
-        <span class="l-bg"
-          >Кое поскъпване се вади: Евростат дели индекса на дефлатора за крайното потребление на
-          домакинствата от националните сметки. Той е роднина на инфлацията, която този сайт
-          показва, но не е същият ред — със сметка по нея излиза близко число, а не същото.</span
-        >
-        <span class="l-en"
-          >Which price rise, exactly: Eurostat divide the index by the national accounts deflator
-          for household final consumption. It is a near relative of the inflation figure this site
-          publishes rather than the same series, so working the dashed line out against ours gives a
-          close number and not the same one.</span
-        >
-      </p>
-
       <!-- The two readings said out loud, from the payload. A chart answers
            «how much dearer» only for a reader who can read a line off an axis;
            this is the same two numbers in a sentence, and the second sentence
@@ -1364,25 +1341,20 @@
       {#if reading.times != null && reading.realTimes != null}
         <p class="reading">
           <span class="l-bg"
-            >В парите от деня жилищата днес струват <b>×{fmt(reading.times)}</b> спрямо {reading.baseYear}
-            г. Извади ли се поскъпването на всичко останало, остават
-            <b>×{fmt(reading.realTimes)}</b>. {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
-              Само вторият ред казва и още нещо. Така мерено, нивото днес е с {fmt(
-                reading.realBelowPeakPct
-              )}% под най-високото, което Евростат изобщо е отчитал — през {periodLong(
-                reading.realPeakPeriod,
-                "bg"
-              )}.{/if}</span
+            >Днес за жилище се плащат <b>×{fmt(reading.times)}</b> повече пари, отколкото през {reading.baseYear}
+            г. Но и всичко останало поскъпна — спрямо него жилищата са
+            <b>×{fmt(reading.realTimes)}</b> по-скъпи.
+            {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
+              Така мерено, нивото днес е с {fmt(reading.realBelowPeakPct)}% под най-високото, което
+              Евростат е отчитал — през {periodLong(reading.realPeakPeriod, "bg")}.{/if}</span
           >
           <span class="l-en"
-            >In the money of the day a home today costs <b>×{fmt(reading.times)}</b> what it did in {reading.baseYear}.
-            Take out the rise in everything else and <b>×{fmt(reading.realTimes)}</b> is left. {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
-              The second line says one more thing. Measured that way, today's level is {fmt(
-                reading.realBelowPeakPct
-              )}% below the highest Eurostat have ever recorded — in {periodLong(
-                reading.realPeakPeriod,
-                "en"
-              )}.{/if}</span
+            >A home today takes <b>×{fmt(reading.times)}</b> as much money as it did in {reading.baseYear}.
+            But everything else got dearer too — against that, homes are
+            <b>×{fmt(reading.realTimes)}</b> dearer.
+            {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
+              Measured that way, today's level is {fmt(reading.realBelowPeakPct)}% below the highest
+              Eurostat have recorded — in {periodLong(reading.realPeakPeriod, "en")}.{/if}</span
           >
         </p>
         <p class="ss tsrc">
@@ -1513,18 +1485,31 @@
         // own table, and the multiple is what a reader understands. Eurostat's
         // key travels with it, because the letters it decodes are in a column of
         // this table and on nothing else the page draws.
+        //
+        // WHICH price rise the second column takes out, in the one place the
+        // question can be asked: this table is where both columns are on screen
+        // at once. The headline figure the calculator is built on is the HICP,
+        // so «без поскъпването на всичко останало» reads as "without THAT" —
+        // and Eurostat deflate by the national accounts deflator for household
+        // final consumption instead, a near neighbour of the HICP and not the
+        // same series. Somebody reconciling this column against our published
+        // inflation gets figures that nearly agree, which is the worst way to
+        // find out they are two measurements.
         {
           bg:
             `Числата са както ги публикува Евростат — индекс, в който средното за ` +
             `${reading.baseYear} г. е 100; картинката отгоре показва същите числа, разделени на ` +
-            `това 100.` +
+            `това 100. Втората колона е разделена и на дефлатора за крайното потребление на ` +
+            `домакинствата — роднина на инфлацията, която този сайт показва, но не същият ред.` +
             (flagKey.length
               ? ` ${COPY.mktFlagsLead.bg} ${flagKey.map((l) => FLAG_COPY[l].bg).join(" · ")}`
               : ""),
           en:
             `The figures are as Eurostat publish them — an index with the average for ` +
             `${reading.baseYear} written as 100; the chart above shows the same figures divided ` +
-            `by that 100.` +
+            `by that 100. The second column is divided by the national accounts deflator for ` +
+            `household final consumption as well — a near relative of the inflation figure this ` +
+            `site publishes rather than the same series.` +
             (flagKey.length
               ? ` ${COPY.mktFlagsLead.en} ${flagKey.map((l) => FLAG_COPY[l].en).join(" · ")}`
               : ""),
