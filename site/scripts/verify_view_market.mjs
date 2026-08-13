@@ -36,7 +36,6 @@ import {
   marketVolumeAgainstPrices,
   marketAverageDealSeries,
   marketOverburdenSeries,
-  marketPriceToIncomeSeries,
   marketRangeStrip,
   RANGE_MIN_POINTS,
   statusLettersUsed,
@@ -184,25 +183,21 @@ test("marketStructure derives only the share, and dates each cube by its own clo
       unoccupied: 1657674,
       api_url: "https://example.invalid/api/cens",
     },
-    price_to_income: { ref_period: "2024", value: 67.75, unit: "PTIR_LT_AVG" },
     housing_cost_overburden: { ref_period: "2025", value_pct: 6.9 },
   };
   const s = marketStructure(structure);
   assert.equal(s.owner.refPeriod, "2025");
   assert.equal(s.dwellings.refPeriod, "2021");
   assert.equal(s.unoccupied.refPeriod, "2021");
-  // The other two cubes are read as series, because the page draws each of them
-  // as a chart and quotes its newest reading in the sentence above it. Their
-  // own year travels with the series for that reason: two calls to get one
-  // figure and its period is how a chart ends up captioned with a year the
-  // number beside it does not share.
-  assert.equal(marketPriceToIncomeSeries(structure).refPeriod, "2024");
-  assert.equal(marketPriceToIncomeSeries(structure).value, 67.75);
+  // The overburden cube is read as a series, because the page draws it as a
+  // chart and quotes its newest reading in the sentence above it. Its own year
+  // travels with the series for that reason: two calls to get one figure and
+  // its period is how a chart ends up captioned with a year the number beside
+  // it does not share.
   assert.equal(marketOverburdenSeries(structure).refPeriod, "2025");
   assert.equal(marketOverburdenSeries(structure).value, 6.9);
-  // …and neither is in `marketStructure` any more, so nothing can read one from
+  // …and it is not in `marketStructure` any more, so nothing can read it from
   // there and caption it with the tenure survey's year.
-  assert.equal(s.priceToIncome, undefined);
   assert.equal(s.overburden, undefined);
   // The share is ours and says so; the counts are Eurostat's and do not.
   assert.ok(Math.abs(s.unoccupiedPct.value - (1657674 / 4258585) * 100) < 1e-9);
@@ -535,7 +530,6 @@ test("every market series a chart is drawn from contains zero in its scale", () 
     dealNew: marketAverageDealSeries(market, "new"),
     dealExisting: marketAverageDealSeries(market, "existing"),
     overburden: marketOverburdenSeries(structure),
-    priceToIncome: marketPriceToIncomeSeries(structure),
   };
   for (const [name, series] of Object.entries(all)) {
     assert.ok(series.points.length > 4, `${name} carries ${series.points.length} points`);
@@ -809,28 +803,20 @@ test("the range strip places every row against its own published extremes", () =
       "series whose record is one-sided is not the year-on-year change of a count that has fallen."
   );
 
-  // **`price_to_income` is kept out, and putting it back is the edit this
-  // guards.** It is the obvious sixth row and it is the one series whose VALUE
-  // does not read on its own: Eurostat publish `PTIR_LT_AVG` as an index where
-  // 100 is Bulgaria's own long-run average of the ratio, so «67,8» means nothing
-  // without that 100 — and a one-line row has nowhere to mark it. Placed on a
-  // track anyway it draws a dot at the left end of a line labelled «цена спрямо
-  // доходите», which reads as "housing has never been more affordable": a
-  // verdict, on the indicator whose own section spends three paragraphs on why
-  // it may not be read as one. `#ratio` draws it with the rule at 100, which is
-  // what `marketPriceToIncomeSeries` passes a `reference` for.
-  assert.ok(
-    marketPriceToIncomeSeries(structure).points.length > RANGE_MIN_POINTS,
-    "price_to_income is short enough that the length gate would exclude it anyway, " +
-      "which would make the assertion below pass for the wrong reason"
-  );
-  assert.ok(
-    !strip.rows.some((r) => r.key === "pti"),
-    "the strip places price-to-income. Its published value is already an index " +
-      "against its own long-run average, and the track cannot draw that 100 — so " +
-      "the row says 'at its lowest ever' about a figure whose reference is nowhere " +
-      "on it, which is a verdict this page does not make (docs/principles.md P6)."
-  );
+  // **A series whose value does not read on its own does not get a row**, and
+  // that rule is what the strip's shape rests on. Every figure in the «сега»
+  // column here stands alone — a count, «×2,7», «+14,8%», «6,9%» — so the
+  // position beside it adds a second fact rather than needing one. An index
+  // defined against a reference the row has nowhere to print would read as a
+  // verdict instead: a dot at one end of a labelled line, with the level it is
+  // measured from nowhere on it.
+  for (const row of strip.rows) {
+    assert.ok(
+      ["count", "times", "signedPct", "pct"].includes(row.format),
+      `${row.key} is drawn in ${row.format}, which is not one of the units a strip row can ` +
+        "print without a reference beside it"
+    );
+  }
 
   for (const row of strip.rows) {
     // **The extremes are the series' own, and the position is the arithmetic

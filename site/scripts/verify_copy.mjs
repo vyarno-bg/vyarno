@@ -2130,7 +2130,6 @@ test("the market page writes no live figure into its own prose", () => {
     ["the deflated index level", market.price_index_real.series_by_period[at]],
     ["the annual price change", market.price_index.annual_rate_pct[at]?.total],
     ["НСИ's own annual change", nsi.national_price_index_yoy.value_pct?.total],
-    ["the price-to-income reading", structure.price_to_income.value],
     ["the overburden share", structure.housing_cost_overburden.value_pct],
     ["the owner-occupier share", structure.tenure.owner_pct],
   ];

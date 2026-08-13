@@ -633,28 +633,19 @@ def fetch_house_price_index_real_bg(geo: str = "BG") -> CubeFetch:
     )
 
 
-# The four structure cubes. None is quarterly and none is about a transaction —
-# together they answer "who owns, who owes, how many homes stand empty, and is
-# any of this expensive relative to what people earn", which is the half of the
-# market the transaction series cannot see.
+# The three structure cubes. None is quarterly and none is about a transaction —
+# together they answer "who owns, who owes, how many homes stand empty, and how
+# many people are paying more for housing than they can carry", which is the
+# half of the market the transaction series cannot see.
 TENURE_DATASET = "ilc_lvho02"  # own / own-with-mortgage / rent
 CENSUS_DWELLINGS_DATASET = "cens_21dwob_r3"  # occupied vs unoccupied, 2021 census
-PRICE_TO_INCOME_DATASET = "tipsho60"  # price-to-income against its own long-run average
 HOUSING_OVERBURDEN_DATASET = "ilc_lvho07a"  # households spending >40% of income on housing
-
-# `tipsho60` publishes three units and only one of them answers the question the
-# page asks. `PTIR_LT_AVG` indexes the price-to-income ratio against that
-# country's OWN long-run average (100 = its own norm), which is what makes a
-# reading below 100 mean "cheaper relative to income than this country's own
-# history" rather than "cheaper than Germany". `PTIR_I15` is a 2015-based index
-# and `RCH_A_AVG` an annual rate — neither supports that sentence.
-PRICE_TO_INCOME_UNIT = "PTIR_LT_AVG"
 
 
 def fetch_housing_structure_bg(geo: str = "BG") -> dict[str, CubeFetch]:
-    """The four structure cubes, each over its own slice, keyed by dataset.
+    """The three structure cubes, each over its own slice, keyed by dataset.
 
-    Four calls rather than one, because they share no dimensions beyond `geo`
+    Three calls rather than one, because they share no dimensions beyond `geo`
     and each needs its own filter. Every one of those filters has a wrong answer
     that returns 200:
 
@@ -681,7 +672,6 @@ def fetch_housing_structure_bg(geo: str = "BG") -> dict[str, CubeFetch]:
             "lastTimePeriod": 1,
         },
         CENSUS_DWELLINGS_DATASET: {"geo": geo, "building": "TOTAL", "unit": "NR"},
-        PRICE_TO_INCOME_DATASET: {"geo": geo, "unit": PRICE_TO_INCOME_UNIT},
         HOUSING_OVERBURDEN_DATASET: {
             "geo": geo,
             "age": "TOTAL",

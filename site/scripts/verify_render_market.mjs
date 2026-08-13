@@ -300,7 +300,6 @@ test(
       // The two deal lines share one scale, and the chart's marks are the hit
       // boxes over the NEW line — that is the series whose extremes are drawn.
       ["average deal", ratioOf(col(market.avg_deal_eur.series_by_period, "new"))],
-      ["price to income", ratioOf(col(structure.price_to_income.series_by_period), 100)],
       ["housing cost overburden", ratioOf(col(structure.housing_cost_overburden.series_by_period))],
     ];
 
@@ -586,9 +585,9 @@ test("the charts are legible on the phone, not only on the desk", { skip }, asyn
         assert.equal(chart.offPage, false, `chart ${i} hangs an axis label off the left edge`);
         // Every chart on this page has zero inside its scale and prints it, so
         // the bottom label is at the foot of the plot. How high the top one
-        // sits is data — the price-to-income plot's highest label is its rule
-        // at 100, which is below the series' own peak — so what is asserted
-        // there is that the labels SPAN the box rather than where each lands.
+        // sits is data — an axis rounded out to its step puts the topmost tick
+        // above the series' own peak — so what is asserted here is that the
+        // labels SPAN the box rather than where each one lands.
         assert.ok(
           chart.lowest > 0.9,
           `chart ${i} puts its lowest axis label at ${(chart.lowest * 100).toFixed(0)}% of the ` +

@@ -61,8 +61,6 @@ from vyarno_pipeline.sources.eurostat import (
     INDEX_UNIT,
     IW_DATASET,
     MINR_DATASET,
-    PRICE_TO_INCOME_DATASET,
-    PRICE_TO_INCOME_UNIT,
     TENURE_DATASET,
     CubeFetch,
     HicpCube,
@@ -1088,10 +1086,9 @@ def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of:
     """
     tenure_cube = structure[TENURE_DATASET]
     census_cube = structure[CENSUS_DWELLINGS_DATASET]
-    ptir_cube = structure[PRICE_TO_INCOME_DATASET]
     burden_cube = structure[HOUSING_OVERBURDEN_DATASET]
     tenure_rows, census_rows = tenure_cube.rows, census_cube.rows
-    ptir_rows, burden_rows = ptir_cube.rows, burden_cube.rows
+    burden_rows = burden_cube.rows
 
     def latest_of(rows: list[dict]) -> str:
         periods = [str(r["time"]) for r in rows if r.get("time") is not None]
@@ -1123,9 +1120,7 @@ def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of:
         if code not in census:
             raise ValueError(f"housing structure: census cube is missing {code!r}")
 
-    ptir = _rows_to_period_map(ptir_rows)
     burden = _rows_to_period_map(burden_rows)
-    ptir_period = max(ptir)
     burden_period = max(burden)
 
     return {
@@ -1134,13 +1129,12 @@ def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of:
         "source": "eurostat",
         "source_url": tenure_cube.page_url,
         "notes": (
-            "The structure of Bulgarian housing, from four Eurostat cubes on "
-            "four different clocks: tenure and housing-cost overburden are "
-            "annual EU-SILC, the dwelling counts are a census snapshot, and the "
-            "price-to-income ratio is annual. Every figure is Eurostat's own, "
-            "unmodified. Nothing here is derived — the unoccupied share and any "
-            "comparison between these figures is computed in the reader's "
-            "browser from the counts below."
+            "The structure of Bulgarian housing, from three Eurostat cubes on "
+            "two different clocks: tenure and housing-cost overburden are "
+            "annual EU-SILC, and the dwelling counts are a census snapshot. "
+            "Every figure is Eurostat's own, unmodified. Nothing here is "
+            "derived — the unoccupied share and any comparison between these "
+            "figures is computed in the reader's browser from the counts below."
         ),
         "payload_name": "house_market_structure",
         "ref_period": tenure_period,
@@ -1172,22 +1166,6 @@ def build_house_market_structure_payload(structure: dict[str, CubeFetch], as_of:
             "total": census["DW"],
             "occupied": census["DW_OC"],
             "unoccupied": census["DW_NOC"],
-        },
-        "price_to_income": {
-            "_role": "RATIO: price-to-income against this country's OWN long-run average",
-            "dataset": ptir_cube.dataset,
-            "source_url": ptir_cube.page_url,
-            "api_url": ptir_cube.api_url,
-            "unit": PRICE_TO_INCOME_UNIT,
-            "ref_period": ptir_period,
-            "value": ptir[ptir_period],
-            "series_by_period": ptir,
-            "note": (
-                "100 is this country's own long-run average, not another "
-                "country's level. A reading below 100 says homes cost less "
-                "relative to Bulgarian incomes than they have on average over "
-                "the series; it says nothing about whether they are cheap."
-            ),
         },
         "housing_cost_overburden": {
             # Both halves of that sentence are the indicator's, and both were

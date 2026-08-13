@@ -49,7 +49,6 @@ Every entry carries a provenance tag:
 | **House price index, deflated** — `tipsho30` (unit I15_Q) | VERIFIED | `house_market.json → price_index_real`. The same index divided by the national accounts deflator for private final consumption, on the **same base year and the same quarters**, so the two are drawn on one axis with nothing rescaled. Neither is the HICP: the page says which deflator this is, because on this site "inflation" already names a different published series. No `purchase` dimension: Eurostat deflate the total only, so no new-build/existing split exists and the page may not imply one. Nominally the index sits far above its 2008 peak; deflated it does not, and a site whose subject is the gap between a number and what it buys cannot publish only the first. |
 | **Tenure** — `ilc_lvho02` | VERIFIED | `house_market_structure.json → tenure`. Own / own-with-loan / rent, at `hhcomp=TOTAL` × `rskpovth=TOTAL`. A share of the population **in private households** — EU-SILC reaches no institution. |
 | **Census dwelling stock** — `cens_21dwob_r3` | VERIFIED | `house_market_structure.json → census_dwellings`. Total, occupied and unoccupied at `building=TOTAL`. «Occupied» means somebody's usual residence, never who slept there. |
-| **Price-to-income** — `tipsho60` (unit=PTIR_LT_AVG) | VERIFIED | `house_market_structure.json → price_to_income`. Indexed against **this country's own long-run average** over 2000→latest, which is the only unit that supports the sentence beside it. Its denominator is B.7G, adjusted gross disposable income per head. |
 | **Housing-cost overburden** — `ilc_lvho07a` | VERIFIED | `house_market_structure.json → housing_cost_overburden`. Share of people in households spending over 40% of **disposable** income on housing, at `age`/`sex`/`rskpovth` = TOTAL. An owner's mortgage **interest** counts, never the capital. |
 
 ## Not available (do not cite as a working source)
@@ -426,14 +425,12 @@ A hash over the ESMS page fails the other way: Eurostat revise that prose withou
 versioning it, so the guard goes red on a typo fix and the next person raises the
 tolerance until it is off.
 
-Three of the eleven cubes **do** carry their meaning in their own labels —
-`tipsho60`'s `PTIR_LT_AVG` is «Price-to-income ratio relative to long-term
-average», `ilc_lvho02` is «Distribution of **population** by tenure status», and
+Two of the ten cubes **do** carry their meaning in their own labels —
+`ilc_lvho02` is «Distribution of **population** by tenure status» and
 `cens_21dwob_r3`'s `DW_NOC` is «Unoccupied conventional dwellings». Gating those
-three is possible and is still not worth doing: they are the three where the
-wrong reading is already refused by a pinned unit code, and a guard whose
-coverage is the easy third certifies the whole while watching none of the part
-that moved.
+two is possible and is still not worth doing: they are the ones where the wrong
+reading is already refused by a pinned dimension, and a guard whose coverage is
+the easy fifth certifies the whole while watching none of the part that moved.
 
 **So this stays a dated read, the pattern [`legal.md`](./legal.md) uses for
 licence terms**: the publisher's sentence, quoted verbatim, with the URL and the
@@ -444,11 +441,21 @@ is that nothing fails when an upstream re-scopes a series between reads; that is
 the cost, it is stated here rather than papered over, and no cheaper guard
 removes it.
 
-### The structure cubes — `ilc_lvho02`, `cens_21dwob_r3`, `tipsho60`, `ilc_lvho07a`
+### The structure cubes — `ilc_lvho02`, `cens_21dwob_r3`, `ilc_lvho07a`
 
-Four cubes on four clocks, which is why they are a second payload rather than
+Three cubes on two clocks, which is why they are a second payload rather than
 more keys on the first: a freshness row cannot honestly date an annual EU-SILC
 survey and a census snapshot at once.
+
+**`tipsho60`, the price-to-income ratio, was a fourth and is not read any more.**
+It was fetched, gated on its unit and drawn on `/market/` with a rule at 100, and
+every reading of it needed three qualifications first: the series is published
+once a year and stopped two years behind everything else on the page, its
+denominator is an income per head over a population falling throughout the
+period, and the 100 it is indexed against is recomputed with each edition, so
+every earlier point moves without its year changing. A figure that cannot be used
+until all three are said is one a reader takes nothing from. Reinstating it means
+the connector, the gate and a section that answers the question it raises.
 
 Every one of them crosses several dimensions and every one has a wrong `TOTAL`
 that returns 200:
@@ -459,12 +466,6 @@ that returns 200:
   one is the country.
 - **the census** splits by occupancy **and** building type, so `building=TOTAL`
   is what "all dwellings" means.
-- **price-to-income** publishes three units and only `PTIR_LT_AVG` indexes the
-  ratio against that country's **own** long-run average. That is what makes a
-  reading below 100 mean "cheaper relative to Bulgarian incomes than over its
-  own history" rather than "cheaper than Germany". `PTIR_I15` is 2015-based and
-  `RCH_A_AVG` an annual rate; neither supports the sentence the page puts beside
-  it, and a gate refuses the payload on any other unit.
 - **overburden** is crossed with age, sex and poverty status. The below-poverty
   slice runs several times higher than the headline and is not the figure
   anybody quotes.
@@ -497,17 +498,6 @@ were wrong. All read **2026-08-13**.
   net of any tax relief**». The Bulgarian «вноска» means the whole instalment,
   so copy using it overstates the numerator for exactly the households the
   indicator is about. It is «лихвата, не главницата», in as many words.
-- **price-to-income's denominator is the ADJUSTED measure**, which is the one
-  containing social transfers in kind.
-  [`tipsho20_esms`](https://ec.europa.eu/eurostat/cache/metadata/en/tipsho20_esms.htm)
-  §3.4: «Income used in the auxiliary indicator standardised house
-  price-to-income ratio is defined as **adjusted** household gross disposable
-  income (B7G from ESA 2010) per head of population». B.6G would not carry them
-  and the page's «услугите, които държавата плаща вместо тях» would then be
-  false; on B.7G it is exactly right. The same file fixes the 100:
-  «Price-to-income ratio relative to the long-term average price-to-income
-  ratio, **calculated over the period 2000 to the most recent data available**»
-  — which is also why every earlier point moves when a year is added.
 - **the census's «unoccupied» is a usual-residence test.**
   [`cens_21_esms`](https://ec.europa.eu/eurostat/cache/metadata/en/cens_21_esms.htm):
   «'Unoccupied conventional dwellings' are conventional dwellings which are not

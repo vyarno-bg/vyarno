@@ -891,22 +891,23 @@ would be describing a different market. What is invariant is that **the drawn
 scale contains zero**, which is what makes a bar twice as tall mean twice as
 much.
 
-The price-to-income plot's scale covers its own reference line as well as its
-data, because the rule at 100 IS the indicator — a plot that cropped it out
-would be missing the thing it is about in every year from 2004 to 2010, when the
-ratio ran above its own average.
+A plot whose figure is defined against a reference covers that reference as well
+as its data: the index chart's ×1 is the base every reading on it is a multiple
+of, and a scale cropped to the data alone would be missing the thing the picture
+is about in the quarters the line ran below it.
 
 `verify_render_market.mjs` measures it rather than reading the source: for every
 chart on the page, the drawn distances from the zero line to the smallest and the
 largest reading have to be in the same ratio as the published figures, which no
 floor can survive.
 
-Six charts carry it — dwellings sold, the index level with its deflated twin, the
-annual rate, the average deal split by purchase type, price-to-income against its
-own average, and the overburden share — plus a sparkline per city, all six of
-those on **one shared scale**, because six charts each drawn to its own range are
-six pictures of the same shape and comparing rows is the only reason to put a
-chart in a column.
+Seven charts carry it — dwellings sold, the count's own year-on-year change
+against the price rate over the quarters they share, the index level with its
+deflated twin, the annual rate, the average deal split by purchase type, and the
+overburden share — plus a sparkline and a two-bar comparison per city, each of
+those columns on **one shared scale**, because six charts each drawn to its own
+range are six pictures of the same shape and comparing rows is the only reason to
+put a chart in a column.
 
 Every chart is also published as a table inside a `<details>`. That is the WCAG
 text alternative, the only way to read one quarter off an eighty-five-quarter
@@ -944,27 +945,13 @@ end of the track looking exactly like a record. A series shorter than
 `view/market.js#RANGE_MIN_POINTS`, or one that never moved, produces no row at all: an
 empty cell on a strip of positions reads as a position.
 
-**`price_to_income` is deliberately not one of the rows**, and it is the one
-that would be wrong rather than merely awkward. Every value the strip prints
-reads on its own — a count, «×2,7», «+14,8%», «6,9%» — so the position beside it
-adds a second fact. `PTIR_LT_AVG` is not a level: Eurostat publish it as an
-index where **100 is Bulgaria's own long-run average of the ratio**, so «67,8»
-says nothing without that 100 and a one-line row has nowhere to mark it. Drawn
-anyway, the dot lands at the left end of a line labelled «цена спрямо доходите»
-and reads as "housing has never been more affordable" — a verdict, on the
-indicator whose own section spends three paragraphs on why it may not be read as
-one: the denominator is **adjusted** gross disposable income — Eurostat's
-`tipsho20_esms`, read 2026-08-13, «Income used in the auxiliary indicator
-standardised house price-to-income ratio is defined as adjusted household gross
-disposable income (B7G from ESA 2010) per head of population» — so it carries
-pensions, benefits and the services the state pays for on households' behalf,
-net of income tax and social contributions, over a population that has fallen
-throughout the period; and the average it is measured against is pulled up by
-the years the ratio was at its highest. **B.7G rather than B.6G is the whole of
-that first clause**: social transfers in kind are in the adjusted measure and in
-no other, and a page that named plain disposable income would be describing a
-series Eurostat do not publish here. `#ratio` draws it whole, with the
-rule at 100 that `plotSeries#reference` exists for.
+**A series whose value does not read on its own does not get a row.** Every
+value the strip prints stands alone — a count, «×2,7», «+14,8%», «6,9%» — so the
+position beside it adds a second fact rather than needing one. An index defined
+against a reference the row cannot print would read as a verdict instead: a dot
+at one end of a labelled line, with the level it is measured from nowhere on it.
+`verify_view_market.mjs` holds every row to one of the four units the column can
+write without a reference beside it.
 
 A row whose series only ever rises sits at its right end by construction, which
 the page says out loud under the strip — it is a property of that series and not
@@ -1089,7 +1076,6 @@ same cell as `series_by_period[ref_period]`, which is the one the payload dates.
 |---|---|
 | `tenure.{owner,owner_with_mortgage,owner_no_mortgage,rent,rent_market_price,rent_reduced_or_free}_pct` | all six, the tenure table |
 | `census_dwellings.{total,occupied,unoccupied}` | the census table; the unoccupied share is derived from two of them |
-| `price_to_income.series_by_period`, `value`, `ref_period` | the ratio chart, its numbers table, and the caption naming the year it stops at |
 | `housing_cost_overburden.series_by_period`, `value_pct`, `ref_period` | the overburden chart, its numbers table, and the sentence above it |
 
 Not drawn: **`tenure.total_pct`**, which is 100 by construction. The two marked

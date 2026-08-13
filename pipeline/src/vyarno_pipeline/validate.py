@@ -953,15 +953,6 @@ def validate_house_market_structure(payload: dict) -> None:
             f"({total_dw:,.0f}). They are subsets of it."
         )
 
-    ptir = payload.get("price_to_income", {})
-    if ptir.get("unit") != "PTIR_LT_AVG":
-        raise ValidationError(
-            f"housing structure: price_to_income is on unit {ptir.get('unit')!r}. "
-            f"Only PTIR_LT_AVG indexes the ratio against this country's OWN "
-            f"long-run average, which is the only reading that supports the "
-            f"sentence the page puts beside it."
-        )
-
 
 # ---------------------------------------------------------------------------
 # The НСИ housing gates

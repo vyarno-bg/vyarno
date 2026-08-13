@@ -35,7 +35,6 @@ from vyarno_pipeline.sources.eurostat import (
     HOUSE_SALES_COUNT_DATASET,
     HOUSE_SALES_VALUE_DATASET,
     HOUSING_OVERBURDEN_DATASET,
-    PRICE_TO_INCOME_DATASET,
     TENURE_DATASET,
     CubeFetch,
     _cube_to_rows,
@@ -59,7 +58,6 @@ FIXTURES = Path(__file__).parent / "fixtures"
 STRUCTURE_FIXTURES = {
     TENURE_DATASET: "eurostat_tenure_bg.json",
     CENSUS_DWELLINGS_DATASET: "eurostat_census_dwellings_bg.json",
-    PRICE_TO_INCOME_DATASET: "eurostat_price_to_income_bg.json",
     HOUSING_OVERBURDEN_DATASET: "eurostat_housing_overburden_bg.json",
 }
 
@@ -191,7 +189,6 @@ def test_every_structure_cube_is_pinned_to_one_slice_of_its_own_population():
     required = {
         TENURE_DATASET: ("hhcomp=TOTAL", "rskpovth=TOTAL"),
         CENSUS_DWELLINGS_DATASET: ("building=TOTAL",),
-        PRICE_TO_INCOME_DATASET: ("unit=PTIR_LT_AVG",),
         HOUSING_OVERBURDEN_DATASET: ("age=TOTAL", "sex=T", "rskpovth=TOTAL"),
     }
     for dataset, pins in required.items():
@@ -304,19 +301,6 @@ def test_a_tenure_split_that_is_not_one_population_is_refused(structure):
     """Owners plus renters is the population, and a wrong slice misses by whole points."""
     structure["tenure"]["rent_pct"] = 40.0
     with pytest.raises(ValidationError, match="not the published total"):
-        validate_house_market_structure(structure)
-
-
-def test_a_price_to_income_reading_on_the_wrong_unit_is_refused(structure):
-    """Only PTIR_LT_AVG indexes the ratio against this country's OWN long-run average.
-
-    The page says a reading below 100 means homes cost less relative to
-    Bulgarian incomes than they have on average over the series. On `PTIR_I15`
-    that sentence is false — 100 would be 2015 — and the figure would still look
-    like a perfectly ordinary index.
-    """
-    structure["price_to_income"]["unit"] = "PTIR_I15"
-    with pytest.raises(ValidationError, match="PTIR_LT_AVG"):
         validate_house_market_structure(structure)
 
 
