@@ -2294,3 +2294,90 @@ test("the market page states that no per-city transaction price exists", () => {
     );
   }
 });
+
+test("the index's base year is never called the start of the series", () => {
+  // **`base_year` and a series' `from` are two different payload fields, and
+  // the page conflated them.** Eurostat set the index to 100 at the base year
+  // and publish it from a decade before that, so a sentence calling the base
+  // "the year taken as the starting point" contradicts the chart beside it:
+  // the line runs ten years to the left of the year the words call the
+  // beginning, and its early quarters are drawn UNDER the ×1 rule. Every digit
+  // stays correct while the page tells a reader it has no data before the base
+  // and gives them no way to read a point below the reference line.
+  //
+  // Nothing else here could catch it. The "no prose freezes a period" rule
+  // passes, because the year renders from `reading.baseYear` and the slot is
+  // right; the render suite checks that figures carry sources, and they do.
+  // What is missing is any comparison between a claim about a series and the
+  // series — and both halves are in the payload, which is what makes this
+  // checkable where a sentence-length ceiling is not
+  // (docs/writing-style.md §"Sentence length is a review note").
+  //
+  // Two assertions, and neither needs the exemption list the verdict rule
+  // above carries. The ban is on the CONSTRUCTIONS that make the claim, so the
+  // sentence explaining that the base is not the start does not trip it; the
+  // requirement is on the clarification itself, which is the half a later
+  // editor is most likely to cut as redundant.
+  const CLAIMS_IT = [
+    [
+      /взе(?:л|та|ло|ли)\s+за\s+начало/iu,
+      "«взел за начало» — the base is not where the record starts",
+    ],
+    [
+      /годината,\s*от\s*която\s*се\s*брои/iu,
+      "«годината, от която се брои» reads as the first year",
+    ],
+    [/tak(?:e|en|es)\s+as\s+the\s+starting\s+point/i, '"taken as the starting point"'],
+    [/took\s+as\s+the\s+starting\s+point/i, '"took as the starting point"'],
+  ];
+  const offenders = [];
+  for (const [re, why] of CLAIMS_IT) {
+    for (const m of MARKET_FLAT.matchAll(new RegExp(re.source, re.flags + "g"))) {
+      offenders.push(`${m[0]} — ${why}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `the market page calls the index's base year the start of the record:\n  ` +
+      `${offenders.join("\n  ")}\n\nIt is the year Eurostat SET TO 100. The series is ` +
+      "published from long before it and its early quarters are below ×1, which is what " +
+      "the sentence has to leave a reader able to read."
+  );
+
+  // And the two clarifications the chart cannot do without, in both languages.
+  //
+  // The first is the page-level one — the base is a yardstick, not a beginning.
+  // It is asserted loosely, over the whole page, because more than one section
+  // says it and any of them serves a reader who lands there.
+  //
+  // The SECOND has a single home and is the one worth pinning: why points sit
+  // below the ×1 rule. It reads as spare prose next to a chart that looks
+  // self-explanatory, so it is the sentence an editor cuts — and cutting it
+  // leaves the left third of the plot unreadable, because a reading under the
+  // reference line means nothing to somebody who thinks the line is the origin.
+  for (const [lang, says] of [
+    ["BG", /мерилото,?\s*а\s*не\s*начало/iu],
+    ["EN", /yardstick\s+(?:rather\s+than|and\s+not|not)\s+the\s+(?:start|beginning)/i],
+  ]) {
+    assert.match(
+      MARKET_FLAT,
+      says,
+      `the ${lang} copy no longer says the base year is the yardstick rather than the ` +
+        "start of the series. Without it a reader takes the base for the first year the " +
+        "data exists."
+    );
+  }
+
+  const explainsBelowOne = MARKET_FLAT.split(/(?<=[.!?])\s+/).filter(
+    (line) => /под\s*×1|below\s*×1/iu.test(line) && /струвал|cost less|по-малко/iu.test(line)
+  );
+  assert.equal(
+    explainsBelowOne.length >= 2,
+    true,
+    "the page draws quarters below the ×1 rule and does not say in both languages why " +
+      `they are there (found ${explainsBelowOne.length} such sentences). A point under the ` +
+      "reference line reads as an error to anybody who takes that line for the start of " +
+      "the record — which is exactly what the base year invites them to think."
+  );
+});
