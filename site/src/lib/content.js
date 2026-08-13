@@ -2281,7 +2281,25 @@ export const COPY = {
     bg: "цените на сделките, без поскъпването на всичко останало",
     en: "transaction prices, with the rise in everything else taken out",
   },
-  mktRangeRate: { bg: "промяната за една година", en: "the change over one year" },
+  // **«промяната» alone stopped being enough the moment the strip placed two of
+  // them.** With the count's own year-on-year change on the strip, a row headed
+  // «промяната за една година» four rows below «промяната в броя сделки за една
+  // година» is a reader's mistake waiting to happen — a strip row is read with
+  // nothing around it, and the two are a percentage each with no unit to tell
+  // them apart.
+  mktRangeRate: {
+    bg: "промяната в цените за една година",
+    en: "the change in prices over one year",
+  },
+  // The row above it counts dwellings and this one counts the movement in that
+  // count, so the label has to say «промяната в» rather than repeat the noun:
+  // two rows reading «продадени жилища» with different numbers beside them are
+  // a reader's mistake waiting to happen, and the strip gives them no
+  // paragraph to resolve it from.
+  mktRangeDealsChange: {
+    bg: "промяната в броя сделки за една година",
+    en: "the change in dwellings sold over one year",
+  },
   mktRangeOverburden: {
     bg: "дял на хората с тежки разходи за жилище",
     en: "share of people with heavy housing costs",
@@ -2380,6 +2398,45 @@ export const COPY = {
     bg: "Дял на хората, чието домакинство дава над 40% от разполагаемия си доход за жилище, по години от {from} до {to}. Най-високо {peak}% през {peakAt}, най-ниско {low}% през {lowAt}; за {to} — {last}%.",
     en: "Share of people whose household spends over 40% of its disposable income on housing, by year {from} to {to}. The highest is {peak}% in {peakAt} and the lowest {low}% in {lowAt}; for {to} it is {last}%.",
   },
+  // The two panels drawn on one row of quarters, and their own accessible
+  // names. The count panel needs its own because it is not the count — it is
+  // the count's movement, in percent — and a reader hearing the price chart's
+  // description under it would be told the same thing twice.
+  mktChartVolumeChange: {
+    bg: "Годишна промяна на броя продадени жилища по тримесечия, от {from} до {to}. Най-силен спад {low} през {lowAt}, най-силен ръст {peak} през {peakAt}; за {to} — {last}.",
+    en: "Annual change in the number of dwellings sold, by quarter from {from} to {to}. The steepest fall is {low} in {lowAt} and the steepest rise {peak} in {peakAt}; for {to} it is {last}.",
+  },
+  // Above each panel rather than beside it. Two plots stacked on one row of
+  // quarters have one x-axis between them, so the label is what says which
+  // number each is — and it names the unit, because both panels are drawn in
+  // percent and neither is a level.
+  mktPanelDeals: {
+    bg: "брой сделки, спрямо същото тримесечие година по-рано",
+    en: "dwellings sold, against the same quarter a year earlier",
+  },
+  mktPanelPrices: {
+    bg: "цените на сделките, спрямо същото тримесечие година по-рано",
+    en: "transaction prices, against the same quarter a year earlier",
+  },
+  mktColSoldChange: { bg: "Сделки, промяна", en: "Sales, change" },
+  mktColPriceChange: { bg: "Цени, промяна", en: "Prices, change" },
+  mktTblPairNumbers: {
+    bg: "Сделки и цени за едни и същи тримесечия",
+    en: "Sales and prices, for the same quarters",
+  },
+  // The tint on the count chart. It marks the quarters that share the newest
+  // reading's place in the year, so the sawtooth names itself: what a reader
+  // sees repeating is the calendar, and the marked columns are the ones the
+  // year-on-year figure actually compares.
+  mktKeySeason: { bg: "същото тримесечие всяка година", en: "the same quarter each year" },
+  // The census bar. Two counts and the share between them, said once for a
+  // reader who cannot see the drawing.
+  mktChartStock: {
+    bg: "Жилищата при преброяването: {occupied} обитавани и {unoccupied} необитавани, или {share}% от всички.",
+    en: "Dwellings at the census: {occupied} occupied and {unoccupied} unoccupied, which is {share}% of them all.",
+  },
+  mktStockOccupied: { bg: "обитавани", en: "occupied" },
+  mktStockUnoccupied: { bg: "необитавани", en: "unoccupied" },
   mktChartCity: {
     bg: "{city}: годишна промяна на цените по тримесечия, от {from} до {to}. За {to} — {last}%.",
     en: "{city}: annual price change by quarter, {from} to {to}. For {to} it is {last}%.",

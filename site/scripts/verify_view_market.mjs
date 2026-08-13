@@ -32,6 +32,8 @@ import {
   marketIndexReading,
   marketRent,
   marketPriceRateSeries,
+  marketVolumeChangeSeries,
+  marketVolumeAgainstPrices,
   marketAverageDealSeries,
   marketOverburdenSeries,
   marketPriceToIncomeSeries,
@@ -524,6 +526,9 @@ test("every market series a chart is drawn from contains zero in its scale", () 
 
   const all = {
     volume: marketVolumeSeries(market),
+    volumeChange: marketVolumeChangeSeries(market),
+    pairVolume: marketVolumeAgainstPrices(market).volume,
+    pairPrice: marketVolumeAgainstPrices(market).price,
     index: marketPriceIndexSeries(market),
     indexReal: marketPriceIndexRealSeries(market),
     rate: marketPriceRateSeries(market),
@@ -612,6 +617,85 @@ test("Eurostat's flags reach the page at the periods they are on, and nowhere el
   assert.deepEqual(statusLettersUsed([{}, null]), []);
 });
 
+test("the count's year-on-year series compares like quarters, and says it is ours", () => {
+  // The change beside the count is one quarter against the same quarter a year
+  // earlier; this is the same arithmetic over the whole record, and the whole
+  // record is what says whether a given quarter's movement is an ordinary one.
+  const change = marketVolumeChangeSeries(HOUSE_MARKET);
+
+  // The fixture holds 2025-Q1, 2025-Q4 and 2026-Q1. Only one of those has the
+  // same quarter a year behind it, so only one change exists — a series that
+  // returned three would be comparing whatever key sits four places back.
+  assert.deepEqual(
+    change.points.map((p) => p.period),
+    ["2026-Q1"]
+  );
+  assert.ok(near(change.points[0].value, ((16227 - 15000) / 15000) * 100, 1e-9));
+
+  // 2025-Q4 is the neighbouring quarter and the higher count, and it is exactly
+  // what a quarter-on-quarter reading would compare 2026-Q1 against. A change
+  // computed that way is −18.9% here by coincidence and measures the calendar.
+  assert.ok(change.points[0].value > 0, "the change is falling, so it was read against Q4");
+
+  // It is Eurostat's count and our division, so it carries what re-runs it —
+  // and it cites the count's own cube, never `avg_deal_eur`'s pair of queries.
+  assert.deepEqual(change.derivedFrom, [HOUSE_MARKET.deals.api_url]);
+  assert.equal(change.sourceUrl, HOUSE_MARKET.deals.source_url);
+  assert.equal(change.reference, 0, "a signed series drawn without its zero rule");
+
+  assert.deepEqual(marketVolumeChangeSeries(null).points, []);
+  assert.deepEqual(marketVolumeChangeSeries({}).derivedFrom, null);
+});
+
+test("the two panels drawn together are restricted to the quarters they share", () => {
+  // Two plots stacked one above the other claim their columns describe the same
+  // quarters, and the two published records are not the same length: Eurostat
+  // publish the price rate from long before they publish the transaction
+  // counts. Drawn on their own windows the panels put a quarter above a quarter
+  // years away from it — every digit published, both axes honest, and the one
+  // thing the arrangement asserts false. The restriction is here rather than in
+  // the template so a caller cannot express the wrong pairing.
+  const market = read("house_market");
+  if (!market) return; // no refresh in this checkout
+
+  const { volume, price } = marketVolumeAgainstPrices(market);
+  const rate = marketPriceRateSeries(market);
+  const change = marketVolumeChangeSeries(market);
+
+  assert.deepEqual(
+    volume.points.map((p) => p.period),
+    price.points.map((p) => p.period),
+    "the two panels are drawn over different quarters"
+  );
+  assert.equal(volume.from, price.from);
+  assert.equal(volume.to, price.to);
+  assert.ok(volume.points.length > 4, "the pair is too short to draw");
+
+  // The published rate reaches back further than the counts do, so the shared
+  // window has to be SHORTER than one of the two records — if it is not, this
+  // test would pass on an implementation that did no restricting at all.
+  assert.ok(
+    rate.points.length > price.points.length,
+    `the price record is ${rate.points.length} quarters and the shared window ` +
+      `${price.points.length}. With the two equal, nothing here would catch a pair drawn on ` +
+      "two different windows."
+  );
+  // …and the change's own record is what the strip places, so it is NOT cut to
+  // the shared window: the two callers want different things from one series.
+  assert.equal(change.points.length, volume.points.length);
+
+  // Each panel keeps its own publisher and its own extremes. One scale over the
+  // two would flatten a rate that moves within twenty points against a count
+  // that has moved by ninety.
+  assert.equal(price.sourceUrl, market.price_index.source_url);
+  assert.equal(volume.sourceUrl, market.deals.source_url);
+  assert.deepEqual(volume.derivedFrom, [market.deals.api_url]);
+  assert.notEqual(volume.max, price.max);
+
+  assert.deepEqual(marketVolumeAgainstPrices(null).volume.points, []);
+  assert.deepEqual(marketVolumeAgainstPrices({}).price.points, []);
+});
+
 test("the six city sparklines are drawn against one shared scale", () => {
   // Six charts each drawn to its own range are six pictures of the same shape,
   // and comparing rows is the only reason to put a chart in a column.
@@ -651,10 +735,34 @@ test("the range strip places every row against its own published extremes", () =
   if (!market || !structure) return; // no refresh in this checkout
 
   const strip = marketRangeStrip(market, structure);
-  assert.equal(strip.rows.length, 5, "the strip places five series");
+  assert.equal(strip.rows.length, 6, "the strip places six series");
   assert.deepEqual(
     strip.rows.map((r) => r.key),
-    ["deals", "index", "indexReal", "rate", "overburden"]
+    ["deals", "dealsChange", "index", "indexReal", "rate", "overburden"]
+  );
+
+  // **The count is placed twice and the second row is the one the season does
+  // not move.** A level of a seasonal series carries the calendar: transactions
+  // peak in fourth quarters, so a first-quarter reading sits low in a record
+  // whose highest points are all fourth quarters, and the marker moves with the
+  // month of the year. The change against the same quarter a year earlier has
+  // the season divided out by construction. Asserted as a property of the
+  // published data rather than as a spelling: the two rows are read off the
+  // same block and would place identically if one of them ever stopped being a
+  // year-on-year change.
+  const level = strip.rows.find((r) => r.key === "deals");
+  const change = strip.rows.find((r) => r.key === "dealsChange");
+  assert.equal(level.sourceUrl, change.sourceUrl, "the two count rows cite different publishers");
+  assert.ok(
+    Math.abs(level.at - change.at) > 0.05,
+    `the count's level and its year-on-year change are placed at ${level.at.toFixed(2)} and ` +
+      `${change.at.toFixed(2)} — within a rounding of each other, which means the second row is ` +
+      "placing the same reading as the first and the strip has two rows saying one thing."
+  );
+  assert.ok(
+    change.low < 0 && change.high > 0,
+    `the change row spans ${change.low} to ${change.high} and does not cross zero — a signed ` +
+      "series whose record is one-sided is not the year-on-year change of a count that has fallen."
   );
 
   // **`price_to_income` is kept out, and putting it back is the edit this

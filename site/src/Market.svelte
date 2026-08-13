@@ -48,6 +48,7 @@
     marketPriceToIncomeSeries,
     marketPriceIndexSeries,
     marketPriceRateSeries,
+    marketVolumeAgainstPrices,
     marketAverageDealSeries,
     marketOverburdenSeries,
     marketPriceIndexRealSeries,
@@ -155,6 +156,17 @@
    * live, and it exists because six templates each got a different one wrong.
    */
   const pct = (x) => percentSigned(x, 1, $lang);
+  /**
+   * The same, with no decimal, for an axis tick.
+   *
+   * A tick sits on a step this file chose to be round — 20, 5, 2.5 — and «+80,0%»
+   * spends four characters saying the axis is exact about a number it invented
+   * for its own convenience. It is also the widest label in the gutter, on a
+   * page whose plots have 280px to divide at 360px. A FIGURE keeps its decimal:
+   * a published rate rounded to the whole percent on screen is a different
+   * number from the one the query returns.
+   */
+  const pctAxis = (x) => percentSigned(x, 0, $lang);
 
   const volume = $derived(marketVolume(data.houseMarket));
   const deal = $derived(marketAverageDeal(data.houseMarket));
@@ -164,6 +176,30 @@
   const cities = $derived(marketCities(data.nsiHousing));
   const nsiNational = $derived(marketNsiNationalRate(data.nsiHousing));
   const volumeSeries = $derived(marketVolumeSeries(data.houseMarket));
+  /**
+   * The count's movement and the price movement, on one row of quarters.
+   *
+   * The window is decided in `view/market.js`, not here: two panels drawn one
+   * above the other claim their columns describe the same quarters, and the two
+   * published records are of different lengths.
+   */
+  const pair = $derived(marketVolumeAgainstPrices(data.houseMarket));
+  /**
+   * Which quarter of the year the newest count belongs to.
+   *
+   * The sawtooth on the count chart is the loudest thing on this page and it is
+   * the calendar: winter and summer are not traded alike, so a reader who takes
+   * the shape for the market has learned the opposite of what the picture
+   * shows. Marking the quarters that share the newest one's place in the year
+   * makes the repetition visible AND marks the columns the year-on-year figure
+   * beside it actually compares.
+   *
+   * Read off the data rather than written down as Q1. Which quarter is newest
+   * moves four times a year, and a marked quarter that is not the one the
+   * figures are about would be a second thing to decode rather than a key.
+   */
+  const sameQuarter = $derived(String(volumeSeries.to ?? "").slice(-2));
+  const isSameQuarter = (period) => Boolean(sameQuarter) && String(period).endsWith(sameQuarter);
   const ptiSeries = $derived(marketPriceToIncomeSeries(data.houseMarketStructure));
 
   /**
@@ -197,28 +233,164 @@
    * percentage of the plot, which is exactly what a percentage means to the
    * gutter cell the grid stretches to the same height.
    */
+  /**
+   * `CH_TALL` is the one plot on the page drawn bigger than the others, and
+   * which one it is is an editorial decision the page is entitled to make.
+   *
+   * Six identically-sized plots say every figure here weighs the same, which is
+   * a claim as much as any other arrangement would be — and it is not the one
+   * this page would make if asked. The nominal line against the deflated one is
+   * the reading nobody else in Bulgaria publishes with a source attached: the
+   * same series, twice, answering "more money" and "dearer than everything
+   * else" — and the second is the correction this whole site exists to apply,
+   * withheld from property prices until it was drawn.
+   *
+   * **Size is not a verdict and may not become one.** A taller box says look
+   * here; it says nothing about which direction the line should be read as good
+   * news, and it is given to the plot that carries two lines rather than to
+   * whichever one is currently falling. Nothing else about the chart differs —
+   * same accent, same zero, same axis in multiples.
+   */
   const CH_W = 600,
-    CH_H = 240;
+    CH_H = 240,
+    CH_TALL = 320;
   const span = (s) => s.max - s.min || 1;
-  const yOf = (value, s) => CH_H * (1 - (value - s.min) / span(s));
+  /**
+   * A value's y in a box `h` tall.
+   *
+   * The height is a parameter rather than the constant it was, because one
+   * plot on the page is drawn taller — and every mark inside it has to be
+   * placed in ITS box. A `yOf` that kept the constant would draw the tall
+   * chart's data in the top three quarters of its own frame with the zero rule
+   * floating above the bottom, which reads as a chart with a cropped axis: the
+   * one thing this page's plots may never look like.
+   */
+  const yOf = (value, s, h = CH_H) => h * (1 - (value - s.min) / span(s));
   /** Evenly across the box, first point on the left edge and last on the right. */
   const lineX = (i, n) => (n > 1 ? (CH_W * i) / (n - 1) : CH_W / 2);
   /** A column occupies its own slot with a gap, so a long series still reads. */
   const colX = (i, n) => (CH_W / n) * (i + 0.12);
   const colW = (n) => Math.max(0.8, (CH_W / n) * 0.76);
-  /** Where a tick sits down the plot, as the percentage its HTML gutter takes. */
+  /**
+   * Where a tick sits down the plot, as the percentage its HTML gutter takes.
+   *
+   * The box's height cancels — it is `yOf` over the same `h` — so this is the
+   * one geometry helper the tall chart does not have to be told about, and a
+   * caller passing the wrong height here could not produce a wrong label.
+   */
   const tickAt = (value, s) => (yOf(value, s) / CH_H) * 100;
+  /**
+   * The years to mark on a time axis, and where each one sits along it.
+   *
+   * **Two end labels are what a chart has instead of a time axis.** Every plot
+   * here spanned decades under «Q1 2005» at one end and «Q1 2026» at the other,
+   * and a reader looking at the rise in the middle of one had no way to say
+   * when it happened without counting columns. On the two panels drawn together
+   * it was worse than unhelpful: the whole reason they share a window is that a
+   * column can be carried down onto the line below it, and nothing on either
+   * picture said where to carry it to.
+   *
+   * A year is placed at ITS OWN FIRST POINT rather than at an even fraction of
+   * the axis. Those are the same thing only while every year carries a full set
+   * of periods, and a series missing one — or starting mid-year — would label
+   * the wrong columns while the picture stayed correct.
+   *
+   * **The step is chosen from the number of years, not from the viewport.** Six
+   * labels is what a 360px plot holds without them touching, and twenty-one
+   * years of an index at one label each is an unreadable smear at that width —
+   * so the same rule that keeps the phone legible thins the desk's axis too,
+   * and both get the same picture rather than one getting a second layout to
+   * maintain. The steps are the ones a reader reads without decoding: every
+   * year, every second, every fifth.
+   */
+  /**
+   * An axis that ends on round numbers, and the values to label along it.
+   *
+   * **A plot whose axis is labelled only at its own extremes has no scale, it
+   * has two captions.** Every chart here drew its highest reading, its lowest
+   * and zero — so «29 130» named one column and told a reader nothing about the
+   * one beside it, and reading a value off the middle of a plot meant
+   * estimating against a number that was not round and did not repeat.
+   *
+   * So the axis is rounded OUTWARD to the step and the step is one a reader
+   * adds in their head: 1, 2, 2.5 or 5 times a power of ten. Rounding out costs
+   * a little of the box — an axis to 80% over a series that reaches 65.7% draws
+   * the columns slightly shorter — and it buys gridlines that mean something at
+   * every height rather than only at three of them.
+   *
+   * **Zero is a tick by construction and stays one.** `plotSeries` guarantees
+   * the range contains zero and every step here divides it, so the rule at the
+   * foot of a positive chart and through the middle of a signed one is always
+   * labelled — which is the property `verify_render_market.mjs` reads the axis
+   * for. Nothing here can crop a scale either: the bounds only ever move
+   * outward.
+   *
+   * @param {number} min  the series' own floor, at or below zero
+   * @param {number} max  the series' own ceiling
+   * @param {number} [want]  roughly how many intervals to aim for
+   */
+  const niceTicks = (min, max, want = 5) => {
+    const range = max - min || 1;
+    const raw = range / want;
+    const magnitude = 10 ** Math.floor(Math.log10(raw));
+    const normalised = raw / magnitude;
+    const step =
+      magnitude *
+      (normalised <= 1
+        ? 1
+        : normalised <= 2
+          ? 2
+          : normalised <= 2.5
+            ? 2.5
+            : normalised <= 5
+              ? 5
+              : 10);
+    const lo = Math.floor(min / step) * step;
+    const hi = Math.ceil(max / step) * step;
+    const values = [];
+    // Accumulating `lo + i * step` rather than `v += step`, because a repeated
+    // addition of 2.5 or of 0.1 drifts, and the drift lands in a tick LABEL:
+    // «12 500,000000001 €» on an axis whose whole purpose is round numbers.
+    for (let i = 0; lo + i * step <= hi + step / 1000; i += 1) {
+      const v = lo + i * step;
+      values.push(Math.abs(v) < step / 1000 ? 0 : v);
+    }
+    return { min: lo, max: hi, values };
+  };
+
+  const YEAR_TICKS_MAX = 6;
+  const YEAR_STEPS = [1, 2, 5, 10, 25];
+  const xTicks = (series) => {
+    const n = series.points.length;
+    const years = series.points
+      .map((p, i) => ({ year: Number(String(p.period).slice(0, 4)), i }))
+      .filter((y, k, all) => Number.isFinite(y.year) && (k === 0 || y.year !== all[k - 1].year));
+    if (!years.length) return [];
+    const step = YEAR_STEPS.find((s) => Math.ceil(years.length / s) <= YEAR_TICKS_MAX) ?? 50;
+    // **Counted back from the NEWEST year, never forward from the oldest.** The
+    // two differ whenever the step does not divide the span, and what they
+    // differ about is which end goes unlabelled — with a two-year step over ten
+    // years, forward from the first leaves the last year off the axis. That is
+    // the end this page is about: every figure on it is the newest reading, and
+    // an axis whose final label is the year before the data stops asks a reader
+    // to count columns to find today.
+    const last = years[years.length - 1].year;
+    return years
+      .filter((y) => (last - y.year) % step === 0)
+      .map((y) => ({ year: String(y.year), at: (lineX(y.i, n) / CH_W) * 100 }));
+  };
+
   /** The sparkline box, and its own mapping. Small, and drawn 1:1 like the rest. */
   const SP_W = 108,
     SP_H = 26;
   const spY = (value, scale) =>
     2 + (SP_H - 4) * (1 - (value - scale.min) / (scale.max - scale.min || 1));
 
-  const pathOf = (s) =>
+  const pathOf = (s, h = CH_H) =>
     s.points
       .map(
         (p, i) =>
-          `${i ? "L" : "M"}${lineX(i, s.points.length).toFixed(2)} ${yOf(p.value, s).toFixed(2)}`
+          `${i ? "L" : "M"}${lineX(i, s.points.length).toFixed(2)} ${yOf(p.value, s, h).toFixed(2)}`
       )
       .join(" ");
 
@@ -338,6 +510,7 @@
   /** A strip row's label. Words, so they live in the component's copy file. */
   const RANGE_LABEL = {
     deals: COPY.mktRangeDeals,
+    dealsChange: COPY.mktRangeDealsChange,
     index: COPY.mktRangeIndex,
     indexReal: COPY.mktRangeIndexReal,
     rate: COPY.mktRangeRate,
@@ -570,12 +743,12 @@
   The scale comes from `plotSeries`, which clamps its own minimum at or below
   zero. Nothing here can crop an axis because nothing here is handed a floor.
 -->
-{#snippet columns(series, label, scale = null)}
+{#snippet columns(series, label, scale = null, marked = null)}
   {@const s = scale ?? series}
   {@const n = series.points.length}
   {#each series.points as p, i (p.period)}
     <rect
-      class="plot-bar"
+      class="plot-bar {marked?.(p.period) ? 'season' : ''}"
       x={colX(i, n)}
       y={Math.min(yOf(p.value, s), yOf(0, s))}
       width={colW(n)}
@@ -607,22 +780,98 @@
   </div>
 {/snippet}
 
-<!-- The two ends of the window, under the plot they belong to. A series states
-     its own span, so nothing here can name a period the data does not reach. -->
-{#snippet xAxis(series)}
-  <div class="xaxis" aria-hidden="true">
-    <span class="plot-tick">{periodLong(series.from, $lang)}</span>
-    <span class="plot-tick">{periodLong(series.to, $lang)}</span>
+<!--
+  The gridlines a y label needs in order to be a scale rather than a caption.
+
+  Drawn for every tick EXCEPT the two that already have a rule of their own:
+  zero, which the axis line marks, and the reference the publisher defines,
+  which is dashed because it is a threshold rather than furniture. Two rules on
+  one height paint a heavier line at exactly the place the page means something
+  quieter.
+
+  Before the data in document order, so a column sits on top of its gridline.
+-->
+{#snippet gridlines(axis, reference = null, h = CH_H)}
+  {#each axis.values as value (value)}
+    {#if value !== 0 && value !== reference}
+      <line class="plot-grid" x1="0" y1={yOf(value, axis, h)} x2={CH_W} y2={yOf(value, axis, h)} />
+    {/if}
+  {/each}
+{/snippet}
+
+<!--
+  The time axis: a year at the position of its own first point.
+
+  **Two end labels are a caption, not an axis.** «Q1 2005» at one end and
+  «Q1 2026» at the other tell a reader what a plot spans and nothing about where
+  they are inside it, so the rise in the middle of a twenty-one-year index had no
+  date on it at all — and on the two panels drawn together the whole point is
+  that a column can be carried down onto the line below, which no reader can do
+  against an unmarked box.
+
+  The labels are HTML positioned as percentages of the plot, the device the y
+  axis uses and for the same measured reason: text inside the box renders at
+  6.2px on a 360px screen, and this is the page's own 11px at every width. The
+  same years are drawn as rules inside both panels, which is what makes an
+  alignment visible rather than merely true.
+
+  The exact window stays under every chart in the source line, in quarters, which
+  is where a reader who needs the precise ends already looks.
+-->
+{#snippet xYears(ticks)}
+  <div class="xyears" aria-hidden="true">
+    {#each ticks as tick (tick.year)}
+      <!-- Centred on its own rule, except near the ends, where half a label
+           would hang off the plot — and off the PAGE, since the plot runs to the
+           measure. A label overhanging the right edge scrolls the whole document
+           sideways at 360px, taking the sticky header and every paragraph with
+           it, which `verify_render_market.mjs` fails the page for.
+
+           Decided by WHERE the tick lands rather than by which one it is: with
+           the step counted back from the newest year the first tick is usually
+           not at the left edge, and anchoring it there by its index would put
+           its text beside a rule it is supposed to sit on. -->
+      <span
+        class="plot-tick"
+        style="left:{tick.at.toFixed(2)}%; transform: translateX({tick.at <= 3
+          ? '0'
+          : tick.at >= 90
+            ? '-100%'
+            : '-50%'})">{tick.year}</span
+      >
+    {/each}
   </div>
 {/snippet}
 
-{#snippet dots(series, label)}
+<!-- The same years as rules inside the box. Quiet, and behind the data: a
+     gridline is furniture, and this page's only emphatic rules are zero and a
+     reference the publisher defines. The first tick is skipped where it sits on
+     the left edge, which the plot's own border already marks. -->
+{#snippet yearRules(ticks, h = CH_H)}
+  {#each ticks as tick (tick.year)}
+    {#if tick.at > 0.5}
+      <line
+        class="plot-year"
+        x1={(tick.at / 100) * CH_W}
+        y1="0"
+        x2={(tick.at / 100) * CH_W}
+        y2={h}
+      />
+    {/if}
+  {/each}
+{/snippet}
+
+{#snippet dots(series, label, h = CH_H)}
   {@const n = series.points.length}
   {#each series.points as p, i (p.period)}
     <!-- An invisible target over each point of a line. A line has no mark to
          put a `<title>` on, and a reader hunting for one quarter out of decades
-         needs a box wide enough to hit rather than a stroke one pixel wide. -->
-    <rect class="plot-hit" x={lineX(i, n) - CH_W / n / 2} y="0" width={CH_W / n} height={CH_H}>
+         needs a box wide enough to hit rather than a stroke one pixel wide.
+
+         The height is the box's, so a target covers its own column of the plot
+         it is drawn in — handed the default in the tall chart it would leave
+         the bottom quarter of the picture with nothing to point at. -->
+    <rect class="plot-hit" x={lineX(i, n) - CH_W / n / 2} y="0" width={CH_W / n} height={h}>
       <title>{p.period}: {label(p.value)}</title>
     </rect>
   {/each}
@@ -1113,12 +1362,35 @@
            and on this subject that is the one distortion the page cannot
            afford. `marketVolumeSeries` offers no `min` for the same reason. -->
       {#if volumeSeries.points.length > 4}
+        <!-- The key to the shape, ABOVE the plot it is about.
+             The explanation existed and it was underneath, inside the note on
+             how the percentage is worked out — so the loudest picture on the
+             page was met with nothing, read as a market lurching about twice a
+             year, and corrected two paragraphs later for a reader who got that
+             far. What the sentence may not do is name a quarter or claim which
+             one is weakest: the tint is drawn from the newest reading's own
+             place in the year, and it moves with the data. -->
+        <p>
+          <span class="l-bg"
+            >Стълбчетата се редуват високо-ниско всяка година, защото зимата и лятото не се търгуват
+            еднакво. Оцветените са едно и също тримесечие всяка година — и точно те се сравняват в
+            числото «спрямо година по-рано» отгоре.</span
+          >
+          <span class="l-en"
+            >The columns alternate high and low every year because winter and summer are not traded
+            alike. The tinted ones are the same quarter each year — and those are the ones the
+            "against a year earlier" figure above compares.</span
+          >
+        </p>
+        {@const volumeAxis = niceTicks(volumeSeries.min, volumeSeries.max)}
         <figure class="chart">
           <div class="plot">
-            {@render yAxis([
-              { at: tickAt(volumeSeries.max, volumeSeries), label: fmt0(volumeSeries.max) },
-              { at: tickAt(0, volumeSeries), label: "0" },
-            ])}
+            {@render yAxis(
+              volumeAxis.values.map((v) => ({
+                at: tickAt(v, volumeAxis),
+                label: v === 0 ? "0" : fmt0(v),
+              }))
+            )}
             <svg
               class="pane"
               viewBox="0 0 {CH_W} {CH_H}"
@@ -1131,17 +1403,26 @@
                 last: fmt0(volumeSeries.latest?.value),
               })}
             >
-              {@render columns(volumeSeries, (v) => `${fmt0(v)}`)}
+              {@render gridlines(volumeAxis)}
+              {@render yearRules(xTicks(volumeSeries))}
+              {@render columns(volumeSeries, (v) => `${fmt0(v)}`, volumeAxis, isSameQuarter)}
               <line
                 class="plot-axis"
                 x1="0"
-                y1={yOf(0, volumeSeries)}
+                y1={yOf(0, volumeAxis)}
                 x2={CH_W}
-                y2={yOf(0, volumeSeries)}
+                y2={yOf(0, volumeAxis)}
               />
             </svg>
-            {@render xAxis(volumeSeries)}
+            {@render xYears(xTicks(volumeSeries))}
           </div>
+          <figcaption>
+            <span class="key season"
+              ><span class="l-bg">{COPY.mktKeySeason.bg}</span><span class="l-en"
+                >{COPY.mktKeySeason.en}</span
+              ></span
+            >
+          </figcaption>
         </figure>
         <p class="ss tsrc">
           {@render srcLine(
@@ -1196,6 +1477,168 @@
         for the same quarter. The two measure different things and neither is wrong.</span
       >
     </p>
+
+    <!--
+      The two figures a reader has to hold at once, on one row of quarters.
+
+      They were both on this page and 1,700px apart at 360px: how many changed
+      hands is this section and what they changed hands for is the next one, and
+      what people actually argue about is what the two are doing at the same
+      time. Assembling that meant scrolling between two charts and remembering a
+      percentage, which is a job the page was leaving to the reader on the one
+      question it is most often asked.
+
+      **ONE ROW OF QUARTERS, TWO SCALES, AND NO SENTENCE JOINING THEM.** The
+      window is the intersection of the two records (`marketVolumeAgainstPrices`),
+      because two panels stacked claim their columns describe the same quarters.
+      The scales stay apart because the two measure different things and one axis
+      would flatten the price line against swings four times its size — that is
+      a picture of the arrangement rather than of the data. And nothing here says
+      one moved the other: the page draws both and stops, which is the same
+      refusal the range strip states out loud. A reader with the two in front of
+      them can see what they do together and decide what it means.
+    -->
+    {#if pair.volume.points.length > 4}
+      <p>
+        <span class="l-bg"
+          >Двете картинки отдолу са за едни и същи тримесечия: горната брои сделките, долната мери
+          цените. И двете са промяна спрямо същото тримесечие година по-рано, а не ниво, и всяка е
+          със собствена мярка — числата им са различни по големина.</span
+        >
+        <span class="l-en"
+          >The two charts below are for the same quarters: the top one counts the sales and the
+          bottom one measures the prices. Both are a change on the same quarter a year earlier
+          rather than a level, and each keeps its own scale — the two move by very different
+          amounts.</span
+        >
+      </p>
+
+      {@const volumeChangeAxis = niceTicks(pair.volume.min, pair.volume.max)}
+      {@const priceChangeAxis = niceTicks(pair.price.min, pair.price.max)}
+      <div class="pair">
+        <p class="panel">
+          <span class="l-bg">{COPY.mktPanelDeals.bg}</span>
+          <span class="l-en">{COPY.mktPanelDeals.en}</span>
+        </p>
+        <figure class="chart">
+          <div class="plot">
+            {@render yAxis(
+              volumeChangeAxis.values.map((v) => ({
+                at: tickAt(v, volumeChangeAxis),
+                label: v === 0 ? "0" : pctAxis(v),
+              }))
+            )}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartVolumeChange, $lang, {
+                from: at(pair.volume.from),
+                to: at(pair.volume.to),
+                low: pct(pair.volume.trough?.value),
+                lowAt: at(pair.volume.trough?.period),
+                peak: pct(pair.volume.peak?.value),
+                peakAt: at(pair.volume.peak?.period),
+                last: pct(pair.volume.latest?.value),
+              })}
+            >
+              {@render gridlines(volumeChangeAxis)}
+              {@render yearRules(xTicks(pair.volume))}
+              {@render columns(pair.volume, (v) => pct(v), volumeChangeAxis)}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, volumeChangeAxis)}
+                x2={CH_W}
+                y2={yOf(0, volumeChangeAxis)}
+              />
+            </svg>
+          </div>
+        </figure>
+
+        <p class="panel">
+          <span class="l-bg">{COPY.mktPanelPrices.bg}</span>
+          <span class="l-en">{COPY.mktPanelPrices.en}</span>
+        </p>
+        <!-- The x-axis is drawn once, under the lower panel, because there is
+             one row of quarters and two pictures of it. Repeated under the
+             upper one it reads as two windows that happen to agree. -->
+        <figure class="chart">
+          <div class="plot">
+            {@render yAxis(
+              priceChangeAxis.values.map((v) => ({
+                at: tickAt(v, priceChangeAxis),
+                label: v === 0 ? "0" : pctAxis(v),
+              }))
+            )}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartRate, $lang, {
+                from: at(pair.price.from),
+                to: at(pair.price.to),
+                low: pct(pair.price.trough?.value),
+                lowAt: at(pair.price.trough?.period),
+                peak: pct(pair.price.peak?.value),
+                peakAt: at(pair.price.peak?.period),
+                last: pct(pair.price.latest?.value),
+              })}
+            >
+              {@render gridlines(priceChangeAxis)}
+              {@render yearRules(xTicks(pair.price))}
+              <path class="plot-line" d={pathOf({ ...pair.price, ...priceChangeAxis })} />
+              {@render dots({ ...pair.price, ...priceChangeAxis }, (v) => pct(v))}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, priceChangeAxis)}
+                x2={CH_W}
+                y2={yOf(0, priceChangeAxis)}
+              />
+            </svg>
+            {@render xYears(xTicks(pair.price))}
+          </div>
+        </figure>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(
+          COPY.srcEurostat,
+          pair.volume.sourceUrl,
+          spanned(pair.volume),
+          pair.volume.apiUrl
+        )}
+        <span class="sep">·</span>
+        {@render srcLine(
+          COPY.srcEurostat,
+          pair.price.sourceUrl,
+          spanned(pair.price),
+          pair.price.apiUrl
+        )}
+      </p>
+      {@render numbersTable(
+        countLabel(COPY.mktOpenQuarters, pair.volume.points.length),
+        COPY.mktTblPairNumbers,
+        [COPY.mktColSoldChange, COPY.mktColPriceChange],
+        rowsOf(pair.volume, [pair.price]),
+        (v) => pct(v)
+      )}
+      {@render ourSum(
+        {
+          bg:
+            `Горният ред е наша сметка от броя сделки: всяко тримесечие срещу същото тримесечие ` +
+            `година по-рано. Долният е числото, което Евростат публикува — не е сметнато тук. ` +
+            `Двете редици мерят различни неща и стоят една до друга, за да се видят заедно; ` +
+            `нищо на тази страница не твърди, че едното движи другото.`,
+          en:
+            `The top series is our arithmetic from the counts: each quarter against the same ` +
+            `quarter a year earlier. The bottom one is the figure Eurostat publish and is not ` +
+            `worked out here. The two measure different things and are drawn together so they ` +
+            `can be seen together; nothing on this page claims that either one moves the other.`,
+        },
+        pair.volume.derivedFrom
+      )}
+    {/if}
   </section>
 
   <!-- 2 ------------------------------------------------------------------ -->
@@ -1374,6 +1817,27 @@
         </p>
       {/if}
 
+      <!-- **The ticks are chosen in MULTIPLES and then converted back to index
+           levels, never the other way round.** This is the one axis on the page
+           whose labels are not the unit its data is in: the series is an index
+           on the base the payload declares and the axis reads «×1», «×2». Round
+           steps found over the levels are 50s and 100s, which come out as ×0,5
+           and ×1,5 — round in a unit nobody sees. Found over the multiples they
+           are round in the unit on screen, and the level they correspond to is
+           whatever it has to be.
+
+           Six intervals rather than five, because this plot is the tall one and
+           the extra room is what it was given for. -->
+      {@const indexMultiples = niceTicks(
+        indexScale.min / indexScale.reference,
+        indexScale.max / indexScale.reference,
+        6
+      )}
+      {@const indexAxis = {
+        min: indexMultiples.min * indexScale.reference,
+        max: indexMultiples.max * indexScale.reference,
+        reference: indexScale.reference,
+      }}
       <figure class="chart">
         <div class="plot">
           <!-- The axis is in multiples, which is what makes it readable at all.
@@ -1382,14 +1846,18 @@
                cell divided by the base the payload declares. The numbers table
                under the chart keeps the published index, because that is the
                figure a sceptic checks against Eurostat. -->
-          {@render yAxis([
-            { at: tickAt(indexScale.max, indexScale), label: times(indexScale.max) },
-            { at: tickAt(indexScale.reference, indexScale), label: times(indexScale.reference, 0) },
-            { at: tickAt(0, indexScale), label: "0" },
-          ])}
+          {@render yAxis(
+            indexMultiples.values.map((m) => ({
+              at: tickAt(m * indexScale.reference, indexAxis),
+              // «×1,0» reads as a measurement where «×1» is a definition, and
+              // the key beside the chart says «×1 = средното за {year} г.» — so
+              // a whole multiple is written whole and a half keeps its decimal.
+              label: m === 0 ? "0" : times(m * indexScale.reference, Number.isInteger(m) ? 0 : 1),
+            }))
+          )}
           <svg
             class="pane"
-            viewBox="0 0 {CH_W} {CH_H}"
+            viewBox="0 0 {CH_W} {CH_TALL}"
             role="img"
             aria-label={t(COPY.mktChartIndex, $lang, {
               from: periodLong(indexSeries.from, $lang),
@@ -1405,12 +1873,14 @@
               realLast: fmt(reading.realTimes),
             })}
           >
+            {@render gridlines(indexAxis, indexScale.reference, CH_TALL)}
+            {@render yearRules(xTicks(indexSeries), CH_TALL)}
             <line
               class="plot-ref"
               x1="0"
-              y1={yOf(indexScale.reference, indexScale)}
+              y1={yOf(indexScale.reference, indexAxis, CH_TALL)}
               x2={CH_W}
-              y2={yOf(indexScale.reference, indexScale)}
+              y2={yOf(indexScale.reference, indexAxis, CH_TALL)}
             />
             <!-- A quarter Eurostat marked as a break in their own series. Drawn as
                  a rule rather than smoothed over: the line either side of it is
@@ -1425,25 +1895,28 @@
                     x1={lineX(i, indexSeries.points.length)}
                     y1="0"
                     x2={lineX(i, indexSeries.points.length)}
-                    y2={CH_H}
+                    y2={CH_TALL}
                   >
                     <title>{period}: {t(COPY.mktFlagB, $lang)}</title>
                   </line>
                 {/if}
               {/if}
             {/each}
-            <path class="plot-line second" d={pathOf({ ...indexRealSeries, ...indexScale })} />
-            <path class="plot-line" d={pathOf({ ...indexSeries, ...indexScale })} />
-            {@render dots({ ...indexSeries, ...indexScale }, times)}
+            <path
+              class="plot-line second"
+              d={pathOf({ ...indexRealSeries, ...indexAxis }, CH_TALL)}
+            />
+            <path class="plot-line" d={pathOf({ ...indexSeries, ...indexAxis }, CH_TALL)} />
+            {@render dots({ ...indexSeries, ...indexAxis }, times, CH_TALL)}
             <line
               class="plot-axis"
               x1="0"
-              y1={yOf(0, indexScale)}
+              y1={yOf(0, indexAxis, CH_TALL)}
               x2={CH_W}
-              y2={yOf(0, indexScale)}
+              y2={yOf(0, indexAxis, CH_TALL)}
             />
           </svg>
-          {@render xAxis(indexSeries)}
+          {@render xYears(xTicks(indexSeries))}
         </div>
         <figcaption>
           <span class="key one"
@@ -1533,13 +2006,15 @@
             the quarters whose column is below it.</span
           >
         </p>
+        {@const rateAxis = niceTicks(rateSeries.min, rateSeries.max)}
         <figure class="chart">
           <div class="plot">
-            {@render yAxis([
-              { at: tickAt(rateSeries.max, rateSeries), label: pct(rateSeries.max) },
-              { at: tickAt(0, rateSeries), label: "0" },
-              { at: tickAt(rateSeries.min, rateSeries), label: pct(rateSeries.min) },
-            ])}
+            {@render yAxis(
+              rateAxis.values.map((v) => ({
+                at: tickAt(v, rateAxis),
+                label: v === 0 ? "0" : pctAxis(v),
+              }))
+            )}
             <svg
               class="pane"
               viewBox="0 0 {CH_W} {CH_H}"
@@ -1554,16 +2029,18 @@
                 last: pct(rateSeries.latest?.value),
               })}
             >
-              {@render columns(rateSeries, (v) => pct(v))}
+              {@render gridlines(rateAxis)}
+              {@render yearRules(xTicks(rateSeries))}
+              {@render columns(rateSeries, (v) => pct(v), rateAxis)}
               <line
                 class="plot-axis"
                 x1="0"
-                y1={yOf(0, rateSeries)}
+                y1={yOf(0, rateAxis)}
                 x2={CH_W}
-                y2={yOf(0, rateSeries)}
+                y2={yOf(0, rateAxis)}
               />
             </svg>
-            {@render xAxis(rateSeries)}
+            {@render xYears(xTicks(rateSeries))}
           </div>
           <figcaption>
             <span class="l-bg">{COPY.mktRefZero.bg}</span>
@@ -1844,12 +2321,15 @@
            narrower, and the two drawn on one scale show the gap between them,
            which is what the mix caveat is about. -->
       {#if dealNewSeries.points.length > 4}
+        {@const dealAxis = niceTicks(dealScale.min, dealScale.max, 4)}
         <figure class="chart">
           <div class="plot">
-            {@render yAxis([
-              { at: tickAt(dealScale.max, dealScale), label: `${fmt0(dealScale.max)} €` },
-              { at: tickAt(0, dealScale), label: "0" },
-            ])}
+            {@render yAxis(
+              dealAxis.values.map((v) => ({
+                at: tickAt(v, dealAxis),
+                label: v === 0 ? "0" : `${fmt0(v)} €`,
+              }))
+            )}
             <svg
               class="pane"
               viewBox="0 0 {CH_W} {CH_H}"
@@ -1861,18 +2341,20 @@
                 existing: fmt0(dealExistingSeries.latest?.value),
               })}
             >
-              <path class="plot-line" d={pathOf({ ...dealNewSeries, ...dealScale })} />
-              <path class="plot-line second" d={pathOf({ ...dealExistingSeries, ...dealScale })} />
-              {@render dots(dealNewSeries, (v) => `${fmt0(v)} €`)}
+              {@render gridlines(dealAxis)}
+              {@render yearRules(xTicks(dealNewSeries))}
+              <path class="plot-line" d={pathOf({ ...dealNewSeries, ...dealAxis })} />
+              <path class="plot-line second" d={pathOf({ ...dealExistingSeries, ...dealAxis })} />
+              {@render dots({ ...dealNewSeries, ...dealAxis }, (v) => `${fmt0(v)} €`)}
               <line
                 class="plot-axis"
                 x1="0"
-                y1={yOf(0, dealScale)}
+                y1={yOf(0, dealAxis)}
                 x2={CH_W}
-                y2={yOf(0, dealScale)}
+                y2={yOf(0, dealAxis)}
               />
             </svg>
-            {@render xAxis(dealNewSeries)}
+            {@render xYears(xTicks(dealNewSeries))}
           </div>
           <figcaption>
             <span class="key one"
@@ -2045,6 +2527,44 @@
           — and the two can move in opposite directions for years.</span
         >
       </p>
+
+      <!--
+        The renters' own figure, beside the rows that say how many of them there
+        are.
+
+        It was the third paragraph from the bottom of §ratio, under two
+        indicators that section itself describes as mostly about owners — so the
+        one number on the page addressed to the people who pay rent arrived after
+        everything addressed to the people who do not, and a reader who stopped
+        earlier never met it. Here the share and the price sit together: the
+        table says how many rent, and the sentence says what renting did.
+
+        BODY COPY, and the tenure table is why. Every figure around it is a share
+        of the population measured once a year by a survey; this one is a price
+        measured every month, from a different cube on a different clock. A
+        reader who takes it for another row of the table has a monthly index
+        filed as an annual share.
+      -->
+      {#if rent}
+        <p>
+          <span class="l-bg"
+            >За хората от последните три реда цената на жилището е наемът. Той се мери всеки месец,
+            а не всяко тримесечие: за {periodLong(rent.refPeriod, "bg")} наемите са {pct(
+              rent.value
+            )} спрямо същия месец година по-рано. Това е цената на наема, а не цената на жилището, и е
+            за всички плащани наеми в страната.</span
+          >
+          <span class="l-en"
+            >For the people in the last three rows the price of housing is the rent. It is measured
+            every month rather than every quarter: for {periodLong(rent.refPeriod, "en")} rents are
+            {pct(rent.value)} against the same month a year earlier. That is the price of renting rather
+            than the price of a home, and it covers every rent actually paid in the country.</span
+          >
+        </p>
+        <p class="ss tsrc">
+          {@render srcLine(COPY.srcEurostat, rent.sourceUrl, when(rent.refPeriod), rent.apiUrl)}
+        </p>
+      {/if}
     {/if}
 
     <p class="cap">
@@ -2073,6 +2593,30 @@
          an example list assembled from the international definition instead
          puts institutions on the page that this census does not enumerate, and
          nothing in the payload can contradict a wrong example. -->
+    <!-- TWO KINDS OF TIME ON ONE PAGE, and this is the section where they meet.
+         Everything above is a series: a quarter, then the next quarter, each
+         one replacing the last. This is a single count, taken once, and it does
+         not update — so a reader who has been reading quarters arrives at a
+         figure that looks like the newest one and is not. The date is under
+         every number here already; what was missing is what KIND of number it
+         is, which no date beside a digit can say. The period is rendered from
+         the payload rather than written, like every other one on the page. -->
+    <p>
+      <span class="l-bg"
+        >Останалите числа на страницата се мерят всяко тримесечие или всяка година и се сменят с
+        новото издание. Това е броене — прави се веднъж и не се обновява, докато не дойде следващото
+        преброяване{#if structure.dwellings.refPeriod}; последното е от {periodLong(
+            structure.dwellings.refPeriod,
+            "bg"
+          )} г{/if}. Дотогава никой не брои всички жилища.</span
+      >
+      <span class="l-en"
+        >The other figures on this page are measured every quarter or every year and are replaced by
+        the next edition. This is a count: taken once, and not updated until the next census{#if structure.dwellings.refPeriod},
+          the last of which was {periodLong(structure.dwellings.refPeriod, "en")}{/if}. Until then
+        nobody counts every dwelling there is.</span
+      >
+    </p>
     <p>
       <span class="l-bg"
         >«Необитавано» значи, че към момента на преброяването жилището не е било постоянен дом на
@@ -2141,6 +2685,70 @@
         )}
       </p>
 
+      <!--
+        The share as one bar, under the table it is the fourth row of.
+
+        Two counts and a percentage are three numbers a reader adds up in their
+        head to get one picture, and this is the picture: how much of the
+        country's dwelling stock was nobody's home. It is drawn from the SHARE
+        the wiring computed, not from the two counts again — a bar that did its
+        own division could disagree with the row above it.
+
+        AFTER the source line and never between it and the table. The render
+        suite finds a table's citation by walking to the element beside it, so a
+        drawing dropped in between leaves the table reading as uncited.
+
+        It is deliberately not a `figure.chart`: it draws one reading rather than
+        a series, so there is no window to caption, no axis to contain zero and
+        no numbers table to publish under it. The table above IS its numbers.
+      -->
+      {#if structure.unoccupiedPct.value != null}
+        <div class="stock">
+          <svg
+            class="stockbar"
+            viewBox="0 0 100 8"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label={t(COPY.mktChartStock, $lang, {
+              occupied: fmt0(structure.occupied.value),
+              unoccupied: fmt0(structure.unoccupied.value),
+              share: fmt(structure.unoccupiedPct.value),
+            })}
+          >
+            <rect
+              class="stock-occupied"
+              x="0"
+              y="0"
+              width={100 - structure.unoccupiedPct.value}
+              height="8"
+            >
+              <title>{t(COPY.mktStockOccupied, $lang)}: {fmt0(structure.occupied.value)}</title>
+            </rect>
+            <rect
+              class="stock-unoccupied"
+              x={100 - structure.unoccupiedPct.value}
+              y="0"
+              width={structure.unoccupiedPct.value}
+              height="8"
+            >
+              <title>{t(COPY.mktStockUnoccupied, $lang)}: {fmt0(structure.unoccupied.value)}</title>
+            </rect>
+          </svg>
+          <p class="ends cap">
+            <span>
+              <span class="l-bg">{COPY.mktStockOccupied.bg}</span>
+              <span class="l-en">{COPY.mktStockOccupied.en}</span>
+              <span class="mono">{fmt0(structure.occupied.value)}</span>
+            </span>
+            <span>
+              <span class="l-bg">{COPY.mktStockUnoccupied.bg}</span>
+              <span class="l-en">{COPY.mktStockUnoccupied.en}</span>
+              <span class="mono">{fmt0(structure.unoccupied.value)}</span>
+            </span>
+          </p>
+        </div>
+      {/if}
+
       {@render ourSum(
         {
           bg:
@@ -2199,12 +2807,12 @@
            off the top in the years the ratio ran above it, which is every year
            from 2004 to 2010. Zero-based for the same reason the volume chart
            is. -->
+      {@const ptiAxis = niceTicks(ptiSeries.min, ptiSeries.max, 4)}
       <figure class="chart">
         <div class="plot">
-          {@render yAxis([
-            { at: tickAt(ptiSeries.reference, ptiSeries), label: "100" },
-            { at: tickAt(0, ptiSeries), label: "0" },
-          ])}
+          {@render yAxis(
+            ptiAxis.values.map((v) => ({ at: tickAt(v, ptiAxis), label: v === 0 ? "0" : fmt0(v) }))
+          )}
           <svg
             class="pane"
             viewBox="0 0 {CH_W} {CH_H}"
@@ -2217,24 +2825,20 @@
               last: fmt(ptiSeries.latest?.value),
             })}
           >
+            {@render gridlines(ptiAxis, ptiSeries.reference)}
+            {@render yearRules(xTicks(ptiSeries))}
             <line
               class="plot-ref"
               x1="0"
-              y1={yOf(ptiSeries.reference, ptiSeries)}
+              y1={yOf(ptiSeries.reference, ptiAxis)}
               x2={CH_W}
-              y2={yOf(ptiSeries.reference, ptiSeries)}
+              y2={yOf(ptiSeries.reference, ptiAxis)}
             />
-            <path class="plot-line" d={pathOf(ptiSeries)} />
-            {@render dots(ptiSeries, (v) => fmt(v))}
-            <line
-              class="plot-axis"
-              x1="0"
-              y1={yOf(0, ptiSeries)}
-              x2={CH_W}
-              y2={yOf(0, ptiSeries)}
-            />
+            <path class="plot-line" d={pathOf({ ...ptiSeries, ...ptiAxis })} />
+            {@render dots({ ...ptiSeries, ...ptiAxis }, (v) => fmt(v))}
+            <line class="plot-axis" x1="0" y1={yOf(0, ptiAxis)} x2={CH_W} y2={yOf(0, ptiAxis)} />
           </svg>
-          {@render xAxis(ptiSeries)}
+          {@render xYears(xTicks(ptiSeries))}
         </div>
         <figcaption>
           <span class="l-bg">{COPY.mktChartRefLine.bg}</span>
@@ -2337,15 +2941,15 @@
           transaction prices.</span
         >
       </p>
+      {@const overburdenAxis = niceTicks(overburdenSeries.min, overburdenSeries.max, 4)}
       <figure class="chart">
         <div class="plot">
-          {@render yAxis([
-            {
-              at: tickAt(overburdenSeries.max, overburdenSeries),
-              label: `${fmt(overburdenSeries.max)}%`,
-            },
-            { at: tickAt(0, overburdenSeries), label: "0" },
-          ])}
+          {@render yAxis(
+            overburdenAxis.values.map((v) => ({
+              at: tickAt(v, overburdenAxis),
+              label: v === 0 ? "0" : `${fmt0(v)}%`,
+            }))
+          )}
           <svg
             class="pane"
             viewBox="0 0 {CH_W} {CH_H}"
@@ -2360,16 +2964,18 @@
               last: fmt(overburdenSeries.latest?.value),
             })}
           >
-            {@render columns(overburdenSeries, (v) => `${fmt(v)}%`)}
+            {@render gridlines(overburdenAxis)}
+            {@render yearRules(xTicks(overburdenSeries))}
+            {@render columns(overburdenSeries, (v) => `${fmt(v)}%`, overburdenAxis)}
             <line
               class="plot-axis"
               x1="0"
-              y1={yOf(0, overburdenSeries)}
+              y1={yOf(0, overburdenAxis)}
               x2={CH_W}
-              y2={yOf(0, overburdenSeries)}
+              y2={yOf(0, overburdenAxis)}
             />
           </svg>
-          {@render xAxis(overburdenSeries)}
+          {@render xYears(xTicks(overburdenSeries))}
         </div>
       </figure>
       <p class="ss tsrc">
@@ -2389,40 +2995,14 @@
       )}
     {/if}
 
-    <!-- The renters' figure. Two of every fifteen people in the country rent,
-         and the two indicators above them are about owners for the most part —
-         so a section asking whether housing is dear against incomes that never
-         mentioned rent would be answering for the majority and calling it the
-         answer. It is the calculator's own line, read here rather than fetched
-         again. -->
-    {#if rent}
-      <p>
-        <span class="l-bg"
-          >Двата реда отгоре са най-вече за хората със собствено жилище. За тези, които плащат наем,
-          официалното число е друго: промяната в наемите за {periodLong(rent.refPeriod, "bg")} спрямо
-          същия месец година по-рано е {pct(rent.value)}. Това е цената на наема, а не цената на
-          жилището, и се мери всеки месец.</span
-        >
-        <span class="l-en"
-          >The two series above are mostly about people who own their home. For those who pay rent
-          the official figure is a different one: the change in rents for {periodLong(
-            rent.refPeriod,
-            "en"
-          )} against the same month a year earlier is {pct(rent.value)}. That is the price of
-          renting rather than the price of a home, and it is measured every month.</span
-        >
-      </p>
-      <p class="ss tsrc">
-        {@render srcLine(COPY.srcEurostat, rent.sourceUrl, when(rent.refPeriod), rent.apiUrl)}
-      </p>
-    {/if}
-
     <p class="cap">
       <span class="l-bg"
-        >Трите числа в този раздел мерят различни неща и не сочат непременно в една посока.</span
+        >Двете числа в този раздел мерят различни неща и не сочат непременно в една посока. Наемите
+        са при <a href="#credit">таблицата кой как живее</a>.</span
       >
       <span class="l-en"
-        >The three figures in this section measure different things and need not point the same way.</span
+        >The two figures in this section measure different things and need not point the same way.
+        Rents are beside <a href="#credit">the table of how people live</a>.</span
       >
     </p>
   </section>
@@ -2833,12 +3413,36 @@
     transform: translateY(-50%);
     white-space: nowrap;
   }
-  .xaxis {
+  /* The year ticks, stacked in ONE grid cell and moved with `position:
+     relative` — the device the y axis uses, and for the same two reasons. Out
+     of flow with `position: absolute` they would contribute nothing to the
+     row's height and the labels would sit on top of the plot; laid out in flow
+     they would space themselves evenly and stop pointing at their own columns.
+
+     A percentage `left` resolves against this box's width, which the grid has
+     already stretched to the plot's — so a tick lands on its own year at every
+     viewport. */
+  .xyears {
     grid-column: 2;
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr;
+    /* …and each tick is sized to its own text rather than stretched to the
+       cell. A stacked grid item defaults to filling its area, and then
+       `translateX(-50%)` moves it by half the PLOT rather than by half the
+       label: the first year lands 157px left of the box at 360px, which is off
+       the page. The y axis needs the same declaration and states it as
+       `justify-items: end`. */
+    justify-items: start;
     margin-top: 4px;
+    min-height: 1em;
+  }
+  /* The horizontal shift is written on the element rather than here: which of
+     the three it takes depends on where the tick lands, and only the template
+     knows that. */
+  .xyears .plot-tick {
+    grid-area: 1 / 1;
+    position: relative;
+    white-space: nowrap;
   }
   /* The labels are HTML and set in the page's own type, so they are the same
      size at 360px as at 1440. Inside the SVG they were 11px in a box that
@@ -2886,6 +3490,88 @@
   .key.two::before {
     background: var(--ink-2);
   }
+  /* The marked quarters' swatch, drawn at the tint the columns are drawn at, or
+     the key names a colour that is nowhere on the plot. Taller than a line
+     swatch because what it stands for is a bar. */
+  .key.season::before {
+    background: var(--real);
+    opacity: 0.42;
+    height: 9px;
+  }
+
+  /* The two panels on one row of quarters. The gap between them is small on
+     purpose — far enough apart they read as two charts that happen to be near
+     each other, which is the reading the shared window exists to prevent. The
+     label sits above its own plot rather than under it, so a reader meets the
+     name before the picture and the pair is not two unlabelled boxes and two
+     captions to match up. */
+  .pair {
+    margin-top: 12px;
+  }
+  .pair .chart {
+    margin-top: 4px;
+  }
+  /* THE ONE PLACE ON THIS PAGE WHERE THE GUTTER IS NOT `auto`, and the pair is
+     why. Every other plot sizes its label column to its own longest tick, which
+     is right for a chart standing alone and wrong for two stacked: two grids
+     cannot share an `auto` column, so «−28,3%» over «0» sets one panel's plot
+     8px narrower than the other's and the two windows no longer line up. A
+     quarter drawn above a different quarter is the one thing the shared window
+     exists to prevent, and it would be a CSS accident rather than a wiring one.
+
+     5.5ch holds a whole signed percentage with its sign and its unit — «−100%»
+     — which is the widest label either of these axes can produce, since an axis
+     tick here is written without a decimal.
+     `verify_render_market.mjs` measures the two plot boxes against each other,
+     so a label that outgrows this is a red test rather than a picture that has
+     quietly stopped being one. */
+  .pair .plot {
+    grid-template-columns: 5.5ch minmax(0, 1fr);
+  }
+  .pair .panel {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* The census stock as one bar. `preserveAspectRatio="none"` is safe here and
+     nowhere else on the page: this draws two widths and no line, no stroke and
+     no diagonal, so stretching the box distorts nothing that carries meaning —
+     and a bar whose height came from its own aspect ratio would be 8px tall at
+     360px and 30px at the full measure. */
+  .stock {
+    margin-top: 14px;
+  }
+  .stockbar {
+    width: 100%;
+    height: 14px;
+    display: block;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .stock-occupied {
+    fill: var(--real);
+  }
+  /* The other side of the same total, in the same hue at less weight — the
+     tint the season marks use. NOT `--erode`: that accent means "money leaving
+     you" everywhere on this site, and an unoccupied dwelling is a count rather
+     than a loss. Which of the two shares is the bad news is exactly the
+     question this page does not answer. */
+  .stock-unoccupied {
+    fill: var(--real);
+    opacity: 0.42;
+  }
+  .stock .ends {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .stock .ends .mono {
+    font-family: var(--mono);
+  }
 
   /* The numbers under a chart, and the method behind a figure. Both closed,
      both the long form of something short that is already on the page; the
@@ -2917,6 +3603,15 @@
   .plot-bar {
     fill: var(--real);
   }
+  /* The quarters that share the newest reading's place in the year. Marked in
+     the SAME hue at less weight, never in a second colour: a different colour
+     on this page means a different series, and these are the same one. What the
+     tint says is "these are the comparable ones", which is a statement about
+     the calendar and not about the market. */
+  .plot-bar.season {
+    fill: var(--real);
+    opacity: 0.42;
+  }
   .plot-line {
     fill: none;
     stroke: var(--real);
@@ -2940,6 +3635,15 @@
      than a two-pixel stroke. */
   .plot-hit {
     fill: transparent;
+  }
+  /* The two kinds of furniture: a year boundary down the plot and a value
+     gridline across it. The quietest marks on the page — the emphatic rules are
+     zero and a reference the publisher defines — and both are drawn BEFORE the
+     data, so a column sits on top of its gridline rather than behind it. */
+  .plot-year,
+  .plot-grid {
+    stroke: var(--rule);
+    stroke-width: 1;
   }
   /* A break the publisher declared, drawn as a rule through the plot. Quiet on
      purpose: it qualifies the line, it is not a second series. */

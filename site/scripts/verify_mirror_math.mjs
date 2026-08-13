@@ -60,6 +60,7 @@ import {
   changePct,
   quarterYearAgo,
   dealsAtQuarter,
+  yearOnYearChanges,
   unoccupiedSharePct,
   dealInYearsOfPay,
   indexTimesBase,
@@ -1272,6 +1273,55 @@ test("dealsAtQuarter compares a quarter with the SAME quarter a year earlier", (
     yearAgo: null,
     changePct: null,
   });
+});
+
+test("yearOnYearChanges reads the label back a year, never four places back", () => {
+  // The same comparison `dealsAtQuarter` makes, over a whole record — which is
+  // what lets a page say whether one quarter's fall is an ordinary one. The
+  // failure it has to be safe against is a series with a gap: counted by
+  // position, four keys back is the same quarter a year earlier only while
+  // nothing is missing, and a series that skips one quarter silently starts
+  // comparing a winter against an autumn and printing the answer.
+  const full = {
+    "2024-Q3": 100,
+    "2024-Q4": 200,
+    "2025-Q3": 110,
+    "2025-Q4": 180,
+  };
+  assert.deepEqual(yearOnYearChanges(full), {
+    "2025-Q3": ((110 - 100) / 100) * 100,
+    "2025-Q4": ((180 - 200) / 200) * 100,
+  });
+
+  // A gap: 2025-Q1 is missing, so 2025-Q2 is the fourth key back from 2026-Q2
+  // and 2025-Q2 is what a positional read would compare it with. The values are
+  // chosen so the two answers differ in SIGN — 2026-Q2 is above its own quarter
+  // a year earlier and below the key four places back.
+  const gapped = {
+    "2025-Q2": 300,
+    "2025-Q3": 100,
+    "2025-Q4": 100,
+    "2026-Q1": 100,
+    "2026-Q2": 150,
+  };
+  const gappedOut = yearOnYearChanges(gapped);
+  assert.deepEqual(Object.keys(gappedOut), ["2026-Q2"]);
+  assert.ok(
+    gappedOut["2026-Q2"] < 0,
+    "the change was read against a key four places back rather than against the same quarter"
+  );
+
+  // Sparse out. A quarter with no year behind it is ABSENT rather than zero: a
+  // plotted zero there is a measurement nobody made, and on a chart of changes
+  // it draws a year of "no movement" at the start of every series.
+  assert.deepEqual(yearOnYearChanges({ "2020-Q1": 5, "2020-Q2": 6 }), {});
+  assert.deepEqual(yearOnYearChanges({}), {});
+  assert.deepEqual(yearOnYearChanges(null), {});
+  assert.deepEqual(yearOnYearChanges(undefined), {});
+
+  // Nothing to divide by, and nothing that is not a quarter.
+  assert.deepEqual(yearOnYearChanges({ "2024-Q1": 0, "2025-Q1": 10 }), {});
+  assert.deepEqual(yearOnYearChanges({ 2024: 100, 2025: 110 }), {});
 });
 
 test("indexTimesBase divides by the base it is given, never by a literal 100", () => {
