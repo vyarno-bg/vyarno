@@ -318,6 +318,15 @@ export function marketCities(nsiHousing) {
       pricePeriod: c.ref_period ?? null,
       dealsPct: d?.value_pct ?? null,
       dealsPeriod: d?.ref_period ?? null,
+      // **Whether this city's two figures may be drawn as one reading.** The
+      // table can print them in two columns whatever their quarters are,
+      // because each column carries its own and a cell behind its column says
+      // so. A picture cannot: two marks on one track assert they describe the
+      // same quarter, and the two workbooks are released separately — so a city
+      // НСИ has updated in one file and not the other would have its spring
+      // prices drawn against its winter sales, with every digit still correct
+      // and nothing on the row to say the pair is not a pair.
+      comparable: Boolean(c.ref_period) && Boolean(d?.ref_period) && c.ref_period === d.ref_period,
       // Each city's own history, which the payload has carried all along: НСИ
       // publish forty-five quarters per city and the table showed the newest
       // one. Русе falling while Бургас rises is the sentence the table can
@@ -340,6 +349,19 @@ export function marketCities(nsiHousing) {
     // one of them.
     priceScale: sharedScale(cities.map((c) => c.priceSeries)),
     dealsScale: sharedScale(cities.map((c) => c.dealsSeries)),
+    // **One scale for this quarter's two changes, across all six cities.** Both
+    // are percentage changes on the same quarter a year earlier, which is what
+    // makes them drawable on one track at all — and drawn per row against each
+    // row's own extremes, six cities would each fill their track and the column
+    // would say nothing, which is the same failure `priceScale` exists to
+    // prevent for the sparklines.
+    //
+    // Zero is inside it by the same clamp every scale on this page goes
+    // through: the whole reading here is which side of zero each mark is on.
+    changeScale: {
+      min: Math.min(0, ...cities.flatMap((c) => [c.pricePct, c.dealsPct].filter(Number.isFinite))),
+      max: Math.max(0, ...cities.flatMap((c) => [c.pricePct, c.dealsPct].filter(Number.isFinite))),
+    },
     cities,
   };
 }

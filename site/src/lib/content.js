@@ -2429,6 +2429,17 @@ export const COPY = {
   // sees repeating is the calendar, and the marked columns are the ones the
   // year-on-year figure actually compares.
   mktKeySeason: { bg: "същото тримесечие всяка година", en: "the same quarter each year" },
+  // The per-city column that draws the two changes the row already prints. Its
+  // head names the quarter rather than the measure, because the measure is the
+  // two columns either side of it and the one thing the picture adds is that
+  // they belong to the same quarter.
+  mktColCityNow: { bg: "Двете, едно до друго", en: "The two, side by side" },
+  mktKeyCityPrice: { bg: "цени", en: "prices" },
+  mktKeyCityDeals: { bg: "брой сделки", en: "sales" },
+  mktChartCityNow: {
+    bg: "{city}: цените са {price}, а броят сделки {deals}, за {at} спрямо същото тримесечие година по-рано.",
+    en: "{city}: prices are {price} and the number of sales {deals}, for {at} against the same quarter a year earlier.",
+  },
   // The census bar. Two counts and the share between them, said once for a
   // reader who cannot see the drawing.
   mktChartStock: {

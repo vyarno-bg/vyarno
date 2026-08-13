@@ -732,6 +732,152 @@ test("the range strip puts every marker where the published figures put it", { s
   );
 });
 
+test("the city column draws both changes on one scale, from one zero", { skip }, async () => {
+  // The six rows carry the only place on the page where the national divergence
+  // — prices one way, sales the other — exists city by city, and they carried it
+  // as two columns of digits. The bars draw the two figures already in the row,
+  // so the claim is the table's; what the picture adds is that six cities can be
+  // compared at a glance, and that is only true if every bar runs from one zero
+  // against one scale.
+  //
+  // **Asserted as linearity rather than against a recomputed axis.** What makes
+  // the rows comparable is that a bar's length is proportional to its own figure
+  // with the SAME constant on every row, and that holds whatever bounds the
+  // column rounds itself out to. A test that rebuilt the axis here would be
+  // reimplementing the component and would agree with it however wrong both were.
+  const nsi = payload("nsi_housing");
+  if (!nsi) return; // no refresh in this checkout
+
+  const rows = nsi.city_price_index_yoy.cities.map((c) => ({
+    code: c.code,
+    price: c.value_pct,
+    deals: nsi.city_deals_yoy.cities.find((d) => d.code === c.code)?.value_pct ?? null,
+  }));
+
+  await withApp(
+    async (page, errors) => {
+      const drawn = await page.evaluate(() =>
+        [...document.querySelectorAll("main.market table.cities tbody tr")]
+          .map((tr) => {
+            const svg = tr.querySelector("svg.now");
+            if (!svg) return null;
+            const zero = svg.querySelector("line.now-zero").getBoundingClientRect();
+            const bar = (sel) => {
+              const box = svg.querySelector(sel).getBoundingClientRect();
+              return { width: box.width, left: box.left - zero.left, right: box.right - zero.left };
+            };
+            return {
+              city: tr.querySelector("th").innerText.trim(),
+              price: bar("rect.now-price"),
+              deals: bar("rect.now-deals"),
+              named: svg.getAttribute("aria-label") ?? "",
+            };
+          })
+          .filter(Boolean)
+      );
+      assert.equal(drawn.length, rows.length, `${drawn.length} of ${rows.length} rows drawn`);
+
+      const scales = [];
+      for (const [i, row] of rows.entries()) {
+        for (const key of ["price", "deals"]) {
+          const value = row[key];
+          const box = drawn[i][key];
+          assert.ok(Number.isFinite(value), `${row.code} publishes no ${key} figure`);
+          // A bar starts at zero and runs the way its own figure points. Drawn
+          // the other way it says a city whose sales fell had them rise, with
+          // the right number printed in the cell beside it.
+          if (value < 0) {
+            assert.ok(
+              box.right <= 1,
+              `${row.code}'s ${key} figure is ${value} and its bar runs right of zero`
+            );
+          } else {
+            assert.ok(
+              box.left >= -1,
+              `${row.code}'s ${key} figure is ${value} and its bar runs left of zero`
+            );
+          }
+          // The 0.8-unit floor keeps a rounds-to-nothing change visible, so a
+          // bar that short says nothing about the scale it was drawn on.
+          if (Math.abs(value) > 2) scales.push(box.width / Math.abs(value));
+        }
+      }
+      assert.ok(scales.length >= 8, `${scales.length} bars long enough to measure`);
+      const spread = Math.max(...scales) / Math.min(...scales);
+      assert.ok(
+        spread < 1.05,
+        `the bars are drawn at ${scales.map((s) => s.toFixed(2)).join(", ")} px per point. One ` +
+          "scale across the six cities is what makes the rows comparable; per row, every city " +
+          "fills its own cell and the column says nothing."
+      );
+      for (const row of drawn) {
+        assert.ok(
+          row.named.length > 30 && /\d/.test(row.named),
+          `${row.city}'s bars have no text alternative naming them: "${row.named}"`
+        );
+      }
+
+      // …and the column states the scale it drew them on, once, in its head.
+      const axis = await page
+        .locator("main.market table.cities thead .nowaxis span")
+        .allInnerTexts();
+      assert.deepEqual(
+        [axis.length, axis.includes("0")],
+        [3, true],
+        `the column head labels its scale as ${axis.join(" | ")} — both ends and the zero ` +
+          "between them, or the bars are lengths against nothing"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+
+  // A city whose two workbooks are a quarter apart draws NOTHING. The columns
+  // either side keep printing their figures and each says which quarter it is
+  // from; the picture has nowhere to put that, and two bars in one cell assert
+  // they describe the same quarter. Served rather than committed, because the
+  // shipped payload has all six cities in step — the state under test is one no
+  // committed file can produce.
+  const parted = {
+    ...nsi,
+    city_deals_yoy: {
+      ...nsi.city_deals_yoy,
+      cities: nsi.city_deals_yoy.cities.map((c, i) =>
+        i === 0 ? { ...c, ref_period: "1999-Q1" } : c
+      ),
+    },
+  };
+  await withApp(
+    async (page, errors) => {
+      const cells = await page.evaluate(() =>
+        [...document.querySelectorAll("main.market table.cities tbody tr")].map((tr) => {
+          const cell = tr.querySelector("td:last-child");
+          return { drawn: Boolean(cell.querySelector("svg")), text: cell.innerText.trim() };
+        })
+      );
+      assert.equal(cells[0].drawn, false, "a city whose two figures are a quarter apart is drawn");
+      assert.equal(
+        cells[0].text,
+        "—",
+        `the undrawable cell reads "${cells[0].text}" rather than as visibly missing`
+      );
+      assert.ok(
+        cells.slice(1).every((c) => c.drawn),
+        "one city out of step stopped the whole column being drawn"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {},
+    async (page) => {
+      await page.route("**/data/published/nsi_housing.json", (route) =>
+        route.fulfill({ contentType: "application/json", body: JSON.stringify(parted) })
+      );
+    }
+  );
+});
+
 test("the marked columns are the quarters the year-on-year figure compares", { skip }, async () => {
   // The sawtooth on the count chart is the loudest thing on the page and it is
   // the calendar. The tint is what says so — and a tint on the wrong columns is
