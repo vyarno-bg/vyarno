@@ -110,14 +110,14 @@
           <span class="l-bg"
             >Три неща: <b>(1)</b> готовия процент на инфлацията („транспортът е с 11% по-скъп
             отпреди година“); <b>(2)</b> ценовия индекс — число, което показва докъде са стигнали
-            цените на всяка група; и <b>(3)</b> теглата на кошницата — каква част от парите на средния
-            човек отива за всяка група (храна ≈ 22%, транспорт ≈ 14%).</span
+            цените на всяка група; и <b>(3)</b> теглата на кошницата — каква част от всички пари, които
+            домакинствата в страната харчат, отива за всяка група (храна ≈ 22%, транспорт ≈ 14%).</span
           >
           <span class="l-en"
             >Three things: <b>(1)</b> the ready-made inflation percentage ("transport is 11% more
             expensive than a year ago"); <b>(2)</b> the price index - a number showing how far each
-            group's prices have got; and <b>(3)</b> the basket weights - how much of the average person's
-            money goes to each group (food ≈ 22%, transport ≈ 14%).</span
+            group's prices have got; and <b>(3)</b> the basket weights - how much of everything the country's
+            households spend goes to each group (food ≈ 22%, transport ≈ 14%).</span
           >
         </p>
 

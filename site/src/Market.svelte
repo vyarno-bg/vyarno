@@ -940,6 +940,8 @@
           `«Колко години заплата» е средната сделка на Евростат, разделена на дванадесет средни ` +
           `месечни заплати на НСИ за всички дейности. Двата файла се срещат едва тук, в браузъра ` +
           `ти, така че във всеки от тях стоят числата само на един публикуващ орган. ` +
+          `Таблицата на НСИ мери наетите по трудово правоотношение, така че работещите на ` +
+          `свободна практика и собствениците на фирми не влизат в тази средна заплата. ` +
           `Заплатата е брутната, както я публикува НСИ. Парите на ръка зависят от данъчната ` +
           `таблица на годината, в която са сметнати — това би вкарало трети закон в сметка между ` +
           `две институции. ` +
@@ -954,6 +956,8 @@
           `The years figure is Eurostat's average transaction divided by twelve of НСИ's ` +
           `published average monthly wages across all activities. The two files meet only here, ` +
           `in your browser, which is what keeps each of them one publisher's data. ` +
+          `НСИ's table measures employees under a labour contract, so the self-employed and ` +
+          `company owners are not in that average. ` +
           `The wage is the one before tax and contributions, as НСИ publish it. Take-home pay ` +
           `depends on the payroll table of the year that computed it, which would put a third ` +
           `body's law inside a two-publisher ratio. ` +
@@ -1000,14 +1004,18 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Евростат брои жилищата, купени от домакинства през тримесечието — апартаменти и къщи, на
-        цената, която реално е платена. Броят им се публикува отделно за новото строителство и за
-        съществуващите жилища, така че двете движения се виждат поотделно.</span
+        >Евростат брои жилищата — апартаменти и къщи — които домакинствата са купили през
+        тримесечието на пазарна цена. Дарения и наследства, продажби на занижена цена между роднини
+        и построеното за себе си остават извън броя, защото не са пазарни покупки. Броят им се
+        публикува отделно за новото строителство и за съществуващите жилища, така че двете движения
+        се виждат поотделно.</span
       >
       <span class="l-en"
-        >Eurostat count the dwellings households bought during the quarter — flats and houses, at
-        the price actually paid. The count is published separately for new builds and existing
-        dwellings, so the two movements can be read apart.</span
+        >Eurostat count the dwellings households bought during the quarter — flats and houses,
+        bought at a market price. Gifts and inheritances, discounted sales between relatives and
+        anything built for oneself stay outside the count, because they are not market purchases.
+        The count is published separately for new builds and existing dwellings, so the two
+        movements can be read apart.</span
       >
     </p>
 
@@ -1785,14 +1793,21 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Евростат публикува колко жилища са купени и колко е платено общо за тях. Едното, разделено
-        на другото, дава средната сделка — число, което никой не публикува наготово. Двете числа, от
-        които идва, стоят на същия ред, за да може делението да се провери.</span
+        >Евростат публикува колко жилища са купени и колко е платено общо за тях — един и същ
+        обхват, едно и също тримесечие. Едното, разделено на другото, дава средната сделка — число,
+        което никой не публикува наготово. Двете числа, от които идва, стоят на същия ред, за да
+        може делението да се провери. «Платено общо» е цената на самите жилища заедно с земята под
+        тях, с ДДС при новото строителство; нотариусът, комисионата и банковите такси стоят извън
+        нея, така че средната сделка е цената на жилището, а не цената на купуването му.</span
       >
       <span class="l-en"
-        >Eurostat publish how many dwellings were bought and how much was paid for them in total.
-        One divided by the other gives the average deal — a figure nobody publishes ready-made. The
-        two numbers it comes from are on the same row, so the division can be checked.</span
+        >Eurostat publish how many dwellings were bought and how much was paid for them in total —
+        the same scope, the same quarter. One divided by the other gives the average deal — a figure
+        nobody publishes ready-made. The two numbers it comes from are on the same row, so the
+        division can be checked. "Total paid" is the price of the dwellings themselves together with
+        the land under them, VAT included on new builds; the notary, the agency commission and the
+        bank fees sit outside it, so the average deal is what a home costs rather than what buying
+        one costs.</span
       >
     </p>
 
@@ -1940,17 +1955,19 @@
         >Всяка година част от домакинствата в страната отговарят на едно и също изследване — за
         доходите си и за това как живеят. Наред с останалото ги питат и какво е жилището, в което
         са: тяхно и изплатено, тяхно, но с кредит по него, или под наем. Евростат публикува
-        резултата. Числата в таблицата са дял от всички хора в страната, на една и съща основа:
-        собствениците и наемателите правят сто. Редът със заема е отговорът на въпроса в заглавието,
-        и той е малък ред.</span
+        резултата. Числата в таблицата са дял от хората, живеещи в частни домакинства — изследването
+        не стига до домовете за стари хора, общежитията и другите колективни домакинства — и са на
+        една и съща основа: собствениците и наемателите правят сто. Редът със заема е отговорът на
+        въпроса в заглавието, и той е малък ред.</span
       >
       <span class="l-en"
         >Every year a part of the country's households answer the same survey — about their income
         and how they live. Among the rest they are asked what the home they are in is: theirs and
         paid off, theirs but with a loan on it, or rented. Eurostat publish the result. The figures
-        in the table are shares of everybody in the country, on one and the same base: owners and
-        renters make a hundred. The row with the loan on it answers the question in the heading, and
-        it is a small row.</span
+        in the table are shares of the people living in private households — the survey does not
+        reach care homes, halls of residence and other collective households — and they are on one
+        and the same base: owners and renters make a hundred. The row with the loan on it answers
+        the question in the heading, and it is a small row.</span
       >
     </p>
 
@@ -2081,16 +2098,20 @@
         всички. «Жилище» тук значи място, направено да се живее в него — апартамент или къща със
         собствен вход. Домовете за стари хора, интернатите, манастирите и затворите преброяването ги
         описва отделно, като «колективни жилища», и в тази таблица ги няма. «Необитавано» значи, че
-        в нощта на преброяването там не е живял никой. Затова вътре влизат и вилите, и вторите
-        жилища, и жилищата на хора в чужбина, а не само наистина празните.</span
+        към момента на преброяването жилището не е било постоянен дом на никого. Не се пита кой е
+        нощувал там: жилище с хора в него, преброени другаде, също е необитавано. Затова вътре
+        влизат и вилите, и вторите жилища, и жилищата на хора в чужбина, а не само наистина
+        празните.</span
       >
       <span class="l-en"
         >The census counts dwellings rather than people, and it is the only time anybody counts all
         of them. "Dwelling" here means somewhere built to be lived in — a flat or a house with its
         own entrance. Care homes for the elderly, boarding schools, monasteries and prisons the
         census describes separately, as "collective dwellings", and they are not in this table.
-        "Unoccupied" means nobody was living there on census night. So holiday homes, second homes
-        and the homes of people abroad are all inside it, not only the genuinely empty ones.</span
+        "Unoccupied" means the dwelling was nobody's permanent home at the time of the census. Who
+        slept there is not the test: a dwelling with people in it who were counted somewhere else is
+        unoccupied as well. So holiday homes, second homes and the homes of people abroad are all
+        inside it, not only the genuinely empty ones.</span
       >
     </p>
     <!-- The heading names the CENSUS rather than the housing stock, because the
@@ -2164,16 +2185,16 @@
       <span class="l-bg"
         >Цената сама по себе си не казва много: тя зависи и от това колко печелят хората. Затова
         Евростат дели едното на другото и гледа как се движи резултатът. «Доход» тук не е заплата —
-        това е всичко, което влиза в домакинствата: заплати, пенсии, помощи и услугите, които
-        държавата плаща вместо тях. Общата сума се дели на всички хора в страната, от бебето до
-        пенсионера.</span
+        това е всичко, което остава на домакинствата след данъците и осигуровките: заплати, пенсии,
+        помощи и услугите, които държавата плаща вместо тях. Общата сума се дели на всички хора в
+        страната, от бебето до пенсионера.</span
       >
       <span class="l-en"
         >A price on its own says little: it depends on what people earn as well. So Eurostat divide
         one by the other and watch how the result moves. "Income" here is not a wage — it is
-        everything coming into households: wages, pensions, benefits and the services the state pays
-        for on their behalf. That total is divided by everyone in the country, from the baby to the
-        pensioner.</span
+        everything households are left with after tax and contributions: wages, pensions, benefits
+        and the services the state pays for on their behalf. That total is divided by everyone in
+        the country, from the baby to the pensioner.</span
       >
     </p>
     <p>
@@ -2324,42 +2345,42 @@
 
     <!-- Twenty years of the overburden share, which was one number ------- -->
     {#if overburdenSeries.points.length > 4}
-      <!-- The card this replaced read «6,9% · плащат над 40% от дохода си за
-           жилище», and a reader could not tell who «they» were: the figure is a
-           share of everybody in the country, while the 40% is of a HOUSEHOLD's
-           income. Two denominators in one line, neither of them named. A
-           sentence has room to say both, and the chart beside it is the same
-           series, so the card was also the picture repeated badly. -->
+      <!-- **Two denominators, and both have to be named in the same breath.**
+           The figure counts PEOPLE — everyone in a household over the line, not
+           the households — while the 40% is a share of that HOUSEHOLD's
+           disposable income. A label short enough for a card («плащат над 40% от
+           дохода си за жилище») can carry at most one of them, and a reader who
+           takes the percentage for a share of households has the wrong number by
+           a household's worth. So this is a sentence, and the chart beside it is
+           the same series a card would have repeated. -->
       <p>
         <span class="l-bg"
-          >Другото официално число брои хората, които живеят в домакинство, даващо над 40% от дохода
-          си за жилище. Изследването пита самите домакинства; процентът е дял от всички хора в
-          страната{#if overburdenSeries.value != null}, и за {periodLong(
+          >Другото официално число брои хората, които живеят в домакинство, даващо над 40% от
+          разполагаемия си доход за жилище. Изследването пита самите домакинства; процентът е дял от
+          хората в частни домакинства{#if overburdenSeries.value != null}, и за {periodLong(
               overburdenSeries.refPeriod,
               "bg"
             )} е {fmt(overburdenSeries.value)}%{/if}. «Разходи за жилище» тук е всичко около него —
-          ток, парно, вода, поддръжка и данък, а наем или вноска само за тези, които плащат такива.
-          Огромната част от хората в България живеят в собствено жилище без заем, така че този ред
-          се движи най-вече от сметките, а не от цените на сделките. И не върви в една посока:
-          най-ниското му е {fmt(overburdenSeries.trough?.value)}% през {periodLong(
-            overburdenSeries.trough?.period,
-            "bg"
-          )}, а най-високото — {fmt(overburdenSeries.peak?.value)}% през {periodLong(
-            overburdenSeries.peak?.period,
-            "bg"
-          )}.</span
+          ток, парно, вода, поддръжка, застраховка и данък; наем за наемателите, а за собствениците
+          с кредит — само лихвата по него, не и главницата, която изплащат. Огромната част от хората
+          в България живеят в собствено жилище без заем, така че този ред се движи най-вече от
+          сметките, а не от цените на сделките. И не върви в една посока: най-ниското му е {fmt(
+            overburdenSeries.trough?.value
+          )}% през {periodLong(overburdenSeries.trough?.period, "bg")}, а най-високото — {fmt(
+            overburdenSeries.peak?.value
+          )}% през {periodLong(overburdenSeries.peak?.period, "bg")}.</span
         >
         <span class="l-en"
           >The other official figure counts people living in a household that spends more than 40%
-          of its income on housing. The survey asks the households themselves; the percentage is a
-          share of everybody in the country{#if overburdenSeries.value != null}, and for {periodLong(
-              overburdenSeries.refPeriod,
-              "en"
-            )} it is {fmt(overburdenSeries.value)}%{/if}. "Housing costs" here is everything around
-          it — electricity, heating, water, maintenance and tax, with rent or a mortgage payment
-          only for those who pay one. The great majority of people in Bulgaria live in a home they
-          own outright, so this series moves mainly with bills rather than with transaction prices.
-          It does not move one way either: its lowest reading is {fmt(
+          of its disposable income on housing. The survey asks the households themselves; the
+          percentage is a share of the people in private households{#if overburdenSeries.value != null},
+            and for {periodLong(overburdenSeries.refPeriod, "en")} it is {fmt(
+              overburdenSeries.value
+            )}%{/if}. "Housing costs" here is everything around it — electricity, heating, water,
+          maintenance, insurance and tax; rent for tenants, and for owners with a loan the interest
+          on it alone, never the capital they are paying back. The great majority of people in
+          Bulgaria live in a home they own outright, so this series moves mainly with bills rather
+          than with transaction prices. It does not move one way either: its lowest reading is {fmt(
             overburdenSeries.trough?.value
           )}% in {periodLong(overburdenSeries.trough?.period, "en")} and its highest {fmt(
             overburdenSeries.peak?.value
@@ -2450,16 +2471,16 @@
     <p class="cap">
       <span class="l-bg"
         >Трите числа в този раздел мерят различни неща и не сочат непременно в една посока. Първото
-        е цената спрямо доходите на цялата страна, второто — колко хора дават над 40% от дохода си
-        за жилището, третото — с колко се променя наемът. Страницата дава и трите и няма да реши
-        вместо теб кое тежи повече. Твоята собствена сметка е в калкулатора.</span
+        е цената спрямо доходите на цялата страна, второто — колко хора дават над 40% от
+        разполагаемия си доход за жилището, третото — с колко се променя наемът. Страницата дава и
+        трите и няма да реши вместо теб кое тежи повече. Твоята собствена сметка е в калкулатора.</span
       >
       <span class="l-en"
         >The three figures in this section measure different things and need not point the same way.
         The first is price against the whole country's incomes, the second is how many people spend
-        over 40% of their income on housing, and the third is how much rent is moving. The page
-        gives all three and will not decide for you which weighs more. Your own arithmetic is in the
-        calculator.</span
+        over 40% of their disposable income on housing, and the third is how much rent is moving.
+        The page gives all three and will not decide for you which weighs more. Your own arithmetic
+        is in the calculator.</span
       >
     </p>
   </section>

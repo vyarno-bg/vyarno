@@ -719,6 +719,14 @@ export function marketOverburdenSeries(structure) {
  * CP04, which sweeps in water, electricity and gas. A section asking what
  * housing costs against incomes would read very differently on CP04.
  *
+ * **It is every actual rent, not only a tenant's own home.** Eurostat's label
+ * for the code is «Actual rental payments made for housing», and it splits one
+ * level down into CP0411 (a tenant's main residence) and CP0412 (other actual
+ * rentals — a second home, a garage). We publish level 2 and not level 3, so
+ * the split is not in the payload and the copy beside this figure says «наемите»
+ * rather than naming a tenant's own rent. Narrowing that sentence would claim
+ * CP0411 while showing CP041.
+ *
  * @param {object|null} hicpCategories
  */
 export function marketRent(hicpCategories) {
