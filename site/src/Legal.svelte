@@ -184,7 +184,12 @@
 <SiteFooter page="legal" />
 
 <style>
+  /* The skip link's target, offset by the height of the sticky header plus a
+     little: a bare `#main` jump parks the first heading underneath it, and a
+     reader who is told they arrived somewhere has to arrive there. The deep
+     links in this page's own contents list carry the same offset. */
   .legal {
+    scroll-margin-top: 64px;
     padding: 26px 0 10px;
     max-width: 760px;
   }

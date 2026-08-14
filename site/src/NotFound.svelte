@@ -62,7 +62,11 @@
 <SiteFooter />
 
 <style>
+  /* The skip link's target, offset by the height of the sticky header plus a
+     little: a bare `#main` jump parks the first heading underneath it, and a
+     reader who is told they arrived somewhere has to arrive there. */
   .nf {
+    scroll-margin-top: 64px;
     padding: 12vh 0 8vh;
     max-width: 620px;
   }

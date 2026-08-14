@@ -99,7 +99,11 @@
 <SiteFooter page="support" />
 
 <style>
+  /* The skip link's target, offset by the height of the sticky header plus a
+     little: a bare `#main` jump parks the first heading underneath it, and a
+     reader who is told they arrived somewhere has to arrive there. */
   main.support {
+    scroll-margin-top: 64px;
     padding: 30px 0 10px;
     max-width: 680px;
   }

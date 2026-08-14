@@ -664,12 +664,11 @@ test("the support page resolves as its own URL and carries the whole ask", { ski
   }, "/support/");
 });
 
-// The two pages that carry a skip link. `/legal/`, `/support/` and the 404 have
-// the sticky header without one, and that is a design call rather than an
-// omission this suite is hiding — those pages put nothing between the header
-// and the prose, so there is nothing for a keyboard reader to skip past. Where
-// one is added, add its route here and this covers it.
-const SKIP_LINK_PAGES = ["/", "/how/"];
+// Every page carries the skip link, because every page carries the same
+// masthead — four tab stops before a word of prose, on all six entries. The
+// list is written out rather than derived so that adding an entry is a visible
+// decision here too.
+const SKIP_LINK_PAGES = ["/", "/how/", "/market/", "/legal/", "/support/", "/404.html"];
 
 for (const path of SKIP_LINK_PAGES) {
   test(
