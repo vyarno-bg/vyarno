@@ -178,9 +178,15 @@
 }
 /* `--fs-lead` is 16px and that is a floor, not a preference: iOS Safari
    zooms the whole viewport when a focused text field is smaller, so a 15px
-   salary box threw the layout sideways the moment someone tapped it. */
+   salary box threw the layout sideways the moment someone tapped it.
+
+   `.m-window` is the measurement-window select in the results card's heading
+   row — card furniture rather than a field, and named here so a control the
+   reader meets among the others is not drawn a second way. It overrides only
+   its size, in the component that renders it. */
 .field input,
-.field select {
+.field select,
+.m-window select {
   width: 100%;
   font-family: var(--mono);
   font-size: var(--fs-lead);
@@ -191,15 +197,9 @@
   padding: 9px 11px;
   font-variant-numeric: tabular-nums;
 }
-/* The y1 option text ("посл. 12 месеца · 2024.12 → 2025.12") overflows the
-   closed dropdown at the shared control size, so the anchor select alone
-   drops two steps. It is a `<select>`, not a text field, so the 16px
-   iOS-zoom floor that binds the inputs does not apply to it. */
-.field select#inAnchor {
-  font-size: var(--fs-meta);
-}
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.m-window select:focus {
   outline: 2px solid var(--real);
   outline-offset: 1px;
   border-color: var(--real);

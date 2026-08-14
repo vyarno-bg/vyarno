@@ -1184,6 +1184,7 @@ function shareCases() {
     piPct: 7.24,
     officialPct: 5.2,
     anchor: "y1",
+    ownBasket: true,
     refPeriod: "2026-06",
     topBgName: "Транспорт",
     topEnName: "Transport",
@@ -1201,9 +1202,24 @@ function shareCases() {
       // No division leads, so there is no biggest bite to name.
       cases.push({ ...base, anchor, verdict, topBgName: "", topEnName: "", topPp: NaN });
     }
+    // The basket every visitor arrives on. `verdict` is still whatever the two
+    // rates compare to — they are the same number here, so it is "close" — and
+    // the card is drawn from `ownBasket` instead, which is the point: a picture
+    // that read the verdict would put a comparison on a surface where only one
+    // basket has been described.
+    cases.push({ ...base, anchor, verdict: "close", ownBasket: false, piPct: 5.2 });
   }
   return cases;
 }
+
+/** Which slots a case is allowed to leave blank, and why each one is allowed. */
+const CARD_MAY_BE_BLANK = (share, slot) =>
+  // `detail` — an empty basket has no leading division, and a dangling
+  // «Най-тежко удря:» with nothing after it is worse than the silence.
+  (slot === "detail" && !Number.isFinite(share.topPp)) ||
+  // The reader's own bar — with no basket described it is the average bar
+  // again, at the same width, under a label calling it the sender's.
+  (!share.ownBasket && (slot === "mineLabel" || slot === "mineValue"));
 
 test("every line on the share card is filled in, in both languages", () => {
   const offenders = [];
@@ -1211,10 +1227,7 @@ test("every line on the share card is filled in, in both languages", () => {
     for (const lang of ["bg", "en"]) {
       const text = shareCardText({ share, copy: COPY, lang });
       for (const [slot, value] of Object.entries(text)) {
-        // `detail` is the one line the card is allowed to drop — an empty
-        // basket has no leading division, and a dangling «Най-тежко удря:»
-        // with nothing after it is worse than the silence.
-        if (slot === "detail" && !Number.isFinite(share.topPp)) continue;
+        if (CARD_MAY_BE_BLANK(share, slot)) continue;
         if (!value || !String(value).trim()) {
           offenders.push(`${lang} ${share.verdict}@${share.anchor}: ${slot} is blank`);
         }

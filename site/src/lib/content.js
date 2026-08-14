@@ -422,12 +422,23 @@ export const COPY = {
   // number covers. Spelled out, the two together overflow the select and the
   // window is what gets clipped.
   anchorY1: { bg: "посл. 12 месеца", en: "last 12 months" },
-  // The default view: Eurostat's official 12-month inflation for the latest
-  // published month, taken verbatim (prc_hicp_minr RCH_A). Plain language —
-  // "инфлация" is the word a regular person uses; no dataset codes.
+  // **Both hints describe the WINDOW and neither names the measure**, and the
+  // select's position is why. It sits in the results card's heading row, four
+  // lines above the headline figure — which is Σ(w·r) over the thirteen
+  // divisions and NOT the all-items rate Eurostat publishes: 5,4% against the
+  // 4,1% in the banner. A hint reading «официалната инфлация на Евростат» there
+  // captions the reconstruction with the name of the other number, and a reader
+  // reads the caption nearest the figure. `docs/site.md` §"A correct formula
+  // fed the wrong number" #5 is this failure with a month in place of a name.
+  //
+  // Saying which months are compared is also what the anchor actually chooses,
+  // and it is the half that dates the figure (P3). `{latest_month}` is the
+  // DIVISIONS' month and never the headline's — during Eurostat's flash the two
+  // are a fortnight apart, and `verify_render_basket.mjs` asserts the rendered
+  // hint against the payload the page fetched for exactly that reason.
   anchorY1Hint: {
-    bg: "официалната инфлация на Евростат за последните 12 месеца (до {latest_month})",
-    en: "Eurostat's official 12-month inflation, to {latest_month}",
+    bg: "(сравнява цените днес с цените отпреди 12 месеца — до {latest_month})",
+    en: "(compares today's prices with prices 12 months earlier - to {latest_month})",
   },
   anchorSinceHint: {
     bg: "(сравнява днешните цени с цените в края на избраната година)",
@@ -564,6 +575,35 @@ export const COPY = {
     bg: "Числото е сметнато по готовата кошница „{p}“ — тя е измислена от нас за пример, не е измерена. Дръпни плъзгачите към своите разходи, за да стане твое.",
     en: 'This is computed from the ready-made "{p}" basket - our illustration, not a measured one. Drag the sliders to your own spending to make it yours.',
   },
+  // The same caveat for the basket EVERY reader starts on, and it was the one
+  // basket without one. `presetActive` covers the four we invented; the
+  // official weights are real published data, so nothing here may call them an
+  // illustration (`verify_copy.mjs` holds that from the other side by refusing
+  // "official" a place in PRESET_LABEL_KEY). What is wrong with them is not
+  // their provenance but whose they are.
+  //
+  // Measured, before this existed: a reader who typed a salary and nothing
+  // else met «5,4% твоята инфлация», a bar labelled «твоята кошница» at 5,4%
+  // and a second labelled «средностатистическата кошница» at 5,4%, both fills
+  // 191px wide, under «Кошницата ти е близо до средностатистическата.» Every
+  // figure was Eurostat's own and the sentence over them reported a
+  // coincidence as a finding — the card comparing the official basket with
+  // itself and calling the result a verdict.
+  //
+  // It says whose the number is and what would make it theirs, and stops
+  // there. The basket is not wrong: it is the country's answer to a question
+  // the reader has not answered yet, which is the only defensible thing to
+  // stand on before they do (docs/principles.md P7).
+  officialBasketActive: {
+    bg: "Числото е сметнато по официалната кошница на Евростат — средното за България, не твоето. Дръпни плъзгачите към своите разходи, за да стане твое.",
+    en: "This is computed from Eurostat's official basket - the average for Bulgaria, not yours. Drag the sliders to your own spending to make it yours.",
+  },
+  // The route to the sliders, and it is the whole reason the sentence above is
+  // actionable. Measured at 360px: the headline sits at y=1,007 and the basket
+  // heading at y=4,675 — 3,668px, 4.7 screens, past the entire receipt, the
+  // област picker, rent, savings and the mortgage block. A caveat naming a
+  // control that far away is a caveat with no second half.
+  officialBasketCta: { bg: "Опиши разходите си", en: "Describe your spending" },
 
   // Input mode: percentage shares vs actual euros per month
   modePct: { bg: "дял в %", en: "share in %" },
@@ -2702,6 +2742,20 @@ export const COPY = {
     bg: "Моята кошница {w}: {p}%. Средната кошница за България: {o}%. Горе-долу колкото средното.",
     en: "My basket {w}: {p}%. The average Bulgarian's basket: {o}%. Much the same as average.",
   },
+  // ONE rate, because before a basket is described the three lines above are
+  // «Моята кошница: 5,4%. Средната кошница за България: 5,4%. Горе-долу
+  // колкото средното.» — the same figure twice and a clause reporting their
+  // sameness as a finding. The four chips still say «моята кошница»: clicking
+  // one is a claim somebody makes, arriving is not.
+  //
+  // **Passive because a participle here agrees with the sender.** «Още не съм
+  // описал» is masculine and nothing knows who is sending it; every other
+  // first-person string on these surfaces is ungendered by carrying no
+  // participle at all.
+  shareLineNoBasket: {
+    bg: "Кошницата ми още не е описана. Средната кошница за България {w}: {o}%.",
+    en: "I haven't described my own basket yet. The average Bulgarian's basket {w}: {o}%.",
+  },
   // The full address, not the bare domain: this is the one surface that CAN
   // carry a link, and P9 asks a format to scale verifiability down only where
   // it physically cannot. The image, which cannot, falls back to `shareCardCta`
@@ -2713,6 +2767,14 @@ export const COPY = {
   // Read by a stranger, at a glance, with no link to click — so the source
   // name, the period and the domain are on the picture itself (P9).
   shareCardKicker: { bg: "моята кошница · {w}", en: "my basket · {w}" },
+  // What the picture is of when the sender has not described a basket. The
+  // kicker names the figure below it, so it has to change with the figure's
+  // owner — a card headed «моята кошница» over the country's number says the
+  // one thing the sentence beside it is being rewritten to stop saying.
+  shareCardKickerOfficial: {
+    bg: "средната кошница за България · {w}",
+    en: "the average Bulgarian's basket · {w}",
+  },
   shareCardMine: { bg: "моята кошница", en: "my basket" },
   // The bar label, under the same rule as the sentences above: it names a
   // basket because that is what the figure beside it is.
@@ -2732,6 +2794,23 @@ export const COPY = {
   shareCardVerdictClose: {
     bg: "Кошницата ми е близо до средната.",
     en: "My basket is close to the average one.",
+  },
+  // The fourth state, and the one that is not a verdict: with no basket
+  // described there are not two things to compare, so the line says which
+  // question is still open instead of answering it. It replaces the three above
+  // rather than joining them — a picture cannot carry both «Кошницата ми е
+  // близо до средната» and «още не съм я описал» without one of them being the
+  // reader's basket and the other not.
+  //
+  // No em dash, for the reason the block below `shareCardTop` gives: «—» is the
+  // glyph `format.js` emits for a value it could not render, and the check that
+  // finds an unfilled slot on a card already in somebody's chat looks for it.
+  // Ungendered for the reason `shareLineNoBasket` above gives at length: a
+  // past participle here agrees with whoever is sending the picture, and the
+  // app has never been told.
+  shareCardVerdictNoBasket: {
+    bg: "Кошницата ми още не е описана.",
+    en: "I haven't described my own basket yet.",
   },
   // {pp} of {p} points, never a euro amount and never a sum the reader is
   // invited to add up: this is one row's share of the total, which is exactly

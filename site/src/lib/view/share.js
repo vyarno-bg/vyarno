@@ -41,6 +41,7 @@ export const SHARE_FIELDS = Object.freeze([
   "piPct",
   "officialPct",
   "verdict",
+  "ownBasket",
   "anchor",
   "refPeriod",
   "topBgName",
@@ -100,16 +101,30 @@ export const SHARE_FIELDS = Object.freeze([
  * roundings — 7.24 against 4.06 draws as 7,2 and 4,1 over a stated 3,2 — and
  * the two bars say which is longer without arithmetic the reader has to trust.
  *
+ * **`activePreset` decides `ownBasket` HERE, not at the call site**, so both
+ * share surfaces read one flag — the failure `near` is passed in to prevent,
+ * one state further back. The four presets count as the reader's own: clicking
+ * one is a claim somebody makes, arriving at the default is not.
+ *
  * @param {object} args
  * @param {number} args.pi         the reader's own rate, percent
  * @param {number} args.official   the same window on the official basket, percent
  * @param {boolean} args.near      the results card's own "close to average" verdict
+ * @param {string|null} args.activePreset  the loaded basket, or null once hand-edited
  * @param {'y1'|number} args.anchor
  * @param {Array<{division:object, contributionPp:number}>} [args.ranked]
  * @param {string} [args.refPeriod]  the published period the rates are from
  * @returns {object|null} the shareable fields, or null when nothing is measured
  */
-export function sharePayload({ pi, official, near, anchor, ranked = [], refPeriod = "" }) {
+export function sharePayload({
+  pi,
+  official,
+  near,
+  activePreset = null,
+  anchor,
+  ranked = [],
+  refPeriod = "",
+}) {
   if (!Number.isFinite(pi) || !Number.isFinite(official)) return null;
 
   // Only the leading row, and only its name and its points. Passing the whole
@@ -121,6 +136,7 @@ export function sharePayload({ pi, official, near, anchor, ranked = [], refPerio
     piPct: pi,
     officialPct: official,
     verdict: near ? "close" : pi > official ? "dearer" : "cheaper",
+    ownBasket: activePreset !== "official",
     anchor,
     refPeriod,
     topBgName: top ? top.division.bg_name : "",
@@ -155,6 +171,7 @@ const SHARE_LINE_KEY = Object.freeze({
  */
 export const SHARE_COPY_KEYS = Object.freeze([
   ...Object.values(SHARE_LINE_KEY),
+  "shareLineNoBasket",
   "shareWindowY1",
   "shareWindowSince",
   "shareCta",
@@ -184,11 +201,18 @@ export function shareSentence({ share, copy, lang = "bg" }) {
     share.anchor === "y1"
       ? t(copy.shareWindowY1, lang)
       : t(copy.shareWindowSince, lang, { y: String(share.anchor) });
-  const body = t(copy[SHARE_LINE_KEY[share.verdict]], lang, {
-    p: number(share.piPct, 1, lang),
-    o: number(share.officialPct, 1, lang),
-    w: windowLabel,
-  });
+  // With no basket described the two rates are one number. `shareLineNoBasket`
+  // carries it once and has no `{p}` slot at all.
+  const body = share.ownBasket
+    ? t(copy[SHARE_LINE_KEY[share.verdict]], lang, {
+        p: number(share.piPct, 1, lang),
+        o: number(share.officialPct, 1, lang),
+        w: windowLabel,
+      })
+    : t(copy.shareLineNoBasket, lang, {
+        o: number(share.officialPct, 1, lang),
+        w: windowLabel,
+      });
   return `${body} ${t(copy.shareCta, lang, { u: share.url })}`;
 }
 

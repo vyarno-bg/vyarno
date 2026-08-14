@@ -1061,6 +1061,14 @@ export class Calculator {
   nearOfficial = $derived(
     Math.abs(this.dpi) < (this.anchor === "y1" ? 0.8 : Math.max(1.2, this.off * 0.08))
   );
+  /**
+   * Whether the basket on screen is anything other than the country's own.
+   *
+   * `dpi` cannot answer this: it is 0 here for the reason a hand-made basket
+   * landing on the national average is also 0, and those two want opposite
+   * sentences.
+   */
+  basketIsOwn = $derived(this.activePreset !== "official");
 
   /**
    * The fields a share surface may carry, and nothing else.
@@ -1086,6 +1094,9 @@ export class Calculator {
           pi: this.pi,
           official: this.off,
           near: this.nearOfficial,
+          // The string, not a comparison of it: the rule lives where
+          // `verify_view_share.mjs` can exercise it.
+          activePreset: this.activePreset,
           anchor: this.anchor,
           ranked: this.ranked,
           refPeriod: this.basketRefPeriod,

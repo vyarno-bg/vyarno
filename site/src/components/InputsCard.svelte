@@ -1,17 +1,19 @@
 <script>
   /**
-   * Everything the reader can leave alone: the comparison period, the raise,
-   * rent, savings, the home block, and the basket underneath them.
+   * Everything the reader can leave alone: the raise, rent, savings, the home
+   * block, and the basket underneath them. **Every control here is a fact about
+   * the reader**, which is why the measurement window is not — it is drawn
+   * beside the figure it governs, and `ResultsSummary.svelte` says why.
    *
    * Net pay is not here. It is the one input every figure on the page is
    * priced off, so it has its own card and its own place in the grid —
    * `PayField.svelte` says why, and it matters most on a phone, where this
    * card is ordered last.
    *
-   * Single-column on purpose — the fields have very different heights (the
-   * anchor is a dropdown plus a hint, the home block opens a grid), so a
-   * two-column grid leaves ungrounded voids between them. Every field is a
-   * full-width unit: label + hint + input + optional sub-hint.
+   * Single-column on purpose — the fields have very different heights (the home
+   * block opens a grid), so a two-column grid leaves ungrounded voids between
+   * them. Every field is a full-width unit: label + hint + input + optional
+   * sub-hint.
    */
   import { lang } from "../lib/stores.js";
   import { number, integer, period, decimalText } from "../lib/format.js";
@@ -118,73 +120,6 @@
     <span class="l-bg">{COPY.restOfNumbers.bg}</span>
     <span class="l-en">{COPY.restOfNumbers.en}</span>
   </h4>
-
-  <!-- Single-column on purpose: the fields have very different
-     heights (the anchor is a dropdown plus a hint, the home block
-     opens a grid), so a two-column grid leaves ungrounded voids
-     between them. Every field is a full-width unit: label + hint +
-     input + optional sub-hint. -->
-  <div class="field">
-    <label for="inAnchor">
-      <span class="l-bg">{COPY.anchor.bg}</span>
-      <span class="l-en">{COPY.anchor.en}</span>
-    </label>
-    <!-- The labels state what the math actually computes (see
-       mirror.js#rateFor and its anchor branch).
-         y1 → verbatim RCH_A from prc_hicp_minr at the
-              headline's ref_period. The previous-month
-              string is derived from the same ref_period
-              (e.g. ref_period="2026-06" → previous="2025-06";
-              the YoY window is shown inline as a range).
-         {y} → idx[latestYear] / idx[yearEnd] − 1. The
-              numerator end-point is whatever year has
-              the freshest index (latestIndexYear()).
-       Bare numbers like "2025" don't tell the user what
-       they're comparing TO — we show the comparison
-       end-point inline. The yoyWindow + idxLatestYearLabel
-       deriveds are computed at the script's top level
-       (see the `$derived` block above) because `{@const}`
-       blocks must be the immediate child of an Svelte
-       block directive, not a sibling element. -->
-    <select
-      id="inAnchor"
-      value={calc.anchor === "y1" ? "y1" : String(calc.anchor)}
-      onchange={calc.onAnchorChange}
-    >
-      <option value="y1"
-        >{COPY.anchorY1[$lang] ?? COPY.anchorY1.bg}{calc.yoyWindowLabel
-          ? ` · ${calc.yoyWindowLabel}`
-          : ""}</option
-      >
-      {#each calc.anchorYears as y (y)}
-        <!-- The end-point range lives in a title rather than the
-           option text: inline it is wider than the field and the
-           dropdown breaks. -->
-        <option
-          value={String(y)}
-          title={calc.idxLatestYearLabel && calc.idxLatestYearLabel !== String(y)
-            ? $lang === "bg"
-              ? `от края на ${y} до ${calc.idxLatestYearLabel}`
-              : `end-of-${y} → ${calc.idxLatestYearLabel}`
-            : ""}
-        >
-          {y}</option
-        >
-      {/each}
-    </select>
-    <div class="hint" style="margin-top:4px;font-size: var(--fs-small)">
-      <span class="l-bg"
-        >{calc.anchor === "y1"
-          ? t(COPY.anchorY1Hint, $lang, { latest_month: calc.basketRefPeriod })
-          : t(COPY.anchorSinceHint, $lang)}</span
-      >
-      <span class="l-en"
-        >{calc.anchor === "y1"
-          ? t(COPY.anchorY1Hint, $lang, { latest_month: calc.basketRefPeriod })
-          : t(COPY.anchorSinceHint, $lang)}</span
-      >
-    </div>
-  </div>
 
   <!-- ONE RAISE PER INCOME. A household's rise is not a number people share:
        +10% for one earner and nothing for the other is not "+5% between us",
