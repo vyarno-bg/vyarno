@@ -11,6 +11,9 @@ promise changes, this page changes with it.
 
 **We invent no number.** Every figure on the screen is an official number
 published by Eurostat, or for a few non-inflation extras by НСИ, БНБ or the ЕЦБ.
+The one exception is the €/m² for a city, which is имот.bg's asking prices —
+what sellers ask, not what anybody paid, and the page says so wherever it
+appears.
 The app's whole job is to *copy* those numbers, *combine* them with what a
 person tells us they spend, and *link back* to the exact source so anyone can
 check. If a number cannot be traced to a public source, it does not belong in

@@ -114,7 +114,7 @@ See [`NOTICE`](./NOTICE).
 Practically, for a contributor: do not add copy, documentation or a README
 badge that describes the *data* as openly licensed, and do not add a feature
 that redistributes the data as a bulk dataset without checking the upstream
-terms first. `test_the_app_states_its_licence_and_claims_nothing_about_the_data`
+terms first. `the_app_states_its_licence_scoped_to_the_code_and_claims_nothing_about_the_data`
 enforces the first half.
 
 ## What gets merged

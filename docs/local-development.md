@@ -61,7 +61,7 @@ cd site && sed -i 's/"checkJs": false/"checkJs": true/' jsconfig.json \
 | Path | Action |
 |---|---|
 | `.venv/`, `__pycache__/`, `.pytest_cache/`, `site/node_modules/` | Gitignored. Never stage |
-| `data/published/*.json` and `*.json.baseline` | **Include.** The versioned snapshot the SPA fetches, plus the drift-check baseline |
+| `data/published/*.json` | **Include.** The versioned snapshot the SPA fetches — the diff is the review |
 | `site/.sourcemaps/` | Gitignored, and it is the full front-end source. Keep it that way — [`site.md`](./site.md) §"Source maps stay out of the deploy artefact" |
 | Per-IDE config, local creds, scratch output | Never commit |
 
@@ -300,8 +300,9 @@ cd site
 npm run verify:math
 ```
 
-Fifteen files under Node's built-in test runner, no dependencies. The list is
-`package.json`'s `verify:math` script, in its order:
+Every suite below runs under Node's built-in test runner, with no dependencies.
+The list is `package.json`'s `verify:math` script, in its order — read the count
+off that rather than from here:
 
 - `verify_format.mjs` — the number and date formatters, including the
   rejection branches that keep a bad value out of `{@html}`.
@@ -433,7 +434,7 @@ actually happen:
 Then run `make check` and commit the payload with what you saw.
 
 A successful `--source hicp` run prints its fetches, then **every gate by name,
-in order**, then the publish. **Six gate lines is the pass condition** — a run
+in order**, then the publish. **Seven gate lines is the pass condition** — a run
 that publishes with fewer has skipped one, usually via `--skip-link-check`. The
 full transcript of a good run, and of a failing one, is in
 [`validation-gates.md`](./validation-gates.md).
@@ -442,7 +443,7 @@ full transcript of a good run, and of a failing one, is in
 
 ```bash
 python3 -m json.tool ../data/published/hicp_categories.json | head -40
-jq '.categories[] | {code, name_bg, weight_pct, annual_rate_pct}' \
+jq '.categories[] | {cp_code, bg_name, weight_pct, annual_rate_pct}' \
   ../data/published/hicp_categories.json
 ```
 

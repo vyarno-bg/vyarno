@@ -54,7 +54,7 @@ redistributed freely, and two of the five publishers make that assumption
 false, and the five publishers' terms differ from one another and from ours.
 
 Enforced in code:
-`test_the_app_states_its_licence_and_claims_nothing_about_the_data` requires the
+`the_app_states_its_licence_scoped_to_the_code_and_claims_nothing_about_the_data` requires the
 footer to name the licence, requires the claim to be scoped to the code in both
 languages, and fails on any copy that calls the *data* open.
 `no_shipped_document_denies_that_the_source_is_published` was added by the
@@ -171,12 +171,18 @@ dependency did not exist in writing until now.
 
 **The second sentence is the one that is easy to skip.** "A disclaimer
 regarding the non-responsibility of Eurostat **shall** be included" is a
-condition, not a note about tone, and two things engage it. `salary_dist.json`
+condition, not a note about tone, and three things engage it. `salary_dist.json`
 interpolates the intermediate deciles and extrapolates the P1/P99 tails out of
 the three deciles SES publishes — genuinely our arithmetic, because there are
-no intermediate deciles in the cube to read. And `weight_pct` is Eurostat's
+no intermediate deciles in the cube to read. `weight_pct` is Eurostat's
 item weight converted out of per-thousand into percent, which is a unit rather
-than a figure, but it is still not the number their cube returns.
+than a figure, but it is still not the number their cube returns. And
+`house_market.json#avg_deal_eur` is value ÷ count over `prc_hpi_hsvq` and
+`prc_hpi_hsnq`, which the payload itself marks `DERIVED BY US` — the test of
+whether a figure engages the condition is whether we did arithmetic on their
+cube, not whether the result looks like one of their numbers.
+`price_index_real` does **not** engage it: `tipsho30` is Eurostat's own deflated
+index, published as it stands.
 
 The shipped sources document carries its own section, «Уговорка за
 преизчислените числа» / "Disclaimer on the figures we recompute", which names
@@ -212,7 +218,7 @@ charge through this website".
 
 Three live consequences:
 
-1. **The footer credits ЕЦБ**, and `test_footer_credits_every_upstream_we_use`
+1. **The footer credits ЕЦБ**, and `the_footer_credits_every_upstream_the_pipeline_pulls_from`
    fails if it stops. The mortgage headline on the front page *is* ЕЦБ MIR.
 2. **The framing clause is about linking to `ecb.europa.eu`, and this document
    used to quote it from the middle.** The full sentence opens "When linking to
@@ -858,7 +864,7 @@ something changes.
 | Regime | In scope | Why |
 |---|---|---|
 | **ЗЕТ чл. 4** (identification) | **Yes** | Вярно is a услуга на информационното общество; §"The published identity" is what it owes. |
-| **ЗЕТ чл. 4а** (storage on the device) | **Yes, exempt** | ал. 4, т. 2 exempts storage «необходими за … предоставяне на услуга на информационното общество, **изрично поискана** от получателя». The two keys are written only after the reader changes the setting, which is what makes them requested. `verify_stores.mjs` holds it. |
+| **ЗЕТ чл. 4а** (storage on the device) | **Yes, exempt** | ал. 4, т. 2 exempts storage «необходими за … предоставяне на услуга на информационното общество, **изрично поискана** от получателя». Every key is written only after the reader changes the setting, which is what makes it requested — `stores.js` swallows the first synchronous call a new subscriber gets, so a default nobody asked for never reaches disk. `verify_stores.mjs` holds it. |
 | **GDPR / ЗЗЛД** | **Yes** | Request logs are personal data. §"Data protection" below. The art. 2(2)(c) household exemption is not available — C-101/01 *Lindqvist*. |
 | **ЗЗП чл. 68в и сл.** (unfair commercial practices) | **No, today** | §13, т. 2 ЗЗП defines «търговец» as a person who provides services «като част от своята търговска или професионална дейност», and т. 23 defines «търговска практика» as conduct «пряко свързано с насърчаването, продажбата или доставката» of a good or service to a consumer. Nothing is sold, offered for sale or promoted for reward. **This flips the day the service earns anything from a visitor**, and the accuracy claims — «Вярно», «икономиката, честно», «не измисляме нито едно число» — become claims a trader is making. |
 | **ЗКНИП** (mortgage credit) | **No** | «Кредитен посредник» requires acting «при извършване на своята търговска дейност **срещу заплащане** в парична или в друга форма» (БНБ's own statement of the definition, read 2026-07-30), and advisory services require a personal recommendation on a specific credit agreement. Вярно presents no lender, brokers nothing, recommends nothing and is paid by nobody. The mortgage panel applies published БНБ limits and a published rate to numbers the reader typed. |

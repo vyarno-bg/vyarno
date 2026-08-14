@@ -21,7 +21,7 @@ point somebody would edit it. Everything else is here.
 | The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all ten, the published figures on the six that read payloads, in the one language the entry declares — below |
 | A second content page | `site/how/index.html` → `src/How.svelte` | the informational queries the calculator cannot rank for — below |
 | A third content page | `site/market/index.html` → `src/Market.svelte` | the property-market queries, which are asked far more often than the calculator's own and which almost nothing answers with a source attached |
-| The English tree | `site/en/*/index.html` | each of the four routes at a second address, declaring `en`, so a document exists for an English query to rank — below |
+| The English tree | `site/en/*/index.html` | each of the five routes at a second address, declaring `en`, so a document exists for an English query to rank — below |
 | `hreflang`, reciprocal | each `.html` entry | `bg`, `en` and `x-default` on all ten, each set naming itself; `x-default` is the Bulgarian page. `verify_static_assets.mjs` checks the whole collection, because a one-sided set is discarded silently |
 
 Core Web Vitals need nothing: a static bundle, no third-party request at all
@@ -79,13 +79,14 @@ parse fails the build rather than being rendered around.
 ### Ten pages, five routes, two languages
 
 **Every route is served at two addresses: `/how/` and `/en/how/`, and so on for
-all four.** The entries are nine files in `site/` — four Bulgarian, four
+all five.** The entries are eleven files in `site/` — five Bulgarian, five
 English, plus the 404 — and each hardcodes the language it declares in
-`<html data-lang>`.
+`<html data-lang>`. `vite.config.js#rollupOptions.input` is the list; a count
+written here is one nothing checks.
 
 The reason is the section below taken to its conclusion. `prerender.mjs` writes
-the language its entry declares and drops the other, and all four entries
-declared `bg`, so the English half of every string was stripped out of every
+the language its entry declares and drops the other, and every entry declared
+`bg`, so the English half of every string was stripped out of every
 served document. It was not weakly indexed; it was not served at all, at any
 URL. There was no page an English query could rank for, and no second address
 for an `hreflang` alternate to point at — which is why the pairing could only be
@@ -288,7 +289,7 @@ Three properties hold it in place, and each has a test:
 
 - **No input, ever.** The whole page is prerendered on the basis that nothing on
   it is the reader's. The four values it reads off `Calculator` —
-  `systemWedge`, `payLadderRows`, `cityHome`, `regionWageGrid` — take payloads
+  `systemWedge`, `payLadderRows`, `cityHome`, `nationalWageGrid` — take payloads
   and the REFERENCE област rather than the reader's chosen one, so the page a
   crawler is served is the page that hydrates
   and no scalar, so a personal figure is not expressible rather than merely
@@ -321,7 +322,7 @@ is decided in the same markup: each table sits in an `overflow-x: auto` box so
 the page body never scrolls sideways, and each box is a named `role="region"`
 tab stop, because a scroll container is not focusable on its own and two of the
 four hold no link to tab to. What says a table scrolls is the column clipped at
-the boundary and the focus ring — the conventional edge shadow is in `How.svelte`
+the boundary and the focus ring — the conventional edge shadow is in `fig-table.css`
 as a comment saying why it is not in the stylesheet.
 
 **Three routes in, and the count is the point.** The one inside the explainer's
@@ -360,7 +361,7 @@ address, that `hreflang` was therefore not expressible, and that undoing it was
 an architecture decision rather than an SEO one. It was taken, and the argument
 is above in §"Ten pages, five routes, two languages" — the short form is that
 the door this paragraph left open turned out to lead somewhere. The half a
-crawler never saw was not weakly indexed, it was never served: all four entries
+crawler never saw was not weakly indexed, it was never served: every entry
 declared `data-lang="bg"` and `prerender.mjs` strips the language the entry does
 not declare, so no document existed that an English query could rank for. What
 stays is the bilingual DOM itself, which is a different question and answered
@@ -413,7 +414,7 @@ question for whoever runs the deployment.
 
 ## Cross-references
 
-- [`site.md`](./site.md) — the SPA module by module, and the nine build entries
+- [`site.md`](./site.md) — the SPA module by module, and every build entry
 - [`principles.md`](./principles.md) — P3, P4 and the closed list
 - `site/public/robots.txt` — the crawler policy, with its reasoning inline
 - `site/scripts/prerender.mjs` — the build step, what it reads and what it refuses to emit
