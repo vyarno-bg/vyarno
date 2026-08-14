@@ -3177,31 +3177,6 @@
     white-space: nowrap;
   }
 
-  /* The scroll box sits on the wrapper, so a wide table never makes the page
-     body scroll sideways on a phone. IT IS A TAB STOP (`tabindex="0"` in the
-     markup): a scroll container is not focusable on its own and no browser
-     makes it so, and at 360px the four-column deal table runs past the box
-     carrying no link at all — a keyboard-only reader could reach none of it. */
-  .scroll {
-    overflow-x: auto;
-    margin-top: 16px;
-  }
-  .scroll:focus-visible {
-    outline: 2px solid var(--real);
-    outline-offset: 2px;
-  }
-  .fig-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--fs-meta);
-  }
-  .fig-table th,
-  .fig-table td {
-    text-align: left;
-    padding: 7px 10px 7px 0;
-    border-bottom: 1px solid var(--rule);
-    vertical-align: baseline;
-  }
   /* **The head is separated from the data by a real rule, not by the same
      hairline every row carries.** `--rule` is a ledger line at 5% ink and it
      divides row from row; used for the head as well it made a column label and
@@ -3234,21 +3209,10 @@
   .fig-table thead .now-col {
     border-left: 1px solid var(--line);
   }
-  .fig-table tbody th {
-    font-weight: 500;
-    color: var(--ink);
-  }
   .fig-table tbody th.sub {
     font-weight: 400;
     color: var(--muted);
     padding-left: 10px;
-  }
-  .fig-table td {
-    color: var(--ink-2);
-  }
-  .fig-table .num {
-    text-align: right;
-    white-space: nowrap;
   }
   /* A COLUMN HEAD MAY WRAP; A FIGURE MAY NOT. «Спрямо година по-рано» held on
      one line pushed the three-column volume table 19px past a 360px screen, so
@@ -3261,10 +3225,6 @@
   }
   /* The row a section's headline figure is on. The same `--real-soft` wash
      `/how/` marks the reader's own row with: one row per table, or the mark
-     means nothing. */
-  .fig-table tr.mark {
-    background: var(--real-soft);
-  }
   /* A period that belongs to one column, or to one cell that is behind its
      column. Set small and quiet on purpose — it is a qualifier on the figure
      beside it, not a second figure. */

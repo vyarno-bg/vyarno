@@ -48,9 +48,15 @@ paragraph sideways with it. And each box is a `tabindex="0"` `role="region"`
 with its own name: a scroll container is not focusable on its own, and the wedge
 table holds no link to tab to, so without it two of that table's five columns
 were unreachable by keyboard at a phone width. `verify_render_country.mjs`
-holds both,
-and the `.scroll` rule in `How.svelte` carries what was tried for the visual
-affordance and why it is not there.
+holds both, and the `.scroll` rule in `lib/fig-table.css` carries what was tried
+for the visual affordance and why it is not there. That file is the table
+treatment `/how/` and `/market/` share — the scroll box, the cell metrics and the
+numeric column, which the two pages had arrived at twice, byte for byte. It is a
+stylesheet rather than a component because what the fifty-one tables across the
+two pages agree on is the furniture and not the markup; the rules it holds are
+global on the two entries that import it, and every page-specific override stays
+in its own component, where Svelte's scoping class puts it one specificity step
+above anything there.
 
 `/support/` is a page rather than a section of `/legal/` because it is not a
 legal document: it carries no obligation, it is not versioned with the four,
@@ -159,7 +165,8 @@ site/
         ├── build.js      # the build stamp (__BUILD_ID__, or "dev")
         ├── SiteHeader.svelte  # wordmark + route out + theme + language
         ├── SiteFooter.svelte  # attribution + legal links + build stamp
-        └── tokens.css · card.css · result-row.css · disclosure.css
+        └── tokens.css · card.css · result-row.css · disclosure.css ·
+            fig-table.css
 ```
 
 **The two components under `lib/` are the two every page mounts**, and they are

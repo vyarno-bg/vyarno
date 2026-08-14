@@ -14,6 +14,7 @@
  * once frozen at build time and once live.
  */
 import "./lib/tokens.css";
+import "./lib/fig-table.css";
 import { mount } from "svelte";
 import How from "./How.svelte";
 
