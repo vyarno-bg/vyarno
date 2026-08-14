@@ -1580,19 +1580,40 @@ test("no prose freezes a date or a count the payloads already carry", () => {
   }
 });
 
-test("the country page discloses that three of its figures are ours", () => {
+test("the country page discloses which of its figures are ours", () => {
   // Eurostat permits derivation on condition it is disclosed. Three figures on
-  // this site are ours rather than a publisher's — the modelled pay ladder,
-  // the Sofia €/m² median across имот.bg's districts and the change since 2015
-  // built on it — and two of the three are rendered here. The disclosure and
-  // the route to the full wording both have to travel with them.
+  // this page are ours rather than a publisher's — Σ over the thirteen
+  // divisions, the modelled pay ladder, and the Sofia €/m² median across
+  // имот.bg's districts with the change since that city's baseline built on it
+  // — and the disclosure travels with each rather than being stated once at
+  // the foot. The sum is the one that most needs it: it stands beside
+  // Eurostat's own all-items rate, so a caption naming them makes our figure
+  // read as a second Eurostat number that disagrees with the first.
   const [bg, en] = pair("oursNote");
   assert.ok(HOW.includes("COPY.oursNote.bg") && HOW.includes("COPY.oursNote.en"));
   assert.ok(
-    (HOW.match(/\{@render ours\(\)\}/g) ?? []).length >= 2,
-    "the derivation disclosure is rendered fewer than twice — the modelled " +
-      "ladder and the €/m² median each need it beside them, not once at the foot"
+    (HOW.match(/\{@render ours\(/g) ?? []).length >= 3,
+    "the derivation disclosure is rendered fewer than three times — the sum " +
+      "over the divisions, the modelled ladder and the €/m² median each need " +
+      "it beside them, not once at the foot"
   );
+  // And the sum's own caption says so, because the disclosure sits under a row
+  // of two cards and only one of them is ours. Named «Евростат» in the slot
+  // every other card puts a publisher in, it is their figure by attribution
+  // whatever the paragraph underneath adds.
+  assert.ok(
+    HOW.includes("COPY.howSrcOurSum"),
+    "the sum over the divisions is captioned with a publisher's name rather " + "than with ours"
+  );
+  for (const [langKey, side] of [
+    ["bg", "наша сметка"],
+    ["en", "our sum"],
+  ]) {
+    assert.ok(
+      COPY.howSrcOurSum[langKey].includes(side),
+      `COPY.howSrcOurSum.${langKey} no longer says the figure is ours: ${COPY.howSrcOurSum[langKey]}`
+    );
+  }
   assert.ok(
     HOW.includes('href="/legal/#sources"'),
     "the disclosure no longer routes to the sources document, which carries " +

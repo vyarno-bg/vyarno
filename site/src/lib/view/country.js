@@ -20,6 +20,7 @@ import {
   SALARY_LADDER_CUTS,
   bgMarginalRatePct,
   bgNetSalary,
+  bgTaxWedge,
   buildLadder,
   composeLadder,
   flooredCuts,
@@ -181,6 +182,43 @@ export function systemWedgeLadder({ payroll, grossLevels = WEDGE_LADDER_LEVELS }
 }
 
 /**
+ * The wedge curve with nobody standing on it.
+ *
+ * `systemWedgeLadder` above answers this section's question in figures a
+ * reader can quote; this answers it in the one thing five rows cannot carry —
+ * the SHAPE. The finding is that the share the state takes holds flat up to
+ * the insurance ceiling and falls above it, and a reader made to hold five
+ * effective rates in their head to see that is being asked to do the drawing.
+ *
+ * **It exists in order to have no `pay` parameter.**
+ * `view/payroll.js#taxWedgePanel` computes the same curve and sits one letter
+ * away in an import list, and what it adds is `earners` — one marker per
+ * contract, at a gross recovered from what the reader typed. A PERSONAL
+ * effective rate inverts to the salary above the ceiling and is closed on
+ * every shareable surface (P2); the system's own curve is the version
+ * `docs/principles.md`'s closed list leaves open by name. Reaching for the
+ * panel here would put the reader onto the country page's picture, and no
+ * assertion about the drawing could see it, because the two hand `WedgeChart`
+ * the same prop. So they are told apart at the one place the difference is
+ * expressible, which is the signature.
+ *
+ * `mirror.js#bgTaxWedge` is the sampler for both, so the country page and the
+ * results card cannot arrive at differently shaped versions of one law — and
+ * the ceiling is a sample point there, which is what stops a curve whose only
+ * kink is stepped over from being drawn as a straight line.
+ *
+ * @param {object} args
+ * @param {object|null} args.payroll  data.payroll (payroll.json), unmodified
+ * @returns {{capGross:number, peakEffectivePct:number, marginalBelowPct:number,
+ *            marginalAbovePct:number, capRisePerMonth:number|null,
+ *            points:Array<{gross:number, effectivePct:number,
+ *                          marginalPct:number}>}}
+ */
+export function wedgeCurve({ payroll }) {
+  return bgTaxWedge({ params: payrollParams(payroll) });
+}
+
+/**
  * The earnings ladder as rows, with each rung saying whether it was surveyed.
  *
  * `mirror.js#composeLadder` re-levels Eurostat's SES dispersion onto НСИ's
@@ -278,6 +316,7 @@ const SES_SURVEYED_CUTS = Object.freeze([10, 50, 90]);
  * @returns {{eurPerM2:number, eurPerM2Min:number, eurPerM2Max:number,
  *            m2:number, price:number, grossMonthly:number,
  *            netMonthly:number, wagePeriod:string, years:number,
+ *            sourceUrl:string,
  *            nDistricts:number, sinceBaselinePct:number, baselineYear:number,
  *            trendPublishable:boolean}}
  */
@@ -310,6 +349,20 @@ export function cityHomeAtAverageWage({
     grossMonthly: anchor.value,
     netMonthly,
     wagePeriod: anchor.refPeriod,
+    // **THIS city's page at имот.bg**, which is where the district rows the
+    // median was taken across actually are.
+    //
+    // Read off the row rather than held as a constant beside the cards, and
+    // for София the two are the same string today: имот.bg's bare
+    // `/sredni-ceni` IS that city's page and `prodazhbi-sofiya` 302s to it
+    // (`sources/imot.py`). So this changes no link a reader follows now, and
+    // that is the case worth naming — a constant that happens to be right for
+    // the one city a page shows is a copy of somebody else's routing, and it
+    // goes wrong silently, at whichever of the two moves first: имот.bg
+    // giving София a path of its own, or this page taking its reference city
+    // from anywhere but a hard-coded София. Both leave a link that still
+    // resolves, to a page that does not carry the number above it.
+    sourceUrl: city?.source_url ?? "",
     // Zero, not `homeYears`' own `Infinity`. That sentinel is right for the
     // home block, which is drawn against a salary field a reader may have
     // emptied; here a missing end means a payload did not load, and every

@@ -20,6 +20,7 @@ import assert from "node:assert/strict";
 
 import {
   systemWedgeLadder,
+  wedgeCurve,
   payLadder,
   cityHomeAtAverageWage,
   cityTrend,
@@ -28,7 +29,7 @@ import {
   QUARTERS,
   nationalQuarter,
 } from "../src/lib/view/country.js";
-import { sectorOptions, SECTOR_TOTAL_KEY } from "../src/lib/view/payroll.js";
+import { sectorOptions, SECTOR_TOTAL_KEY, taxWedgePanel } from "../src/lib/view/payroll.js";
 import { regionQuarter, regionRow, cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 import { HOME } from "../src/lib/content.js";
 import { payrollParams } from "../src/lib/mirror.js";
@@ -141,6 +142,71 @@ test("the wedge ladder's share falls above the ceiling and its parts add up", ()
   assert.ok(
     high.marginalPct < low.marginalPct,
     "the marginal rate above the ceiling is not below the one under it"
+  );
+});
+
+test("wedgeCurve draws the same curve the results card does, with nobody on it", () => {
+  // One statute, two pages, one sampler. Drawn from a second implementation
+  // the country page and the results card would be two pictures of one law —
+  // correctable in one place and stale in the other, and no assertion about
+  // either drawing could see the disagreement, because each would be right
+  // about itself.
+  if (!PAYROLL) return;
+  const country = wedgeCurve({ payroll: PAYROLL });
+  const personal = taxWedgePanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [1500] } });
+  assert.deepEqual(
+    country.points,
+    personal.points,
+    "the country page and the results card sample the wedge differently"
+  );
+  assert.equal(country.capGross, payrollParams(PAYROLL).maxInsurable);
+  assert.equal(country.peakEffectivePct, personal.peakEffectivePct);
+});
+
+test("wedgeCurve has no parameter a reader's own figure could arrive through", () => {
+  // The whole of the difference between this and `taxWedgePanel`, and the
+  // reason `/how/` calls this one. `WedgeChart` draws whatever markers it is
+  // handed and cannot tell whose they are, so what keeps a personal effective
+  // rate off a page with no input is that there is nothing here to pass it
+  // through — P2, made unexpressible rather than merely untested.
+  assert.equal(wedgeCurve.length, 1, "wedgeCurve takes more than its one options bag");
+  const arg = String(wedgeCurve).slice(0, String(wedgeCurve).indexOf(")") + 1);
+  assert.ok(
+    !/\bpay\b|earners|amounts|salary|gross\s*[,}]/.test(arg),
+    `wedgeCurve's signature has grown a way in for a reader's own figure: ${arg}`
+  );
+  assert.equal(
+    wedgeCurve({ payroll: PAYROLL }).earners,
+    undefined,
+    "wedgeCurve returned markers, so the country page can draw somebody onto its curve"
+  );
+});
+
+test("wedgeCurve keeps the ceiling as a sample, so the kink is where the law is", () => {
+  // A curve whose only kink is stepped over is drawn as a straight line, which
+  // is a wrong picture rather than a coarse one — and the fall above the
+  // ceiling is the section's whole finding.
+  if (!PAYROLL) return;
+  const { points, capGross } = wedgeCurve({ payroll: PAYROLL });
+  assert.ok(
+    points.some((p) => p.gross === capGross),
+    "the insurance ceiling is not one of the sampled points"
+  );
+  const below = points.filter((p) => p.gross < capGross);
+  const above = points.filter((p) => p.gross > capGross);
+  assert.ok(below.length > 1 && above.length > 1, `the curve has ${points.length} points`);
+  // Flat below, falling above: the two facts the picture exists to carry.
+  assert.ok(
+    below.every((p) => near(p.effectivePct, below[0].effectivePct, 1e-9)),
+    "the effective rate is not constant below the ceiling"
+  );
+  assert.ok(
+    above.at(-1).effectivePct < below[0].effectivePct,
+    "the effective rate does not fall above the ceiling"
+  );
+  assert.ok(
+    above.every((p) => p.marginalPct < below[0].marginalPct),
+    "the marginal rate does not step down above the ceiling"
   );
 });
 
@@ -389,6 +455,10 @@ test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () =
   });
   const priceRow = cityRow(price, SOFIA_CITY_CODE);
   assert.equal(home.eurPerM2, priceRow.eur_per_m2_median);
+  // The city's OWN page, because the median on screen is ours across that
+  // page's district rows.
+  assert.equal(home.sourceUrl, priceRow.source_url);
+  assert.match(home.sourceUrl, /^https:\/\//);
   assert.equal(home.grossMonthly, regionQuarter(wage, SOFIA_CITY_CODE).value);
   assert.equal(home.wagePeriod, wage.ref_period);
   assert.ok(
@@ -455,6 +525,35 @@ test("cityHomeAtAverageWage prices a home against a NET wage, not a gross", () =
   });
   assert.equal(flat.sinceBaselinePct, 0);
   assert.equal(flat.baselineYear, 0);
+});
+
+test("the €/m² link follows the city, and is not one page's held beside it", () => {
+  // София's page is имот.bg's bare `/sredni-ceni` and `prodazhbi-sofiya` 302s
+  // to it, so a constant spelling that one URL is right for the city `/how/`
+  // shows and wrong for twenty-six others — which is invisible while the
+  // reference city never moves. Read off the row it cannot be: a caller has to
+  // say which city it means, and gets that city's page.
+  const price = read("city_price");
+  if (!price || !PAYROLL) return;
+  const of = (code) =>
+    cityHomeAtAverageWage({
+      cityPrice: price,
+      cityCode: code,
+      regionSalary: read("region_salary"),
+      regionCode: code,
+      payroll: PAYROLL,
+      m2: 70,
+    }).sourceUrl;
+  const links = new Map(price.cities.map((c) => [c.code, of(c.code)]));
+  for (const c of price.cities) {
+    assert.equal(links.get(c.code), c.source_url, `${c.code} links to another city's page`);
+  }
+  assert.ok(
+    new Set(links.values()).size >= price.cities.length - 1,
+    "two cities share a €/m² link, so at least one of them cites district rows " +
+      "that are not the ones its median was taken across"
+  );
+  assert.equal(of("no-such-city"), "", "a city with no row got a link to somewhere");
 });
 
 test("cityHomeAtAverageWage prints nothing when either end is missing", () => {

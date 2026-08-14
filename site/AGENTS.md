@@ -84,10 +84,14 @@ happened.
 - **`components/*.svelte`** takes `calc` or a prop only `/` produces. Nothing
   else imports them — a component another entry needs is not the calculator's.
 - **`lib/*.svelte`** is what more than one entry mounts: `SiteFooter` (the
-  attribution and ЗЕТ чл. 4 identity every page owes) and `SiteHeader` (a
+  attribution and ЗЕТ чл. 4 identity every page owes), `SiteHeader` (a
   control bar, and a control that differs per page is one a reader learns
-  twice). Before adding a third prop to `SiteHeader`, stop: it takes `page` and
+  twice) and `WedgeChart` (the tax wedge, which `/` and `/how/` both draw).
+  Before adding a third prop to `SiteHeader`, stop: it takes `page` and
   `tagline`, and a masthead that needs more is a page asking for a second header.
+  `WedgeChart` draws whatever markers it is handed and cannot tell whose gross
+  they are, so which page gets a reader on the curve is decided in `view/`,
+  where a suite can reach it, and never here.
 - **`lib/*.css`** is a look two entries share — `fig-table.css` on `/how/` and
   `/market/`. A stylesheet and not a component because Svelte scopes a
   component's `<style>` to it, so a shared LOOK cannot be a shared component;
