@@ -172,6 +172,175 @@ test("every figure on the country page names a source and a period", { skip }, a
   }, "/how/");
 });
 
+test(
+  "the wedge curve is drawn on the country page, with nobody standing on it",
+  { skip },
+  async () => {
+    // The section's finding is a shape — flat to the insurance ceiling, falling
+    // above it — and five table rows state it only to a reader willing to hold
+    // five effective rates in their head. The table is still the exact figures
+    // and still open, because a picture is not its own text alternative.
+    //
+    // **And the marker count is the assertion that matters.** `WedgeChart` draws
+    // whatever markers it is handed and cannot tell whose gross they are, so the
+    // page with no input is one wrong prop away from plotting a personal
+    // effective rate — which inverts to the salary above the ceiling (P2). The
+    // wiring keeps that unexpressible (`view/country.js#wedgeCurve` has no `pay`
+    // parameter) and this is the same fact read off the drawing, because the
+    // failure would be visible on screen and in served HTML.
+    await withApp(async (page, errors) => {
+      const chart = page.locator("#pay svg.wedge");
+      assert.equal(await chart.count(), 1, "the wedge section draws no curve");
+      assert.ok(
+        (await chart.locator("path.wedge-effective").getAttribute("d"))?.startsWith("M"),
+        "the effective-rate line is drawn with no path"
+      );
+      assert.equal(
+        await chart.locator("circle.wedge-you").count(),
+        0,
+        "somebody is marked on the country page's wedge curve — that marker is a " +
+          "reader's own gross, and this page has no reader in it (P2)"
+      );
+      // The key names both series and the threshold, so the picture is readable
+      // without the description a pointer never hears.
+      assert.equal(await page.locator("#pay .wedge-key .wk").count(), 3);
+      assert.match(
+        (await chart.getAttribute("aria-label")) ?? "",
+        /\d/,
+        "the curve's description carries no figure, so it says a chart is there and " +
+          "nothing that is in it"
+      );
+      // The exact figures stay on the page rather than moving behind the picture.
+      assert.ok(
+        (await page.locator("#pay table tbody tr").count()) >= 4,
+        "the wedge table went away when the chart arrived"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, "/how/");
+  }
+);
+
+test("the country page says which of its figures is not its publisher's", { skip }, async () => {
+  // Σ over the thirteen divisions is ours — Eurostat publish the shares and
+  // the rates and never that sum — and it stands beside their own all-items
+  // rate, 1.3 pp away during their flash. Captioned «Евростат» it is their
+  // figure, in their voice, contradicting their published one, on the page
+  // whose whole claim is that a reader can tell whose number is whose.
+  //
+  // The disclosure has to be able to be RE-RUN, not merely made: Eurostat
+  // permit derivation on condition it is stated, and a sceptic needs the rates
+  // back. `view/basket.js#basketSumQuery` is the query, and it is asserted here
+  // as a link because the licence is discharged on the page rather than in the
+  // module.
+  await withApp(async (page, errors) => {
+    const captions = await page
+      .locator("#inflation .stat .ss")
+      .evaluateAll((els) => els.map((el) => el.textContent.replace(/\s+/g, " ").trim()));
+    assert.equal(captions.length, 2, `§инфлацията rendered ${captions.length} figures`);
+    const ours = captions.filter((c) => c.includes("наша сметка"));
+    assert.equal(
+      ours.length,
+      1,
+      `exactly one of the two inflation figures is ours; ${ours.length} say so: ${captions.join(" / ")}`
+    );
+    // And the other one is still Eurostat's own, plainly. A section where both
+    // cards disclaim the publisher is the same failure pointing the other way.
+    assert.ok(
+      captions.some((c) => c.includes("Евростат") && !c.includes("наша сметка")),
+      `no figure in §инфлацията is attributed to Eurostat at all: ${captions.join(" / ")}`
+    );
+
+    const disclosure = page.locator("#inflation p.ours");
+    assert.equal(await disclosure.count(), 1, "the sum carries no derivation disclosure");
+    // One per language span, because both ship in the DOM and `tokens.css`
+    // hides the one the entry does not declare — a link written into one side
+    // only is a blank where the other reader's «провери» goes, which is
+    // invisible to whoever edited it.
+    const check = disclosure.locator('a[href*="coicop18"]');
+    assert.equal(
+      await check.count(),
+      2,
+      "the disclosure's re-run query is missing from one of the two languages"
+    );
+    const hrefs = await check.evaluateAll((els) => els.map((el) => el.getAttribute("href")));
+    assert.equal(hrefs[0], hrefs[1], "the two languages check the sum against different queries");
+    const href = hrefs[0] ?? "";
+    assert.ok(
+      (href.match(/coicop18=/g) ?? []).length >= 13,
+      `the re-run query asks for ${(href.match(/coicop18=/g) ?? []).length} divisions, and the ` +
+        "figure over it is a sum across all of them"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/how/");
+});
+
+test("whose figure it is can be read without reading the caption", { skip }, async () => {
+  // Eighteen figures from six publishers, one of which is us. Set at one
+  // weight in one colour the answer to «whose is this» is only reachable by
+  // reading every caption in turn, and the reader who wants it — somebody
+  // deciding what to attribute a number to — is the one least likely to.
+  //
+  // Asserted as the painted effect rather than as the declaration: the
+  // publisher has to be a distinct element AND come out heavier and darker
+  // than the period beside it, which survives the same result reached another
+  // way.
+  await withApp(async (page, errors) => {
+    const seen = await page.locator("main.how .stat .ss").evaluateAll((els) =>
+      els.map((el) => {
+        const pub = el.querySelector(".pub");
+        const per = el.querySelector(".per");
+        if (!pub || !per) return null;
+        const a = getComputedStyle(pub);
+        const b = getComputedStyle(per);
+        return {
+          name: pub.textContent.replace(/\s+/g, " ").trim(),
+          weight: Number(a.fontWeight),
+          otherWeight: Number(b.fontWeight),
+          colour: a.color,
+          otherColour: b.color,
+        };
+      })
+    );
+    assert.ok(seen.length >= 12, `/how/ rendered ${seen.length} figure captions`);
+    for (const row of seen) {
+      assert.ok(row, "a figure's caption does not separate its publisher from its period");
+      assert.ok(row.name, "a figure's caption names no publisher");
+      assert.ok(
+        row.weight > row.otherWeight || row.colour !== row.otherColour,
+        `«${row.name}» is painted exactly like the date beside it, so the publisher ` +
+          "column cannot be scanned"
+      );
+    }
+    // Every publisher on the page, each spelled one way. Two spellings of one
+    // upstream read as two upstreams down a column of eighteen.
+    const names = new Set(seen.map((r) => r.name));
+    assert.ok(
+      names.size >= 5,
+      `only ${names.size} distinct publishers across ${seen.length} figures: ${[...names].join(" / ")}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/how/");
+});
+
+test("the country page ends somewhere, and names both places", { skip }, async () => {
+  // A reference page that ends is a reader with nowhere to go. `/market/` was
+  // reachable from here only through a clause inside §цената в обявите — a
+  // route for somebody who read that section, and none at all for the reader
+  // who came for the wedge.
+  await withApp(async (page, errors) => {
+    const links = await page
+      .locator("main.how nav.onward a")
+      .evaluateAll((els) => els.map((el) => el.getAttribute("href")));
+    assert.deepEqual(links, ["/", "/market/"], `the page's routes out are ${links.join(", ")}`);
+    // Each says what it gives. «Пазарът на жилища →» answers where it goes and
+    // not why anybody would follow it.
+    const subs = await page.locator("main.how nav.onward .sub").allInnerTexts();
+    assert.equal(subs.length, 2, "a route out carries no line saying what it is for");
+    for (const s of subs) assert.ok(s.trim().split(/\s+/).length >= 4, `a bare label: «${s}»`);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/how/");
+});
+
 test("no figure on the country page is drawn as an em dash", { skip }, async () => {
   // **An em dash where a number goes is what a missed READ looks like**, and
   // it is indistinguishable from a payload that has not loaded. The

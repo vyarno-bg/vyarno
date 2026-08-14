@@ -12,15 +12,17 @@
    * a reader, in both languages, with the figures rendered rather than typed.
    *
    * **Every number here is the country's and none is the reader's.** There is
-   * no input on this page and there must never be one: the four values it
-   * reads off `Calculator` — `systemWedge`, `payLadderRows`, `cityHome`,
-   * `nationalWageGrid` — are functions of the published payloads alone, and each
-   * takes payloads rather than scalars precisely so a reader's figure cannot be
+   * no input on this page and there must never be one: every value it reads off
+   * `Calculator` is a function of the published payloads alone, and each takes
+   * payloads rather than scalars precisely so a reader's figure cannot be
    * threaded into one (calculator.svelte.js §"Derived: the country, with nobody
    * in it"). The tax
    * wedge is the case that matters: a PERSONAL effective rate is closed on any
    * shareable surface because it inverts to the salary (P2), and the system's
-   * own curve is the version the closed list leaves open.
+   * own curve is the version the closed list leaves open. `WedgeChart` is
+   * mounted by the results card too and draws whatever it is handed, so what
+   * keeps the reader off this page's picture is `systemWedgeCurve` —
+   * `view/country.js#wedgeCurve` has no `pay` parameter and passes no markers.
    *
    * **`syncWithData` is deliberately not called.** It seeds the basket
    * sliders, adopts the live mortgage rate into the reader's field and clamps
@@ -32,6 +34,7 @@
   import { lang } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
   import SiteHeader from "./lib/SiteHeader.svelte";
+  import WedgeChart from "./lib/WedgeChart.svelte";
   import DataLate from "./components/DataLate.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
@@ -150,6 +153,9 @@
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&coicop18=TOTAL&unit=RCH_A&lastTimePeriod=12";
   const ESTAT_UNEMPLOYMENT_URL =
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_m?geo=BG&s_adj=SA&sex=T&age=TOTAL&unit=PC_ACT&sinceTimePeriod=2020-01";
+  // The shares in the basket table's own column. Their cube is not the rates'
+  // — a row's ↗ is a `prc_hicp_minr` query and returns no weight — so this is
+  // the one place on the page `prc_hicp_iw` is reachable from.
   const ESTAT_WEIGHTS_URL =
     "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_iw/default/table?lang=en";
   const ESTAT_SES_URL =
@@ -169,6 +175,10 @@
       en: t(COPY.howSrcDvIssue, "en", { issue: gazetteIssue, date: dateShort(gazetteDate, "en") }),
     };
   });
+  // The index of all twenty-seven city pages, and the fallback only. Each city
+  // row carries its own page and `cityHome.sourceUrl` is what the cards use —
+  // this is what a card links to when the payload has not loaded, which is the
+  // one state in which no city has been chosen to link to.
   const IMOT_URL = "https://www.imot.bg/sredni-ceni";
 </script>
 
@@ -205,28 +215,70 @@
       <span class="l-en">{label.en}</span>
     </div>
     <div class="ss">
+      <!-- The publisher and the period are two elements rather than one
+           `COPY.howSrc` string, because they answer different questions and the
+           page needs one of them answerable without reading. Eighteen figures
+           come from six publishers and one of them is us; set at one weight in
+           one colour, WHOSE a figure is can only be found by reading every
+           caption in turn, and the reader most likely to want it — somebody
+           deciding what to attribute a number to — is the one least likely to
+           read eighteen captions. The publisher takes the page's ink and the
+           period keeps the muted tone it had, so the six names carry down the
+           column and the dates stay furniture.
+
+           `COPY.howSrc` still assembles the same line under the tables, where
+           there is one caption rather than a column of them and nothing to
+           scan. The separator is spelled here because it sits BETWEEN the two
+           elements: `::before` content is not in the accessible name, and a
+           caption announced as «Държавен вестникбр. 68» is the cost of keeping
+           the punctuation in the stylesheet. -->
       <a href={httpUrl(href)} target="_blank" rel="noopener">
-        <span class="l-bg">{t(COPY.howSrc, "bg", { s: source.bg, p: period.bg })}</span>
-        <span class="l-en">{t(COPY.howSrc, "en", { s: source.en, p: period.en })}</span>
+        <b class="pub">
+          <span class="l-bg">{source.bg}</span>
+          <span class="l-en">{source.en}</span>
+        </b>
+        ·
+        <span class="per">
+          <span class="l-bg">{period.bg}</span>
+          <span class="l-en">{period.en}</span>
+        </span>
       </a>
     </div>
   </div>
 {/snippet}
 
-<!-- The Eurostat disclosure obligation, attached to each of the three figures
-     it applies to rather than stated once at the foot: the modelled ladder,
-     the €/m² median across имот.bg's districts, and the change since that
-     city's baseline year computed from it are OURS, and Eurostat's terms permit
-     derivation on condition that it is disclosed. The link carries the reader
-     to the full wording, including the non-responsibility clause. -->
-{#snippet ours()}
+<!-- The Eurostat disclosure obligation, attached to each of the figures it
+     applies to rather than stated once at the foot: the sum over the thirteen
+     divisions, the modelled ladder, and the €/m² median across имот.bg's
+     districts with the change since that city's baseline year built on it are
+     OURS, and Eurostat's terms permit derivation on condition that it is
+     disclosed. The link carries the reader to the full wording, including the
+     non-responsibility clause.
+
+     `check` is the query that RE-RUNS the derivation, and it is optional
+     because only one of the three has a single one. A licence discharged one
+     paragraph above the number does nothing for the reader who thinks the
+     number is invented, so where a sum can be reproduced from one extract the
+     disclosure carries it — Σ over the divisions is that case, and
+     `view/basket.js#basketSumQuery` says why the shares are not a second link.
+     The ladder's two inputs are already linked, one each, in the caption
+     directly above it; the €/m² median's is the card's own link, which is the
+     district page the median was taken across. -->
+
+{#snippet ours(check = "")}
   <p class="ours">
     <span class="l-bg"
       >{COPY.oursNote.bg}
+      {#if check}
+        <a href={httpUrl(check)} target="_blank" rel="noopener">провери</a>&nbsp;
+      {/if}
       <a href="/legal/#sources">{COPY.oursMoreK.bg} →</a></span
     >
     <span class="l-en"
       >{COPY.oursNote.en}
+      {#if check}
+        <a href={httpUrl(check)} target="_blank" rel="noopener">check</a>&nbsp;
+      {/if}
       <a href="/legal/#sources">{COPY.oursMoreK.en} →</a></span
     >
   </p>
@@ -316,15 +368,28 @@
         )}
       {/if}
       {#if calc.categories.length > 0}
+        <!-- **The publisher slot says US, and the two cards are why.** This
+             figure is Σ(w·r) over the thirteen divisions, which Eurostat has
+             never printed — it runs about 0.16 pp from their all-items rate in
+             the ordinary case and 1.3 pp during their flash, and it is standing
+             beside that rate under a caption a reader reads as a byline. Named
+             «Евростат» there it is their number, in their voice, differing from
+             their own published one, on the page whose whole claim is that a
+             reader can tell whose figure is whose. The inputs are still theirs
+             and the link still goes to their table of them. -->
         {@render stat(
           `${fmt(calc.off)}%`,
           COPY.howKBasket,
-          COPY.srcEurostat,
-          ESTAT_WEIGHTS_URL,
+          COPY.howSrcOurSum,
+          calc.data.hicpCategories.source_url,
           when(calc.basketRefPeriod)
         )}
       {/if}
     </div>
+
+    {#if calc.categories.length > 0}
+      {@render ours(calc.basketSumUrl)}
+    {/if}
 
     <!-- The two figures sit side by side, so the paragraph under them has to
          account for the whole of what a reader can see — and how much of the gap
@@ -467,19 +532,31 @@
           </tbody>
         </table>
       </div>
+      <!-- **The caption is the weight column's citation and nothing else is.**
+           Two Eurostat cubes meet in this table: the rate column is
+           `prc_hicp_minr` and every row carries its own ↗ into it, and the
+           share column is `prc_hicp_iw`, which no row links because no row is
+           a query for it. Uncited, thirteen shares sit on the page with the
+           dataset that publishes them named nowhere — the omission direction
+           of `verify_wiring.mjs` §"the country page cites every Eurostat
+           dataset it renders", and the one a reader cannot notice, because a
+           figure with no link looks exactly like a figure whose link is
+           elsewhere. -->
       <p class="cap">
-        <span class="l-bg"
-          >{t(COPY.howSrc, "bg", {
-            s: COPY.srcEurostat.bg,
-            p: when(calc.basketRefPeriod).bg,
-          })}</span
-        >
-        <span class="l-en"
-          >{t(COPY.howSrc, "en", {
-            s: COPY.srcEurostat.en,
-            p: when(calc.basketRefPeriod).en,
-          })}</span
-        >
+        <a href={ESTAT_WEIGHTS_URL} target="_blank" rel="noopener">
+          <span class="l-bg"
+            >{t(COPY.howSrc, "bg", {
+              s: COPY.srcEurostat.bg,
+              p: when(calc.basketRefPeriod).bg,
+            })}</span
+          >
+          <span class="l-en"
+            >{t(COPY.howSrc, "en", {
+              s: COPY.srcEurostat.en,
+              p: when(calc.basketRefPeriod).en,
+            })}</span
+          >
+        </a>
       </p>
     {/if}
   </section>
@@ -541,17 +618,36 @@
         >Данъкът е един за всички, но осигуровки се плащат само до определена заплата. Под тази
         граница от всяко увеличение се удържа едно и също. Над нея осигуровките спират, така че от
         увеличението остава само данъкът — и колкото по-висока е заплатата, толкова по-малка част от
-        нея взима държавата. Таблицата долу показва това при четири различни заплати, сметнато от
-        ставките и границата горе. Никоя институция не я публикува: никой не е длъжен да я състави.</span
+        нея взима държавата. Картината долу показва цялата извивка, а таблицата под нея — точните
+        числа при няколко заплати; и двете са сметнати от ставките и границата горе. Никоя
+        институция не ги публикува: никой не е длъжен да ги състави.</span
       >
       <span class="l-en"
         >The tax is the same for everyone, but contributions are only paid up to a certain salary.
         Below that line the same share comes out of any raise. Above it contributions stop, so only
-        the tax comes out of a raise - and the higher the pay, the smaller the share of it the state
-        takes. The table below shows this at four different salaries, worked out from the rates and
-        the line above. No agency publishes it: nobody is obliged to put it together.</span
+        the tax comes out of a raise — and the higher the pay, the smaller the share of it the state
+        takes. The chart below draws the whole curve and the table under it gives the exact figures
+        at a few salaries; both are worked out from the rates and the line above. No agency
+        publishes them: nobody is obliged to put them together.</span
       >
     </p>
+
+    <!-- **The shape, then the figures.** The finding on this section is that
+         the share the state takes holds flat and then falls, and five rows ask
+         a reader to hold five effective rates in their head and do the drawing
+         themselves. The table stays and stays open: it is the exact figures, it
+         is what a keyboard and a screen reader get, and it is what a journalist
+         quotes — a picture is not a text alternative for itself.
+
+         `$lib/WedgeChart.svelte` rather than a second drawing, and no markers:
+         the results card mounts the same component over the reader's own
+         contracts, and `systemWedgeCurve` is the curve with nobody standing on
+         it (`view/country.js#wedgeCurve`). -->
+    {#if calc.data.payroll && calc.systemWedgeCurve.points.length > 0}
+      <figure class="wedge-fig">
+        <WedgeChart wedge={calc.systemWedgeCurve} />
+      </figure>
+    {/if}
 
     {#if calc.data.payroll}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -624,31 +720,14 @@
       <span class="l-bg">Къде сяда една заплата в страната</span>
       <span class="l-en">Where a salary sits in the country</span>
     </h2>
-    <p>
-      <span class="l-bg"
-        >За това трябват две официални числа, защото нито едното не стига само. Първото казва
-        <b>колко са разпънати заплатите</b> — с колко човек в горния край изкарва повече от човек в
-        долния. То е от изследването на Евростат за заплатите, мери един човек с една заплата, но
-        излиза веднъж на четири години, тоест сумите в него са остарели. Второто е
-        <b>днешната средна заплата за страната</b>, която НСИ публикува всяко тримесечие. Взимаме
-        разпъването от първото и го прилагаме върху днешната средна от второто, за да носят
-        стъпалата днешни суми. После всяко стъпало се превръща от бруто в нето. И двете числа са за
-        цялата страна: никой не публикува как са разпределени заплатите вътре в една област, затова
-        тази подредба не зависи от нея.</span
-      >
-      <span class="l-en"
-        >This needs two official numbers, because neither is enough on its own. The first says
-        <b>how far apart wages are</b> — how much more someone near the top earns than someone near
-        the bottom. It comes from Eurostat's earnings survey, counts one person and one wage at a
-        time, but is published once every four years, so its amounts are out of date. The second is
-        <b>today's average wage for the country</b>, which NSI publishes every quarter. We take the
-        spread from the first and set it against today's average from the second, so the rungs carry
-        today's amounts. Each rung is then converted from gross to net. Both figures are the whole
-        country's — nobody publishes how wages are spread inside one oblast, so this ladder does not
-        change with the oblast.</span
-      >
-    </p>
-
+    <!-- **The figure, then the table, then how they were made.** A reader who
+         came for the average wage — the one figure on this section, and the
+         one nobody publishing it puts on a page of its own — met 121 words of
+         method first and the number 588px below the heading, which is off a
+         phone screen. The method has not moved out of anyone's way: it sits
+         under the table, where the two caveats already are, in the order
+         `docs/writing-style.md` §"Sentence length is a review note" sets out —
+         the answer, then what qualifies it, then how it was produced. -->
     <div class="stats">
       {#if calc.data.sectorSalary}
         {@render stat(
@@ -792,6 +871,31 @@
         </p>
       {/if}
     {/if}
+
+    <p>
+      <span class="l-bg"
+        >За това трябват две официални числа, защото нито едното не стига само. Първото казва
+        <b>колко са разпънати заплатите</b> — с колко човек в горния край изкарва повече от човек в
+        долния. То е от изследването на Евростат за заплатите, мери един човек с една заплата, но
+        излиза веднъж на четири години, тоест сумите в него са остарели. Второто е
+        <b>днешната средна заплата за страната</b>, която НСИ публикува всяко тримесечие. Взимаме
+        разпъването от първото и го прилагаме върху днешната средна от второто, за да носят
+        стъпалата днешни суми. После всяко стъпало се превръща от бруто в нето. И двете числа са за
+        цялата страна: никой не публикува как са разпределени заплатите вътре в една област, затова
+        тази подредба не зависи от нея.</span
+      >
+      <span class="l-en"
+        >This needs two official numbers, because neither is enough on its own. The first says
+        <b>how far apart wages are</b> — how much more someone near the top earns than someone near
+        the bottom. It comes from Eurostat's earnings survey, counts one person and one wage at a
+        time, but is published once every four years, so its amounts are out of date. The second is
+        <b>today's average wage for the country</b>, which NSI publishes every quarter. We take the
+        spread from the first and set it against today's average from the second, so the rungs carry
+        today's amounts. Each rung is then converted from gross to net. Both figures are the whole
+        country's — nobody publishes how wages are spread inside one oblast, so this ladder does not
+        change with the oblast.</span
+      >
+    </p>
   </section>
 
   <!-- 5 ------------------------------------------------------------------ -->
@@ -800,6 +904,43 @@
       <span class="l-bg">Жилищният кредит: коя лихва на какъв въпрос отговаря</span>
       <span class="l-en">The home loan: which rate answers which question</span>
     </h2>
+    <!-- **The three rates before the paragraph that tells them apart.** This
+         is the longest block on the page — 227 words, 933px at 360px — and it
+         stood between the heading and the figures it is about, so the rates a
+         reader came for sat 1,029px down. It is a caveat rather than method,
+         which is why it stays on the page and directly under the cards: a
+         reader who takes the 2,41% for what a loan costs, or amortises the
+         ГПР, draws a wrong conclusion from a number they can see. -->
+    <div class="stats">
+      {#if calc.data.mortgage}
+        {@render stat(
+          `${fmt(calc.mortgageRateData.pct, 2)}%`,
+          COPY.howKAar,
+          COPY.srcEcbMir,
+          calc.data.mortgage.new_business?.source_url,
+          when(calc.mortgageRateData.refPeriod)
+        )}
+        {#if calc.mortgageAprcData}
+          {@render stat(
+            `${fmt(calc.mortgageAprcData.pct, 2)}%`,
+            COPY.howKAprc,
+            COPY.srcEcbMir,
+            calc.mortgageAprcData.url,
+            when(calc.mortgageAprcData.refPeriod)
+          )}
+        {/if}
+        {#if calc.data.mortgage.outstanding_stock}
+          {@render stat(
+            `${fmt(calc.data.mortgage.outstanding_stock.value_pct, 2)}%`,
+            COPY.howKStock,
+            COPY.srcBnb,
+            calc.data.mortgage.outstanding_stock.source_url,
+            when(calc.data.mortgage.outstanding_stock.ref_period)
+          )}
+        {/if}
+      {/if}
+    </div>
+
     <p>
       <span class="l-bg"
         >Три числа се наричат „лихвата по жилищен кредит“ и отговарят на три различни въпроса. <b
@@ -840,36 +981,6 @@
         it. It describes what people are paying now, not what a new borrower would sign.</span
       >
     </p>
-
-    <div class="stats">
-      {#if calc.data.mortgage}
-        {@render stat(
-          `${fmt(calc.mortgageRateData.pct, 2)}%`,
-          COPY.howKAar,
-          COPY.srcEcbMir,
-          calc.data.mortgage.new_business?.source_url,
-          when(calc.mortgageRateData.refPeriod)
-        )}
-        {#if calc.mortgageAprcData}
-          {@render stat(
-            `${fmt(calc.mortgageAprcData.pct, 2)}%`,
-            COPY.howKAprc,
-            COPY.srcEcbMir,
-            calc.mortgageAprcData.url,
-            when(calc.mortgageAprcData.refPeriod)
-          )}
-        {/if}
-        {#if calc.data.mortgage.outstanding_stock}
-          {@render stat(
-            `${fmt(calc.data.mortgage.outstanding_stock.value_pct, 2)}%`,
-            COPY.howKStock,
-            COPY.srcBnb,
-            calc.data.mortgage.outstanding_stock.source_url,
-            when(calc.data.mortgage.outstanding_stock.ref_period)
-          )}
-        {/if}
-      {/if}
-    </div>
 
     <p>
       <span class="l-bg"
@@ -966,7 +1077,7 @@
           `${fmt0(calc.cityHome.eurPerM2)} €`,
           COPY.howKEurM2,
           COPY.howSrcImot,
-          IMOT_URL,
+          calc.cityHome.sourceUrl || IMOT_URL,
           imotDated
         )}
         {@render stat(
@@ -976,7 +1087,7 @@
             en: t(COPY.howKEurM2Range, "en", { n: fmt0(calc.cityHome.nDistricts) }),
           },
           COPY.howSrcImot,
-          IMOT_URL,
+          calc.cityHome.sourceUrl || IMOT_URL,
           imotDated
         )}
         {@render stat(
@@ -986,7 +1097,7 @@
             en: t(COPY.howKHomePrice, "en", { m2: fmt0(HOME.m2Default) }),
           },
           COPY.howSrcImot,
-          IMOT_URL,
+          calc.cityHome.sourceUrl || IMOT_URL,
           imotDated
         )}
       {/if}
@@ -1129,12 +1240,39 @@
     {/if}
   </section>
 
-  <p class="onward">
-    <a href="/">
-      <span class="l-bg">{COPY.howToCalculatorK.bg} →</span>
-      <span class="l-en">{COPY.howToCalculatorK.en} →</span>
-    </a>
-  </p>
+  <!-- Where a reader who has read the country's figures goes next, and both
+       answers named rather than one. `/market/` was reachable from this page
+       only through a clause inside §цената в обявите, which is a route for
+       somebody who read that section and no route at all for the reader who
+       came for the wedge. Each link says what it gives, because «Пазарът на
+       жилища →» answers where it goes and not why anyone would follow it.
+
+       Not in the contents list: `verify_render_country.mjs` holds that list to
+       one entry per section on THIS page, which is what catches it drifting
+       from the page, and an eighth entry pointing somewhere else would be
+       bought by taking that check off. -->
+  <nav class="onward" aria-label={t(COPY.howTitle, $lang)}>
+    <p>
+      <a href="/">
+        <span class="l-bg">{COPY.howToCalculatorK.bg} →</span>
+        <span class="l-en">{COPY.howToCalculatorK.en} →</span>
+      </a>
+      <span class="sub">
+        <span class="l-bg">{COPY.howToCalculatorSub.bg}</span>
+        <span class="l-en">{COPY.howToCalculatorSub.en}</span>
+      </span>
+    </p>
+    <p>
+      <a href="/market/">
+        <span class="l-bg">{COPY.howToMarketK.bg} →</span>
+        <span class="l-en">{COPY.howToMarketK.en} →</span>
+      </a>
+      <span class="sub">
+        <span class="l-bg">{COPY.howToMarketSub.bg}</span>
+        <span class="l-en">{COPY.howToMarketSub.en}</span>
+      </span>
+    </p>
+  </nav>
 </main>
 
 <SiteFooter page="how" />
@@ -1219,6 +1357,21 @@
     font-family: var(--mono);
     font-size: var(--fs-small);
   }
+  .onward p {
+    margin: 0 0 12px;
+    font-family: inherit;
+    font-size: inherit;
+  }
+  /* On its own line rather than after the link, so the two routes read as two
+     entries with a subtitle each. Beside it at 360px the second one wraps
+     under the first and the pair looks like one sentence with a link in it. */
+  .onward .sub {
+    display: block;
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: var(--fs-micro);
+    line-height: 1.45;
+  }
 
   /* The stat blocks. A wrapping flex row for the same reason the national
      strip is one: the count per section is 1, 2, 3 or 4 and no fixed column
@@ -1273,6 +1426,28 @@
   .stat .ss a:hover {
     color: var(--real-ink);
     border-bottom-color: var(--real);
+  }
+  /* WHO says this figure, at a weight that carries down a column of eighteen.
+     The caption is one line at one size, so the separation is colour and
+     weight rather than a second line — the period stays where the whole line
+     was and only the publisher steps forward. `--ink-2` on `--surface` is a
+     pair `verify_contrast.mjs` already computes, so this adds no ratio to
+     check. */
+  .stat .ss .pub {
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+  .stat .ss a:hover .pub {
+    color: inherit;
+  }
+
+  /* The chart draws to its own 320-unit box and this page's measure is 760, so
+     unconstrained it renders at more than twice the size it was drawn for and
+     its labels come out larger than the body text beside them. Capped at the
+     width it is legible at, and left-aligned with the table it belongs to. */
+  .wedge-fig {
+    margin: 16px 0 0;
+    max-width: 420px;
   }
 
   .fig-table thead th {

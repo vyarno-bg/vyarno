@@ -168,13 +168,18 @@ site/
         ├── build.js      # the build stamp (__BUILD_ID__, or "dev")
         ├── SiteHeader.svelte  # wordmark + route out + theme + language
         ├── SiteFooter.svelte  # attribution + legal links + build stamp
+        ├── WedgeChart.svelte  # the tax wedge as a curve — `/` marks the
+        │                      # reader's contracts on it, `/how/` marks nobody
         └── tokens.css · card.css · result-row.css · disclosure.css ·
             fig-table.css
 ```
 
-**The two components under `lib/` are the two every page mounts**, and they are
-there rather than in `components/` for that reason: `components/` is the
-calculator's own parts, and a file six entries import is not one of them.
+**The components under `lib/` are the ones more than one entry mounts**, and
+they are there rather than in `components/` for that reason: `components/` is
+the calculator's own parts, and a file six entries import is not one of them.
+The split is by AUDIENCE and not by how many — two entries is already more than
+the calculator, which is why `WedgeChart.svelte` sits beside the two the whole
+site carries.
 
 `SiteFooter.svelte` is shared by every page on purpose: it carries the upstream
 attribution (a licence condition) and the legal links (ЗЕТ чл. 4 wants the
@@ -189,6 +194,24 @@ jumps to `#main` or goes home, which route out shows; `null` on `/404.html`) and
 `tagline` (the `{bg, en}` under the wordmark). A masthead that needs a third
 prop is a page asking for a second header — `site/AGENTS.md` §"`components/` is
 the calculator's" is why.
+
+`WedgeChart.svelte` is shared by the two pages that draw the tax wedge: `/`
+marks each of the reader's contracts on the curve, `/how/` marks nobody. Drawn
+twice it would be two pictures of one statute, correctable in one place and
+stale in the other — and the correctness that matters is not in the drawing.
+**`markers` is the whole difference between the callers and it defaults to
+none**, because the component draws whatever it is handed and cannot tell whose
+gross a marker is. What keeps a personal effective rate — which inverts to the
+salary above the ceiling (P2) — off a page with no input is therefore the
+wiring: `view/country.js#wedgeCurve` has no `pay` parameter, where
+`view/payroll.js#taxWedgePanel` returns `earners` beside the identical curve.
+Its geometry is inline rather than in `plot.js`, which is the one deviation
+this file has to name: it labels five points inside a 320-unit box instead of
+carrying an axis, and the box is small enough that the 6.2px failure
+[`plot.js`](../site/src/lib/plot.js) argues against does not arise. Putting it
+on that module means moving those labels into an HTML gutter, which is what
+`verify_render_strip.mjs` §"the wedge's right-edge labels belong to the series
+they sit on" measures.
 
 ## The five-layer split
 

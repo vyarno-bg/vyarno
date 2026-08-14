@@ -2699,7 +2699,31 @@ export const COPY = {
     en: "This figure is ours rather than the publisher's below it — worked out from their published data.",
   },
   oursMoreK: { bg: "Как и защо", en: "How, and why" },
+  // Under a figure of ours, in `howSrc`'s `{s}` slot, where every other card
+  // puts a publisher's name. Eurostat's terms permit derivation on condition it
+  // is disclosed, and Σ over the thirteen divisions is a figure Eurostat never
+  // printed — «Евростат» in that slot on a card beside their own all-items rate
+  // hands them a number 1.3 pp from the one they published, in their own voice,
+  // on the page whose whole claim is that a reader can tell whose figure is
+  // whose. The inputs are still theirs and the caption still says so.
+  howSrcOurSum: {
+    bg: "наша сметка от числата на Евростат",
+    en: "our sum over Eurostat's figures",
+  },
+  // What each route out gives a reader who has read the figures. The link text
+  // alone answers "where does this go" and not "why would I", and the two
+  // destinations answer different questions — one puts the reader's own numbers
+  // against these, the other carries the same country at a different subject.
   howToCalculatorK: { bg: "Сметни своята инфлация", en: "Work out your own inflation" },
+  howToCalculatorSub: {
+    bg: "със своя кошница и своята заплата, тук в браузъра",
+    en: "with your own basket and your own pay, here in the browser",
+  },
+  howToMarketK: { bg: "Пазарът на жилища", en: "The property market" },
+  howToMarketSub: {
+    bg: "колко жилища се купуват, колко се плаща за тях и как се движи официалният индекс",
+    en: "how many dwellings are bought, what is paid for them and how the official index moves",
+  },
 
   // --- Sharing -------------------------------------------------------------
   //

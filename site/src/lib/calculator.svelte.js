@@ -74,7 +74,7 @@ import {
 // between a formula and its input is testable. Wiring that lives in a
 // `$derived(...)` is wiring nothing can test — see the header of any `view/`
 // module, and docs/site.md §"`src/lib/view/` — one module per subject".
-import { officialBasketWeights, verifyUrl } from "./view/basket.js";
+import { basketSumQuery, officialBasketWeights, verifyUrl } from "./view/basket.js";
 import {
   payLadder,
   quarterGrid,
@@ -83,6 +83,7 @@ import {
   nationalRow,
   cityTrend,
   systemWedgeLadder,
+  wedgeCurve,
 } from "./view/country.js";
 import { dataAge } from "./view/freshness.js";
 import { homePriceFor, homePriceBasis, clampTerm, mortgagePanel } from "./view/home.js";
@@ -783,6 +784,8 @@ export class Calculator {
   // ---------------------------------------------------------------------
   /** The tax wedge at round gross salaries — the system's curve, not a person's. */
   systemWedge = $derived(systemWedgeLadder({ payroll: this.data.payroll }));
+  /** The same wedge as a shape, over the range the table's own rows span. */
+  systemWedgeCurve = $derived(wedgeCurve({ payroll: this.data.payroll }));
   /** The SES ladder as rows, each saying whether SES surveyed it or we modelled it. */
   payLadderRows = $derived(
     payLadder({
@@ -1365,6 +1368,18 @@ export class Calculator {
    * rate means they cannot find the figure they clicked. See view/basket.js#verifyUrl.
    */
   estatCatUrl = (cat) => verifyUrl(cat, this.anchor);
+
+  /**
+   * The extract that returns every rate `off` is summed from, for the surface
+   * that prints that sum as a figure of its own.
+   *
+   * Not `estatCatUrl` over one row and not the anchor's: this is the whole
+   * collection at the twelve-month rate, because the figure it stands under is
+   * Σ(w·r) over all of them. `view/basket.js#basketSumQuery` builds it from the
+   * rows' own extracts so nothing about the geography, the unit or the window
+   * is written into the front end.
+   */
+  basketSumUrl = $derived(basketSumQuery(this.categories));
 
   // ---------------------------------------------------------------------
   // Handlers. Arrow fields, per the rule in this file's header.

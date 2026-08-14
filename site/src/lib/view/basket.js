@@ -64,6 +64,45 @@ export function verifyUrl(row, anchor) {
 }
 
 /**
+ * The one extract that returns every rate Σ(w·r) is summed from.
+ *
+ * `verifyUrl` above answers "where do I check THIS row"; this answers "where
+ * do I check the figure printed over all of them", which `/how/` puts on a
+ * card of its own beside Eurostat's all-items headline. A derivation that says
+ * it is ours has to carry its own way to re-run the sum, and a link to one
+ * division is not it.
+ *
+ * **Built from the rows' own `api_url`s rather than from a URL written here.**
+ * The first row's extract already carries the endpoint, the geography, the
+ * unit and the window Eurostat published this figure at, so what a second
+ * division adds to it is its own `coicop18` — the one dimension the query
+ * varies. Spelling the base out in this module would freeze BG, RCH_A and a
+ * twelve-month window into the front end and let a pipeline that retargets any
+ * of them keep a link that returns different digits than the page shows. The
+ * count follows the payload for the same reason nothing else about the
+ * classification is written here: thirteen divisions is Eurostat's answer for
+ * Bulgaria today, not a constant.
+ *
+ * The other half of Σ(w·r) — the shares — is deliberately not a second link.
+ * `prc_hicp_iw` answers in per mille, so «223,23» comes back for a page
+ * showing 22,323%, and a reader following it lands on a figure that reads as
+ * contradicting the table it was meant to confirm. The shares are on this page
+ * already, one to a row, at the precision Eurostat publishes them.
+ *
+ * @param {Array<{api_url?:string, cp_code?:string}>} categories
+ * @returns {string} empty where no row carries an extract, so a caller falls
+ *          back rather than rendering a link to nothing
+ */
+export function basketSumQuery(categories) {
+  const rows = (categories ?? []).filter((c) => c?.cp_code);
+  const base = rows.find((c) => typeof c.api_url === "string" && c.api_url.startsWith("https://"));
+  if (!base) return "";
+  return rows
+    .filter((c) => c !== base)
+    .reduce((url, c) => `${url}&coicop18=${encodeURIComponent(c.cp_code)}`, base.api_url);
+}
+
+/**
  * The division whose 12-month rate is highest — the "fastest-rising group"
  * card. Sorted descending; a sign slip here advertises the *slowest*-rising
  * division as the fastest, which reads as plausible and is exactly backwards.

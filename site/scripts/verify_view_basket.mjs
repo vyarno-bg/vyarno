@@ -17,7 +17,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { officialBasketWeights, verifyUrl, fastestRisingDivision } from "../src/lib/view/basket.js";
+import {
+  officialBasketWeights,
+  verifyUrl,
+  basketSumQuery,
+  fastestRisingDivision,
+} from "../src/lib/view/basket.js";
 import { officialInflation } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
@@ -106,6 +111,54 @@ test("verifyUrl describes the row it was handed, never a fixed category", () => 
 test("verifyUrl falls back to the dataset table rather than an empty href", () => {
   assert.match(verifyUrl({}, "y1"), /^https:\/\//);
   assert.match(verifyUrl(null, 2020), /^https:\/\//);
+});
+
+test("basketSumQuery asks for every division the sum was taken over", () => {
+  // The figure this link sits under is Σ(w·r) across all of them, and `/how/`
+  // prints it beside Eurostat's own all-items rate under a caption saying the
+  // sum is ours. A disclosure that cannot be re-run is a licence discharged
+  // and a sceptic ignored, and a query missing one division returns a set the
+  // page's figure cannot be rebuilt from — which reads exactly like a link
+  // that works.
+  const cats = read("hicp_categories")?.categories;
+  if (!cats) return;
+  const url = basketSumQuery(cats);
+  for (const c of cats) {
+    assert.ok(url.includes(`coicop18=${c.cp_code}`), `${c.cp_code} is not in the sum's query`);
+  }
+  assert.equal(
+    (url.match(/coicop18=/g) ?? []).length,
+    cats.length,
+    "the query names a different number of divisions than the sum was taken over"
+  );
+  // The rate cube at the rate unit, not the index one: the figure over it is a
+  // twelve-month rate, and `unit=I15` returns the index instead — the same
+  // wrong-extract failure `verifyUrl` carries its anchor for.
+  assert.match(url, /prc_hicp_minr/);
+  assert.match(url, /unit=RCH_A/);
+  assert.match(url, /geo=BG/);
+});
+
+test("basketSumQuery takes the endpoint from the payload, never from this repo", () => {
+  // Everything but the division list has to come off the row, so a pipeline
+  // that retargets the cube, the geography, the unit or the window moves this
+  // link with it. Built from a base written here, the link keeps returning
+  // yesterday's shape while the page shows today's figure.
+  const url = basketSumQuery([
+    { cp_code: "CP01", api_url: "https://example.test/x?geo=XX&coicop18=CP01&unit=Q" },
+    { cp_code: "CP02" },
+  ]);
+  assert.equal(url, "https://example.test/x?geo=XX&coicop18=CP01&unit=Q&coicop18=CP02");
+});
+
+test("basketSumQuery returns nothing rather than a link to nowhere", () => {
+  // The caller renders no «провери» at all on an empty string. A fallback URL
+  // here would be a link that does not reproduce the figure above it, which is
+  // worse than the absence on the one page whose claim is that each one does.
+  assert.equal(basketSumQuery([]), "");
+  assert.equal(basketSumQuery(null), "");
+  assert.equal(basketSumQuery([{ cp_code: "CP01" }]), "");
+  assert.equal(basketSumQuery([{ cp_code: "CP01", api_url: "javascript:alert(1)" }]), "");
 });
 
 // ---------------------------------------------------------------------------
