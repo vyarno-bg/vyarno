@@ -89,6 +89,7 @@ site/
 │   ├── near.mjs               # the float comparator, and the tolerance it carries
 │   ├── verify_net_salary.mjs      # gross ↔ net payroll pair
 │   ├── verify_mirror_math.mjs     # every formula in mirror.js
+│   ├── verify_plot.mjs            # the geometry every chart is drawn with
 │   │                              # one suite per module under src/lib/view/,
 │   │                              # same stem — a sentence needing an "and"
 │   │                              # is two files on both sides of the pair
@@ -143,6 +144,8 @@ site/
         ├── payloads.js   # WHICH payloads exist at all (the manifest)
         ├── data.js       # fetch wrappers + the fallback chains
         ├── mirror.js     # pure FORMULAS (the only domain math)
+        ├── plot.js       # pure PLOT GEOMETRY — a figure to a coordinate,
+        │                 # and the two axes. Knows no box; takes one
         ├── view/         # pure DERIVED VALUES (the wiring)  ← read this
         │   ├── freshness.js  # whether the figures are still current
         │   ├── basket.js     # the published divisions the sliders start from

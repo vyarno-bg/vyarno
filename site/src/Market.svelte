@@ -58,6 +58,17 @@
     statusLettersUsed,
   } from "./lib/view/market.js";
   import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
+  import {
+    plotY,
+    plotX,
+    columnX,
+    columnW,
+    tickAt,
+    niceTicks,
+    yearTicks,
+    sparkY,
+    pathOf,
+  } from "./lib/plot.js";
   import { indexTimesBase } from "./lib/mirror.js";
 
   const { payloads = null, servedLang = null } = $props();
@@ -202,35 +213,15 @@
   const isSameQuarter = (period) => Boolean(sameQuarter) && String(period).endsWith(sameQuarter);
 
   /**
-   * The plot box, and the mapping from a published figure to a coordinate in it.
+   * The plot box this page draws in. The mapping into it is `$lib/plot.js`,
+   * which carries the constraints that hold whatever the box: why a scale is
+   * never cropped, and why no axis text may be drawn inside the SVG.
    *
-   * Geometry rather than domain math, which is why it is here and not in
-   * `mirror.js` — `systemWedgeLadder` draws the same line, returning the rates
-   * and leaving the pixels to the component that knows how wide its box is.
-   *
-   * **`yOf` takes a series and never a pair of bounds, and that is the honesty
-   * constraint rather than a convenience.** `plotSeries` clamps `min` at or
-   * below zero and offers no way to raise it, so every scale on this page
-   * contains zero by construction and there is no floor for a later edit to
-   * pass in. A y-axis cropped to a property series' own range turns any of them
-   * into a cliff, and this is the page that refuses to tell a reader what to
-   * think.
-   *
-   * **THE BOX IS THE PLOT AND NOTHING ELSE. No axis text may be drawn inside
-   * it, and the reason is the phone.** An SVG sized `width: 100%` against a
-   * fixed `viewBox` scales its whole coordinate system, TEXT INCLUDED: at a
-   * 360px viewport this box renders at 0.56 of the width it is declared in, so
-   * an 11px axis label reaches the reader at 6.2px — measured in Chromium, on
-   * six charts at once, on the page whose smallest type is the thing that makes
-   * every figure above it checkable. Padding for the labels also came out of
-   * the same box, so the plot itself was 83px tall on the device most readers
-   * arrive on.
-   *
-   * So the labels are HTML in a grid beside the box (`.plot`), set in the
-   * page's own type scale and therefore the same size at every width, and the
-   * SVG carries marks only. `tickAt` is the whole join: a tick's height as a
-   * percentage of the plot, which is exactly what a percentage means to the
-   * gutter cell the grid stretches to the same height.
+   * The numbers are here because they are this page's editorial decision and
+   * nothing else's. 600 by 240 is a shape rather than a size — the SVG is
+   * `width: 100%` and scales — so what these fix is the aspect a reader sees
+   * every plot in, and a page that drew each chart to its own would be saying
+   * something about them by their proportions.
    */
   /**
    * `CH_TALL` is the one plot on the page drawn bigger than the others, and
@@ -253,145 +244,30 @@
   const CH_W = 600,
     CH_H = 240,
     CH_TALL = 320;
-  const span = (s) => s.max - s.min || 1;
   /**
-   * A value's y in a box `h` tall.
+   * This page's box, bound to the geometry in `$lib/plot.js`.
    *
-   * The height is a parameter rather than the constant it was, because one
-   * plot on the page is drawn taller — and every mark inside it has to be
-   * placed in ITS box. A `yOf` that kept the constant would draw the tall
-   * chart's data in the top three quarters of its own frame with the zero rule
-   * floating above the bottom, which reads as a chart with a cropped axis: the
-   * one thing this page's plots may never look like.
+   * Each of these is a binding and not a calculation — the arithmetic is one
+   * layer down, where `verify_plot.mjs` can reach it, and what is left here is
+   * the one fact the module deliberately does not hold: how big this page draws
+   * its plots. A caller writing `plotX(i, n, 600)` at a mark site would be
+   * spelling the box out a seventh time.
+   *
+   * `yOf` keeps its height parameter, because one plot on the page is drawn
+   * taller and every mark inside it has to be placed in ITS box.
    */
-  const yOf = (value, s, h = CH_H) => h * (1 - (value - s.min) / span(s));
-  /** Evenly across the box, first point on the left edge and last on the right. */
-  const lineX = (i, n) => (n > 1 ? (CH_W * i) / (n - 1) : CH_W / 2);
-  /** A column occupies its own slot with a gap, so a long series still reads. */
-  const colX = (i, n) => (CH_W / n) * (i + 0.12);
-  const colW = (n) => Math.max(0.8, (CH_W / n) * 0.76);
-  /**
-   * Where a tick sits down the plot, as the percentage its HTML gutter takes.
-   *
-   * The box's height cancels — it is `yOf` over the same `h` — so this is the
-   * one geometry helper the tall chart does not have to be told about, and a
-   * caller passing the wrong height here could not produce a wrong label.
-   */
-  const tickAt = (value, s) => (yOf(value, s) / CH_H) * 100;
-  /**
-   * The years to mark on a time axis, and where each one sits along it.
-   *
-   * **Two end labels are what a chart has instead of a time axis.** Every plot
-   * here spanned decades under «Q1 2005» at one end and «Q1 2026» at the other,
-   * and a reader looking at the rise in the middle of one had no way to say
-   * when it happened without counting columns. On the two panels drawn together
-   * it was worse than unhelpful: the whole reason they share a window is that a
-   * column can be carried down onto the line below it, and nothing on either
-   * picture said where to carry it to.
-   *
-   * A year is placed at ITS OWN FIRST POINT rather than at an even fraction of
-   * the axis. Those are the same thing only while every year carries a full set
-   * of periods, and a series missing one — or starting mid-year — would label
-   * the wrong columns while the picture stayed correct.
-   *
-   * **The step is chosen from the number of years, not from the viewport.** Six
-   * labels is what a 360px plot holds without them touching, and twenty-one
-   * years of an index at one label each is an unreadable smear at that width —
-   * so the same rule that keeps the phone legible thins the desk's axis too,
-   * and both get the same picture rather than one getting a second layout to
-   * maintain. The steps are the ones a reader reads without decoding: every
-   * year, every second, every fifth.
-   */
-  /**
-   * An axis that ends on round numbers, and the values to label along it.
-   *
-   * **A plot whose axis is labelled only at its own extremes has no scale, it
-   * has two captions.** Every chart here drew its highest reading, its lowest
-   * and zero — so «29 130» named one column and told a reader nothing about the
-   * one beside it, and reading a value off the middle of a plot meant
-   * estimating against a number that was not round and did not repeat.
-   *
-   * So the axis is rounded OUTWARD to the step and the step is one a reader
-   * adds in their head: 1, 2, 2.5 or 5 times a power of ten. Rounding out costs
-   * a little of the box — an axis to 80% over a series that reaches 65.7% draws
-   * the columns slightly shorter — and it buys gridlines that mean something at
-   * every height rather than only at three of them.
-   *
-   * **Zero is a tick by construction and stays one.** `plotSeries` guarantees
-   * the range contains zero and every step here divides it, so the rule at the
-   * foot of a positive chart and through the middle of a signed one is always
-   * labelled — which is the property `verify_render_market.mjs` reads the axis
-   * for. Nothing here can crop a scale either: the bounds only ever move
-   * outward.
-   *
-   * @param {number} min  the series' own floor, at or below zero
-   * @param {number} max  the series' own ceiling
-   * @param {number} [want]  roughly how many intervals to aim for
-   */
-  const niceTicks = (min, max, want = 5) => {
-    const range = max - min || 1;
-    const raw = range / want;
-    const magnitude = 10 ** Math.floor(Math.log10(raw));
-    const normalised = raw / magnitude;
-    const step =
-      magnitude *
-      (normalised <= 1
-        ? 1
-        : normalised <= 2
-          ? 2
-          : normalised <= 2.5
-            ? 2.5
-            : normalised <= 5
-              ? 5
-              : 10);
-    const lo = Math.floor(min / step) * step;
-    const hi = Math.ceil(max / step) * step;
-    const values = [];
-    // Accumulating `lo + i * step` rather than `v += step`, because a repeated
-    // addition of 2.5 or of 0.1 drifts, and the drift lands in a tick LABEL:
-    // «12 500,000000001 €» on an axis whose whole purpose is round numbers.
-    for (let i = 0; lo + i * step <= hi + step / 1000; i += 1) {
-      const v = lo + i * step;
-      values.push(Math.abs(v) < step / 1000 ? 0 : v);
-    }
-    return { min: lo, max: hi, values };
-  };
-
-  const YEAR_TICKS_MAX = 6;
-  const YEAR_STEPS = [1, 2, 5, 10, 25];
-  const xTicks = (series) => {
-    const n = series.points.length;
-    const years = series.points
-      .map((p, i) => ({ year: Number(String(p.period).slice(0, 4)), i }))
-      .filter((y, k, all) => Number.isFinite(y.year) && (k === 0 || y.year !== all[k - 1].year));
-    if (!years.length) return [];
-    const step = YEAR_STEPS.find((s) => Math.ceil(years.length / s) <= YEAR_TICKS_MAX) ?? 50;
-    // **Counted back from the NEWEST year, never forward from the oldest.** The
-    // two differ whenever the step does not divide the span, and what they
-    // differ about is which end goes unlabelled — with a two-year step over ten
-    // years, forward from the first leaves the last year off the axis. That is
-    // the end this page is about: every figure on it is the newest reading, and
-    // an axis whose final label is the year before the data stops asks a reader
-    // to count columns to find today.
-    const last = years[years.length - 1].year;
-    return years
-      .filter((y) => (last - y.year) % step === 0)
-      .map((y) => ({ year: String(y.year), at: (lineX(y.i, n) / CH_W) * 100 }));
-  };
+  const yOf = (value, s, h = CH_H) => plotY(value, s, h);
+  const lineX = (i, n) => plotX(i, n, CH_W);
+  const colX = (i, n) => columnX(i, n, CH_W);
+  const colW = (n) => columnW(n, CH_W);
+  const xTicks = (series) => yearTicks(series, CH_W);
 
   /** The sparkline box, and its own mapping. Small, and drawn 1:1 like the rest. */
   const SP_W = 108,
     SP_H = 26;
-  const spY = (value, scale) =>
-    2 + (SP_H - 4) * (1 - (value - scale.min) / (scale.max - scale.min || 1));
+  const spY = (value, scale) => sparkY(value, scale, SP_H);
 
-  const pathOf = (s, h = CH_H) =>
-    s.points
-      .map(
-        (p, i) =>
-          `${i ? "L" : "M"}${lineX(i, s.points.length).toFixed(2)} ${yOf(p.value, s, h).toFixed(2)}`
-      )
-      .join(" ");
+  const path = (s, h = CH_H) => pathOf(s, CH_W, h);
 
   /**
    * Every series the page draws, and the ones it draws a table of.
@@ -1616,7 +1492,7 @@
             >
               {@render gridlines(priceChangeAxis)}
               {@render yearRules(xTicks(pair.price))}
-              <path class="plot-line" d={pathOf({ ...pair.price, ...priceChangeAxis })} />
+              <path class="plot-line" d={path({ ...pair.price, ...priceChangeAxis })} />
               {@render dots({ ...pair.price, ...priceChangeAxis }, (v) => pct(v))}
               <line
                 class="plot-axis"
@@ -1933,9 +1809,9 @@
             {/each}
             <path
               class="plot-line second"
-              d={pathOf({ ...indexRealSeries, ...indexAxis }, CH_TALL)}
+              d={path({ ...indexRealSeries, ...indexAxis }, CH_TALL)}
             />
-            <path class="plot-line" d={pathOf({ ...indexSeries, ...indexAxis }, CH_TALL)} />
+            <path class="plot-line" d={path({ ...indexSeries, ...indexAxis }, CH_TALL)} />
             {@render dots({ ...indexSeries, ...indexAxis }, times, CH_TALL)}
             <line
               class="plot-axis"
@@ -2428,8 +2304,8 @@
             >
               {@render gridlines(dealAxis)}
               {@render yearRules(xTicks(dealNewSeries))}
-              <path class="plot-line" d={pathOf({ ...dealNewSeries, ...dealAxis })} />
-              <path class="plot-line second" d={pathOf({ ...dealExistingSeries, ...dealAxis })} />
+              <path class="plot-line" d={path({ ...dealNewSeries, ...dealAxis })} />
+              <path class="plot-line second" d={path({ ...dealExistingSeries, ...dealAxis })} />
               {@render dots({ ...dealNewSeries, ...dealAxis }, (v) => `${fmt0(v)} €`)}
               <line
                 class="plot-axis"
