@@ -85,10 +85,25 @@
       content="Жилищният пазар в България с числата на Евростат и НСИ — сделки, цени, собственост и необитавани жилища, всяко със своя източник и период."
     />
     <!--
-    No og:image. The calculator's card carries the wordmark and a strapline
-    about working out your own inflation, and reusing it here would unfurl a
-    page of national figures as a personal calculator.
+    This page's own card. It matters more here than anywhere: this is the page
+    that gets sent to a newsroom, and its first screen already answers — ×2,7,
+    ×1,6, 16 227 and 4,9, each with its publisher and its quarter. None of that
+    may go ON the card, because a preview is cached hard by every platform and
+    those four move every quarter (docs/principles.md P4), so the headline says
+    what the page answers and the answer stays where a refresh reaches it.
+
+    scripts/make_og_image.py's CARDS block carries the rest: why a card per
+    page, why one per language, and what an entry with none unfurls as.
   -->
+    <meta property="og:image" content="https://vyarno.bg/og-market.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Вярно · vyarno.bg — пазарът на жилища, от Евростат, НСИ и обявите на имот.bg"
+    />
+    <!-- The shape, which no og: tag can state. See /how/ for what X does without it. -->
+    <meta name="twitter:card" content="summary_large_image" />
 
     <!--
     Structured data, and the two things it deliberately does not say.

@@ -61,10 +61,19 @@
       content="Bulgaria's official figures, each with the institution, the period and the link to the table it came from."
     />
     <!--
-    No og:image. The calculator's card carries the wordmark and a strapline
-    about working out your own inflation, and reusing it here would unfurl a
-    reference page as the calculator.
+    This entry's own card, in the language this entry declares. The Bulgarian
+    /how/ names what a page with no og:image unfurls as, and
+    scripts/make_og_image.py's CARDS block carries the rest of the reasoning.
   -->
+    <meta property="og:image" content="https://vyarno.bg/og-how.en.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Вярно · vyarno.bg — the figures for Bulgaria, from Eurostat, the ECB, NSI, BNB and imot.bg"
+    />
+    <!-- The shape, which no og: tag can state. See /how/ for what X does without it. -->
+    <meta name="twitter:card" content="summary_large_image" />
 
     <!--
     A WebPage, and NOT a Dataset or an FAQPage, for the two reasons the

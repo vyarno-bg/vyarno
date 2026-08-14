@@ -130,12 +130,12 @@ site/
 │   ├── verify_render_payroll.mjs  # payroll and more than one income
 │   ├── verify_render_share.mjs    # the share card and the share text
 │   ├── verify_render_contrast.mjs # painted text ratios · control boundaries
-│   ├── make_og_image.py           # regenerates the static OG preview + the
-│   │                              # two README banners (stdlib only)
+│   ├── make_og_image.py           # regenerates the six OG cards, the icons
+│   │                              # and the two README banners (stdlib only)
 │   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png
 ├── public/             # copied verbatim into dist/ — no build step
 │   ├── _headers · robots.txt · llms.txt · .well-known/security.txt
-│   ├── favicon.svg · og-image.png · fonts/ (self-hosted, vendored unmodified)
+│   ├── favicon.svg · og-*.png · fonts/ (self-hosted, vendored unmodified)
 └── src/
     ├── App.svelte · How.svelte · Market.svelte · Legal.svelte · Support.svelte
     │   · NotFound.svelte
@@ -1803,12 +1803,26 @@ every build, and `.gitignore` covers it.
 
 ## Share previews
 
-`og:image` is a static 1200×630 PNG in `public/`, with `og:url`, `og:type`,
-`og:site_name`, `og:locale`, `canonical` and `twitter:card` beside it.
+**A page unfurls as itself, or it does not unfurl.** Six static 1200×630 PNGs
+in `public/` — one per content route per language, `og-image`, `og-how` and
+`og-market`, each with an `.en` twin — declared beside `og:url`, `og:type`,
+`og:site_name`, `og:locale`, `canonical` and `twitter:card`.
+`scripts/make_og_image.py`'s `CARDS` block carries the reasoning; the short
+form is that a chat app draws a picture only where `og:image` resolves, and no
+served page here carries an `<img>` for a scraper to fall back on. `/legal/` and
+`/support/` have none and declare none, on the grounds their own entries state.
 
-The card deliberately carries **no number** — the wordmark, the strapline and
-the source line. Preview images are cached hard by every platform, and a stale
-inflation figure in a cached card is our credibility, not theirs.
+`twitter:card` is the one tag those blocks cannot leave to a fallback: X reads
+`og:image`, `og:title` and `og:description` when the `twitter:` twins are
+absent, but has no fallback for the card SHAPE, and without it crops a 1200×630
+card to a small square.
+
+The cards deliberately carry **no number** — the wordmark, the strapline, a
+headline and the source line. Preview images are cached hard by every platform,
+and a stale figure in a cached card is our credibility, not theirs. Which page
+has a card, that the file exists, that it is 1200×630, and that an English entry
+does not unfurl with the Bulgarian artwork are all held by
+`verify_static_assets.mjs` §"every page a stranger is sent unfurls as a card".
 
 **The name and the address never fuse.** The wordmark is «ВЯРНО»; the domain is
 `vyarno.bg` and is set apart from it, in Latin. «ВЯРНО.BG» is neither of the

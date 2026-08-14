@@ -55,7 +55,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
     ├── index.html · how/index.html · market/index.html ·
     │                legal/index.html · support/index.html · 404.html
     ├── public/      _headers (CSP + cache) · robots.txt · llms.txt ·
-    │                .well-known/security.txt · favicon · og-image · fonts
+    │                .well-known/security.txt · favicon · og cards · fonts
     ├── eslint.config.js · .prettierrc.json · svelte.config.js
     ├── scripts/     verify_*.mjs (`npm run verify:math`) · verify_render_*.mjs
     │                (`npm run test:render`, the built page in a browser) ·

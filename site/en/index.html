@@ -55,10 +55,15 @@
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
 
     <!--
-    Share previews. og:image is the same static 1200×630 PNG the Bulgarian
-    entry points at, and it carries the wordmark and the strapline only: NO
-    number, deliberately. Preview images are cached hard by every platform, and
-    a stale inflation figure in a cached card is our credibility, not theirs
+    Share previews. og:image is this entry's OWN 1200×630 PNG rather than the
+    Bulgarian one: the artwork is pixels, so a Cyrillic card under an English
+    title is not a page half-translated — it is a picture the recipient cannot
+    read, beside a title they can. `scripts/make_og_image.py` draws both from
+    one lockup, which is what keeps them one identity rather than two drawings.
+
+    It carries the wordmark, the strapline and the source line: NO number,
+    deliberately. Preview images are cached hard by every platform, and a stale
+    inflation figure in a cached card is our credibility, not theirs
     (docs/principles.md P4). The card the READER generates does carry their
     rate — it is drawn per share and cached by nobody.
   -->
@@ -78,12 +83,12 @@
       property="og:description"
       content="Your inflation, your real wage and the road to a home — in 30 seconds, with no sign-up, from official data, entirely in your browser."
     />
-    <meta property="og:image" content="https://vyarno.bg/og-image.png" />
+    <meta property="og:image" content="https://vyarno.bg/og-image.en.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Вярно · vyarno.bg — work out your own inflation, from Eurostat's official data"
+      content="Вярно · vyarno.bg — work out your inflation, from official Eurostat data"
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vyarno — work out your own inflation" />
@@ -91,7 +96,7 @@
       name="twitter:description"
       content="Your inflation, your real wage and the road to a home — in 30 seconds, with no sign-up, from official data, entirely in your browser."
     />
-    <meta name="twitter:image" content="https://vyarno.bg/og-image.png" />
+    <meta name="twitter:image" content="https://vyarno.bg/og-image.en.png" />
 
     <!--
     A WebPage, and the WebApplication it is part of is declared once — at

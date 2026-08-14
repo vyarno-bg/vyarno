@@ -140,9 +140,23 @@ export const COPY = {
   // Page-level
   title: { bg: "Вярно — сметни своята инфлация", en: "Vyarno - work out your inflation" },
   h1: { bg: "Твоите числа. Твоята реалност.", en: "Your numbers. Your reality." },
+  // P1 IN THE APP'S OWN VOICE, AND UNCONDITIONALLY. The promise this product
+  // stands on is that a reader's figures never leave their device — `mirror.js`
+  // is what makes it so — and «не събираме лични данни» is a narrower claim
+  // wearing the same clothes: it says what WE do, where the reader wants to
+  // know where their salary goes. Every other place the strong form is said is
+  // reached only by a reader who went looking: `rememberHint` belongs to a
+  // switch that has to be opened, the privacy notice is a document behind the
+  // footer, and the <noscript> is served to nobody running JavaScript. This
+  // line is the one a stranger meets in the first screen, so it is the one that
+  // has to carry it.
+  //
+  // «Това устройство», not «твоя браузър»: the figures survive a reload in
+  // `localStorage` when the switch above is on, which is still the device and
+  // is what `rememberHint` qualifies two elements below.
   privacy: {
-    bg: "Всичко е анонимно, не събираме лични данни",
-    en: "Everything is anonymous, we don't collect personal data",
+    bg: "Числата ти не напускат това устройство. Няма регистрация и не събираме лични данни.",
+    en: "Your figures never leave this device. No sign-up, and we collect no personal data.",
   },
   brandSmall: { bg: "икономиката, честно", en: "the economy, honestly" },
   // The switch that keeps the reader's figures on this device, and the line
@@ -2868,7 +2882,21 @@ export const COPY = {
     bg: "Най-тежко удря: {c} - {pp} от {p} пункта",
     en: "The biggest bite: {c} - {pp} of {p} points",
   },
-  shareCardSource: { bg: "Данни: Евростат (HICP), {d}", en: "Data: Eurostat (HICP), {d}" },
+  // THE PICTURE HAS TO NAME WHAT ITS BIGGEST OBJECT COUNTS. The card is read by
+  // a stranger in a chat window with nothing else on screen, and the largest
+  // thing on it is a numeral: «6,5» over a kicker naming a basket, two bars and
+  // a verdict about what is dearer. Between them those imply a price rise and
+  // none of them says one, so the word arrives here, on the line that already
+  // carries the publisher and the period P9 asks for.
+  //
+  // A noun, never «поскъпна с». A basket weighted onto the divisions that are
+  // FALLING makes the figure negative, and a verb then contradicts its own
+  // number — the same rule the sentences above this block are written under.
+  // «Инфлация» survives either sign, which is why it and not «поскъпване».
+  shareCardSource: {
+    bg: "Инфлация по данни на Евростат (HICP), {d}",
+    en: "Inflation from Eurostat (HICP) data, {d}",
+  },
   shareCardCta: { bg: "сметни своята на {u}", en: "work out yours at {u}" },
 
   // --- The share block in the results card ---------------------------------
