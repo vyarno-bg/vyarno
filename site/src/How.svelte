@@ -1275,65 +1275,12 @@
     border-bottom-color: var(--real);
   }
 
-  /* The scroll box sits on the wrapper, so a wide table never makes the page
-     body scroll sideways on a phone.
-
-     IT IS A TAB STOP (`tabindex="0"` in the markup). A scroll container is not
-     focusable on its own and no browser makes it so — so at 360px, where the
-     wedge table runs about 190px past the box and holds no link at all, a
-     keyboard-only reader could not reach two of its five columns by any means.
-     Every box carries the attribute rather than only the ones that overflow,
-     because whether a table overflows is a function of the viewport and of
-     which language is showing, and neither is known where the markup is
-     written.
-
-     WHAT SAYS IT SCROLLS is the clipped column at the boundary, plus the focus
-     ring for the keyboard. The conventional edge shadow — two `local` cover
-     layers over two `scroll` shadow layers — was tried and is not shippable
-     here: the only token faint enough not to fight the ledger palette is
-     invisible against it, and `.mark`'s own row background sits above the box's
-     background anyway, so the shadow shows through at the ceiling row after
-     scrolling to the end. A shadow that is either invisible or wrong on one row
-     is worse than the clipped edge it was meant to strengthen. */
-  .scroll {
-    overflow-x: auto;
-    margin-top: 16px;
-  }
-  /* The focus ring is the keyboard half of the same affordance: the box a
-     reader has just landed on is the one the arrow keys will scroll. */
-  .scroll:focus-visible {
-    outline: 2px solid var(--real);
-    outline-offset: 2px;
-  }
-  .fig-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--fs-meta);
-  }
-  .fig-table th,
-  .fig-table td {
-    text-align: left;
-    padding: 7px 10px 7px 0;
-    border-bottom: 1px solid var(--rule);
-    vertical-align: baseline;
-  }
   .fig-table thead th {
     font-weight: 600;
     color: var(--muted);
     font-size: var(--fs-micro);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-  }
-  .fig-table tbody th {
-    font-weight: 500;
-    color: var(--ink);
-  }
-  .fig-table td {
-    color: var(--ink-2);
-  }
-  .fig-table .num {
-    text-align: right;
-    white-space: nowrap;
   }
   .fig-table .code {
     color: var(--muted);
@@ -1350,9 +1297,6 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--muted);
-  }
-  .fig-table tr.mark {
-    background: var(--real-soft);
   }
   .fig-table .tag {
     font-family: var(--mono);

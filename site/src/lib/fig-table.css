@@ -1,0 +1,107 @@
+/**
+ * The table treatment `/how/` and `/market/` share.
+ *
+ * Both pages are the same kind of document — a published figure, the period it
+ * describes and who published it, laid out in rows — and they had come to the
+ * same answer twice. Eight rules were byte-identical across the two files:
+ * the scroll box, its focus ring, the table's own metrics, the cell padding
+ * and rule, the row header weight, the cell colour, the numeric column and the
+ * highlighted row. Changing any of them meant two edits, and nothing in either
+ * file said the other existed.
+ *
+ * ## Why a stylesheet and not a component
+ *
+ * Because a shared LOOK and a shared COMPONENT are different things, and only
+ * one of them fits here. There are fifty-one tables across the two pages and
+ * they differ in almost everything a component would have to take as a prop:
+ * column count, whether there is a sparkline column, whether a row carries a
+ * status flag, whether the header is two lines, whether the whole thing sits
+ * inside a `<details>`. `Market.svelte`'s own `numbersTable` snippet already
+ * takes seven parameters and covers only the tables on that page.
+ *
+ * What they actually agree on is the furniture. So the furniture is shared and
+ * the markup is not, which is also why this cannot be a Svelte component's
+ * `<style>` block: those are scoped to the component, and the whole point is
+ * that the rules reach markup written elsewhere.
+ *
+ * ## What that costs, and the bound on it
+ *
+ * These selectors are GLOBAL wherever this file is loaded, and Svelte's
+ * unused-selector warning does not reach them — a typo here fails silently
+ * rather than at build time. Two things keep that bounded. Only `how-main.js`
+ * and `market-main.js` import it, so the calculator's tree never sees these
+ * names at all; and every page-specific rule stays in its own component, where
+ * Svelte's scoping class puts it one specificity step above anything here. A
+ * page overriding a rule below therefore wins without needing `!important` and
+ * without depending on which file the bundler emitted first.
+ *
+ * The same trade `card.css`, `result-row.css` and `disclosure.css` already
+ * make. `tokens.css` is the one every entry loads.
+ */
+
+/**
+ * The scroll box sits on the wrapper, so a wide table never makes the page
+ * body scroll sideways on a phone — which would take the sticky header and
+ * every paragraph with it.
+ *
+ * IT IS A TAB STOP (`tabindex="0"` in the markup, with `role="region"` and a
+ * name). A scroll container is not focusable on its own and no browser makes it
+ * so — so at 360px, where the wedge table runs about 190px past the box and
+ * holds no link at all, a keyboard-only reader could not reach two of its five
+ * columns by any means. Every box carries the attribute rather than only the
+ * ones that overflow, because whether a table overflows is a function of the
+ * viewport and of which language is showing, and neither is known where the
+ * markup is written. `verify_render_country.mjs` holds both halves.
+ *
+ * WHAT SAYS IT SCROLLS is the clipped column at the boundary, plus the focus
+ * ring below for the keyboard. The conventional edge shadow — two `local`
+ * cover layers over two `scroll` shadow layers — was tried and is not
+ * shippable here: the only token faint enough not to fight the ledger palette
+ * is invisible against it, and `.mark`'s own row background sits above the
+ * box's background anyway, so the shadow shows through at the ceiling row
+ * after scrolling to the end. A shadow that is either invisible or wrong on
+ * one row is worse than the clipped edge it was meant to strengthen.
+ */
+.scroll {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+/* The focus ring is the keyboard half of the same affordance: the box a reader
+   has just landed on is the one the arrow keys will scroll. */
+.scroll:focus-visible {
+  outline: 2px solid var(--real);
+  outline-offset: 2px;
+}
+
+.fig-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-meta);
+}
+/* `vertical-align: baseline` and not the default `middle`: a row whose label
+   wraps to two lines and whose figure does not would otherwise centre the
+   figure against the pair, and a column of numbers that do not sit on one line
+   is a column that cannot be read down. */
+.fig-table th,
+.fig-table td {
+  text-align: left;
+  padding: 7px 10px 7px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: baseline;
+}
+.fig-table tbody th {
+  font-weight: 500;
+  color: var(--ink);
+}
+.fig-table td {
+  color: var(--ink-2);
+}
+/* Right-aligned so the digits line up down the column, and unwrapped so a
+   figure and its unit never break across two lines. */
+.fig-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.fig-table tr.mark {
+  background: var(--real-soft);
+}

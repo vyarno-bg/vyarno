@@ -17,6 +17,7 @@
  * assertion would still pass.
  */
 import "./lib/tokens.css";
+import "./lib/fig-table.css";
 import { mount } from "svelte";
 import Market from "./Market.svelte";
 
