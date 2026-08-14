@@ -19,9 +19,9 @@
              nothing and therefore has no counterpart in the other tree.
     tagline  the {bg, en} pair under the wordmark.
 
-  Everything else — the pills, the glyphs, the accessible names, the 400px
-  rule that drops the tagline — is the same on all six entries and lives here
-  once. It owns no state: the two toggles write to the `theme`/`lang` stores in
+  Everything else — the pills, the glyphs, the accessible names, the rules that
+  drop the tagline and tighten the spacing on a phone — is the same on all six
+  entries and lives here once. It owns no state: the two toggles write to the `theme`/`lang` stores in
   $lib/stores.js, which every other component reads from directly.
 -->
 <script>
@@ -101,9 +101,12 @@
            arrive at a document that declares `bg` and be read it in Bulgarian,
            since the URL is what decides the language.
 
-           The labels are one word each. The media rule below already drops the
-           brand's `small` at 400px, and the bar has to stay on one line at
-           360px rather than growing a second row on every phone. -->
+           The labels are ONE WORD EACH, IN BOTH LANGUAGES, and the English
+           half is the half to watch: «числата» is 71px and "the numbers" was
+           106px, which is what put every English page's bar past the right
+           edge of a 360px phone while the Bulgarian one fitted. The bar has to
+           stay on one line at 360px rather than growing a second row on every
+           phone, and a length rule kept in one language is not a rule. -->
       {#if page === "/"}
         <a class="pill nav l-bg" href={langHref("/how/", "bg")}>{COPY.howNavK.bg}</a>
         <a class="pill nav l-en" href={langHref("/how/", "en")}>{COPY.howNavK.en}</a>
@@ -151,11 +154,30 @@
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
   }
+  /**
+   * The bar wraps rather than overflowing, and `min-height` rather than
+   * `height` is what lets it.
+   *
+   * This is a floor and not a layout: at every width where the row fits, an
+   * auto height resolves to exactly the 54px the minimum sets, so nothing
+   * moves. What it removes is the other outcome. A fixed height with no wrap
+   * does not make the content fit — it makes the overflow leave the box, and a
+   * control past the right edge scrolls the whole DOCUMENT sideways, taking the
+   * sticky header and every paragraph with it on the narrowest phones.
+   *
+   * Measured, at 360px, before the rules below: /en/ ran to 383px and every
+   * English page to 386px, while their Bulgarian counterparts fitted. The bar
+   * is decided by words, and words are a per-language length — so a bar that
+   * can only fit or break is one that will break in some language eventually,
+   * whatever any one measurement says today.
+   */
   .bar {
     display: flex;
     align-items: center;
-    gap: 16px;
-    height: 54px;
+    flex-wrap: wrap;
+    column-gap: 16px;
+    row-gap: 4px;
+    min-height: 54px;
   }
   .brand {
     display: flex;
@@ -229,6 +251,31 @@
   @media (max-width: 560px) {
     .brand small {
       display: none;
+    }
+  }
+  /**
+   * The bar tightens before it wraps, and this is where the room comes from.
+   *
+   * Four controls and a wordmark is what a 360px phone cannot hold at desk
+   * spacing, and the calculator is the page that carries four. Ten pixels off
+   * the bar's gap, two off each control's gap and two off each pill's sides is
+   * 28px on that bar — measured, /en/ goes from 383px to 355px inside a 360px
+   * viewport, and the Bulgarian pages gain the same margin they did not have.
+   *
+   * Spacing rather than type: the labels are the smallest thing in the header
+   * already, and a pill set smaller than `--fs-small` on the device most
+   * readers arrive on is a control they can see and not read.
+   */
+  @media (max-width: 480px) {
+    .bar {
+      column-gap: 10px;
+    }
+    .controls {
+      gap: 6px;
+    }
+    .pill {
+      padding-left: 7px;
+      padding-right: 7px;
     }
   }
   /* Off-screen until focused. `left` rather than `display: none` or

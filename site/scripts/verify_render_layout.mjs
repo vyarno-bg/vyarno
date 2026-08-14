@@ -22,10 +22,10 @@ test("the country page is reachable without opening anything", { skip }, async (
   // at the foot of the calculator is where one would naturally go — arrives
   // after the reader has already decided whether to believe the page.
   //
-  // Two routes, and the pair is the assertion. The header belongs to the
-  // calculator alone — `/legal/` and `/support/` write their own — so a reader
-  // who walked into one of those has only the footer, and a reader who never
-  // scrolls has only the header.
+  // Two routes, and the pair is the assertion. The header's route out is the
+  // one the reader is not on — `/legal/` and `/support/` carry «← към
+  // калкулатора» in the same slot — so a reader who walked into one of those
+  // has only the footer, and a reader who never scrolls has only the header.
   await withApp(async (page, errors) => {
     const inHeader = page.locator('header.site .controls a[href="/how/"]');
     assert.equal(await inHeader.count(), 1, "the calculator's header carries no route to /how/");
@@ -50,49 +50,150 @@ test("the country page is reachable without opening anything", { skip }, async (
   });
 });
 
-test("the header still fits a phone with the route on it", { skip }, async () => {
-  // The bar is a fixed 54px holding a wordmark and four controls: two content
-  // routes, the theme button and the language link. At 360px the brand's
-  // tagline wrapped to two lines inside that fixed height — the promise
-  // «икономиката, честно» rendered as a layout fault — so under 400px the
-  // tagline is what gives. Nothing about that is visible from the markup,
-  // which is why it is measured.
+/**
+ * Every entry, in both languages, at the two widths that decide the bar.
+ *
+ * `/` in Bulgarian was the whole of this test, and that is exactly how the bar
+ * came to run off the right edge of every English page unnoticed. The bar is
+ * decided by WORDS: «числата» is 71px and "the numbers" was 106px, «← към
+ * калкулатора» is 149px and "← to the calculator" was 169px, and "Vyarno" is
+ * 18px wider than «Вярно» before a single control is drawn. Measured at 360px
+ * before the fix, /en/ ran to 383px and the other four English entries to
+ * 386px, so the document scrolled sideways and took the sticky header and every
+ * paragraph with it — on half the site, at the width most readers arrive at.
+ *
+ * So the route list is every route, and the language is half of what makes a
+ * case. 320px is here because it is the narrowest phone still in use and the
+ * one that has no margin at all; the bar wraps rather than overflowing if it
+ * ever runs out of room there, and the assertion below is about the document,
+ * not about the row count.
+ */
+const BAR_ROUTES = [
+  "/",
+  "/how/",
+  "/market/",
+  "/legal/",
+  "/support/",
+  "/404.html",
+  "/en/",
+  "/en/how/",
+  "/en/market/",
+  "/en/legal/",
+  "/en/support/",
+];
+
+for (const path of BAR_ROUTES) {
+  for (const width of [320, 360]) {
+    test(`the header fits a ${width}px phone on ${path}`, { skip }, async () => {
+      await withApp(
+        async (page, errors) => {
+          const bar = await page.evaluate(() => {
+            const vw = document.documentElement.clientWidth;
+            // What a reader can see. Three of the bar's controls are written as
+            // a `.l-bg` / `.l-en` pair — the routes and the language link,
+            // whose hrefs differ by language — so the DOM holds more elements
+            // than it draws. A count over the DOM would measure how the markup
+            // is assembled; what has to fit is what is drawn.
+            const controls = [...document.querySelectorAll("header.site .controls > *")].filter(
+              (el) => el.offsetParent !== null
+            );
+            const boxes = [document.querySelector("header.site .brand"), ...controls].map((el) =>
+              el.getBoundingClientRect()
+            );
+            return {
+              vw,
+              docWidth: Math.round(document.documentElement.scrollWidth),
+              rightmost: Math.round(
+                Math.max(...controls.map((el) => el.getBoundingClientRect().right))
+              ),
+              // One row, measured as one row. Not by a shared top edge — the
+              // wordmark and a button and four anchors are not the same height,
+              // and `align-items: center` gives each its own top. What makes a
+              // row is that every box overlaps every other vertically.
+              rowGap: Math.round(
+                Math.max(...boxes.map((b) => b.top)) - Math.min(...boxes.map((b) => b.bottom))
+              ),
+            };
+          });
+          // The document, not the bar. An overflowing control is only a problem
+          // because of what it does to everything else on the page.
+          assert.equal(
+            bar.docWidth,
+            bar.vw,
+            `${path} at ${width}px scrolls ${bar.docWidth - bar.vw}px sideways`
+          );
+          assert.ok(
+            bar.rightmost <= bar.vw + 1,
+            `on ${path} at ${width}px a header control reaches ${bar.rightmost}px ` +
+              `past the ${bar.vw}px viewport`
+          );
+          // ONE ROW at 360px, in both languages, and this is the assertion the
+          // wrap above would otherwise hide. Wrapping keeps the document from
+          // scrolling sideways, so a bar that no longer fits passes every check
+          // over the page's width while quietly costing every reader on that
+          // half of the site 40px of sticky header. Restore "the numbers" and
+          // "← to the calculator" and this goes red on the five English routes;
+          // nothing else does.
+          //
+          // 320px is left out on purpose: it is below the width this bar is
+          // designed to hold, and the wrap is the answer there rather than a
+          // failure.
+          if (width === 360) {
+            assert.ok(
+              bar.rowGap < 0,
+              `on ${path} at 360px the header has wrapped — ${bar.rowGap}px of clear ` +
+                "air between two controls"
+            );
+          }
+          assert.deepEqual(errors, [], errors.join(" | "));
+        },
+        path,
+        { viewport: { width, height: 800 } }
+      );
+    });
+  }
+}
+
+test("the calculator's bar keeps its four controls on one line at 360px", { skip }, async () => {
+  // The count and the row are what the tightening above is for, and they are
+  // asserted on the calculator because it is the page that carries four
+  // controls where every other carries three. The fourth is the one that makes
+  // the measurement matter rather than merely repeat itself: adding a nav pill
+  // to a bar that already fits is exactly the change that fits on a laptop and
+  // wraps on a phone, and the only place that shows is a real viewport.
   //
-  // The fourth control is the one that makes the measurement matter rather
-  // than merely repeat itself. Adding a nav pill to a bar that already fits is
-  // exactly the change that fits on a laptop and wraps to a second row on a
-  // phone, and the only place that shows is a real viewport.
+  // At 360px the brand's tagline wrapped to two lines inside the bar — the
+  // promise «икономиката, честно» rendered as a layout fault — so it is what
+  // gives first. Nothing about that is visible from the markup.
   await withApp(
     async (page, errors) => {
       const bar = await page.evaluate(() => {
-        const vw = document.documentElement.clientWidth;
         const brand = document.querySelector("header.site .brand");
-        // What a reader can see. Three of the bar's controls are written as a
-        // `.l-bg` / `.l-en` pair — the two content routes and the language
-        // link, whose hrefs differ by language — so the DOM holds seven
-        // elements and draws four. A count over the DOM would measure how the
-        // markup is assembled; what has to fit is what is drawn.
         const controls = [...document.querySelectorAll("header.site .controls > *")].filter(
           (el) => el.offsetParent !== null
         );
         return {
-          vw,
           barHeight: Math.round(
             document.querySelector("header.site .bar").getBoundingClientRect().height
           ),
           brandHeight: Math.round(brand.getBoundingClientRect().height),
           taglineShown: Boolean(document.querySelector("header.site .brand small")?.offsetHeight),
           controls: controls.length,
-          rightmost: Math.round(
-            Math.max(...controls.map((el) => el.getBoundingClientRect().right))
-          ),
+          // One row, measured as one row. Not by a shared top edge — the
+          // controls are a button among anchors, they are not the same height,
+          // and `align-items: center` puts each at its own top. What makes a
+          // row is that every box overlaps every other vertically.
+          rowGap:
+            Math.max(...controls.map((el) => el.getBoundingClientRect().top)) -
+            Math.min(...controls.map((el) => el.getBoundingClientRect().bottom)),
         };
       });
       assert.equal(bar.controls, 4, `the header carries ${bar.controls} controls, expected 4`);
       assert.ok(
-        bar.rightmost <= bar.vw + 1,
-        `a header control reaches ${bar.rightmost}px past the ${bar.vw}px viewport`
+        bar.rowGap < 0,
+        `the four controls have wrapped — ${bar.rowGap}px of clear air between two of them`
       );
+      assert.equal(bar.barHeight, 54, `the bar is ${bar.barHeight}px tall, expected 54`);
       assert.ok(
         bar.brandHeight <= bar.barHeight,
         `the brand is ${bar.brandHeight}px tall in a ${bar.barHeight}px bar — it has wrapped`

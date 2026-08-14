@@ -202,7 +202,12 @@ export const COPY = {
   // rather than a pseudo-element, because it is a direction and not decoration:
   // read out, «← към калкулатора» and «към калкулатора» say the same thing, and
   // seen, the arrow is what separates a way back from a fifth destination.
-  backToCalcK: { bg: "← към калкулатора", en: "← to the calculator" },
+  // The same bar and the same rule: «← към калкулатора» is 153px and "← to the
+  // calculator" was 169px, on a bar that has 16px less to give in English
+  // because "Vyarno" is wider than «Вярно». The article and the preposition are
+  // what a header sheds first — nothing about a back link needs them, and the
+  // arrow already says which direction it goes.
+  backToCalcK: { bg: "← към калкулатора", en: "← calculator" },
   // What the masthead's wordmark is subtitled with, page by page. A tagline is
   // a prop rather than markup inside the header because the header is shared
   // and this is the one word in it that is about WHICH page you are on — and a
@@ -2056,7 +2061,11 @@ export const COPY = {
   // Two labels rather than one because the slots differ: the header pill sits
   // beside two glyph buttons on a 360px bar, and the footer line has room to
   // say which numbers.
-  howNavK: { bg: "числата", en: "the numbers" },
+  // ONE WORD IN BOTH LANGUAGES, and the English half is the half that has to be
+  // watched: «числата» is 75px and "the numbers" was 106px, which is what put
+  // every English page's header past the right edge of a 360px phone while the
+  // Bulgarian one fitted. A rule kept in one language is not a rule.
+  howNavK: { bg: "числата", en: "numbers" },
   // One word, because it shares the bar with `howNavK`, a theme button and a
   // language link, and the bar has to stay on one line at 360px.
   //
@@ -2066,7 +2075,14 @@ export const COPY = {
   // Bulgarian reader has to open it to find out which one. «имоти» is the word
   // they would use for the topic out loud. The precise «жилищен пазар» is two
   // words and puts this bar on a second row on every phone.
-  marketNavK: { bg: "имоти", en: "property" },
+  //
+  // The English half is held to the same rule and has 18px less room to do it
+  // in, because "Vyarno" is wider than «Вярно» before a control is drawn.
+  // "property" is 79px against «имоти»'s 55px, and measured at 360px that is
+  // the 12px that wrapped the calculator's English bar to two rows. "homes" is
+  // the everyday word for the same topic, which is exactly what «имоти» is to a
+  // Bulgarian reader — the register is the match, not the dictionary.
+  marketNavK: { bg: "имоти", en: "homes" },
   howFooterK: { bg: "Числата за България", en: "Bulgaria's numbers" },
   marketFooterK: { bg: "Пазарът на жилища →", en: "The property market →" },
 
