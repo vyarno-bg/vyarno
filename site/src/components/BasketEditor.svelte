@@ -138,11 +138,6 @@
       <span class="l-bg">{COPY.modeEur.bg}</span><span class="l-en">{COPY.modeEur.en}</span>
     </button>
   </div>
-  <label class="homeTog">
-    <input type="checkbox" bind:checked={calc.detailMode} />
-    <span class="l-bg">{COPY.detailToggle.bg}</span>
-    <span class="l-en">{COPY.detailToggle.en}</span>
-  </label>
 </div>
 <p class="leg">
   <span class="l-bg">{COPY.modeHint.bg}</span>
@@ -208,12 +203,10 @@
     />
   </div>
 {/if}
-{#if calc.detailMode}
-  <p class="leg">
-    <span class="l-bg">{COPY.detailHint.bg}</span>
-    <span class="l-en">{COPY.detailHint.en}</span>
-  </p>
-{/if}
+<p class="leg">
+  <span class="l-bg">{COPY.detailHint.bg}</span>
+  <span class="l-en">{COPY.detailHint.en}</span>
+</p>
 <!-- The € tally, and the bar under it. Both read `budget`
      (view/spend.js#basketBudget) rather than subtracting inline: the
      leftover is stated in three places on this page and they have to
@@ -256,10 +249,10 @@
          `RankedContributions.svelte#toRow` says why the receipt is the
          navigation. `cp_code` because it is published, unique and already this
          block's key. -->
-    <div class="cat" id="cat-{c.cp_code}" class:open={open && calc.detailMode}>
+    <div class="cat" id="cat-{c.cp_code}" class:open>
       <div class="top">
         <span class="nm">
-          {#if calc.detailMode && c.groups?.length}
+          {#if c.groups?.length}
             <button
               class="disc"
               aria-expanded={open}
@@ -350,7 +343,7 @@
            number here (name, rate, default share, verify link)
            comes from hicp_categories.json → categories[].groups[];
            nothing about the sub-level is hardcoded in the SPA. -->
-      {#if calc.detailMode && open && c.groups?.length}
+      {#if open && c.groups?.length}
         {@const sp = calc.splitFor(i)}
         {@const spTotal = sp.reduce((s, x) => s + (x > 0 ? x : 0), 0)}
         <div class="subs">
@@ -526,7 +519,7 @@
     color: var(--muted);
     line-height: 1.5;
   }
-  /* Basket toolbar: input mode on the left, detail switch on the right. */
+  /* Basket toolbar: the %/€ input mode, which is the only choice on this row. */
   .basketbar {
     display: flex;
     align-items: center;

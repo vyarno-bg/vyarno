@@ -572,10 +572,9 @@ test("every basket rail announces its value with its unit", { skip }, async () =
   // ONE rule over the whole collection rather than an assertion per rail: a
   // check that cannot go red while this one stays green is a second thing to
   // update, not a second guard. The three shapes have to be ON the page for the
-  // rule to mean anything, which is what the counts below are for — the
-  // group rails need the detail switch and an opened division to exist at all,
-  // and a collection rule that quietly ran over thirteen rows would read as
-  // having covered all of them.
+  // rule to mean anything, which is what the counts below are for — the group
+  // rails need an opened division to exist at all, and a collection rule that
+  // quietly ran over thirteen rows would read as having covered all of them.
   //
   // Both languages, because the announcement is a rendered string like any
   // other: an empty attribute is the missing-translation failure and Cyrillic
@@ -586,7 +585,6 @@ test("every basket rail announces its value with its unit", { skip }, async () =
     ["/en/", false],
   ]) {
     await withApp(async (page, errors) => {
-      await page.locator(".basketbar .homeTog input").check();
       await page.locator("#sliders .cat .disc").first().click();
       await page.waitForTimeout(300);
 

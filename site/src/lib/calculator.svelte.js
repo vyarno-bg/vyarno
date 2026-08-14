@@ -312,8 +312,6 @@ export class Calculator {
    * the measured one are never both live.
    */
   spendSharePct = $state(100);
-  /** Master switch for the ECOICOP level-2 drill-down. */
-  detailMode = $state(false);
   /** Which divisions are currently expanded (by index). */
   // A plain Set, never mutated in place: `toggleDivision` builds a new one and
   // reassigns, which is what makes `$state` see the change.
@@ -472,7 +470,6 @@ export class Calculator {
     activePreset: this.activePreset,
     spendMode: this.spendMode,
     spendSharePct: this.spendSharePct,
-    detailMode: this.detailMode,
     sectorKey: this.sectorKey,
   });
 
@@ -533,7 +530,6 @@ export class Calculator {
     this.activePreset = saved.activePreset;
     this.spendMode = saved.spendMode;
     this.spendSharePct = saved.spendSharePct;
-    this.detailMode = saved.detailMode;
     this.sectorKey = saved.sectorKey;
     return true;
   };

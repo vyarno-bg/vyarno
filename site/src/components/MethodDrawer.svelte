@@ -20,8 +20,6 @@
     anchor = "y1",
     /** Published divisions and the reader's shares of them. */
     categories = [],
-    /** Whether the basket is showing groups as well as divisions. */
-    detailMode = false,
     openDivisions = new Set(),
     /** Deposit share (%), quoted in the mortgage worked example. */
     downPayPct = 0,
@@ -257,7 +255,7 @@
               ></td
             >
           </tr>
-          {#if detailMode && openDivisions.has(i)}
+          {#if openDivisions.has(i)}
             {#each c.groups ?? [] as g, gi (g.cp_code)}
               {@const sp = splitFor(i)}
               {@const spTotal = sp.reduce((s, x) => s + (x > 0 ? x : 0), 0)}

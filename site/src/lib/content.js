@@ -775,7 +775,6 @@ export const COPY = {
   },
 
   // Drill-down into ECOICOP groups
-  detailToggle: { bg: "покажи по-подробно", en: "show more detail" },
   detailHint: {
     bg: "Всяка група се разпъва на подгрупи — например транспортът се дели на кола, гориво и билети. Отвориш ли я, числото не се променя; променя се само ако преместиш нещо вътре.",
     en: "Each group opens into sub-groups - transport splits into buying a car, running it, and tickets. Opening one changes nothing; only moving something inside does.",

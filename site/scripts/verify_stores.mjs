@@ -125,7 +125,6 @@ const SAVED = {
   activePreset: null,
   spendMode: "eur",
   spendSharePct: 80,
-  detailMode: true,
   sectorKey: "Information and communication",
 };
 
@@ -521,7 +520,6 @@ test("one junk field is enough to refuse the whole snapshot", async () => {
     activePreset: 3,
     spendMode: "percent",
     spendSharePct: 140,
-    detailMode: "on",
     sectorKey: 7,
   };
   assert.deepEqual(
