@@ -207,10 +207,10 @@ test("the calculator's bar keeps its four controls on one line at 360px", { skip
 });
 
 test("every page carries a route to the country page, except itself", { skip }, async () => {
-  // The footer is on all five pages, so it is what makes `/how/` reachable from
-  // the two that write their own header. `/how/` is the exception: a page that
-  // links to itself is noise, and the four document links in the same row
-  // already follow that rule.
+  // The footer is on every page, and it is what makes `/how/` reachable from the
+  // two whose header points back to the calculator instead. `/how/` is the
+  // exception: a page that links to itself is noise, and the four document
+  // links in the same row already follow that rule.
   for (const path of ["/legal/", "/support/"]) {
     await withApp(
       async (page, errors) => {

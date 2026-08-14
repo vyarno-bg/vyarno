@@ -62,7 +62,9 @@ behind guards nothing — it will pass a suite that lost half its tests.
   `validate.py` → `publish.py`, driven by `cli.py`. Has its own `AGENTS.md`.
 - `data/published/` — twelve JSON envelopes, **committed**. These are what the
   site fetches; the diff is the review.
-- `site/` — Vite 8 + Svelte 5 SPA, five layers. Has its own `AGENTS.md`.
+- `site/` — Vite 8 + Svelte 5 SPA, five layers. `src/components/` is the
+  calculator's own parts; `src/lib/` is what more than one entry uses, chrome and
+  shared stylesheets included. Has its own `AGENTS.md`.
 - `docs/` — everything else; `docs/README.md` is the index.
 
 ## Boundaries
@@ -132,7 +134,15 @@ checklist: `docs/data-sources.md` §"Checklist for adding a connector".
 
 **Changing a formula.** `docs/math.md` first — it is the provenance contract —
 then `site/src/lib/mirror.js`, then a case in
-`site/scripts/verify_mirror_math.mjs`.
+`site/scripts/verify_mirror_math.mjs`. A chart's geometry is not a formula:
+`site/src/lib/plot.js` holds the axis, the ticks and the coordinate mapping,
+paired with `verify_plot.mjs`.
+
+**Changing the chrome every page carries.** The masthead and the footer are one
+file each under `site/src/lib/`, mounted by all six entries; a page may not write
+its own, and `verify_render_layout.mjs`/`verify_render_shell.mjs` hold that. A new
+entry belongs in their route lists. `SiteHeader` takes two props and a third is a
+conversation, not an edit.
 
 **Changing which number feeds a formula.** The `site/src/lib/view/` module that
 owns the subject, then the `site/scripts/verify_view_*.mjs` suite of the same
@@ -183,6 +193,15 @@ Which suite a test belongs in, and what is deliberately uncovered:
 The standard is a senior engineer writing to a colleague who is going to read
 the diff anyway. One test: **would a reviewer learn something from this sentence
 that the diff does not already tell them?** If no, cut it.
+
+**A doc is a map, not the territory.** Its job is to point at the code and say
+why the code is shaped that way, not to restate what the code already says. If a
+paragraph takes longer to absorb than the file it describes, it has failed. When
+you add to a doc, add the fewest lines that let the next agent find the thing and
+grasp the one constraint that is not obvious from the source; the reasoning lives
+beside the code, in the comment, and the doc links to it. Prefer a table row to a
+paragraph, a sentence to a table row, and nothing to a sentence a reader already
+knows.
 
 - **Commit subject** — imperative, sentence case, ≤72 chars, no full stop; an
   area prefix (`site:`, `pipeline:`, `ci:`, `docs:`) only when the change is

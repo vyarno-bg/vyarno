@@ -92,9 +92,10 @@
       link below gives: that landmark is labelled "legal" and holds what
       discharges ЗЕТ чл. 4. A page of published figures is not that.
 
-      It is here as well as in the header because the header belongs to the
-      calculator alone — `/legal/` and `/support/` write their own — and a
-      reader who has walked into one of those had no way back to the numbers.
+      It is here as well as in the header because the header's own route out is
+      the one the reader is not on: `/legal/` and `/support/` carry «← към
+      калкулатора» in that slot, so without this line a reader who walked into
+      one of those has no way to the numbers at all.
       Absent on `/how/` itself: a page that links to itself is noise, which is
       the rule the four document links above already follow.
     -->
