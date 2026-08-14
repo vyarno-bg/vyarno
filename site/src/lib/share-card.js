@@ -83,6 +83,14 @@ const CARD_VERDICT_KEY = Object.freeze({
 });
 
 /**
+ * The line that replaces all three above when `share.ownBasket` is false.
+ *
+ * Outside `CARD_VERDICT_KEY` on purpose: that map is indexed by `share.verdict`
+ * and a key inside it is reachable by a genuine comparison.
+ */
+const CARD_VERDICT_NO_BASKET = "shareCardVerdictNoBasket";
+
+/**
  * The rest of the `COPY` keys the card is lettered with.
  *
  * Named through this map rather than reached as `copy.shareCardMine`, so that
@@ -94,6 +102,7 @@ const CARD_VERDICT_KEY = Object.freeze({
 const CARD_COPY = Object.freeze({
   tagline: "brandSmall",
   kicker: "shareCardKicker",
+  kickerOfficial: "shareCardKickerOfficial",
   mine: "shareCardMine",
   average: "shareCardAverage",
   top: "shareCardTop",
@@ -111,6 +120,7 @@ const CARD_COPY = Object.freeze({
  */
 export const SHARE_CARD_COPY_KEYS = Object.freeze([
   ...Object.values(CARD_VERDICT_KEY),
+  CARD_VERDICT_NO_BASKET,
   ...Object.values(CARD_COPY),
 ]);
 
@@ -161,18 +171,27 @@ export function shareCardText({ share, copy, lang = "bg" }) {
 
   return {
     tagline: t(copy[CARD_COPY.tagline], lang),
-    kicker: t(copy[CARD_COPY.kicker], lang, { w: windowLabel }),
+    // The kicker names whose the figure under it is, so it follows the owner.
+    kicker: t(copy[share.ownBasket ? CARD_COPY.kicker : CARD_COPY.kickerOfficial], lang, {
+      w: windowLabel,
+    }),
     // The unit is a separate slot because it is set separately: `.r-big .pct`
     // in the results card draws the percent sign at 0.42em and raised, and a
     // full-height "%" beside a 116px numeral out-weighs the number it belongs
     // to.
     figure: piText,
     figureUnit: "%",
-    mineLabel: t(copy[CARD_COPY.mine], lang),
-    mineValue: `${piText}%`,
+    // Dropped rather than drawn, on the rule `detail` below already follows:
+    // without a described basket this row is the average row again, at the same
+    // rate, under a label calling it the sender's.
+    mineLabel: share.ownBasket ? t(copy[CARD_COPY.mine], lang) : "",
+    mineValue: share.ownBasket ? `${piText}%` : "",
     averageLabel: t(copy[CARD_COPY.average], lang),
     averageValue: `${number(share.officialPct, 1, lang)}%`,
-    verdict: t(copy[CARD_VERDICT_KEY[share.verdict]], lang),
+    verdict: t(
+      copy[share.ownBasket ? CARD_VERDICT_KEY[share.verdict] : CARD_VERDICT_NO_BASKET],
+      lang
+    ),
     // Dropped rather than drawn empty when no division leads — a basket with
     // every slider at zero has no biggest bite, and a dangling «Най-тежко
     // удря:» with nothing after it is worse than the silence.
@@ -351,14 +370,16 @@ export function drawShareCard(canvas, { share, copy, lang = "bg", palette }) {
     colour: accent,
   });
 
-  drawBar(ctx, palette, {
-    label: text.mineLabel,
-    value: text.mineValue,
-    fraction: bars.mine,
-    labelY: Y.mineLabel,
-    trackY: Y.mineTrack,
-    fill: accent,
-  });
+  if (text.mineLabel) {
+    drawBar(ctx, palette, {
+      label: text.mineLabel,
+      value: text.mineValue,
+      fraction: bars.mine,
+      labelY: Y.mineLabel,
+      trackY: Y.mineTrack,
+      fill: accent,
+    });
+  }
   drawBar(ctx, palette, {
     label: text.averageLabel,
     value: text.averageValue,

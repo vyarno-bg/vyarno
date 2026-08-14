@@ -33,6 +33,100 @@ test("the results card announces the headline, not fifty numbers", { skip }, asy
   });
 });
 
+test("the headline says whose basket it is until the reader says otherwise", { skip }, async () => {
+  // Every visitor arrives on Eurostat's weights, so the biggest figure on the
+  // page is the country's until they move something. Three things have to hold
+  // at once for that to be honest, and each fails differently: the label must
+  // not call it theirs, a note must say whose it is, and the note must carry
+  // the route — the basket heading is 3,668px below this figure at 360px, and a
+  // caveat naming a control four screens away has no second half.
+  await withApp(async (page, errors) => {
+    const label = page.locator(".r-lbl");
+    const note = page.locator(".m-card .m-preset-note");
+
+    const before = (await label.innerText()).replace(/\s+/g, " ").trim();
+    assert.doesNotMatch(
+      before,
+      /тво[яей]/i,
+      `the headline claims the country's basket as the reader's: "${before}"`
+    );
+    assert.match(
+      before,
+      /средностатистическата кошница/,
+      `the headline names no basket at all: "${before}"`
+    );
+    assert.equal(await note.count(), 1, "nothing on the card says whose basket the figure is");
+    assert.match(
+      (await note.innerText()).replace(/\s+/g, " ").trim(),
+      /Евростат/,
+      "the note does not name the basket the figure was computed from"
+    );
+
+    // The route lands the reader on the heading that says what the thirteen
+    // rows are, not partway down the list of them. Asserted as "on screen and
+    // near the top" rather than at a pixel: the assertion is that the reader
+    // arrives able to read the instruction.
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.waitForTimeout(200);
+    await note.locator("button").click();
+    await page.waitForTimeout(300);
+    const box = await page.locator("#basket").boundingBox();
+    assert.ok(
+      box && box.y >= 0 && box.y < 200,
+      `the basket heading sits at ${box ? Math.round(box.y) : "nowhere"}px after the route was taken`
+    );
+
+    // And the claim is earned the moment the reader describes anything: the
+    // label takes «твоята» back and the note goes, because what it caveats has
+    // stopped being true.
+    await page.locator("#sliders .cat > input[type=range]").nth(6).fill("40");
+    await page.waitForTimeout(400);
+    assert.match(
+      (await label.innerText()).replace(/\s+/g, " ").trim(),
+      /тво[яей]/i,
+      "the headline still disowns a basket the reader has edited"
+    );
+    assert.equal(await note.count(), 0, "the note outlived the basket it was a caveat about");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test("the window the figure is measured over is a control beside it", { skip }, async () => {
+  // The anchor decides which two dates the published index is read at, and the
+  // headline, its € line, both bars and the ranked column are all different
+  // numbers under a different one. A reader who never finds it never learns the
+  // figure has a window — so the constraint is the DISTANCE, and the assertion
+  // is that both fit one phone screen together rather than that the select sits
+  // in a named element.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.waitForTimeout(200);
+
+    const [select, figure] = await Promise.all([
+      page.locator("#inAnchor").boundingBox(),
+      page.locator(".r-big").boundingBox(),
+    ]);
+    assert.ok(select && figure, "the anchor control or the headline figure is gone");
+    assert.ok(
+      Math.abs(select.y - figure.y) < 780,
+      `the window control is ${Math.round(Math.abs(select.y - figure.y))}px from the figure it ` +
+        `governs, on a 780px screen`
+    );
+
+    // Changing it changes the headline. Without this the control could be moved
+    // anywhere and left wired to nothing.
+    const before = await page.locator(".r-big").innerText();
+    await page.locator("#inAnchor").selectOption("2020");
+    await page.waitForTimeout(400);
+    assert.notEqual(
+      (await page.locator(".r-big").innerText()).trim(),
+      before.trim(),
+      "the headline ignored the window it is measured over"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test(
   "the verdict names the comparison in words, over bars that keep both figures",
   { skip },
@@ -41,31 +135,53 @@ test(
     // they are asserted together rather than in two tests that can be satisfied
     // one at a time.
     //
-    // The bars own the figures: the reader's rate and the average, labelled, to
-    // one decimal, over the period the caption above them names. Deleting one
-    // to shorten the card takes a published number off the default view, and
-    // `barCeiling` exists so the pair can be compared by length.
+    // The bars own the figures: each rate labelled, to one decimal, over the
+    // period the caption above them names. Dropping one of a live PAIR to
+    // shorten the card takes a published number off the default view, and
+    // `barCeiling` exists so the two can be compared by length.
     //
     // The paragraph under them owns the words. It says which rate is bigger and
     // whether the gap is worth calling one — the thing two bars cannot say — and
     // it says it without a figure, because a percentage there is the pair above
     // reprinted 20px lower, and a reader who meets the same number twice looks
     // for the difference between the copies.
+    //
+    // **Both halves are gated on there being two baskets.** Until a slider
+    // moves, the reader's weights ARE Eurostat's, so a second bar is the first
+    // one relabelled — identical rate, identical width — and the paragraph
+    // reports the official basket's distance from itself as a finding about the
+    // reader. What the card may say then is one basket's rise; what arrives on
+    // the first drag is the comparison. This test walks that transition, and
+    // the count of bars is the load-bearing assertion at both ends.
     await withApp(async (page, errors) => {
       const bars = page.locator(".vbars .num");
       const verdict = page.locator("p.m-verdict");
 
-      // Default load: the reader's weights ARE the official ones, so the two
-      // rates agree and the card's verdict is the near one.
+      // Default load: the reader's weights ARE the official ones, so there is
+      // one basket on the card and nothing to compare it with. One bar, and no
+      // verdict — the paragraph pronounces on a gap, and the gap is zero
+      // because the two sides are one number rather than because two baskets
+      // came out alike.
       const onLoad = (await bars.allInnerTexts()).map((s) => s.trim());
-      assert.equal(onLoad.length, 2, `the comparison lost a bar: ${onLoad.join(" | ")}`);
-      for (const shown of onLoad) {
-        assert.match(shown, /\d+[.,]\d%/, `a bar states no rate to one decimal: "${shown}"`);
-      }
-      assert.match(await verdict.innerText(), /близо до средностатистическата/);
+      assert.equal(
+        onLoad.length,
+        1,
+        `the card draws a comparison before there is one: ${onLoad.join(" | ")}`
+      );
+      assert.match(
+        onLoad[0],
+        /\d+[.,]\d%/,
+        `the bar states no rate to one decimal: "${onLoad[0]}"`
+      );
+      assert.equal(
+        await verdict.count(),
+        0,
+        "the card pronounces on a comparison between the official basket and itself"
+      );
 
       // A weight moved onto transport, so the basket parts company with the
-      // average one and the verdict has a direction to state.
+      // average one — and the comparison arrives as the result of doing
+      // something rather than as the state the reader landed in.
       // Scoped to the basket's own rows. An unscoped `input[type="range"]` counts
       // every rail on the page, so the index means "the seventh division" only
       // for as long as nothing else on the card is a slider — and the
@@ -74,6 +190,10 @@ test(
       await page.waitForTimeout(400);
 
       const moved = (await bars.allInnerTexts()).map((s) => s.trim());
+      assert.equal(moved.length, 2, `the comparison lost a bar: ${moved.join(" | ")}`);
+      for (const shown of moved) {
+        assert.match(shown, /\d+[.,]\d%/, `a bar states no rate to one decimal: "${shown}"`);
+      }
       assert.notEqual(
         moved[0],
         onLoad[0],

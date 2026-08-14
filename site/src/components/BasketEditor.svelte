@@ -73,7 +73,11 @@
 </script>
 
 <!-- BASKET PRESETS + SLIDERS -->
-<h4 style="margin-top:14px;margin-bottom:8px">
+<!-- The target of the results card's «Опиши разходите си →», on the HEADING
+     rather than on `#sliders`: what says what the thirteen rows are is this
+     line and the legend under it. `scroll-margin-top` for `#main`'s reason —
+     the masthead is sticky. -->
+<h4 id="basket" style="margin-top:14px;margin-bottom:8px;scroll-margin-top:64px">
   <span class="l-bg">{COPY.basketHead.bg}</span>
   <span class="l-en">{COPY.basketHead.en}</span>
 </h4>

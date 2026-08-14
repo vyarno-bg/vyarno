@@ -94,7 +94,19 @@ test("sharePayload cannot be handed a salary", () => {
     .split(",")
     .map((p) => p.split("=")[0].trim())
     .filter(Boolean);
-  assert.deepEqual(params, ["pi", "official", "near", "anchor", "ranked", "refPeriod"]);
+  // `activePreset` is a basket's NAME — "official", one of the four chips, or
+  // null once hand-edited — and carries no figure of any kind. It is in the
+  // list because the list is exhaustive: a parameter added here is one somebody
+  // has to justify, which is the whole mechanism.
+  assert.deepEqual(params, [
+    "pi",
+    "official",
+    "near",
+    "activePreset",
+    "anchor",
+    "ranked",
+    "refPeriod",
+  ]);
 
   // And the money words are absent from what it returns, whatever it was fed.
   const share = sharePayload(shareArgs());
@@ -133,6 +145,12 @@ test("no share sentence carries a currency, in either language", () => {
     { near: false },
     { pi: 3.1, near: false },
     { pi: -1.2, near: false },
+    // The state every visitor arrives in: the official weights, so `pi` and
+    // `official` are one number and the sentence is a different one. It is in
+    // this sweep rather than only in its own test because the sweep is what
+    // checks EVERY sentence at every anchor for a currency and an unfilled
+    // slot, and a branch outside it is a branch outside that guarantee.
+    { activePreset: "official", pi: 5.2, near: true },
   ];
   for (const anchor of anchors) {
     for (const over of verdicts) {
@@ -166,6 +184,53 @@ test("the share sentence speaks the reader's own numbers in their own locale", (
   // nobody can place, and placing it is the whole point of sending it.
   assert.match(shareSentence({ share, copy: COPY, lang: "bg" }), /5,2%/);
   assert.equal(shareSentence({ share: null, copy: COPY, lang: "bg" }), "");
+});
+
+test("a basket the reader has not described is not sent as theirs", () => {
+  // Arriving is not a claim. On the official weights `pi` and `official` are
+  // the same number, so all three verdict lines print one rate twice and close
+  // by pronouncing on the difference — «Моята кошница: 5,4%. Средната кошница
+  // за България: 5,4%. Горе-долу колкото средното.» Nothing in that is false
+  // and none of it is about the sender.
+  const official = sharePayload(shareArgs({ activePreset: "official", pi: 5.2, near: true }));
+  assert.equal(official.ownBasket, false);
+
+  for (const lang of ["bg", "en"]) {
+    const sentence = shareSentence({ share: official, copy: COPY, lang });
+    assert.ok(
+      sentence.includes(lang === "bg" ? "5,2%" : "5.2%"),
+      `the national figure is gone: ${sentence}`
+    );
+    // Once, not twice. The count is the assertion — a line that names the same
+    // rate at both ends is the one this exists to keep off the surface.
+    assert.equal(
+      sentence.split(lang === "bg" ? "5,2%" : "5.2%").length - 1,
+      1,
+      `the same rate is printed twice: ${sentence}`
+    );
+    assert.ok(sentence.includes(SHARE_ORIGIN), `no way back to the site: ${sentence}`);
+  }
+
+  // Every other basket is the reader's, including the four ready-made chips: a
+  // reader who picked «с кола всеки ден» has said something about their life,
+  // and `presetActive` is what tells them on screen that the weights behind it
+  // are ours. `null` is a hand-edited basket.
+  for (const preset of [null, "driver", "family", "noCar", "pensioner"]) {
+    assert.equal(
+      sharePayload(shareArgs({ activePreset: preset })).ownBasket,
+      true,
+      `activePreset=${preset} is not being treated as the reader's own basket`
+    );
+    assert.match(
+      shareSentence({
+        share: sharePayload(shareArgs({ activePreset: preset })),
+        copy: COPY,
+        lang: "bg",
+      }),
+      /7,2%/,
+      `activePreset=${preset} lost the reader's own rate`
+    );
+  }
 });
 
 test("every COPY key the share text needs exists", () => {

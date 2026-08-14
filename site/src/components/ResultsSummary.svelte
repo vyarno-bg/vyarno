@@ -1,8 +1,18 @@
 <script>
   /**
    * The card's headline: the reader's own inflation, what it costs them a
-   * month, the biggest single bite, and the two bars that put their basket
-   * next to the average one.
+   * month, the biggest single bite, and the bars that put their basket next to
+   * the average one.
+   *
+   * **Half of what this block says is gated on `calc.basketIsOwn`, and the
+   * arithmetic is why.** The basket every visitor arrives on IS the official
+   * one, so `pi` and `off` are the same number until a slider moves or a chip
+   * is picked — and a headline calling that number «твоята», two bars of
+   * identical width, and a verdict pronouncing them close are three claims
+   * about a comparison nobody has made. What the card may honestly say before
+   * the reader describes anything is what the country's basket did, whose it
+   * is, and where to go to make it theirs; the second bar and the verdict are
+   * what arrives when there is a second thing to compare.
    *
    * `aria-live` is scoped to the headline block, NOT to the whole card:
    * announcing all ~50 numbers on every slider tick makes the calculator
@@ -87,22 +97,70 @@
     if (band) band.open = true;
     document.getElementById("two-official")?.scrollIntoView({ block: "center" });
   }
+
+  // The longest route on the page: the headline is at y=1,007 at 360px and the
+  // basket heading at y=4,675. `block: "start"` because the reader has to
+  // arrive at «За какво отиват парите ти?» and its legend — landing among the
+  // sliders puts the instruction above the viewport. No focus(), for
+  // `openReconciliation`'s reason: there is no keyboard to raise here.
+  function showBasket() {
+    document.getElementById("basket")?.scrollIntoView({ block: "start" });
+  }
 </script>
 
+<!-- **The window stays within a screen of the figure it governs.** It is the
+     one control here that is not a fact about the reader, and the headline, its
+     € line, both bars and the ranked column are all different numbers under a
+     different one. Among the household's own fields it sits 3,113px below what
+     it decides at 360px, and a reader who never reaches it never learns the big
+     figure has a window at all. -->
 <div class="h4row">
   <h4>
     <span class="l-bg">{COPY.yourReal.bg}</span>
     <span class="l-en">{COPY.yourReal.en}</span>
   </h4>
-  <span class="mono" style="font-size: var(--fs-fine);color:var(--muted)">
-    {calc.anchor === "y1"
-      ? $lang === "bg"
-        ? "за 1 година"
-        : "over 1 year"
-      : $lang === "bg"
-        ? `от ${calc.anchor} насам`
-        : `since ${calc.anchor}`}
-  </span>
+  <div class="m-window">
+    <!-- The option text is the visible label, so the accessible name is the
+         question it answers: a screen reader otherwise meets bare years. -->
+    <select
+      id="inAnchor"
+      aria-label={t(COPY.anchor, $lang)}
+      value={calc.anchor === "y1" ? "y1" : String(calc.anchor)}
+      onchange={calc.onAnchorChange}
+    >
+      <option value="y1"
+        >{COPY.anchorY1[$lang] ?? COPY.anchorY1.bg}{calc.yoyWindowLabel
+          ? ` · ${calc.yoyWindowLabel}`
+          : ""}</option
+      >
+      {#each calc.anchorYears as y (y)}
+        <!-- The end-point range lives in a title rather than the option text:
+             inline it is wider than the field and the dropdown breaks. -->
+        <option
+          value={String(y)}
+          title={calc.idxLatestYearLabel && calc.idxLatestYearLabel !== String(y)
+            ? $lang === "bg"
+              ? `от края на ${y} до ${calc.idxLatestYearLabel}`
+              : `end-of-${y} → ${calc.idxLatestYearLabel}`
+            : ""}
+        >
+          {y}</option
+        >
+      {/each}
+    </select>
+    <div class="hint">
+      <span class="l-bg"
+        >{calc.anchor === "y1"
+          ? t(COPY.anchorY1Hint, "bg", { latest_month: calc.basketRefPeriod })
+          : t(COPY.anchorSinceHint, "bg")}</span
+      >
+      <span class="l-en"
+        >{calc.anchor === "y1"
+          ? t(COPY.anchorY1Hint, "en", { latest_month: calc.basketRefPeriod })
+          : t(COPY.anchorSinceHint, "en")}</span
+      >
+    </div>
+  </div>
 </div>
 
 <div aria-live="polite" aria-atomic="true">
@@ -120,13 +178,23 @@
   >
     {fmt(calc.pi)}<span class="pct">%</span>
   </div>
+  <!-- «Твоята» is earned, not assumed, and the noun is the bar's own so a
+       reader meets one name for one number. -->
   <div class="r-lbl">
-    {#if calc.anchor === "y1"}
-      <span class="l-bg">твоята инфлация за последната година</span>
-      <span class="l-en">your inflation over the past year</span>
+    {#if calc.basketIsOwn}
+      {#if calc.anchor === "y1"}
+        <span class="l-bg">твоята инфлация за последната година</span>
+        <span class="l-en">your inflation over the past year</span>
+      {:else}
+        <span class="l-bg">поскъпването на твоята кошница от {calc.anchor} насам</span>
+        <span class="l-en">your basket's rise since {calc.anchor}</span>
+      {/if}
+    {:else if calc.anchor === "y1"}
+      <span class="l-bg">поскъпването на средностатистическата кошница за последната година</span>
+      <span class="l-en">the average basket's rise over the past year</span>
     {:else}
-      <span class="l-bg">поскъпването на твоята кошница от {calc.anchor} насам</span>
-      <span class="l-en">your basket's rise since {calc.anchor}</span>
+      <span class="l-bg">поскъпването на средностатистическата кошница от {calc.anchor} насам</span>
+      <span class="l-en">the average basket's rise since {calc.anchor}</span>
     {/if}
   </div>
   {#if calc.householdNet > 0}
@@ -173,6 +241,28 @@
   {/if}
 </div>
 
+<!-- What the figures above are standing on, in the order the figures are:
+     this note governs the percentage, the €900 one below it governs the euro.
+     Both sit above the bars — a caveat under them is 250px past its claim.
+     Only the official basket gets a route: a reader on «с кола всеки ден» has
+     already found the chips, and one who has touched nothing has met no
+     evidence that the thirteen rows exist. -->
+{#if activePresetLabel}
+  <p class="m-preset-note">
+    <span class="l-bg">{t(COPY.presetActive, "bg", { p: activePresetLabel })}</span>
+    <span class="l-en">{t(COPY.presetActive, "en", { p: activePresetLabel })}</span>
+  </p>
+{:else if !calc.basketIsOwn}
+  <p class="m-preset-note">
+    <span class="l-bg">{COPY.officialBasketActive.bg}</span>
+    <span class="l-en">{COPY.officialBasketActive.en}</span>
+    <button type="button" onclick={showBasket}>
+      <span class="l-bg">{COPY.officialBasketCta.bg} →</span>
+      <span class="l-en">{COPY.officialBasketCta.en} →</span>
+    </button>
+  </p>
+{/if}
+
 <!-- Outside the aria-live block above, deliberately. Inside it, the note and
      its button would be re-announced on every slider tick along with the ~50
      figures the live region already re-reads; and it is not a result, it is a
@@ -198,32 +288,39 @@
   {/if}
 </div>
 <div class="vbars">
-  <div>
-    <div class="gm">
-      <span class="lab"
-        ><span class="l-bg">{COPY.yourBasket.bg}</span><span class="l-en">{COPY.yourBasket.en}</span
-        ></span
-      >
-      <span
-        class="num mono"
-        style="color: {calc.nearOfficial
-          ? 'var(--ink)'
-          : calc.dpi > 0
-            ? 'var(--erode)'
-            : 'var(--real-ink)'}">{fmt(calc.pi)}%</span
-      >
+  <!-- On the official weights `pi` and `off` are one number, so this row and
+       the one below are one figure under two labels at identical widths —
+       measured at 191px and 191px. Two equal bars are the strongest "these were
+       compared" signal the card has. -->
+  {#if calc.basketIsOwn}
+    <div>
+      <div class="gm">
+        <span class="lab"
+          ><span class="l-bg">{COPY.yourBasket.bg}</span><span class="l-en"
+            >{COPY.yourBasket.en}</span
+          ></span
+        >
+        <span
+          class="num mono"
+          style="color: {calc.nearOfficial
+            ? 'var(--ink)'
+            : calc.dpi > 0
+              ? 'var(--erode)'
+              : 'var(--real-ink)'}">{fmt(calc.pi)}%</span
+        >
+      </div>
+      <div class="track">
+        <div
+          class="fill"
+          style="width:{Math.max(2, (100 * calc.pi) / ceiling)}%;background: {calc.nearOfficial
+            ? 'var(--real)'
+            : calc.dpi > 0
+              ? 'var(--erode)'
+              : 'var(--real)'}"
+        ></div>
+      </div>
     </div>
-    <div class="track">
-      <div
-        class="fill"
-        style="width:{Math.max(2, (100 * calc.pi) / ceiling)}%;background: {calc.nearOfficial
-          ? 'var(--real)'
-          : calc.dpi > 0
-            ? 'var(--erode)'
-            : 'var(--real)'}"
-      ></div>
-    </div>
-  </div>
+  {/if}
   <div>
     <div class="gm">
       <span class="lab"
@@ -251,18 +348,20 @@
      a reader can compare their lengths, which is the one thing the bars are for.
      `the verdict names the comparison in words, over bars that keep both
      figures` in verify_render.mjs holds both halves of that. -->
-<p class="m-verdict">
-  {#if calc.nearOfficial}
-    <span class="l-bg">Кошницата ти е близо до средностатистическата.</span>
-    <span class="l-en">Your basket is close to the average.</span>
-  {:else if calc.dpi > 0}
-    <span class="l-bg">При теб е по-скъпо, отколкото при средностатистическия българин.</span>
-    <span class="l-en">For you it's pricier than for the average Bulgarian.</span>
-  {:else}
-    <span class="l-bg">При теб е по-евтино, отколкото при средностатистическия българин.</span>
-    <span class="l-en">For you it's cheaper than for the average Bulgarian.</span>
-  {/if}
-</p>
+{#if calc.basketIsOwn}
+  <p class="m-verdict">
+    {#if calc.nearOfficial}
+      <span class="l-bg">Кошницата ти е близо до средностатистическата.</span>
+      <span class="l-en">Your basket is close to the average.</span>
+    {:else if calc.dpi > 0}
+      <span class="l-bg">При теб е по-скъпо, отколкото при средностатистическия българин.</span>
+      <span class="l-en">For you it's pricier than for the average Bulgarian.</span>
+    {:else}
+      <span class="l-bg">При теб е по-евтино, отколкото при средностатистическия българин.</span>
+      <span class="l-en">For you it's cheaper than for the average Bulgarian.</span>
+    {/if}
+  </p>
+{/if}
 
 <!-- The bridge between the two official rates, and deliberately a route
      rather than a sentence. The banner's figure and the average-basket bar are
@@ -278,13 +377,6 @@
     <span class="l-en">{COPY.explainGapRoute.en} →</span>
   </button>
 </p>
-
-{#if activePresetLabel}
-  <p class="m-preset-note">
-    <span class="l-bg">{t(COPY.presetActive, "bg", { p: activePresetLabel })}</span>
-    <span class="l-en">{t(COPY.presetActive, "en", { p: activePresetLabel })}</span>
-  </p>
-{/if}
 
 <style>
   /* Layout / shell */
@@ -304,10 +396,54 @@
     border-left: 2px solid var(--muted);
     border-radius: 0 var(--radius) var(--radius) 0;
   }
+  /* The measurement window. `card.css` draws the control itself, so what is
+     here is only its size and where it sits.
+
+     **Its own line at every width, and that is a decision rather than an
+     outcome.** Left to wrap, the row is a heading with a control beside it
+     between 820px and 1000px and a heading above one everywhere else, so a
+     reader meeting the page on a tablet and on a laptop learns it twice. The
+     `rem` cap and not `ch`: `ch` is the font's own `0` advance and the select
+     falls back to a different face per platform, so a rule that decides this by
+     measuring text answers differently on somebody else's machine.
+
+     Two steps under the shared control size, and one more below 430px:
+     «посл. 12 месеца · 2025.06 → 2026.06» is 296px of mono at `--fs-meta`
+     against a 288px card interior at 360px wide, and the tail it loses is the
+     end month. A `<select>` is exempt from the 16px floor that stops iOS
+     zooming a focused text field, which is what makes the step available. */
+  .m-window {
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+  .m-window select {
+    max-width: 22rem;
+    font-size: var(--fs-meta);
+    padding: 5px 8px;
+  }
+  @media (max-width: 430px) {
+    .m-window select {
+      font-size: var(--fs-fine);
+      padding: 6px 4px;
+    }
+  }
+  /* Which months the figure covers, and the half of the control that dates it
+     (P3). A note under a control rather than a claim about the figure, and the
+     copy is worded so it cannot be read as one. */
+  .m-window .hint {
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    line-height: 1.4;
+    color: var(--muted);
+  }
   /* The route to the field reads as a link, not as a call to action. A filled
      button here would out-shout the figure it sits under, which is the number
      the reader came for — the same reasoning that keeps the footer's donate
-     ask one quiet line. */
+     ask one quiet line. The basket route in `.m-preset-note` is the same kind
+     of control pointing at a different card, so it takes the same treatment
+     rather than a second one a reader would have to learn. */
+  .m-preset-note button,
   .placeholder button {
     display: inline;
     margin: 0;
@@ -321,6 +457,7 @@
     border-bottom: 1px solid var(--real);
     cursor: pointer;
   }
+  .m-preset-note button:hover,
   .placeholder button:hover {
     color: var(--ink);
     border-bottom-color: var(--ink);

@@ -762,6 +762,16 @@ it" and "invest it" are advice, which P6 and §7a close, and
 
 ## The basket interface
 
+**The default basket is the official one, so the results card may not compare
+until the reader has described something.** `calculator.svelte.js#basketIsOwn`
+is that state, and it gates the headline's «твоята», the reader's own bar, the
+verdict paragraph and `view/share.js#sharePayload`'s `ownBasket`. Ungated, the
+card prints one number under two labels at two identical bar widths and calls
+the result a finding about the reader; the note that names the basket instead
+carries the only route on the page to the sliders, 3,668px below it at 360px.
+`verify_render_results.mjs` §"the headline says whose basket it is" walks the
+transition from both ends.
+
 **Nothing about the classification is hardcoded in the front end.** The basket
 iterates the published payload — divisions and their groups, labels, codes and
 within-division shares — so an upstream reclassification reaches the page as
@@ -1693,8 +1703,9 @@ other pages. Two properties of it are load-bearing rather than cosmetic:
   outside it. The scale is compressed rather than uniformly enlarged, so the
   hierarchy survives while nothing is tiny. Separately, every `<input>` sits at `--fs-lead` (16px) because iOS
   Safari zooms the viewport when a focused field is smaller, which throws the
-  layout sideways mid-typing. `.field select#inAnchor` is the one deliberate
-  exception, and it is a `<select>`, which the zoom rule does not touch.
+  layout sideways mid-typing. The measurement-window `<select>` in the results
+  card's heading row is the one control set below it, and a `<select>` is what
+  the zoom rule does not touch.
 
 A new size is a new token or an existing one — never a fresh `px` value.
 
