@@ -78,6 +78,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
                      view/         WHICH input feeds which formula (the wiring),
                                    ten modules, one per subject
                      mirror.js     THE ARITHMETIC (the only domain math)
+                     plot.js       PLOT GEOMETRY — a figure to a coordinate
                      calculator.svelte.js  the STATE everything reads
                      format.js     how a number or a date is written
                      content.js    BG/EN copy + presets + offline sentinels
