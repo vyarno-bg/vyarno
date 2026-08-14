@@ -155,30 +155,63 @@ export const tickAt = (value, scale) => (1 - (value - scale.min) / span(scale)) 
 export const niceTicks = (min, max, want = 5) => {
   const range = max - min || 1;
   const raw = range / want;
-  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  const exponent = Math.floor(Math.log10(raw));
+  const magnitude = 10 ** exponent;
   const normalised = raw / magnitude;
-  const step =
-    magnitude *
-    (normalised <= 1
-      ? 1
-      : normalised <= 2
-        ? 2
-        : normalised <= 2.5
-          ? 2.5
-          : normalised <= 5
-            ? 5
-            : 10);
-  const lo = Math.floor(min / step) * step;
-  const hi = Math.ceil(max / step) * step;
+  const multiple =
+    normalised <= 1 ? 1 : normalised <= 2 ? 2 : normalised <= 2.5 ? 2.5 : normalised <= 5 ? 5 : 10;
+  const step = magnitude * multiple;
+  /**
+   * How many decimals a tick can legitimately carry, and the whole of the
+   * arithmetic's precision.
+   *
+   * A tick is a whole number of steps, so its exact value needs exactly as many
+   * decimals as the step does — no computation over it may produce more. The
+   * step is a power of ten times 1, 2, 2.5, 5 or 10, so that count is the
+   * exponent, plus one where the multiple is the only fractional one.
+   *
+   * **Neither `lo + i * step` nor `v += step` is exact, and the difference
+   * between them is not the point.** Multiplying is better than accumulating —
+   * the error stops growing with `i` — but binary floating point cannot hold
+   * 0.1, 0.2 or 2.5 at all, so `0 + 3 * 0.2` is 0.6000000000000001 whichever
+   * way it is reached. That is a tick LABEL on an axis whose entire purpose is
+   * round numbers, and formatting downstream is not a defence: the page happens
+   * to write these through `percentSigned(x, 0)` today, so a caller writing one
+   * decimal would print it, and nothing would say so.
+   *
+   * So each value is rounded back onto the decimal grid its own step defines.
+   * That is exact rather than approximate — the rounded value IS the tick's
+   * mathematical value, to the last digit it can have.
+   */
+  const decimals = Math.min(100, Math.max(0, -exponent) + (multiple === 2.5 ? 1 : 0));
+  const exact = (v) => Number(v.toFixed(decimals));
+  const lo = exact(Math.floor(min / step) * step);
+  const hi = exact(Math.ceil(max / step) * step);
   const values = [];
-  // Accumulating `lo + i * step` rather than `v += step`, because a repeated
-  // addition of 2.5 or of 0.1 drifts, and the drift lands in a tick LABEL:
-  // «12 500,000000001 €» on an axis whose whole purpose is round numbers.
   for (let i = 0; lo + i * step <= hi + step / 1000; i += 1) {
-    const v = lo + i * step;
+    const v = exact(lo + i * step);
     values.push(Math.abs(v) < step / 1000 ? 0 : v);
   }
   return { min: lo, max: hi, values };
+};
+
+/**
+ * The year a period names, or `null` where it names none.
+ *
+ * **Four digits, tested, and not `Number()` over the first four characters.**
+ * `Number("")` is 0 rather than NaN, so a point whose period is the empty
+ * string parses as the year 0 and puts «0» on the axis — a label a reader
+ * cannot account for, on a chart that is otherwise correct. `Number(" 12")`
+ * and `Number("2e3")` are the same class. A period is `2026`, `2026-Q1` or
+ * `2026-01` in every payload here, so what the axis wants is exactly a
+ * four-digit head and nothing that merely coerces like one.
+ *
+ * @param {string|number|null|undefined} period
+ * @returns {number|null}
+ */
+const yearOf = (period) => {
+  const head = String(period ?? "").slice(0, 4);
+  return /^\d{4}$/.test(head) ? Number(head) : null;
 };
 
 /** Six labels is what a 360px plot holds without them touching. */
@@ -227,8 +260,13 @@ const YEAR_STEPS = [1, 2, 5, 10, 25];
 export const yearTicks = (series, w) => {
   const n = series.points.length;
   const years = series.points
-    .map((p, i) => ({ year: Number(String(p.period).slice(0, 4)), i }))
-    .filter((y, k, all) => Number.isFinite(y.year) && (k === 0 || y.year !== all[k - 1].year));
+    .map((p, i) => ({ year: yearOf(p.period), i }))
+    // Two passes and not one. Merged, the dedupe compares each year against the
+    // previous MAPPED point rather than the previous surviving one, so a period
+    // that parsed to nothing sitting between two readings of the same year lets
+    // the second through and the axis carries that year twice.
+    .filter((y) => y.year !== null)
+    .filter((y, k, kept) => k === 0 || y.year !== kept[k - 1].year);
   if (!years.length) return [];
   const step = YEAR_STEPS.find((s) => Math.ceil(years.length / s) <= YEAR_TICKS_MAX) ?? 50;
   const last = years[years.length - 1].year;

@@ -9,18 +9,21 @@
  * arithmetic and everything checked one instance of its output.
  *
  * So this file exercises the module, and the cases are the failures the code
- * itself names. The five that would each ship a chart that renders, looks
- * plausible and is wrong:
+ * itself names. Each would ship a chart that renders, looks plausible and is
+ * wrong:
  *
- *   - a step accumulated by repeated addition, so a label reads
- *     «12 500,000000001 €» on an axis whose whole purpose is round numbers;
+ *   - a tick carrying more precision than its own step, so a label reads
+ *     «0,6000000000000001 %» on an axis whose whole purpose is round numbers;
  *   - a bound rounded inward, cropping a scale the page promises never to crop;
  *   - zero missing from the values, so the rule at the foot of a positive chart
  *     and through the middle of a signed one goes unlabelled;
  *   - a year axis counted forward from the oldest reading, which drops the
  *     newest year — the end every figure on the page is about;
  *   - a mark placed against the box it was not drawn in, which is what the tall
- *     chart's height parameter exists to prevent.
+ *     chart's height parameter exists to prevent;
+ *   - a period that coerces to a number without being one, which puts the year
+ *     0 on the axis, and a year labelled twice because an unreadable period sat
+ *     between two of its readings.
  *
  * `verify_render_market.mjs` still reads the rendered axis, and it is a
  * different question: that the labels this module returns are the ones the page
@@ -113,12 +116,26 @@ test("a column takes its own slot and never disappears", () => {
 // ---------------------------------------------------------------------------
 
 test("an axis only ever moves outward, so no scale is cropped", () => {
-  const axis = niceTicks(0, 65.7);
-  assert.ok(axis.min <= 0, `axis floor rose to ${axis.min}`);
-  assert.ok(axis.max >= 65.7, `axis ceiling fell to ${axis.max}`);
-  const signed = niceTicks(-19.8, 30.4);
-  assert.ok(signed.min <= -19.8, `signed axis floor rose to ${signed.min}`);
-  assert.ok(signed.max >= 30.4, `signed axis ceiling fell to ${signed.max}`);
+  // Over every range the precision case below covers, because rounding a tick
+  // onto its own decimal grid is exactly the operation that could pull a bound
+  // inward — and a bound pulled inward crops a scale, which is the one thing
+  // the page's charts may never do.
+  for (const [lo, hi, want] of [
+    [0, 65.7, 5],
+    [-19.8, 30.4, 5],
+    [0, 1, 5],
+    [0, 0.4, 5],
+    [-0.3, 0.5, 4],
+    [-0.02, 0.11, 5],
+    [0, 29130, 5],
+    [0, 0.07, 5],
+    [0, 3, 5],
+    [-1, 1, 4],
+  ]) {
+    const axis = niceTicks(lo, hi, want);
+    assert.ok(axis.min <= lo, `niceTicks(${lo}, ${hi}, ${want}) floor rose to ${axis.min}`);
+    assert.ok(axis.max >= hi, `niceTicks(${lo}, ${hi}, ${want}) ceiling fell to ${axis.max}`);
+  }
 });
 
 test("zero is a tick on every axis, positive or signed", () => {
@@ -143,27 +160,44 @@ test("zero is a tick on every axis, positive or signed", () => {
 });
 
 test("a tick value carries no more precision than its own step", () => {
-  // The failure this guards is a LABEL: an axis whose whole purpose is round
-  // numbers printing «12 500,000000001 €». A step that is a whole number of
-  // units cannot produce one, whatever the range.
+  // The failure is a LABEL: an axis whose entire purpose is round numbers
+  // printing «12 500,000000001 €» or «0,6000000000000001 %». Binary floating
+  // point holds neither 0.1 nor 2.5, so it is reachable at any fractional step
+  // however the values are reached — multiplying stops the error growing with
+  // the index, it does not remove it.
   //
-  // It does NOT hold for a fractional step, and that is a defect in
-  // `niceTicks` rather than a gap here: `niceTicks(0, 1, 5)` returns
-  // 0.6000000000000001 for its fourth tick. It reaches no reader today because
-  // every axis label on the page goes through `percentSigned(x, 0)` or
-  // `integer(x)`, but the arithmetic is wrong and this is the first thing that
-  // could have said so. Scoped to integral steps so the assertion is true;
-  // widening it is the commit that fixes the module.
+  // A tick is a whole number of steps, so its exact value needs exactly as many
+  // decimals as the step does. Anything past that is drift.
+  const decimalsOf = (x) => {
+    const written = String(x);
+    if (written.includes("e")) return 100;
+    return written.includes(".") ? written.split(".")[1].length : 0;
+  };
   for (const [lo, hi, want] of [
     [0, 12500, 5],
     [0, 29130, 5],
     [0, 25000, 4],
     [-20, 40, 5],
     [0, 100, 5],
+    [0, 1, 5],
+    [0, 0.4, 5],
+    [-0.3, 0.5, 4],
+    [0, 7, 5],
+    [-0.02, 0.11, 5],
+    [0, 65.7, 5],
+    [-19.8, 30.4, 5],
+    [0, 0.07, 5],
+    [-1, 1, 4],
+    [0, 3, 5],
   ]) {
-    const { values } = niceTicks(lo, hi, want);
-    for (const v of values) {
-      assert.equal(v, Math.round(v), `niceTicks(${lo}, ${hi}, ${want}) returned ${v}`);
+    const { values, min, max } = niceTicks(lo, hi, want);
+    const step = values[1] - values[0];
+    const allowed = decimalsOf(step);
+    for (const v of [min, max, ...values]) {
+      assert.ok(
+        decimalsOf(v) <= allowed,
+        `niceTicks(${lo}, ${hi}, ${want}) returned ${v} against a step of ${step}`
+      );
     }
   }
 });
@@ -278,19 +312,36 @@ test("a long series is thinned rather than smeared", () => {
 });
 
 test("a series with no readable period gets no axis rather than a wrong one", () => {
-  // A `null`, a number, an ISO date that is not a period — anything whose first
-  // four characters do not parse as a year drops out, and a series of nothing
-  // but those draws no axis at all rather than an axis of one wrong label.
-  //
-  // An EMPTY STRING is the exception and it is a defect, left standing here
-  // rather than fixed in a move: `Number("")` is 0, not NaN, so a point with
-  // `period: ""` survives the filter and labels the axis «0». No published
-  // payload carries one today — every `period` comes out of a series keyed by
-  // it — which is why this documents the hole instead of asserting past it.
+  // A period is `2026`, `2026-Q1` or `2026-01` in every payload here, so the
+  // axis wants exactly a four-digit head — not anything that merely coerces
+  // like one. `Number("")` is 0, and read as a year it puts «0» on the axis of
+  // a chart that is otherwise correct: a label a reader cannot account for and
+  // no other test could see.
   assert.deepEqual(yearTicks({ points: [] }, 600), []);
   assert.deepEqual(yearTicks({ points: [{ period: null }, { period: undefined }] }, 600), []);
   assert.deepEqual(yearTicks({ points: [{ period: "not-a-year" }] }, 600), []);
-  assert.deepEqual(yearTicks({ points: [{ period: "" }] }, 600), [{ year: "0", at: 50 }]);
+  assert.deepEqual(yearTicks({ points: [{ period: "" }] }, 600), []);
+  assert.deepEqual(yearTicks({ points: [{ period: " 12" }, { period: "2e30" }] }, 600), []);
+  // …and a period that IS one still works, written as a number or a string.
+  assert.deepEqual(yearTicks({ points: [{ period: 2026 }] }, 600), [{ year: "2026", at: 50 }]);
+});
+
+test("a year is labelled once, whatever sits between its readings", () => {
+  // The parse and the dedupe are two passes for this. Merged, the dedupe
+  // compares against the previous MAPPED point rather than the previous
+  // surviving one, so an unreadable period between two readings of the same
+  // year lets the second through and the axis carries that year twice — two
+  // rules through one column, on a chart nothing else would call wrong.
+  const ticks = yearTicks(
+    {
+      points: [{ period: "2024-Q1" }, { period: "" }, { period: "2024-Q3" }, { period: "2025-Q1" }],
+    },
+    600
+  );
+  assert.deepEqual(
+    ticks.map((t) => t.year),
+    ["2024", "2025"]
+  );
 });
 
 // ---------------------------------------------------------------------------
