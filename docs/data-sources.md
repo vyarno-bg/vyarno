@@ -29,17 +29,17 @@ Every entry carries a provenance tag:
 | Source | Tag | Feeds |
 |---|---|---|
 | **HICP rate per code** — `prc_hicp_minr` (unit=RCH_A) | VERIFIED | Every `annual_rate_pct` and the headline. ECOICOP ver.2, dim `coicop18`. One unfiltered call for the whole BG slice. |
-| **HICP index per code** — `prc_hicp_minr` (unit=I15) | VERIFIED | `index_by_year` and `latest_index`. Same cube, `sinceTimePeriod=2020-01`. 555 codes × 78 months in one response. |
+| **HICP index per code** — `prc_hicp_minr` (unit=I15) | VERIFIED | `index_by_year` and `latest_index`. Same cube, `sinceTimePeriod=2020-01`. The whole BG slice in one response. |
 | **HICP basket weights** — `prc_hicp_iw` | VERIFIED | `weight_pct`. ECOICOP ver.2 item weights, dim `coicop18` — the same dimension the rate cube uses. Per-thousand ÷ 10. |
-| **ЕЦБ MIR new-business rate** — `M.BG.B.A2C.A.R.A.2250.{BGN,EUR}.N` | VERIFIED | `mortgage.json → new_business.value_pct`. **The mortgage headline**, 2.43% at 2026-05. The rate excluding charges; `R` is AAR-or-NDER and which one BG reports is unsettled. |
-| **ЕЦБ MIR new-business APRC** — `M.BG.B.A2C.A.C.A.2250.{BGN,EUR}.N` | VERIFIED | `new_business.aprc.value_pct` — the same loans' all-in cost with fees (ГПР), 2.77%. |
-| **БНБ housing-loan rate** — `s_ir_loan_oa_hh_bg.xlsx` | VERIFIED | `outstanding_stock.value_pct` — 2.6717% at 2026-05 on an €18.2 bn book, monthly back to 2007-01. |
+| **ЕЦБ MIR new-business rate** — `M.BG.B.A2C.A.R.A.2250.{BGN,EUR}.N` | VERIFIED | `mortgage.json → new_business.value_pct`. **The mortgage headline** — the rate excluding charges; `R` is AAR-or-NDER and which one BG reports is unsettled. |
+| **ЕЦБ MIR new-business APRC** — `M.BG.B.A2C.A.C.A.2250.{BGN,EUR}.N` | VERIFIED | `new_business.aprc.value_pct` — the same loans' all-in cost with fees (ГПР). |
+| **БНБ housing-loan rate** — `s_ir_loan_oa_hh_bg.xlsx` | VERIFIED | `outstanding_stock.value_pct`, with `book_volume_eur_m` beside it. Monthly back to 2007-01. |
 | **БНБ lending limits** — dated table in `mortgage.py` | VERIFIED | `mortgage.json → lending_limits`. Borrower-based measures, not scraped. |
 | **BG payroll parameters** — dated table in `payroll.py` | VERIFIED | `payroll.json`. Legislative constants, not scraped. |
 | **Individual earnings distribution** — `earn_ses_monthly` | VERIFIED | The percentile ladder's **shape** (D1 / median / mean / D9 gross, 4-yearly). |
 | **Average gross wage by област** — НСИ `Labour_1.1.2.2_EUR_EN.xlsx` + `_EUR.xlsx` | VERIFIED | `region_salary.json`. All 28 области, both language editions, НСИ's published quarters from 2020-Q1. |
 | **€/m² by city** — `imot.bg/sredni-ceni` | VERIFIED | `city_price.json`. 27 cities, each with its own district count and its own year window. |
-| **Unemployment rate** — `une_rt_m` | VERIFIED | `unemployment.json`. **Monthly**, seasonally adjusted, 2020-01–. 2.9% at 2026-05. |
+| **Unemployment rate** — `une_rt_m` | VERIFIED | `unemployment.json → value_pct`. **Monthly**, seasonally adjusted, since 2020-01. |
 | **НСИ house price index, national** — `HPI_1.3.xlsx` | VERIFIED | `nsi_housing.json`. Change on the same quarter a year earlier. **The cross-publisher reconciliation reads this** against Eurostat's `RCH_A`. |
 | **НСИ house price index, six cities** — `HPI_2.6.xlsx` | VERIFIED | `nsi_housing.json`. The six cities over 120,000 people, y/y. A percentage, never a level. |
 | **НСИ sales count, six cities** — `HSI_2.4.5.xlsx` | VERIFIED | `nsi_housing.json`. The change in the NUMBER of sales in those cities, y/y. |
@@ -60,7 +60,7 @@ Every entry carries a provenance tag:
 | БНБ real-estate section | WRONG | A Site Studio shell returning identical bytes for every URL. **БНБ does not publish residential property prices machine-readably** — which is why the €/m² level comes from имот.bg. |
 | НСИ city-level housing €/m² | WRONG | PDF press releases only; not structurally machine-readable. |
 | A **city**-level average wage, for anywhere but София | WRONG | НСИ publish the wage by **област** and by statistical region, and nothing below. София-city is the exception by accident of geography: it is its own statistical region, BG411, so there the област and the град are the same area. Everywhere else the €/m² is a city's and the wage beside it is its област's, which is why the two cards name their own geographies rather than sharing a heading. |
-| **имот.bg rentals** — `/sredni-ceni/naemi-{slug}` | VERIFIED, deliberately unused | Exists for every city and serves the **same** `raioniAvgPrice` identifier, in float €/m² per **month** (1.39-32.48, every value below 100). Out of scope, and `sources/imot.py` refuses the URL and the fractional value rather than merely not asking for it. |
+| **имот.bg rentals** — `/sredni-ceni/naemi-{slug}` | VERIFIED, deliberately unused | Exists for every city and serves the **same** `raioniAvgPrice` identifier, in float €/m² per **month** — fractional, and under the sales sanity floor. Out of scope, and `sources/imot.py` refuses the URL and the fractional value rather than merely not asking for it. |
 | `earn_ses_pub1e` / `earn_ses_pub1t` for BG | WRONG | The SES *publication* tables 404 for BG. The main cubes `earn_ses_monthly` / `_hourly` do carry BG — use those. |
 | `prc_hicp_ctr` / `prc_hicp_ctrb` as a BG cross-check | WRONG | Euro-area aggregate cubes: `geo=BG` and `geo=DE` both return an empty `value` map with HTTP 200, while `geo=EA` returns tens of thousands of observations. They cannot cross-check a Bulgarian figure. |
 | A pay **distribution** by sector for BG (any publisher) | WRONG | Probed 2026-08-06. `earn_ses_monthly` with `nace_r2=J&geo=BG` returns HTTP 200, `"value": {}`, `nace_r2` size **0** — section J is not a category in the cube. Its five `nace_r2` categories for BG are all broad groupings and none is a NACE section: `B-S_X_O` (whole economy), `B-N`, `B-F`, `G-N`, `P-S`. At the 2022 vintage `salary_dist.json` reads, only `B-S_X_O` carries any values; the other four stop at 2018. **So no section-level median, decile or spread exists at any vintage.** НСИ's `Labour_1.1.2.1` publishes a sector **average** and nothing else, which is why the sector card compares against an average and says so. |
@@ -105,10 +105,10 @@ one response shape and one decoder (`_cube_to_rows`).
   unfiltered, so those nine are in the response, at the flash month.
 - **No COICOP filter, one call per (dataset × unit).** A multi-value
   `coicop18=A+B+C` filter returns an **empty** cube with HTTP 200 — never batch
-  one. An *unfiltered* `geo + unit` query returns the complete BG slice: 555
-  codes × 78 months, ~550 KB in a few seconds, verified value-for-value against a per-code
-  fan-out. Publishing 13 divisions and 46 groups would otherwise be ~130
-  requests per refresh. **`_require_codes` is what makes it safe:** every code
+  one. An *unfiltered* `geo + unit` query returns the complete BG slice in a few
+  seconds, verified value-for-value against a per-code fan-out; fanning out over
+  the divisions and groups we publish would be over a hundred requests per
+  refresh. **`_require_codes` is what makes it safe:** every code
   we intend to publish must be present or the fetch raises, so a truncated or
   reshaped response fails loudly instead of publishing a partial basket.
 
@@ -167,8 +167,8 @@ personal transport equipment, `CP121` Insurance). The SPA's detailed mode
 renders these, so the pipeline publishes them under `categories[].groups[]` with
 the same fields a division gets.
 
-- BG has **50** groups; **46** carry a non-zero weight. The four that do not
-  (`CP013`, `CP082`, `CP101`, `CP103`) have no published rate either.
+- Not every BG group carries a non-zero weight, and the ones that do not have no
+  published rate either.
 - The set is **discovered from the weights cube at refresh time**
   (`group_codes_in_basket`), never hardcoded — it is country- and
   vintage-specific.
@@ -198,11 +198,10 @@ in, and the level the shape is re-levelled onto (НСИ's all-activities average
 does not have the same coverage either.
 
 `indic_se` carries the four points we use — `D1_E_EUR`, `MED_E_EUR`,
-`MEAN_E_EUR`, `D9_E_EUR`, in EUR. **BG 2022: D1 €376 · median €705 · mean €949 ·
-D9 €1700** gross/month. This is the correct unit — *individual employee gross
-earnings* — but SES is **4-yearly** (BG's waves: 2002, 2006, 2010, 2014, 2018,
-2022; next 2026, disseminated 2028), so it is stale in level and used only for
-the distribution shape.
+`MEAN_E_EUR`, `D9_E_EUR`, in EUR, gross per month. This is the correct unit —
+*individual employee gross earnings* — but SES is **4-yearly** (BG's waves: 2002,
+2006, 2010, 2014, 2018, 2022; next 2026, disseminated 2028), so it is stale in
+level and used only for the distribution shape.
 
 **The cadence is legislated, and the legal basis changed on 2026-01-01.**
 Regulation (EU) 2025/941 on EU labour market statistics on businesses repealed
@@ -212,8 +211,7 @@ at periodicity **"Every 4 years"**, reference period "Calendar year and a
 representative month in that year", transmission deadline **T+16 months**, and
 **first reference period 2026**. So 2026 is a named requirement rather than an
 extrapolation from the 2018→2022 gap, and the wave lands in 2028 (transmission
-due April 2028, dissemination after). The old regime was T+18 to Eurostat and
-~T+20 to dissemination, per the SES 2022 ESMS metadata.
+due April 2028, dissemination after).
 `fetch_ses_earnings_bg` raises if any of the four indicators is missing.
 
 ### `une_rt_m` — unemployment, monthly
@@ -223,9 +221,9 @@ The transform pins **`s_adj=SA` × `sex=T` × `age=TOTAL` × `unit=PC_ACT`** and
 **raises** if that cell is absent.
 
 **Why monthly and not `une_rt_a`.** The annual cube publishes one figure a year,
-so in July 2026 the freshest reading it offered was the **2025 average, 3.5%** —
-eighteen months old, and 0.6 pp above the 2.9% the monthly series showed for
-2026-05. On a page whose promise is that the number reflects now, an annual
+so mid-year its freshest reading is an average of the year before last — over a
+year stale, and far enough from the monthly series to change what the page
+claims. On a page whose promise is that the number reflects now, an annual
 average is the wrong instrument, and it is not what Eurostat's own releases or
 the Bulgarian press quote.
 
@@ -363,8 +361,8 @@ comparison tempting: НСИ's national metadata for the index says «The HPI use
 the real transaction prices registered in Property Register of Registry Agency»
 (`prc_hpi_inx_esmshpi_bg`, read 2026-08-13). The register's own «Продажби»
 column counts every sale deed — land, agricultural land, garages, shops,
-offices — and came to 45,144 in 2025-Q1 against Eurostat's 19,916 dwellings for
-the same quarter, a ratio of 2.27.
+offices — and runs to roughly twice Eurostat's dwelling count for the same
+quarter.
 
 Four traps, all probed:
 
@@ -373,9 +371,9 @@ Four traps, all probed:
   *successfully*. `_require_periods` is what turns that into an error.
 - **The two sales cubes are published over different windows**, the value series
   reaching several years further back than the count series. An unfiltered count
-  fetch returns 111 values in a 243-cell cube, and a transform reading an absent
-  cell as zero publishes a quarter in which Bulgaria sold no dwellings. The
-  transform pairs the two on the quarters they **share**.
+  fetch returns a cube whose early cells are simply absent, and a transform
+  reading an absent cell as zero publishes a quarter in which Bulgaria sold no
+  dwellings. The transform pairs the two on the quarters they **share**.
 - **No `sinceTimePeriod` on any of them, deliberately.** A window pinned in code
   is a date somebody has to maintain against an upstream nobody controls; asking
   for everything costs one small response and lets the series grow by itself,
@@ -390,8 +388,8 @@ Four traps, all probed:
 from the start of 2026 under Regulation (EU) 2025/1182 and warn in the workbook
 footnotes that rates recomputed across the two bases can differ by rounding. So
 `annual_rate_pct` is Eurostat's `RCH_A`, which is also the figure the
-cross-publisher reconciliation compares: at 2026-Q1 both НСИ's `HPI_1.3` and
-Eurostat's `RCH_A` read 14.8 / 12.5 / 16.3 for total / new / existing.
+cross-publisher reconciliation compares against НСИ's `HPI_1.3`, for total / new
+/ existing alike.
 
 **The index covers every household purchase, not owner-occupation.** BG's own
 national metadata, read 2026-08-13: «All transactions are included (both cash
@@ -462,8 +460,8 @@ that returns 200:
 
 - **tenure** is a seven-way split crossed with household composition and poverty
   status. `hhcomp=TOTAL` and `rskpovth=TOTAL` are the whole population; leaving
-  either unpinned returns 357 cells and the transform would be guessing which
-  one is the country.
+  either unpinned returns the whole cross-product and the transform would be
+  guessing which cell is the country.
 - **the census** splits by occupancy **and** building type, so `building=TOTAL`
   is what "all dwellings" means.
 - **overburden** is crossed with age, sex and poverty status. The below-poverty
@@ -487,9 +485,9 @@ were wrong. All read **2026-08-13**.
 - **tenure** exhausts its base: `ilc_lvho02`'s own dataset label is
   «Distribution of **population** by tenure status, type of household and income
   group» and its `tenure` dimension carries `OWN` (with `OWN_L` / `OWN_NL`
-  beneath it) and `RENT` (with `RENT_MKT` / `RENT_FR`) and no third status. At
-  2025 the payload reads 86.1 + 13.9 = 100.0, so «собствениците и наемателите
-  правят сто» is the cube's structure and not an arithmetic coincidence.
+  beneath it) and `RENT` (with `RENT_MKT` / `RENT_FR`) and no third status. So
+  «собствениците и наемателите правят сто» is the cube's structure and not an
+  arithmetic coincidence of one vintage.
 - **overburden's numerator is not a mortgage payment.** Eurostat's glossary
   entry for the rate: «the percentage of the population living in households
   where the total housing costs ('net' of housing allowances) represent more
@@ -515,13 +513,13 @@ were wrong. All read **2026-08-13**.
 distribution for BG, and nothing at all publishes one below the national
 level.** Everything was probed:
 
-| Dataset | Latest | Why it cannot rank a salary |
+| Dataset | Cadence | Why it cannot rank a salary |
 |---|---|---|
-| `earn_ses_monthly` / `_hourly` / `_annual` | 2022 | The only individual-earnings *distribution*. 4-yearly. **Used, for shape.** |
-| `earn_nt_net` / `earn_nt_netft` | 2025 | A tax model at fixed reference cases (fractions of the mean), not percentiles. |
-| `ilc_di01`, `ilc_di03` | 2025 | *Household* disposable income — the wrong unit; mixing it with a one-person salary question pushes almost every wage into the top few percent. |
-| `ilc_di11` (S80/S20) | 2025 | A single inequality ratio. |
-| НОИ insured income | monthly | Capped at the maximum insurable income (€2,111.64), barely above the Sofia average, so the whole upper half piles at the ceiling. |
+| `earn_ses_monthly` / `_hourly` / `_annual` | 4-yearly | The only individual-earnings *distribution*. **Used, for shape.** |
+| `earn_nt_net` / `earn_nt_netft` | annual | A tax model at fixed reference cases (fractions of the mean), not percentiles. |
+| `ilc_di01`, `ilc_di03` | annual | *Household* disposable income — the wrong unit; mixing it with a one-person salary question pushes almost every wage into the top few percent. |
+| `ilc_di11` (S80/S20) | annual | A single inequality ratio. |
+| НОИ insured income | monthly | Capped at the maximum insurable income, barely above the Sofia average, so the whole upper half piles at the ceiling. |
 | НСИ quarterly wages | quarterly | *Average* only, no distribution — by област and by activity alike. It is our level anchor, applied in the browser — see below. |
 
 So the ladder needs two official sources: the **shape** from Eurostat SES 2022,
@@ -532,9 +530,9 @@ default.** The shape is national: SES publishes D1, the median and D9 for
 Bulgaria and nothing below that, at any vintage, from any publisher. So the
 level it is re-levelled onto has to be national too, or a national spread is
 being multiplied by one област's mean and the result called that област's
-ranking. Anchored on София's €1915 instead of the country's €1407, a €900 net
-wage reads as ahead of 30% of earners where the country's own ladder puts it at
-49% — every rung stays plausible, the ladder stays monotonic, and nothing on
+ranking. Anchored on София's average instead of the country's, a mid-range wage
+lands tens of percentiles from where the country's own ladder puts it — every
+rung stays plausible, the ladder stays monotonic, and nothing on
 screen shows the difference. `view/country.js#nationalQuarter` is where the level is
 selected, out of `sector_salary.json`'s all-activities «Общо» row, and
 `the ladder is anchored on the country's average and never on one област's` is
@@ -553,14 +551,13 @@ invented correction and neither is right.
    populations' mean pay differs by is exactly what `f` absorbs. What survives
    the re-level is the SHAPE, and only the shape can be wrong.
 2. **A coverage change of this size moves the level far more than the shape —
-   on the one such change SES publishes for BG.** At the 2022 vintage, adding
-   part-timers to the same cube (`worktime=TOTAL` against `FT`) moves the mean
-   949 → 904, **−4.7%**, and moves D9/D1 from 4.521 to 4.527, **+0.1%**. That is
-   the encouraging direction and it is one data point.
+   on the one such change SES publishes for BG.** Adding part-timers to the same
+   cube (`worktime=TOTAL` against `FT`) moves the mean by about −5% and D9/D1 by
+   about +0.1%. That is the encouraging direction and it is one data point.
 3. **It does not generalise, and the same cube says why.** At the 2018 vintage —
-   the last one where BG carries activity groupings at all — D9/D1 runs **2.713**
-   for `P-S` (education, health, arts) against **5.177** for `G-N` (services of
-   the business economy), around a whole-economy **4.179**. Composition can move
+   the last one where BG carries activity groupings at all — D9/D1 for `P-S`
+   (education, health, arts) is roughly half of `G-N`'s (services of the business
+   economy), with the whole economy between them. Composition can move
    dispersion by a factor of two. Section O is a public-sector pay structure and
    would most likely pull towards the `P-S` end, narrowing the true spread;
    firms under ten pay less and would widen the bottom. **The two omissions push
@@ -608,17 +605,16 @@ steps 3–4 run in the reader's tab (`mirror.js#composeLadder`, over the level
    standard-normal quantile z, matching the D1/median/D9 anchors exactly.
 2. Extrapolate the P1/P99 tails along the nearest segment's log-slope. Publish
    at SES's level, to **four decimal places** — see below.
-3. In the browser: read НСИ's latest published quarter for all activities
-   (Q1 2026 = €1407; the March month alone spikes on annual bonuses, which is
-   why the level is a quarter and not a month).
-4. Multiply every rung by `f = НСИ_national_mean / ses_mean` (≈ **1.48** today)
-   and floor **every** rung at the statutory minimum wage, after scaling.
+3. In the browser: read НСИ's latest published quarter for all activities. The
+   March month alone spikes on annual bonuses, which is why the level is a
+   quarter and not a month.
+4. Multiply every rung by `f = НСИ_national_mean / ses_mean` and floor **every**
+   rung at the statutory minimum wage, after scaling.
 
 **Why the floor is on every rung and not only on P1.** A scalar re-level moves
 the whole shape by however much the MEAN moved, and Bulgaria's minimum wage has
-moved faster: €363/month at SES's 2022 vintage against €620 today, +71%, where
-the mean went 949 → 1407, +48%. So the bottom of the scaled shape lands under a
-wage it is not lawful to pay a full-time employee — P10 composes to €558 — and a
+moved faster than the mean since SES's vintage. So the bottom of the scaled shape
+lands under a wage it is not lawful to pay a full-time employee, and a
 rung there is an artefact of the model rather than a wage anybody is on. The
 floor leaves the ladder weakly rising; `mirror.js#percentile` is safe on that,
 because a flat pair at the bottom sits behind its `salary <= ladder[0]` branch
@@ -629,19 +625,18 @@ D1, median and D9 by the same `f`, which adds `ln(f)` to every point of the
 log-linear model and leaves both dispersions untouched — so `rung(f) === f ×
 rung(1)`, exactly. Nothing is approximated by moving the multiplication. The
 precision is the one real cost: at one decimal on both sides the double-round
-moves P20, P60 and P70 by €0.10, so the published rungs carry four and the
+moves several of the middle rungs, so the published rungs carry four and the
 browser rounds once. `test_relevelling_is_a_scalar_multiply` holds the property
 and `test_rungs_carry_four_decimals_so_the_browser_rounds_once` holds the
 precision.
 
 **Output:** `shape.ladder_ses` at percentile cuts 1,10,20,…,90,99, `ses_mean`,
-`sigma_bottom` and `sigma_top`. Composed against the national anchor and
-rounded, that is P10 €620 (the statutory floor) · P50 €1045 · P90 €2520.
+`sigma_bottom` and `sigma_top`. The composed rungs exist only in the reader's
+tab; nothing in the payload carries them.
 
 **Gross → net happens in the SPA too.** The salary input is net take-home, so
 `mirror.js#buildLadder` converts each composed rung through `bgNetSalary` — one
-payroll implementation, not two. Net median ≈ €811/mo, and the comparison is
-net vs net.
+payroll implementation, not two. The comparison is net vs net.
 
 **Caveats, carried in the payload's `disclaimer` and the SPA's `pctCaveat`:**
 the level is live and the shape is a 2022 survey re-levelled to today; the
@@ -683,9 +678,9 @@ Unfixed, `refresh --source mortgage` exits **4** and the error points back here.
 
 ### `s_ir_loan_oa_hh_bg.xlsx` — household loans by purpose
 
-Sheet `LOAN_OA_HH`, 242 rows × 49 cols, monthly **2007-01 → present**. **The
-cell:** Жилищни кредити (housing) × в евро (EUR) × maturity **total** — at
-2026-05, **2.6717%** on a book of **€18.2 bn**.
+Sheet `LOAN_OA_HH`, monthly **2007-01 → present**, one row per month. **The
+cell:** Жилищни кредити (housing) × в евро (EUR) × maturity **total** — the rate
+into `outstanding_stock.value_pct`, the book beside it into `book_volume_eur_m`.
 
 **Column discovery, never a hardcoded index.** The header is four merged rows —
 purpose → currency → maturity — and the connector re-reads them every run,
@@ -724,10 +719,11 @@ A defaulted mortgage and one restructured below market are outside the average,
 which is the direction that matters: the published rate is over the performing
 book, so it is if anything an understatement of what the country is paying.
 
-**Cross-check against ЕЦБ MIR:** БНБ **2.6717%** vs
-`M.BG.B.A22.A.R.A.2250.EUR.O` **2.67%** — 0.002 pp apart, because they are the
-same data (БНБ is the institution that reports MIR to the ЕЦБ).
-`mortgage.py#cross_check_outstanding` enforces this as a gate at 0.30 pp.
+**Cross-check against ЕЦБ MIR:** this cell and
+`M.BG.B.A22.A.R.A.2250.EUR.O` are the same data reported twice — БНБ is the
+institution that reports MIR to the ЕЦБ — so they agree to their own rounding.
+`mortgage.py#cross_check_outstanding` enforces that as a gate at 0.30 pp, and the
+observed delta rides in `cross_check.delta_pp`.
 
 **Methodology change in the payload:** Bulgaria adopted the euro on 2026-01-01.
 Per the БНБ methodological note (`st_m_instr_irs_new_2026_bg.pdf`, 19 Feb 2026),
@@ -739,9 +735,9 @@ figures **reconstructed** by БНБ from BGN+EUR aggregates — so EUR values be
 > **Do not use `s_ir_loan_oa_rm_hh_bg.xlsx`.** Its title is *"…loans other than
 > overdraft for the household sector by original maturity, residual maturity and
 > period until the next interest-rate change"*: every purpose blended, no
-> housing breakdown at all. Two tells — its column volume is €28.7 bn (all
-> household lending) against housing's €18.2 bn, and the neighbouring column
-> reads 14.83%, a rate no mortgage has carried.
+> housing breakdown at all. Two tells — its volume column covers all household
+> lending and so runs far above the housing book, and the rate column beside it
+> reads a level no mortgage has carried.
 
 ---
 
@@ -754,11 +750,11 @@ its own response shape.
 
 ```
 RIGHT  GET …/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01
-     → 200, 14 KB, exactly 1 series
+     → 200, kilobytes, exactly 1 series
 
 WRONG  GET …/service/data/MIR?REF_AREA=BG&BS_ITEM=A22&IR_BUS_COV=N&…
-     → 200, 18.7 MB, 7,742 series — the ЕЦБ SILENTLY IGNORES unknown query
-       parameters, so this is the whole MIR flow, unfiltered
+     → 200, megabytes, thousands of series — the ЕЦБ SILENTLY IGNORES unknown
+       query parameters, so this is the whole MIR flow, unfiltered
 ```
 
 The series key has 10 dimensions, all mandatory — a wildcard slot reopens the
@@ -769,16 +765,16 @@ FREQ . REF_AREA . BS_REP_SECTOR . BS_ITEM . MATURITY_NOT_IRATE
      . DATA_TYPE_MIR . AMOUNT_CAT . BS_COUNT_SECTOR . CURRENCY_TRANS . IR_BUS_COV
 ```
 
-| Role | Series key | 2026-05 |
-|---|---|---|
-| **Headline** — rate excluding charges, new business | `M.BG.B.A2C.A.R.A.2250.EUR.N` | **2.43%** |
-| All-in cost — APRC (ГПР), fees included | `M.BG.B.A2C.A.C.A.2250.EUR.N` | **2.77%** |
-| New-business volume (splice evidence) | `M.BG.B.A2C.A.B.A.2250.EUR.N` | 599 m€/mo |
-| Outstanding stock (cross-check gate only) | `M.BG.B.A22.A.R.A.2250.EUR.O` | 2.67% |
-| Pre-2026 legs of the three above | same keys with `BGN` | 2.48% @ 2025-12 |
+| Role | Series key |
+|---|---|
+| **Headline** — rate excluding charges, new business | `M.BG.B.A2C.A.R.A.2250.EUR.N` |
+| All-in cost — APRC (ГПР), fees included | `M.BG.B.A2C.A.C.A.2250.EUR.N` |
+| New-business volume (splice evidence) | `M.BG.B.A2C.A.B.A.2250.EUR.N` |
+| Outstanding stock (cross-check gate only) | `M.BG.B.A22.A.R.A.2250.EUR.O` |
+| Pre-2026 legs of the three above | same keys with `BGN` |
 
 - **`A2C`, not `A22`, for new business.** `A22` exists for BG **outstanding
-  only**; `A2C` is new business — 28 BG series, monthly, current. The two codes
+  only**; `A2C` is new business — monthly and current. The two codes
   are not "outstanding" and "new business", though: that split is the last
   dimension, `IR_BUS_COV` (`O` / `N`). What separates the codes is the
   instrument set, and the ЕЦБ's `CL_BS_ITEM`, read **2026-08-13**, says so —
@@ -884,15 +880,15 @@ nothing else" reasons from.
 ### The BGN → EUR splice at eurozone entry
 
 Before 2026-01-01 home loans were written in BGN and the EUR series covered a
-niche; after it, everything is EUR and the BGN series stops. Monthly
-new-business volume shows the scale: in 2025 the BGN leg averaged 1,090 m/month
-against the EUR leg's 36 m/month; at 2026-05 the EUR series is 599 m/month.
+niche; after it, everything is EUR and the BGN series stops.
+`new_business.monthly_volume` is what shows that: on either side of the boundary
+one leg carries almost all the lending and the other almost none.
 
 So the published series is **BGN through 2025-12 spliced with EUR from
-2026-01** — the rate in the currency of the day. The splice is continuous, which
-is the evidence it is the right one: the rate 2.48% → 2.46%, APRC 2.90% → 2.74%
-across the boundary. `EURO_SWITCH_PERIOD` in `sources/ecb.py` is the single
-knob; `test_ecb.py` asserts the splice stays gap-free and step-free.
+2026-01** — the rate in the currency of the day. That the splice is continuous
+across the boundary is the evidence it is the right one, so it is a test rather
+than an observation: `EURO_SWITCH_PERIOD` in `sources/ecb.py` is the single knob
+and `test_ecb.py` holds the spliced series gap-free and step-free.
 
 ---
 
@@ -958,7 +954,7 @@ Each looks entirely right on the page, and each has a named guard.
 |---|---|---|
 | **Rentals** at `/sredni-ceni/naemi-{slug}` serve the SAME variable name, in float €/m² per **month** | a monthly rent as a purchase price | `_assert_sales_page` on the requested URL *and* on the final URL after redirects, plus a raise on any fractional value |
 | **`date=` is silently ignored** when invalid, future or out of range — the response is byte-identical to the no-parameter baseline | today's numbers under an old date, with every downstream gate passing because the file is internally consistent | the connector never sends `date=` at all, held by a test over every URL it can build |
-| **District counts run 141 to 7**, so no flat floor fits | a truncated parse published as a small city | a floor at 60% of that city's own count in `regions.py#imot_districts` |
+| **District counts run from over a hundred down to single digits**, so no flat floor fits | a truncated parse published as a small city | a floor at 60% of that city's own count in `regions.py#imot_districts` |
 | **The sanity bounds drop rows** and nothing counted them | a thin dataset published as a complete one | `n_dropped` per city-year, and the run fails above 20% |
 
 **`year=` is safe and `date=` is not, and that asymmetry is the single most
@@ -989,40 +985,35 @@ are computed per city at refresh time; none is a constant.
 
 **The thin early years are wrong rather than merely imprecise.** имот.bg's
 coverage of a city grew over two decades, and a median over four districts is
-not the same measurement as a median over thirteen: Blagoevgrad's median moves
-**+219% year over year** inside its thin years on a four-to-six-district sample,
-and Burgas 70% in its own. Those are sampling artefacts wearing the clothes of
-price moves, and no gate downstream would catch one — the file would be
-internally consistent.
+not the same measurement as a median over thirteen: inside the thin years a
+city's median moves year over year by multiples of anything a price series does.
+Those are sampling artefacts wearing the clothes of price moves, and no gate
+downstream would catch one — the file would be internally consistent.
 
 **The unbroken-run clause does most of the work.** A city whose coverage
 collapses for a year and recovers has not been measured the same way throughout,
-so everything before the gap is disqualified. That is how Blagoevgrad's 2003 and
-2004 fall out on their own, its 2007 having dropped to 6 districts of a
-current 13.
+so everything before the gap is disqualified — which is what drops a city's
+earliest years without anyone choosing a cut-off for it.
 
 **Which of the two thresholds actually decides is a fact about city size, and
 it is worth knowing before either number is touched.** They cross at 15
-districts (6 ÷ 0.40), so for the **16 cities at or below that** — Ловеч at 7 up
-to Враца, Габрово and Ямбол at 15 — the share clause computes 2.8 to 6.0 and
-the flat 6 is what binds. The share only decides for the 11 larger ones, from
-Хасково and Видин at 19 up to София at 141. So a small city's year is admitted
-on 6 districts however few that is of its own total, and in Плевен's case 6 of
-11 is 55% — comfortably above the 40% the rule nominally asks for, which is why
-this is the rule working rather than a hole in it.
+districts (6 ÷ 0.40): below that the flat 6 binds and the share clause is slack,
+above it the share is what decides. So a small city's year is admitted on 6
+districts however small a share of its own total that is — which is the rule
+working rather than a hole in it, because the flat floor is what makes a small
+city's history publishable at all.
 
 What it costs is that the largest year-over-year move left inside any published
-window, Плевен's **+120% across 2003-04**, is a reading over 6 districts, and
+window is a reading over a floor-sized sample, and
 nothing on the card says so: `n_districts` travels on every historical row of
-`city_price.json` and appears on no screen. It is inside Плевен's window, so it
-is inside the «+X% от 2003» that card prints. Whether it is a price move or a
+`city_price.json` and appears on no screen. It is inside that city's window, so
+it is inside the «+X% от YEAR» the card prints. Whether it is a price move or a
 composition change cannot be told from the payload, and tightening either
 threshold to exclude it is not a decision to take from the file — it needs the
 per-city-year district counts from a live probe, which this repository does not
 carry.
 
-On the probe's data every one of the 26 non-Sofia cities keeps a trend, most
-reaching 2003 to 2007. Below **five** consecutive years the payload sets
+Below **five** consecutive years the payload sets
 `trend_publishable: false` and the SPA shows the €/m² without a «since YEAR»
 sentence — the chart still carries every qualifying year, because the data is
 not in doubt, there is simply not enough of it to call a trend.
@@ -1030,16 +1021,16 @@ not in doubt, there is simply not enough of it to call a trend.
 ### The sanity bounds, and why they do not widen
 
 Drop any value outside `[100, 10000] €/m²`. The sub-100 values in the history
-are **sentinels, not cheap flats** — Burgas 2008 carries a 0, 2010 a 5, 2004 a
-9; Blagoevgrad 2006 a 4, 2008 a 6 — so widening the band to `[10, 100_000]`
-would admit the 13 and reject the 9, which is an arbitrary line through a set of
+are **sentinels, not cheap flats** — single-digit €/m² readings, zeros among
+them — so widening the band to `[10, 100_000]` would admit some of them and
+reject others, which is an arbitrary line through a set of
 values that are uniformly junk. `AGENTS.md` forbids it in terms.
 
-What changed is that the drop is no longer silent: every city-year publishes
-`n_dropped`, and `_assert_drop_share` fails the run above **20%**. That
-threshold is measured rather than chosen — inside the windows this connector
-publishes, only **5 of 186** city-years drop anything at all, the worst is Ruse
-2003 at 2 of 20 = 10%, and all 27 current-year pages drop none.
+The drop is not silent: every city-year publishes `n_dropped`, and
+`_assert_drop_share` fails the run above **20%**. That threshold is measured
+rather than chosen — inside the windows this connector publishes, a handful of
+city-years drop anything at all, the worst of them sits well under the ceiling,
+and no current-year page drops a row.
 
 **Output** — `city_price.json`, `schema_version` 2.0: the envelope, then
 `city_pages[]`, then one block per city carrying `code` (the join to
@@ -1059,9 +1050,9 @@ does publish Варна, in the wording borrowed from the one област it is
 `view/region.js#cityCoverage` is the three-way answer the cards and the picker share,
 and only its `nopage` state may be stated in имот.bg's name.
 
-**`all_districts` is not published.** The per-district dict was carried for
-every city and read by nothing — no component, no view function, no verify
-script — and at 27 cities it is about 120 KB raw and 40 KB gzipped on every page
+**`all_districts` is not published.** The per-district dict is read by nothing —
+no component, no view function, no verify script — and across 27 cities it is
+the largest thing in the payload, downloaded on every page
 load. What goes with it is the only way to recompute a median from the file
 itself; the median, mean, range and district count stay, which is what the page
 cites.
@@ -1070,14 +1061,14 @@ cites.
 **403**, so this is the one connector that needs an ordinary Bulgarian
 connection. That is why `city-price` is refreshed by hand while the other eight
 arms run anywhere, and why a 403 from this arm is an environment result rather
-than a parser regression. A full sweep is ~650 requests, about two and a half
+than a parser regression. A full sweep is a few hundred requests, a couple of
 minutes at 200 ms spacing; имот.bg showed no throttling at all on a
-100-request burst, so the spacing is politeness rather than a measured need.
+hundred-request burst, so the spacing is politeness rather than a measured need.
 **Never route it through a proxy** — `docs/legal.md`.
 
 **Failure modes:** every city unreachable → exit 4 (the datacenter-IP case). One
 city's page changed shape, served rentals, or came in under its floor → that
-city is skipped with a WARNING and the other 26 publish. The payload gate →
+city is skipped with a WARNING and the others publish. The payload gate →
 exit 3. A city absent from the file renders its price card empty rather than
 borrowing another city's figure.
 
@@ -1094,8 +1085,7 @@ the 27 names `regions.py` carries.
 
 The workbook's own title is `AVERAGE GROSS MONTHLY WAGES … BY STATISTICAL
 REGIONS AND DISTRICTS`, and that is what we read: **all 28 области**, from the
-`{year}trimes` sheets — НСИ's own published quarterly averages. 2026-Q1 runs
-**968 EUR** (Благоевград) to **1915 EUR** (София-столица), as published.
+`{year}trimes` sheets — НСИ's own published quarterly averages, as published.
 
 **Both language editions**, `_EUR_EN.xlsx` and `_EUR.xlsx`, for the reason the
 by-activity table reads both: the област names are half of what this payload is
@@ -1133,14 +1123,14 @@ the same reason.
 workbook. Taking theirs means no figure in the payload is one this project
 computed, which is what §2.1.1 of their licence needs — it forbids distributing
 производни и сборни произведения ([`legal.md`](./legal.md) §НСИ). It is also
-simply more accurate: НСИ publish 1915 for 2026-Q1, where the mean of their
-three rounded monthly cells gives 1914.7.
+simply more accurate: the mean of their three rounded monthly cells does not
+reproduce the quarter they publish, to the digit they print it at.
 
 **Two traps in the sheet, both guarded.**
 
 - **Q4 is published twice**, as `IV` and as `IV incl.annual bonuses`
-  («IV вкл.годишни премии»), and the two diverge by 6–8% (2025: 1859 against
-  2009) because the second folds in the 13th salary. We take `IV`;
+  («IV вкл.годишни премии»), and the two diverge by several per cent because the
+  second folds in the 13th salary. We take `IV`;
   `_quarter_columns` refuses any column whose header mentions a bonus in either
   spelling, and `test_the_annual_bonus_column_is_never_read_as_a_quarter` fails
   if that changes. Reading the wrong one would step the whole ladder up every
@@ -1158,7 +1148,7 @@ beats region Y" between any other pair. Reading the whole table affords:
    editions — a renamed row fails here rather than going missing from a picker;
 2. no district row is present that table does not name — without this the check
    is one-directional, and НСИ splitting an област would publish 28 of 29;
-3. Sofia-city is the maximum, 1915 against a next-highest 1304.
+3. Sofia-city is the maximum, and by a wide margin over the next област.
 
 Together they catch what a `cap > province` comparison could not: an off-by-one
 that shifts every reading by one област keeps that comparison true while putting
@@ -1214,8 +1204,7 @@ feeds: the sector card, the ladder's national anchor and the years-of-pay card
 on `/market/` alike. Both the sector coverage line and that card's disclosure
 say so, and neither may be shortened to «средната заплата». **Both language editions are read** — `_EUR_EN.xlsx` carries
 English section names, `_EUR.xlsx` (no language suffix) the Bulgarian ones, with
-identical figures. 2026-Q1: all activities **1407 EUR**, Information and
-communication **3176 EUR**, as published.
+identical figures, taken as published.
 
 **Why both files.** The section names are half of what this payload is for, and
 translating НСИ's English ourselves is the whole hazard of the feature in one
@@ -1234,7 +1223,8 @@ block is bounded from the header row it was found by and terminated by the first
 blank label. The `IV incl.annual bonuses` / «IV вкл.годишни премии» column is
 refused in both spellings, the quarter headers mix alphabets, and the quarter is
 taken rather than a month for the same reason as `1.1.2.2` — March is the annual
-bonus peak, and for section J it reads 3617 against a published 3176.
+bonus peak, and in the highest-paid sections it runs well clear of the quarter
+beside it.
 
 **There is no distribution behind these averages, and there is none to find.**
 Probed 2026-08-06: `earn_ses_monthly` filtered to `nace_r2=J&geo=BG` returns
@@ -1298,8 +1288,9 @@ plausible-looking number:
 | `HSI_2.4.5` | «ППЖ според броя на продажбите, за шестте града … — …» | the y/y change in the **number of sales**, per city, `N.1.*` rows, headed «Тип на закупените имоти» |
 
 The header says «= 100» and the second line says «изменение», which read
-together mean the change and not the index: София's newest `HPI_2.6` cell is 6.7
-rather than 106.7. Both readings are plausible percentages, so nothing
+together mean the change and not the index — illustratively, a cell holding 6.7
+is a 6.7% change and not an index level of 106.7. Both readings are plausible
+percentages, so nothing
 downstream would catch the wrong one — `HOUSING_ROW_CODES` matches the code
 column rather than the label, and the value is published as `value_pct`.
 
@@ -1318,8 +1309,8 @@ forbidden and would have failed on the first attempt: `HPI_1.3.xls` 404s where
 
 **Four traps, all hit while probing, all silent:**
 
-- **The year header carries footnote markers glued to the numeral.** `HPI_2.4`'s
-  newest year reads `20263,5` and `HSI_2.4.5`'s reads `2026 3`. A
+- **The year header carries footnote markers glued to the numeral.** The newest
+  year arrives as `{year}3,5` or `{year} 3` rather than four digits. A
   `str(y).isdigit()` parse drops the newest quarter and reports the one before
   it as the latest — a plausible number for the wrong period, which is the worst
   shape a bug takes here. Matched with `^\s*(\d{4})`.
@@ -1361,26 +1352,22 @@ via `mirror.js#payrollParams(data.payroll)` and threads the result through
 `bgNetSalary` / `bgGrossFromNet` / `buildLadder`. The `mirror.js` `BG_2026_*`
 constants are an **offline sentinel only**, parity-tested by `test_payroll.py`.
 
-**2026-01-01 → 2026-07-31:** employee social contributions **13.78%**
-(pension 6.58% + pension2 2.20% + sickness-maternity 1.40% + unemployment 0.40%
-+ health 3.20%); flat personal income tax **10%** with no allowance; maximum
-insurable income **€2111.64** (4130 BGN); statutory minimum gross wage
-**€620.20** (1213 BGN).
+An entry carries the five employee contribution lines (pension, pension2,
+sickness-maternity, unemployment, health), the flat personal income tax and its
+absence of an allowance, the maximum insurable income and the statutory minimum
+gross wage. **The figures live in `BG_PAYROLL_TABLE` and nowhere else**, this
+file included: `build_payroll_payload(as_of)` picks whichever entry was in force
+on the publish date, so what shipped is read off `payroll.json`'s
+`effective_from` and not off a list somebody has to remember to update.
 
-**From 2026-08-01, and this is the entry `payroll.json` currently carries:** the
-maximum insurable income rises to **€2300** for all insured persons — ЗБДОО
-2026, adopted **2026-07-22**, promulgated **ДВ бр. 68 от 28.07.2026**. Nothing
-else moves: the five contribution lines, the 10% flat tax and the €620.20
-minimum wage are unchanged. The draft of that act is the thing to be careful of,
-because it still outranks the act itself in search: it carried a **€2352**
-ceiling and raised фонд "Пенсии" from 14.8% to 16.8% for those born after 1959,
-and neither was enacted. Two changes the act does make sit outside this table on
-purpose — ТЗПБ moves for seven economic activities and is wholly employer-side,
-and държавни служители begin paying personal contributions at 80:20, a different
-insured category from the III категория труд employee modelled here.
-Which entry ships is whichever was in force on the refresh's `as_of`,
-so the way to read the shipped figure is `payroll.json`'s `effective_from`
-rather than this list.
+**The draft of a budget act is the thing to be careful of**, because a draft
+outranks the act itself in search for months after it is superseded: the last
+ЗБДОО draft carried a higher insurance ceiling and a raised фонд "Пенсии" rate
+for those born after 1959, and neither was enacted. Read the promulgated text.
+Two changes that act does make sit outside this table on purpose — ТЗПБ moves
+are wholly employer-side, and държавни служители begin paying personal
+contributions at 80:20, a different insured category from the III категория труд
+employee modelled here.
 
 **The ДВ citation is a field, not a caption.** `source_url` is
 dv.parliament.bg's landing page and can be nothing else: their permalinks are
@@ -1449,10 +1436,10 @@ from key order.
 | Key | Carries |
 |---|---|
 | `schema_version`, `as_of`, `source`, `headline` | Envelope. `headline: "new_business"`. |
-| `new_business` | ЕЦБ. `_role`, `dataset` (the BGN key spliced with the EUR key), `source_url`, `ref_period`, `value_pct`, `rate_basis` (the charge-free rate), `series_by_period` (77 months), `currency`, `currency_history`, `methodology_change`. |
+| `new_business` | ЕЦБ. `_role`, `dataset` (the BGN key spliced with the EUR key), `source_url`, `ref_period`, `value_pct`, `rate_basis` (the charge-free rate), `series_by_period` (monthly since the ЕЦБ series starts), `currency`, `currency_history`, `methodology_change`. |
 | `new_business.aprc` | The same loans' all-in cost with fees (ГПР): `value_pct` + `series_by_period`. |
 | `new_business.monthly_volume` | How much was lent — the evidence for the splice. |
-| `outstanding_stock` | БНБ. `_role`, the XLSX + sheet + cell in `dataset`, `value_pct`, `book_volume_eur_m`, 233 months back to 2007-01, `methodology_change`. |
+| `outstanding_stock` | БНБ. `_role`, the XLSX + sheet + cell in `dataset`, `value_pct`, `book_volume_eur_m`, `series_by_period` monthly back to 2007-01, `methodology_change`. |
 | `cross_check` | `bnb_outstanding_pct`, `ecb_mir_outstanding_pct`, `delta_pp`, `tolerance_pp`, `status`. |
 | `lending_limits` | `effective_from`, `ltv_max_pct` 85, `dsti_max_pct` 50, `maturity_max_years` 30, `min_down_payment_pct` 15, `prudent_dsti_pct` 30, `observed_weighted_avg_dsti_pct` 38.5, `dsti_income_basis`. |
 
@@ -1462,11 +1449,15 @@ it without this document.
 
 **The three numbers must never blur in the UI:**
 
-| Shown as | From | 2026-05 | Label the user reads |
-|---|---|---|---|
-| The default rate in the input | `new_business.value_pct` (charge-free) | **2.43%** | "ЕЦБ · new home loans" |
-| Sub-caption under it | `new_business.aprc.value_pct` | **2.77%** | "with the loan's charges (APRC/ГПР)" |
-| Learn-more only | `outstanding_stock.value_pct` | **2.67%** | "БНБ · loans already being repaid" |
+| Shown as | From | Label the user reads |
+|---|---|---|
+| The default rate in the input | `new_business.value_pct` (charge-free) | "ЕЦБ · new home loans" |
+| Sub-caption under it | `new_business.aprc.value_pct` | "with the loan's charges (APRC/ГПР)" |
+| Learn-more only | `outstanding_stock.value_pct` | "БНБ · loans already being repaid" |
+
+The three sit within a point or so of each other, which is why the labels carry
+the work: a reader who reads one as another is out by the fees or by a decade of
+older lending, and nothing on screen would look wrong.
 
 The default is the **charge-free rate, not the APRC**: the annuity formula needs an interest
 rate. The fallback chain in `data.js#mortgageDefaultRate` is
