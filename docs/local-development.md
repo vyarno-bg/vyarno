@@ -42,8 +42,8 @@ Two things follow from this list rather than from taste:
   quote style goes red on a formatter run that broke nothing. Assert on what the
   code does; helpers exist for whitespace-insensitive matching where a source
   scan is genuinely the right tool
-  ([`testing-strategy.md`](./testing-strategy.md) §"Why the wiring tests stay
-  source checks").
+  ([`testing-strategy.md`](./testing-strategy.md) §"Why source checks are normal
+  here, and where the line actually falls").
 
 `checkJs` is currently off in `site/jsconfig.json`. Turning it on surfaces
 errors across a good part of `src/`, mostly inference noise around `$state({})`
@@ -361,8 +361,10 @@ vyarno-pipeline refresh --source <name> --out ../data/published
 
 **`--source` values:** `hicp`, `unemployment`, `mortgage`,
 `city-price`, `region-salary`, `sector-salary`, `salary-dist`, `payroll`,
-`house-market`, `all`. Ten arms and twelve files — `hicp` and `house-market`
-each write two.
+`house-market`, `nsi-housing`, `all`. Ten arms and twelve files — `hicp` and
+`house-market` each write two. The list is `click.Choice` in `cli.py`, and that
+is the one to read it off: an arm missing from here is an arm nobody runs by
+hand and nobody thinks to gate.
 
 **`house-market` writes both `house_market.json` and
 `house_market_structure.json`**, and the second stem starting with the first is
@@ -371,7 +373,7 @@ payloads an arm owns by matching stems against the `--source` name with hyphens
 swapped for underscores, so a payload no arm owns never publishes while the run
 reports success.
 
-**Eight of the nine run on a schedule without you.** `.github/workflows/
+**Nine of the ten run on a schedule without you.** `.github/workflows/
 refresh-*.yml` fires each one on its own upstream's cadence and opens a pull
 request with the diff; running an arm here is for developing it, for re-reading
 a payload the review questioned, and for `city-price`, which cannot run on a
@@ -444,7 +446,7 @@ jq '.categories[] | {code, name_bg, weight_pct, annual_rate_pct}' \
   ../data/published/hicp_categories.json
 ```
 
-Two things to check by eye after a refresh: **`as_of` is today** (all eleven should
+Two things to check by eye after a refresh: **`as_of` is today** (all twelve should
 match — one pipeline run), and **`latest_index` and `index_by_year` are on the
 same base**, because the SPA divides one by the other and a 12-month rate looks
 correct even when the base is wrong. Both carry Eurostat's own values, so the

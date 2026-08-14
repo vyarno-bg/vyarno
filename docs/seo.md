@@ -358,7 +358,7 @@ sharing works, and that is the trade rather than an oversight.
 recorded the opposite: that the live page answered in two languages off one
 address, that `hreflang` was therefore not expressible, and that undoing it was
 an architecture decision rather than an SEO one. It was taken, and the argument
-is above in §"Eight pages, four routes, two languages" — the short form is that
+is above in §"Ten pages, five routes, two languages" — the short form is that
 the door this paragraph left open turned out to lead somewhere. The half a
 crawler never saw was not weakly indexed, it was never served: all four entries
 declared `data-lang="bg"` and `prerender.mjs` strips the language the entry does
