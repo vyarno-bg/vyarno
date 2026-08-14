@@ -102,7 +102,7 @@ Not because we say so — because you can verify it:
 
 | Publisher | What it provides |
 |---|---|
-| **Eurostat** | HICP — inflation across 13 divisions and ~46 groups, the official basket weights, the yearly indices, and the salary-distribution shape. Plus the property market: how many dwellings households bought each quarter, what they paid, the house price index, tenure, the census dwelling stock and the price-to-income ratio |
+| **Eurostat** | HICP — inflation across 13 divisions and ~46 groups, the official basket weights, the yearly indices, and the salary-distribution shape. Plus the property market: how many dwellings households bought each quarter, what they paid, the house price index, tenure and the census dwelling stock |
 | **ЕЦБ / БНБ** | Interest rates on new home loans, APRC, and the БНБ lending limits for mortgages (LTV, DSTI, maximum term) |
 | **НСИ** | The average wage in each of the 28 области, and the average wage by economic activity — 19 NACE Rev 2 sections plus the all-activities total, which is the level the salary ladder is anchored to. Named in their own Bulgarian and their own English |
 | **имот.bg** | Average €/m² by district, in each of the 27 cities they publish |

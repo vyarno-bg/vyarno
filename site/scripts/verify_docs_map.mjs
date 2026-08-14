@@ -37,7 +37,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { PAYLOADS } from "../src/lib/payloads.js";
@@ -302,5 +302,117 @@ test("no doc counts the published payloads wrong", () => {
       "Fix the sentence, not this test. `AGENTS.md` bars writing a test count " +
       "into a doc for this reason and the reason is not about tests: a number " +
       "nothing reads only ever goes stale, and it goes stale silently."
+  );
+});
+
+// ---------------------------------------------------------------------------
+// §-CITATIONS
+// ---------------------------------------------------------------------------
+//
+// These docs cite each other, and the suites, by quoting a title: `math.md`
+// §"Which rate goes into the annuity", `verify_copy.mjs` §"the market page
+// writes no year". The quoted string is the whole address — there is no link to
+// follow and nothing resolves it — so a rename anywhere silently turns every
+// citation of it into a dead end that still reads as authoritative.
+//
+// That is not hypothetical. Renaming one test to cover the masthead as well as
+// the footer left `site.md` citing a name no suite had; two more citations named
+// tests that had never existed under those names, each introduced with "holds
+// it", which is the failure worth catching — a doc asserting a guard that is not
+// there is worse than a doc saying nothing, because it retires the question.
+//
+// The check is deliberately the weakest one that catches a rename: does the
+// quoted string appear in the file it names, anywhere, at all? Not "is it a
+// heading", because these citations legitimately point at a `//` line comment,
+// at a numbered heading whose number the citation drops, and at a bold sentence
+// inside a section. Not "does it match exactly", because the house style
+// abbreviates a long title down to its distinctive half. Every one of those
+// resolves for a reader who searches the file, and a check that failed them
+// would be a check somebody turns off — which `docs/testing-strategy.md`
+// §"`docs/` is outside its roots" is the standing argument about.
+
+/** Every file the citations can address, indexed by basename. */
+function pathsUnder(dir, out = new Map()) {
+  for (const entry of readdirSync(dir)) {
+    if (SKIP.has(entry) || entry === ".git" || entry === ".venv" || entry === "__pycache__")
+      continue;
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) pathsUnder(path, out);
+    else if (!out.has(entry)) out.set(entry, path);
+  }
+  return out;
+}
+
+/**
+ * Backticks stripped, whitespace flattened, case folded.
+ *
+ * The flattening is what makes this work on prose wrapped at 80 columns: a
+ * quoted title routinely straddles a newline, so anything comparing line by line
+ * reads half a title and reports every long citation as broken.
+ */
+const flat = (s) => s.replace(/[`*]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+/** `name.ext` immediately before a `§"…"`, and the title it quotes. */
+const CITATION = /(?:([A-Za-z0-9_./-]+\.(?:md|mjs|js|py|svelte|css))[`)\]]*\s*)?§\s*"([^"]+)"/g;
+
+test("every §-citation in the docs resolves to something in the file it names", () => {
+  const byName = pathsUnder(REPO);
+  const bodies = new Map();
+  const body = (path) => {
+    if (!bodies.has(path)) bodies.set(path, flat(readFileSync(path, "utf8")));
+    return bodies.get(path);
+  };
+
+  const dangling = [];
+  let checked = 0;
+
+  for (const file of markdownFiles(REPO)) {
+    const here = file.slice(REPO.length + 1);
+    const prose = readFileSync(file, "utf8").replace(/\s*\n\s*/g, " ");
+
+    for (const [, named, quoted] of prose.matchAll(CITATION)) {
+      checked += 1;
+      const want = flat(quoted);
+
+      // A citation naming no file addresses this one, or a file named just
+      // before it in the same sentence — both spellings are in use, so a bare
+      // one is satisfied by any doc carrying the title.
+      if (!named) {
+        if (body(file).includes(want)) continue;
+        if (markdownFiles(REPO).some((f) => body(f).includes(want))) continue;
+        dangling.push(`${here}: §"${quoted}" — no doc carries that title`);
+        continue;
+      }
+
+      // A citation spells the path from wherever the writer was standing:
+      // `./math.md` from a sibling, `site/AGENTS.md` from the repo root, and a
+      // bare `verify_copy.mjs` for a file everybody knows by name. Resolving
+      // repo-relative BEFORE falling back to the basename is what keeps
+      // `site/AGENTS.md` from matching the root `AGENTS.md`, which is a
+      // different file with different rules in it.
+      const candidates = [join(dirname(file), named), join(REPO, named)];
+      const target = candidates.find(existsSync) ?? byName.get(named.split("/").pop());
+      if (!target) {
+        dangling.push(`${here}: ${named} §"${quoted}" — ${named} is not in the repository`);
+        continue;
+      }
+      if (body(target).includes(want)) continue;
+      dangling.push(
+        `${here}: ${named} §"${quoted}" — ${target.slice(REPO.length + 1)} does not ` +
+          "contain that string, so the section or test was renamed and the citation was not"
+      );
+    }
+  }
+
+  // A regex that stopped matching is a green test for every dead citation in
+  // the tree, which is the shape every empty assertion in this repo takes.
+  assert.ok(checked >= 90, `the citation scan matched only ${checked} references`);
+  assert.deepEqual(
+    dangling,
+    [],
+    `a §-citation names something that is not there:\n  ${dangling.join("\n  ")}\n\n` +
+      "Repoint the citation at what the thing is called now. If it named a test " +
+      "that does not exist, say what actually holds the constraint — or that " +
+      "nothing does."
   );
 });

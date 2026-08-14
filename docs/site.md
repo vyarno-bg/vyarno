@@ -5,8 +5,9 @@ calculator. The user's browser never calls an upstream API.
 
 ## Layout
 
-**Nine build entries, nine real URLs**, so each resolves on a static host with
-no router and no rewrite rules (`vite.config.js#rollupOptions.input`):
+**Eleven build entries, eleven real URLs**, so each resolves on a static host
+with no router and no rewrite rules (`vite.config.js#rollupOptions.input`, which
+is the list to read this off — a count written here is a count nothing checks):
 
 | Entry | URL | What it is |
 |---|---|---|
@@ -18,14 +19,14 @@ no router and no rewrite rules (`vite.config.js#rollupOptions.input`):
 | `en/index.html`, `en/how/…`, `en/market/…`, `en/legal/…`, `en/support/…` | `/en/…` | those five again, declaring `en` |
 | `404.html` → `src/notfound-main.js` → `NotFound.svelte` | `/404.html` | served for any unmatched path by name |
 
-**The `en/` four name the same bootstraps and the same components as their
+**The `en/` five name the same bootstraps and the same components as their
 Bulgarian counterparts.** What separates a pair is the `data-lang` on `<html>`,
 the head tags, and which half of every `.l-bg` / `.l-en` string survives
 `prerender.mjs` — so an English entry is four kilobytes of head and no second
 implementation of anything. They exist because a page ranks as a DOCUMENT and
 the served document carries one language: `/` put no English in front of a
 search engine at all, and an `hreflang` alternate had no address to point at
-([`seo.md`](./seo.md) §"Eight pages, four routes, two languages").
+([`seo.md`](./seo.md) §"Ten pages, five routes, two languages").
 
 Which language a reader gets is decided by the URL, and the preference in
 `stores.js` supplies the default at `/` alone. The header's language control is
@@ -41,22 +42,13 @@ prerender the whole of it; `verify_wiring.mjs` holds that property from both
 sides, refusing an `<input>` in the template and refusing any read of a value
 the reader types.
 
-Its content is four wide tables, so two things about them are structural rather
-than styling. Each sits in an `overflow-x: auto` box, because five columns at
-360px would otherwise scroll the page body and take the sticky header and every
-paragraph sideways with it. And each box is a `tabindex="0"` `role="region"`
-with its own name: a scroll container is not focusable on its own, and the wedge
-table holds no link to tab to, so without it two of that table's five columns
-were unreachable by keyboard at a phone width. `verify_render_country.mjs`
-holds both, and the `.scroll` rule in `lib/fig-table.css` carries what was tried
-for the visual affordance and why it is not there. That file is the table
-treatment `/how/` and `/market/` share — the scroll box, the cell metrics and the
-numeric column, which the two pages had arrived at twice, byte for byte. It is a
-stylesheet rather than a component because what the fifty-one tables across the
-two pages agree on is the furniture and not the markup; the rules it holds are
-global on the two entries that import it, and every page-specific override stays
-in its own component, where Svelte's scoping class puts it one specificity step
-above anything there.
+Its content is wide tables, and two things about them are structural rather than
+styling: each sits in an `overflow-x: auto` box so a phone scrolls the table
+instead of the page body, and each box is a focusable `role="region"` with its
+own name, because a scroll container is not focusable on its own and columns
+past the fold were unreachable by keyboard without it. `fig-table.css` is that
+treatment, shared with `/market/`, and carries why it is a stylesheet rather
+than a component; `verify_render_country.mjs` holds both properties.
 
 `/support/` is a page rather than a section of `/legal/` because it is not a
 legal document: it carries no obligation, it is not versioned with the four,
@@ -70,7 +62,7 @@ holds the import list that keeps the count honest.
 ```
 site/
 ├── vite.config.js      # Svelte plugin · /data/published middleware ·
-│                       # the five entries · the __BUILD_ID__ define
+│                       # every build entry · the __BUILD_ID__ define
 ├── scripts/
 │   ├── check-all.mjs          # lint → test → render, and the counts at the end
 │   ├── check-test-floors.mjs  # no suite got smaller — the only counts there are
@@ -184,8 +176,11 @@ site carries.
 `SiteFooter.svelte` is shared by every page on purpose: it carries the upstream
 attribution (a licence condition) and the legal links (ЗЕТ чл. 4 wants the
 provider's identity reachable from every page). A page that declares its own
-`<footer>` fails `every_page_mounts_the_shared_footer_and_none_declares_its_own`,
-and a new build entry belongs in that test's list in the commit that adds it.
+`<footer>` fails
+`every_build_entry_mounts_the_shared_masthead_and_footer_and_neither_twice`, and
+a new build entry belongs in that test's list in the commit that adds it — the
+masthead is held by the same assertion, so an entry missing from the list is
+unchecked for both.
 
 `SiteHeader.svelte` is shared because it is a control bar, and a control that
 behaves differently per page is one a reader learns twice. It takes two props —
@@ -215,85 +210,46 @@ they sit on" measures.
 
 ## The five-layer split
 
-Read this before adding a number to the page. Each layer answers a different
-question.
+`site/AGENTS.md` §"The five layers — which one a change belongs in" is the
+table: which layer a change belongs in, what tests it, and where new arithmetic
+goes. It is the operative copy and this file does not keep a second one.
 
-| Layer | File | Question | Tested by |
-|---|---|---|---|
-| **Data** | `data.js` | *Which* published number, and what if it is missing? | `verify_data_contracts.mjs` |
-| **Formula** | `mirror.js` | Given these inputs, what is the arithmetic? | `verify_mirror_math.mjs`, `verify_net_salary.mjs` |
-| **Wiring** | `view/*.js` | *Which* inputs go into that formula? | `verify_view_<stem>.mjs`, one suite per module |
-| **State** | `calculator.svelte.js` | What holds the result, and when does it recompute? | the `verify_render_*.mjs` suites (it is the only layer with no pure function to test) |
-| **Render** | `components/*.svelte` | Where does it go, what colour, which language? | the `verify_render_*.mjs` suite for that region; template wiring in `verify_wiring.mjs` |
-
-**The rule this encodes: where a wrong wiring would be a wrong number, make the
-wrong wiring impossible to express — do not merely test against it.** A formula
-is only as correct as its arguments, and a wrong argument is invisible to a test
-of the formula.
-
-**Where new arithmetic goes**, and the choice is not a judgement call:
-
-- a new **formula** (a real-terms change, a rate, an annuity) → `mirror.js`,
-  with a case in `verify_mirror_math.mjs`;
-- a new **derived value** (which published field feeds that formula, which
-  fallback applies, which anchor it uses) → the `src/lib/view/` module that owns
-  the subject, with a case in the suite of the same stem.
-
-A component keeps only display-shape helpers that cannot produce a wrong number
-on their own — `fmt`/`fmt0`/`fmtDate`, per-row share normalisation in the slider
-render, colour selection. A multiplication in the template belongs one layer
-down. Both destinations carry their test in the same commit.
-
-**The State layer is thin on purpose and it is the one to be suspicious of.**
-It is the only layer with no pure function behind it, so anything computed
-there is computed where no unit test can reach — which is exactly the rule the
-wiring layer was extracted to enforce. Every `$derived` in
-`calculator.svelte.js` is a call into a `view/` module or `mirror.js` with
-named arguments; if you find yourself writing arithmetic in one, it belongs one
-layer down. That rule did not relax when the `$derived`s moved out of
-`App.svelte` into a rune module.
+What that table cannot carry is why the split is shaped this way, which is the
+section below.
 
 ### A correct formula fed the wrong number
 
 This is the class of bug the pipeline gates structurally cannot see, because
 everything they check is already correct on disk. What is left is *which*
-correct number reaches which correct formula, and it is what the split above
-exists to make impossible rather than merely testable.
+correct number reaches which correct formula.
 
-1. **Where a wrong wiring would be a wrong number, make the wrong wiring
-   impossible to express — do not merely test against it.** Every `view/` module
-   is built that way: `savingsSince2020` takes the *categories*, not a rate, so the
-   user's basket rate cannot be substituted; `headlineRate` takes only the
-   headline payload, so it cannot become Σ(w·r); `mortgagePanel` reads the
-   regulatory caps out of the published limits instead of accepting them.
-2. **A pure function with no caller is not covered.** A formula is only as
-   correct as its arguments. Test the call, not just the callee.
-3. **A source-grep is not a behaviour test, and its docstring will lie about
-   it.** A grep for two exact spellings of a forbidden phrase is walked past by
-   a third spelling. Greps belong to template wiring that has no runtime
-   harness (`verify_wiring.mjs`, and
-   [`testing-strategy.md`](./testing-strategy.md) §"Why the wiring tests stay
-   source checks"); formulas get exercised.
-4. **Guard the sentence, not only the number.** A user-visible claim can be
-   false while every formula behind it is right, and no arithmetic test can see
-   it. `verify_copy.mjs` guards the claims the copy makes.
-5. **A label belongs to the field it labels, not to the nearest payload.** The
-   basket's "1 year ago" option is dated from `categories[].ref_period`, beside
-   the `annual_rate_pct` that `rateFor(c, "y1")` returns verbatim — never from
-   `hicp_headline.json`, whose month Eurostat's flash release puts two weeks
-   ahead of the divisions. Taken from the headline, the dropdown reads
-   "2025.07 → 2026.07" over thirteen June rates: every figure on the page is
-   Eurostat's own, and the sentence over them is false. The render suite asserts
-   the rendered option against the payload the page fetched, because the defect
-   only exists as a string on a screen.
-6. **A figure and its label have to be about the same PLACE, and one page
-   holding two is how they stop being.** `/how/` is the country's and pins a
-   reference град; `/` follows the reader's. The housing card read its baseline
-   year and its since-baseline percentage off `cityHome` — the reference one —
-   and printed София's 2015 and София's +232% beside Варна's €/m², under Варна's
-   name, with the chart's own end labels correctly Варна's. Every number was
-   real. `view/country.js#cityTrend` is the one selection both surfaces call, and it
-   takes the code as an argument so a caller has to say which city it means.
+The layers exist to make a wrong wiring **impossible to express** rather than
+merely testable — `savingsSince2020` takes the categories rather than a rate, so
+the user's basket rate cannot be substituted; `headlineRate` takes only the
+headline payload, so it cannot become Σ(w·r). A formula is only as correct as
+its arguments, and a wrong argument is invisible to a test of the formula.
+
+Two shipped defects are what the rule is made of, and neither is deducible from
+the layer table:
+
+- **A label belongs to the field it labels, not to the nearest payload.** The
+  basket's "1 year ago" option is dated from `categories[].ref_period`, beside
+  the `annual_rate_pct` that `rateFor(c, "y1")` returns verbatim — never from
+  `hicp_headline.json`, whose month Eurostat's flash release puts two weeks
+  ahead of the divisions. Taken from the headline it reads "2025.07 → 2026.07"
+  over thirteen June rates: every figure Eurostat's own, and the sentence over
+  them false.
+- **A figure and its label have to be about the same PLACE, and one page holding
+  two is how they stop being.** `/how/` is the country's and pins a reference
+  град; `/` follows the reader's. The housing card read its baseline year and
+  its since-baseline percentage off the reference city and printed София's 2015
+  and +232% beside Варна's €/m², under Варна's name, with the chart's own end
+  labels correctly Варна's. Every number was real. `view/country.js#cityTrend`
+  is the one selection both surfaces call, and it takes the code as an argument
+  so a caller has to say which city it means.
+
+Both exist only as a string on a screen, which is why the render suites assert
+the rendered text against the payload the page fetched.
 
 ## Boot path
 
@@ -464,101 +420,35 @@ same route.
 
 ## `src/lib/mirror.js` — the formulas
 
-The only file with domain logic. Every function takes its inputs explicitly; no
-closures over hardcoded data. The conventions:
+The only file with domain logic. Every function takes its inputs explicitly, and
+no function closes over hardcoded data — which is what makes each one reachable
+from a test with the arguments the bug needs.
 
-- Real change = `(1+r) / (1+π) − 1`, **never** subtraction.
-- Multi-year rate = `idx[now] / idx[year] − 1`, **never** subtraction.
-- Two-decimal display rounding; full precision internally.
-- **Index base:** `latest_index` and `index_by_year` both carry Eurostat's
-  published values, on the base `index_base_year` names. `rateFor(c, year)` and
-  `officialCumulativeSince2020` divide one by the other, so they must share a
-  base — and nothing scales either, so nothing can scale one alone. The `y1` path returns the verbatim
-  `annual_rate_pct`, which is base-invariant and therefore cannot reveal a base
-  bug — always check a since-year number too ([`math.md`](./math.md)).
+Four conventions, and each is a wrong number if broken:
 
-What is in it:
+- Real change is `(1+r) / (1+π) − 1`, **never** subtraction.
+- A multi-year rate is `idx[now] / idx[year] − 1`, **never** subtraction.
+- Two-decimal display rounding, full precision internally.
+- **`latest_index` and `index_by_year` share the base `index_base_year` names**,
+  because `rateFor` divides one by the other. The `y1` path returns the verbatim
+  `annual_rate_pct`, which is base-invariant and so cannot reveal a base bug —
+  always check a since-year number too.
 
-- **Personal calculator:** `rateFor`, `personalInflation`, `officialInflation`,
-  `officialCumulativeSince2020`, `pocketReal`, `targetRaise` (the inverse: given
-  inflation and a target real pocket, the nominal raise required), `extraPerMonth`,
-  `pocketPerMonth` (the same inversion applied to the real change, so the pocket
-  row can say what its percentage is worth in euro), `cashErosion`.
-- **Basket drill-down (ECOICOP level 2):** `divisionRate(division, split, anchor)`
-  — a division's own published rate until the user splits it, then
-  `Σ(share × group rate)`; `officialSplit(division, total)` — Eurostat's
-  within-division shares scaled to whatever the user allocated;
-  `personalInflationDetailed`; `contributions({…})` — the **exact**
-  decomposition, `Σ contributionPp === π`, which is what lets the ranked view
-  claim the rows add up to the user's number. `amounts` are unit-agnostic
-  (percent shares or €/month) because everything normalises by Σ — that is what
-  makes the input-mode toggle a display choice rather than a second calculator.
-- **Income ladder + home:** `percentile` (returns position **from the bottom** —
-  copy must be "you earn more than {n}%" / «изпреварваш {n}%», never "top
-  {n}%"), `composeLadder`, `buildLadder`, `rentBurden`, `rentDays`,
-  `annuityPayment`, `annuityReverse`, `homeYears`.
-- **Wage comparators:** `wageGap(net, ref)` — one signed distance with one
-  rounding and one dead band, used by the област comparison and the
-  sector one alike. It lives here rather than in the wiring layer because two
-  callers computing
-  their own `(a − b) / b` is two dead bands that drift apart, and the drift
-  shows up as one card saying "the same" while the other says "1% below".
-  `meanRungPosition(shape)` is the sector card's correction: which rung of
-  Eurostat's published ladder the mean itself sits on. **It takes no anchor**,
-  which is what stops it — handed a sector average it would return the sector
-  percentile nobody publishes, and there is no parameter to attempt that
-  through. Same device as `headlineRate`'s refusal to accept `categories`.
-  [`math.md`](./math.md) §"A sector average" has the figures and what is
-  modelled in them.
-- **BG payroll:** `bgNetSalary(gross, params)`, `bgGrossFromNet(net, params)`,
-  `payrollParams(data.payroll)`, `bgTaxWedge`, `bgMarginalRatePct`. The
-  published `payroll.json` is the source of truth; the `BG_2026_*` constants
-  (`BG_PAYROLL_DEFAULT`) are an **offline sentinel** for first paint only. A BG
-  law change is a pipeline table edit plus a re-run, **no SPA code change**. The
-  SPA collects **net** take-home (most people know that, not their contract
-  gross), back-computes the gross for the област comparator, and applies the same
-  formula to that област's gross — so the comparison is net vs net.
-- **Net or gross:** the pay field takes either, and `view/payroll.js#netsOf` is the one
-  place one becomes the other. Amounts travel as `pay = { basis, amounts }` so
-  none can arrive without saying what it is; flipping the toggle converts in
-  place, and what was typed in the outgoing basis is stashed so a round trip
-  restores it verbatim rather than creeping a cent per flip.
-- **The household:** `householdNet(nets)` and `bgHouseholdPayroll(nets, params)`.
-  The pay card collects **one net per earner**, and the total is derived from
-  that list rather than typed. Inverting a combined net as a single salary
-  applies one insurance ceiling to several people and understates a two-earner
-  household's gross by €234/month at €2,000 gross each — [`math.md`](./math.md)
-  §"A household is several contracts" has the table, and the split between the
-  figures that are per person and the ones that are per household.
+Two refusals are worth knowing before adding a function: `meanRungPosition`
+takes no anchor, so it cannot be handed a sector average and asked for the
+sector percentile nobody publishes; `headlineRate` refuses `categories`, so it
+cannot become Σ(w·r). Where a wrong call would be a wrong number, the parameter
+list is the guard.
 
-With the official weights, `officialInflation` lands *near* the headline HICP
-rate but not on it — HICP chain-links at December, so a 12-month window
-re-weights mid-flight and the two sit ~0.16 pp apart. The UI shows both.
+`payroll.json` is the source of truth for BG payroll and the `BG_2026_*`
+constants are an offline sentinel for first paint only — **a law change is a
+pipeline table edit and a re-run, with no SPA code change.**
 
-### Testing conventions
-
-`mirror.js` is the only place in the SPA where a wrong formula becomes a wrong
-number on someone's screen, so **every exported function here has a test**, and
-the tests live beside the code they protect:
-
-| File | Covers |
-|---|---|
-| `verify_net_salary.mjs` | `bgNetSalary`, `bgGrossFromNet` — the cap boundary, the flat tax, the round-trip above the contribution cap, cross-checks against published BG payroll references |
-| `verify_mirror_math.mjs` | everything else in `mirror.js` — the anchor contract, personal vs official inflation, the real-wage division, `percentile`'s direction, `buildLadder`, annuity + inverse, `cashErosion`, `payrollParams`, the tax wedge |
-| `verify_view_*.mjs` | every derived value under `src/lib/view/` — which input reaches which formula, one suite per module, and the two boundaries below |
-| `verify_stores.mjs` | every persisted key — the three preferences, and the reader's own figures behind the switch that has to be turned on first |
-| `verify_contrast.mjs` | WCAG AA ratios for every ink × surface pair, both themes, computed from `tokens.css` itself |
-| `verify_render_contrast.mjs` | the ratio each piece of text is actually painted at, in a browser — ancestor `opacity` multiplied in, translucent bands composited down — and every control boundary at the 3:1 WCAG 1.4.11 asks. Both themes, both languages |
-| `verify_data_contracts.mjs` | `data.js`'s fallback chains, and these same functions run over the JSON committed in `data/published/` |
-| `verify_legal.mjs`, `verify_static_assets.mjs` | the legal documents and the identity table; robots, `llms.txt`, security.txt, sitemap and the exact CSP |
-
-All of them run under `npm run verify:math` (Node's built-in test runner, no
-dependencies) and in CI on every push. Source-greps in
-`site/scripts/verify_wiring.mjs` covers template wiring and the
-claims the copy makes; they are not a substitute for exercising a formula.
-
-**The standard a new test has to meet: break the function on purpose and watch
-it go red.**
+[`math.md`](./math.md) is the provenance contract for every formula here,
+including why `officialInflation` lands ~0.16 pp off the headline rate and why
+the UI shows both. Which suite a change belongs in is
+[`testing-strategy.md`](./testing-strategy.md); the standard it has to meet is
+to break the function on purpose and watch the test go red.
 
 ## `src/lib/plot.js` — where a mark goes
 
@@ -717,71 +607,21 @@ Rollup chunks this differently the split stands on the paragraph above it.
 
 ### Three of these are boundaries, not conveniences
 
-**`mortgagePanel` amortises the AAR, never the APRC.** The AAR is the interest
-rate, and the annuity formula needs an interest rate. The APRC folds fees into
-an annualised figure; compounding them monthly overstates the payment by
-~€24/month on the published София median — plausible enough that no sanity band
-would catch it. **APRC is for comparing, AAR is for computing.**
+Three `view/` functions are load-bearing in a way the table above cannot show,
+and each carries its argument, its measurements and the defect it prevents in
+the module that owns it:
 
-**`sharePayload` takes no salary, and that is how the € rule is kept.**
-`extraPerMonth = salary × π/(100+π)` inverts exactly, so "my inflation is 5.4%,
-that's €48/month" reveals the salary to everyone who reads the message. The
-function that decides what may cross onto a share surface therefore has no
-salary parameter at all — there is nothing for a caller to pass and nothing
-downstream to invert. `verify_view_share.mjs` still asserts no `€`, `EUR`,
-`евро` or `лв` reaches the finished string in either language at any
-anchor, and reads the signature back to check the parameter list has not grown;
-the assertion is the second lock rather than the only one.
+| Boundary | Reasoning in |
+|---|---|
+| **`mortgagePanel` amortises the AAR, never the APRC.** APRC is for comparing, AAR is for computing | `view/home.js` |
+| **`sharePayload` takes no salary at all**, because `salary × π/(100+π)` inverts exactly. Check a new share surface against the inversion rather than against the presence of a euro sign — the dangerous fields are the ones that look safe | `view/share.js` |
+| **`basketBudget` decides what the € column is a share of**, and the two entry modes measure the remainder differently on purpose: euro mode measures it, share mode has the reader state it, and only one is ever live | `view/spend.js` |
 
-**Two figures the site already computes are excluded by the same rule, and
-neither carries a currency symbol.** The ladder position inverts:
-`mirror.js#percentile` interpolates over rungs composed from
-`salary_dist.json` and `region_salary.json`, both committed and public, so
-"ahead of 34% of the country" reconstructs the net pay to within a rung's width. A
-*personal* tax-wedge rate inverts above the insurance ceiling, where the
-effective rate falls with every extra euro of gross. **Check a new share
-surface against the inversion, not against the presence of a euro sign** — the
-dangerous fields are the ones that look safe.
-
-`SHARE_FIELDS` is the closed list of what does travel, and
-`verify_view_share.mjs` compares it against the returned object key for key.
-Adding a figure to a card means adding it there first, which is where the
-argument happens.
-
-**`basketBudget` decides what the € column is a share of, and the two entry
-modes measure the remainder differently on purpose.** A person who is careful
-with money does not spend everything, and the two modes are not equally placed
-to notice. A basket of *euros per month* is a list of real payments and carries
-its own size, so the remainder is **measured** — `spendBase` is the euros
-actually entered, and feeding `spendable` instead is the defect this exists to
-make unexpressible: a €1,000 basket against a €1,250 budget came back rescaled
-by 25%, every row a number the reader had never typed, adding to a total they
-had deliberately not reached. A basket of *percentage shares* says how a pot
-divides and cannot say how big it is, so there the remainder has to be
-**stated** — `spendBase` is `spendable × spendSharePct/100`, the reader's own
-claim about how much of their pay actually gets spent.
-
-**The claim defaults to 100 and the parameter is optional**, so a reader who
-never touches the control is charged on everything they earn, exactly as before
-they had one. Anything lower would shrink their headline € figure without their
-having claimed anything, which is the flattering default P7 rules out.
-`exposedSpend` carries the correction into that headline and **reduces to
-`salary` exactly** whenever nothing is left over, by either route.
-
-**Only one of the two remainders is ever live.** They can disagree — one is
-derived from thirteen typed amounts, the other is a sentence the reader wrote
-about themselves — and a page carrying both would put two answers to "how much
-do you not spend" in front of the same reader. So `basketBudget` ignores the
-stated claim in euro mode, and `BasketEditor` does not render the control there.
-Neither of those alone is the guarantee; `verify_view_spend.mjs` pins the first
-and `verify_wiring.mjs` the second.
-
-What that money *is* — savings, investment, help sent home, something they
-forgot — is not ours to say. The row that renders it states its size, the year
-it adds to, and what prices do to money held as cash; the last of those is a
-projection and carries its assumption on the line beneath (principles.md P5). "Save
-it" and "invest it" are advice, which P6 and §7a close, and
-`the_unplaced_money_copy_describes_and_never_advises` keeps them out.
+`SHARE_FIELDS` is the closed list of what may cross onto a share surface, so
+adding a figure to a card means adding it there first — which is where the
+argument happens. What the unplaced money *is* — savings, help sent home — is
+not ours to say: P5 puts the assumption on the line beneath, and P6 and §7a
+close "save it" and "invest it".
 
 ## The basket interface
 
@@ -931,716 +771,148 @@ Eurostat reclassifies, the pipeline republishes and the UI follows.
 
 ## `src/lib/stores.js` — everything this device is allowed to keep
 
-Four `writable` stores with `localStorage` persistence:
+Four `writable` stores over `localStorage`: `lang`, `theme`, `region` and
+`rememberInputs`. Keys are `vyarno_lang` / `vyarno_theme` / `vyarno_region` /
+`vyarno_inputs`, and `verify_legal.mjs` reads those names out of this file and
+fails when the privacy notice does not name one of them in both languages.
 
-| Store | Values | Default with no saved preference |
-|---|---|---|
-| `lang` | `"bg" \| "en"` | the language `<html data-lang>` declares; at `/` alone, the saved preference, then `"bg"` (`DEFAULT_LANG`). `navigator.language` is deliberately **not** consulted |
-| `theme` | `"light" \| "dark"` | `matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"` |
-| `region` | an `region_salary.json` code, or `""` | `""` — no default at all, and that is P7: a preselected София hands a Бургас reader Sofia's wage and Sofia's €/m² wearing the appearance of a choice they made |
-| `rememberInputs` | `boolean` | `false`, and the reader is the only thing that turns it on |
+Three constraints, all argued at length in `stores.js` itself:
 
-**Why `lang` ignores the browser.** This is a calculator of Bulgarian prices,
-Bulgarian payroll law and Bulgarian housing, for a person living in Bulgaria
-today
-([`README.md`](./README.md) §"Who this is for") — and a great many of those
-people browse on a device whose UI
-language is English. Deriving the default from `navigator.language` served them
-the English site on first paint, which is the one guess we can be wrong about
-before the reader has told us anything. `theme` keeps its OS fallback, because
-`prefers-color-scheme` is a statement about the device rather than a guess about
-who is holding it.
-
-**The URL outranks the saved preference, and the root is the exception.** Every
-page is served at two addresses and each entry hardcodes the language it
-declares, so `initialLang()` reads `document.documentElement.dataset.lang`:
-rendering `/en/legal/` in Bulgarian because this device once stored `bg` makes
-the page contradict the document a reader and a crawler were both handed. `/` is
-where a stored choice still decides, because it is the one address that names no
-language — what a person types, and what a bookmark holds.
-
-**Switching language is a navigation.** `langHref(page, to)` says where a route
-lives in a language, and each header renders one anchor per language so the pair
-is stripped by the same rule as every other pair. `chooseLang(to)` records the
-choice on the click and does not touch the store — the counterpart document
-declares its own language, and repainting a page a reader is leaving would put
-it in a language its `<html lang>` no longer matches. Navigating IS choosing, so
-that write is inside the ЗЕТ чл. 4а exemption below; being SERVED a language is
-not, and nothing is written on arrival. With the bundle off the anchor still
-works, which a handler could not: the entry's `data-lang` is fixed and nothing
-on the served page can change it.
-
-`theme` and `lang` push their value into `document.documentElement` as a
-`data-theme` / `data-lang` attribute, which `tokens.css` reads to switch
-palettes and hide the language the page is not in. `toggleTheme()` is the one
-toggle helper left. Everything here swallows `localStorage` errors silently —
-private mode, quota exhausted, no DOM — it simply does not persist.
-
-The persisted keys are `vyarno_lang`, `vyarno_theme`, `vyarno_region` and
-`vyarno_inputs`, exported as `LANG_KEY` / `THEME_KEY` / `REGION_KEY` /
-`INPUTS_KEY`. `readPreference(key, isValid)` returns a saved value only where
-`isValid` accepts it, so junk is absent rather than adopted — and the exported
-names are read straight out of this file by `verify_legal.mjs`, which fails when
-the privacy notice does not name one of them in both languages. Tested in
-`verify_stores.mjs`, which installs a fake `localStorage` / `document` /
-`location` / `navigator` / `matchMedia` per case and re-imports the module under
-a unique query string, because `stores.js` reads storage — and the document's
-declared language — at module-evaluation time.
-
-**Nothing is written until the visitor chooses something, and that is a legal
-constraint rather than a taste one.** A Svelte `writable` calls a new subscriber
-synchronously with the current value, so a subscriber that persists on every
-value writes on first paint — with defaults, for a reader who has touched
-nothing. `persistOnChange` swallows that first call. ЗЕТ чл. 4а, ал. 4, т. 2
-exempts storage «изрично поискана» by the recipient; a default nobody asked for
-is the weakest available form of that argument, and the notice's «избраният
-език» would not be true of it either.
-
-**`vyarno_inputs` is the reader themselves, so it is the one key with a switch
-in front of it.** It holds what they typed — pay, raise, rent, savings, basket,
-splits, the home block — versioned, and dropped unread when the version does not
-match, because a basket saved against thirteen divisions and read back against
-fourteen is a wrong number wearing the appearance of the reader's own choice.
-The risk it opens is not the network one P1 is about: a stored salary is exposed
-to the next person holding the device. Hence off by default (P7), a one-line
-label that says so, a «forget everything on this device» button beside the
-switch, and deletion in the same action as switching off — a switch that stops
-writing while yesterday's figures stay on disk is the state the design makes
-unreachable. `Calculator#snapshot` writes it and `Calculator#restore` reads it
-back, refusing a snapshot whole when the payload's divisions, a division's
-groups or the pay card's `MAX_EARNERS` no longer fit: those are sizes, and
-`stores.js` deliberately knows nothing about the payloads. `App.svelte` holds
-the only two effects that call either.
+- **`lang` ignores `navigator.language`, and `region` has no default at all.**
+  A great many people in Bulgaria browse on an English-language device, and a
+  preselected София hands a Бургас reader Sofia's wage wearing the appearance of
+  a choice they made (P7). `theme` keeps its OS fallback, because
+  `prefers-color-scheme` describes the device rather than guessing who is
+  holding it.
+- **The URL outranks the saved preference, and `/` is the exception** — it is
+  the one address that names no language. Switching language is a *navigation*,
+  not a repaint.
+- **Nothing is written until the visitor chooses something**, which is ЗЕТ чл.
+  4а, ал. 4, т. 2 rather than taste: the exemption is for storage «изрично
+  поискана», and a default nobody asked for is the weakest form of that
+  argument. `vyarno_inputs` is the reader themselves, so it is the one key
+  behind a switch, off by default, deleted in the same action as switching off.
 
 ## `src/lib/content.js` — copy, presets, offline sentinels
 
-- **`COPY`** — the BG/EN dictionary, in both languages, and `t(key)` looks up
-  the variant for the current `lang` store. **Everything JavaScript has to
-  select, interpolate or hand to an attribute belongs here**: a string chosen by
-  a branch, one carrying a `{slot}`, an `aria-label`, a `<title>`. Long
-  bilingual prose does not — it is written inline as paired `.l-bg` / `.l-en`
-  spans in the component that renders it — both variants ship in the DOM and
-  `tokens.css` hides one — because a paragraph split between a copy file and a
-  template is edited in two places and reads as neither. `How.svelte` and
-  `ExplainerBand.svelte` are most of that prose.
-- **`PRESETS`** — five starting baskets, one number per ECOICOP ver.2 division
-  in published order. `official` is the real Eurostat BG basket, kept as a
-  first-paint fallback — the live weights replace it as soon as
-  `hicp_categories.json` resolves, and `verify_data_contracts.mjs` fails if the
-  copy drifts more than 3 pp. `driver`, `family`, `noCar` and `pensioner` are
-  **hand-made illustrative starting points, not survey data**, and the line
-  above the chip row says so by naming which of the five Eurostat published.
-  The chips sit below the sliders and name baskets rather than people — the
-  ordering rule and its failure are in §"The basket interface" above. Every
-  vector must have exactly as many entries as the
-  published basket and sum to 100 — a short vector leaves the tail divisions
-  `undefined` and silently drops them from Σw.
-  `every_preset_covers_every_published_division_and_sums_to_100` enforces both.
-- **`HOME`** — offline sentinels. Each duplicates a published value for first
-  paint only, and `verify_data_contracts.mjs` fails when one drifts past its
-  band (rate ±0.75 pp, the област wage ±10%, €/m² ±20%, down payment and term
-  exact).
+`COPY` is the BG/EN dictionary — **everything JavaScript has to select,
+interpolate or hand to an attribute**. Long bilingual prose does not live here;
+it is written inline as paired `.l-bg` / `.l-en` spans in the component that
+renders it (`site/AGENTS.md` §Copy has the rule and why).
 
-Three copy rules this file has to keep:
+`PRESETS` is five starting baskets. Only `official` is Eurostat's; the other
+four are **hand-made illustrative starting points, not survey data**, which is
+why `presetActive` travels with the number and the `official` chip is
+deliberately not caveated. `HOME` holds offline sentinels for first paint, each
+banded by `verify_data_contracts.mjs` so it cannot drift far from the published
+value it stands in for.
 
-- **Write for someone who does not know the vocabulary, and never at the cost of
-  the number.** The reader is the person in [`README.md`](./README.md)
-  §"Who this is for": they are paying these
-  prices this month, and they have not met "the effective rate", "the marginal
-  rate", "the distribution's shape" or "the next euro". Every such term is
-  either replaced with what it is a share *of* («удържа се от увеличението»,
-  «удържа се от цялата заплата») or explained where it first appears. Two
-  failure modes are equally bad: jargon the reader skips past, and a
-  simplification that has stopped being true. Translated idiom counts as jargon —
-  «ориентир, не присъда» was a word-for-word calque of "a guide, not a verdict"
-  and is not something anyone says in Bulgarian. Where a caveat is needed, say
-  what the number *is* («показва приблизително къде си, а не точно»).
-- **`medianDefault` must not call the pre-filled salary typical.** We publish no
-  national median net wage; the only median in the data is the P50 of the net
-  ladder this site composes, and the placeholder sits close enough to it that
-  calling it typical would be borrowing that card's provenance (P7).
-  `the_salary_default_is_never_called_a_median` fails on the words
-  "median" / "медиан" / "typical" / "типичн" in that key.
-- **`presetActive` must travel with the number.** The four hand-made presets
-  yield headline figures in the same voice as the Eurostat one, so the results
-  card carries the caveat while a hand-made preset is active. The `official`
-  chip is real published data and is deliberately not caveated.
+The rule the copy has to keep is to **write for someone who does not know the
+vocabulary, and never at the cost of the number** — every term is either
+replaced with what it is a share *of* or explained where it first appears, and a
+translated idiom counts as jargon. `medianDefault` may not call the pre-filled
+salary typical: we publish no national median net wage, so calling it one
+borrows the ladder's provenance (P7).
 
-Staleness is **not** driven by a hardcoded date, and not by a single
-threshold either. `Calculator#load` calls `view/freshness.js#dataAge(data, PAYLOADS)`,
-which judges each payload against the cadence its own manifest row declares:
-past it the row is *due*, past 1.5× it is *overdue*, and the banner fires when
-something is overdue — naming how many rather than implying all nine are. One
-flat threshold could not serve four release rhythms; 45 days is late for the
-monthly HICP release, perfectly normal for the quarterly НСИ wage series, and
-meaningless against a survey Eurostat runs every four years.
-`view/freshness.js#STALE_AFTER_DAYS` survives only as the fallback for a manifest row with
-no declared cadence.
+Staleness is judged per payload, never against one threshold:
+`view/freshness.js#dataAge` measures each against the cadence its own manifest
+row declares. One flat threshold cannot serve four release rhythms — 45 days is
+late for the monthly HICP release and perfectly normal for a quarterly НСИ
+series.
 
 ## `src/App.svelte` — the composition root
 
-Owns the page's shape and nothing else: the header (lang + theme toggles, "as
-of" date), the banner, the two cards, the national strip (see below), the
-explainer band, the footer — plus the two states that replace the calculator
-entirely, loading and load-failed. It constructs the `Calculator`, calls
+Owns the page's shape and nothing else: the masthead, the banner, the two cards,
+the national strip, the explainer band, the footer, plus the two states that
+replace the calculator entirely. It constructs the `Calculator`, calls
 `calc.load()` on mount, and passes it down as one prop.
-
-It is 248 lines. It was 5,678 two sessions ago and 3,300 one session ago, and
-what unlocked the last cut was not a better division of the markup but moving
-the state out from under it.
 
 ### `src/lib/calculator.svelte.js` — the state everything reads
 
 Runes are not confined to `.svelte` files, so the whole reactive graph lives in
-a `Calculator` class here: the `$state` the reader types into, the `$derived`
-graph over `data.js`/`mirror.js`/`view/`, the loader, and the handlers.
+a `Calculator` class: the `$state` the reader types into, the `$derived` graph
+over `data.js` / `mirror.js` / `view/`, the loader and the handlers.
 
-The reason it exists is testability, by way of prop count. The inputs card and
-most of the result rows read some sixty values out of one graph. While that
-graph was in `App.svelte`'s `<script>`, extracting a row meant threading twenty
-props into it and the next row wanted a different twenty — `HomeRow` and
-`TaxWedgeRow`, extracted that way, still take fifteen each. A component now
-takes one `calc` prop, and its prop list stops describing the graph's internals.
+**It exists for testability, by way of prop count.** The inputs card and most of
+the result rows read some sixty values out of one graph. While that graph sat in
+`App.svelte`'s `<script>`, extracting a row meant threading twenty props into it
+and the next row wanted a different twenty. A component now takes one `calc`
+prop, and its prop list stops describing the graph's internals.
 
-Two rules it holds to:
-
-- **Nothing computes here.** Every `$derived` is a call into a `view/` module
-  or `mirror.js` with named arguments. See the note under the layer table.
-- **Nothing picks words here.** The module is language-agnostic, so
-  `cityPriceDated` and the preset label live in the components that render
-  them — where `$lang` auto-subscription works anyway. `shareSentence` is the
-  shape this takes for a string built in `view/share.js`: the words arrive as an
-  argument and the component chooses which language to ask for.
-
-One convention, with no exception to remember: **every mutating handler is an
-arrow-function class field, never a method.** A template that passes a method
-bare — `oninput={calc.onRaiseInput}` — hands over a detached function whose
-`this` is `undefined`, and that failure is a runtime error inside an event
-handler, which is to say a silent one.
+Three rules it holds, each argued in the file: **nothing computes here** (every
+`$derived` is a call into `view/` or `mirror.js` with named arguments),
+**nothing picks words here** (the module is language-agnostic), and **every
+mutating handler is an arrow-function class field, never a method** — a template
+passing a method bare hands over a detached function whose `this` is
+`undefined`, which fails silently inside an event handler.
 
 ### The components
 
-`PayField`, `InputsCard` (with `BasketEditor` under it) and
-`ResultsCard`. `ResultsCard` is a running order rather than a template: the
-headline, then `ResultsAnswer`, then one component per receipt row —
-`ResultsSummary`, `PocketRow`, `PercentileRow`, `TaxWedgeRow`, `RentRow`,
-`HomeRow`, `LeftoverRow`, `SavingsRow` — so which rows the calculator answers,
-and in what order, is forty lines of markup. Each row decides for itself whether
-it renders; `RentRow` is empty without a rent, `HomeRow` without the home block.
+`PayField`, `InputsCard` (with `BasketEditor` under it) and `ResultsCard`.
+`ResultsCard` is a **running order rather than a template**: the headline, then
+`ResultsAnswer`, then one component per receipt row, so which rows the calculator
+answers and in what order is forty lines of markup. Each row decides for itself
+whether it renders — `RentRow` is empty without a rent, `HomeRow` without the
+home block — which is why adding a row needs no coordination with the ones
+around it.
 
-Two components close the card and they are not rows. `ShareCard` draws the
-picture a reader sends; `ResultsWordmark` is the wordmark and the tagline
-anchored to the bottom edge. **The names are worth reading carefully, because
-they were once one file and the wrong way round** — a component called
-`ShareCard` that rendered a wordmark is a name that costs the next person an
-afternoon, which is why the share work started by fixing it.
+Shared anatomy is in `card.css` (the grid, the cards, the field, the `.vlink`
+verify arrow) and `result-row.css` (the row). Both are stylesheets rather than
+components because Svelte scopes a component's `<style>` to its own markup and
+these rules span three files by construction: `.m-grid > .m-card:first-child >
+.field` cannot be written inside any one of them.
 
-`ShareCard` is the only canvas in the app, where every chart is inline SVG, and
-the reason is narrow: the artefact has to leave the page as a PNG, and an SVG
-serialised into an `<img>` resolves no `@font-face` from the document that made
-it, so the card would come back set in the system stack. Getting the faces back
-means base64-ing four woff2 files into every card. A canvas draws with the
-fonts the page already has, and it is still zero dependencies and still nothing
-third-party, which is what the SVG rule was protecting.
+Each component carries its own reasoning, and this table is the index rather
+than a second copy of it — every measurement, every defect that became a rule,
+and every rejected alternative is in the file named on the right, next to the
+code it constrains.
 
-**Where the sentence can go, and what it loses on the way.** `navigator.share`
-is absent on most desktops, so the block also offers `viber://`, `t.me` and
-`wa.me` links built from the same `shareSentence` the clipboard button copies.
-A URL scheme carries text and cannot attach a file, so **the picture stays
-behind** — which is why that row sits under a line of its own saying so
-(`COPY.shareChatNote`) rather than beside the share-sheet button that sends
-both. The sentence ends in the full `https://vyarno.bg`, so travelling alone
-costs a recipient nothing they could not check; P9's fallback to the source
-name and the date is for the image, which physically cannot carry a link.
-Facebook Messenger is deliberately absent: its web dialog needs a registered
-`app_id` and the `fb-messenger://` scheme reaches only a device that has the
-app, which is the case the share sheet already covers.
+| Component | The constraint that is not obvious from reading it |
+|---|---|
+| `NationalStrip` | A wrapping flex row, never an auto-fit grid, and the charted card renders last in a row of its own. Every card is gated on **its own payload**, never on what the reader typed |
+| `ResultsAnswer` | Introduces no arithmetic — `view/results.js#answerLine` decides what can honestly be stated. Two of its three clauses refuse to compute, and the refusals are the point |
+| `RankedContributions` | The fold is driven by the list's **own measured width**, not a `matchMedia` on the layout breakpoint. `rankedSplit` keeps Σshown + restPp === π at any limit |
+| `PercentileRow` | Ranks nobody who has not typed a salary. See the rule below |
+| `PayField` | Withholds the payslip and the област comparator until a salary is typed, for the same reason |
+| `PocketRow` | Seven states, one per verdict; «точно» is bound to `pocket === 0` and may not be said inside the dead zone |
+| `ShareCard` | The only canvas in an app that draws every chart as inline SVG. An SVG serialised into an `<img>` resolves no `@font-face`, so the card would come back in the system stack |
+| `WedgeChart` | Draws whatever markers it is handed and cannot tell whose gross they are, so who lands on the curve is decided in `view/`, where a suite can reach it |
 
-Every one of those hrefs is the message and nothing else. No `utm_`, no `ref=`,
-no click handler, and the address handed to Telegram is the bare origin — «a
-share count, a click event or a campaign parameter on an outgoing share» is on
-the closed list in [`principles.md`](./principles.md) without qualification.
-`verify_render_share.mjs` reads the rendered attributes and holds every
-parameter of every outgoing link to that, as a rule rather than per link, so a
-fourth destination is covered on the day somebody adds it.
+Three rules cut across all of them, and only these are stated here because no
+single component owns one:
 
-Their shared anatomy is in `$lib/card.css` (the grid, the two cards, the field,
-the `.vlink` verify arrow) and `$lib/result-row.css` (the row itself). Both
-exist because Svelte scopes a
-component's `<style>` to its own markup and these rules span three files by
-construction — `.m-grid > .m-card:first-child > .field` cannot be written in
-any one of them. Decoration that belongs to one component stays with it.
+**A figure that describes the reader waits until the reader types.** «Изпреварваш
+34% от работещите» is a second-person claim about somebody who has entered
+nothing, and no caveat rescues it — a visitor on €2,400 has been told something
+false about themselves before touching the page. A euro figure is different: it
+is arithmetic about prices scaled by a salary, so it may show against the €900
+worked example as long as the sentence names the salary it used.
 
-### The national strip — five tiles and one feature card
+**Prose may move down a tier; a source caption, an `as_of` and a verify link may
+not.** Rows are tiered — the figure and one plain sentence always visible, the
+derivation one tap away in a `<details>`, the method and sources at page level.
+Most of the small grey text on the card is captions and verify arrows, so
+folding "the small grey text" is the obvious density move and it is the one
+[`principles.md`](./principles.md) §"Publish the method" forbids: a caption a
+reader has to go looking for is degraded as surely as one that was deleted, and
+the difference is invisible in a diff that only adds a `<details>`.
 
-HICP headline · median net pay (the country) · average net pay (the chosen
-област) · fastest-rising category · unemployment, then the €/m² card for the
-chosen град, carrying that city's own sparkline. Three layout rules, each of which was a visible defect
-before it was a rule, and all three are held by
-the national-strip tests in `verify_render_strip.mjs`:
+**A caveat may not be folded away from a claim that stays visible.** The
+converse is fine — `LeftoverRow` puts its projection and the assumption behind
+one summary, so neither can be met without the other.
 
-- **`.stats` is a wrapping flex row whose items grow, never a fixed-column
-  grid.** `auto-fit` columns hold their width, so a card count that does not
-  divide by the column count leaves the tail of the last row empty — a 5-up row
-  plus one orphan. With `flex-grow` the last row's cards widen to fill it, so a
-  row is always full at every width.
-- **The charted card takes a row of its own** (`.stat.wide { flex: 1 1 100% }`)
-  and is rendered **last**. Cards in a row are `align-items: stretch`, so a
-  card twice its neighbours' height would stretch every tile beside it to
-  match — a stat tile with 120px of nothing under its label. Being last also
-  keeps the tiles in one uninterrupted run.
-- **Every card is gated on its own payload, never on what the reader typed.**
-  The average-wage card was once gated on `salary > 0` although nothing
-  on it is personal, which made "the country at a glance" change shape — and
-  gave the strip a card count (5 or 6) that no layout can be tuned for.
-
-Each card is `value → label → (chart) → source`, with `.ss` taking the slack
-(`margin-top: auto`) so the source captions line up across a row. Extra footer
-lines stack **inside** that one `.ss`: three sibling `.ss` blocks meant three
-rules and three paddings, which is what made the median-pay card twice the
-height of its neighbours.
-
-### Three cards, and the order a phone reads them in
-
-The grid holds `PayField`, `InputsCard` and `ResultsCard`, and the DOM order in
-`App.svelte` is the **phone's** order: ask, answer, refine.
-
-That is what the split is for. Below the breakpoint the results card is placed
-ahead of the inputs — the payoff should not sit under thirteen basket sliders —
-and with net pay inside the inputs card that put the one field every figure on
-the page is priced off **2,969px down a 6,670px page**, five screens past the
-figures computed from it. A reader who wanted to answer the page's one question
-had to scroll past every answer to find where to put it. Lifting that single
-field into its own card puts it 449px in, above the fold on a 664px phone, with
-the top of the results card visible under it.
-
-Three things hold the arrangement up, each of which was a defect first:
-
-- **Every rule names its card** — `.m-pay` / `.m-inputs` / `.m-results`, never
-  `:first-child` or `:nth-child(2)`. A positional selector keeps matching after
-  a card is inserted and silently means a different one, which would have moved
-  the field rhythm and the results card's flex column onto whichever card
-  happened to be first. Naming them is what makes the DOM order free to serve
-  the reader instead of the stylesheet.
-- **The left column is a real element** (`.m-col`), not two grid rows. Two rows
-  with the results card spanning both looks equivalent and is not: the spanning
-  card is the tallest thing in the grid, so it sizes the rows, and
-  `align-items: start` then parks each input card at the top of a row far
-  taller than it — a 28px hole opens between two cards drawn to look like one.
-  Below the breakpoint `.m-col` becomes `display: contents`, so its children
-  become grid items and `order` can put the results between them. One DOM
-  order, both layouts, and no second copy of the pay field to keep in step.
-- **The seam is closed on a wide screen.** `.m-pay` drops its bottom border and
-  its lower radius so the two read as one card with a rule between its
-  sections. Without it, a split made for the phone's sake would be a visible
-  change to a desktop layout that had nothing wrong with it.
-
-**The breakpoint is 820px, not 880.** An iPad in portrait is 820 CSS px and was
-taking the phone stack, which put its salary field 2,465px down a screen with
-room for both columns side by side. Two columns hold their shape to about
-800px; below that the basket sliders and their labels start colliding.
-`a_portrait_tablet_gets_two_columns_not_the_phone_stack` checks both sides of
-the boundary, and `a_phone_is_asked_before_it_is_told` asserts the ordering
-rather than any pixel figure — the numbers above move with every copy edit, the
-sequence must not.
-
-### Three tiers, and the one thing that may never move down one
-
-The results card holds a headline figure, a plain answer and eight receipt rows,
-and readers reported the whole of it as "super hard" — not wrong and not
-missing anything, a wall of small sentences and figures. So each row is tiered,
-and the tiers are a contract rather than a layout preference:
-
-| Tier | What is in it | Where it lives |
-|---|---|---|
-| 1, always visible | the figure, its label, **one** plain sentence of what it means for this reader, **its source caption, its `as_of` and its verify link**, and any caveat the claim cannot stand without | the row itself |
-| 2, one tap | the derivation, the per-earner breakdown, a second finding the reader has to want before the answer is worth reading, the reason a curve bends | a `<details class="rr-more">` with `summary.disclose` (`disclosure.css`) |
-| 3, one tap, page level | the method, the sources table, the explainer | `MethodDrawer`, `DataPanel`, `ExplainerBand` |
-
-**Prose may move down a tier. A source caption, an `as_of` date and a verify
-link may not.** Most of the small grey text on this page is `.rr-note.ss`
-captions and `.vlink` arrows, so folding "the small grey text" is the obvious
-density move and it is the one
-[`principles.md`](./principles.md) §"Publish the method" forbids in bold: a
-caption a reader has to go looking for has been degraded as surely as one that
-was deleted, and the difference is invisible in a diff that only adds a
-`<details>`. `no source caption or verify link is folded out of view` in
-`verify_render_results.mjs` is what makes it visible.
-
-**A caveat may not be folded away from a claim that stays visible**, and the
-converse is fine: `LeftoverRow` puts the one-year projection and its P5
-assumption behind the same summary, so neither can be met without the other.
-The instance that matters most is the ladder, whose caveat is the longest
-paragraph on the card and therefore the most tempting thing on it to fold —
-over a second-person ranking of the reader against their neighbours. That pair
-has its own test.
-
-The receipt rows are near their floor under that rule. What the tiering bought
-is where the answers land rather than how tall the page is: on a 390px phone
-with a salary and a raise entered, the last of the four things a reader arrives
-asking moved from 2,315px to 1,476px — 2.7 screens to 1.7.
-
-### The two bars carry the figures; the verdict under them carries the words
-
-Density on this card has two moves that look alike and are not. **Folding a
-figure out of the default view is not ours to decide** — the tax-wedge chart and
-the comparison bars stay open for that reason. **Saying the same figure twice on
-one screen is a different thing**, and the pair of comparison bars is where it
-shows: the bars state the reader's rate and the average, labelled, to one
-decimal, over the period their caption names, and `barCeiling` draws them
-against a shared scale so the two can be compared by length. A paragraph
-directly beneath that reprints both rates puts the same pair 20px apart, and a
-reader who meets a number twice reads the second copy looking for the difference
-from the first.
-
-So `.m-verdict` says what the bars cannot: which rate is bigger, and whether the
-gap is worth calling one — `nearOfficial`'s ±0.8 pp dead zone at the one-year
-anchor, wider at the others. Three sentences, no figure. `the verdict names the
-comparison in words, over bars that keep both figures` in
-`verify_render_results.mjs`
-holds both halves, because they pull against each other: it asserts each bar
-still states a rate to one decimal AND that the sentence beneath them carries no
-digit.
-
-### The plain answer, and why it is a component rather than a paragraph
-
-`ResultsAnswer` sits between the headline figure and the ranked table: after the
-number it is about, before the working that explains it. Readers arrive asking
-whether their pay is keeping up, where that puts them, and what is getting
-dearer or cheaper, and the card answered all three — in the pocket row, the
-ladder row and the ranked list, each under its own derivation, two and three
-screens down.
-
-It introduces no arithmetic. `view/results.js#answerLine` decides which of the three can
-honestly be stated and in what state, and the component picks the words. Three
-things about it are load-bearing:
-
-- **Two of the three clauses refuse to compute**, and the refusals are the
-  point. `stand` needs a typed salary rather than merely a rank — a visitor on
-  €2,400 told on arrival that they out-earn a third of the country has been told
-  something false about themselves before typing a character, which is the rule
-  `PercentileRow` keeps in its own corner. The answer block sits a screen above
-  that row, so a summary that outran it would move the defect up the page rather
-  than remove it.
-- **The pay verdict comes from `view/results.js#pocketVerdictState`, which `PocketRow`
-  also reads.** Two ladders of thresholds a screen apart drift, and silently:
-  the summary calling a raise ahead while the row below calls it level, over one
-  number that neither of them moved. The row keeps all seven states because it
-  prints them beside a signed figure; the answer block collapses the three
-  near-zero cases, because up there is nothing to contradict.
-- **It is outside the headline's `aria-live` region**, for the same reason the
-  region is scoped at all: four sentences inside it are four sentences re-read
-  on every tick of a slider that moves none of them.
-
-`answerLine` reads the reader's OWN basket rows for the mover clause, and both
-directions are sign-gated — a basket where nothing fell must not be handed its
-least-bad row as a saving.
-
-### The ranked table folds where the column is narrow
-
-Eight rows is around 1,000px, and on a phone that is a screen and a half of
-table between the headline figure and «в джоба» — the row that answers whether
-the reader's raise beat their prices, which is the question the site is named
-for. A narrow list draws five, which carry 3.9 of the default basket's 5.4
-points, and `покажи всички 13 групи` unfolds the rest.
-
-Two properties make the cap safe, and neither is optional:
-
-- `view/results.js#rankedSplit` folds whatever is not drawn into a remainder, so
-  Σshown + restPp === π **at any limit**. The cap changes a number in a call,
-  not the arithmetic. Capping a list that `rankLead` promises adds up, without
-  rendering the tail, is the defect `verify_view_results.mjs` exists to catch.
-- The limit comes from the list's **own measured width**
-  (`bind:clientWidth`), not from a `matchMedia` on 820px. A second copy of the
-  layout breakpoint in a file that cannot see the first is a drift waiting to
-  happen, and what actually decides whether eight rows are readable is the
-  width this list got — which is also why a 7fr column on a 834px tablet folds
-  too. Before the first measurement the width is 0 and the desktop cap applies,
-  erring towards showing more.
-
-### The card says whose salary it is computing with
-
-The €900 default is a worked example — a page whose figures are all em dashes
-until someone types demonstrates nothing — and the hint under the input says so
-in `COPY.medianDefault`. That arrangement holds on a desktop, where the two are
-200px apart, and breaks on a phone: `card.css` orders the results card **first**
-below 880px, which puts the input ~3,100px under «≈ €46 повече всеки месец ти
-струва същият живот отпреди година». Four screens is not a caveat.
-
-So `COPY.startingSalary` repeats it where the figures are, under the headline
-block, until `Calculator#salaryDirty` flips on the first keystroke in the salary
-field — the same shape as `raiseDirty` next to it. It interpolates the live
-`salary` rather than spelling out 900, so the sentence cannot drift from the
-default it describes, and it carries the page's only route from the results back
-to the inputs: `ResultsSummary#focusSalary`, which focuses before it scrolls
-because focus is what raises the phone keyboard.
-
-**`PercentileRow` does not take that deal, and the difference is what the
-sentence claims.** A euro figure is arithmetic about prices scaled by a salary,
-and naming the salary makes it honest. «Изпреварваш 34% от работещите в
-страната»
-is a ranking *of the reader* against their neighbours in the second person, and
-a visitor who earns €2,400 has been told something false about themselves before
-touching the page. No caveat rescues that, so the row waits — corner figure and
-sentence together, because a bare «пред 34%» over a prompt asking for a salary is
-the claim with its caveat removed. It is the treatment `PocketRow` already gives
-an empty raise.
-
-`PayField` applies the same rule to the payslip and the област comparator: the
-gross, the deductions and «твоята нетна заплата е 39% под средната» are facts
-about whoever earns the placeholder until the reader replaces it. Withholding
-them also keeps the first paint short enough that the headline figure stays on
-the first screen of a phone with the pay field above it.
-
-The render tests that hold all of this are
-`an_untouched_salary_is_named_where_its_figures_are…`,
-`the_route_from_the_headline_to_the_salary_field_lands_on_it`,
-`the_ladder_row_ranks_nobody_who_has_not_typed_a_salary`,
-`the_placeholders_payslip_and_comparator_wait_for_a_salary` and
-`every_verify_link_is_drawn_the_same_in_both_cards`.
-
-### The sector card compares against an average, and has to say so
-
-Under the област comparator sits a picker of НСИ's 19 NACE Rev 2 sections and,
-once one is chosen, the reader's distance from that section's published average
-— net against net, `view/payroll.js#sectorComparison` over `mirror.js#wageGap`. The
-figures are small; the copy around them is most of the work, and every line of
-it is answering something the number would otherwise imply on its own.
-
-**"Below your sector's average" is not "below the middle", and a disclaimer
-does not fix it.** Earnings are right-skewed, so an average sits above the
-median — on the shipped SES shape the mean lands at the 66th rung and the median
-earner takes 74% of it. Someone told they are 18% below their sector's average
-hears that they are paid less than most people in it, and may be paid more.
-A negation in small type does not land, so the correction is carried as a figure
-the reader can use instead: `COPY.sectorAverageFlatters` prints both published
-SES figures and the rung, marking which of them is modelled.
-**`COPY.sectorNoRank` says the plain thing separately** — nobody publishes how
-pay is spread inside a Bulgarian sector — because the absence is the reason the
-card is shaped this way and a reader is owed it whether or not they read the
-calibration.
-
-**The sector table is the country's; the line three rows above it is one
-област's.** `Labour_1.1.2.1` covers all of Bulgaria, so stacking the two
-comparisons silently charges the gap between the reader's own област and the
-country to their industry — a builder in София reads «144% над средната за
-„Строителство“» and most of that is the city. So `COPY.sectorNationwide` puts НСИ's all-activities cell
-(1407 € gross at 2026-Q1) on screen beside the section's, and the reader does
-the comparing. **Neither figure is divided by the other**: the ratio would be
-our arithmetic under НСИ's name, which is the thing `docs/legal.md` §НСИ and
-gate 7 both exist to prevent.
-
-**The picker leads with the words for the work; every claim keeps НСИ's name.**
-A classification title is written for the classifier, not for the person being
-classified: «Създаване и разпространение на информация и творчески продукти;
-далекосъобщения» is 78 characters that do not contain the word for anybody's
-job, and a developer scanning nineteen of those does not stop on it. The word
-they are looking for sits two levels down in division 62, which the picker never
-shows. So each option reads «ИТ и софтуер, телекоми, издателства, кино и ТВ —
-Създаване и разпространение…», hint first because a phone truncates the tail of
-a closed select and the front is the part used to find a line.
-
-`content.js#SECTOR_HINTS` holds them, keyed by the payload's own `en_name`, and
-**every item in a hint is a division inside that section** off НСИ's КИД-2008
-structure — «кол центрове» is 82, «зъболекари» is 86, «кино и ТВ» is 59 and 60.
-That is what keeps a hint from becoming a claim. «ИТ» alone for J would be one:
-the section is also publishing, film, radio and telecoms, and its average is
-diluted across all of them, so naming the breadth tells a reader what the figure
-is an average *of*. An empty hint is a decision — `Строителство` and
-`Образование` say what they are — and a section with no entry at all is a red
-test, so an НСИ rename surfaces instead of quietly rendering a bare title.
-
-`sectorOptions` composes in one direction and has no branch returning a hint
-alone, so an option cannot name a section something НСИ did not call it; the
-test asserts every option still *ends with* their string, character for
-character, in both languages.
-
-**Both labels are НСИ's own, and the verify link follows the label.** The two
-language editions of the workbook are read precisely so the section names are
-never ours — «Създаване и разпространение на информация и творчески продукти;
-далекосъобщения» is section J, and nobody reads that as «ИТ», where our
-translation of "Information and communication" invites exactly that. So
-`sourceUrl` and `sourceUrlBg` are separate: a Bulgarian reader sent to the
-English workbook cannot find the row they just read, and a verify link that
-demonstrates nothing is worse than none (P3, P9).
-
-**The gap reaches no share surface.** It inverts harder than the ladder position
-already on `principles.md`'s closed list — that one is bounded by a rung's
-width, this divides by one of the averages published in `sector_salary.json`,
-so "18% below Information and communication" is one net wage to the euro, and
-naming the sector has already narrowed the sender to one of the nineteen
-sections the picker offers.
-`sharePayload` takes no sector, and `sharePayload_cannot_be_handed_a_salary`
-in `verify_view_share.mjs` pins its whole parameter list, so it cannot acquire
-one without a red test.
-
-### More than one income, and which figures know it
-
-`PayField` holds a **list** of incomes and starts with one, so a single earner
-meets a card that has not changed: one field, one payslip, and no control
-describing a situation they are not in. There is no "household mode" flag —
-`earners.length` is the only state, because a checkbox would be a second source
-of truth able to say "household, one income", which means nothing and would have
-to be handled everywhere.
-
-Adding an income seeds it **empty**, not with the €900 placeholder. A prefilled
-second field adds €900 to the rent burden, the mortgage cap and the basket the
-moment it appears — figures the reader never typed, all of them moving in the
-flattering direction. `an_empty_second_income_changes_nothing_until_it_is_answered`
-holds it.
-
-Below the fields, a figure appears **once per person** where it describes a
-person and **once** where it describes money. Per person: the gross and its
-payslip, the position on the ladder, the comparison with НСИ's област average,
-and the marker on the wedge curve. Once: the household's take-home, the basket,
-rent, and everything about a home. [`math.md`](./math.md) §"A household is
-several contracts" carries the table and the reason.
-
-**One raise per income**, and they live in `InputsCard` rather than beside the
-pay fields — the raise is optional, and the pay card is ordered first on a phone
-precisely so the question it asks stays short. The combined figure is weighted
-by what each earner was paid *before* ([`math.md`](./math.md)), so it is not one
-of the numbers the reader typed and not the average of them either; `PocketRow`
-prints the parts underneath so it can be checked. Until every income has
-answered, the row names the ones still missing and states nothing.
-
-Two consequences worth knowing before editing a sentence here:
-
-- **The second person has to go** once there are several earners. «Изпреварваш
-  61%» addressed to a household is a claim about a person who does not exist, so
-  the ladder switches to a line per income (`COPY.pctEarnerLine`) and states the
-  median once underneath.
-- **The corner figure becomes a range.** The row cannot choose which earner
-  speaks for the household, and picking the first makes an arbitrary one do it.
-  «пред 34-62%» is true about where the people in this household sit; any single
-  number in that corner is not.
-
-### The pocket row says which state it is in
-
-Seven states, seven sentences (`COPY.pocketOk` / `pocketBad` / `pocketZero` /
-`pocketNearUp` / `pocketNearDn` / `pocketNone` / `pocketCut`), chosen once in
-`pocketVerdict`. A ±1 pp dead zone is right and stays, but **«точно» must not
-be said inside it** — «увеличението точно покрива твоите цени» printed beside a
-figure reading «−0,3%» is a false sentence over correct arithmetic. «Точно» is
-bound to `pocket === 0`, the band says which side of the line it is on, and
-no-raise and pay-cut get their own
-sentence instead of being told their raise was eaten. The verdict is followed
-by the figure in **euro** (`pocketPerMonth`), dropped when it rounds to zero.
-
-**Any percentage that can go negative goes through `signedPct`.** `+{fmt(x)}%`
-printed «+−1,2%», and it was reachable three ways: a pay cut is typeable, and π
-follows the sliders onto groups whose published annual rate is below zero, which
-also hit the card's own headline. The template never writes a `+` next to a
-formatted number; a hardcoded `−` is still fine for payslip deductions, which
-are magnitudes that only ever come off. `no_percentage_is_printed_with_a_sign_the_template_wrote_itself`,
-`the_pocket_row_has_a_sentence_for_every_state_it_can_be_in` and
-`the_stand_still_target_does_not_claim_a_rise_that_did_not_happen` hold
-all three.
+`verify_render_results.mjs` and `verify_render_strip.mjs` hold all three, as
+rules over the whole card rather than per row.
 
 ### The two charts
 
-Both are inline SVG — no chart library and no third-party script, so the CSP the
-privacy notice depends on stays intact — and both had the same class of bug: a
-mark the reader could not actually see.
-
-- **The tax wedge.** Two series, and below the ceiling they are *the same
-  number*. Drawn as two lines, the marginal one spent the first third of the
-  plot hidden underneath the effective one, while the legend named it — so the
-  key pointed at something that was not there. The marginal rate is therefore
-  an **area** closed to the baseline and the effective rate a **line** on top
-  of it: where they coincide the line is the top of the wash, and above the
-  ceiling a gap opens between them, which is the whole finding. One hue
-  (`--erode`, the palette's colour for money leaving you), told apart by form —
-  which also survives colour-blindness and greyscale, as two hues at this size
-  would not. Every key swatch is the mark it stands for, in that mark's own
-  token; a series key is a filled block, and only the ceiling's key is a rule.
-- **The €/m² sparkline** is drawn at its **measured pixel width**
-  (`bind:clientWidth={histW}`, viewBox `0 0 {histW} {h}`). A fixed 110×22 box
-  at `width: 100%` with `preserveAspectRatio="none"` scales the two axes
-  independently: the stroke thins out and every round marker renders as an
-  ellipse. `preserveAspectRatio="none"` anywhere on this page is the tell that
-  this has been undone, and a test says so.
-
-**A third rule, and `/market/`'s six plots are what found it: no axis text goes
-inside a scaled box.** An SVG sized `width: 100%` against a fixed `viewBox`
-scales its whole coordinate system, and text is part of it. At a 360px viewport
-those plots rendered at 0.56 of the width they were declared in, so an 11px axis
-label reached the reader at **6.2px** — measured in Chromium, on six charts at
-once, on the page whose smallest type is the thing that makes every figure above
-it checkable. The padding those labels needed came out of the same box, so the
-plot itself was 83px tall on the device most readers arrive on.
-
-So the box holds marks and the labels are HTML beside it, in a two-column grid
-(`.plot` in `Market.svelte`): the gutter is `auto`, so it is as wide as the
-longest tick and no wider, and each tick carries its own height as a percentage
-— which the grid can honour because it stretches that cell to exactly the height
-the SVG resolved to. The labels are then set in the page's own type scale and
-are the same size at 360px as at 1440.
-
-Two things this constrains. The ticks are moved with `position: relative` in a
-single stacked grid area rather than taken out of flow: an absolutely positioned
-child contributes nothing to its parent's intrinsic width, so the gutter
-measures zero and every label hangs off the left edge of the page. And the SVG
-is `overflow: visible`, because a line's first and last point sit ON the left
-and right edges and the zero rule on the bottom one. `verify_render_market.mjs`
-walks the built page at 360px and fails a label rendering below `--fs-micro`, a
-plot under 110px tall, a label starting left of zero, or a page that scrolls
-sideways.
-
-**The drawer explains; it does not derive.** Each of its four items is a short
-plain sentence and a worked example in round numbers — no algebra, no `<code>`,
-no nested `<details>`. A «виж формулата» toggle under every item puts four
-maths prompts between the reader and the explanation of their own number, and
-the reader this page is written for does not audit our arithmetic — being right
-is our side of that deal.
-
-**The method is still published, once.** All four formulas live in a single
-closed `<details class="fx">` at the end of the explainer band, labelled from
-`COPY.explainMath`. That is the §9.2 obligation — the method is public and every
-figure stays re-derivable by hand — and it is met by publishing it, not by
-putting it in the way. The explainer band answers the same questions at page
-level and quotes **no live figure as a literal**: a hardcoded "5,2%" in prose
-contradicts the strip the moment the data refreshes.
-`the_results_drawer_explains_in_words_and_carries_no_algebra`,
-`the_method_stays_published_once_at_the_end_of_the_explainer` and
-`the_explainer_writes_no_live_figure_into_its_prose` hold the three halves.
-
-**Published means enterable.** Every formula in that block is preceded, in both
-language spans, by a sentence that reads it out loud — what the symbols do, not
-a second worked example, which is the drawer's job. The set of people who want
-to re-derive a figure by hand is wider than the set who read Σ notation
-fluently, and a block that opens on bare algebra is published at the second set
-rather than to the first. Both spans also branch on `anchor` for the same
-reason a formula is glossed at all: describing the 12-month rate and the index
-division unconditionally shows a reader on «1 година» the formula the other
-setting uses.
-`every_formula_in_the_published_method_is_read_out_loud_first_in_both_languages`
-holds it.
-
-State is `$state()` runes. The component imports formulas from `$lib/mirror`,
-derived values from `$lib/view` and copy from `$lib/content`; it holds no domain
-logic, and its `$derived(...)` expressions are one-line calls into those
-modules.
-
-Accessibility notes that are easy to undo by accident:
-
-- **`aria-live` is scoped to the headline block**, not the whole results card —
-  a card-wide live region re-announces ~50 numbers on every slider tick. The
-  live region is the `.r-big` + label group, with `aria-atomic="true"`.
-- Both language variants (`.l-bg` / `.l-en`) are in the DOM and hidden with
-  `display:none` in `tokens.css`, which screen readers skip correctly. Do not
-  switch that to `visibility` or opacity.
-- Every input, slider and toggle carries an `aria-label`; the drill-down
-  disclosure carries `aria-expanded`; decorative bars are `aria-hidden`.
-
-Two behaviours that surprise people reading the code:
-
-- **The basket's € column rebases** to `(salary − mortgage − rent) / Σw` when
-  either housing payment is active — same percentages, smaller absolute € per
-  group — and a hint under the legend says so in both languages.
-- **The home row shows the current salary-stretch, never a projection.** There
-  is no BG official nominal-wage series, so a projection could not be made
-  honestly.
+The tax wedge and the basket comparison are **inline SVG with no library**, and
+that is a standing answer rather than a default: nothing third-party reaches the
+reader (`AGENTS.md` §Boundaries), and a chart library would be the first thing
+to. `plot.js` holds the axis, the ticks and the coordinate mapping — the
+arithmetic a component may not keep, because a tick value is digits a reader
+reads off an axis. `verify_plot.mjs` is its suite; `WedgeChart.svelte` carries
+why each mark is placed where it is.
 
 ## `src/lib/tokens.css` — palette, type, contrast floor
 

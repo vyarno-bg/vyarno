@@ -172,6 +172,9 @@ it as a boolean today.
 | `city_price.json` | Per-city €/m² for the 27 cities имот.bg cover: each city's district count, summary and its OWN year window, chosen from how far back имот.bg's coverage of it supports a comparison. Keyed by the same `code`. No per-district dict — nothing read it |
 | `mortgage.json` (17 KB) | Two rate tiers (`new_business` with nested `aprc`, `outstanding_stock`), the БНБ↔ЕЦБ `cross_check`, and `lending_limits` |
 | `unemployment.json` | BG unemployment — **monthly**, seasonally adjusted, 2020-01 onward (`une_rt_m`, not the annual `une_rt_a`) |
+| `house_market.json` (40 KB) | The quarterly transaction market: `deals` and `value` (how many dwellings households bought and what they paid), `avg_deal_eur`, and `price_index` beside `price_index_real` — the nominal series and the same series deflated, so a rise in prices is never reported as a rise in what a home costs in real terms |
+| `house_market_structure.json` | `tenure`, `census_dwellings` and `housing_cost_overburden` — what the country owns rather than rents, the census dwelling stock, and the share spending over 40% of income on housing. Annual, so it moves on a different clock from the quarterly market above and carries its own `ref_period` |
+| `nsi_housing.json` (20 KB) | НСИ's own housing series: `national_price_index_yoy`, `city_price_index_yoy` for the six cities over 120,000, and `city_deals_yoy`. **Percentages, never a level** — no НСИ city series carries €/m², which is why `/market/` compares change against change and the € level comes from `city_price.json` |
 
 Field-level detail sits beside the connector that produces it, in
 [`data-sources.md`](./data-sources.md). The load-bearing schema rule is in

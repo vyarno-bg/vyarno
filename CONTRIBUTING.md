@@ -120,7 +120,7 @@ enforces the first half.
 ## What gets merged
 
 - **Every change passes the validation gates.** `docs/validation-gates.md`
-  explains the six of them. They exist because a silently wrong number is the
+  explains the eight of them. They exist because a silently wrong number is the
   worst failure this project has.
 - **A number-changing PR says which number and why**, with the upstream link.
 - **New copy is written in both languages.** A missing string renders as a

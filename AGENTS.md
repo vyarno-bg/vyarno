@@ -134,7 +134,12 @@ checklist: `docs/data-sources.md` §"Checklist for adding a connector".
 
 **Changing a formula.** `docs/math.md` first — it is the provenance contract —
 then `site/src/lib/mirror.js`, then a case in
-`site/scripts/verify_mirror_math.mjs`. A chart's geometry is not a formula:
+`site/scripts/verify_mirror_math.mjs` — or in `verify_net_salary.mjs` where the
+formula is payroll. Net salary is the one figure with a suite of its own, and
+the split is not cosmetic: the property test that a reported gross pays back the
+net it was asked for lives there, so a payroll change landing in
+`verify_mirror_math.mjs` is a change nothing round-trips. A chart's geometry is
+not a formula:
 `site/src/lib/plot.js` holds the axis, the ticks and the coordinate mapping,
 paired with `verify_plot.mjs`.
 

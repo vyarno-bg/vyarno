@@ -488,7 +488,10 @@ payslip. Everything that compares the user against a published wage needs the
 `mirror.js`.
 
 Forward (`bgNetSalary`), for gross *G*, employee rate *R* = 13.78%, flat tax
-*T* = 10%, insurance ceiling *C* = €2,111.64:
+*T* = 10%, insurance ceiling *C* = €2,300
+(`payroll.json#max_insurable_income_eur`, which is where the figure below has to
+be read back from — a ceiling written here and nowhere else goes stale one
+statute later while the worked example beside it stays right):
 
 ```
 insurance = min(G, C) × R          ← the CEILING applies here

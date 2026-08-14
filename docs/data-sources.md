@@ -65,7 +65,7 @@ Every entry carries a provenance tag:
 | `prc_hicp_ctr` / `prc_hicp_ctrb` as a BG cross-check | WRONG | Euro-area aggregate cubes: `geo=BG` and `geo=DE` both return an empty `value` map with HTTP 200, while `geo=EA` returns tens of thousands of observations. They cannot cross-check a Bulgarian figure. |
 | A pay **distribution** by sector for BG (any publisher) | WRONG | Probed 2026-08-06. `earn_ses_monthly` with `nace_r2=J&geo=BG` returns HTTP 200, `"value": {}`, `nace_r2` size **0** — section J is not a category in the cube. Its five `nace_r2` categories for BG are all broad groupings and none is a NACE section: `B-S_X_O` (whole economy), `B-N`, `B-F`, `G-N`, `P-S`. At the 2022 vintage `salary_dist.json` reads, only `B-S_X_O` carries any values; the other four stop at 2018. **So no section-level median, decile or spread exists at any vintage.** НСИ's `Labour_1.1.2.1` publishes a sector **average** and nothing else, which is why the sector card compares against an average and says so. |
 | Per-decile HBS weights | WRONG | Eurostat publishes BG household budget structure by **quintile** (`hbs_str_t223`), not decile, in ECOICOP ver.1, latest vintage 2020. |
-| An offered-rate ("best offer") mortgage tier | WRONG | Rate-comparison sites and per-bank pages publish advertised promotional "from" rates: conditional on terms they do not state, editorially curated, with no methodology and no revision policy. Nothing in that class can carry the five properties in [`README.md`](../README.md) §"Who this is for", so the class is excluded rather than any particular site being judged. ЕЦБ MIR **APRC** answers the same question officially — and comes out higher. `test_mortgage.py` asserts the `indicative_offer` key is absent from the published JSON. |
+| An offered-rate ("best offer") mortgage tier | WRONG | Rate-comparison sites and per-bank pages publish advertised promotional "from" rates: conditional on terms they do not state, editorially curated, with no methodology and no revision policy. Nothing in that class can carry the five properties in [`README.md`](./README.md) §"Who this is for", so the class is excluded rather than any particular site being judged. ЕЦБ MIR **APRC** answers the same question officially — and comes out higher. `test_mortgage.py` asserts the `indicative_offer` key is absent from the published JSON. |
 | `prc_hpi_q` **as a €/m² level** | VERIFIED, unusable for a level | A transaction-based **index** and an annual rate, with no absolute €/m² at any geography. Both are published — `house_market.json` carries them — and neither can price a square metre, which is why the home block's level still comes from имот.bg. |
 | A **transaction** price per m² for any Bulgarian city, from anyone | WRONG | Probed 2026-08-12. Every НСИ city series is an index or a percentage (`HPI_2.4` 2025=100, `HPI_2.6` y/y, `HSI_2.4.5` y/y), and their own лв./кв.м survey «Пазарни цени на жилища» ran «I тримесечие 1993 - II тримесечие 2014» and was discontinued. So `/market/` compares **change against change** — имот.bg's asking-price movement beside НСИ's transaction-price movement, each labelled as the different measurement it is — and never a € level against a € level. The page says so out loud (P11). |
 | Average city rents — `prc_colc_rents` | WRONG | Probed 2026-08-12. `geo` dimension size **0** for Bulgaria: it is the EU-staff correction-coefficient survey and covers no Bulgarian city. |
@@ -1760,6 +1760,18 @@ In one commit, or it does not ship:
    §"the footer credits every upstream the pipeline pulls from" holds the list
    in both languages, and several of those publishers require the credit as a
    licence condition
+8. **A row in `site/src/lib/payloads.js`** — the manifest is what the site
+   fetches and what the freshness panel judges each payload's age against. Items
+   1–7 leave a file that is committed, gated and attributed, and that no page
+   reads; `verify_data_contracts.mjs` fails on exactly that gap rather than
+   letting it ship quietly
+9. The `view/` module that reads it, and its copy in **both** languages — a
+   missing string renders as a blank line, not a fallback
+   ([`site.md`](./site.md) §"The five-layer split")
+
+Items 8 and 9 are where this list crosses out of `pipeline/`, and they are the
+ones a connector-shaped change forgets: everything up to 7 can be done, run and
+reviewed without the site being opened once.
 
 ## Cross-references
 
@@ -1768,3 +1780,4 @@ In one commit, or it does not ship:
 - [`validation-gates.md`](./validation-gates.md) — how drift is caught
 - [`legal.md`](./legal.md) — what each publisher permits
 - [`local-development.md`](./local-development.md) — running the pipeline against live upstreams
+- [`site.md`](./site.md) §"`src/lib/payloads.js` — the manifest" — what a payload has to declare before a page can read it
