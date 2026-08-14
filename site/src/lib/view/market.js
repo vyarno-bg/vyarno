@@ -857,14 +857,16 @@ export const RANGE_MIN_POINTS = 5;
  */
 const RANGE_ROWS = Object.freeze(
   [
-    { key: "deals", format: "count", href: "#volume" },
-    // **The count's own row is placed by a LEVEL, and a level of this series
-    // carries the calendar in it.** Transactions have a season, so a first
-    // quarter sits low inside a record whose highest readings are fourth
-    // quarters — the marker moves with the month of the year and reads as news
-    // about the market. The change against the same quarter a year earlier has
-    // the season divided out of it by construction, so this row places what the
-    // level row cannot: whether a quarter's movement is an ordinary one.
+    // **The count is placed by its year-on-year change and never by its level,
+    // because a level of this series carries the calendar in it.** Transactions
+    // have a season: the record's highest readings are all fourth quarters, so
+    // a first-quarter count sits in the bottom quarter of that record whatever
+    // the market is doing — 16 227 dwellings placed at 26% of a track running
+    // 11 669 to 29 130, against 55% of the range the first quarters alone
+    // occupy. A dot near the left-hand end reads as news, and the news it
+    // reports is the month of the year. The change against the same quarter a
+    // year earlier has the season divided out of it by construction, which is
+    // the same repair the tint on §volume's chart makes for the picture.
     //
     // Signed, for the reason the price rate is: every reading of it is a
     // direction, and «18,5%» without its sign is two different quarters.
@@ -883,10 +885,10 @@ const RANGE_ROWS = Object.freeze(
 /**
  * **Where today's reading sits inside each published series' own range.**
  *
- * The page answers four questions at the top and then spends six sections and
- * eight charts on the working, and a reader who wants the whole picture at once
- * has to read all of it. This is that picture: one line per series, each saying
- * how far along its own record the newest reading is — and nothing else.
+ * The page answers four questions at the top and then spends every section
+ * below on the working, and a reader who wants the whole picture at once has to
+ * read all of it. This is that picture: one line per series, each saying how
+ * far along its own record the newest reading is — and nothing else.
  *
  * **IT POSITIONS AND IT DOES NOT SCORE.** There is no weighting, no total, and
  * no composite, and that is a constraint rather than an omission. Prices,
@@ -906,7 +908,7 @@ const RANGE_ROWS = Object.freeze(
  * publisher has actually printed, which is what "inside its own range" means.
  *
  * **A series whose VALUE does not read on its own does not get a row**, whatever
- * else recommends it. Every figure in a row here stands alone — a count, «×2,7»,
+ * else recommends it. Every figure in a row here stands alone — «×2,7»,
  * «+14,8%», «6,9%» — so the position beside it adds a second fact. An index
  * defined against a reference the row has nowhere to print reads as a verdict
  * instead: a dot at one end of a labelled line, with the level it is measured

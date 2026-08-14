@@ -405,7 +405,6 @@
 
   /** A strip row's label. Words, so they live in the component's copy file. */
   const RANGE_LABEL = {
-    deals: COPY.mktRangeDeals,
     dealsChange: COPY.mktRangeDealsChange,
     index: COPY.mktRangeIndex,
     indexReal: COPY.mktRangeIndexReal,
@@ -996,7 +995,7 @@
           `средни за цялата страна — не сметката на конкретен купувач в конкретен град.`,
         en:
           `The multiples and the years figure are our arithmetic, both from published numbers. ` +
-          `The wage in them is the one before tax and contributions, as НСИ publish it, and both ` +
+          `The wage in them is the one before tax and contributions, as NSI publish it, and both ` +
           `it and the dwelling are country-wide averages — not any particular buyer's ` +
           `arithmetic in any particular city.`,
       },
@@ -1014,9 +1013,9 @@
         `сметка между две институции.`,
       en:
         `The multiple is Eurostat's index divided by its ${reading.baseYear} level. The years ` +
-        `figure is Eurostat's average transaction divided by twelve of НСИ's published average ` +
+        `figure is Eurostat's average transaction divided by twelve of NSI's published average ` +
         `monthly wages across all activities. The two files meet only here, in your browser, ` +
-        `which is what keeps each of them one publisher's data. НСИ's table measures employees ` +
+        `which is what keeps each of them one publisher's data. NSI's table measures employees ` +
         `under a labour contract, so the self-employed and company owners are not in that ` +
         `average. Take-home pay depends on the payroll table of the year that computed it, ` +
         `which would put a third body's law inside a two-publisher ratio.`,
@@ -1175,17 +1174,24 @@
     COPY.mktHowLinks
   )}
 
+  <!-- The order the sections are in, and the order is an editorial decision
+       rather than an inheritance. A reader arrives asking what a home costs, so
+       the page answers that first — in the published rate and the index, then
+       in euros — and turns to how many changed hands after. The two questions
+       meet in the pair of panels at the foot of §volume, which is why that pair
+       is drawn there and not sooner: it needs a reader who has already met both
+       of its halves. -->
   <nav class="toc" aria-label="contents">
-    <a href="#volume"
-      ><span class="l-bg">колко се търгува</span><span class="l-en">how much changes hands</span></a
-    >
     <a href="#prices"
       ><span class="l-bg">колко струва</span><span class="l-en">what it costs</span></a
     >
-    <a href="#cities"><span class="l-bg">по градове</span><span class="l-en">by city</span></a>
     <a href="#deal"
       ><span class="l-bg">средната сделка</span><span class="l-en">the average deal</span></a
     >
+    <a href="#volume"
+      ><span class="l-bg">колко се търгува</span><span class="l-en">how much changes hands</span></a
+    >
+    <a href="#cities"><span class="l-bg">по градове</span><span class="l-en">by city</span></a>
     <a href="#credit"
       ><span class="l-bg">кой купува с кредит</span><span class="l-en">who borrows</span></a
     >
@@ -1202,351 +1208,6 @@
   </nav>
 
   <!-- 1 ------------------------------------------------------------------ -->
-  <section id="volume">
-    <h2>
-      <span class="l-bg">Колко се търгува</span>
-      <span class="l-en">How much changes hands</span>
-    </h2>
-    <p>
-      <span class="l-bg"
-        >Евростат брои жилищата — апартаменти и къщи — които домакинствата са купили през
-        тримесечието на пазарна цена. Дарения, наследства, продажбите между роднини на занижена цена
-        и построеното за себе си остават извън броя.</span
-      >
-      <span class="l-en"
-        >Eurostat count the dwellings households bought during the quarter — flats and houses,
-        bought at a market price. Gifts, inheritances, discounted sales between relatives and
-        anything built for oneself stay outside the count.</span
-      >
-    </p>
-
-    {#if volume.deals.value}
-      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblVolume, $lang)}>
-        <table class="fig-table">
-          <thead>
-            <tr>
-              <th scope="col">{@render colHead(COPY.mktColKind, null)}</th>
-              <th scope="col" class="num">{@render colHead(COPY.mktColCount, volume.period)}</th>
-              <th scope="col" class="num">{@render colHead(COPY.mktColYoy, volume.period)}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="mark">
-              <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
-              <td class="num mono">{fmt0(volume.deals.value)}</td>
-              <td class="num mono">{pct(volume.changePct.value)}</td>
-            </tr>
-            <tr>
-              <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
-              <td class="num mono">{fmt0(volume.newBuild)}</td>
-              <td class="num mono">{pct(volume.changeNewPct)}</td>
-            </tr>
-            <tr>
-              <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
-              <td class="num mono">{fmt0(volume.existing)}</td>
-              <td class="num mono">{pct(volume.changeExistingPct)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="ss tsrc">
-        {@render srcLine(
-          COPY.srcEurostat,
-          volume.deals.sourceUrl,
-          when(volume.period),
-          volume.deals.apiUrl
-        )}
-      </p>
-
-      <!-- The volume series, which IS this section's finding. One quarter and a
-           percentage state it; the whole series shows the shape it sits in, and
-           the shape is what the year-on-year figure is a single reading of.
-
-           Columns start at zero and there is no axis minimum to set: a count
-           chart cropped to its own range makes any series look like a cliff,
-           and on this subject that is the one distortion the page cannot
-           afford. `marketVolumeSeries` offers no `min` for the same reason. -->
-      {#if volumeSeries.points.length > 4}
-        <!-- The key to the shape, ABOVE the plot it is about.
-             The explanation existed and it was underneath, inside the note on
-             how the percentage is worked out — so the loudest picture on the
-             page was met with nothing, read as a market lurching about twice a
-             year, and corrected two paragraphs later for a reader who got that
-             far. What the sentence may not do is name a quarter or claim which
-             one is weakest: the tint is drawn from the newest reading's own
-             place in the year, and it moves with the data. -->
-        <p>
-          <span class="l-bg"
-            >Стълбчетата се редуват високо-ниско всяка година, защото зимата и лятото не се търгуват
-            еднакво. Оцветените са едно и също тримесечие всяка година — и точно те се сравняват в
-            числото «спрямо година по-рано» отгоре.</span
-          >
-          <span class="l-en"
-            >The columns alternate high and low every year because winter and summer are not traded
-            alike. The tinted ones are the same quarter each year — and those are the ones the
-            "against a year earlier" figure above compares.</span
-          >
-        </p>
-        {@const volumeAxis = niceTicks(volumeSeries.min, volumeSeries.max)}
-        <figure class="chart">
-          <div class="plot">
-            {@render yAxis(
-              volumeAxis.values.map((v) => ({
-                at: tickAt(v, volumeAxis),
-                label: v === 0 ? "0" : fmt0(v),
-              }))
-            )}
-            <svg
-              class="pane"
-              viewBox="0 0 {CH_W} {CH_H}"
-              role="img"
-              aria-label={t(COPY.mktChartVolume, $lang, {
-                from: periodLong(volumeSeries.from, $lang),
-                to: periodLong(volumeSeries.to, $lang),
-                peak: fmt0(volumeSeries.peak?.value),
-                peakAt: periodLong(volumeSeries.peak?.period, $lang),
-                last: fmt0(volumeSeries.latest?.value),
-              })}
-            >
-              {@render gridlines(volumeAxis)}
-              {@render yearRules(xTicks(volumeSeries))}
-              {@render columns(volumeSeries, (v) => `${fmt0(v)}`, volumeAxis, isSameQuarter)}
-              <line
-                class="plot-axis"
-                x1="0"
-                y1={yOf(0, volumeAxis)}
-                x2={CH_W}
-                y2={yOf(0, volumeAxis)}
-              />
-            </svg>
-            {@render xYears(xTicks(volumeSeries))}
-          </div>
-          <figcaption>
-            <span class="key season"
-              ><span class="l-bg">{COPY.mktKeySeason.bg}</span><span class="l-en"
-                >{COPY.mktKeySeason.en}</span
-              ></span
-            >
-          </figcaption>
-        </figure>
-        <p class="ss tsrc">
-          {@render srcLine(
-            COPY.srcEurostat,
-            volume.deals.sourceUrl,
-            spanned(volumeSeries),
-            volume.deals.apiUrl
-          )}
-        </p>
-        {@render numbersTable(
-          countLabel(COPY.mktOpenQuarters, volumeSeries.points.length),
-          COPY.mktTblVolumeNumbers,
-          [COPY.mktColSold],
-          rowsOf(volumeSeries),
-          fmt0
-        )}
-      {/if}
-
-      {#if volume.changePct.value != null}
-        {@render ourSum(
-          {
-            bg:
-              "Промяната спрямо година по-рано е наша сметка: броят за това тримесечие срещу броя " +
-              "за същото тримесечие година по-рано. Сравняват се едни и същи тримесечия, а не " +
-              "съседни — спадът от лято към зима мери календара, а не пазара.",
-            en:
-              "The year-on-year change is our arithmetic: this quarter's count against the same " +
-              "quarter a year earlier. Like quarters are compared rather than neighbouring ones " +
-              "— a summer-to-winter fall measures the calendar rather than the market.",
-          },
-          volume.changePct.derivedFrom
-        )}
-      {/if}
-    {/if}
-
-    <!-- Both qualifications in one paragraph. They are two readings a figure
-         here invites and neither is the other's subject, but four lines of
-         quiet type in two blocks read as two things to skip rather than one to
-         read — and the register comparison is the one that decides whether a
-         reader trusts the rest of the page. -->
-    <p class="cap">
-      <span class="l-bg"
-        >Първата точка на редицата е начало на запис, а не дъно на пазара — преди нея е имало
-        сделки, просто не в тази таблица. И това не е броят на всички сделки с имоти: имотният
-        регистър вписва и земя, гаражи, магазини и офиси и затова брои чувствително повече за същото
-        тримесечие. Двете мерят различни неща и нито едното не е сгрешено.</span
-      >
-      <span class="l-en"
-        >The series' first point is the start of a record rather than a floor in the market — there
-        were sales before it, just not in this table. Nor is this a count of all property sales: the
-        land register also records land, garages, shops and offices, and so counts considerably more
-        for the same quarter. The two measure different things and neither is wrong.</span
-      >
-    </p>
-
-    <!--
-      The two figures a reader has to hold at once, on one row of quarters.
-
-      They were both on this page and 1,700px apart at 360px: how many changed
-      hands is this section and what they changed hands for is the next one, and
-      what people actually argue about is what the two are doing at the same
-      time. Assembling that meant scrolling between two charts and remembering a
-      percentage, which is a job the page was leaving to the reader on the one
-      question it is most often asked.
-
-      **ONE ROW OF QUARTERS, TWO SCALES, AND NO SENTENCE JOINING THEM.** The
-      window is the intersection of the two records (`marketVolumeAgainstPrices`),
-      because two panels stacked claim their columns describe the same quarters.
-      The scales stay apart because the two measure different things and one axis
-      would flatten the price line against swings four times its size — that is
-      a picture of the arrangement rather than of the data. And nothing here says
-      one moved the other: the page draws both and stops, which is the same
-      refusal the range strip states out loud. A reader with the two in front of
-      them can see what they do together and decide what it means.
-    -->
-    {#if pair.volume.points.length > 4}
-      <p>
-        <span class="l-bg"
-          >Двете картинки отдолу са за едни и същи тримесечия: горната брои сделките, долната мери
-          цените. И двете са промяна спрямо същото тримесечие година по-рано, а не ниво, и всяка е
-          със собствена мярка — числата им са различни по големина.</span
-        >
-        <span class="l-en"
-          >The two charts below are for the same quarters: the top one counts the sales and the
-          bottom one measures the prices. Both are a change on the same quarter a year earlier
-          rather than a level, and each keeps its own scale — the two move by very different
-          amounts.</span
-        >
-      </p>
-
-      {@const volumeChangeAxis = niceTicks(pair.volume.min, pair.volume.max)}
-      {@const priceChangeAxis = niceTicks(pair.price.min, pair.price.max)}
-      <div class="pair">
-        <p class="panel">
-          <span class="l-bg">{COPY.mktPanelDeals.bg}</span>
-          <span class="l-en">{COPY.mktPanelDeals.en}</span>
-        </p>
-        <figure class="chart">
-          <div class="plot">
-            {@render yAxis(
-              volumeChangeAxis.values.map((v) => ({
-                at: tickAt(v, volumeChangeAxis),
-                label: v === 0 ? "0" : pctAxis(v),
-              }))
-            )}
-            <svg
-              class="pane"
-              viewBox="0 0 {CH_W} {CH_H}"
-              role="img"
-              aria-label={t(COPY.mktChartVolumeChange, $lang, {
-                from: at(pair.volume.from),
-                to: at(pair.volume.to),
-                low: pct(pair.volume.trough?.value),
-                lowAt: at(pair.volume.trough?.period),
-                peak: pct(pair.volume.peak?.value),
-                peakAt: at(pair.volume.peak?.period),
-                last: pct(pair.volume.latest?.value),
-              })}
-            >
-              {@render gridlines(volumeChangeAxis)}
-              {@render yearRules(xTicks(pair.volume))}
-              {@render columns(pair.volume, (v) => pct(v), volumeChangeAxis)}
-              <line
-                class="plot-axis"
-                x1="0"
-                y1={yOf(0, volumeChangeAxis)}
-                x2={CH_W}
-                y2={yOf(0, volumeChangeAxis)}
-              />
-            </svg>
-          </div>
-        </figure>
-
-        <p class="panel">
-          <span class="l-bg">{COPY.mktPanelPrices.bg}</span>
-          <span class="l-en">{COPY.mktPanelPrices.en}</span>
-        </p>
-        <!-- The x-axis is drawn once, under the lower panel, because there is
-             one row of quarters and two pictures of it. Repeated under the
-             upper one it reads as two windows that happen to agree. -->
-        <figure class="chart">
-          <div class="plot">
-            {@render yAxis(
-              priceChangeAxis.values.map((v) => ({
-                at: tickAt(v, priceChangeAxis),
-                label: v === 0 ? "0" : pctAxis(v),
-              }))
-            )}
-            <svg
-              class="pane"
-              viewBox="0 0 {CH_W} {CH_H}"
-              role="img"
-              aria-label={t(COPY.mktChartRate, $lang, {
-                from: at(pair.price.from),
-                to: at(pair.price.to),
-                low: pct(pair.price.trough?.value),
-                lowAt: at(pair.price.trough?.period),
-                peak: pct(pair.price.peak?.value),
-                peakAt: at(pair.price.peak?.period),
-                last: pct(pair.price.latest?.value),
-              })}
-            >
-              {@render gridlines(priceChangeAxis)}
-              {@render yearRules(xTicks(pair.price))}
-              <path class="plot-line" d={path({ ...pair.price, ...priceChangeAxis })} />
-              {@render dots({ ...pair.price, ...priceChangeAxis }, (v) => pct(v))}
-              <line
-                class="plot-axis"
-                x1="0"
-                y1={yOf(0, priceChangeAxis)}
-                x2={CH_W}
-                y2={yOf(0, priceChangeAxis)}
-              />
-            </svg>
-            {@render xYears(xTicks(pair.price))}
-          </div>
-        </figure>
-      </div>
-      <p class="ss tsrc">
-        {@render srcLine(
-          COPY.srcEurostat,
-          pair.volume.sourceUrl,
-          spanned(pair.volume),
-          pair.volume.apiUrl
-        )}
-        <span class="sep">·</span>
-        {@render srcLine(
-          COPY.srcEurostat,
-          pair.price.sourceUrl,
-          spanned(pair.price),
-          pair.price.apiUrl
-        )}
-      </p>
-      {@render numbersTable(
-        countLabel(COPY.mktOpenQuarters, pair.volume.points.length),
-        COPY.mktTblPairNumbers,
-        [COPY.mktColSoldChange, COPY.mktColPriceChange],
-        rowsOf(pair.volume, [pair.price]),
-        (v) => pct(v)
-      )}
-      {@render ourSum(
-        {
-          bg:
-            `Горният ред е наша сметка от броя сделки: всяко тримесечие срещу същото тримесечие ` +
-            `година по-рано. Долният е числото, което Евростат публикува — не е сметнато тук. ` +
-            `Двете редици мерят различни неща и стоят една до друга, за да се видят заедно; ` +
-            `нищо на тази страница не твърди, че едното движи другото.`,
-          en:
-            `The top series is our arithmetic from the counts: each quarter against the same ` +
-            `quarter a year earlier. The bottom one is the figure Eurostat publish and is not ` +
-            `worked out here. The two measure different things and are drawn together so they ` +
-            `can be seen together; nothing on this page claims that either one moves the other.`,
-        },
-        pair.volume.derivedFrom
-      )}
-    {/if}
-  </section>
-
-  <!-- 2 ------------------------------------------------------------------ -->
   <section id="prices">
     <h2>
       <span class="l-bg">Колко струва</span>
@@ -1621,9 +1282,9 @@
           `на 100 — и процент, пресметнат наново през старата и през новата, може да се ` +
           `разминава с публикувания в последния знак.`,
         en:
-          `One figure reaches this page by two routes: НСИ compile it and Eurostat disseminate ` +
+          `One figure reaches this page by two routes: NSI compile it and Eurostat disseminate ` +
           `it, so the table has two columns and a reader can see they agree. Neither is worked ` +
-          `out here from the index. НСИ have changed its base — the year set to 100 — and a rate ` +
+          `out here from the index. NSI have changed its base — the year set to 100 — and a rate ` +
           `recomputed across the old base and the new one can differ from the published one in ` +
           `the last decimal.`,
       })}
@@ -1696,12 +1357,19 @@
               Така мерено, нивото днес е с {fmt(reading.realBelowPeakPct)}% под най-високото, което
               Евростат е отчитал — през {periodLong(reading.realPeakPeriod, "bg")}.{/if}</span
           >
+          <!-- «×N» is a RATIO and the English has to keep it one. "takes ×2.7
+               as much money" is missing the word the construction needs — "as
+               much as" governs "times", not a multiplication sign — and "homes
+               are ×1.6 dearer" turns the ratio into a difference, which is a
+               different figure: ×1,6 is sixty per cent dearer, not a hundred
+               and sixty. Both halves say what the level IS a multiple of, which
+               is what the axis beside them is labelled in. -->
           <span class="l-en"
-            >A home today takes <b>×{fmt(reading.times)}</b> as much money as it did in {reading.baseYear}.
-            But everything else got dearer too — against that, homes are
-            <b>×{fmt(reading.realTimes)}</b> dearer.
+            >The money paid for a home today is <b>×{fmt(reading.times)}</b> what it was in {reading.baseYear}.
+            But everything else got dearer too — measured against that, a home is
+            <b>×{fmt(reading.realTimes)}</b> what it was.
             {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
-              Measured that way, today's level is {fmt(reading.realBelowPeakPct)}% below the highest
+              On that measure today's level is {fmt(reading.realBelowPeakPct)}% below the highest
               Eurostat have recorded — in {periodLong(reading.realPeakPeriod, "en")}.{/if}</span
           >
         </p>
@@ -1971,15 +1639,593 @@
     {/if}
   </section>
 
-  <!-- 2b -----------------------------------------------------------------
-       Its own section, because section two had grown into the longest on the
-       page: two publishers' rate table, the index chart with two lines and a
-       disclosure of every quarter behind it, the annual rate chart with another,
-       and then six cities with two more — read end to end, the city table
-       arrives after four charts and a reader looking for their own city has no
-       way to jump to it. It is also a different subject and a different publisher:
-       everything above is Eurostat's national series, and every cell below is a
-       cell НСИ published for one city. -->
+  <!-- 2 ------------------------------------------------------------------ -->
+  <section id="deal">
+    <h2>
+      <span class="l-bg">Средната сделка</span>
+      <span class="l-en">The average deal</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Евростат публикува колко жилища са купени и колко е платено общо за тях — един и същ
+        обхват, едно и също тримесечие. «Платено общо» е цената на самите жилища заедно с земята под
+        тях, с ДДС при новото строителство; нотариусът, комисионата и банковите такси стоят извън
+        нея, така че средната сделка е цената на жилището, а не цената на купуването му.</span
+      >
+      <span class="l-en"
+        >Eurostat publish how many dwellings were bought and how much was paid for them in total —
+        the same scope, the same quarter. "Total paid" is the price of the dwellings themselves
+        together with the land under them, VAT included on new builds; the notary, the agency
+        commission and the bank fees sit outside it, so the average deal is what a home costs rather
+        than what buying one costs.</span
+      >
+    </p>
+
+    {#if deal.avg.value}
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblDeal, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktColKind, null)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColAvgPaid, deal.period)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColTotalPaid, deal.period)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColCount, deal.period)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
+              <td class="num mono">{fmt0(deal.avg.value)} €</td>
+              <td class="num mono">{fmt0(deal.totalValue)} €</td>
+              <td class="num mono">{fmt0(deal.deals)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
+              <td class="num mono">{fmt0(deal.newBuild)} €</td>
+              <td class="num mono">{fmt0(deal.newValue)} €</td>
+              <td class="num mono">{fmt0(deal.newDeals)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
+              <td class="num mono">{fmt0(deal.existing)} €</td>
+              <td class="num mono">{fmt0(deal.existingValue)} €</td>
+              <td class="num mono">{fmt0(deal.existingDeals)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(COPY.srcEurostat, deal.avg.sourceUrl, when(deal.period), deal.avg.apiUrl)}
+      </p>
+
+      <!--
+        The section's figure, said out loud, and the chart's introduction — one
+        paragraph doing both jobs because they are the same sentence.
+
+        THE PAGE'S SIGNATURE FIGURE WAS ONLY EVER A TABLE CELL. It is the one
+        number here a reader can picture — every other price on the page is an
+        index, a multiple or a percentage — and a cell in the second column of a
+        four-column table is not where a reader takes a figure away from. The
+        section states it the way §prices states its own, in the marked
+        paragraph, so the two sections that answer "what does a home cost" both
+        answer it in words.
+
+        And it is the one chart on the page a reader met with nothing: every
+        other plot has a sentence above it saying what it draws.
+
+        **The gap between the two lines is not stated as a ratio, and that is a
+        decision rather than an omission.** «×1,55» over these two would be our
+        arithmetic over two figures that are already our division, and it reads
+        as a claim about one dwelling against another — while each is a mean
+        over a different mix, new builds weighted to the cities and existing
+        dwellings sweeping in the whole country. The two figures are here and
+        the subtraction is the reader's.
+      -->
+      <p class="reading">
+        <span class="l-bg"
+          >За едно жилище са платени средно <b>{fmt0(deal.avg.value)} €</b> през тримесечието —
+          {fmt0(deal.newBuild)} € за новото строителство и {fmt0(deal.existing)} € за съществуващото.
+          Картинката отдолу е същото за всяко тримесечие, двата реда на един мащаб.</span
+        >
+        <span class="l-en"
+          >A dwelling changed hands for <b>{fmt0(deal.avg.value)} €</b> on average in the quarter —
+          {fmt0(deal.newBuild)} € for a new build and {fmt0(deal.existing)} € for an existing dwelling.
+          The chart below is the same figure every quarter, both lines on one scale.</span
+        >
+      </p>
+
+      <!-- The two lines apart, never one line for the total ---------------
+           The average deal is a mean over whatever sold that quarter, so a
+           TOTAL line moves with the mix of new builds and existing dwellings as
+           much as with prices — and a line chart invites exactly the reading
+           that mix will not support. Within one purchase type the mix is far
+           narrower, and the two drawn on one scale show the gap between them,
+           which is what the mix caveat is about. -->
+      {#if dealNewSeries.points.length > 4}
+        {@const dealAxis = niceTicks(dealScale.min, dealScale.max, 4)}
+        <figure class="chart">
+          <div class="plot">
+            {@render yAxis(
+              dealAxis.values.map((v) => ({
+                at: tickAt(v, dealAxis),
+                label: v === 0 ? "0" : `${fmt0(v)} €`,
+              }))
+            )}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartDeal, $lang, {
+                from: at(dealNewSeries.from),
+                to: at(dealNewSeries.to),
+                new: fmt0(dealNewSeries.latest?.value),
+                existing: fmt0(dealExistingSeries.latest?.value),
+              })}
+            >
+              {@render gridlines(dealAxis)}
+              {@render yearRules(xTicks(dealNewSeries))}
+              <path class="plot-line" d={path({ ...dealNewSeries, ...dealAxis })} />
+              <path class="plot-line second" d={path({ ...dealExistingSeries, ...dealAxis })} />
+              {@render dots({ ...dealNewSeries, ...dealAxis }, (v) => `${fmt0(v)} €`)}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, dealAxis)}
+                x2={CH_W}
+                y2={yOf(0, dealAxis)}
+              />
+            </svg>
+            {@render xYears(xTicks(dealNewSeries))}
+          </div>
+          <figcaption>
+            <span class="key one"
+              ><span class="l-bg">{COPY.mktKeyNew.bg}</span><span class="l-en"
+                >{COPY.mktKeyNew.en}</span
+              ></span
+            >
+            <span class="key two"
+              ><span class="l-bg">{COPY.mktKeyExisting.bg}</span><span class="l-en"
+                >{COPY.mktKeyExisting.en}</span
+              ></span
+            >
+          </figcaption>
+        </figure>
+        <p class="ss tsrc">
+          {@render srcLine(
+            COPY.srcEurostat,
+            deal.avg.sourceUrl,
+            spanned(dealNewSeries),
+            deal.avg.apiUrl
+          )}
+        </p>
+        {@render numbersTable(
+          countLabel(COPY.mktOpenQuarters, dealNewSeries.points.length),
+          COPY.mktTblDealNumbers,
+          [COPY.mktColAvgNew, COPY.mktColAvgExisting],
+          rowsOf(dealNewSeries, [dealExistingSeries]),
+          (v) => (v == null ? "—" : `${fmt0(v)} €`)
+        )}
+      {/if}
+
+      {@render ourSum(
+        {
+          bg:
+            `Средната сделка е наша сметка: платеното общо, разделено на броя сделки — ` +
+            `${fmt0(deal.totalValue)} € върху ${fmt0(deal.deals)} жилища. Това е средна сума за ` +
+            `едно жилище, не цена на квадратен метър и не цената по средата на сделките; какво се ` +
+            `е продавало, къщи или апартаменти, я движи. Евростат не отговаря за делението, нито ` +
+            `за изводите от него.`,
+          en:
+            `The average deal is our arithmetic: the total paid divided by the number of deals — ` +
+            `€${fmt0(deal.totalValue)} over ${fmt0(deal.deals)} dwellings. It is a mean amount ` +
+            `paid for a dwelling, not a price per square metre and not the middle price of the ` +
+            `quarter's deals; the mix of flats and houses sold moves it. Eurostat are not ` +
+            `responsible for the division or for conclusions drawn from it.`,
+        },
+        deal.avg.derivedFrom
+      )}
+
+      <!-- «Колко години заплата струва едно жилище» is the card at the top of
+           the page rather than a second one here. It is built from this
+           section's own figure and НСИ's wage, and it belongs with the other
+           three answers rather than under the working: a reader who has to
+           reach the fourth section to learn how many years a home costs has
+           been made to earn an answer the page could have given them at the
+           top. -->
+    {/if}
+  </section>
+
+  <!-- 3 ------------------------------------------------------------------ -->
+  <section id="volume">
+    <h2>
+      <span class="l-bg">Колко се търгува</span>
+      <span class="l-en">How much changes hands</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Евростат брои жилищата — апартаменти и къщи — които домакинствата са купили през
+        тримесечието на пазарна цена. Дарения, наследства, продажбите между роднини на занижена цена
+        и построеното за себе си остават извън броя.</span
+      >
+      <span class="l-en"
+        >Eurostat count the dwellings households bought during the quarter — flats and houses,
+        bought at a market price. Gifts, inheritances, discounted sales between relatives and
+        anything built for oneself stay outside the count.</span
+      >
+    </p>
+
+    {#if volume.deals.value}
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblVolume, $lang)}>
+        <table class="fig-table">
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktColKind, null)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColCount, volume.period)}</th>
+              <th scope="col" class="num">{@render colHead(COPY.mktColYoy, volume.period)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="mark">
+              <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
+              <td class="num mono">{fmt0(volume.deals.value)}</td>
+              <td class="num mono">{pct(volume.changePct.value)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
+              <td class="num mono">{fmt0(volume.newBuild)}</td>
+              <td class="num mono">{pct(volume.changeNewPct)}</td>
+            </tr>
+            <tr>
+              <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
+              <td class="num mono">{fmt0(volume.existing)}</td>
+              <td class="num mono">{pct(volume.changeExistingPct)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(
+          COPY.srcEurostat,
+          volume.deals.sourceUrl,
+          when(volume.period),
+          volume.deals.apiUrl
+        )}
+      </p>
+
+      <!-- The volume series, which IS this section's finding. One quarter and a
+           percentage state it; the whole series shows the shape it sits in, and
+           the shape is what the year-on-year figure is a single reading of.
+
+           Columns start at zero and there is no axis minimum to set: a count
+           chart cropped to its own range makes any series look like a cliff,
+           and on this subject that is the one distortion the page cannot
+           afford. `marketVolumeSeries` offers no `min` for the same reason. -->
+      {#if volumeSeries.points.length > 4}
+        <!-- The key to the shape, ABOVE the plot it is about.
+             The explanation existed and it was underneath, inside the note on
+             how the percentage is worked out — so the loudest picture on the
+             page was met with nothing, read as a market lurching about twice a
+             year, and corrected two paragraphs later for a reader who got that
+             far. What the sentence may not do is name a quarter or claim which
+             one is weakest: the tint is drawn from the newest reading's own
+             place in the year, and it moves with the data. -->
+        <p>
+          <span class="l-bg"
+            >Стълбчетата се редуват високо-ниско всяка година, защото зимата и лятото не се търгуват
+            еднакво. Оцветените са едно и също тримесечие всяка година — и точно те се сравняват в
+            числото «спрямо година по-рано» отгоре.</span
+          >
+          <span class="l-en"
+            >The columns alternate high and low every year because winter and summer are not traded
+            alike. The tinted ones are the same quarter each year — and those are the ones the
+            "against a year earlier" figure above compares.</span
+          >
+        </p>
+        {@const volumeAxis = niceTicks(volumeSeries.min, volumeSeries.max)}
+        <figure class="chart">
+          <div class="plot">
+            {@render yAxis(
+              volumeAxis.values.map((v) => ({
+                at: tickAt(v, volumeAxis),
+                label: v === 0 ? "0" : fmt0(v),
+              }))
+            )}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartVolume, $lang, {
+                from: periodLong(volumeSeries.from, $lang),
+                to: periodLong(volumeSeries.to, $lang),
+                peak: fmt0(volumeSeries.peak?.value),
+                peakAt: periodLong(volumeSeries.peak?.period, $lang),
+                last: fmt0(volumeSeries.latest?.value),
+              })}
+            >
+              {@render gridlines(volumeAxis)}
+              {@render yearRules(xTicks(volumeSeries))}
+              {@render columns(volumeSeries, (v) => `${fmt0(v)}`, volumeAxis, isSameQuarter)}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, volumeAxis)}
+                x2={CH_W}
+                y2={yOf(0, volumeAxis)}
+              />
+            </svg>
+            {@render xYears(xTicks(volumeSeries))}
+          </div>
+          <figcaption>
+            <span class="key season"
+              ><span class="l-bg">{COPY.mktKeySeason.bg}</span><span class="l-en"
+                >{COPY.mktKeySeason.en}</span
+              ></span
+            >
+          </figcaption>
+        </figure>
+        <p class="ss tsrc">
+          {@render srcLine(
+            COPY.srcEurostat,
+            volume.deals.sourceUrl,
+            spanned(volumeSeries),
+            volume.deals.apiUrl
+          )}
+        </p>
+        {@render numbersTable(
+          countLabel(COPY.mktOpenQuarters, volumeSeries.points.length),
+          COPY.mktTblVolumeNumbers,
+          [COPY.mktColSold],
+          rowsOf(volumeSeries),
+          fmt0
+        )}
+      {/if}
+
+      {#if volume.changePct.value != null}
+        {@render ourSum(
+          {
+            bg:
+              "Промяната спрямо година по-рано е наша сметка: броят за това тримесечие срещу броя " +
+              "за същото тримесечие година по-рано. Сравняват се едни и същи тримесечия, а не " +
+              "съседни — спадът от лято към зима мери календара, а не пазара.",
+            en:
+              "The year-on-year change is our arithmetic: this quarter's count against the same " +
+              "quarter a year earlier. Like quarters are compared rather than neighbouring ones " +
+              "— a summer-to-winter fall measures the calendar rather than the market.",
+          },
+          volume.changePct.derivedFrom
+        )}
+      {/if}
+    {/if}
+
+    <!-- Both qualifications in one paragraph. They are two readings a figure
+         here invites and neither is the other's subject, but four lines of
+         quiet type in two blocks read as two things to skip rather than one to
+         read — and the register comparison is the one that decides whether a
+         reader trusts the rest of the page. -->
+    <p class="cap">
+      <span class="l-bg"
+        >Първата точка на редицата е начало на запис, а не дъно на пазара — преди нея е имало
+        сделки, просто не в тази таблица. И това не е броят на всички сделки с имоти: имотният
+        регистър вписва и земя, гаражи, магазини и офиси и затова брои чувствително повече за същото
+        тримесечие. Двете мерят различни неща и нито едното не е сгрешено.</span
+      >
+      <span class="l-en"
+        >The series' first point is the start of a record rather than a floor in the market — there
+        were sales before it, just not in this table. Nor is this a count of all property sales: the
+        land register also records land, garages, shops and offices, and so counts considerably more
+        for the same quarter. The two measure different things and neither is wrong.</span
+      >
+    </p>
+
+    <!--
+      The two figures a reader has to hold at once, on one row of quarters.
+
+      What people actually argue about is what prices and volume are doing at
+      the SAME time, and the two are two sections apart on a page that is
+      thousands of pixels tall at 360px. Assembling the answer from two charts
+      means carrying a percentage between them, which is a job this page should
+      not be leaving to a reader on the one question it is most often asked.
+
+      **It is drawn last, after both its halves have been met.** The lower panel
+      is the same series §prices draws whole, over the window the count series
+      allows — so a reader arrives here already knowing what that line measures,
+      and the pair is one new idea rather than two.
+
+      **ONE ROW OF QUARTERS, TWO SCALES, AND NO SENTENCE JOINING THEM.** The
+      window is the intersection of the two records (`marketVolumeAgainstPrices`),
+      because two panels stacked claim their columns describe the same quarters.
+      The scales stay apart because the two measure different things and one axis
+      would flatten the price line against swings four times its size — that is
+      a picture of the arrangement rather than of the data. And nothing here says
+      one moved the other: the page draws both and stops, which is the same
+      refusal the range strip states out loud. A reader with the two in front of
+      them can see what they do together and decide what it means.
+    -->
+    {#if pair.volume.points.length > 4}
+      <!-- The lower panel names where it came from, and that is the whole
+           repair. It is the series §prices draws over its own full window, cut
+           to the quarters the count reaches — so a reader who has already read
+           that section meets it twice, and without this clause the second
+           meeting is a new chart they have to place. -->
+      <p>
+        <span class="l-bg"
+          >Двете картинки отдолу са за едни и същи тримесечия: горната брои сделките, долната мери
+          цените — същата редица, показана цялата в <a href="#prices">«колко струва»</a>, тук само
+          за тримесечията, за които има и брой сделки. И двете са промяна спрямо същото тримесечие
+          година по-рано, а не ниво, и всяка е със собствена мярка — числата им са различни по
+          големина.</span
+        >
+        <span class="l-en"
+          >The two charts below are for the same quarters: the top one counts the sales and the
+          bottom one measures the prices — the same series drawn in full under
+          <a href="#prices">what it costs</a>, here only over the quarters that also have a count.
+          Both are a change on the same quarter a year earlier rather than a level, and each keeps
+          its own scale — the two move by very different amounts.</span
+        >
+      </p>
+
+      {@const volumeChangeAxis = niceTicks(pair.volume.min, pair.volume.max)}
+      {@const priceChangeAxis = niceTicks(pair.price.min, pair.price.max)}
+      <div class="pair">
+        <p class="panel">
+          <span class="l-bg">{COPY.mktPanelDeals.bg}</span>
+          <span class="l-en">{COPY.mktPanelDeals.en}</span>
+        </p>
+        <figure class="chart">
+          <div class="plot">
+            {@render yAxis(
+              volumeChangeAxis.values.map((v) => ({
+                at: tickAt(v, volumeChangeAxis),
+                label: v === 0 ? "0" : pctAxis(v),
+              }))
+            )}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartVolumeChange, $lang, {
+                from: at(pair.volume.from),
+                to: at(pair.volume.to),
+                low: pct(pair.volume.trough?.value),
+                lowAt: at(pair.volume.trough?.period),
+                peak: pct(pair.volume.peak?.value),
+                peakAt: at(pair.volume.peak?.period),
+                last: pct(pair.volume.latest?.value),
+              })}
+            >
+              {@render gridlines(volumeChangeAxis)}
+              {@render yearRules(xTicks(pair.volume))}
+              {@render columns(pair.volume, (v) => pct(v), volumeChangeAxis)}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, volumeChangeAxis)}
+                x2={CH_W}
+                y2={yOf(0, volumeChangeAxis)}
+              />
+            </svg>
+          </div>
+        </figure>
+
+        <p class="panel">
+          <span class="l-bg">{COPY.mktPanelPrices.bg}</span>
+          <span class="l-en">{COPY.mktPanelPrices.en}</span>
+        </p>
+        <!-- The x-axis is drawn once, under the lower panel, because there is
+             one row of quarters and two pictures of it. Repeated under the
+             upper one it reads as two windows that happen to agree.
+
+             **COLUMNS FROM ZERO, THE MARK THE PANEL ABOVE USES, AND THE SIGN IS
+             WHY.** Both panels draw a signed change, and on a signed series the
+             reading is which side of zero a quarter falls: a bar states that by
+             the side it is on, before a reader has been taught anything, which
+             is the argument the city column is drawn on. A line states it only
+             by crossing, and this line does not cross today — the record
+             Eurostat have published over the count's own window is positive
+             throughout, so zero sits on the floor of the box and reads as a
+             floor rather than as a line with a far side. The quarter prices
+             fall, a line dips and columns turn over.
+
+             It also stops the same series being two kinds of picture: §prices
+             draws these quarters as columns, and a reader who meets them again
+             here as a line has no way to see that they are the same figures. -->
+        <figure class="chart">
+          <div class="plot">
+            {@render yAxis(
+              priceChangeAxis.values.map((v) => ({
+                at: tickAt(v, priceChangeAxis),
+                label: v === 0 ? "0" : pctAxis(v),
+              }))
+            )}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.mktChartRate, $lang, {
+                from: at(pair.price.from),
+                to: at(pair.price.to),
+                low: pct(pair.price.trough?.value),
+                lowAt: at(pair.price.trough?.period),
+                peak: pct(pair.price.peak?.value),
+                peakAt: at(pair.price.peak?.period),
+                last: pct(pair.price.latest?.value),
+              })}
+            >
+              {@render gridlines(priceChangeAxis)}
+              {@render yearRules(xTicks(pair.price))}
+              {@render columns(pair.price, (v) => pct(v), priceChangeAxis)}
+              <line
+                class="plot-axis"
+                x1="0"
+                y1={yOf(0, priceChangeAxis)}
+                x2={CH_W}
+                y2={yOf(0, priceChangeAxis)}
+              />
+            </svg>
+            {@render xYears(xTicks(pair.price))}
+          </div>
+          <!-- The key to the rule both panels are drawn against, once, at the
+               foot of the pair. Once and not per panel: the paragraph above
+               says both are the same kind of change, the two boxes sit in one
+               block, and a second copy of it lands between the upper plot and
+               the lower panel's own label — two lines of mono, three words
+               apart, saying the same thing about two pictures a reader is
+               being asked to read as one. -->
+          <figcaption>
+            <span class="l-bg">{COPY.mktRefZero.bg}</span>
+            <span class="l-en">{COPY.mktRefZero.en}</span>
+          </figcaption>
+        </figure>
+      </div>
+      <p class="ss tsrc">
+        {@render srcLine(
+          COPY.srcEurostat,
+          pair.volume.sourceUrl,
+          spanned(pair.volume),
+          pair.volume.apiUrl
+        )}
+        <span class="sep">·</span>
+        {@render srcLine(
+          COPY.srcEurostat,
+          pair.price.sourceUrl,
+          spanned(pair.price),
+          pair.price.apiUrl
+        )}
+      </p>
+      {@render numbersTable(
+        countLabel(COPY.mktOpenQuarters, pair.volume.points.length),
+        COPY.mktTblPairNumbers,
+        [COPY.mktColSoldChange, COPY.mktColPriceChange],
+        rowsOf(pair.volume, [pair.price]),
+        (v) => pct(v)
+      )}
+      {@render ourSum(
+        {
+          bg:
+            `Горният ред е наша сметка от броя сделки: всяко тримесечие срещу същото тримесечие ` +
+            `година по-рано. Долният е числото, което Евростат публикува — не е сметнато тук. ` +
+            `Двете редици мерят различни неща и стоят една до друга, за да се видят заедно; ` +
+            `нищо на тази страница не твърди, че едното движи другото.`,
+          en:
+            `The top series is our arithmetic from the counts: each quarter against the same ` +
+            `quarter a year earlier. The bottom one is the figure Eurostat publish and is not ` +
+            `worked out here. The two measure different things and are drawn together so they ` +
+            `can be seen together; nothing on this page claims that either one moves the other.`,
+        },
+        pair.volume.derivedFrom
+      )}
+    {/if}
+  </section>
+
+  <!-- 4 -----------------------------------------------------------------
+       ITS OWN SECTION, AND ITS OWN ENTRY IN THE CONTENTS, because a reader
+       looking for their own city needs somewhere to jump to. Folded into the
+       section above it, the city table arrives behind that section's charts and
+       its disclosures, and the only way to it is to scroll past all of them.
+
+       It is a different subject and a different publisher besides: everything
+       above is a national series Eurostat disseminate, and every cell below is
+       a cell НСИ published for one city. -->
   <section id="cities">
     <h2>
       <span class="l-bg">Цените и сделките по градове</span>
@@ -1999,7 +2245,7 @@
           колко струва едно жилище.</span
         >
         <span class="l-en"
-          >НСИ publish the same movement for the six cities over 120,000 people, and beside it how
+          >NSI publish the same movement for the six cities over 120,000 people, and beside it how
           much the number of sales there changed. Every figure is a change on the same quarter a
           year earlier rather than a level: the left column is how much transaction prices moved,
           not what a home costs.</span
@@ -2165,7 +2411,7 @@
           >; the sales counts come from
           <a href={httpUrl(cities.dealsUrl)} target="_blank" rel="noopener"
             >dwelling sales by city</a
-          >. Every value is a cell НСИ published; nothing in this table is computed by us.</span
+          >. Every value is a cell NSI published; nothing in this table is computed by us.</span
         >
       </p>
       {@render numbersTable(
@@ -2208,172 +2454,14 @@
       >
       <span class="l-en"
         >An asking price and a paid price are different things. Asking prices per m² by city are in
-        the calculator and come from имот.bg; the figures here are transaction figures and come from
+        the calculator and come from imot.bg; the figures here are transaction figures and come from
         Eurostat. Nobody publishes a transaction price per square metre for an individual Bulgarian
         city, which is why there is no such table here.</span
       >
     </p>
   </section>
 
-  <!-- 3 ------------------------------------------------------------------ -->
-  <section id="deal">
-    <h2>
-      <span class="l-bg">Средната сделка</span>
-      <span class="l-en">The average deal</span>
-    </h2>
-    <p>
-      <span class="l-bg"
-        >Евростат публикува колко жилища са купени и колко е платено общо за тях — един и същ
-        обхват, едно и също тримесечие. «Платено общо» е цената на самите жилища заедно с земята под
-        тях, с ДДС при новото строителство; нотариусът, комисионата и банковите такси стоят извън
-        нея, така че средната сделка е цената на жилището, а не цената на купуването му.</span
-      >
-      <span class="l-en"
-        >Eurostat publish how many dwellings were bought and how much was paid for them in total —
-        the same scope, the same quarter. "Total paid" is the price of the dwellings themselves
-        together with the land under them, VAT included on new builds; the notary, the agency
-        commission and the bank fees sit outside it, so the average deal is what a home costs rather
-        than what buying one costs.</span
-      >
-    </p>
-
-    {#if deal.avg.value}
-      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktTblDeal, $lang)}>
-        <table class="fig-table">
-          <thead>
-            <tr>
-              <th scope="col">{@render colHead(COPY.mktColKind, null)}</th>
-              <th scope="col" class="num">{@render colHead(COPY.mktColAvgPaid, deal.period)}</th>
-              <th scope="col" class="num">{@render colHead(COPY.mktColTotalPaid, deal.period)}</th>
-              <th scope="col" class="num">{@render colHead(COPY.mktColCount, deal.period)}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="mark">
-              <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
-              <td class="num mono">{fmt0(deal.avg.value)} €</td>
-              <td class="num mono">{fmt0(deal.totalValue)} €</td>
-              <td class="num mono">{fmt0(deal.deals)}</td>
-            </tr>
-            <tr>
-              <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
-              <td class="num mono">{fmt0(deal.newBuild)} €</td>
-              <td class="num mono">{fmt0(deal.newValue)} €</td>
-              <td class="num mono">{fmt0(deal.newDeals)}</td>
-            </tr>
-            <tr>
-              <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
-              <td class="num mono">{fmt0(deal.existing)} €</td>
-              <td class="num mono">{fmt0(deal.existingValue)} €</td>
-              <td class="num mono">{fmt0(deal.existingDeals)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="ss tsrc">
-        {@render srcLine(COPY.srcEurostat, deal.avg.sourceUrl, when(deal.period), deal.avg.apiUrl)}
-      </p>
-
-      <!-- The two lines apart, never one line for the total ---------------
-           The average deal is a mean over whatever sold that quarter, so a
-           TOTAL line moves with the mix of new builds and existing dwellings as
-           much as with prices — and a line chart invites exactly the reading
-           that mix will not support. Within one purchase type the mix is far
-           narrower, and the two drawn on one scale show the gap between them,
-           which is what the mix caveat is about. -->
-      {#if dealNewSeries.points.length > 4}
-        {@const dealAxis = niceTicks(dealScale.min, dealScale.max, 4)}
-        <figure class="chart">
-          <div class="plot">
-            {@render yAxis(
-              dealAxis.values.map((v) => ({
-                at: tickAt(v, dealAxis),
-                label: v === 0 ? "0" : `${fmt0(v)} €`,
-              }))
-            )}
-            <svg
-              class="pane"
-              viewBox="0 0 {CH_W} {CH_H}"
-              role="img"
-              aria-label={t(COPY.mktChartDeal, $lang, {
-                from: at(dealNewSeries.from),
-                to: at(dealNewSeries.to),
-                new: fmt0(dealNewSeries.latest?.value),
-                existing: fmt0(dealExistingSeries.latest?.value),
-              })}
-            >
-              {@render gridlines(dealAxis)}
-              {@render yearRules(xTicks(dealNewSeries))}
-              <path class="plot-line" d={path({ ...dealNewSeries, ...dealAxis })} />
-              <path class="plot-line second" d={path({ ...dealExistingSeries, ...dealAxis })} />
-              {@render dots({ ...dealNewSeries, ...dealAxis }, (v) => `${fmt0(v)} €`)}
-              <line
-                class="plot-axis"
-                x1="0"
-                y1={yOf(0, dealAxis)}
-                x2={CH_W}
-                y2={yOf(0, dealAxis)}
-              />
-            </svg>
-            {@render xYears(xTicks(dealNewSeries))}
-          </div>
-          <figcaption>
-            <span class="key one"
-              ><span class="l-bg">{COPY.mktKeyNew.bg}</span><span class="l-en"
-                >{COPY.mktKeyNew.en}</span
-              ></span
-            >
-            <span class="key two"
-              ><span class="l-bg">{COPY.mktKeyExisting.bg}</span><span class="l-en"
-                >{COPY.mktKeyExisting.en}</span
-              ></span
-            >
-          </figcaption>
-        </figure>
-        <p class="ss tsrc">
-          {@render srcLine(
-            COPY.srcEurostat,
-            deal.avg.sourceUrl,
-            spanned(dealNewSeries),
-            deal.avg.apiUrl
-          )}
-        </p>
-        {@render numbersTable(
-          countLabel(COPY.mktOpenQuarters, dealNewSeries.points.length),
-          COPY.mktTblDealNumbers,
-          [COPY.mktColAvgNew, COPY.mktColAvgExisting],
-          rowsOf(dealNewSeries, [dealExistingSeries]),
-          (v) => (v == null ? "—" : `${fmt0(v)} €`)
-        )}
-      {/if}
-
-      {@render ourSum(
-        {
-          bg:
-            `Средната сделка е наша сметка: платеното общо, разделено на броя сделки — ` +
-            `${fmt0(deal.totalValue)} € върху ${fmt0(deal.deals)} жилища. Това е средна сума за ` +
-            `едно жилище, не цена на квадратен метър и не цената по средата на сделките; какво се ` +
-            `е продавало, къщи или апартаменти, я движи. Евростат не отговаря за делението, нито ` +
-            `за изводите от него.`,
-          en:
-            `The average deal is our arithmetic: the total paid divided by the number of deals — ` +
-            `€${fmt0(deal.totalValue)} over ${fmt0(deal.deals)} dwellings. It is a mean amount ` +
-            `paid for a dwelling, not a price per square metre and not the middle price of the ` +
-            `quarter's deals; the mix of flats and houses sold moves it. Eurostat are not ` +
-            `responsible for the division or for conclusions drawn from it.`,
-        },
-        deal.avg.derivedFrom
-      )}
-
-      <!-- «Колко години заплата струва едно жилище» is the card at the top of
-           the page rather than a second one here. It is built from this
-           section's own figure and НСИ's wage, and a reader who has just been
-           told how many years it costs is the reader already asking what the
-           market is doing — which is the order the page is now in. -->
-    {/if}
-  </section>
-
-  <!-- 4 ------------------------------------------------------------------ -->
+  <!-- 5 ------------------------------------------------------------------ -->
   <section id="credit">
     <h2>
       <span class="l-bg">Кой купува с кредит</span>
@@ -2534,13 +2622,13 @@
         калкулатора, до ипотечната сметка.</span
       >
       <span class="l-en"
-        >The rate on new home loans, the size of the banks' book and the БНБ limits are in the
+        >The rate on new home loans, the size of the banks' book and the BNB limits are in the
         calculator, next to the mortgage panel.</span
       >
     </p>
   </section>
 
-  <!-- 5 ------------------------------------------------------------------ -->
+  <!-- 6 ------------------------------------------------------------------ -->
   <section id="stock">
     <h2>
       <span class="l-bg">Колко жилища преброи преброяването</span>
@@ -2726,7 +2814,7 @@
     {/if}
   </section>
 
-  <!-- 6 ------------------------------------------------------------------ -->
+  <!-- 7 ------------------------------------------------------------------ -->
   <section id="ratio">
     <h2>
       <span class="l-bg">Скъпо ли е спрямо доходите</span>
@@ -2957,7 +3045,14 @@
     font-family: var(--mono);
     font-size: var(--fs-small);
   }
+  /* Every in-text link on the page, in one rule. `section p a` covers body copy
+     as well as the quiet registers, because a cross-reference between two
+     sections belongs in the sentence that makes it — and an unstyled anchor in
+     body copy is the one link on the page a reader cannot tell goes anywhere.
+     The `.cap` and `.ours` paragraphs inside a section match both selectors and
+     take the same declarations either way. */
   .toc a,
+  section p a,
   .cap a,
   .ours a,
   .onward a {
@@ -2966,6 +3061,7 @@
     border-bottom: 1px solid var(--real-soft);
   }
   .toc a:hover,
+  section p a:hover,
   .cap a:hover,
   .ours a:hover,
   .onward a:hover {
