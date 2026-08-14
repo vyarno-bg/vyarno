@@ -538,10 +538,11 @@ test("the anchor dropdown names the window its maths actually uses", () => {
 
 test("the share card is dated by the month its two figures describe", () => {
   // Both percentages on the card are Σ(w·r) over `hicp_categories.json`, so the
-  // date drawn beneath them — «Данни: Евростат (HICP), юни 2026 г.» — has to be
-  // the divisions' month. Eurostat's flash publishes the all-items rate about
-  // two weeks ahead of them, and for that fortnight `headlineRefPeriod` names a
-  // month the basket figures do not cover: the card then read «юли 2026 г.»
+  // date drawn beneath them — «Инфлация по данни на Евростат (HICP), юни
+  // 2026 г.» — has to be the divisions' month. Eurostat's flash publishes the
+  // all-items rate about two weeks ahead of them, and for that fortnight
+  // `headlineRefPeriod` names a month the basket figures do not cover: the card
+  // then read «юли 2026 г.»
   // over June's numbers, with the anchor selector on the same page saying
   // «2025.06 → 2026.06».
   //

@@ -177,6 +177,72 @@ test(
   }
 );
 
+test("the card's source line and its way back do not run into each other", { skip }, async () => {
+  // P9's line, and the only one on the picture: the source, the period and the
+  // domain, for a reader who has no link to follow. `drawShareCard` sets it
+  // from the left margin and the route back from the right, and neither wraps
+  // or is measured — `Canvas`-style blitting, so a longer string is simply
+  // drawn further across until the two collide into an unreadable run.
+  //
+  // Checked in PIXELS because there is nothing else to check. The card is a
+  // canvas, so no test can read the strings back off the DOM, and asserting on
+  // a character count would be asserting on the cause: the same 48 characters
+  // are three different widths in the three fonts a reader can end up with,
+  // and the failure only exists at the width the browser actually drew.
+  await withApp(async (page, errors) => {
+    await page.locator("#sliders .cat > input[type=range]").nth(6).fill("40");
+    await page.waitForFunction(() => {
+      const canvas = document.querySelector("section.share canvas");
+      return Boolean(canvas) && canvas.getContext("2d").getImageData(4, 4, 1, 1).data[3] > 0;
+    });
+
+    // The band the footer text occupies: below the rule at y=578, around the
+    // baseline at y=610. Taking the rule in would make every column inky.
+    const gap = await page.evaluate(() => {
+      const canvas = document.querySelector("section.share canvas");
+      const ctx = canvas.getContext("2d");
+      const TOP = 586;
+      const HEIGHT = 34;
+      const { data } = ctx.getImageData(0, TOP, canvas.width, HEIGHT);
+      const ground = [data[0], data[1], data[2]];
+      const inky = [];
+      for (let x = 0; x < canvas.width; x++) {
+        let ink = false;
+        for (let y = 0; y < HEIGHT && !ink; y++) {
+          const i = (y * canvas.width + x) * 4;
+          ink = [0, 1, 2].some((c) => Math.abs(data[i + c] - ground[c]) > 12);
+        }
+        inky.push(ink);
+      }
+      const first = inky.indexOf(true);
+      const last = inky.lastIndexOf(true);
+      if (first === -1) return { widest: -1, first, last };
+      // The widest blank run BETWEEN the two blocks. Word spaces inside either
+      // string are runs too, which is what makes this a measurement rather than
+      // a presence check: the answer is the channel down the middle, and it
+      // collapses to a word space when the two texts meet.
+      let widest = 0;
+      let run = 0;
+      for (let x = first; x <= last; x++) {
+        run = inky[x] ? 0 : run + 1;
+        if (run > widest) widest = run;
+      }
+      return { widest, first, last };
+    });
+
+    assert.ok(gap.widest > 0, `nothing is drawn in the card's footer band: ${JSON.stringify(gap)}`);
+    // 24px is about twice the widest word space either line contains at 22px,
+    // so this fails while the two are merely close rather than only once they
+    // overlap — a collision reaches somebody's chat before anyone sees it.
+    assert.ok(
+      gap.widest >= 24,
+      `the source line and the route back are ${gap.widest}px apart on the finished card ` +
+        `(text spans x=${gap.first}..${gap.last}); one of the two strings has outgrown its half`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the shared picture follows the reader's theme and language", { skip }, async () => {
   await withApp(async (page, errors) => {
     // Reading the pixel is a second state question, and the canvas answers it

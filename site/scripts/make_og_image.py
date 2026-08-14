@@ -3,7 +3,8 @@
 
 Run: `python3 scripts/make_og_image.py` from `site/`. It writes:
 
-    site/public/og-image.png   1200×630, the link-preview card
+    site/public/og-*.png       1200×630, one link-preview card per page per
+                               language — see CARDS
     site/public/favicon.ico    16/32/48, the icon every surface can read
     site/public/icon-180.png   the iOS home screen
     site/public/icon-192.png   Android, and the manifest's small icon
@@ -233,8 +234,80 @@ WORDMARK = "ВЯРНО"
 DOMAIN = "VYARNO.BG"  # upper-case for the 5×7 font; hostnames are case-blind
 STRAPLINE = "ИКОНОМИКАТА, ЧЕСТНО"  # = COPY.brandSmall.bg, upper-cased
 STRAPLINE_EN = "THE ECONOMY, HONESTLY"  # = COPY.brandSmall.en, upper-cased
-HEADLINE = "СМЕТНИ СВОЯТА ИНФЛАЦИЯ"
-SOURCE = "ОТ ОФИЦИАЛНИТЕ ДАННИ НА ЕВРОСТАТ"
+
+# ---------------------------------------------------------------------------
+# The cards: file, strapline, headline, and what the page reads.
+#
+# **A page unfurls as itself or it does not unfurl at all.** Facebook, Viber,
+# Telegram and Slack draw a picture only where `og:image` resolves, and nothing
+# on this site can stand in for one — every entry's body is a mount point and a
+# `<noscript>`, the mark is inline SVG, and no served page carries a single
+# `<img>` for a scraper to fall back on. A page declaring no card is a one-line
+# row in a chat window, under a title a recipient reads once.
+#
+# Reusing one card across the pages is the other wrong answer, and the entries
+# argue it where somebody would do it: a strapline about working out your own
+# inflation, over a page of national housing figures, unfurls a reference page
+# as a calculator.
+#
+# **A language is a card, not a string swap.** The artwork is pixels, so the
+# Bulgarian card under an English title is not a page half-translated — it is
+# Cyrillic sent to somebody who cannot read it, beside a title that can be.
+#
+# **NO FIGURE ON ANY OF THEM.** Every platform caches a preview hard and
+# re-fetches it on its own schedule, so a rate drawn here is still being served
+# months after the payload moved — our credibility rather than the publisher's
+# (docs/principles.md P4). The headline says what the page ANSWERS; the answer
+# itself is on the page, where a refresh reaches it.
+#
+# `/legal/` and `/support/` have no card and declare no `og:image`. Both
+# entries carry that reasoning at the point somebody would add one.
+#
+# The source line names the publishers rather than repeating the strapline,
+# because it is the claim that separates this from an opinion blog and it is
+# what P9 asks a surface carrying no link to carry.
+# ---------------------------------------------------------------------------
+CARDS = (
+    (
+        "og-image.png",
+        STRAPLINE,
+        "СМЕТНИ СВОЯТА ИНФЛАЦИЯ",
+        "ОТ ОФИЦИАЛНИТЕ ДАННИ НА ЕВРОСТАТ",
+    ),
+    # «Своята» is reflexive and carries «your own» in one word; English has no
+    # such word, so the card drops "own" rather than overflowing the margin.
+    # The og:title above it keeps the full «work out your own inflation».
+    (
+        "og-image.en.png",
+        STRAPLINE_EN,
+        "WORK OUT YOUR INFLATION",
+        "FROM OFFICIAL EUROSTAT DATA",
+    ),
+    (
+        "og-how.png",
+        STRAPLINE,
+        "ЧИСЛАТА ЗА БЪЛГАРИЯ",
+        "ЕВРОСТАТ, ЕЦБ, НСИ, БНБ, ИМОТ.BG",
+    ),
+    (
+        "og-how.en.png",
+        STRAPLINE_EN,
+        "THE FIGURES FOR BULGARIA",
+        "EUROSTAT, ECB, NSI, BNB, IMOT.BG",
+    ),
+    (
+        "og-market.png",
+        STRAPLINE,
+        "ПАЗАРЪТ НА ЖИЛИЩА",
+        "ЕВРОСТАТ, НСИ И ОБЯВИТЕ НА ИМОТ.BG",
+    ),
+    (
+        "og-market.en.png",
+        STRAPLINE_EN,
+        "THE PROPERTY MARKET",
+        "EUROSTAT, NSI AND IMOT.BG LISTINGS",
+    ),
+)
 
 MARGIN = 96
 RIGHT = W - MARGIN
@@ -254,6 +327,12 @@ WM_SCALE = 12
 # than the other — so they share a size and a colour. Set larger, the
 # strapline outruns the wordmark it describes.
 SUB_SCALE = 4
+
+# The headline, one rank under the wordmark and one above the strapline. It is
+# the only line on the card set in ERODE, so the size is what stops a reader
+# taking the wordmark for the message. At this scale a line fits 24 glyphs;
+# `main()` exits non-zero rather than letting a longer one run off the margin.
+HEAD_SCALE = 7
 
 
 def lockup(c, top, strapline):
@@ -331,16 +410,16 @@ def ico(sizes):
     return head + entries + b"".join(b for _, b in blobs)
 
 
-def build_card():
-    """The 1200×630 link preview."""
+def build_card(strapline, headline, source):
+    """One 1200×630 link preview: the shared lockup, this page's two lines."""
     c = Canvas(W, H, PAPER)
     for y in (155, 325, 410, 500, 590):
         c.rect(MARGIN, y, W - 2 * MARGIN, 1, LINE_2)
 
-    lockup(c, 155, STRAPLINE)
+    lockup(c, 155, strapline)
 
-    c.text(HEADLINE, MARGIN, 448, 7, ERODE)
-    c.text(SOURCE, MARGIN, 516, SUB_SCALE, MUTED)
+    c.text(headline, MARGIN, 448, HEAD_SCALE, ERODE)
+    c.text(source, MARGIN, 516, SUB_SCALE, MUTED)
     c.rect(MARGIN, 568, 220, 3, REAL)
     return c
 
@@ -365,14 +444,32 @@ def main():
     # Prove the font covers every string before drawing anything: a missing
     # glyph must be an error at the top, not a hole discovered by whoever the
     # link is sent to.
-    strings = (WORDMARK, DOMAIN, STRAPLINE, STRAPLINE_EN, HEADLINE, SOURCE)
+    strings = (
+        WORDMARK,
+        DOMAIN,
+        STRAPLINE,
+        STRAPLINE_EN,
+        *(line for _, _, headline, source in CARDS for line in (headline, source)),
+    )
     missing = sorted({ch for s in strings for ch in s if ch not in FONT})
     if missing:
         sys.exit(f"missing glyphs: {missing}")
 
-    card = build_card()
-    if card.width_of(HEADLINE, 7) > W - 2 * MARGIN:
-        sys.exit("the headline overflows the card's margins")
+    cards = [
+        (name, build_card(strapline, headline, source))
+        for name, strapline, headline, source in CARDS
+    ]
+    card = cards[0][1]
+
+    # Both lines are set from the left margin and neither wraps — `Canvas.text`
+    # blits a run and nothing measures it back — so a line too long for the
+    # card is drawn straight off the right edge, on artwork no test can read
+    # and every recipient can see.
+    for (name, _, headline, source), (_, drawn) in zip(CARDS, cards):
+        for line, scale in ((headline, HEAD_SCALE), (source, SUB_SCALE)):
+            over = drawn.width_of(line, scale) - (W - 2 * MARGIN)
+            if over > 0:
+                sys.exit(f"{name}: {line!r} overflows the card's margins by {over}px")
 
     # The wordmark and the domain share a baseline and are set from opposite
     # margins, so a longer name or a longer host is what closes the gap
@@ -384,8 +481,7 @@ def main():
         if 264 + card.width_of(strapline, SUB_SCALE) > RIGHT:
             sys.exit(f"the strapline overflows the right margin: {strapline}")
 
-    targets = [
-        (site / "public" / "og-image.png", card),
+    targets = [(site / "public" / name, drawn) for name, drawn in cards] + [
         (site / "public" / "icon-180.png", build_icon(180)),
         (site / "public" / "icon-192.png", build_icon(192)),
         (site / "public" / "icon-512.png", build_icon(512)),
@@ -400,6 +496,10 @@ def main():
         print(f"wrote {out.relative_to(root)} ({out.stat().st_size} bytes, {canvas.w}×{canvas.h})")
     print(f"  wordmark  {WORDMARK}  ({card.width_of(WORDMARK, WM_SCALE)} px wide)")
     print(f"  domain    {DOMAIN}  ({card.width_of(DOMAIN, SUB_SCALE)} px wide)")
+    for name, _, headline, _ in CARDS:
+        print(
+            f"  {name:18} {headline}  ({card.width_of(headline, HEAD_SCALE)} of {W - 2 * MARGIN} px)"
+        )
 
 
 if __name__ == "__main__":

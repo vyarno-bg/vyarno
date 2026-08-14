@@ -404,19 +404,29 @@ test("the generated sitemap carries every indexable page, /how/ included", () =>
 /**
  * The pages that are a build entry, in URL order.
  *
- * One list, read by three tests below: the entries exist, `_headers` gives each
- * one a revalidating cache rule, and every one of them carries a `<noscript>`
- * with the upstream attribution. Three hardcoded lists is three chances for a
- * page to be in two of them — and the one it is missing from is the one nobody
- * looks at, because the tests around it stay green.
+ * One list, read by every test below that is about the collection: the entries
+ * exist, `_headers` gives each one a revalidating cache rule, each carries a
+ * `<noscript>` with the upstream attribution, each names both languages of
+ * itself, and each declares an unfurl a chat app can draw. Separate hardcoded
+ * lists would be separate chances for a page to be in some of them — and the
+ * one it is missing from is the one nobody looks at, because the tests around
+ * it stay green.
+ *
+ * **A route missing here is a route with no test at all**, which is not
+ * hypothetical: `/market/` was absent, so nothing checked its cache rule, its
+ * `hreflang` set or its `<noscript>` — and it is the largest served document in
+ * the tree, 223 kB of figures frozen at build time, so a host caching it hard
+ * serves last quarter's house prices for as long as it likes.
  */
 const ENTRIES = [
   { file: ["index.html"], url: "/index.html" },
   { file: ["how", "index.html"], url: "/how/index.html" },
+  { file: ["market", "index.html"], url: "/market/index.html" },
   { file: ["legal", "index.html"], url: "/legal/index.html" },
   { file: ["support", "index.html"], url: "/support/index.html" },
   { file: ["en", "index.html"], url: "/en/index.html" },
   { file: ["en", "how", "index.html"], url: "/en/how/index.html" },
+  { file: ["en", "market", "index.html"], url: "/en/market/index.html" },
   { file: ["en", "legal", "index.html"], url: "/en/legal/index.html" },
   { file: ["en", "support", "index.html"], url: "/en/support/index.html" },
   { file: ["404.html"], url: "/404.html" },
@@ -485,6 +495,103 @@ test("every icon a page declares is a file the build ships", () => {
       `the manifest calls ${icon.src} ${icon.sizes} and the file is ${w}x${h}`
     );
   }
+});
+
+/**
+ * Every `<meta>` on a page, keyed by `property` or `name`.
+ *
+ * Both keys into one map because the two vocabularies sit side by side in these
+ * heads and neither namespaces the other: `og:title` arrives as a `property`
+ * and `twitter:card` as a `name`, and a reader of the result wants the tag, not
+ * the attribute it happened to be spelled with.
+ */
+function metaTags(html) {
+  const out = {};
+  for (const [, attrs] of html.matchAll(/<meta\s+([^>]*?)\/?>/gs)) {
+    const pairs = {};
+    for (const [, name, value] of attrs.matchAll(/([\w:-]+)\s*=\s*"([^"]*)"/gs))
+      pairs[name] = value;
+    const key = pairs.property ?? pairs.name;
+    if (key) out[key] = (pairs.content ?? "").replace(/\s+/g, " ").trim();
+  }
+  return out;
+}
+
+test("every page a stranger is sent unfurls as a card, and the card is a file", () => {
+  // What this catches is invisible from inside the site: a link posted to
+  // Viber, Messenger, Telegram or Slack draws a picture only where `og:image`
+  // resolves, and nothing here can stand in for one — every entry's body is a
+  // mount point and a <noscript>, and the mark is inline SVG, so no served page
+  // carries an <img> for a scraper to fall back on. A renamed PNG, or a route
+  // that never grew a card, unfurls as a one-line row while every page renders,
+  // every test passes and nobody who is not being sent the link can tell.
+  //
+  // One loop over `ENTRIES`, so a page added to the build is covered by the
+  // block it copies from its neighbour.
+  const CARD_ROUTES = ["/index.html", "/how/index.html", "/market/index.html"];
+  const withCard = [];
+  for (const { file, url } of ENTRIES) {
+    const meta = metaTags(read(...file));
+    const image = meta["og:image"];
+    const expected = CARD_ROUTES.includes(url.replace(/^\/en/, "")) && url !== "/404.html";
+    if (!image) {
+      assert.ok(
+        !expected,
+        `${url} declares no og:image, so it unfurls with no picture at all. ` +
+          "scripts/make_og_image.py draws one per page per language."
+      );
+      // /legal/ and /support/ deliberately have none, and must not then claim a
+      // shape for a picture that is not there.
+      assert.equal(meta["twitter:card"], undefined, `${url} names a card shape and no image`);
+      continue;
+    }
+    withCard.push(url);
+
+    const png = site("public", image.replace(/^https:\/\/vyarno\.bg\//, ""));
+    assert.ok(existsSync(png), `${url} declares og:image ${image} and public/ has no such file`);
+
+    // The PNG's own IHDR, not the declared numbers: a platform lays out the
+    // card from og:image:width/height before it has fetched the file, so a pair
+    // that disagrees with the pixels is a preview drawn at the wrong aspect and
+    // cropped to fit. 1200x630 is what every unfurler crops least, and it is
+    // what `share-card.js` exports too — the generated card and the site's own
+    // are one shape in a feed.
+    const head = readFileSync(png).subarray(16, 24);
+    const size = `${head.readUInt32BE(0)}x${head.readUInt32BE(4)}`;
+    assert.equal(size, "1200x630", `${image} is ${size}`);
+    assert.equal(`${meta["og:image:width"]}x${meta["og:image:height"]}`, size, `${url} declares`);
+
+    // Alt text, because a chat app reads it aloud and a picture of a headline
+    // is the one kind that loses everything when it is not read.
+    assert.ok(meta["og:image:alt"], `${url} declares an og:image with no og:image:alt`);
+
+    // X reads og:image as its fallback but has no fallback for the SHAPE:
+    // without `twitter:card` it renders the small square summary, which crops a
+    // 1200x630 card to its middle third.
+    assert.equal(meta["twitter:card"], "summary_large_image", `${url} would render as a square`);
+    const twitterImage = meta["twitter:image"];
+    assert.ok(
+      twitterImage === undefined || twitterImage === image,
+      `${url} unfurls as ${image} everywhere except X, where it is ${twitterImage}`
+    );
+
+    // The card is drawn in the language its entry declares, because the artwork
+    // is pixels: the Bulgarian card under an English title is not a page half
+    // translated, it is Cyrillic sent to somebody who cannot read it.
+    assert.equal(
+      /\.en\.png$/.test(image),
+      url.startsWith("/en/"),
+      `${url} unfurls with the other language's artwork: ${image}`
+    );
+  }
+  // The set, not just each member: the failure that this half catches is a
+  // route quietly LOSING its card, where every remaining assertion above still
+  // passes because it only ever runs on the pages that still have one.
+  assert.deepEqual(
+    withCard.sort(),
+    CARD_ROUTES.flatMap((u) => [u, `/en${u}`]).sort(),
+    "the set of pages that unfurl as a card has changed"
+  );
 });
 
 /** The `hreflang` set and the canonical of a built entry, as a crawler reads them. */

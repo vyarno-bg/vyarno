@@ -74,10 +74,31 @@
       content="Официалните числа за България, с институцията, периода и връзката към таблицата до всяко от тях."
     />
     <!--
-    No og:image. The calculator's card carries the wordmark and a strapline
-    about working out your own inflation, and reusing it here would unfurl a
-    reference page as the calculator.
+    This page's OWN card, drawn by scripts/make_og_image.py from the shared
+    lockup — the two lines under it are this page's. That file's CARDS block
+    argues the whole decision: why a card per page rather than the calculator's
+    reused, why one per language, and why no figure is drawn on any of them.
+
+    What it costs to skip: an entry declaring no og:image unfurls as a one-line
+    row, because nothing on this site can stand in for a card. Every body is a
+    mount point and a <noscript>, and the mark is inline SVG, so no served page
+    carries a single <img> for a scraper to fall back on.
   -->
+    <meta property="og:image" content="https://vyarno.bg/og-how.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Вярно · vyarno.bg — числата за България, от Евростат, ЕЦБ, НСИ, БНБ и имот.bg"
+    />
+    <!--
+    twitter:card decides the SHAPE and has no Open Graph equivalent, so it is
+    the one tag this block cannot leave to a fallback: without it X renders the
+    small square summary, which crops a 1200×630 card to its middle third. The
+    title, the description and the image itself ARE read off og: above, so
+    restating them here would be a second copy to keep in step for no effect.
+  -->
+    <meta name="twitter:card" content="summary_large_image" />
 
     <!--
     Structured data, and the two things it deliberately does not say.

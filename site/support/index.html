@@ -4,9 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Вярно — кой плаща за проекта</title>
+    <!--
+      What the donations cover is a fact `src/lib/support.js` owns, and this
+      tag has to say what that file says. A head tag is the one surface where
+      the claim is read with no page beside it to correct it — a search result,
+      an unfurl, an agent's summary — so a sentence here that the page
+      contradicts is the version most people get. `support.js#line` names the
+      domain and says the hosting is free; naming a server as something
+      donations pay for describes a cost nobody has.
+    -->
     <meta
       name="description"
-      content="Вярно е безплатно за всички и няма платена версия. Домейнът и сървърът се плащат от дарения, които не купуват нищо."
+      content="Вярно е безплатно за всички и няма платена версия. Домейнът се плаща от дарения; хостингът е безплатен. Дарението не купува нищо."
     />
     <link rel="canonical" href="https://vyarno.bg/support/" />
     <!--
@@ -55,7 +64,17 @@
     <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:url" content="https://vyarno.bg/support/" />
     <meta property="og:title" content="Вярно — кой плаща за проекта" />
-    <meta property="og:description" content="Какво покриват даренията и какво не купуват." />
+    <!--
+      This page has no card, so the description IS the unfurl — the whole of
+      what a recipient is given before deciding whether to open it. So it names
+      the product before it names the funding: somebody sent this link is
+      usually being answered «кой стои зад това», and a line about what
+      donations cover tells them nothing about what they are being sent to.
+    -->
+    <meta
+      property="og:description"
+      content="Вярно е безплатен калкулатор върху официална статистика. Няма платена версия и няма функции за дарители — дарението не купува нищо."
+    />
 
     <!--
     A WebPage, so the page a person is given as the funding answer is one a
