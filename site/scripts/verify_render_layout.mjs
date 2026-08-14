@@ -165,39 +165,29 @@ test("the calculator's bar keeps its four controls on one line at 360px", { skip
   // At 360px the brand's tagline wrapped to two lines inside the bar — the
   // promise «икономиката, честно» rendered as a layout fault — so it is what
   // gives first. Nothing about that is visible from the markup.
+  //
+  // **What still catches a wrapped bar is the 54px, and the BAR_ROUTES loop
+  // above.** The height is exact: `.bar` sets `min-height` rather than
+  // `height`, so anything that no longer fits on one line — the tagline coming
+  // back, a fifth control, a longer word in either language — grows the box and
+  // this goes red with the measurement in the message. The loop asserts the
+  // rows overlap on all eleven routes at 360px, over the brand AND the
+  // controls, which is a superset of what a `rowGap` taken over the controls
+  // alone could say here; and a brand taller than the bar containing it is not
+  // a state the box model has.
   await withApp(
     async (page, errors) => {
-      const bar = await page.evaluate(() => {
-        const brand = document.querySelector("header.site .brand");
-        const controls = [...document.querySelectorAll("header.site .controls > *")].filter(
+      const bar = await page.evaluate(() => ({
+        barHeight: Math.round(
+          document.querySelector("header.site .bar").getBoundingClientRect().height
+        ),
+        taglineShown: Boolean(document.querySelector("header.site .brand small")?.offsetHeight),
+        controls: [...document.querySelectorAll("header.site .controls > *")].filter(
           (el) => el.offsetParent !== null
-        );
-        return {
-          barHeight: Math.round(
-            document.querySelector("header.site .bar").getBoundingClientRect().height
-          ),
-          brandHeight: Math.round(brand.getBoundingClientRect().height),
-          taglineShown: Boolean(document.querySelector("header.site .brand small")?.offsetHeight),
-          controls: controls.length,
-          // One row, measured as one row. Not by a shared top edge — the
-          // controls are a button among anchors, they are not the same height,
-          // and `align-items: center` puts each at its own top. What makes a
-          // row is that every box overlaps every other vertically.
-          rowGap:
-            Math.max(...controls.map((el) => el.getBoundingClientRect().top)) -
-            Math.min(...controls.map((el) => el.getBoundingClientRect().bottom)),
-        };
-      });
+        ).length,
+      }));
       assert.equal(bar.controls, 4, `the header carries ${bar.controls} controls, expected 4`);
-      assert.ok(
-        bar.rowGap < 0,
-        `the four controls have wrapped — ${bar.rowGap}px of clear air between two of them`
-      );
       assert.equal(bar.barHeight, 54, `the bar is ${bar.barHeight}px tall, expected 54`);
-      assert.ok(
-        bar.brandHeight <= bar.barHeight,
-        `the brand is ${bar.brandHeight}px tall in a ${bar.barHeight}px bar — it has wrapped`
-      );
       assert.equal(bar.taglineShown, false, "the tagline is still drawn on a 360px bar");
       assert.deepEqual(errors, [], errors.join(" | "));
     },
@@ -446,17 +436,78 @@ test("the two input cards read as one on a wide screen", { skip }, async () => {
       const inputs = document.querySelector(".m-inputs").getBoundingClientRect();
       return {
         gap: Math.round(inputs.top - pay.bottom),
+        payFirst: pay.top < inputs.top,
         leftAligned: Math.abs(inputs.left - pay.left) < 1,
       };
     });
+    // The order first, because the seam measurement cannot see it. `.m-col`
+    // drawn bottom-up puts the salary field BELOW the thirteen sliders it
+    // prices everything off — the same defect the phone stack above is
+    // arranged to avoid, arriving on the desktop instead — and
+    // `inputs.top - pay.bottom` then reads several hundred pixels NEGATIVE,
+    // which is a hole reported as a seam closed tighter than asked.
     assert.ok(
-      seam.gap <= 1,
-      `there is a ${seam.gap}px hole between the pay card and the inputs card on a desktop`
+      seam.payFirst,
+      "the inputs card is drawn above the pay field on a wide screen. The " +
+        "salary is what every figure on the page is priced off, so it is what " +
+        "the column asks for first."
+    );
+    assert.ok(
+      Math.abs(seam.gap) <= 1,
+      `the pay card and the inputs card are ${seam.gap}px apart on a desktop, ` +
+        "and the join between them is drawn once because they read as one card"
     );
     assert.ok(seam.leftAligned, "the two input cards do not share a left edge");
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
+
+test(
+  "the unit glyph sits in the gutter the field reserves, not over the digits",
+  { skip },
+  async () => {
+    // `.field .unit::after` writes the € or the % inside the input's own box, and
+    // the input's `padding-right` is the room set aside for it. Anchored from the
+    // wrong edge it lands on the first digit the reader types: the glyph is
+    // `pointer-events: none`, so there is nothing to click, nothing throws, the
+    // field reports the right value, and «900» is on screen as a € painted over
+    // the 9.
+    //
+    // Read as resolved offsets because a pseudo-element has no box to measure —
+    // an absolutely positioned one resolves BOTH `left` and `right` to used
+    // values, so the pair answers where it actually landed whichever of the two
+    // the rule set. Over every unit on the page rather than the first: the next
+    // suffix added is the case this is for.
+    await withApp(async (page, errors) => {
+      const glyphs = await page.locator(".field .unit").evaluateAll((els) =>
+        els.map((unit) => {
+          const after = getComputedStyle(unit, "::after");
+          const input = unit.querySelector("input");
+          return {
+            glyph: after.content,
+            right: parseFloat(after.right),
+            width: parseFloat(after.width),
+            gutter: parseFloat(getComputedStyle(input).paddingRight),
+          };
+        })
+      );
+      assert.ok(
+        glyphs.length >= 2,
+        `${glyphs.length} unit suffixes are drawn, so this checks little`
+      );
+      for (const g of glyphs) {
+        assert.ok(g.width > 0, `the ${g.glyph} suffix renders no glyph at all`);
+        assert.ok(
+          g.right >= 0 && g.right + g.width <= g.gutter,
+          `the ${g.glyph} suffix reaches ${(g.right + g.width).toFixed(1)}px in from the ` +
+            `field's right edge, past the ${g.gutter}px of padding the input keeps clear ` +
+            "for it — so it is drawn over the reader's own digits"
+        );
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
 
 test("a narrow column folds the ranked table and still adds up", { skip }, async () => {
   // Eight rows is about a screen and a half of table between the headline and

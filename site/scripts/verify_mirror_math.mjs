@@ -282,9 +282,17 @@ test("percentile reads from the bottom: a low income is 1, not 99", () => {
   assert.equal(percentile(520, NET_LADDER), 1);
 });
 
-test("percentile clamps the top rung to 99", () => {
+test("percentile clamps at the top rung and nowhere below it", () => {
   assert.equal(percentile(3200, NET_LADDER), 99);
   assert.equal(percentile(99999, NET_LADDER), 99);
+  // The rung BELOW the top is where the clamp costs something. P90 to P99 is
+  // nine points of the ladder spread over €1350 of net — the widest gap on the
+  // whole thing — and a clamp reading from the P90 rung answers 99 across all
+  // of it. «изпреварваш 99%» to a €1900 net is the answer this ladder exists to
+  // stop giving, and one index is the whole distance between the two.
+  assert.equal(percentile(1850, NET_LADDER), 90);
+  assert.equal(percentile(2000, NET_LADDER), 91);
+  assert.equal(percentile(2500, NET_LADDER), 94);
 });
 
 test("percentile is monotonic — more money never moves you down", () => {
@@ -296,10 +304,17 @@ test("percentile is monotonic — more money never moves you down", () => {
   }
 });
 
-test("percentile interpolates between cuts", () => {
+test("percentile interpolates between cuts, and rounds to the nearest", () => {
   // Exactly the P50 rung → 50; midway between P50 and P60 → ~55.
   assert.equal(percentile(1080, NET_LADDER), 50);
   assert.equal(percentile(1130, NET_LADDER), 55);
+  // Both of those land on whole numbers, where truncating and rounding agree.
+  // €1128 interpolates to 54.8 and €1123 to 54.3, so the pair pins the nearest
+  // from both sides. A point of the ladder is about €10 of net here and the
+  // reader is shown the figure to the point, so an end taken instead of the
+  // nearest is a rank that is off by one for half of them.
+  assert.equal(percentile(1128, NET_LADDER), 55);
+  assert.equal(percentile(1123, NET_LADDER), 54);
 });
 
 test("percentile returns 0 (renders as unknown) when the ladder is missing", () => {
@@ -412,6 +427,33 @@ test("buildLadder uses the payroll params it is given, not a frozen copy", () =>
   );
   const doubledTax = { ...BG_PAYROLL_DEFAULT, incomeTaxRate: 0.2 };
   assert.ok(buildLadder(dist, 1000, doubledTax)[0] < buildLadder(dist, 1000)[0]);
+  // The tax rate reaches the ladder through `bgNetSalary` alone. The minimum
+  // wage reaches it through `composeLadder`, which is a second hand-off and the
+  // one that can be dropped on its own — and the published
+  // `min_wage_gross_eur` is €620.20 today, the same figure as the offline
+  // sentinel, so a ladder built off the sentinel is indistinguishable from a
+  // correct one until the ЗБДОО moves it.
+  const raisedFloor = { ...BG_PAYROLL_DEFAULT, minWageGross: 1500 };
+  assert.equal(buildLadder(dist, 1000, raisedFloor)[0], bgNetSalary(1500, raisedFloor).net);
+  assert.equal(buildLadder(dist, 1000)[0], bgNetSalary(1000).net);
+});
+
+test("the shape is re-levelled ONTO the anchor, not away from it", () => {
+  // Two publishers meet in one number here: `ladder_ses` is Eurostat's shape at
+  // Eurostat's own level, and the anchor is НСИ's newest national mean. The
+  // whole join is one scalar, and the direction of its divide is the join.
+  //
+  // Inverted, an anchor ABOVE the survey's mean shrinks every rung instead of
+  // lifting it — and nothing about the result looks wrong. The ladder still
+  // rises, still floors at the minimum wage, still reads as eleven percentiles;
+  // every salary measured against it simply lands too high. The fixtures
+  // elsewhere in this file pass an anchor equal to `ses_mean` to keep their
+  // rungs readable, which is precisely the one anchor at which the divide has
+  // no direction to get wrong.
+  const gross = composeLadder(distOf({ P1: 800, P50: 1000, P99: 4000 }, 1000), 1400);
+  assert.equal(gross.P50, 1400, "the median rung is not at the anchor's own level");
+  assert.equal(gross.P1, 1120);
+  assert.equal(gross.P99, 5600);
 });
 
 test("buildLadder returns [] when either half of the ladder is missing", () => {
@@ -669,14 +711,30 @@ test("contributions decompose personal inflation EXACTLY", () => {
 
 test("contributions rank by euro-weighted impact, not by headline rate", () => {
   // CAR has the highest rate but a small share here; FOOD's share carries it.
+  //
+  // Handed in an order the answer disagrees with: CAR contributes 0.55 points
+  // here, TRANSPORT 0.28 and FOOD 3.90, so the ranking is neither the order
+  // they arrived in nor its reverse. `view/results.js#rankedSplit` takes the
+  // first eight rows of this list and sums the remainder into one line, so a
+  // list that came back in the order it went in draws the wrong groups and
+  // sweeps the biggest one into «останалите» — with every number in it right.
   const rows = contributions({
-    divisions: [FOOD, CAR],
-    amounts: [95, 5],
+    divisions: [CAR, TRANSPORT, FOOD],
+    amounts: [5, 20, 75],
     anchor: "y1",
     spendable: 2000,
   });
-  assert.equal(rows[0].division, FOOD, "the big share outranks the big rate");
-  assert.ok(rows[0].contributionPp > rows[1].contributionPp);
+  assert.deepEqual(
+    rows.map((r) => r.division),
+    [FOOD, CAR, TRANSPORT],
+    "the big share outranks the big rate"
+  );
+  for (let i = 1; i < rows.length; i += 1) {
+    assert.ok(
+      rows[i - 1].contributionPp > rows[i].contributionPp,
+      `row ${i} contributes ${rows[i].contributionPp} above ${rows[i - 1].contributionPp}`
+    );
+  }
 });
 
 test("contributions price each row off its own spend, not a share of a total", () => {

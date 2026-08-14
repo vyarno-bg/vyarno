@@ -475,11 +475,58 @@ test(
           "it coincides with the effective one — which is most of the plot"
       );
 
+      // **And it traces the marginal rate rather than a second copy of the
+      // effective one.** Handed the same key, the two paths are the same
+      // numbers: the wash sits exactly under the line for the whole plot, the
+      // legend still names two series, both assertions above still pass, and
+      // the chart's entire finding — that the effective rate falls above the
+      // ceiling while the marginal rate holds — is drawn as a shape that says
+      // nothing. Above the ceiling the wash's top edge has to be BELOW the
+      // line, which is that gap and nothing else, so it is measured where the
+      // frame cuts them: the fill is scanned down from the top of the plot at
+      // the line's own end, and where it starts is where the wash's edge is.
+      const series = await page
+        .locator("svg.wedge")
+        .first()
+        .evaluate((svg) => {
+          const wash = svg.querySelector("path.wedge-marginal");
+          const line = svg.querySelector("path.wedge-effective");
+          const baseY = Number(svg.querySelector("line.wedge-base").getAttribute("y1"));
+          const end = line.getPointAtLength(line.getTotalLength());
+          let washTop = null;
+          for (let y = 0; y <= baseY && washTop === null; y += 0.25) {
+            if (wash.isPointInFill(new DOMPoint(end.x - 3, y))) washTop = y;
+          }
+          return { lineEndY: end.y, washTop, baseY };
+        });
+      assert.ok(
+        series.washTop !== null && series.washTop < series.baseY,
+        "the wash has no filled height at the right edge of the frame, so the " +
+          "marginal rate is drawn as nothing there"
+      );
+      assert.ok(
+        series.washTop - series.lineEndY > 5,
+        `at the frame's right edge the wash's top edge is at ${series.washTop} and the ` +
+          `effective line ends at ${series.lineEndY} — the two coincide, so the chart ` +
+          "draws one series twice and the drop above the ceiling is invisible"
+      );
+
       // Each SERIES key is a swatch with real area. The ceiling's key is a rule,
       // because the mark it names is a rule.
+      //
+      // Asserted rather than skipped when the selector finds nothing: a `continue`
+      // here means renaming a key's class — the one-character edit that leaves a
+      // legend drawn and a swatch blank — passes this test with the loop having
+      // measured nothing. An early exit on a missing element is a green test for a
+      // deleted feature (docs/testing-strategy.md §"The standard a test has to
+      // meet"), and it is the same rule the full-width card's test above states.
       for (const cls of [".wedge-key .e", ".wedge-key .m"]) {
         const swatch = page.locator(cls);
-        if (!(await swatch.count())) continue;
+        assert.ok(
+          await swatch.count(),
+          `the key names no series at ${cls}, so either the swatch is gone or its ` +
+            "class no longer matches the mark it stands for"
+        );
         const box = await swatch.first().evaluate((el) => {
           const s = getComputedStyle(el, "::before");
           return { w: parseFloat(s.width), h: parseFloat(s.height), bg: s.backgroundColor };

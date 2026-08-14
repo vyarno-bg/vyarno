@@ -33,6 +33,7 @@ from vyarno_pipeline.sources.eurostat import (
     fetch_hicp_index_bg,
     fetch_hicp_rates_bg,
     fetch_hicp_weights_bg,
+    fetch_ses_earnings_bg,
     group_codes_in_basket,
 )
 
@@ -41,9 +42,11 @@ IW = json.loads((FIXTURES / "eurostat_hicp_iw_bg.json").read_text(encoding="utf-
 RCH = json.loads((FIXTURES / "eurostat_hicp_rch_bg.json").read_text(encoding="utf-8"))
 I15 = json.loads((FIXTURES / "eurostat_hicp_i15_bg.json").read_text(encoding="utf-8"))
 INW_V1 = json.loads((FIXTURES / "eurostat_hicp_inw_v1_bg.json").read_text(encoding="utf-8"))
+SES = json.loads((FIXTURES / "eurostat_ses_monthly_bg.json").read_text(encoding="utf-8"))
 
 MINR_URL = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{MINR_DATASET}"
 IW_URL = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{IW_DATASET}"
+SES_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/earn_ses_monthly"
 
 
 def _minr_by_unit(request):
@@ -141,6 +144,81 @@ def test_group_codes_exclude_zero_weight_groups():
         assert zero_weight not in groups
     # Every group belongs to a published division.
     assert all(g[:4] in CP_DIVISIONS for g in groups)
+
+
+# ---------------------------------------------------------------------------
+# The earnings distribution — `earn_ses_monthly`
+# ---------------------------------------------------------------------------
+
+
+@respx.mock
+def test_the_ses_decile_ladder_is_decoded_end_for_end():
+    """Which rung each `indic_se` code is, against the live BG 2022 cube.
+
+    Nineteen indicators come back in one response and four of them are read.
+    Two are the ends of the ladder and they differ by one character —
+    `D1_E_EUR` and `D9_E_EUR` — so exchanging them inverts every figure the
+    percentile card is built from while the payload stays a plausible
+    distribution: the four values are still SES's own, the shape is still
+    monotone once sorted, and the mean still sits where it did. The published
+    ladder would put a bottom-decile salary in the top decile and back.
+
+    The values are written out because the cube is the only place they exist:
+    D1 376, median 705, mean 949, D9 1700 EUR/month, BG 2022.
+    """
+    respx.get(SES_URL).mock(return_value=httpx.Response(200, json=SES))
+
+    ses = fetch_ses_earnings_bg(geo="BG")
+
+    assert ses["ref_year"] == "2022"
+    assert ses["d1"] == 376.0
+    assert ses["median"] == 705.0
+    assert ses["mean"] == 949.0
+    assert ses["d9"] == 1700.0
+
+
+@respx.mock
+def test_the_ses_slice_is_pinned_and_read_in_euro_rather_than_pps():
+    """Every dimension the cube crosses, and the currency the rungs are in.
+
+    The same nineteen indicators publish each figure twice, in euro and in PPS,
+    and BG's PPS numbers run about 1.65x the euro ones — a ladder read in PPS is
+    a plausible distribution against which every reader's salary ranks lower
+    than it does. The slice pins matter for the same reason: `worktime` left
+    unpinned mixes part-time into a monthly figure, and `isco08` unpinned
+    returns a ladder per occupation with no way to tell which is the country.
+    """
+    route = respx.get(SES_URL).mock(return_value=httpx.Response(200, json=SES))
+
+    ses = fetch_ses_earnings_bg(geo="BG")
+
+    params = route.calls.last.request.url.params
+    assert params["geo"] == "BG"
+    assert params["nace_r2"] == "B-S_X_O"
+    assert params["isco08"] == "TOTAL"
+    assert params["worktime"] == "FT"
+    assert params["age"] == "TOTAL"
+    assert params["sex"] == "T"
+    # D1 / median / mean / D9 in PPS, from the same response. None of the four
+    # euro rungs may be one of these.
+    pps = {623.0, 1170.0, 1575.0, 2820.0}
+    assert not pps & {ses[k] for k in ("d1", "median", "mean", "d9")}
+
+
+@respx.mock
+def test_the_ses_fetch_raises_when_a_rung_is_missing():
+    """A partial cube must fail rather than publish a ladder with a hole.
+
+    Interpolation downstream fills the deciles BETWEEN the published points; a
+    missing endpoint would be extrapolated from the segment beside it and
+    published as a surveyed figure.
+    """
+    holed = json.loads(json.dumps(SES))
+    del holed["value"]["6"]  # D9_E_EUR
+    respx.get(SES_URL).mock(return_value=httpx.Response(200, json=holed))
+
+    with pytest.raises(ValueError, match=r"missing \['d9'\]"):
+        fetch_ses_earnings_bg(geo="BG")
 
 
 # ---------------------------------------------------------------------------

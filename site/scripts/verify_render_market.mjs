@@ -1134,12 +1134,20 @@ test("the six-city table draws each city's own history on one shared scale", { s
   // They share `cities.priceScale`, so Русе falling and Бургас rising are drawn
   // against the same yardstick — measured by checking that the zero rule sits
   // at the same height in every one of them.
+  //
+  // **The payload decides whether this test has a subject; the page never
+  // does.** Skipping on a selector that matches nothing conflates the two — a
+  // checkout with no НСИ refresh and a page that stopped drawing the column
+  // look identical from the DOM, so deleting the six sparklines outright, which
+  // is the regression this test is named for, leaves the suite green. An early
+  // return on a missing element is a green test for a deleted feature
+  // (docs/testing-strategy.md §"The standard a test has to meet").
+  if (!payload("nsi_housing")) return; // no НСИ figures published in this checkout
   await withApp(
     async (page, errors) => {
       const sparks = page.locator("main.market table.fig-table.cities svg.spark");
       const n = await sparks.count();
-      if (!n) return; // no нси payload in this checkout
-      assert.ok(n >= 6, `only ${n} cities carry a history`);
+      assert.ok(n >= 6, `the six-city table draws ${n} histories`);
 
       const zeros = await sparks.evaluateAll((els) =>
         els.map((el) => Number(el.querySelector("line.plot-ref").getAttribute("y1")).toFixed(3))
@@ -1241,10 +1249,21 @@ test(
     // hand-rolled `x > 0 ? "+" : ""` renders them with `toLocaleString`'s hyphen
     // — narrower than the U+2212 the rest of the site draws, and read as a dash
     // rather than as a minus at 12px in a column of percentages.
+    //
+    // Gated on the payload rather than on the table being there, for the reason
+    // the sparkline test above carries: a selector that matches nothing is a
+    // deleted table and an unpublished one at once, and a `return` on it passes
+    // both.
+    const nsi = payload("nsi_housing");
+    if (!nsi) return; // no НСИ figures published in this checkout
     await withApp(
       async (page, errors) => {
         const table = page.locator("main.market table.fig-table.cities");
-        if (!(await table.count())) return; // no нси payload in this checkout
+        assert.ok(
+          await table.count(),
+          "the six-city table is not on the page, though nsi_housing.json publishes " +
+            "the figures it draws"
+        );
 
         // Found by class rather than by position: the history column sits
         // between the two figure columns and carries a range, not a quarter.
@@ -1283,8 +1302,6 @@ test(
         // own summaries, which come from the two series' own lengths — so this
         // goes red if either stops being published as well as if either stops
         // being drawn.
-        const nsi = payload("nsi_housing");
-        if (!nsi) return;
         const lengths = ["city_price_index_yoy", "city_deals_yoy"].map(
           (block) => Object.keys(nsi[block]?.cities?.[0]?.series_by_period ?? {}).length
         );
@@ -1501,6 +1518,168 @@ test("the market page is reachable from the calculator, and links back", { skip 
         0,
         "the footer links /market/ from /market/ — a page linking to itself is noise"
       );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+});
+
+// ---------------------------------------------------------------------------
+// The treatment every table on this page and on `/how/` is drawn with
+// ---------------------------------------------------------------------------
+//
+// `fig-table.css` is one stylesheet mounted by two entries, and the three
+// assertions below are about it rather than about `/market/`. They live here
+// because this is the page that draws fifty-one of these tables, so a rule that
+// stopped working has fifty-one places to show — and because a `main.how`
+// selector and a `main.market` one measure the same rule twice.
+
+test("a table wider than its column scrolls under the reader's own keys", { skip }, async () => {
+  // `overflow-x: hidden` clips exactly the columns `auto` would and leaves them
+  // unreachable. Everything else about the box survives it: it still takes
+  // focus, `role="region"` still announces it, `scrollWidth` still exceeds
+  // `clientWidth`, and assigning `scrollLeft` from a script still moves it — so
+  // proving the box scrolls BY setting `scrollLeft` proves nothing a reader
+  // gets. An arrow key is the whole difference: under `hidden` the container is
+  // not user-scrollable, and the last columns of every table on two pages are
+  // gone for anybody without a mouse.
+  //
+  // Measured at 360px, which is where these tables overflow at all.
+  await withApp(
+    async (page, errors) => {
+      const box = await page.evaluate(() => {
+        const el = [...document.querySelectorAll("main.market .scroll")].find(
+          (candidate) => candidate.scrollWidth > candidate.clientWidth + 4
+        );
+        if (!el) return null;
+        el.focus();
+        return {
+          name: el.getAttribute("aria-label") ?? "(unnamed)",
+          over: el.scrollWidth - el.clientWidth,
+          focused: document.activeElement === el,
+          start: el.scrollLeft,
+        };
+      });
+      assert.ok(
+        box,
+        "no table on /market/ is wider than its box at 360px, so the box under " +
+          "test is not the one this is about"
+      );
+      assert.ok(box.focused, `the scroll box around "${box.name}" refused focus`);
+
+      await page.keyboard.press("ArrowRight");
+      await page.waitForTimeout(200);
+      const moved = await page.evaluate(() => document.activeElement.scrollLeft);
+      assert.ok(
+        moved > box.start,
+        `the box around "${box.name}" hides ${box.over}px of table and did not move ` +
+          "under an arrow key, so those columns are unreachable by keyboard"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    { viewport: { width: 360, height: 780 } }
+  );
+});
+
+test("no figure in a table touches the text of the row or column beside it", { skip }, async () => {
+  // Cell padding is the only thing holding the columns of a ledger apart, and
+  // losing it breaks the page in the way that leaves every other assertion
+  // green: the figures are all still there, still right, still cited, and every
+  // right-aligned number is drawn against the first letter of the next
+  // column's label.
+  //
+  // Measured over the INK rather than over the boxes. A cell's border box is
+  // the same width whatever its padding, so the gap that matters is between
+  // where one cell's text stops and the next one's starts — a range over the
+  // cell's contents is what gives that, and it reads whatever the row is made
+  // of. The bound is well under the 10px `fig-table.css` sets and well over the
+  // 1px rule left when the padding goes.
+  await withApp(
+    async (page, errors) => {
+      const seen = await page.evaluate(() => {
+        const ink = (cell) => {
+          const range = document.createRange();
+          range.selectNodeContents(cell);
+          const r = range.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 ? r : null;
+        };
+        let columns = null;
+        let rows = null;
+        let pairs = 0;
+        for (const table of document.querySelectorAll("main.market table.fig-table")) {
+          const grid = [...table.querySelectorAll("tr")].map((tr) => [...tr.children].map(ink));
+          for (const row of grid) {
+            for (let i = 0; i + 1 < row.length; i += 1) {
+              if (!row[i] || !row[i + 1]) continue;
+              pairs += 1;
+              const gap = row[i + 1].left - row[i].right;
+              if (columns === null || gap < columns) columns = gap;
+            }
+          }
+          for (let i = 0; i + 1 < grid.length; i += 1) {
+            for (let c = 0; c < Math.min(grid[i].length, grid[i + 1].length); c += 1) {
+              if (!grid[i][c] || !grid[i + 1][c]) continue;
+              pairs += 1;
+              const gap = grid[i + 1][c].top - grid[i][c].bottom;
+              if (rows === null || gap < rows) rows = gap;
+            }
+          }
+        }
+        return { columns, rows, pairs };
+      });
+      assert.ok(seen.pairs > 200, `only ${seen.pairs} pairs of cells could be measured`);
+      assert.ok(
+        seen.columns >= 4,
+        `the tightest pair of columns on the page leaves ${seen.columns}px between one ` +
+          "cell's text and the next one's, so a figure is drawn against its neighbour"
+      );
+      assert.ok(
+        seen.rows >= 6,
+        `the tightest pair of rows leaves ${seen.rows}px between them, so the table ` +
+          "reads as a block of digits rather than as lines"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/market/",
+    {}
+  );
+});
+
+test("the marked row is tinted, not merely carrying the class", { skip }, async () => {
+  // `tr.mark` is a claim: it says WHICH row of the published table the figure
+  // quoted above it came from. Drawn with no tint the claim is not made at all —
+  // the row is still in the DOM, still classed, still the right row, and a
+  // reader looking for the cell that backs the sentence has a table of
+  // identical lines.
+  await withApp(
+    async (page, errors) => {
+      const tints = await page.evaluate(() => {
+        const bg = (el) => getComputedStyle(el).backgroundColor;
+        const clear = "rgba(0, 0, 0, 0)";
+        return {
+          marked: [...document.querySelectorAll("main.market tr.mark")].map(bg),
+          plain: [
+            ...new Set([...document.querySelectorAll("main.market tbody tr:not(.mark)")].map(bg)),
+          ],
+          clear,
+        };
+      });
+      assert.ok(tints.marked.length >= 3, `${tints.marked.length} rows are marked on the page`);
+      for (const paint of tints.marked) {
+        assert.notEqual(
+          paint,
+          tints.clear,
+          "a marked row is drawn with no background at all, so nothing on screen " +
+            "says which published row the figure above it was read off"
+        );
+        assert.ok(
+          !tints.plain.includes(paint),
+          `a marked row is painted ${paint}, which is what the rows around it are ` +
+            "painted — the mark then distinguishes nothing"
+        );
+      }
       assert.deepEqual(errors, [], errors.join(" | "));
     },
     "/market/",

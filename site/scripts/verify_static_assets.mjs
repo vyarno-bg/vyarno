@@ -1042,7 +1042,30 @@ test("the CSP still forbids everything the privacy notice says it forbids", () =
       "images could be loaded from anywhere, which is a tracking pixel with " +
         "extra steps. `data:` is needed for the inline SVG.",
     ],
+    "style-src": [
+      "'self' 'unsafe-inline'",
+      "a stylesheet could be fetched from any https origin, and a stylesheet " +
+        "is a request that leaves the reader's browser while the privacy " +
+        "notice says none does — `@font-face`, `url()` and `image-set()` all " +
+        "fetch. `'unsafe-inline'` is here because Svelte writes style " +
+        "attributes and for no other reason; it buys a third party nothing " +
+        "while the origin list stays `'self'`.",
+    ],
   };
+  // Every directive the header declares has to be one this test knows the
+  // value of. Nine of the ten were listed and `style-src` was not, so widening
+  // it was a change no assertion in the repository could see — and the same
+  // hole opens again the moment a tenth directive is added. Naming a directive
+  // here is the decision; leaving it out is not an option the check offers.
+  assert.deepEqual(
+    Object.keys(directives)
+      .filter((name) => !(name in required))
+      .sort(),
+    [],
+    "the CSP declares directives this test states no expected value for, so " +
+      "they can be widened without anything going red. Add each to `required` " +
+      "with the sentence saying what it is holding."
+  );
   for (const [name, [value, why]] of Object.entries(required)) {
     assert.equal(
       directives[name],

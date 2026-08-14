@@ -1,0 +1,269 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "Structure of earnings survey - monthly earnings",
+ "source": "ESTAT",
+ "updated": "2026-02-09T23:00:00+0100",
+ "value": {
+  "4": 376,
+  "5": 623,
+  "6": 1700,
+  "7": 2820,
+  "0": 949,
+  "1": 1575,
+  "16": 168,
+  "17": 1,
+  "18": 15,
+  "10": 115,
+  "11": 190,
+  "8": 9,
+  "9": 14,
+  "14": 45,
+  "15": 75,
+  "12": 4,
+  "13": 7,
+  "2": 705,
+  "3": 1170
+ },
+ "id": [
+  "freq",
+  "nace_r2",
+  "isco08",
+  "worktime",
+  "age",
+  "sex",
+  "indic_se",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  19,
+  1,
+  1
+ ],
+ "dimension": {
+  "freq": {
+   "label": "Time frequency",
+   "category": {
+    "index": {
+     "A": 0
+    },
+    "label": {
+     "A": "Annual"
+    }
+   }
+  },
+  "nace_r2": {
+   "label": "Statistical classification of economic activities in the European Community (NACE Rev. 2)",
+   "category": {
+    "index": {
+     "B-S_X_O": 0
+    },
+    "label": {
+     "B-S_X_O": "Industry, construction and services (except public administration, defense, compulsory social security)"
+    }
+   }
+  },
+  "isco08": {
+   "label": "International Standard Classification of Occupations 2008 (ISCO-08)",
+   "category": {
+    "index": {
+     "TOTAL": 0
+    },
+    "label": {
+     "TOTAL": "Total"
+    }
+   }
+  },
+  "worktime": {
+   "label": "Working time",
+   "category": {
+    "index": {
+     "FT": 0
+    },
+    "label": {
+     "FT": "Full-time"
+    }
+   }
+  },
+  "age": {
+   "label": "Age class",
+   "category": {
+    "index": {
+     "TOTAL": 0
+    },
+    "label": {
+     "TOTAL": "Total"
+    }
+   }
+  },
+  "sex": {
+   "label": "Sex",
+   "category": {
+    "index": {
+     "T": 0
+    },
+    "label": {
+     "T": "Total"
+    }
+   }
+  },
+  "indic_se": {
+   "label": "Structure of earnings indicator",
+   "category": {
+    "index": {
+     "MEAN_E_EUR": 0,
+     "MEAN_E_PPS": 1,
+     "MED_E_EUR": 2,
+     "MED_E_PPS": 3,
+     "D1_E_EUR": 4,
+     "D1_E_PPS": 5,
+     "D9_E_EUR": 6,
+     "D9_E_PPS": 7,
+     "MEAN_OP_SAL_EUR": 8,
+     "MEAN_OP_SAL_PPS": 9,
+     "MEAN_OP_SALC_EUR": 10,
+     "MEAN_OP_SALC_PPS": 11,
+     "MEAN_SP_SAL_EUR": 12,
+     "MEAN_SP_SAL_PPS": 13,
+     "MEAN_SP_SALC_EUR": 14,
+     "MEAN_SP_SALC_PPS": 15,
+     "MEAN_HP": 16,
+     "MEAN_OHP_SAL": 17,
+     "MEAN_OHP_SALC": 18
+    },
+    "label": {
+     "MEAN_E_EUR": "Mean earnings in euro",
+     "MEAN_E_PPS": "Mean earnings in PPS",
+     "MED_E_EUR": "Median earnings in euro",
+     "MED_E_PPS": "Median earnings in PPS",
+     "D1_E_EUR": "First decile earnings in euro",
+     "D1_E_PPS": "First decile earnings in PPS",
+     "D9_E_EUR": "Ninth decile earnings in euro",
+     "D9_E_PPS": "Ninth decile earnings in PPS",
+     "MEAN_OP_SAL_EUR": "Mean overtime pay per employee in euro",
+     "MEAN_OP_SAL_PPS": "Mean overtime pay per employee in PPS",
+     "MEAN_OP_SALC_EUR": "Mean overtime pay per employee concerned in euro",
+     "MEAN_OP_SALC_PPS": "Mean overtime pay per employee concerned in PPS",
+     "MEAN_SP_SAL_EUR": "Mean shift pay per employee in euro",
+     "MEAN_SP_SAL_PPS": "Mean shift pay per employee in PPS",
+     "MEAN_SP_SALC_EUR": "Mean shift pay per employee concerned in euro",
+     "MEAN_SP_SALC_PPS": "Mean shift pay per employee concerned in PPS",
+     "MEAN_HP": "Mean number of hours paid",
+     "MEAN_OHP_SAL": "Mean number of overtime hours paid per employee",
+     "MEAN_OHP_SALC": "Mean number of overtime hours paid per employee concerned"
+    }
+   }
+  },
+  "geo": {
+   "label": "Geopolitical entity (reporting)",
+   "category": {
+    "index": {
+     "BG": 0
+    },
+    "label": {
+     "BG": "Bulgaria"
+    }
+   }
+  },
+  "time": {
+   "label": "Time",
+   "category": {
+    "index": {
+     "2022": 0
+    },
+    "label": {
+     "2022": "2022"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "EARN_SES_MONTHLY",
+  "agencyId": "ESTAT",
+  "version": "1.0",
+  "datastructure": {
+   "id": "EARN_SES_MONTHLY",
+   "agencyId": "ESTAT",
+   "version": "24.0"
+  },
+  "annotation": [
+   {
+    "type": "CREATED",
+    "date": "2014-07-09T11:22:18+0200"
+   },
+   {
+    "type": "DISSEMINATION_DOI_XML",
+    "title": "<adms:identifier xmlns:adms=\"http://www.w3.org/ns/adms#\" xmlns:skos=\"http://www.w3.org/2004/02/skos/core.html\" xmlns:dct=\"http://purl.org/dc/terms/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><adms:Identifier rdf:about=\"https://doi.org/10.2908/EARN_SES_MONTHLY\"><skos:notation rdf:datatype=\"http://purl.org/spar/datacite/doi\">10.2908/EARN_SES_MONTHLY</skos:notation><dct:creator rdf:resource=\"http://publications.europa.eu/resource/authority/corporate-body/ESTAT\"/><dct:issued rdf:datatype=\"http://www.w3.org/2001/XMLSchema#date\">2023-01-23</dct:issued></adms:Identifier></adms:identifier>"
+   },
+   {
+    "type": "DISSEMINATION_OBJECT_TYPE",
+    "title": "DATASET"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_DATA",
+    "date": "2026-02-09T23:00:00+0100"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_GLOBAL",
+    "date": "2026-02-09T23:00:00+0100"
+   },
+   {
+    "type": "DISSEMINATION_TIMESTAMP_PLANNED",
+    "date": "2026-02-09T23:00:00+0100"
+   },
+   {
+    "type": "ESMS_HTML",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/cache/metadata/en/earn_ses_main_esms.htm"
+   },
+   {
+    "type": "ESMS_SDMX",
+    "title": "Explanatory texts (metadata)",
+    "href": "https://ec.europa.eu/eurostat/api/dissemination/files?file=metadata/earn_ses_main_esms.sdmx.zip"
+   },
+   {
+    "type": "OBS_COUNT",
+    "title": "11438954"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_LATEST",
+    "title": "2022"
+   },
+   {
+    "type": "OBS_PERIOD_OVERALL_OLDEST",
+    "title": "2002"
+   },
+   {
+    "type": "SOURCE_INSTITUTIONS",
+    "text": "Eurostat"
+   },
+   {
+    "type": "UPDATE_DATA",
+    "date": "2026-02-09T23:00:00+0100"
+   },
+   {
+    "type": "UPDATE_STRUCTURE",
+    "date": "2025-02-11T23:00:00+0100"
+   }
+  ],
+  "positions-with-no-data": {
+   "freq": [],
+   "nace_r2": [],
+   "isco08": [],
+   "worktime": [],
+   "age": [],
+   "sex": [],
+   "indic_se": [],
+   "geo": [],
+   "time": []
+  }
+ }
+}

@@ -140,6 +140,63 @@ test("taxWedgePanel places the user by their GROSS, not the net they typed", () 
   // With one earner the corner figure is that earner's own rate, unchanged
   // from before households existed.
   assert.ok(near(panel.headlineEffectivePct, you.effectivePct, 1e-9));
+
+  // **And the other basis, where there is nothing to recover.** The pay field
+  // takes gross as readily as net and this is the only suite that reaches the
+  // function at all — no browser test calls it with a basis either. Recovering
+  // a gross from a figure that already IS one runs the conversion backwards:
+  // €2,000 gross, comfortably under the €2,300 ceiling, is placed at €2,539,
+  // flagged as over the cap and told its next euro costs 10% when it costs
+  // 22.4%. Every number on the row stays a plausible Bulgarian salary.
+  const typedGross = params.maxInsurable - 300;
+  assert.ok(typedGross > 0, "test premise: the gross probe sits under the ceiling");
+  const asGross = taxWedgePanel({
+    payroll: PAYROLL,
+    pay: { basis: "gross", amounts: [typedGross] },
+  });
+  assert.equal(asGross.earners.length, 1);
+  assert.equal(asGross.earners[0].gross, typedGross, "the typed gross was converted from itself");
+  assert.equal(asGross.earners[0].overCap, false, "a salary under the ceiling was placed over it");
+  assert.ok(near(asGross.earners[0].marginalPct, 22.402, 1e-3), asGross.earners[0].marginalPct);
+  // The same figure typed on the two bases is two different people, which is
+  // what the basis is for.
+  const asNet = taxWedgePanel({ payroll: PAYROLL, pay: { basis: "net", amounts: [typedGross] } });
+  assert.ok(
+    asNet.earners[0].gross > asGross.earners[0].gross,
+    "the two bases place the same typed figure at the same gross"
+  );
+});
+
+test("an earner exactly at the insurance ceiling is over it, not under", () => {
+  // The boundary belongs to the upper branch, and `mirror.js#bgMarginalRatePct`
+  // says why in as many words: at the cap the next euro is already outside the
+  // insurance base, so the rate there is 10% and `bgTaxWedge`'s
+  // `peakEffectivePct` is measured AT the cap and is the maximum of the curve.
+  // The panel's own flag has to agree with the rate beside it — an earner shown
+  // a 10% marginal rate and «under the ceiling» in the same row is being told
+  // two things, and only one of them is true. A probe at cap + €300 cannot see
+  // the disagreement, because the two branches only differ on the boundary.
+  if (!PAYROLL) return;
+  const params = payrollParams(PAYROLL);
+  const panel = taxWedgePanel({
+    payroll: PAYROLL,
+    pay: { basis: "gross", amounts: [params.maxInsurable] },
+  });
+  const [atCap] = panel.earners;
+  assert.equal(atCap.gross, params.maxInsurable);
+  assert.equal(atCap.overCap, true, "an earner standing on the ceiling was placed under it");
+  assert.ok(
+    near(atCap.marginalPct, 10, 1e-9),
+    `the rate at the ceiling is ${atCap.marginalPct}%, so the flag and the rate disagree`
+  );
+  assert.ok(near(atCap.effectivePct, panel.peakEffectivePct, 1e-9), "the peak is not at the kink");
+  // One euro below it, both halves flip together.
+  const [under] = taxWedgePanel({
+    payroll: PAYROLL,
+    pay: { basis: "gross", amounts: [params.maxInsurable - 1] },
+  }).earners;
+  assert.equal(under.overCap, false);
+  assert.ok(under.marginalPct > 20);
 });
 
 test("taxWedgePanel says nothing about a user who has typed nothing", () => {

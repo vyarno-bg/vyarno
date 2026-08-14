@@ -153,6 +153,40 @@ def test_the_interpolation_matches_the_documented_model():
         assert out["ladder_ses"][f"P{p}"] == pytest.approx(expected, abs=1e-4)
 
 
+def test_each_tail_continues_the_half_it_extends():
+    """P1 and P99 are extrapolations, and each has to follow ITS OWN half.
+
+    Neither is surveyed — SES publish D1, the median and D9 and stop — so what
+    makes the two end rungs honest is that they carry on the slope of the
+    segment they hang off rather than borrowing the other one. BG's halves
+    differ by enough for that to matter: the minimum wage compresses the lower
+    one and nothing compresses the upper. Extend P99 at the lower half's slope
+    and the top rung falls 3484.09 → 2838.02 EUR/month, a €646 move that leaves
+    every property this file already checks intact — the three surveyed anchors
+    are still exact, the ladder is still strictly increasing, both dispersions
+    are unchanged and re-levelling is still a scalar multiply. The percentile
+    card would place a Sofia salary in the 99th percentile that is not near it.
+
+    Asserted as slope continuity at the anchor rather than as the formula, so
+    it is a property of the published rungs instead of a second copy of the
+    model — `test_the_interpolation_matches_the_documented_model` is the copy,
+    and it reaches only the two segments between the anchors.
+    """
+    out = build_ses_shape_ladder(SES_BG_2022)
+    ladder = out["ladder_ses"]
+    z = NormalDist()
+    z1, z10, z90, z99 = (z.inv_cdf(p / 100) for p in (1, 10, 90, 99))
+
+    above_d9 = (math.log(ladder["P99"]) - math.log(ladder["P90"])) / (z99 - z90)
+    below_d1 = (math.log(ladder["P10"]) - math.log(ladder["P1"])) / (z10 - z1)
+    assert above_d9 == pytest.approx(out["sigma_top"], abs=1e-4)
+    assert below_d1 == pytest.approx(out["sigma_bottom"], abs=1e-4)
+    assert out["sigma_bottom"] < out["sigma_top"], (
+        "the two halves have the same dispersion here, so this test cannot tell "
+        "a tail extended along the wrong one from a correct one"
+    )
+
+
 def test_zero_mean_raises():
     with pytest.raises(ValueError):
         build_ses_shape_ladder({**SES_BG_2022, "mean": 0.0})

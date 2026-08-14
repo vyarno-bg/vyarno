@@ -455,17 +455,38 @@ test("the breakdown itemises the same money bgNetSalary withholds", () => {
 });
 
 test("bgPayslipFromNet lands on the typed net exactly, not a cent away", () => {
-  // The reason both neighbouring cents of the inverse are tried: for €2100 the
-  // exact inverse is €2650.2733, and rounding it UP to €2650.28 works out at
-  // €2100.01 once each line is rounded. €2650.27 is the gross that actually
-  // pays €2100.00. Breaking the candidate loop in bgPayslipFromNet down to a
-  // single Math.round turns this test red.
-  for (const targetNet of [500, 620.2, 1000, 1638, 1639, 2100, 2500, 3333, 5000]) {
-    const p = bgPayslipFromNet(targetNet);
-    assert.ok(
-      Math.abs(p.net - targetNet) < 0.005,
-      `asked for ${targetNet} net, the breakdown bottoms out at ${p.net}`
-    );
+  // The gross that pays a typed net is not always the nearest cent to the exact
+  // inverse, and it misses in BOTH directions: €500.07 inverts to €644.436712,
+  // whose nearest cent €644.44 itemises to €500.08 while €644.43 pays the
+  // €500.07 asked for — and €1780.00 inverts to €2293.873553, where the nearest
+  // cent €2293.87 pays €1779.99 and the cent above it is the one that lands.
+  // Which neighbour wins is decided by where the line roundings inside the
+  // column happen to fall, so it cannot be predicted from the inverse alone;
+  // both are tried and the closer one kept.
+  //
+  // **Cent by cent, because a list of round salaries cannot see this.** Trying
+  // only the nearest cent leaves 6425 of the 60003 nets swept below a cent out
+  // — 10.7% — and yet €500, €1000, €2100 and €5000 are all among the ones it
+  // gets right. The offenders are scattered through the range at that density,
+  // so which nets a fixture happens to name decides whether it catches anything
+  // at all.
+  //
+  // Three bands, because the inverse is piecewise at the insurance ceiling.
+  // €1784.75 is the last net whose gross is fully insurable, so the middle band
+  // crosses that boundary and the third sits wholly above it.
+  for (const [fromCents, toCents] of [
+    [50000, 80000],
+    [170000, 190000],
+    [300000, 310000],
+  ]) {
+    for (let cents = fromCents; cents <= toCents; cents += 1) {
+      const targetNet = cents / 100;
+      const p = bgPayslipFromNet(targetNet);
+      assert.ok(
+        Math.abs(p.net - targetNet) < 0.005,
+        `asked for ${targetNet} net, the breakdown bottoms out at ${p.net}`
+      );
+    }
   }
 });
 

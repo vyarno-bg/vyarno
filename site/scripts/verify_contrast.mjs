@@ -61,9 +61,48 @@ function ratio(fg, bg) {
 
 const AA_BODY = 4.5;
 
-/** Every ink token, against every surface it is actually painted on. */
-const INKS = ["ink", "ink-2", "muted", "real", "real-ink", "erode", "erode-ink"];
 const SURFACES = ["paper", "paper-2", "surface"];
+
+/**
+ * The tokens that are neither text nor a surface, so the 4.5:1 bar is not
+ * theirs. `--line` and `--line-2` rule a page and identify nothing;
+ * `--control-line` bounds a control and WCAG 1.4.11 asks 3:1 of it, which it
+ * gets its own test for further down.
+ */
+const NOT_TEXT = ["line", "line-2", "control-line"];
+
+/**
+ * Every opaque colour a theme block declares, in declaration order.
+ *
+ * `#rrggbb` only, and the lookahead is load-bearing: `--track: #17211b0a` is
+ * eight digits, and a six-digit pattern reads it as `#17211b` — an opaque
+ * ledger black in place of a 4%-alpha wash, which would then be measured
+ * against a surface it is never painted on and fail for a reason nobody can
+ * act on.
+ */
+function opaqueTokens(block) {
+  const scope = CSS.slice(CSS.indexOf(block));
+  return [
+    ...scope.slice(0, scope.indexOf("}")).matchAll(/--([\w-]+):\s*#[0-9A-Fa-f]{6}(?![0-9A-Fa-f])/g),
+  ].map((m) => m[1]);
+}
+
+/**
+ * Every ink token, against every surface it is actually painted on.
+ *
+ * **Derived, never typed.** A list written out here covers the tokens somebody
+ * remembered on the day they wrote it, and the omission is invisible from both
+ * ends — the file's own header claims the ratios are pinned in both themes,
+ * and a token nobody enumerated is painted at whatever ratio it likes while
+ * that sentence stays up. `--stamp` is the one that shows the cost: it paints
+ * DataBanner's text, the line telling a reader their figures are stale, and it
+ * takes 2.79:1 without argument. What a token IS decides whether it is checked:
+ * a six-digit hex in a theme block is a colour something is painted with, and
+ * everything that is not a surface and not a ruling is text.
+ */
+const INKS = opaqueTokens(":root {").filter(
+  (name) => !SURFACES.includes(name) && !NOT_TEXT.includes(name)
+);
 
 for (const [themeName, block] of [
   ["light", ":root {"],

@@ -29,17 +29,11 @@ import pytest
 import respx
 
 from vyarno_pipeline.sources.eurostat import (
-    CENSUS_DWELLINGS_DATASET,
-    HOUSE_PRICE_INDEX_DATASET,
-    HOUSE_PRICE_REAL_DATASET,
-    HOUSE_SALES_COUNT_DATASET,
-    HOUSE_SALES_VALUE_DATASET,
-    HOUSING_OVERBURDEN_DATASET,
-    TENURE_DATASET,
     CubeFetch,
     _cube_to_rows,
     fetch_house_price_index_real_bg,
     fetch_house_sales_count_bg,
+    fetch_house_sales_value_bg,
     fetch_housing_structure_bg,
 )
 from vyarno_pipeline.transform import (
@@ -54,6 +48,21 @@ from vyarno_pipeline.validate import (
 
 EUROSTAT_BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data"
 FIXTURES = Path(__file__).parent / "fixtures"
+
+# **The dataset codes are written out here, never imported from the module under
+# test.** Every route this file registers and every fixture it labels is keyed
+# by one of them, so importing the constants would make the whole file agree
+# with whatever `sources/eurostat.py` currently says — including the two sales
+# codes exchanged, which differ by one letter and would invert `avg_deal_eur`
+# end to end while the derivation still reproduced from whatever was in the two
+# blocks. `hsnq` counts dwellings and `hsvq` is what was paid for them.
+COUNT_DATASET = "prc_hpi_hsnq"
+VALUE_DATASET = "prc_hpi_hsvq"
+INDEX_DATASET = "prc_hpi_q"
+REAL_INDEX_DATASET = "tipsho30"
+TENURE_DATASET = "ilc_lvho02"
+CENSUS_DWELLINGS_DATASET = "cens_21dwob_r3"
+HOUSING_OVERBURDEN_DATASET = "ilc_lvho07a"
 
 STRUCTURE_FIXTURES = {
     TENURE_DATASET: "eurostat_tenure_bg.json",
@@ -79,10 +88,10 @@ def _fetch(name: str, dataset: str) -> CubeFetch:
 @pytest.fixture
 def market() -> dict:
     return build_house_market_payload(
-        _fetch("eurostat_house_sales_count_bg.json", HOUSE_SALES_COUNT_DATASET),
-        _fetch("eurostat_house_sales_value_bg.json", HOUSE_SALES_VALUE_DATASET),
-        _fetch("eurostat_house_price_index_bg.json", HOUSE_PRICE_INDEX_DATASET),
-        _fetch("eurostat_house_price_real_bg.json", HOUSE_PRICE_REAL_DATASET),
+        _fetch("eurostat_house_sales_count_bg.json", COUNT_DATASET),
+        _fetch("eurostat_house_sales_value_bg.json", VALUE_DATASET),
+        _fetch("eurostat_house_price_index_bg.json", INDEX_DATASET),
+        _fetch("eurostat_house_price_real_bg.json", REAL_INDEX_DATASET),
         date(2026, 8, 12),
     )
 
@@ -110,18 +119,16 @@ def test_a_filter_that_matches_nothing_raises_instead_of_publishing_an_empty_ser
     vacuously.
     """
     empty = _cube("eurostat_house_sales_count_bg.json") | {"value": {}}
-    respx.get(f"{EUROSTAT_BASE}/{HOUSE_SALES_COUNT_DATASET}").mock(
-        return_value=httpx.Response(200, json=empty)
-    )
+    respx.get(f"{EUROSTAT_BASE}/{COUNT_DATASET}").mock(return_value=httpx.Response(200, json=empty))
     with pytest.raises(ValueError, match="expected at least"):
         fetch_house_sales_count_bg(geo="BG")
 
 
-def _cube_of_quarters(n: int) -> dict:
-    """A count cube carrying `n` quarters, for the checks that need a full window.
+def _cube_of_quarters(n: int, unit: str = "NR") -> dict:
+    """A sales cube carrying `n` quarters, for the checks that need a full window.
 
     The committed fixtures are trimmed to three quarters so the diff stays
-    readable, and the connector refuses a response with too few periods —
+    readable, and the connectors refuse a response with too few periods —
     correctly, since that is what a filter matching nothing looks like. A test
     about the URL rather than about the data builds its own cube instead of
     being the reason that guard is loosened.
@@ -132,7 +139,7 @@ def _cube_of_quarters(n: int) -> dict:
         "size": [1, 1, 1, n, 1],
         "dimension": {
             "freq": {"category": {"index": {"Q": 0}}},
-            "unit": {"category": {"index": {"NR": 0}}},
+            "unit": {"category": {"index": {unit: 0}}},
             "geo": {"category": {"index": {"BG": 0}}},
             "time": {"category": {"index": {p: i for i, p in enumerate(periods)}}},
             "purchase": {"category": {"index": {"TOTAL": 0}}},
@@ -149,7 +156,7 @@ def test_the_connector_publishes_the_query_it_actually_ran():
     it, so the query has to be the one that produced the figure — not a URL
     assembled separately from constants that were right when they were typed.
     """
-    respx.get(f"{EUROSTAT_BASE}/{HOUSE_SALES_COUNT_DATASET}").mock(
+    respx.get(f"{EUROSTAT_BASE}/{COUNT_DATASET}").mock(
         return_value=httpx.Response(200, json=_cube_of_quarters(37))
     )
     fetched = fetch_house_sales_count_bg(geo="BG")
@@ -167,6 +174,37 @@ def test_the_connector_publishes_the_query_it_actually_ran():
         "the query bounds the period. The window belongs to the cube, not to us: "
         "pinning it freezes a date in the source that nothing will update."
     )
+
+
+@respx.mock
+def test_the_count_and_the_value_come_from_the_cubes_that_hold_them():
+    """`hsnq` counts dwellings, `hsvq` is what was paid, and one letter separates them.
+
+    Exchanged at the source, nothing downstream can tell: both connectors still
+    fetch a cube that answers, the transform still pairs them on their shared
+    quarters, and the gate's derivation check still reproduces — value over
+    count is precisely what it recomputes, whichever name points at which cube.
+    What inverts is the one figure on the page: an average deal of €58,000
+    becomes €0.000017. So each connector's code is pinned to the unit that
+    identifies it — a number of dwellings against euro — rather than to the
+    module's own constants, which would agree with the exchange.
+    """
+    respx.get(f"{EUROSTAT_BASE}/{COUNT_DATASET}").mock(
+        return_value=httpx.Response(200, json=_cube_of_quarters(45, unit="NR"))
+    )
+    respx.get(f"{EUROSTAT_BASE}/{VALUE_DATASET}").mock(
+        return_value=httpx.Response(200, json=_cube_of_quarters(45, unit="EUR"))
+    )
+
+    count = fetch_house_sales_count_bg(geo="BG")
+    assert count.dataset == COUNT_DATASET
+    assert f"/{COUNT_DATASET}?" in count.api_url
+    assert "unit=NR" in count.api_url, "the deal count is not being asked for as a number"
+
+    value = fetch_house_sales_value_bg(geo="BG")
+    assert value.dataset == VALUE_DATASET
+    assert f"/{VALUE_DATASET}?" in value.api_url
+    assert "unit=EUR" in value.api_url, "what households paid is not being asked for in euro"
 
 
 @respx.mock
@@ -228,7 +266,7 @@ def test_the_derivation_is_disclosed_with_the_queries_that_reproduce_it(market):
     """
     block = market["avg_deal_eur"]
     assert block["_role"].startswith("DERIVED BY US"), "the derivation is not marked as ours"
-    assert set(block["derived_from"]) == {HOUSE_SALES_VALUE_DATASET, HOUSE_SALES_COUNT_DATASET}
+    assert set(block["derived_from"]) == {VALUE_DATASET, COUNT_DATASET}
     assert len(block["derived_from_api_urls"]) == 2
     notes = market["notes"]
     assert "MODIFICATION NOTICE" in notes, "the envelope does not disclose the modification"
@@ -319,7 +357,7 @@ def test_the_deflated_index_is_published_beside_the_nominal_one(market):
     """
     real = market["price_index_real"]
     nominal = market["price_index"]
-    assert real["dataset"] == HOUSE_PRICE_REAL_DATASET
+    assert real["dataset"] == REAL_INDEX_DATASET
     assert real["base_year"] == nominal["base_year"]
     assert set(real["series_by_period"]) <= set(nominal["series_by_period"])
     # A flat map of period → level. `tipsho30` has no purchase dimension, so a
@@ -393,7 +431,7 @@ def test_a_flag_outside_eurostats_own_vocabulary_is_refused(market):
 def test_the_deflated_cube_refuses_a_filter_that_matches_nothing():
     """Same failure mode as every other cube here: a wrong unit answers 200."""
     empty = _cube("eurostat_house_price_real_bg.json") | {"value": {}}
-    respx.get(f"{EUROSTAT_BASE}/{HOUSE_PRICE_REAL_DATASET}").mock(
+    respx.get(f"{EUROSTAT_BASE}/{REAL_INDEX_DATASET}").mock(
         return_value=httpx.Response(200, json=empty)
     )
     with pytest.raises(ValueError, match="expected at least"):

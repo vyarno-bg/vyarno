@@ -1,5 +1,5 @@
 /**
- * $lib/format.js — the four functions every figure on the page passes through.
+ * $lib/format.js — the formatters every figure on the page passes through.
  *
  * **They live in a module so that a test can call them.** As closures inside
  * `App.svelte` they are reachable only by rendering the component, and the rule
@@ -14,6 +14,9 @@ import {
   integer,
   percentSigned,
   dateShort,
+  periodLong,
+  label,
+  httpUrl,
   ordinalDay,
   parseDecimal,
   decimalText,
@@ -125,8 +128,39 @@ test("the minus is U+2212, matching the tables it sits beside", () => {
 });
 
 test("dateShort renders a readable day-month-year in both languages", () => {
-  assert.match(dateShort("2026-07-17", "en"), /17.*Jul.*2026/);
-  assert.match(dateShort("2026-07-17", "bg"), /17.*2026/);
+  // Both halves written out, because the month is the part that varies: a
+  // pattern with `.*` between the day and the year matches every month style
+  // Intl offers, «17 July 2026» included. bg-BG renders a short month and a
+  // numeric one identically, so the English half is the one that pins it.
+  assert.equal(dateShort("2026-07-17", "en"), "17 Jul 2026");
+  assert.equal(dateShort("2026-07-17", "bg"), "17.07.2026 г.");
+});
+
+test("a monthly reference period is spoken as its own month, in both languages", () => {
+  // Nobody reads «2026-06» as June, so the banner, the strip and the explainer
+  // all say the month — and the render suites that read those back build their
+  // expected string by calling this, which is why a month-index slip has to be
+  // caught by a string written out rather than derived.
+  assert.equal(periodLong("2026-06", "bg"), "юни 2026 г.");
+  assert.equal(periodLong("2026-06", "en"), "June 2026");
+  assert.equal(periodLong("2026-01", "bg"), "януари 2026 г.");
+  assert.equal(periodLong("2026-01", "en"), "January 2026");
+  // December is the month an off-by-one moves into the WRONG YEAR — every other
+  // month it only misnames, and «януари 2027 г.» over November's reading dates
+  // the whole page thirteen months out.
+  assert.equal(periodLong("2026-12", "bg"), "декември 2026 г.");
+  assert.equal(periodLong("2026-12", "en"), "December 2026");
+  // A quarter and a bare year are the publisher's own label already.
+  assert.equal(periodLong("2026-Q1", "bg"), "Q1 2026");
+  assert.equal(periodLong("2026-Q1", "en"), "Q1 2026");
+  assert.equal(periodLong("2026", "bg"), "2026");
+  // Anything outside the pipeline's period shape is the em dash `period()`
+  // returns, because these land inside `{@html …}` alongside copy that carries
+  // markup — the same property, so usable in the same places.
+  for (const bad of ["", null, undefined, "2026-6", "<b>2026</b>", "2026-Q5"]) {
+    assert.equal(periodLong(bad, "bg"), "—", String(bad));
+    assert.equal(periodLong(bad, "en"), "—", String(bad));
+  }
 });
 
 test("a day of the month takes the ordinal ending its own language gives it", () => {
@@ -225,6 +259,65 @@ test("a fetched string cannot carry markup into a template", () => {
   assert.equal(safeText("&lt;"), "&amp;lt;");
   assert.equal(safeText("Велико Търново"), "Велико Търново");
   for (const empty of [null, undefined]) assert.equal(safeText(empty), "");
+});
+
+test("a publisher's label reaches the DOM only in the shape a label has", () => {
+  // `PayField.svelte` renders НСИ's sector name through `{@html …}`, because the
+  // copy around it carries markup. So this admits what a label looks like rather
+  // than escaping what it is handed: escaping would let anything through in a
+  // mangled form, and a name that is not a name renders as a visibly missing one
+  // instead. The whole string has to match — a rule that merely FINDS letters
+  // somewhere passes «<img src=x onerror=alert(1)>Търговия», which is the case
+  // the `{@html}` makes expensive.
+  assert.equal(label("<img src=x onerror=alert(1)>Търговия"), "—");
+  assert.equal(label("Търговия<script>alert(1)</script>"), "—");
+  assert.equal(label("Образование\n<b>x</b>"), "—");
+  assert.equal(label("x".repeat(121)), "—", "a label with no end to it is not a label");
+  for (const empty of ["", "   ", null, undefined]) assert.equal(label(empty), "—", String(empty));
+});
+
+test("every sector name НСИ publishes survives the label rule intact", () => {
+  // The other half of the shape: too strict and a real sector renders as an em
+  // dash on the card the reader came for. Over the collection rather than over
+  // names I picked, because the ones that would trip it are the ones with НСИ's
+  // own punctuation — «Доставяне на води;канализационни услуги,управление на
+  // отпадъци и възстановяване» carries a semicolon and an unspaced comma.
+  const sectors = published("sector_salary");
+  if (!sectors) return;
+  assert.ok(sectors.sectors.length > 0);
+  for (const s of sectors.sectors) {
+    assert.equal(label(s.bg_name), s.bg_name);
+    assert.equal(label(s.en_name), s.en_name);
+  }
+});
+
+test("a source link is a web address or it is no link at all", () => {
+  // Every source link on the page comes out of a published payload's
+  // `source_url` and is rendered inside `{@html …}` copy. A scheme that is not
+  // http(s) reaches an `href` as itself, and `javascript:` in an href is script
+  // the reader runs by clicking a citation.
+  assert.equal(httpUrl("javascript:alert(1)"), "");
+  assert.equal(httpUrl("data:text/html,<script>alert(1)</script>"), "");
+  assert.equal(httpUrl("vbscript:msgbox(1)"), "");
+  // Not a URL at all, and the empty states — "" rather than an em dash, because
+  // this goes into an `href` where a dash would be a broken relative link.
+  for (const none of ["", "  ", "nsi.bg/x", null, undefined]) {
+    assert.equal(httpUrl(none), "", String(none));
+  }
+  assert.equal(httpUrl("https://www.nsi.bg/x"), "https://www.nsi.bg/x");
+  assert.equal(httpUrl("http://www.nsi.bg/x"), "http://www.nsi.bg/x");
+});
+
+test("every source_url the payloads publish survives as itself", () => {
+  // The other half again: a rule that refused one of these would drop the
+  // attribution link the licence conditions rest on (`docs/legal.md`), on a
+  // page that still renders. Eurostat's carry a query string and имот.bg's a
+  // path per city, so the collection is the check rather than one example.
+  for (const name of ["hicp_categories", "mortgage", "region_salary", "city_price"]) {
+    const payload = published(name);
+    if (!payload) continue;
+    assert.equal(httpUrl(payload.source_url), payload.source_url, name);
+  }
 });
 
 test("a year prints without a thousands separator", () => {

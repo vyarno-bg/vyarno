@@ -82,6 +82,28 @@ const CYRILLIC = /[а-яА-Я]/;
 /** A string with its `{slot}` and `{{slot}}` placeholders taken out. */
 const withoutSlots = (text) => text.replace(/\{\{?[^}]*\}\}?/g, " ");
 
+/** A string with its markup taken out. A tag name is not prose a reader sees. */
+const withoutTags = (text) => text.replace(/<[^>]*>/g, " ");
+
+/**
+ * A Latin run in Bulgarian copy that is not somebody's name.
+ *
+ * The alphabet rule below catches a Bulgarian string written wholly in Latin.
+ * The likelier defect is a MIXED one — an untranslated fragment left in place,
+ * which renders half a heading in each language to every Bulgarian reader while
+ * the string still reads as Cyrillic to a test asking only whether any Cyrillic
+ * is present.
+ *
+ * Fourteen Bulgarian values legitimately carry Latin, and every one is a name:
+ * GitHub, Viber, Telegram, WhatsApp, Apache, the ЕЦБ's MIR, Евростат's HICP,
+ * and имот.bg. They are told apart by SHAPE rather than by a list of them — a
+ * name is capitalised or an acronym, and a domain carries a dot, so what is
+ * left is an all-lowercase undotted run, which is what an English word dropped
+ * into a Bulgarian sentence looks like and what no name here does. Handle a
+ * genuine exception the same way: state the shape the rule does not reach.
+ */
+const LATIN_FRAGMENT = /(?<![A-Za-z.])[a-z]{2,}(?![A-Za-z.])/;
+
 /**
  * The alphabet offences in one bilingual pair, named.
  *
@@ -104,9 +126,13 @@ const withoutSlots = (text) => text.replace(/\{\{?[^}]*\}\}?/g, " ");
  */
 function alphabetOffences(label, bg, en) {
   const out = [];
-  const bgWords = typeof bg === "string" ? withoutSlots(bg) : "";
+  const bgWords = typeof bg === "string" ? withoutTags(withoutSlots(bg)) : "";
   if (/\p{L}/u.test(bgWords) && !CYRILLIC.test(bgWords)) {
     out.push(`${label}.bg is not in Bulgarian: ${bg}`);
+  }
+  const fragment = LATIN_FRAGMENT.exec(bgWords);
+  if (fragment && CYRILLIC.test(bgWords)) {
+    out.push(`${label}.bg leaves "${fragment[0]}" untranslated: ${bg}`);
   }
   if (typeof en === "string" && CYRILLIC.test(en)) {
     out.push(`${label}.en carries Cyrillic: ${en}`);
@@ -266,6 +292,35 @@ test("every placeholder in a COPY string is substituted somewhere", () => {
 // ---------------------------------------------------------------------------
 // Editorial rules: sentences that are commitments, not preferences
 // ---------------------------------------------------------------------------
+
+test("no COPY string frames a figure as concealed rather than uncomputed", () => {
+  // docs/principles.md P11. "They intentionally don't show it" is a claim we
+  // cannot source, and it is the difference between a civic tool and a
+  // grievance.
+  //
+  // Over every bilingual entry rather than over the cards that happen to
+  // discuss a missing figure today. A rule this one is scoped by hand covers
+  // the keys somebody remembered: a string added to a card no list names is
+  // guarded by none of them, and that failure does not go red, it goes ABSENT.
+  // The tax wedge and the sector card are the two surfaces the wording is
+  // likeliest to reach, and they are the two a hand list would have held.
+  const banned =
+    /(скрива|укрива|не искат да|нарочно не|deliberately (?:hides?|omits?)|do(?:es)? not want you to|intentionally (?:hides?|does not show))/i;
+  const offenders = [];
+  for (const [key, value] of bilingualEntries()) {
+    for (const lang of ["bg", "en"]) {
+      if (banned.test(value[lang] ?? "")) {
+        offenders.push(`COPY.${key}.${lang}: ${value[lang]}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a figure is framed as suppression:\n  ${offenders.join("\n  ")}\n` +
+      "docs/principles.md P11 — computable and uncomputed, or unpublished; never hidden."
+  );
+});
 
 test("the unplaced-money copy describes and never advises", () => {
   // The row names what is left over, so that the basket is not asserting that
@@ -563,22 +618,6 @@ test("the wedge copy says the rate FALLS at the ceiling", () => {
       !/\b(расте|rises|increases)\b/.test(text),
       `the wedge explainer says the rate RISES above the ceiling: ${text}`
     );
-  }
-});
-
-test("the wedge copy frames the figure as uncomputed, never as concealed", () => {
-  // docs/principles.md P11. "They intentionally don't show it" is a claim we cannot
-  // source, and it is the difference between a civic tool and a grievance.
-  const banned =
-    /(скрива|укрива|не искат да|нарочно не|deliberately (?:hides?|omits?)|do(?:es)? not want you to|intentionally (?:hides?|does not show))/i;
-  for (const key of WEDGE_KEYS) {
-    for (const text of pair(key)) {
-      assert.ok(
-        !banned.test(text),
-        `COPY.${key} frames a derived figure as suppression: ${text}\n` +
-          "docs/principles.md P11 — say it is computable and uncomputed, not hidden."
-      );
-    }
   }
 });
 
@@ -1745,15 +1784,6 @@ test("the country page keeps the 30% line where P7 put it", () => {
 // The sector card — a comparison to an average, said out loud
 // ---------------------------------------------------------------------------
 
-const SECTOR_KEYS = [
-  "sectorNoRank",
-  "sectorAverageFlatters",
-  "sectorCoverage",
-  "sectorNationwide",
-  "sectorDiff",
-  "sectorDiffEarner",
-];
-
 test("the sector copy says plainly that no distribution by sector is published", () => {
   // The load-bearing sentence. НСИ publish an average by economic activity and
   // nobody publishes a distribution by one, so a reader shown a gap will read a
@@ -1769,23 +1799,6 @@ test("the sector copy says plainly that no distribution by sector is published",
       /(класиране|rank)/i.test(text),
       `sectorNoRank does not say this is not a rank: ${text}`
     );
-  }
-});
-
-test("the sector copy frames the missing figure as unpublished, never as withheld", () => {
-  // docs/principles.md P11. Nobody publishes a pay distribution by activity for
-  // BG, and we cannot source a reason — so the copy says it does not exist,
-  // and does not impute a motive to anyone for its absence.
-  const banned =
-    /(скрива|укрива|не искат да|нарочно не|deliberately (?:hides?|omits?)|do(?:es)? not want you to|intentionally (?:hides?|does not show))/i;
-  for (const key of SECTOR_KEYS) {
-    for (const text of pair(key)) {
-      assert.ok(
-        !banned.test(text),
-        `COPY.${key} frames an unpublished figure as suppression: ${text}\n` +
-          "docs/principles.md P11 — say it is unpublished, not hidden."
-      );
-    }
   }
 });
 

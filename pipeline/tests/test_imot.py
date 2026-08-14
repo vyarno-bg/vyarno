@@ -204,6 +204,27 @@ def test_the_dead_page_date_extractor_is_gone() -> None:
 # ---------------------------------------------------------------------------
 
 
+def test_the_probed_counts_the_floor_is_calibrated_on() -> None:
+    """The two counts every assertion in this section takes its yardstick from.
+
+    `imot_districts` is имот.bg's own count on the 2026-08-09 probe, and it is
+    both the INPUT to `_min_districts_for` and — in every test below — the
+    figure the resulting floor is judged against. A count that drifted
+    therefore lowers its own floor and passes: read София as 41 and the floor
+    lands at 24, which still sits above Ловеч's whole page, still leaves room
+    for a retirement or two, and still equals 60% of the count beside it. What
+    it stops being is a floor: a София page returning a quarter of its
+    districts clears 24 comfortably, and that page is what the share exists to
+    refuse.
+
+    So the counts are written out and dated, like every other read off an
+    upstream here, and the floor they buy is written out with them.
+    """
+    assert SOFIA.imot_districts == 141, "имот.bg served 141 София districts on 2026-08-09"
+    assert LOVECH.imot_districts == 7, "имот.bg served 7 Ловеч districts on 2026-08-09"
+    assert _min_districts_for(SOFIA) == 84
+
+
 def test_the_district_floor_passes_the_smallest_city_and_fails_a_fragment() -> None:
     """The two things a flat floor cannot do at once.
 
@@ -398,7 +419,17 @@ def test_a_city_whose_current_year_is_missing_publishes_no_trend() -> None:
 
 
 def _districts(n: int, base: int = 1000) -> dict[str, int]:
-    return {f"D{i}": base + i * 10 for i in range(n)}
+    """`n` districts, right-skewed the way a real city's prices are.
+
+    A straight run of `base + i * 10` is an arithmetic sequence, whose median
+    and mean are the same number to the last decimal — so a payload publishing
+    one under the other's name is indistinguishable from a correct one, and
+    every test built on this helper passes either way. The top tenth is lifted
+    instead, which is what a handful of central districts do to a city: the
+    mean lands well above the median and each figure identifies itself.
+    """
+    top = max(1, n // 10)
+    return {f"D{i}": base + i * 10 + (2 * base if i >= n - top else 0) for i in range(n)}
 
 
 def _row(region, years: dict[int, int]):
@@ -455,6 +486,31 @@ def test_the_since_baseline_percentage_is_measured_from_the_first_published_year
         ),
         abs=0.05,
     )
+
+
+def test_the_median_and_the_mean_are_published_under_their_own_names() -> None:
+    """The card prints the median, and the payload's notes say so.
+
+    имот.bg publish a per-district average and no city figure at all, so both
+    of these are ours — which is exactly why nothing upstream would contradict
+    them if they were exchanged. Both stay plausible €/m², both stay inside the
+    published min-max, and the since-baseline percentage still reproduces from
+    whichever series it was computed over. A city's prices are right-skewed, so
+    what a reader would get under «медиана» is a figure a majority of districts
+    sit below.
+    """
+    row = _row(SOFIA, dict.fromkeys(range(THIS_YEAR - 9, THIS_YEAR + 1), 141))
+    stats = imot._summary_stats(_districts(141))
+    assert stats["eur_per_m2_mean"] > stats["eur_per_m2_median"], (
+        "the fixture is symmetric, so this test cannot tell the two figures apart"
+    )
+    assert row["eur_per_m2_median"] == stats["eur_per_m2_median"]
+    assert row["eur_per_m2_mean"] == stats["eur_per_m2_mean"]
+
+    # The same pairing on every year of the chart, which is a second write site.
+    newest = row["historical"][-1]
+    assert newest["eur_per_m2_median"] == stats["eur_per_m2_median"]
+    assert newest["eur_per_m2_mean"] == stats["eur_per_m2_mean"]
 
 
 def test_a_short_run_publishes_its_years_but_not_a_trend_sentence() -> None:

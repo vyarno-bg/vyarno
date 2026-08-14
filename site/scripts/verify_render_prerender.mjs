@@ -41,6 +41,13 @@
  * `dist/`, for the same reason: the assertion is that the served HTML agrees
  * with the JSON shipped beside it, not that it says 4.1%.
  *
+ * **What a string in this file proves is that it was SERVED, never that it is
+ * on screen.** The upstream attribution is the case that matters — it is a
+ * licence condition — and a `display: none` on the rule that carries it leaves
+ * every `includes(attribution(lang))` below green while nobody reads it.
+ * `verify_render_shell.mjs` §"the upstream attribution is on screen, in the
+ * language the page serves" is the other half, in a browser.
+ *
  * This is the one render suite that opens NO browser — it reads `dist/` off
  * disk, which is why it imports `render-dist.mjs` rather than the harness.
  */
