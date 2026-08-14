@@ -57,7 +57,7 @@ to satisfy, are in [`README.md`](./README.md) §"Who this is for".
   reasoning and names the test that enforces it.
 - **The footer's upstream attribution «Данни от Евростат / ЕЦБ / НСИ / БНБ /
   имот.bg» is a licence condition** of several upstreams *and* the credibility
-  claim. Guarded by `test_footer_credits_every_upstream_we_use` in both
+  claim. Guarded by `the_footer_credits_every_upstream_the_pipeline_pulls_from` in both
   languages; removing a source name to shorten the line is never a cleanup.
 
 ## Open source — what the code owes the people reading it

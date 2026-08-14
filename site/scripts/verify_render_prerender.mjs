@@ -70,6 +70,7 @@ import { cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 // <lastmod> carries, so the assertion computes it the same way rather than
 // restating the rule.
 import { LEGAL_LASTMOD, newestAsOf } from "./gen-sitemap.mjs";
+import { PRERENDERED } from "./prerender.mjs";
 import { COPY, DIST, attribution, needsBuild, servedText, shipped } from "./render-dist.mjs";
 
 /**
@@ -83,17 +84,16 @@ import { COPY, DIST, attribution, needsBuild, servedText, shipped } from "./rend
  */
 const MIN_PRERENDERED = 500;
 
-/** Every page the build serves, Bulgarian first, as `join()` segments. */
-const SERVED_PAGES = [
-  ["index.html"],
-  ["how", "index.html"],
-  ["legal", "index.html"],
-  ["support", "index.html"],
-  ["en", "index.html"],
-  ["en", "how", "index.html"],
-  ["en", "legal", "index.html"],
-  ["en", "support", "index.html"],
-];
+/**
+ * Every page the build serves, as `join()` segments — read off `PRERENDERED`
+ * rather than listed here.
+ *
+ * A hand-kept copy covers the pages somebody remembered to add to it, and a new
+ * content route is both the moment the head tags are most likely to be written
+ * wrong and the moment a second list is most likely to be forgotten. Deriving it
+ * means a route is covered by the same commit that starts serving it.
+ */
+const SERVED_PAGES = PRERENDERED.flatMap((entry) => entry.pages);
 
 test(
   "the built page carries its prose without running any JavaScript",
@@ -393,13 +393,21 @@ test(
     for (const page of SERVED_PAGES) {
       const html = await readFile(join(DIST, ...page), "utf8");
       const where = page.join("/");
+      // Counted over the HEAD, not the document. `<title>` is also SVG's
+      // accessible name, and `/market/` serves 330 of them inside its charts —
+      // counted whole-document, the page a crawler reads perfectly well fails
+      // for drawing pictures. The head is where the rule lives and where a
+      // second description actually arrives, next to an og:description somebody
+      // was already editing.
+      const head = html.slice(0, html.indexOf("</head>"));
+      assert.ok(head.length > 0, `${where} serves no <head> to check`);
       for (const [what, pattern] of [
         ["<title>", /<title[\s>]/g],
         ['<meta name="description">', /<meta[^>]+name="description"/g],
         ['<link rel="canonical">', /<link[^>]+rel="canonical"/g],
       ]) {
         assert.equal(
-          (html.match(pattern) ?? []).length,
+          (head.match(pattern) ?? []).length,
           1,
           `${where} does not carry exactly one ${what}, and a crawler reads the first`
         );
@@ -445,16 +453,14 @@ test("the served pages carry one language, not two", { skip: needsBuild }, async
   // `PRERENDERED` row pointing two addresses at the same language — serves the
   // Bulgarian body under an English canonical, with every Bulgarian assertion
   // above still green.
-  for (const [page, served, dropped] of [
-    [["index.html"], "bg", "l-en"],
-    [["how", "index.html"], "bg", "l-en"],
-    [["legal", "index.html"], "bg", "l-en"],
-    [["support", "index.html"], "bg", "l-en"],
-    [["en", "index.html"], "en", "l-bg"],
-    [["en", "how", "index.html"], "en", "l-bg"],
-    [["en", "legal", "index.html"], "en", "l-bg"],
-    [["en", "support", "index.html"], "en", "l-bg"],
-  ]) {
+  // `SERVED_PAGES` is derived, so a route is checked by the commit that starts
+  // serving it rather than by the one that remembers this list.
+  const entries = SERVED_PAGES.map((page) =>
+    page[0] === "en" ? [page, "en", "l-bg"] : [page, "bg", "l-en"]
+  );
+  assert.ok(entries.length >= 10, `only ${entries.length} prerendered pages to check`);
+
+  for (const [page, served, dropped] of entries) {
     const html = await readFile(join(DIST, ...page), "utf8");
     const mounted = html.slice(html.indexOf('<div id="app">'));
     const left = (mounted.match(new RegExp(dropped, "g")) ?? []).length;

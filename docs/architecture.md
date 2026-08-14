@@ -45,15 +45,16 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 ├── pipeline/        Python 3.11 + httpx + pydantic + click · AGENTS.md
 │   ├── requirements.txt · requirements-dev.txt   pip-compile locks, hashed
 │   ├── src/vyarno_pipeline/
-│   │   ├── models · transform · validate · publish · cli
+│   │   ├── models · transform · validate · publish · cli · regions
 │   │   ├── mortgage.py   # gates + БНБ lending limits
 │   │   ├── payroll.py    # dated BG payroll-law table (no network)
 │   │   └── sources/      # eurostat · bnb · ecb · imot · nsi
 │   └── tests/       `pytest -q` offline; `-m live` hits real upstreams
 ├── data/published/  12 payloads, committed — these ARE served to the site
-└── site/            Vite 8 + Svelte 5, five build entries · AGENTS.md
+└── site/            Vite 8 + Svelte 5, eleven build entries · AGENTS.md
     ├── index.html · how/index.html · market/index.html ·
     │                legal/index.html · support/index.html · 404.html
+    ├── en/           the same five routes, declaring `en`
     ├── public/      _headers (CSP + cache) · robots.txt · llms.txt ·
     │                .well-known/security.txt · favicon · og cards · fonts
     ├── eslint.config.js · .prettierrc.json · svelte.config.js
@@ -86,9 +87,11 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
                      legal.js      the legal documents + ЗЕТ чл. 4 identity
                      legal-nav.js  contact addresses + document names
                      support.js    the donation rules — what may be offered
-                     stores.js     lang + theme, persisted
+                     stores.js     lang · theme · област · the reader's figures
                      build.js      the build stamp (__BUILD_ID__, or "dev")
-                     tokens.css · card.css · disclosure.css · result-row.css
+                     tokens.css · card.css · disclosure.css · result-row.css ·
+                     fig-table.css
+                     WedgeChart.svelte  the tax wedge, drawn by / and /how/
                      SiteHeader.svelte  wordmark + route out + theme + language
                      SiteFooter.svelte  attribution + legal links + build stamp
 ```

@@ -51,7 +51,8 @@ Filler is the problem.
 
 ## Pull requests
 
-`.github/pull_request_template.md` asks four things. Answer those and stop.
+`.github/pull_request_template.md` asks five things — the last only where a
+data source is touched. Answer those and stop.
 "What this changes" is one or two sentences; "Why" is the reasoning. Skip the
 per-file walkthrough — the Files tab is the walkthrough.
 

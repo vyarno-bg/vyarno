@@ -101,11 +101,11 @@ suite will pass a deletion of half of it. The band is the price of keeping
 `check-test-floors.mjs` §"Floors, not exact counts" argues it against the two
 alternatives.
 
-`make check` runs all of it in CI's order. **The three totals live in
-[`AGENTS.md`](../AGENTS.md) §Commands and nowhere else.** A per-file count in
-this table is a number that goes stale the next time somebody adds a test to
-that file, and twelve of them go stale twelve different ways — read the totals
-from the run you just did instead. A count that moved without you moving it is
+`make check` runs all of it in CI's order and reports the three totals. **They
+live in `check-test-floors.mjs` as floors and nowhere else as numbers** — a
+per-file count in this table is one that goes stale the next time somebody adds
+a test to that file, and twelve of them go stale twelve different ways. Read the
+totals from the run you just did. A count that moved without you moving it is
 still a finding.
 
 **Every suite above tests behaviour, and that is the line.** A test here fails
@@ -464,13 +464,13 @@ has to meet".
 If yes, leave the test whole however long it is. **Split where a failure would
 be ambiguous, never to raise a count.**
 
-Lines per test is the wrong signal for this. `verify_template_safety.mjs` is
-seven tests over five hundred lines, and most of those lines are the `{@html}`
-scanner and the reasoning behind it — each of the seven reports the offending
+Lines per test is the wrong signal for this. `verify_template_safety.mjs` is a
+handful of tests over a long file, and most of that file is the `{@html}`
+scanner and the reasoning behind it — each test reports the offending
 expression by name, so none of them is ambiguous and none should be split.
 `test_published_contracts.py` is the same shape over the published payloads,
-and so is `verify_render_contrast.mjs`: two tests over four hundred lines that
-are almost all the compositing walk, each reporting every failing element with
+and so is `verify_render_contrast.mjs`: a very long file that is
+almost all the compositing walk, each test reporting every failing element with
 its selector, its text, the ratio it was painted at and the alpha that got it
 there. Splitting either of those two would drive the page through another
 browser to report less. A test earns a split when its failure says the results
@@ -644,12 +644,11 @@ for is the question a reviewer should be able to ask about any uncovered line �
 
 **JavaScript.** The layers that can produce a wrong number are effectively
 complete: `src/lib/view/`, `mirror.js`, `legal.js` and `support.js` are at or near
-100%. Two real gaps:
+100%. One real gap:
 
 | File | Why |
 |---|---|
 | `data.js` | `fetchJson`'s success return and its warn-and-return-null catch arm, which is the whole of what the coverage run reports uncovered. `verify_data_contracts.mjs` covers the fallback chains — the part that can pick a wrong number — with `fetch` stubbed. Covering the two remaining arms means a stub asserting that `fetch` was called, which tests the mock. The real coverage of them is the render suites, which load the page and make it fetch |
-| `format.js` | The `httpUrl`/`period` rejection branches, for input shapes the payloads cannot produce. They exist because `{@html}` is downstream of them, and they are guarded structurally by `verify_template_safety.mjs` rather than by example |
 
 **Python.** Everything below the CLI is 89–100%: gates, transforms, connectors,
 models. What is left is `cli.py`'s ten `_refresh_*` arms — fetch, transform,

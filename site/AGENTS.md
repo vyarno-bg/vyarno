@@ -122,8 +122,13 @@ P-numbered rules it has to satisfy (`docs/principles.md`).
 `svelte/no-at-html-tags` is switched off, and `verify_template_safety.mjs` is
 the evidence. Three invariants hold it up:
 
-1. **The app has no free-text input surface at all** — every control is a
-   number, range, checkbox or radio. No `<textarea>`, no `contenteditable`.
+1. **The app has no free-text input surface at all** — everything a visitor can
+   enter is a NUMBER. No `<textarea>`, no `contenteditable`. The two decimal
+   fields are `type="text"` and keep the guarantee anyway, because the type
+   attribute is not what it rests on: `type="number"`'s sanitiser silently
+   deletes the comma a Bulgarian reader types. The exception is narrow — a text
+   input must declare itself decimal — and `verify_template_safety.mjs` carries
+   its terms.
 2. **Every `{@html …}` expression is rooted in an in-repo constant** — a `COPY`
    key or a `legal.js` paragraph.
 3. **Every value substituted into one goes through a formatter that constrains

@@ -701,8 +701,8 @@ the same point one step further from the evidence, and stating both put two of
 our own percentages in a four-line caveat that a reader has to hold at once. Two
 published levels are easier to check than a ratio between them and easier to
 read than either. `COPY.sectorAverageFlatters` attributes the rung to us and
-dates the survey, and `the calibration marks its modelled figure and dates its
-measured one` in `verify_copy.mjs` fails if either goes.
+dates the survey, and `verify_copy.mjs` §"the calibration states the skew in
+words and puts no level on screen" fails if either goes.
 
 What the modelling can and cannot move: a different interpolation between the
 published median and D9 shifts the rung by a few points, and cannot put the mean

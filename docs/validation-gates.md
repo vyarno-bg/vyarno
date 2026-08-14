@@ -2,8 +2,14 @@
 
 Seven gates block the HICP publish, plus five on the mortgage panel and one on
 the by-sector wage payload. They run in order, short-circuit on the first failure,
-and never pass silently. On any failure the CLI exits **before** publish, so the
-on-disk JSON never represents a failed run.
+and never pass silently. On any failure the CLI exits **before** that arm's
+publish, so no payload on disk is the output of a run that failed its gates.
+
+**`--source all` is per arm, not per run.** The arms run in sequence and each
+publishes on success, so a failure at the eighth leaves the first seven written
+— which is why the error names them: `written this run:` and `not reached:` are
+printed on the way out. Read that list before re-running; the tree is a partial
+refresh, not an untouched one.
 
 | # | Gate | Catches |
 |---|---|---|
@@ -345,7 +351,7 @@ detail.
 | `city-price` | bounds [100, 10000] €/m², per city; a count below 60% of that city's own is exit 2; a city-year dropping over 20% of its rows is exit 2. Then `validate_city_price` on the payload: every code one `regions.py` covers, no duplicate, a name in both languages, the median inside its own min-max, the published years unbroken and in order, and the headline since-baseline percentage equal to the newest year's | Publishes `n_dropped` per city-year, so the drop is never silent; `snapshot_date` off имот.bg's own list, so the payload is dated by them rather than by us; and `city_pages` beside `cities`, so a city nobody read is never reported as one имот.bg do not publish |
 | `region-salary` | all 28 области present, no district row we do not name, София-city the maximum; any failure is exit 2 | Three-part regression guard on the row selector — an off-by-one that shifts every reading by one област passes any two of them |
 | `sector-salary` | gate 8 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
-| `salary-dist` | P1 floored at the statutory minimum wage | — |
+| `salary-dist` | No published-JSON gate. The arm fetches, transforms and writes | **The P1 floor is not here.** It applies after the ladder is re-levelled to today's София average, which happens in the reader's browser (`mirror.js#composeLadder`, minimum wage out of `payroll.json`) — flooring an unlevelled rung would floor a number that is not a wage |
 | `payroll` | no network; parity-checked against the SPA sentinel. `payroll.py` raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | `test_payroll.py` reads `mirror.js` |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
 | `nsi-housing` | every published figure is a cell НСИ published, and the national price index change reconciles with Eurostat's at the newest shared quarter | The reconciliation reads `house_market.json` off disk and says so when it is absent rather than passing quietly |
