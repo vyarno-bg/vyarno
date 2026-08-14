@@ -1127,33 +1127,74 @@ test("the recomputed-figures disclaimer accounts for имот.bg", () => {
   }
 });
 
-test("every page mounts the shared footer and none declares its own", () => {
-  // The footer carries the upstream attribution (a licence condition) and the
-  // legal links (ЗЕТ чл. 4 wants the provider's identity reachable from every
-  // page). A page that grew its own <footer> is the same list maintained twice,
-  // and the copy drifts.
-  //
-  // The list is every component that is a build entry's root. A page added to
-  // `vite.config.js` and not to this list is a page shipping without the
-  // attribution and without the ЗЕТ чл. 4 links, with every suite green — so a
-  // new entry belongs here in the commit that adds it.
-  for (const page of [
-    "App.svelte",
-    "How.svelte",
-    "Legal.svelte",
-    "Support.svelte",
-    "NotFound.svelte",
-  ]) {
+/**
+ * Every build entry's root component, followed out of `vite.config.js`.
+ *
+ * Rollup's `input` map is the only list of what this site actually ships. An
+ * entry names an HTML file, the HTML names a `/src/*.js` bootstrap, and the
+ * bootstrap names the component it mounts — three hops, all of them mechanical,
+ * and none of them a name anybody has to remember to add twice.
+ *
+ * A hand-typed list here omits in exactly the way that cannot be noticed: the
+ * page it leaves out is a page shipping without the upstream attribution and
+ * without the ЗЕТ чл. 4 links, at however many published addresses it has, with
+ * every suite in the repository green.
+ *
+ * @returns {Promise<Map<string, string[]>>} component filename → entry names
+ */
+async function entryRoots() {
+  const config = (await import("../vite.config.js")).default;
+  const inputs = config.build?.rollupOptions?.input ?? {};
+  assert.ok(
+    Object.keys(inputs).length >= 6,
+    `vite.config.js declares ${Object.keys(inputs).length} build inputs. The ` +
+      "shape this reads has moved, so the check below is running over nothing."
+  );
+  const roots = new Map();
+  for (const [entry, html] of Object.entries(inputs)) {
+    const boot = readFileSync(html, "utf-8").match(/<script[^>]*\bsrc="\/src\/([\w.-]+\.js)"/);
+    assert.ok(boot, `the ${entry} entry names no /src/ bootstrap, so nothing can follow it`);
+    const src = read("src", boot[1]);
+    const mounted = src.match(/\bmount\(\s*(\w+)\s*,/);
+    assert.ok(mounted, `src/${boot[1]} calls no mount(), so the ${entry} entry renders nothing`);
+    const from = src.match(
+      new RegExp(`import\\s+${mounted[1]}\\s+from\\s+"\\./([\\w./-]+\\.svelte)"`)
+    );
+    assert.ok(from, `src/${boot[1]} mounts ${mounted[1]}, imported from no .svelte file`);
+    roots.set(from[1], [...(roots.get(from[1]) ?? []), entry]);
+  }
+  return roots;
+}
+
+test("every build entry mounts the shared masthead and footer, and neither twice", async () => {
+  // The footer carries the upstream attribution — a licence condition of
+  // several of the five publishers — and the legal links, which is how ЗЕТ
+  // чл. 4 gets the provider's identity reachable from every page. The masthead
+  // carries the skip link, the language control and the route back out. Both
+  // are one component mounted by every entry, and a page that grew its own is
+  // the same list maintained twice, with the copy drifting from the day it
+  // was pasted.
+  const roots = await entryRoots();
+  assert.ok(roots.size >= 6, `the build resolves to ${roots.size} distinct root components`);
+  for (const [page, entries] of roots) {
     const src = read("src", page).replace(/<!--[\s\S]*?-->/g, " ");
+    const at = `${page} (mounted by ${entries.join(", ")})`;
     assert.ok(
       src.includes("<SiteFooter"),
-      `${page} does not mount SiteFooter — it either has no footer at all, ` +
+      `${at} does not mount SiteFooter — it either has no footer at all, ` +
         "losing the upstream attribution and the legal links, or it grew its own"
     );
     assert.ok(
-      !/<footer\b/.test(src),
-      `${page} declares its own <footer>. There is one footer component ` +
-        "(lib/SiteFooter.svelte); a second one drifts."
+      src.includes("<SiteHeader"),
+      `${at} does not mount SiteHeader, so the page ships with no skip link, no ` +
+        "language control and no route back to the calculator"
     );
+    for (const tag of ["header", "footer"]) {
+      assert.ok(
+        !new RegExp(`<${tag}\\b`).test(src),
+        `${at} declares its own <${tag}>. There is one of each (lib/SiteHeader.svelte, ` +
+          "lib/SiteFooter.svelte); a second one drifts."
+      );
+    }
   }
 });

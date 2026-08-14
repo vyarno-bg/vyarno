@@ -28,11 +28,12 @@ import {
   quarterGrid,
   QUARTERS,
   nationalQuarter,
+  nationalRow,
 } from "../src/lib/view/country.js";
 import { sectorOptions, SECTOR_TOTAL_KEY, taxWedgePanel } from "../src/lib/view/payroll.js";
 import { regionQuarter, regionRow, cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
 import { HOME } from "../src/lib/content.js";
-import { payrollParams } from "../src/lib/mirror.js";
+import { bgNetSalary, flooredCuts, payrollParams } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
 
@@ -50,13 +51,23 @@ const PAYROLL = read("payroll");
 // reader — is not expressible rather than merely untested.
 // ---------------------------------------------------------------------------
 
-test("systemWedgeLadder reads the ceiling and the rates out of the PUBLISHED payload", () => {
+test("systemWedgeLadder reads the ceiling, the rates and the minimum wage from the payload", () => {
   if (!PAYROLL) return;
   const ladder = systemWedgeLadder({ payroll: PAYROLL });
   assert.ok(
     near(ladder.maxInsurable, PAYROLL.max_insurable_income_eur, 1e-9),
     "the ladder's ceiling is not payroll.json's"
   );
+  // The fourth figure the ДВ citation dates, and the one whose slot sits beside
+  // a number four times its size. `/how/` renders it as Bulgaria's statutory
+  // minimum wage; filled from the insurance ceiling the page would state €2,300
+  // as the lowest lawful monthly pay in the country, from a payload that
+  // publishes both and a caption that dates both to the same act.
+  assert.ok(
+    near(ladder.minWageGross, PAYROLL.min_wage_gross_eur, 1e-9),
+    "the minimum wage on the page is not payroll.json's"
+  );
+  assert.notEqual(ladder.minWageGross, ladder.maxInsurable);
   assert.ok(
     near(ladder.incomeTaxRatePct, 100 * PAYROLL.income_tax_rate, 1e-9),
     "the flat tax rate is not payroll.json's"
@@ -73,6 +84,9 @@ test("systemWedgeLadder reads the ceiling and the rates out of the PUBLISHED pay
     raised.rungs.some((r) => r.gross === 3000 && r.atCeiling),
     "a moved ceiling did not move the rung that marks it"
   );
+  const lifted = systemWedgeLadder({ payroll: { ...PAYROLL, min_wage_gross_eur: 700 } });
+  assert.ok(near(lifted.minWageGross, 700, 1e-9), "the minimum wage is hardcoded, not read");
+  assert.ok(near(lifted.maxInsurable, PAYROLL.max_insurable_income_eur, 1e-9));
 });
 
 test("the wedge ladder carries the ДВ issue the four figures are cited by", () => {
@@ -232,7 +246,21 @@ test("payLadder pairs each rung with its cut, and says which were surveyed", () 
   // every rung there. Two rungs sharing the floor are the floor doing its job;
   // anything above it that fails to rise is the re-levelling going wrong, and
   // the second loop is what keeps this from being a weaker test than it reads.
-  const floor = payrollParams(PAYROLL).minWageGross;
+  const params = payrollParams(PAYROLL);
+  const floor = params.minWageGross;
+  // **Every rung's net is the net OF ITS OWN GROSS, and P1 is where that is
+  // decided.** The two columns arrive from two calls over one cut list, so a
+  // whole-column shift pairs each rung with the take-home of the cut below it —
+  // monotonic in both directions, every figure a real Bulgarian net wage, and
+  // the bottom rung reading €0/month. The monotonicity loop below starts at
+  // index 1, so the shifted-in zero sits outside every comparison it makes.
+  for (const rung of ladder.rungs) {
+    assert.ok(
+      near(rung.net, bgNetSalary(rung.gross, params).net, 1e-9),
+      `P${rung.cut} shows €${rung.net} net against €${rung.gross} gross`
+    );
+    assert.ok(rung.net > 0, `P${rung.cut} takes home nothing`);
+  }
   for (let i = 1; i < ladder.rungs.length; i += 1) {
     assert.ok(ladder.rungs[i].gross >= floor, "a rung composes below the statutory minimum wage");
     assert.ok(ladder.rungs[i].gross >= ladder.rungs[i - 1].gross, "the gross rungs are not rising");
@@ -256,9 +284,20 @@ test("payLadder pairs each rung with its cut, and says which were surveyed", () 
   // is the minimum wage; calling that row «измерено» credits Eurostat with a
   // figure that came out of the ЗБДОО, on the one column whose job is telling a
   // measurement from a model.
+  //
+  // The floored set is recomputed from the payloads rather than read back off
+  // the rungs under test: an expectation built out of each rung's own
+  // `atMinWage` agrees with whatever the rungs say, including a `surveyed` that
+  // stopped subtracting the floor at all.
+  const floored = flooredCuts(dist, ladder.anchorGross, params);
+  assert.deepEqual(
+    ladder.rungs.filter((r) => r.atMinWage).map((r) => r.cut),
+    [...floored].sort((a, b) => a - b),
+    "the rungs marked as replaced by the floor are not the ones the floor replaced"
+  );
   assert.deepEqual(
     ladder.rungs.filter((r) => r.surveyed).map((r) => r.cut),
-    [10, 50, 90].filter((cut) => !ladder.rungs.find((r) => r.cut === cut).atMinWage),
+    [10, 50, 90].filter((cut) => !floored.has(cut)),
     "the surveyed rungs are not D1, the median and D9 less the floored ones"
   );
   // No row carries both markers, and every floored row is at the floor. The
@@ -367,6 +406,81 @@ test("nationalQuarter reads НСИ's published quarter and computes nothing", ()
   for (const junk of [null, undefined, {}, { sectors: [] }]) {
     assert.deepEqual(nationalQuarter(junk), { value: 0, refPeriod: "", isPreliminary: false });
   }
+});
+
+test("nationalQuarter falls back to НСИ's newest quarter, and to no month at all", () => {
+  // Two branches a live payload never enters, because it carries both a
+  // `value_eur` and a quarter-shaped `ref_period` and takes the headline path.
+  // They are what an older envelope lands on, and both are one character from
+  // the wrong cell: the OLDEST quarter instead of the newest re-levels the whole
+  // ladder onto a wage from years back, and a monthly key read as a quarter
+  // quotes one month as the quarterly level — March runs ~7.6% above its own
+  // quarter on the published series.
+  const totalRow = (series) => ({
+    sectors: [{ en_name: SECTOR_TOTAL_KEY, series_by_period: series }],
+  });
+
+  const q = nationalQuarter(
+    totalRow({ "2024-Q2": 1100, "2026-Q1": 1407, "2025-Q3": 1250, "2026-Q2": null })
+  );
+  assert.equal(q.refPeriod, "2026-Q1", "the fallback is not НСИ's newest published quarter");
+  assert.equal(q.value, 1407);
+
+  // Quarter-shaped keys only, both in the series and in the period the payload
+  // states. The monthly key above sorts last of the four and is not a quarter;
+  // this one is the whole series.
+  const monthly = nationalQuarter(totalRow({ "2026-01": 1865, "2026-02": 1818, "2026-03": 2061 }));
+  assert.equal(monthly.value, 0);
+  assert.equal(monthly.refPeriod, "");
+
+  // A stated `ref_period` that is not a quarter cannot date the headline either,
+  // so the row's own quarters answer instead of a month wearing the label.
+  const dated = nationalQuarter({
+    ref_period: "2026-M05",
+    sectors: [
+      { en_name: SECTOR_TOTAL_KEY, value_eur: 1500, series_by_period: { "2026-Q1": 1407 } },
+    ],
+  });
+  assert.equal(dated.refPeriod, "2026-Q1");
+  assert.equal(dated.value, 1407);
+});
+
+test("nationalRow hands /how/'s wage grid the country's row and no sector's", () => {
+  // The grid under the ladder prints НСИ's own quarterly cells, and it prints
+  // the country's because the ladder above it is anchored on the country's. One
+  // selector for both, so the table and the anchor cannot describe different
+  // rows — and it selects «Общо» BY NAME. Selecting any other row draws one
+  // industry's quarters under a heading that says Bulgaria, beside a ladder
+  // still anchored on the real total: «Селско, горско и рибно стопанство» runs
+  // well under the country's average and every cell of it is a figure НСИ
+  // printed.
+  const payload = read("sector_salary");
+  if (!payload) return;
+  const row = nationalRow(payload);
+  assert.ok(row, "sector_salary.json carries no all-activities row for the grid");
+  assert.equal(row.en_name, SECTOR_TOTAL_KEY);
+  // The grid and the ladder's anchor are the same cell, which is the whole
+  // reason there is one selector.
+  assert.equal(row.value_eur, nationalQuarter(payload).value);
+  assert.equal(
+    quarterGrid(row).flatMap((r) => r.cells.filter(Boolean)).length,
+    seriesCells(row).length
+  );
+  // Selected by name and not by position, wherever НСИ put the row.
+  const shuffled = {
+    sectors: [
+      { en_name: "Agriculture, forestry and fishing", value_eur: 900 },
+      { en_name: SECTOR_TOTAL_KEY, value_eur: 1407 },
+      { en_name: "Information and communication", value_eur: 3900 },
+    ],
+  };
+  assert.equal(nationalRow(shuffled).value_eur, 1407);
+  // No «Общо» row is nothing rather than whichever sector is nearest.
+  assert.equal(
+    nationalRow({ sectors: payload.sectors.filter((s) => s.en_name !== SECTOR_TOTAL_KEY) }),
+    null
+  );
+  for (const junk of [null, undefined, {}, { sectors: [] }]) assert.equal(nationalRow(junk), null);
 });
 
 test("the offline ladder sentinel selects the same way the live payload does", () => {

@@ -432,7 +432,7 @@ These are stable; scripts and CI rely on them.
 
 | Where | Question it answers | Runs |
 |---|---|---|
-| `pipeline/tests/test_validate.py`, `test_mortgage.py` | Does the gate raise on the wrong value it exists to catch? | `pytest -q` |
+| `pipeline/tests/test_validate.py` (gates 1-8), `test_house_market.py`, `test_nsi_housing.py`, `test_mortgage.py` (the three sets above that this page numbers nowhere) | Does the gate raise on the wrong value it exists to catch? | `pytest -q` |
 | `pipeline/tests/test_cli.py`, `test_cli_mortgage.py` | Is the gate wired into the refresh, does it abort **before** publishing, does it exit with the documented code? | `pytest -q` |
 | `test_published_contracts.py`, `test_mortgage.py` (published section), `site/scripts/verify_data_contracts.mjs` | Does the JSON **committed in this repo** still satisfy what the gate promised? | `pytest -q`, `npm run verify:math` |
 | `site/scripts/verify_view_*.mjs` | Does the SPA feed the right published number into the right formula? | `npm run verify:math` |

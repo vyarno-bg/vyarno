@@ -508,9 +508,9 @@ it meant.
   day it was read, in `data-sources.md` — the pattern
   [`legal.md`](./legal.md) uses for licence terms, and for the same reason.
 - **A line the coverage report shows uncovered**, where the answer to "why not"
-  is written down. `data.js`'s fetch wrappers and the five `_refresh_*` arms in
-  `cli.py` that no end-to-end test drives are the two, and both entries below
-  say what covering them would cost and what it would buy.
+  is written down. `data.js`'s two `fetchJson` arms and the eight `_refresh_*`
+  arms in `cli.py` that no end-to-end test drives are the two, and both entries
+  below say what covering them would cost and what it would buy.
 
 ## Is the core logic well covered?
 
@@ -522,8 +522,12 @@ Yes, and it is the strongest part of the repository.
   rather than shape.
 - The pipeline's gates and transforms carry substantially more test than source,
   with real fixtures per upstream and `respx` for the HTTP paths.
-  `test_validate.py` exercises every gate's failure mode, not just its happy
-  path.
+  `test_validate.py` exercises the failure mode of each of the eight gates
+  [`validation-gates.md`](./validation-gates.md) numbers, not just its happy
+  path. Those eight are the HICP set and gate 8; the property-market, НСИ-housing
+  and mortgage gates are numbered nowhere and are tested in `test_house_market.py`,
+  `test_nsi_housing.py` and `test_mortgage.py` — so "the gate tests" is three
+  files more than the name suggests.
 
 The thing at risk of being over-tested is never the maths. It is the prose,
 because a copy assertion is the easiest test in the repository to write: pin
@@ -644,17 +648,18 @@ complete: `src/lib/view/`, `mirror.js`, `legal.js` and `support.js` are at or ne
 
 | File | Why |
 |---|---|
-| `data.js` | The `fetch` wrappers. `verify_data_contracts.mjs` covers the fallback chains — the part that can pick a wrong number — but not the one-line loaders around them. Covering those means a fetch stub asserting that `fetch` was called, which tests the mock. The real coverage of this file is the render suites, which load the page and make it fetch |
+| `data.js` | `fetchJson`'s success return and its warn-and-return-null catch arm, which is the whole of what the coverage run reports uncovered. `verify_data_contracts.mjs` covers the fallback chains — the part that can pick a wrong number — with `fetch` stubbed. Covering the two remaining arms means a stub asserting that `fetch` was called, which tests the mock. The real coverage of them is the render suites, which load the page and make it fetch |
 | `format.js` | The `httpUrl`/`period` rejection branches, for input shapes the payloads cannot produce. They exist because `{@html}` is downstream of them, and they are guarded structurally by `verify_template_safety.mjs` rather than by example |
 
 **Python.** Everything below the CLI is 89–100%: gates, transforms, connectors,
-models. What is left is `cli.py`'s eight `_refresh_*` arms — fetch, transform,
+models. What is left is `cli.py`'s ten `_refresh_*` arms — fetch, transform,
 validate, write, print — of which two are driven end to end through `respx`
-against real trimmed cubes and six are not. Nine arms write twelve payloads —
-`_refresh_hicp` publishes the headline and the categories — so the nine in
-`data/published/` counts files and never arms.
+against real trimmed cubes and eight are not. Ten arms write twelve payloads —
+`_refresh_hicp` publishes the headline and the categories, `_refresh_house_market`
+the market and its structure — so the twelve in `data/published/` counts files
+and never arms.
 
-That is the honest gap, and it is deliberate. Covering the other six means six
+That is the honest gap, and it is deliberate. Covering the other eight means eight
 more fixture sets built from live upstream responses, each of which then has to
 be *maintained* against a publisher that restructures its output without
 warning. The failure they would catch — a connector that breaks — is the failure
@@ -666,8 +671,8 @@ broken, which is worse than the gap.
 What *was* worth testing there is the dispatcher above those arms
 (`test_cli_dispatch.py`): forty lines of pure branching, no network, guarding
 one specific bug — a connector wired to `--source <name>` but missing from
-`--source all`. That ships a panel where eight payloads are current and the
-ninth is months old, and the staleness banner only catches it after it has
+`--source all`. That ships a panel where eleven payloads are current and the
+twelfth is months old, and the staleness banner only catches it after it has
 shipped. It
 also documented a piece of dead code: `refresh()`'s `else: unknown source`
 branch is unreachable through the CLI, because `--source`'s `click.Choice`

@@ -40,6 +40,7 @@ from pathlib import Path
 import pytest
 
 from vyarno_pipeline import clock, publish
+from vyarno_pipeline.regions import REGIONS
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data" / "published"
@@ -102,6 +103,45 @@ def test_every_published_payload_has_a_publisher_and_a_consumer() -> None:
     assert published <= on_disk, (
         f"publish.py names files that are not published: {sorted(published - on_disk)}"
     )
+
+
+def test_the_two_nsi_wage_tables_are_written_to_the_files_that_name_them() -> None:
+    """The filename constants, against literals and against what each file holds.
+
+    The test above reads the constants out of `publish.py` and compares them as
+    a SET, so `REGION_SALARY_FILE` and `SECTOR_SALARY_FILE` exchanged passes it
+    — the same two names, still both on disk, still both in the manifest. What
+    the exchange does is put the 28-област table in `sector_salary.json` and the
+    20 NACE sections in `region_salary.json`, and every consumer joins by
+    filename: the SPA's област picker would offer «Създаване и разпространение
+    на информация», and the ladder would be re-levelled to whatever wage the
+    first области row happened to carry.
+
+    So the pairing is written out here, and each file is checked for the shape
+    that belongs to its arm. A wage table is a wage table — the two are told
+    apart by the key they publish their rows under and by whether those rows
+    carry an област code, and by nothing else.
+    """
+    assert publish.REGION_SALARY_FILE == "region_salary.json"
+    assert publish.SECTOR_SALARY_FILE == "sector_salary.json"
+
+    regions = _published("region_salary")
+    assert regions["payload_name"] == "region_salary"
+    assert "sectors" not in regions
+    # 28 области, and the codes are the join to `city_price.json`. A NACE
+    # section has no code at all, which is what makes the two distinguishable
+    # from the file alone.
+    assert len(regions["regions"]) == 28
+    assert {r["code"] for r in regions["regions"]} == {r.code for r in REGIONS}
+
+    sectors = _published("sector_salary")
+    assert sectors["payload_name"] == "sector_salary"
+    assert "regions" not in sectors
+    # NACE Rev.2 sections A–S as НСИ publish them, plus the all-activities row
+    # the ladder is re-levelled against. The connector refuses a sheet whose
+    # by-activity block is not exactly this many rows.
+    assert len(sectors["sectors"]) == 20
+    assert all("code" not in s for s in sectors["sectors"])
 
 
 def test_every_published_file_ends_in_a_newline() -> None:

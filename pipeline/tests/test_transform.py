@@ -1,10 +1,11 @@
 """Tests for transforms between Eurostat cube rows and our observation models."""
 
+import re
 from datetime import date
 
 import pytest
 
-from vyarno_pipeline.sources.eurostat import CP_DIVISIONS, INDEX_BASE_YEAR, HicpCube
+from vyarno_pipeline.sources.eurostat import CP_DIVISIONS, HicpCube
 from vyarno_pipeline.transform import (
     COICOP_META,
     MissingSeriesError,
@@ -13,6 +14,11 @@ from vyarno_pipeline.transform import (
     rows_to_category_observations,
     rows_to_yearly_index,
 )
+
+# The two index units `prc_hicp_minr` publishes, and the year each one sets to
+# 100. Eurostat's fact, written out here — a test that asked the module under
+# test what its own base year is agrees with any answer it gives.
+BASE_YEAR_OF_INDEX_UNIT = {"I15": 2015, "I25": 2025}
 
 
 def test_coicop_metadata_covers_every_ver2_division():
@@ -341,9 +347,20 @@ def test_both_index_fields_reach_the_payload_at_the_cube_s_own_base():
     cp01 = cats["CP01"]
     assert cp01.index_by_year[2020] == 115.65, "the anchor reading was scaled on the way through"
     assert cp01.latest_index["value"] == 184.98, "the latest reading was scaled on the way through"
-    assert cp01.index_base_year == INDEX_BASE_YEAR
     since_2020 = 100 * (cp01.latest_index["value"] / cp01.index_by_year[2020] - 1)
     assert since_2020 == pytest.approx(59.95, abs=0.1)
+
+    # The base and the unit are ONE fact, and the payload states it twice — once
+    # as a year and once inside the link a reader clicks to check the level.
+    # `prc_hicp_minr` publishes I15 and I25 and nothing between, so a base moved
+    # without its unit ships index levels the I15 cube returned under a heading
+    # saying 2025=100: every level on the page is then a third of what the
+    # verify link answers, and not one ratio the site draws moves, so nothing
+    # else here can go red. Compared against the mapping below rather than
+    # against `INDEX_BASE_YEAR`, which is the half that would have moved.
+    unit = re.search(r"[?&]unit=(I\d\d)", str(cp01.api_url_index)).group(1)
+    assert BASE_YEAR_OF_INDEX_UNIT[unit] == cp01.index_base_year == 2015
+    assert cp01.unit == "index_2015=100"
 
 
 # ---- groups ---------------------------------------------------------------

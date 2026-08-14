@@ -25,12 +25,23 @@ import { near } from "./near.mjs";
 
 const read = published;
 
-/** The BNB limits as published — the shape `mortgagePanel` consumes. */
+/**
+ * The BNB limits as published — the shape `mortgagePanel` consumes.
+ *
+ * **Every DSTI figure published carries a different number, and the fixture has
+ * to keep them different.** A `limits` that omits `observedDstiPct` cannot tell
+ * a cap read from our prudent line apart from one read from the market's
+ * observed average: both land on the `?? 30` fallback, so `capPct === 30` holds
+ * either way. On the published 38.5 the cap on €1486 net moves €446 → €572,
+ * `maxPrice` rises ~28%, and the over-the-line warning stops firing for the band
+ * of readers between the two.
+ */
 const LIMITS = {
   minDownPaymentPct: 15,
   dstiMaxPct: 50,
   maturityMaxYears: 30,
   prudentDstiPct: 30,
+  observedDstiPct: 38.5,
 };
 
 // ---------------------------------------------------------------------------
@@ -175,6 +186,10 @@ test("mortgagePanel draws the affordability line at OUR 30%, not the regulator's
   assert.equal(p.capPct, 30);
   assert.ok(near(p.capEur, 1486 * 0.3, 1e-9));
   assert.ok(p.capPct < LIMITS.dstiMaxPct, "our line must stay stricter than the law");
+  assert.ok(
+    p.capPct < LIMITS.observedDstiPct,
+    "our line must stay stricter than what the average BG borrower actually carries"
+  );
   // At the published Sofia median this purchase IS a stretch, and the app has
   // to keep saying so.
   assert.ok(p.overCap, "the Sofia median at the average wage must read as over the line");
@@ -197,6 +212,45 @@ test("mortgagePanel's fallback affordability line is 30%, not the regulator's 50
   });
   assert.equal(p.capPct, 30, "the fallback line must be our 30%, not the 50% BNB permits");
   assert.ok(near(p.capEur, 1486 * 0.3, 1e-9));
+});
+
+test("mortgagePanel's fallback down payment is the 15% BNB minimum, not nothing", () => {
+  // The sibling of the branch above, on the other constant a degraded
+  // mortgage.json can leave out. Every test that quotes a payment passes a
+  // complete `limits`, so `?? 15` could become `?? 0` and quote a 100% loan —
+  // €200,000 borrowed against a home a BG bank may only write 85% of, with a
+  // payment ~18% higher than any offer the reader could sign.
+  const partial = { prudentDstiPct: 30, maturityMaxYears: 30 };
+  const p = mortgagePanel({
+    price: 200000,
+    ratePct: 2.43,
+    termYears: 25,
+    netSalary: 1486,
+    eurPerM2: 2501,
+    limits: partial,
+  });
+  assert.equal(p.downPaymentPct, 15, "the fallback deposit must be the published LTV-O floor");
+  assert.equal(p.loan, 170000);
+  assert.equal(p.downPayment, 30000);
+});
+
+test("capGap is signed from the reader's side of the line, over and under", () => {
+  // `HomeRow.svelte` branches on `mortCapGap > 0` for the whole verdict — the
+  // bar colour, the «над»/«под» word and the euro figure beside it. With the
+  // subtraction the other way round a reader €215/month OVER the line is told
+  // in the green colour that they are €215 under it, and the sentence and the
+  // number are both wrong in the direction that sells the purchase. Zero has no
+  // sign, so the round-trip case below cannot see this.
+  const base = { ratePct: 2.43, termYears: 25, netSalary: 1486, eurPerM2: 2501, limits: LIMITS };
+  const over = mortgagePanel({ ...base, price: 175070 });
+  assert.ok(over.overCap);
+  assert.ok(over.capGap > 0, `over the line the gap must read positive, got ${over.capGap}`);
+  assert.ok(near(over.capGap, over.payment - over.capEur, 1e-9));
+
+  const under = mortgagePanel({ ...base, price: 90000 });
+  assert.ok(!under.overCap);
+  assert.ok(under.capGap < 0, `under the line the gap must read negative, got ${under.capGap}`);
+  assert.ok(near(-under.capGap, under.capEur - under.payment, 1e-9));
 });
 
 test("mortgagePanel's reverse calc round-trips against its own forward calc", () => {

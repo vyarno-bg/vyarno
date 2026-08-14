@@ -82,12 +82,19 @@ def _build_edition(
     extra_district: str | None = None,
     drop: str | None = None,
     pad_rows: int = 0,
+    one_quarter_behind: str | None = None,
 ) -> bytes:
     """One language edition of `Labour_1.1.2.2`, mirroring the live layout.
 
     `years` maps year -> {"quarters": [1, 2, ...], "is_preliminary": bool} and
     the cell for (code, quarter) is `wages[code] + quarter`, so every published
     figure is distinct and a test can assert which cell was read.
+
+    `one_quarter_behind` names one област that stops one quarter short of the
+    rest. Where every row carries the same quarters, the latest quarter of the
+    whole table and the latest of any single row are the same period, so a rule
+    picking either passes — and the headline is meant to be a period the WHOLE
+    table describes.
 
     The Bulgarian edition differs in three ways that the live files differ in,
     and all three are deliberate: sheet names carry surrounding spaces, an extra
@@ -147,10 +154,13 @@ def _build_edition(
             if rename and label == rename[0]:
                 label = rename[1]
             base = wages[r.code]
-            row = [label, *[base + q if q in spec["quarters"] else None for q in (1, 2, 3, 4)]]
+            quarters = spec["quarters"]
+            if one_quarter_behind is not None and r.code == one_quarter_behind:
+                quarters = quarters[:-1]
+            row = [label, *[base + q if q in quarters else None for q in (1, 2, 3, 4)]]
             # The bonus column, filled for the quarters that have a Q4. It is
             # ~8% above Q4 and reading it would step the whole ladder.
-            row.append(base * 1.08 if 4 in spec["quarters"] else None)
+            row.append(base * 1.08 if 4 in quarters else None)
             ws.append(row)
             if r.code == SOFIA_OBLAST_CODE:
                 ws.append([headings[1], 1708.0, None, None, None, None])
@@ -439,9 +449,28 @@ def test_the_headline_quarter_is_one_every_oblast_carries(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A quarter only some области have published is not a period the table
-    describes, and it would leave the picker with regions that render blank."""
-    _serve(monkeypatch)
+    describes, and it would leave the picker with regions that render blank.
+
+    Видин is put one quarter behind the other twenty-seven, because a table
+    where every row carries the same quarters cannot tell the rule apart from
+    its opposite: the latest quarter EVERY област carries and the latest ANY of
+    them carries are then the same period.
+    """
+    lagging = {
+        _PRIOR_YEAR: {"quarters": [1, 2, 3, 4], "is_preliminary": False},
+        _LATEST_YEAR: {"quarters": [1, 2], "is_preliminary": True},
+    }
+    _serve(
+        monkeypatch,
+        en=_build_edition(years=lagging, one_quarter_behind="vidin"),
+        bg=_build_edition(bulgarian=True, years=lagging, one_quarter_behind="vidin"),
+    )
     result = fetch_region_salaries_eu()
+
+    by_code = {r["code"]: r for r in result["regions"]}
+    assert f"{_LATEST_YEAR}-Q2" in by_code["sofiya"]["series_by_period"]
+    assert f"{_LATEST_YEAR}-Q2" not in by_code["vidin"]["series_by_period"]
+    assert result["ref_period"] == f"{_LATEST_YEAR}-Q1"
     assert all(result["ref_period"] in r["series_by_period"] for r in result["regions"])
 
 

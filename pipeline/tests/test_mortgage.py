@@ -82,8 +82,17 @@ def test_bounds_bracket_the_real_bg_history_without_being_useless():
 
 
 def test_rejects_a_truncated_series():
+    """Two years of months, written out, either side of the floor.
+
+    A length built as `MIN_SERIES_MONTHS - 1` is one month short of whatever
+    the floor happens to be, so it agrees with a floor of three — and a reply
+    carrying a quarter of the series would then publish as complete. The SPA
+    draws a trend line off this, and three months cannot show a market.
+    """
+    assert MIN_SERIES_MONTHS == 24
+    validate_rate_series(series(2024, 24, 2.43), "test")
     with pytest.raises(MortgageValidationError, match="expected at least"):
-        validate_rate_series(series(2025, MIN_SERIES_MONTHS - 1, 2.43), "test")
+        validate_rate_series(series(2025, 23, 2.43), "test")
 
 
 def test_rejects_an_empty_series():
@@ -143,10 +152,19 @@ def test_rejects_a_stale_reference_month():
         validate_freshness("2024-01", date(2026, 7, 24), "ECB MIR")
 
 
-def test_staleness_limit_accommodates_the_real_publication_lag():
-    """MIR runs ~6–8 weeks behind; the limit must not trip on normal lag."""
-    assert MAX_STALENESS_DAYS >= 90
-    validate_freshness("2026-05", date(2026, 7, 24), "ECB MIR")
+def test_staleness_limit_accommodates_the_lag_without_admitting_a_stopped_source():
+    """150 days: past MIR's 6–8 week lag, well short of two quarters.
+
+    Both edges have to be pinned, because a floor alone is satisfied by a limit
+    twice the width. Six months past the reference month, "the ЕЦБ stopped
+    publishing in January" and "the panel is current" are the same payload —
+    the site would go on quoting the January rate under a July `as_of`, which
+    is the one failure this gate exists for.
+    """
+    assert MAX_STALENESS_DAYS == 150
+    validate_freshness("2026-05", date(2026, 7, 24), "ECB MIR")  # 53 days: the normal lag
+    with pytest.raises(MortgageValidationError, match="do not ship a stale"):
+        validate_freshness("2026-01", date(2026, 7, 24), "ECB MIR")  # 173 days
 
 
 def test_freshness_handles_a_december_reference_month():
@@ -174,11 +192,18 @@ def test_rejects_the_blended_workbook_value():
 
 
 def test_tolerance_is_tight_because_these_are_the_same_data():
-    """BNB reports MIR to the ECB, so only rounding should separate them."""
-    assert CROSS_CHECK_TOLERANCE_PP <= 0.5
-    cross_check_outstanding(bnb_pct=2.67, ecb_pct=2.67 + CROSS_CHECK_TOLERANCE_PP / 2)
-    with pytest.raises(MortgageValidationError):
-        cross_check_outstanding(bnb_pct=2.67, ecb_pct=2.67 + CROSS_CHECK_TOLERANCE_PP + 0.01)
+    """BNB reports MIR to the ECB, so only rounding should separate them.
+
+    An absolute, and a pair either side of it built from written-out figures.
+    A ceiling of 0.5 admits 0.5 itself — two-thirds wider than the band, on the
+    one gate that catches either side's outstanding-stock read drifting — and a
+    pair expressed as `± CROSS_CHECK_TOLERANCE_PP / 2` agrees with whatever
+    width is set. They agreed to 0.002 pp at 2026-05.
+    """
+    assert CROSS_CHECK_TOLERANCE_PP == 0.30
+    cross_check_outstanding(bnb_pct=2.67, ecb_pct=2.92)  # 0.25 pp apart
+    with pytest.raises(MortgageValidationError, match="same book"):
+        cross_check_outstanding(bnb_pct=2.67, ecb_pct=3.02)  # 0.35 pp apart
 
 
 # ---------------------------------------------------------------------------
@@ -209,8 +234,16 @@ def test_dsti_is_measured_against_net_income():
 
 
 def test_our_guidance_line_is_stricter_than_the_regulator_and_the_market():
-    """The app must not flatter. 30% < ~38.5% observed < 50% legal ceiling."""
+    """The app must not flatter. 30% < ~38.5% observed < 50% legal ceiling.
+
+    30 is written out because the ordering alone admits anything up to 38.5 —
+    and a line set at 37 is still "stricter than the market" while being no
+    line at all: it approves every payment BG borrowers already average. What
+    the 30 is for is the difference between a payment a bank signs off and one
+    that leaves room to live, and `AGENTS.md` lists loosening it under NEVER.
+    """
     limits = lending_limits_at(date(2026, 7, 24))
+    assert PRUDENT_DSTI_PCT == 30.0
     assert limits["observed_weighted_avg_dsti_pct"] > PRUDENT_DSTI_PCT, (
         "our line must be stricter than what BG borrowers actually carry"
     )

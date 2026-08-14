@@ -63,10 +63,18 @@ const HOUSE_MARKET = Object.freeze({
     dataset: "prc_hpi_hsnq",
     source_url: "https://example.invalid/hsnq",
     api_url: "https://example.invalid/api/hsnq",
+    // **The cube reaches a quarter past the payload's own `ref_period`, and it
+    // has to.** `ref_period` is the quarter the gates ran against; the newest
+    // key is whatever Eurostat's cube happened to reach. With the two equal in
+    // the fixture, `max(keys)` and `ref_period` are the same string and no
+    // assertion on this block can tell which one the wiring read — the
+    // substitution `marketVolume`'s docstring warns about would report a real
+    // count for a quarter nothing validated, with every suite green.
     series_by_period: {
       "2025-Q1": { total: 15000, new: 4800, existing: 10200 },
       "2025-Q4": { total: 20000, new: 6400, existing: 13600 },
       "2026-Q1": { total: 16227, new: 5181, existing: 11046 },
+      "2026-Q2": { total: 30000, new: 9000, existing: 21000 },
     },
   },
   value: {
@@ -113,6 +121,22 @@ test("marketVolume reports the quarter the payload names, not the last key it ho
   // wiring that reached for the neighbouring key would come back negative.
   assert.ok(v.changePct.value > 0, `year-on-year should be a rise, got ${v.changePct.value}`);
   assert.equal(v.changePct.value, ((16227 - 15000) / 15000) * 100);
+  // One rule over all three rows of the table rather than three assertions:
+  // each row's change is the year-on-year of ITS OWN count. New builds and
+  // existing dwellings move differently in volume — which is why the payload
+  // carries them apart — so the two crossed leaves both figures published, both
+  // plausible and both against the wrong row.
+  for (const [field, change, now, before] of [
+    ["total", v.changePct.value, 16227, 15000],
+    ["new", v.changeNewPct, 5181, 4800],
+    ["existing", v.changeExistingPct, 11046, 10200],
+  ]) {
+    assert.ok(
+      near(change, ((now - before) / before) * 100, 1e-9),
+      `${field} is not its own change`
+    );
+  }
+  assert.notEqual(v.changeNewPct, v.changeExistingPct);
   // The provenance travels with the figure or the page cannot print it.
   assert.equal(v.deals.sourceUrl, "https://example.invalid/hsnq");
   assert.deepEqual(v.changePct.derivedFrom, ["https://example.invalid/api/hsnq"]);
@@ -143,6 +167,18 @@ test("marketAverageDeal carries the two figures its division is checkable from",
   assert.equal(d.avg.derivedFrom.length, 2);
   assert.equal(d.newBuild, 109138.42);
   assert.equal(d.existing, 70425.72);
+  // The same invitation, per purchase type: the page prints the numerator and
+  // the denominator of EVERY row beside its quotient, so each row's two sides
+  // have to be that row's. A new-build value over a new-build count is €109,138
+  // and over an existing count it is €150,149 — both euro figures, one of them
+  // an average of nothing, and only the row's own division says which.
+  for (const [type, avg, value, deals] of [
+    ["total", d.avg.value, d.totalValue, d.deals],
+    ["new", d.newBuild, d.newValue, d.newDeals],
+    ["existing", d.existing, d.existingValue, d.existingDeals],
+  ]) {
+    assert.ok(Math.abs(avg - value / deals) < 0.01, `${type}: ${avg} is not ${value} ÷ ${deals}`);
+  }
 });
 
 test("marketPriceRate is dated by the index's own quarter, never the payload's", () => {
@@ -164,28 +200,45 @@ test("marketPriceRate is dated by the index's own quarter, never the payload's",
   assert.equal(r.total.derivedFrom, null);
 });
 
+/**
+ * The tenure survey and the census, shaped as `house_market_structure.json`
+ * carries them.
+ *
+ * **The tenure split is here in full, and the full split is what makes the
+ * panel checkable.** Every share is on one base, so the column sums to the
+ * published total and each sub-share sits inside its own total — a renter share
+ * of 13.9% containing 2.2% at a market price. Two adjacent fields of the same
+ * type read into each other's slot leave six percentages that are all published
+ * and one table that no longer adds up, and a partial fixture cannot see it: a
+ * field the fixture omits reads as `undefined` from either slot.
+ */
+const STRUCTURE = Object.freeze({
+  tenure: {
+    ref_period: "2025",
+    total_pct: 100.0,
+    owner_pct: 86.1,
+    owner_with_mortgage_pct: 1.7,
+    owner_no_mortgage_pct: 84.4,
+    rent_pct: 13.9,
+    rent_market_price_pct: 2.2,
+    rent_reduced_or_free_pct: 11.7,
+  },
+  census_dwellings: {
+    ref_period: "2021",
+    total: 4258585,
+    occupied: 2600911,
+    unoccupied: 1657674,
+    api_url: "https://example.invalid/api/cens",
+  },
+  housing_cost_overburden: { ref_period: "2025", value_pct: 6.9 },
+});
+
 test("marketStructure derives only the share, and dates each cube by its own clock", () => {
   // Four cubes on four clocks in one payload. A census from 2021 shown under
   // the tenure survey's year is a five-year-old dwelling count presented as
   // this year's, on the one page whose promise is that every figure carries the
   // period it describes.
-  const structure = {
-    tenure: {
-      ref_period: "2025",
-      owner_pct: 86.1,
-      owner_with_mortgage_pct: 1.7,
-      rent_market_price_pct: 2.2,
-    },
-    census_dwellings: {
-      ref_period: "2021",
-      total: 4258585,
-      occupied: 2600911,
-      unoccupied: 1657674,
-      api_url: "https://example.invalid/api/cens",
-    },
-    housing_cost_overburden: { ref_period: "2025", value_pct: 6.9 },
-  };
-  const s = marketStructure(structure);
+  const s = marketStructure(STRUCTURE);
   assert.equal(s.owner.refPeriod, "2025");
   assert.equal(s.dwellings.refPeriod, "2021");
   assert.equal(s.unoccupied.refPeriod, "2021");
@@ -194,8 +247,8 @@ test("marketStructure derives only the share, and dates each cube by its own clo
   // travels with the series for that reason: two calls to get one figure and
   // its period is how a chart ends up captioned with a year the number beside
   // it does not share.
-  assert.equal(marketOverburdenSeries(structure).refPeriod, "2025");
-  assert.equal(marketOverburdenSeries(structure).value, 6.9);
+  assert.equal(marketOverburdenSeries(STRUCTURE).refPeriod, "2025");
+  assert.equal(marketOverburdenSeries(STRUCTURE).value, 6.9);
   // …and it is not in `marketStructure` any more, so nothing can read it from
   // there and caption it with the tenure survey's year.
   assert.equal(s.overburden, undefined);
@@ -207,6 +260,59 @@ test("marketStructure derives only the share, and dates each cube by its own clo
   for (const key of ["owner", "ownerWithMortgage", "dwellings", "unoccupied"]) {
     assert.equal(s[key].method, null, `${key} is presented as our arithmetic and is not`);
   }
+});
+
+test("every figure on the structure panel is the published field of its own name", () => {
+  // **The panel's slots are all the same type, so a wrong one is invisible in
+  // the digit.** Occupied and unoccupied are both dwelling counts in the
+  // millions; the renter total and the market-price renter share are both
+  // percentages of one population. Read into each other's slot the page prints
+  // an empty-stock share of 61% and a market-rent share larger than the whole
+  // rented sector, with every number published and no gate in the pipeline able
+  // to see a swap that happens in the browser.
+  //
+  // The unoccupied share is the one derived figure here and it recomputes from
+  // the census block rather than from the panel, so it cannot see the panel's
+  // own fields move — which is why it is checked AGAINST them below rather than
+  // against the payload a second time.
+  const s = marketStructure(STRUCTURE);
+  const c = STRUCTURE.census_dwellings;
+  const t = STRUCTURE.tenure;
+
+  assert.deepEqual(
+    [s.dwellings.value, s.occupied.value, s.unoccupied.value],
+    [c.total, c.occupied, c.unoccupied]
+  );
+  assert.ok(
+    near(s.unoccupiedPct.value, (100 * s.unoccupied.value) / s.dwellings.value, 1e-9),
+    "the share on the panel is not the share of the two counts printed beside it"
+  );
+
+  assert.deepEqual(
+    [
+      s.owner.value,
+      s.ownerWithMortgage.value,
+      s.ownerNoMortgage.value,
+      s.renter.value,
+      s.renterAtMarketPrice.value,
+      s.renterReducedOrFree.value,
+    ],
+    [
+      t.owner_pct,
+      t.owner_with_mortgage_pct,
+      t.owner_no_mortgage_pct,
+      t.rent_pct,
+      t.rent_market_price_pct,
+      t.rent_reduced_or_free_pct,
+    ]
+  );
+  // The identities the column is a table rather than six percentages: each pair
+  // of sub-shares adds to its own total, and the two totals to the published
+  // 100%. A reader checks the column by adding it up, so the panel has to add
+  // up on the values the panel itself returns.
+  assert.ok(near(s.ownerWithMortgage.value + s.ownerNoMortgage.value, s.owner.value, 1e-9));
+  assert.ok(near(s.renterAtMarketPrice.value + s.renterReducedOrFree.value, s.renter.value, 1e-9));
+  assert.ok(near(s.owner.value + s.renter.value, t.total_pct, 1e-9));
 });
 
 test("marketDealInYearsOfPay reads the all-activities GROSS row, and dates both halves", () => {
@@ -390,18 +496,92 @@ test("plotSeries clamps its own floor at zero and offers no way to raise it", ()
   assert.equal(ratio.reference, 100);
 
   // The readings a text alternative needs, and the order the points come in.
-  const many = plotSeries({ 2021: 5, 2019: 9, 2020: 1 });
+  //
+  // **Keyed by quarter, because a quarter is what every series on this page is
+  // keyed by and an integer-like key sorts itself.** JavaScript enumerates
+  // `{2021:…, 2019:…}` in ascending numeric order whatever the insertion order
+  // was, so an unsorted implementation comes back sorted and the ordering claim
+  // holds vacuously. `"2021-Q1"` is not an array index, so the object hands back
+  // insertion order and the sort is the only thing that can produce this. Every
+  // chart, every text alternative and every strip row on `/market/` is built out
+  // of `first`, `latest`, `from` and `to`, so an unordered series draws the
+  // record backwards and reports the oldest quarter as the newest reading.
+  const many = plotSeries({ "2021-Q1": 5, "2019-Q3": 9, "2020-Q2": 1 });
   assert.deepEqual(
     many.points.map((p) => p.period),
-    ["2019", "2020", "2021"]
+    ["2019-Q3", "2020-Q2", "2021-Q1"]
   );
-  assert.equal(many.peak.period, "2019");
-  assert.equal(many.trough.period, "2020");
-  assert.equal(many.first.period, "2019");
-  assert.equal(many.latest.period, "2021");
+  assert.equal(many.peak.period, "2019-Q3");
+  assert.equal(many.trough.period, "2020-Q2");
+  assert.equal(many.first.period, "2019-Q3");
+  assert.equal(many.latest.period, "2021-Q1");
+  assert.equal(many.from, "2019-Q3");
+  assert.equal(many.to, "2021-Q1");
 
   assert.deepEqual(plotSeries(null).points, []);
   assert.equal(plotSeries(null).min, 0);
+});
+
+test("a series asked for one purchase type never comes back with another's", () => {
+  // Every quarterly block on this page is a `{period: {total, new, existing}}`
+  // map and one lift-out reads all of them, so a fall-through to `total`
+  // collapses the split everywhere at once: the two average-deal lines the
+  // chart draws APART — the gap between them is what the mix caveat is about —
+  // land on top of each other, and the new-build rate is labelled new while
+  // reading the total. Three distinct series is the property, held over both
+  // functions that take the argument rather than over one of them.
+  for (const [name, of] of [
+    ["avg deal", (purchase) => marketAverageDealSeries(HOUSE_MARKET, purchase)],
+    ["price rate", (purchase) => marketPriceRateSeries(HOUSE_MARKET, purchase)],
+  ]) {
+    const values = ["total", "new", "existing"].map((p) => of(p).latest?.value);
+    assert.ok(
+      values.every(Number.isFinite),
+      `${name} returns no reading for one of the three purchase types: ${values}`
+    );
+    assert.equal(new Set(values).size, 3, `${name} draws ${values} for three different questions`);
+  }
+  // Named, so the fall-through is caught by the figure rather than only by the
+  // three being unequal: `total` is the mean over the whole quarter's mix and
+  // sits BETWEEN the two, which is what makes a fall-through plausible.
+  assert.equal(marketAverageDealSeries(HOUSE_MARKET, "new").latest.value, 109138.42);
+  assert.equal(marketAverageDealSeries(HOUSE_MARKET, "existing").latest.value, 70425.72);
+  assert.equal(marketAverageDealSeries(HOUSE_MARKET, "total").latest.value, 82786.01);
+});
+
+test("each drawn series carries the level its own units are defined against", () => {
+  // `reference` is what the chart draws its rule at and what `indexTimesBase`
+  // divides by, so it is a claim about what the numbers MEAN rather than a
+  // drawing option. An index measured from 100 is «×2,7 спрямо 2015 г.»; the
+  // same series referenced at 0 is a level with no anchor, and a rate
+  // referenced at 100 puts its own zero line — the whole reading of a signed
+  // series — off the bottom of the plot and reports every quarter of a 21-year
+  // record as a fall. Held as a table over all ten series rather than on the two
+  // it happened to be asserted for, so a new one has to say which it is.
+  const market = read("house_market");
+  const structure = read("house_market_structure");
+  if (!market || !structure) return; // no refresh in this checkout
+
+  const expected = [
+    // An index: 100 is the base year, which is what the multiples are read from.
+    [100, "index", marketPriceIndexSeries(market)],
+    [100, "indexReal", marketPriceIndexRealSeries(market)],
+    // A signed change: zero is the reading, so the axis has to contain it by
+    // definition rather than by whatever the data happened to do.
+    [0, "rate", marketPriceRateSeries(market)],
+    [0, "volumeChange", marketVolumeChangeSeries(market)],
+    [0, "pairVolume", marketVolumeAgainstPrices(market).volume],
+    [0, "pairPrice", marketVolumeAgainstPrices(market).price],
+    // A count, a euro figure and a share of the population are defined against
+    // nothing, and a rule drawn at an invented level would be ours.
+    [null, "volume", marketVolumeSeries(market)],
+    [null, "dealNew", marketAverageDealSeries(market, "new")],
+    [null, "dealExisting", marketAverageDealSeries(market, "existing")],
+    [null, "overburden", marketOverburdenSeries(structure)],
+  ];
+  for (const [reference, name, series] of expected) {
+    assert.equal(series.reference, reference, `${name} is defined against ${series.reference}`);
+  }
 });
 
 test("marketRent cites the publisher's page and queries the row", () => {
@@ -449,6 +629,16 @@ test("marketIndexReading takes the base year off the payload and divides by its 
   // alternative; Eurostat rebase, and `I25_Q` is the same measurement putting
   // today at 109 instead of 273 — so both would have kept rendering, beside a
   // chart whose every digit was still right.
+  //
+  // **The series starts a decade before the base, and the fixture has to keep
+  // that gap.** Eurostat set the index to 100 at the base year and publish it
+  // from long before — 2005-Q1 against a 2015 base in the committed payload. A
+  // fixture whose first quarter falls inside its own base year cannot tell
+  // `block.base_year` apart from the year the record opens, and that conflation
+  // is the one `verify_copy.mjs` bans the WORDING of: called the start of the
+  // series, the base leaves ten years of quarters drawn to the left of the year
+  // the words call the beginning, all of them under the ×1 rule with nothing to
+  // explain why.
   const market = {
     ref_period: "2026-Q1",
     price_index: {
@@ -456,6 +646,7 @@ test("marketIndexReading takes the base year off the payload and divides by its 
       source_url: "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_q/default/table",
       api_url: "https://ec.europa.eu/eurostat/api/x/prc_hpi_q",
       series_by_period: {
+        "2005-Q1": { total: 60 },
         "2015-Q1": { total: 100 },
         "2026-Q1": { total: 250 },
       },
@@ -469,6 +660,18 @@ test("marketIndexReading takes the base year off the payload and divides by its 
   };
   const r = marketIndexReading(market);
   assert.equal(r.baseYear, 2015, "the base year is not read off the payload");
+  // Both lines carry it, and neither reads it off its own first quarter.
+  for (const [name, series] of [
+    ["nominal", marketPriceIndexSeries(market)],
+    ["deflated", marketPriceIndexRealSeries(market)],
+  ]) {
+    assert.equal(series.baseYear, 2015, `${name}'s base year is not the payload's base_year`);
+    assert.notEqual(
+      String(series.baseYear),
+      series.from.slice(0, 4),
+      `${name} takes its base year from the quarter the record opens at`
+    );
+  }
   assert.equal(r.times, 2.5, "the nominal reading is not the level over its own base");
   assert.equal(r.realTimes, 1.6);
   assert.equal(r.period, "2026-Q1");
@@ -489,7 +692,7 @@ test("marketIndexReading takes the base year off the payload and divides by its 
     price_index: {
       ...market.price_index,
       base_year: 2025,
-      series_by_period: { "2025-Q1": { total: 100 }, "2026-Q1": { total: 250 } },
+      series_by_period: { "2005-Q1": { total: 60 }, "2026-Q1": { total: 250 } },
     },
   });
   assert.equal(rebased.baseYear, 2025);
@@ -700,6 +903,25 @@ test("the six city sparklines are drawn against one shared scale", () => {
   assert.ok(cities.cities.length >= 6);
   for (const city of cities.cities) {
     assert.ok(city.priceSeries.points.length > 8, `${city.code} carries no history`);
+    // **The sparkline ends on the figure in the column beside it.** Two
+    // histories per row, both quarterly percentage changes, both in the same
+    // shape — crossed, every price cell draws that city's sales record and the
+    // row reads as a fall while its number says a rise. The scale is derived
+    // from the series, so it stays self-consistent under the swap and cannot
+    // see it; only the tie back to the row's own headline can. HPI_2.6 runs
+    // from 2015 and HSI_2.4.5 from 2022, so the two are not interchangeable
+    // records either.
+    for (const [column, series, value, period] of [
+      ["price", city.priceSeries, city.pricePct, city.pricePeriod],
+      ["sales", city.dealsSeries, city.dealsPct, city.dealsPeriod],
+    ]) {
+      assert.equal(
+        series.latest?.value ?? null,
+        value,
+        `${city.code}'s ${column} chart ends off it`
+      );
+      assert.equal(series.to, period, `${city.code}'s ${column} chart ends in another quarter`);
+    }
     // Every city fits inside the shared scale, which is what makes two rows
     // comparable: a city drawn to its own range would fill the same box
     // whatever its numbers.
@@ -774,9 +996,24 @@ test("the range strip places every row against its own published extremes", () =
 
   const strip = marketRangeStrip(market, structure);
   assert.equal(strip.rows.length, 5, "the strip places five series");
+  // **Which unit a row prints in and which section it opens are per-row facts,
+  // and neither reads wrong on its own.** Two rows' formats exchanged prints
+  // «×0,1» where a share belongs and «+2,7%» where a multiple does — both
+  // formatters succeed, both figures are the published one, and the sentence
+  // the row makes is false. Two hrefs exchanged sends a reader checking the
+  // volume row to the price section, where the working for the figure they
+  // clicked is not. The rule below catches a row printed in a unit that needs a
+  // reference beside it; only the table catches a unit that is merely another
+  // row's.
   assert.deepEqual(
-    strip.rows.map((r) => r.key),
-    ["dealsChange", "index", "indexReal", "rate", "overburden"]
+    strip.rows.map((r) => [r.key, r.format, r.href]),
+    [
+      ["dealsChange", "signedPct", "#volume"],
+      ["index", "times", "#prices"],
+      ["indexReal", "times", "#prices"],
+      ["rate", "signedPct", "#prices"],
+      ["overburden", "pct", "#ratio"],
+    ]
   );
 
   // **THE COUNT IS PLACED BY ITS YEAR-ON-YEAR CHANGE AND NEVER BY ITS LEVEL.**

@@ -33,6 +33,44 @@ test("the results card announces the headline, not fifty numbers", { skip }, asy
   });
 });
 
+test(
+  "the headline figure is drawn in a box that holds the type it is set in",
+  { skip },
+  async () => {
+    // `.r-big` is the largest thing on the site — a `clamp()` running to 56px at
+    // this viewport — and every other assertion about it reads its TEXT or its
+    // position, both of which survive the figure being drawn into a line box with
+    // no height. A `line-height: 0` renders 5,4% as a band of overlapping glyphs
+    // on top of the label above it, and the suite goes green: `innerText` is
+    // unchanged, the ordering against `.ans` is unchanged, and the live region is
+    // still announcing it.
+    //
+    // Asserted against the figure's own computed `font-size` rather than a pixel
+    // count, because the size is a `clamp()` on the viewport and the bound has to
+    // mean the same thing at 360px as at 1280. The `.pct` sign rides above the
+    // baseline, so the box is a little taller than the type — never shorter.
+    await withApp(async (page, errors) => {
+      const big = await page.locator(".r-big").evaluate((el) => {
+        const s = getComputedStyle(el);
+        return {
+          fontSize: parseFloat(s.fontSize),
+          height: el.getBoundingClientRect().height,
+          width: el.getBoundingClientRect().width,
+        };
+      });
+      assert.ok(big.fontSize >= 30, `the headline figure is set at ${big.fontSize}px`);
+      assert.ok(
+        big.height >= big.fontSize,
+        `the headline figure is ${big.height}px tall in ${big.fontSize}px type, so the ` +
+          "glyphs are drawn outside the box that is supposed to carry them and land " +
+          "on whatever is above"
+      );
+      assert.ok(big.width > 0, "the headline figure occupies no width");
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
 test("the headline says whose basket it is until the reader says otherwise", { skip }, async () => {
   // Every visitor arrives on Eurostat's weights, so the biggest figure on the
   // page is the country's until they move something. Three things have to hold

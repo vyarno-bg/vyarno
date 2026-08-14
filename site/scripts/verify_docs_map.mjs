@@ -51,13 +51,14 @@ const SITE_MD = join(REPO, "docs", "site.md");
  * The gate count is deliberately NOT checked here, and the reason is the rule.
  *
  * There is no single number to check it against. `docs/validation-gates.md`
- * numbers seven; six of those block an HICP publish and the seventh runs only
- * under `--source sector-salary`; five more gate the mortgage panel from
- * another module; `validate.py` defines eight functions because one of them is
- * a helper the table never numbers. So "six gate lines is the pass condition",
- * "the five mortgage gates" and "the seven gates in validation-gates.md" are
- * three different true sentences, and a scan matching a numeral against the
- * word `gate` calls two of them wrong.
+ * numbers eight; seven of those block a full HICP release and the eighth runs
+ * only under `--source sector-salary`; five more gate the mortgage panel from
+ * another module; `validate.py` defines fifteen `validate_*` functions, because
+ * the numbered table is the HICP set and every other `--source` carries gates
+ * the table does not number. So "seven gate lines is the pass condition", "the
+ * five mortgage gates" and "the eight gates in validation-gates.md" are three
+ * different true sentences, and a scan matching a numeral against the word
+ * `gate` calls two of them wrong.
  *
  * That is the failure `docs/testing-strategy.md` §"`docs/` is outside its
  * roots" describes — a guard that fires on legitimate text is one somebody

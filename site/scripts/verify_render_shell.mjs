@@ -17,7 +17,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { join } from "node:path";
-import { SITE } from "./render-dist.mjs";
+import { SITE, attribution } from "./render-dist.mjs";
 import { READY, shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
 import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
@@ -42,9 +42,14 @@ test("the built page mounts over the shell rather than beside it", { skip }, asy
 test("the calculator renders with no console errors", { skip }, async () => {
   await withApp(async (page, errors) => {
     // Every region, so a component that silently rendered nothing is caught.
+    // `header.site` and `.explain-band` are not on this list, and the test
+    // above is why: it counts both to EXACTLY one on this same route, which is
+    // the same claim with the duplicate case closed as well. A second entry
+    // that cannot go red while a broader one stays green is a second thing to
+    // update rather than a second guard (docs/testing-strategy.md §"What does
+    // NOT get a test").
     for (const [what, selector] of [
       ["skip link", "a.skip"],
-      ["header", "header.site"],
       ["as-of strip", ".data-strip"],
       ["pay field", ".m-grid .m-pay"],
       ["inputs card", ".m-grid .m-inputs"],
@@ -54,7 +59,6 @@ test("the calculator renders with no console errors", { skip }, async () => {
       ["result rows", ".r-row"],
       ["method drawer", "details.how"],
       ["national strip", ".strip .stat"],
-      ["explainer band", ".explain-band"],
       ["footer", "footer"],
     ]) {
       assert.ok(await page.locator(selector).first().count(), `${what} (${selector}) is missing`);
@@ -62,6 +66,105 @@ test("the calculator renders with no console errors", { skip }, async () => {
     assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
   });
 });
+
+test("the sticky masthead paints a ground of its own, in both themes", { skip }, async () => {
+  // The bar is `position: sticky` over scrolling prose, so its background is
+  // the whole of what separates the two. Pointing it at a custom property that
+  // does not exist is not an error anywhere in the toolchain: the declaration
+  // becomes invalid at computed-value time, `background-color` resolves to
+  // transparent, and every route on the site scrolls THROUGH its own header in
+  // both themes with the render suites green.
+  //
+  // `verify_render_contrast.mjs` cannot stand in for this. It composites the
+  // ancestor layers behind a piece of text and SKIPS any layer at alpha 0, so a
+  // header with no ground is measured against the body ground it assumes is
+  // behind — the reading it would give if the defect were not there.
+  //
+  // Both themes, through the control a reader presses, because `--hdr` is
+  // declared once per theme block and one of them can lose it alone. The
+  // grounds have to differ for the same reason: a light ground carried into the
+  // dark theme is a bar that cannot be read, not a bar with no bar.
+  await withApp(async (page, errors) => {
+    const ground = () =>
+      page.evaluate(() => {
+        const bg = getComputedStyle(document.querySelector("header.site")).backgroundColor;
+        const parts = bg.match(/[\d.]+/g) ?? [];
+        return {
+          theme: document.documentElement.getAttribute("data-theme"),
+          bg,
+          alpha: parts.length === 4 ? Number(parts[3]) : 1,
+        };
+      });
+
+    const first = await ground();
+    await page.locator("header.site .controls button").first().click();
+    await page.waitForTimeout(200);
+    const second = await ground();
+
+    for (const seen of [first, second]) {
+      assert.ok(
+        seen.alpha > 0,
+        `the ${seen.theme} masthead has no background of its own (${seen.bg}), so the ` +
+          "page scrolls through the one bar that stays on screen"
+      );
+    }
+    assert.notEqual(
+      first.bg,
+      second.bg,
+      `both themes paint the masthead ${first.bg}, so one of them is drawing a bar ` +
+        "in the other theme's ground"
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
+test(
+  "the upstream attribution is on screen, in the language the page serves",
+  { skip },
+  async () => {
+    // Every other guard on this line reads it as TEXT — `verify_legal.mjs` over
+    // `COPY.footerNote`, `verify_render_prerender.mjs` over the served HTML — and
+    // a string in the markup is not a credit. `display: none` on the rule that
+    // carries it leaves both of those green while «Данни от Евростат / ЕЦБ / НСИ
+    // / БНБ / имот.bg» reaches nobody at any address, and several of those five
+    // publishers ask for it as a licence condition rather than as a courtesy
+    // (docs/legal.md).
+    //
+    // Both languages: the pair is two elements, one hidden by the rule that
+    // decides which document a reader is on, and that is the same mechanism a
+    // hidden credit would arrive through.
+    for (const [path, lang] of [
+      ["/", "bg"],
+      ["/en/", "en"],
+    ]) {
+      await withApp(async (page, errors) => {
+        const seen = await page.evaluate((text) => {
+          const carrying = [...document.querySelectorAll("footer.site *")].filter(
+            (el) => el.textContent.trim() === text
+          );
+          return {
+            inDom: carrying.length,
+            drawn: carrying
+              .map((el) => el.getBoundingClientRect())
+              .filter((r) => r.width > 0 && r.height > 0).length,
+          };
+        }, attribution(lang));
+        assert.ok(
+          seen.inDom >= 1,
+          `${path} carries no element holding the ${lang} attribution at all`
+        );
+        assert.equal(
+          seen.drawn,
+          1,
+          `${path} draws ${seen.drawn} of the ${seen.inDom} elements holding the ${lang} ` +
+            "attribution. The five publishers have to be credited where a reader can " +
+            "read them, and exactly once."
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      }, path);
+    }
+  }
+);
 
 test("the as-of strip writes both its dates the same way", { skip }, async () => {
   // The bar carries two months and they are not always the same one: the page

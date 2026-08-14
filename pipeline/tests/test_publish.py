@@ -4,7 +4,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from vyarno_pipeline.models import CategoryObservation
+from vyarno_pipeline.models import CategoryObservation, GroupObservation
 from vyarno_pipeline.payroll import build_payroll_payload
 from vyarno_pipeline.publish import (
     HICP_CATEGORIES_FILE,
@@ -36,6 +36,24 @@ def _cat(cp: str = "CP01", weight: float = 23.0, rate: float = 2.4) -> CategoryO
         published_at=date(2026, 12, 31),
         unit="index_2015=100",
         value=150.0,
+    )
+
+
+def _grp(cp: str, parent: str) -> GroupObservation:
+    return GroupObservation(
+        cp_code=cp,
+        parent_cp_code=parent,
+        bg_name=f"BG {cp}",
+        en_name=f"EN {cp}",
+        eurostat_label=f"Eurostat label {cp}",
+        weight_pct=1.0,
+        annual_rate_pct=2.4,
+        ref_period="2026-12",
+        index_base_year=2015,
+        index_by_year={2020: 100.0, 2026: 150.0},
+        latest_index={"time": "2026-12", "value": 150.0},
+        api_url=f"https://example.com/{cp}",
+        api_url_index=f"https://example.com/index/{cp}",
     )
 
 
@@ -84,6 +102,35 @@ def test_write_hicp_categories_stamps_the_classification_block(tmp_path: Path):
     assert c["rates_dataset"] == "prc_hicp_minr"
     assert c["weights_dataset"] == "prc_hicp_iw"
     assert c["weights_ref_year"] == "2026"
+
+
+def test_write_hicp_categories_counts_level_2_rows_under_group_count(tmp_path: Path):
+    """`group_count` has to count children, and the block above it counts parents.
+
+    The two sit side by side in the envelope, and a `group_count` that resolved
+    to the number of divisions is plausible on sight — thirteen is a number of
+    groups a small basket could have. What reads this field is whoever reviews a
+    refresh diff: a division whose children vanished upstream shows up as this
+    figure dropping and as nothing else in the envelope, so a count of the wrong
+    level retires the only signal there is.
+
+    The fixture gives two divisions groups and eleven none, so the group total
+    and the division total cannot coincide.
+    """
+    cats = {f"CP{n:02d}": _cat(f"CP{n:02d}") for n in range(1, 14)}
+    cats["CP01"].groups = [_grp(f"CP01{i}", "CP01") for i in (1, 2, 3)]
+    cats["CP07"].groups = [_grp(f"CP07{i}", "CP07") for i in (1, 2)]
+
+    payload = json.loads(
+        write_hicp_categories(
+            cats, as_of=date(2026, 12, 31), target_dir=tmp_path, weights_year="2026"
+        ).read_text(encoding="utf-8")
+    )
+    assert payload["classification"]["division_count"] == 13
+    assert payload["classification"]["group_count"] == 5
+    # The same two figures in the envelope's prose, which is what a reader who
+    # opens the file rather than the block sees first.
+    assert "13 ECOICOP ver.2 divisions + 5 groups" in payload["notes"]
 
 
 def test_write_hicp_categories_dates_the_envelope_with_the_rate_month(tmp_path: Path):

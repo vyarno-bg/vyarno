@@ -86,6 +86,11 @@ test("a scale with no range still divides", () => {
   // would make every y `NaN` and the chart would render as nothing at all.
   assert.equal(span({ min: 5, max: 5 }), 1);
   assert.ok(Number.isFinite(plotY(5, { min: 5, max: 5 }, 240)));
+  // `tickAt` divides by the same range and is the third caller. It reaches the
+  // page through a different route — the HTML gutter beside the box rather than
+  // the SVG — so a NaN here empties the axis labels of a chart whose marks are
+  // still drawn, which reads as a picture with no scale rather than as a blank.
+  assert.equal(tickAt(5, { min: 5, max: 5 }), 100);
 });
 
 // ---------------------------------------------------------------------------
@@ -203,12 +208,22 @@ test("a tick value carries no more precision than its own step", () => {
 });
 
 test("the step is one a reader adds in their head", () => {
+  // 2.5 is the one allowed multiple that is not a whole number of its own
+  // magnitude, so it is the one whose ticks need a decimal the exponent does not
+  // account for. A range of 12 over five intervals picks it: rounded onto the
+  // grid the exponent alone gives, the axis reads 0, 3, 5, 8, 10, 13 — gaps that
+  // alternate between two and three on a scale whose whole purpose is that a
+  // reader can count along it. 1.2 is the same multiple an order of magnitude
+  // down, where the decimal the exponent asks for and the one the multiple asks
+  // for add.
   for (const [lo, hi] of [
     [0, 100],
     [0, 65.7],
     [0, 29130],
     [-19.8, 30.4],
     [0, 7],
+    [0, 12],
+    [0, 1.2],
   ]) {
     const { values } = niceTicks(lo, hi);
     const step = values[1] - values[0];
@@ -230,9 +245,28 @@ test("the step is one a reader adds in their head", () => {
 });
 
 test("the axis reaches its own ends and stops", () => {
-  const axis = niceTicks(0, 29130);
-  assert.equal(axis.values[0], axis.min);
-  assert.equal(axis.values[axis.values.length - 1], axis.max);
+  // The loop's bound carries a thousandth of a step in slack, and only a
+  // fractional axis can show why. `-0.1 + 4 × 0.1` is 0.30000000000000004, so an
+  // axis whose ceiling IS 0.3 stops a tick short of it without the slack: the
+  // top gridline goes unlabelled while the columns are still drawn to it, on a
+  // chart nothing else calls wrong. 29130 is the other end of the same
+  // question — integer arithmetic that cannot drift, so it says the slack never
+  // adds a tick PAST the ceiling.
+  for (const [lo, hi] of [
+    [0, 29130],
+    [-0.1, 0.3],
+    [0, 0.4],
+    [-0.02, 0.11],
+    [-1, 1],
+  ]) {
+    const axis = niceTicks(lo, hi);
+    assert.equal(axis.values[0], axis.min, `niceTicks(${lo}, ${hi}) starts above its own floor`);
+    assert.equal(
+      axis.values[axis.values.length - 1],
+      axis.max,
+      `niceTicks(${lo}, ${hi}) ends at ${axis.values.at(-1)}, not at its own ceiling ${axis.max}`
+    );
+  }
 });
 
 test("a tick's height is a percentage, so the box cancels", () => {
@@ -287,20 +321,79 @@ test("a year is placed at its own first reading, not at an even fraction", () =>
     min: 0,
     max: 5,
   };
+  // 2021's first reading is the third of five, so it belongs halfway along. As
+  // the second of two years it would sit at the right-hand end, against the last
+  // column of the chart — a rule three columns from the one it names.
   const ticks = yearTicks(series, 600);
   assert.deepEqual(
     ticks.map((t) => t.year),
     ["2020", "2021"]
   );
-  assert.equal(ticks[0].at, (plotX(0, 5, 600) / 600) * 100, "2020 is not at its own first point");
-  assert.equal(ticks[1].at, (plotX(2, 5, 600) / 600) * 100, "2021 is not at its own first point");
+  assert.deepEqual(
+    ticks.map((t) => t.at),
+    [0, 50]
+  );
+});
+
+test("a year rule is divided back out of the box the columns were placed in", () => {
+  // `yearTicks` answers in a percentage and takes the width anyway, which looks
+  // redundant. It is not: `Market.svelte` draws the rule at `(at / 100) * 600`
+  // and the reading it names at `plotX(i, n, 600)`, and those are the same
+  // double only while the percentage came back out through that same `plotX`.
+  //
+  // Eight quarters from mid-2020 put 2021's first reading at the fourth of them.
+  // Three sevenths of the axis is 42.85714285714286 divided back out of the box
+  // and 42.857142857142854 computed from the index alone — one bit, and it
+  // reaches the markup as a rule drawn a hairline off its own column. Written
+  // out rather than computed, because an expectation reached the way the
+  // function reaches it agrees with the function however the function is
+  // written.
+  const w = 600;
+  const points = [
+    "2020-Q2",
+    "2020-Q3",
+    "2020-Q4",
+    "2021-Q1",
+    "2021-Q2",
+    "2021-Q3",
+    "2021-Q4",
+    "2022-Q1",
+  ].map((period, i) => ({ period, value: i }));
+  const ticks = yearTicks({ points }, w);
+  assert.deepEqual(
+    ticks.map((t) => t.year),
+    ["2020", "2021", "2022"]
+  );
+  assert.deepEqual(
+    ticks.map((t) => t.at),
+    [0, 42.85714285714286, 100]
+  );
+  // And the consequence on this series, in the markup's own arithmetic: every
+  // rule lands on the exact coordinate its column was drawn at.
+  for (const [k, i] of [
+    [0, 0],
+    [1, 3],
+    [2, 7],
+  ]) {
+    assert.equal(
+      (ticks[k].at / 100) * w,
+      plotX(i, points.length, w),
+      `${ticks[k].year}'s rule is at ${(ticks[k].at / 100) * w}, its column at ${plotX(i, points.length, w)}`
+    );
+  }
 });
 
 test("a long series is thinned rather than smeared", () => {
   // Six labels is what a 360px plot holds without them touching, and the step
   // is chosen from the number of years rather than from the viewport — so the
   // phone and the desk get one picture instead of two layouts.
-  for (const years of [1, 6, 7, 12, 21, 40, 200]) {
+  //
+  // Thirteen years is here because it is the only span under thirty where
+  // counting LABELS and counting INTERVALS disagree: at a two-year step that
+  // series has six intervals and seven labels, so a rule reading the intervals
+  // admits a step the axis has no room for. Every other span in the sweep is
+  // thinned identically either way, which is what makes this one the case.
+  for (const years of [1, 6, 7, 12, 13, 21, 40, 200]) {
     const series = quarterly(
       Array.from({ length: years * 4 }, (_, i) => i),
       1900

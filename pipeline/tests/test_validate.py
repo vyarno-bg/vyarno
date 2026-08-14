@@ -21,6 +21,7 @@ from vyarno_pipeline.sources.eurostat import _cube_labels, _cube_to_rows
 from vyarno_pipeline.validate import (
     BASKET_SUM_TOLERANCE_PP,
     CHAIN_TOLERANCE_PP,
+    GROUP_SUM_TOLERANCE_PCT,
     ValidationError,
     validate_chain_reconciliation,
     validate_city_price,
@@ -215,6 +216,32 @@ def test_classification_agreement_catches_a_division_missing_from_one_cube():
         )
 
 
+def test_classification_agreement_catches_a_division_the_RATES_cube_lacks():
+    """The rates half of the paired code check.
+
+    The ver.1 fixture above is short of CP13 on the WEIGHTS side, so both
+    directions of the pair fail it and either list comprehension reading
+    `weight_labels` passes that case. A code the weights cube publishes and the
+    rates cube does not is the other failure, and it is the worse one: the
+    division renders with a real weight against a rate from nowhere. The
+    message must name the side, because the fix differs by side — a missing
+    weight is a retired code, a missing rate is a cube on a different version.
+    """
+    rate_labels = dict(_labels(RCH))
+    del rate_labels["CP13"]
+    with pytest.raises(ValidationError) as exc:
+        validate_classification_agreement(
+            codes=DIVISIONS_V2,
+            weight_labels=_labels(IW_V2),
+            rate_labels=rate_labels,
+            weights_dim="coicop18",
+            rates_dim="coicop18",
+        )
+    msg = str(exc.value)
+    assert "missing from rates: ['CP13']" in msg
+    assert "missing from weights: none" in msg
+
+
 def test_classification_agreement_tolerates_only_cosmetic_label_differences():
     """Case and punctuation must not fail the gate — meaning must."""
     weight_labels = {"CP12": "insurance & financial services"}
@@ -401,6 +428,53 @@ def test_group_consistency_fails_on_a_misparented_group():
     cat = _cat("CP07", weight=14.0, groups=[_group("CP071", "CP04", 14.0)])
     with pytest.raises(ValidationError, match="parent"):
         validate_group_consistency([cat])
+
+
+def test_group_consistency_fails_on_a_group_code_from_another_division():
+    """The child-code check, isolated from the parent check above it.
+
+    `parent_cp_code` is CP07 and correct, so the guard that fires first here
+    does not; what is wrong is the code itself. Both `api_url`s a group carries
+    are built from `cp_code`, so a CP08 group filed under CP07 draws CP07's
+    drill-down from CP08's series and links a reader to the cube that disagrees
+    with the row above it.
+    """
+    cat = _cat("CP07", weight=14.0, groups=[_group("CP081", "CP07", 14.0)])
+    with pytest.raises(ValidationError, match="not a child code"):
+        validate_group_consistency([cat])
+
+
+def test_group_sum_tolerance_is_the_documented_value():
+    """0.02 pp is Eurostat's own rounding and nothing else — they publish
+    per-thousand weights to two decimals, so thirteen divisions' worth of
+    children can miss by a couple of hundredths of a per-mille and no more."""
+    assert GROUP_SUM_TOLERANCE_PCT == 0.02
+
+
+def test_the_group_sum_band_admits_eurostats_rounding_and_nothing_wider():
+    """The band itself, either side of the line.
+
+    A division whose groups miss it by whole points is not the failure this
+    tolerance is sized for — that one trips any band. What it has to catch is a
+    single group reweighted upstream while its siblings kept their vintage,
+    which lands a few hundredths out: the SPA's detailed mode re-splits the
+    division across exactly these children, so the drill-down would resize the
+    division under the reader without changing a figure on the summary row.
+    """
+    within = _cat(
+        "CP07",
+        weight=14.0,
+        groups=[_group("CP071", "CP07", 4.0), _group("CP072", "CP07", 9.99)],
+    )
+    validate_group_consistency([within])
+
+    outside = _cat(
+        "CP07",
+        weight=14.0,
+        groups=[_group("CP071", "CP07", 4.0), _group("CP072", "CP07", 9.97)],
+    )
+    with pytest.raises(ValidationError, match="groups sum to"):
+        validate_group_consistency([outside])
 
 
 # ---------------------------------------------------------------------------
@@ -616,6 +690,24 @@ def test_sector_gate_rejects_a_headline_it_computed():
         validate_sector_salary(rows, "2026-Q1")
 
 
+def test_sector_gate_rejects_a_headline_rounded_off_the_published_cell():
+    """The identity is an identity, and 0.4 EUR is already a breach.
+
+    The mean-of-two-quarters case above is 121 EUR from the cell, so it trips
+    any band anybody might put here. This is the failure that a band would let
+    through: НСИ print 3175.6 and the payload headlines 3176 — a rounding that
+    reads as a tidier number and is a производно произведение under §2.1.1 all
+    the same. Nothing in this path rounds, so there is no width the check can
+    afford.
+    """
+    rows = _sector_rows()
+    rows[1]["series_by_period"]["2026-Q1"] = 3175.6
+    rows[1]["value_eur"] = 3176.0
+
+    with pytest.raises(ValidationError, match="must BE the published cell"):
+        validate_sector_salary(rows, "2026-Q1")
+
+
 def test_sector_gate_rejects_a_missing_label_in_either_language():
     """A blank label renders the picker option as a blank line, not a fallback."""
     for field in ("en_name", "bg_name"):
@@ -626,10 +718,19 @@ def test_sector_gate_rejects_a_missing_label_in_either_language():
 
 
 def test_sector_gate_rejects_two_rows_resolving_to_one_activity():
-    rows = _sector_rows()
-    rows[1]["en_name"] = rows[0]["en_name"]
-    with pytest.raises(ValidationError, match="duplicate activity"):
-        validate_sector_salary(rows, "2026-Q1")
+    """Either language on its own is enough to lose a section.
+
+    The two editions are paired by position, so a section can collide in one
+    edition and stay distinct in the other — which is exactly the read that
+    drifted by a row on one side. The picker is rendered from `bg_name` for a
+    Bulgarian reader, so a duplicate there costs the same section it would in
+    English, and no English name has to repeat for it to happen.
+    """
+    for field in ("en_name", "bg_name"):
+        rows = _sector_rows()
+        rows[1][field] = rows[0][field]
+        with pytest.raises(ValidationError, match="duplicate activity"):
+            validate_sector_salary(rows, "2026-Q1")
 
 
 def test_sector_gate_rejects_an_activity_missing_the_reference_quarter():
@@ -640,15 +741,22 @@ def test_sector_gate_rejects_an_activity_missing_the_reference_quarter():
         validate_sector_salary(rows, "2026-Q1")
 
 
-def test_sector_gate_rejects_a_figure_that_is_not_a_monthly_wage():
-    """The band catches a column index landing on an index number or a headcount.
+@pytest.mark.parametrize("misparse", [104.3, 116_492.0])
+def test_sector_gate_rejects_a_figure_that_is_not_a_monthly_wage(misparse: float):
+    """Both ends of the band, because the two catch different columns.
 
-    Widening it is never the fix — every failure it is written for puts the
-    parse on a column that is not a wage, and none of those look wrong on
-    screen.
+    Labour_1.1.2.1 puts an index number (104.3, the previous year = 100) and a
+    headcount (116 492 employees) on the same sheet as the wage, and a column
+    index off by one lands on whichever is beside the one we meant. The floor
+    catches the index, the ceiling catches the headcount, and a gate holding
+    only one side is a gate for one direction of the same off-by-one.
+
+    Widening either is never the fix — every failure the band is written for
+    puts the parse on a column that is not a wage, and none of those look wrong
+    on screen.
     """
     rows = _sector_rows()
-    rows[1]["series_by_period"]["2025-Q4"] = 104.3
+    rows[1]["series_by_period"]["2025-Q4"] = misparse
     rows[1]["value_eur"] = rows[1]["series_by_period"]["2026-Q1"]
     with pytest.raises(ValidationError, match="not a monthly wage"):
         validate_sector_salary(rows, "2026-Q1")

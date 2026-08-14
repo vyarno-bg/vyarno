@@ -57,23 +57,30 @@ const read = (...p) => readFileSync(join(SRC, ...p), "utf8");
  * element ended up in, so they read the whole tree. Otherwise moving markup
  * into a component — or the reactive graph into `$lib/calculator.svelte.js` —
  * would silently drop the invariant guarding it. Both of those moves have
- * happened; each time the fix was to widen this list, never to delete a test.
+ * happened, and both were found by hand.
+ *
+ * **Both directories are read off the disk, and that is what makes the negative
+ * assertions here mean anything.** A guard spelled "this pattern appears
+ * nowhere in the calculator" over a hand-typed file list does not go red when
+ * the list falls behind the tree — it goes ABSENT, quietly covering less every
+ * time a component is added, and nothing reports the loss. `components/` was
+ * already read this way; `lib/` holds the chrome every page mounts plus the
+ * chart the wedge row draws, which is calculator markup living beside the
+ * modules it is shared with rather than under `components/`.
  */
+const CALC_COMPONENTS = ["lib", "components"].flatMap((dir) =>
+  readdirSync(join(SRC, dir))
+    .sort()
+    .filter((name) => name.endsWith(".svelte"))
+    .map((name) => [dir, name])
+);
+
 function calculatorSource() {
-  const parts = [
+  return [
     read("App.svelte"),
     read("lib", "calculator.svelte.js"),
-    // The two `lib/` components the calculator mounts. `components/` is the
-    // calculator's own parts; what every page mounts lives beside the modules
-    // it is shared with, and naming those two here is what keeps a chrome
-    // invariant covered wherever the markup sits.
-    read("lib", "SiteHeader.svelte"),
-    read("lib", "SiteFooter.svelte"),
-  ];
-  for (const name of readdirSync(join(SRC, "components")).sort()) {
-    if (name.endsWith(".svelte")) parts.push(read("components", name));
-  }
-  return parts.join("\n");
+    ...CALC_COMPONENTS.map((p) => read(...p)),
+  ].join("\n");
 }
 
 /**
@@ -140,6 +147,32 @@ const MATH_FRAGMENTS = [
   "P = L \u00d7 m \u00f7 (1 \u2212 (1 + m)", // the annuity
 ];
 const MIRROR = read("lib", "mirror.js");
+
+test("the calculator's scan reads both component roots off the disk", () => {
+  // Every negative assertion in this file is a claim about the WHOLE
+  // calculator, so a scan that has quietly stopped reading part of it satisfies
+  // `!includes` for the code it was written to forbid. Read off the directory
+  // that cannot happen, and the guard against the read itself failing — a
+  // renamed folder returning nothing — is that both roots have to come back
+  // with files.
+  for (const dir of ["lib", "components"]) {
+    const found = CALC_COMPONENTS.filter(([d]) => d === dir);
+    assert.ok(found.length > 0, `the scan reads no component out of src/${dir}/`);
+  }
+  assert.ok(
+    CALC_COMPONENTS.length >= 25,
+    `only ${CALC_COMPONENTS.length} components reached the scan — it lost a root`
+  );
+  // The chrome every page mounts and the chart the wedge row draws are under
+  // `lib/` rather than `components/`, and they carry markup these assertions
+  // are about.
+  for (const name of ["SiteHeader.svelte", "SiteFooter.svelte", "WedgeChart.svelte"]) {
+    assert.ok(
+      CALC_COMPONENTS.some(([d, f]) => d === "lib" && f === name),
+      `${name} is outside the calculator's scan`
+    );
+  }
+});
 
 // ---------------------------------------------------------------------------
 // The basket follows the classification instead of freezing it
@@ -319,10 +352,26 @@ test("the price rise is charged only on money that is actually spent", () => {
   // something whose price moved. For a reader who put money aside it overstates
   // the damage by exactly what they put aside — and it is the headline € figure
   // on the results card.
+  //
+  // Calling `exposedSpend` is not the guard — WHAT IT IS HANDED is. Fed
+  // `spendable` the function subtracts the housing cost from the whole
+  // take-home and hands back the same figure `extraPerMonth(salary, π)`
+  // produced, through a signature that reads as though the correction had been
+  // made. `spendBase` is the money the reader said they spend; `spendable` is
+  // everything they earn less nothing.
   const extra = /extra = \$derived\(([\s\S]*?)\n {2}\);/.exec(LIVE);
   assert.ok(extra, "the extra-per-month figure is gone");
   assert.ok(extra[1].includes("exposedSpend"), "extra is charged against the whole salary again");
   assert.ok(!extra[1].includes("extraPerMonth(salary"), "extra takes the raw salary again");
+  assert.match(
+    extra[1].replace(/\s+/g, " "),
+    /spendBase:\s*budget\.spendBase/,
+    `the price rise is charged against a base other than the basket's: ${extra[1].trim()}`
+  );
+  assert.ok(
+    !/spendBase:\s*spendable/.test(extra[1].replace(/\s+/g, " ")),
+    "exposedSpend is handed the whole spendable amount as the base"
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -536,7 +585,7 @@ test("the anchor dropdown names the window its maths actually uses", () => {
   assert.ok(hint.includes('anchor === "y1"'), "the hint no longer switches on the selected anchor");
 });
 
-test("the share card is dated by the month its two figures describe", () => {
+test("the share card carries the reader's rate, the official one and the month both describe", () => {
   // Both percentages on the card are Σ(w·r) over `hicp_categories.json`, so the
   // date drawn beneath them — «Инфлация по данни на Евростат (HICP), юни
   // 2026 г.» — has to be the divisions' month. Eurostat's flash publishes the
@@ -557,6 +606,19 @@ test("the share card is dated by the month its two figures describe", () => {
     call[0],
     /refPeriod:\s*basketRefPeriod/,
     `the share card is dated by something other than the basket's own month: ${call[0]}`
+  );
+  // **The two rates on the card are the whole comparison, and they are both
+  // percentages of the same order.** Exchanged, the reader's own basket is
+  // captioned as Eurostat's official figure and the official one as theirs, on
+  // the one surface that leaves the page and gets read by people who never
+  // typed anything into it. `verify_view_share.mjs` proves the card renders
+  // whichever pair it is handed and structurally cannot see which is which.
+  const flatCall = call[0].replace(/\s+/g, " ");
+  assert.match(flatCall, /\bpi:\s*pi\b/, `the shared card's own-basket rate is not π: ${flatCall}`);
+  assert.match(
+    flatCall,
+    /\bofficial:\s*off\b/,
+    `the shared card's official rate is not the official one: ${flatCall}`
   );
 });
 
@@ -584,6 +646,40 @@ test("the Sofia comparator reads the live НСИ wage and links to it", () => {
     !PAY.includes("householdNet - regionNet"),
     "the comparator is back on the household total instead of one earner at a time"
   );
+});
+
+test("the rate the mortgage input is seeded with is the AAR, never the APRC", () => {
+  // **The annuity is fed nothing but the AAR, and the seed is the one place a
+  // caller could break that from outside `view/home.js`.** The rate input is
+  // filled from the published figure until the reader types over it, and
+  // whatever lands there is what `mortgagePanel` amortises. The APRC folds the
+  // fees into an annualised figure — 2.77% against 2.43% at 2026-05 — and
+  // compounding fees monthly overstates the payment on the София median by
+  // ~€24/month, inside every sanity band there is.
+  //
+  // `data.js#mortgageDefaultRate` is guarded against returning the APRC and
+  // stays green through this: the substitution is at the CALL SITE, where the
+  // seed reaches for the other derived value. The hint under the input goes on
+  // citing the AAR either way, so the page would name one rate and charge
+  // another.
+  const seed = /if \(!rateTouched\) rate = ([^;]+);/.exec(LIVE);
+  assert.ok(seed, "the mortgage rate input is no longer seeded from the published figure");
+  assert.equal(
+    seed[1].trim(),
+    "mortgageRateData.pct",
+    `the rate input is seeded from \`${seed[1].trim()}\` rather than the AAR`
+  );
+  // Both derived values exist and are distinct, so the assertion above is a
+  // choice between two live figures rather than a spelling.
+  for (const name of ["mortgageRateData", "mortgageAprcData"]) {
+    assert.ok(LIVE.includes(`${name} = $derived(`), `the calculator no longer derives ${name}`);
+  }
+  // And the panel amortises that same seeded state rather than reaching for the
+  // APRC itself one line further down.
+  const panel = /mortgagePanel\(\{[\s\S]*?\n {4}\}\)/.exec(LIVE);
+  assert.ok(panel, "the home row no longer goes through view/home.js#mortgagePanel");
+  assert.match(panel[0], /ratePct:\s*rate,/, `the annuity is fed ${panel[0]}`);
+  assert.ok(!/aprc/i.test(panel[0]), "the APRC reaches the annuity");
 });
 
 test("the home block prices m² off the live имот.bg median, and cites imot.bg", () => {
