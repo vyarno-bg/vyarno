@@ -311,6 +311,10 @@ off that rather than from here:
 - `verify_mirror_math.mjs` — the rest of `mirror.js`: the anchor contract,
   personal vs official inflation, the real-wage division, the percentile
   direction, annuity and its inverse, savings erosion, the tax wedge.
+- `verify_plot.mjs` — the geometry every chart is drawn with: the axis, the
+  ticks and the coordinate mapping.
+- `verify_payload_prose.mjs` — claims retired for being false, scanned across
+  the payloads' prose, `src/` and the entry shells alike.
 - `verify_view_*.mjs` — **the wiring**: every derived value under
   `src/lib/view/`, i.e. which published number reaches which formula, one suite
   per module and the same stem on both. Includes
@@ -353,7 +357,8 @@ All of them also run in CI on every push and on every pull request, alongside
 ```bash
 cd pipeline && source .venv/bin/activate
 
-# Full refresh — every connector, every gate, all 12 JSONs. ~10 s.
+# Full refresh — every connector, every gate, every JSON. Minutes, not seconds:
+# the city-price arm walks имот.bg city by city on a deliberate delay.
 vyarno-pipeline refresh --source all --out ../data/published
 
 # Or one at a time.
@@ -515,9 +520,10 @@ npm run build                                   # writes dist/
 npm run preview -- --port 4173 --strictPort     # 4173, prod build, no HMR
 ```
 
-Both servers serve `data/published/*.json` via the middleware in
-`site/vite.config.js`: in dev straight from the repo's `data/` folder, in
-preview from whatever `scripts/copy-data.mjs` baked into `dist/`. Refresh the
+`npm run dev` serves `data/published/*.json` through the middleware in
+`site/vite.config.js`, straight from the repo's `data/` folder. `npm run preview`
+has no such hook — it serves `dist/`, so what it shows is whatever
+`scripts/copy-data.mjs` baked in at build time. Refresh the
 JSONs first, then `npm run build` to ship them.
 
 Kill both servers between sessions — they hold ports and battery:

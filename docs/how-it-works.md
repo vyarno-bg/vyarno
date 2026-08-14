@@ -108,9 +108,13 @@ honest reason: **your basket is not the average basket.** Spend more than averag
 on things rising fast and your inflation is higher; spend more on flat or
 falling things and it is lower.
 
-Both numbers are for the **same latest month**, taken **verbatim** from
-Eurostat. The only difference between them is the basket mix — not the time
-window, and not any derivation on our side. You can click through to verify
+Both are Eurostat's, at the month each of them names, and the difference between
+them is the basket mix. Two footnotes rather than exceptions: the figure set
+beside yours is Eurostat's divisions recombined at their own weights, so it can
+sit a little off the all-items headline in the strip — the page shows both and
+says why. And for about two weeks after a flash release the national rate is a
+month ahead of the divisions, because that is the order Eurostat publish them
+in. Every figure states its own month. You can click through to verify
 either.
 
 ## 5b. Why НСИ sometimes reports a slightly different number
@@ -179,8 +183,9 @@ linked:
   sector. That matters more than it sounds. Pay is lopsided — a few large
   salaries pull the average up — so the average sits above the middle, and being
   below your sector's average is not the same as being paid less than most
-  people in it. The card prints how far above the middle an average sits, so
-  the reader can place their own number rather than take a percentage on faith.
+  people in it. The card says so in words rather than printing a second figure,
+  because the correction is the point and a number beside it invites the
+  arithmetic we are warning against.
   This table covers the whole country while the област line above it covers one
   district, and both figures are shown rather than one divided by the other.
 - **Mortgage rate** — the ЕЦБ's sector average for home loans actually signed
@@ -209,9 +214,11 @@ Full provenance for each is in [`data-sources.md`](./data-sources.md).
 
 ## 8. How a number gets from Eurostat to the screen
 
-The pipeline runs on demand, on a laptop: it copies the official data, runs the
-gates, and writes twelve small JSON files, each stamped with its date. Those files are committed to the repository and shipped
-alongside the site.
+The pipeline runs on a schedule — one arm per upstream, on its own cadence, plus
+by hand when somebody wants a refresh now. It copies the official data, runs the
+gates, and writes a small JSON file per subject, each stamped with its date.
+Each run opens a pull request, because deciding whether a moved number is right
+is a person's job. Those files are committed and shipped alongside the site.
 
 **Your browser downloads those files and never calls Eurostat.** Everything
 personal — your salary, your basket, your rent, your savings — is computed in

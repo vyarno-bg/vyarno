@@ -178,7 +178,9 @@ attribution (a licence condition) and the legal links (ЗЕТ чл. 4 wants the
 provider's identity reachable from every page). A page that declares its own
 `<footer>` fails
 `every_build_entry_mounts_the_shared_masthead_and_footer_and_neither_twice`, and
-a new build entry belongs in that test's list in the commit that adds it — the
+the test needs no edit when an entry is added: `entryRoots()` reads
+`rollupOptions.input` out of `vite.config.js` and follows each bootstrap, so a
+new entry is covered by the commit that creates it — the
 masthead is held by the same assertion, so an entry missing from the list is
 unchecked for both.
 
@@ -262,7 +264,9 @@ the rendered text against the payload the page fetched.
    { cache: 'no-cache' })` per manifest row and returns whichever succeeded; failures become
    `null` and the page renders whatever subset loaded. The list is
    `payloads.js#PAYLOADS`, not a copy of it (below).
-5. `Calculator#load` computes `dataAge(data, PAYLOADS)` and raises the staleness
+5. `Calculator#load` computes `dataAge` over the route's own manifest rows
+   (`payloadsFor(PAGE)`, not the whole manifest — a page is not stale for a
+   payload it never reads) and raises the staleness
    banner if **any payload is overdue against its own cadence** — see
    `payloads.js` and `view/freshness.js#payloadStatus`.
 
@@ -300,7 +304,9 @@ Three helpers on the same module:
 
 - **`mortgageDefaultRate(mortgage)`** — the rate the calculator starts from:
   `new_business.value_pct` → `outstanding_stock.value_pct` →
-  `HOME.rateDefaultPct` (offline sentinel). Returns `{ pct, label }`; the label
+  `HOME.rateDefaultPct` (offline sentinel). Returns `{ pct, label, refPeriod }`
+  — the period is what dates the rate on screen, so it travels with it rather
+  than being looked up again; the label
   drives the provenance caption, because tier 2 answers a *different* question
   ("what people already repaying average") and must re-caption rather than pass
   for "the rate". The default is the **AAR**, not the APRC.
@@ -335,7 +341,7 @@ that the mortgage fallback **relabels** when it degrades.
 ## `src/lib/payloads.js` — the manifest
 
 **The one list that answers "which data?".** `loadAll`, the freshness verdict,
-the data panel, `/version.json`, the sitemap's `lastmod` and three contract tests
+the data panel, `/version.json`, the sitemap's `lastmod` and the contract suites
 all derive from it, so a payload is added or removed in exactly one place.
 
 It matters that this is one list rather than several, because the six consumers
@@ -382,7 +388,7 @@ on `region_salary`'s own quarterly row.
 **`cadenceDays` is here rather than in the envelope**, and that is a deliberate
 trade. It is a property of the upstream, so the connector is the natural owner;
 but nothing in the pipeline consumes it, and publishing it would put a second
-copy in nine JSON files that only a full refresh can correct. One table that
+copy in every published JSON that only a full refresh can correct. One table that
 cannot drift from itself beats nine that can drift from each other.
 
 **A row is not a consumer.** The panel renders every payload, so "is it used?"
@@ -434,11 +440,11 @@ Four conventions, and each is a wrong number if broken:
   `annual_rate_pct`, which is base-invariant and so cannot reveal a base bug —
   always check a since-year number too.
 
-Two refusals are worth knowing before adding a function: `meanRungPosition`
+One refusal is worth knowing before adding a function here: `meanRungPosition`
 takes no anchor, so it cannot be handed a sector average and asked for the
-sector percentile nobody publishes; `headlineRate` refuses `categories`, so it
-cannot become Σ(w·r). Where a wrong call would be a wrong number, the parameter
-list is the guard.
+sector percentile nobody publishes. The wiring layer does the same — `view/results.js#headlineRate`
+refuses `categories`, so it cannot become Σ(w·r). Where a wrong call would be a
+wrong number, the parameter list is the guard.
 
 `payroll.json` is the source of truth for BG payroll and the `BG_2026_*`
 constants are an offline sentinel for first paint only — **a law change is a
@@ -492,7 +498,7 @@ Every number the components render, as a pure function. This is the layer betwee
 "what is the arithmetic" and "where does it go on the page", and its functions
 are shaped to make a wrong wiring *unexpressible*:
 
-- `savingsSince2020(cash, categories)` takes the **categories**, not a rate, so
+- `savingsSince2020(cash, headline, categories)` takes the **categories**, not a rate, so
   no caller can hand it the user's own basket rate.
 - `headlineRate(payload)` takes **only** `hicp_headline.json`, so it cannot be
   handed `categories` and quietly become Σ(w·r) — a different number by
@@ -529,7 +535,7 @@ modules force its test to move — which is the rule
 same standard [`testing-strategy.md`](./testing-strategy.md) §"When one suite
 file has become two" applies to the suites.
 
-Three exports are exercised by more than one suite and that is not a boundary
+Some exports are exercised by more than one suite and that is not a boundary
 failure: `region.js#regionQuarter` is `verify_view_region.mjs`'s subject and
 `verify_view_country.mjs` and `verify_view_payroll.mjs` call it to build a
 fixture, and `results.js#headlineRate` is `verify_view_results.mjs`'s subject
@@ -549,7 +555,7 @@ visible: every import site would read the same, and every `view.js#symbol`
 reference in the docs would stay literally true. It is not there for two
 reasons.
 
-**A barrel makes the reach invisible.** With one specifier for all 87 exports, a
+**A barrel makes the reach invisible.** With one specifier for every export, a
 component reaching across four subjects looks exactly like one reaching into
 one — which is the property that let this layer grow to 3,106 lines before
 anybody counted. `import { mortgagePanel } from "$lib/view/home.js"` says which
@@ -745,9 +751,10 @@ screen, and the three that carry the pay ladder, the област wage and the �
 nothing on the basket table came from them.
 Citing a source we do not use breaks the traceability claim from the other
 side: the first reader who follows the link finds a dataset with none of our
-figures in it. `test_the_sources_line_names_only_upstreams_this_page_uses`
-compares the cited set against the dataset ids in the provenance fields of
-every payload `loadAll` actually fetches, **in both directions**.
+figures in it. `verify_wiring.mjs` §"the source line names every Eurostat
+dataset the page uses, and no others" compares the cited set against the dataset
+ids in the provenance fields of every payload `loadAll` actually fetches, **in
+both directions**, with a companion for the non-Eurostat upstreams.
 
 **Every row stays verifiable.** Divisions link to their own Eurostat extract;
 groups link to *theirs*, because a group inheriting its parent's link would send
@@ -906,10 +913,10 @@ rules over the whole card rather than per row.
 
 ### The two charts
 
-The tax wedge and the basket comparison are **inline SVG with no library**, and
-that is a standing answer rather than a default: nothing third-party reaches the
-reader (`AGENTS.md` §Boundaries), and a chart library would be the first thing
-to. `plot.js` holds the axis, the ticks and the coordinate mapping — the
+The tax wedge is **inline SVG with no library**; the comparison bars are plain
+divs with a width, because a bar needs no SVG. **No chart library**, and that is
+a standing answer rather than a default: nothing third-party reaches the reader
+(`AGENTS.md` §Boundaries), and a chart library would be the first thing to. `plot.js` holds the axis, the ticks and the coordinate mapping — the
 arithmetic a component may not keep, because a tick value is digits a reader
 reads off an axis. `verify_plot.mjs` is its suite; `WedgeChart.svelte` carries
 why each mark is placed where it is.
@@ -1140,7 +1147,7 @@ a dashed baseline between them — and is text-free.
 
 ```
 data/published/hicp_categories.json          ← published by the pipeline
-   │ fetch (data.js#loadHicpCategories) — the full envelope
+   │ fetch (data.js#loadAll) — every payload the route names
    ▼
 view/results.js decides WHICH number this formula gets
    │ e.g. savingsSince2020 takes the CATEGORIES, not a rate
