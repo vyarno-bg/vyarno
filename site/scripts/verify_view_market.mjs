@@ -773,29 +773,39 @@ test("the range strip places every row against its own published extremes", () =
   if (!market || !structure) return; // no refresh in this checkout
 
   const strip = marketRangeStrip(market, structure);
-  assert.equal(strip.rows.length, 6, "the strip places six series");
+  assert.equal(strip.rows.length, 5, "the strip places five series");
   assert.deepEqual(
     strip.rows.map((r) => r.key),
-    ["deals", "dealsChange", "index", "indexReal", "rate", "overburden"]
+    ["dealsChange", "index", "indexReal", "rate", "overburden"]
   );
 
-  // **The count is placed twice and the second row is the one the season does
-  // not move.** A level of a seasonal series carries the calendar: transactions
-  // peak in fourth quarters, so a first-quarter reading sits low in a record
-  // whose highest points are all fourth quarters, and the marker moves with the
-  // month of the year. The change against the same quarter a year earlier has
-  // the season divided out by construction. Asserted as a property of the
-  // published data rather than as a spelling: the two rows are read off the
-  // same block and would place identically if one of them ever stopped being a
-  // year-on-year change.
-  const level = strip.rows.find((r) => r.key === "deals");
+  // **THE COUNT IS PLACED BY ITS YEAR-ON-YEAR CHANGE AND NEVER BY ITS LEVEL.**
+  // A level of this series carries the calendar: the record's highest readings
+  // are all fourth quarters, so a first-quarter count sits near the bottom of
+  // that record whatever the market is doing, and a dot near the left-hand end
+  // reports the month of the year as though it were news. Held as a property of
+  // the published data rather than as a spelling — with the level row gone,
+  // what is asserted is that the level and the change would still have placed
+  // differently, which is the fact that justifies the removal and the fact that
+  // stops the row coming back.
+  const counts = Object.entries(market.deals.series_by_period)
+    .sort()
+    .map(([, r]) => r.total)
+    .filter(Number.isFinite);
+  const levelAt =
+    (counts[counts.length - 1] - Math.min(...counts)) / (Math.max(...counts) - Math.min(...counts));
   const change = strip.rows.find((r) => r.key === "dealsChange");
-  assert.equal(level.sourceUrl, change.sourceUrl, "the two count rows cite different publishers");
+  assert.equal(
+    change.sourceUrl,
+    market.deals.source_url,
+    "the count's change row cites a publisher other than the block it is computed from"
+  );
   assert.ok(
-    Math.abs(level.at - change.at) > 0.05,
-    `the count's level and its year-on-year change are placed at ${level.at.toFixed(2)} and ` +
-      `${change.at.toFixed(2)} — within a rounding of each other, which means the second row is ` +
-      "placing the same reading as the first and the strip has two rows saying one thing."
+    Math.abs(levelAt - change.at) > 0.05,
+    `the count's level places at ${levelAt.toFixed(2)} and its year-on-year change at ` +
+      `${change.at.toFixed(2)} — within a rounding of each other. The level row was dropped ` +
+      "because the two say different things and the level's is the calendar; if they now agree, " +
+      "the reason has gone and the removal should be revisited rather than left standing."
   );
   assert.ok(
     change.low < 0 && change.high > 0,

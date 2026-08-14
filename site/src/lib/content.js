@@ -2253,9 +2253,17 @@ export const COPY = {
   // «толкова» carries the figure into the sentence, so the card reads as one
   // line out loud: «×2,7 — толкова пъти повече се плаща за жилище днес». A
   // label that repeats the unit («×2,7 пъти повече») says «times» twice.
+  // **The English half is written as English, not carried across word for
+  // word.** «толкова пъти повече се плаща» is how the figure is said out loud
+  // in Bulgarian; "that many times more is paid for a home today" is the same
+  // clause with the same parts in the same order, and it reads as a translation
+  // because it is one — a passive with the subject withheld, under a number
+  // that has already given it. English puts the home first and the multiple
+  // where «толкова» is, which is the same job done the way the language does
+  // it.
   mktKTimesNominal: {
     bg: "толкова пъти повече се плаща за жилище днес, отколкото през {year} г.",
-    en: "that many times more is paid for a home today than in {year}",
+    en: "a home today costs that many times what it cost in {year}",
   },
   // The year is on BOTH multiples and not only on the first. A card carrying a
   // «×N» whose base is stated on the card beside it reads correctly only while
@@ -2266,19 +2274,31 @@ export const COPY = {
   // (view/market.js#marketRangeStrip).
   mktKTimesReal: {
     bg: "толкова пъти повече от {year} г., след като се извади поскъпването на всичко останало",
-    en: "that many times more than in {year}, once the rise in everything else is taken out",
+    en: "that many times what it cost in {year}, once the rise in everything else is taken out",
   },
+  // "dwellings households across the country bought in the quarter" is four
+  // nouns before the verb that governs them, which English readers parse by
+  // backtracking: «жилища са купили домакинствата» is ordinary Bulgarian and
+  // the same order in English is a pile. The agent goes after the thing.
   mktKDeals: {
     bg: "жилища са купили домакинствата в цялата страна за тримесечието",
-    en: "dwellings households across the country bought in the quarter",
+    en: "dwellings bought by households across the country in the quarter",
   },
-  // «бруто» is taught by not being used. What a reader has to know is that the
-  // wage in the division is the one before tax and contributions, which is not
-  // the money anybody actually receives — so the card says that, and the
-  // disclosure under the row says why a net figure would be worse.
+  // «бруто» is taught by not being used: the wage in the division is the one
+  // before tax and contributions, which is not the money anybody receives, and
+  // a reader who takes it for take-home has the answer wrong by the whole tax
+  // wedge.
+  //
+  // **That caveat belongs beside the figure and not inside this label.** It is
+  // stated in full in the «наша сметка» block directly under the answer row —
+  // on screen, in body type, unopened — and a card that carries it as well is
+  // carrying it twice: at 360px the second copy runs the label to eight lines,
+  // this card is the tallest of the four, and a flex row is as tall as its
+  // tallest member, so the duplicate sets the height of the whole summary a
+  // reader came for.
   mktKYearsOfPay: {
-    bg: "толкова години средна заплата струва средното жилище — заплатата преди данъци и осигуровки, не парите на ръка",
-    en: "that many years of the average wage is what the average home costs — the wage before tax and contributions, not take-home pay",
+    bg: "толкова години средна заплата струва средното жилище",
+    en: "the average home costs that many years of the average wage",
   },
   // The figure tables. A row of loose cards is what most of this page was, and
   // it reads as a wall: four boxes of the same size, the same weight and the
@@ -2353,7 +2373,6 @@ export const COPY = {
   mktColRangeWhat: { bg: "Показател", en: "Indicator" },
   mktColRangeWhere: { bg: "Спрямо своята история", en: "Against its own history" },
   mktColRangeNow: { bg: "Сега", en: "Now" },
-  mktRangeDeals: { bg: "продадени жилища", en: "dwellings sold" },
   // The two price rows are the same measurement twice, so the pair has to read
   // as a pair: the second is the first with the rise in everything else taken
   // out. A term of art in either half breaks that — a label on a strip is read
@@ -2364,21 +2383,15 @@ export const COPY = {
     bg: "цените на сделките, без поскъпването на всичко останало",
     en: "transaction prices, with the rise in everything else taken out",
   },
-  // **«промяната» alone stopped being enough the moment the strip placed two of
-  // them.** With the count's own year-on-year change on the strip, a row headed
-  // «промяната за една година» four rows below «промяната в броя сделки за една
-  // година» is a reader's mistake waiting to happen — a strip row is read with
-  // nothing around it, and the two are a percentage each with no unit to tell
-  // them apart.
+  // **«промяната» alone is not enough on a strip that places two of them.** A
+  // row headed «промяната за една година» three rows under «промяната в броя
+  // сделки за една година» is a reader's mistake waiting to happen: a strip row
+  // is read with nothing around it, and the two are a percentage each with no
+  // unit to tell them apart. Each says what it is the change IN.
   mktRangeRate: {
     bg: "промяната в цените за една година",
     en: "the change in prices over one year",
   },
-  // The row above it counts dwellings and this one counts the movement in that
-  // count, so the label has to say «промяната в» rather than repeat the noun:
-  // two rows reading «продадени жилища» with different numbers beside them are
-  // a reader's mistake waiting to happen, and the strip gives them no
-  // paragraph to resolve it from.
   mktRangeDealsChange: {
     bg: "промяната в броя сделки за една година",
     en: "the change in dwellings sold over one year",

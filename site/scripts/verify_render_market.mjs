@@ -277,16 +277,10 @@ test(
     );
     const pairPrice = shared.map((p) => market.price_index.annual_rate_pct[p].total);
 
+    // **In the order the page draws them**, which is the order a reader meets
+    // them in: what a home costs, then what one changed hands for, then how
+    // many did, then the two of those on one row of quarters, then the burden.
     const expected = [
-      ["dwellings sold", ratioOf(col(market.deals.series_by_period, "total"))],
-      [
-        "the change in dwellings sold",
-        ratioOf(
-          shared.map((p) => yoy[p]),
-          0
-        ),
-      ],
-      ["prices over the same quarters", ratioOf(pairPrice, 0)],
       // Both index lines share one scale, so the nominal line's extremes are
       // drawn against whichever of the two maxima is larger.
       [
@@ -300,6 +294,15 @@ test(
       // The two deal lines share one scale, and the chart's marks are the hit
       // boxes over the NEW line — that is the series whose extremes are drawn.
       ["average deal", ratioOf(col(market.avg_deal_eur.series_by_period, "new"))],
+      ["dwellings sold", ratioOf(col(market.deals.series_by_period, "total"))],
+      [
+        "the change in dwellings sold",
+        ratioOf(
+          shared.map((p) => yoy[p]),
+          0
+        ),
+      ],
+      ["prices over the same quarters", ratioOf(pairPrice, 0)],
       ["housing cost overburden", ratioOf(col(structure.housing_cost_overburden.series_by_period))],
     ];
 
@@ -647,11 +650,11 @@ test("the range strip puts every marker where the published figures put it", { s
   const col = (rows, f) =>
     Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, f ? r[f] : r]));
 
-  // The count is placed twice: once as a level, and once as the change against
-  // the same quarter a year earlier. The second row exists because the first
-  // one carries the calendar — transactions peak in fourth quarters, so a
-  // first-quarter reading sits low in its own record whatever the market is
-  // doing, and the marker moves with the month of the year.
+  // The count is placed by its change against the same quarter a year earlier
+  // and never by its level, because a level of this series carries the
+  // calendar: transactions peak in fourth quarters, so a first-quarter reading
+  // sits low in its own record whatever the market is doing, and the marker
+  // moves with the month of the year.
   const yoy = {};
   const counts = market.deals.series_by_period;
   for (const period of Object.keys(counts).sort()) {
@@ -663,7 +666,6 @@ test("the range strip puts every marker where the published figures put it", { s
   }
 
   const expected = [
-    ["dwellings sold", at(col(market.deals.series_by_period, "total"))],
     ["the change in dwellings sold", at(yoy)],
     ["house price index", at(col(market.price_index.series_by_period, "total"))],
     ["deflated index", at(col(market.price_index_real.series_by_period))],
@@ -1414,6 +1416,49 @@ test("both languages reach the served HTML, in both trees", { skip }, async () =
       {}
     );
   }
+});
+
+test("the English page names every publisher in its own alphabet", { skip }, async () => {
+  // «НСИ» and "NSI" both reached the English page, once inside a single
+  // sentence: "The price changes are NSI's — … Every value is a cell НСИ
+  // published." One body, two names, and a reader with no Cyrillic cannot tell
+  // that they are the same institution — on the page whose argument is that
+  // every figure can be traced to whoever published it.
+  //
+  // The COPY layer transliterates already (NSI, BNB, ECB, Eurostat) and
+  // `verify_copy.mjs` §"every COPY string is written in its own alphabet" holds
+  // it there. What that rule cannot see is the long bilingual prose inlined in
+  // the component, which is most of the words on this page (site/AGENTS.md
+  // §Copy says why it is inlined). This is the same rule over the rendered
+  // result, which is where the two halves finally meet.
+  //
+  // **Asserted over what a reader is SERVED, not over the source.** The `/en/`
+  // tree is the prerendered English half with the Bulgarian stripped, so any
+  // Cyrillic left in it is Cyrillic on an English page — no flattening, no
+  // guessing which span a template literal will land in.
+  await withApp(
+    async (page, errors) => {
+      const cyrillic = await page.evaluate(() => {
+        const text = document.querySelector("main.market").innerText;
+        // Reported with enough either side to find the sentence it is in. A
+        // bare list of letters names the alphabet and not the place.
+        return [...text.matchAll(/[\p{Script=Cyrillic}]+/gu)].map((m) =>
+          text.slice(Math.max(0, m.index - 45), m.index + m[0].length + 25).replace(/\s+/g, " ")
+        );
+      });
+      assert.deepEqual(
+        cyrillic,
+        [],
+        `the English market page carries Cyrillic:\n  ${cyrillic.join("\n  ")}\n\n` +
+          "Publishers are named the way COPY names them — NSI, BNB, ECB, Eurostat, imot.bg. " +
+          "The footer's «Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg» is a licence " +
+          "condition and lives outside main (docs/legal.md)."
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/en/market/",
+    {}
+  );
 });
 
 test("the market page is reachable from the calculator, and links back", { skip }, async () => {
