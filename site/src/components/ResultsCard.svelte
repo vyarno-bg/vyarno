@@ -88,7 +88,6 @@
     bind:open={calc.drawerOpen}
     anchor={calc.anchor}
     categories={calc.categories}
-    detailMode={calc.detailMode}
     openDivisions={calc.openDivisions}
     splitFor={calc.splitFor}
     divisionSharePct={calc.divisionSharePct}

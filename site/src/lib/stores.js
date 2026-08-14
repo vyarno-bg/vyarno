@@ -331,7 +331,6 @@ const INPUT_FIELDS = {
   activePreset: (v) => v === null || isText(v),
   spendMode: (v) => v === "pct" || v === "eur",
   spendSharePct: (v) => isNum(v) && v >= 0 && v <= 100,
-  detailMode: isBool,
   sectorKey: isText,
 };
 
