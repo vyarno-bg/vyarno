@@ -638,10 +638,10 @@ voice.** Eurostat publish D1, the median and D9 for BG and nothing between, so
 against the median is two published numbers, and "the average sits near the Nth
 rung" is read off modelled ones.
 
-**The card shows the pair and derives one figure from it, not two.** The mean
-and the median go on screen as published, with the sentence a reader needs to
-use them — half of employees earn less than the median — and the only number
-computed here is the rung. The median-to-mean ratio makes the same point one
+**The card states the skew in words and puts no level on screen.** A reader is
+told that the average sits above the middle and why — half of employees earn
+less than the median — without a second figure beside it to do arithmetic with.
+The rung is computed and the copy attributes it to us. The median-to-mean ratio makes the same point one
 step further from the evidence, and stating both put two of our own percentages
 in a four-line caveat that a reader has to hold at once. Two published levels
 are easier to check than a ratio between them and easier to read than either.
@@ -1091,7 +1091,7 @@ basket.
 | a verify link resolves to the number beside it | `view/basket.js#verifyUrl(row, anchor)` |
 | a shared number must not reconstruct a private one | `view/share.js#sharePayload` takes no salary; `SHARE_FIELDS` is the closed list of what travels, and no € reaches `shareSentence` in either language |
 | a shared ranking must not reconstruct a private one either | the ladder position is kept off every share surface: `mirror.js#percentile` inverts through the published rungs, so "ahead of 34%" IS the salary |
-| the payslip itemises the GROSS, never the typed net | `view/payroll.js#payslipPanel` inverts internally; it does not accept a gross |
+| the payslip itemises a gross, never the typed net as if it were one | `view/payroll.js#payslipPanel` takes `pay.basis` and hands it to `bgHouseholdPayroll`, so a typed gross is itemised as a gross and a typed net is inverted first — the basis travels with the amounts and cannot be assumed |
 | the breakdown's rates are the published ones | `payslipPanel` takes `payroll.json`, not a params object |
 | the insurance ceiling is per contract, never per household | `payslipPanel` and `taxWedgePanel` take a list and have no scalar parameter |
 | an amount never travels without its basis | both take `pay = { basis, amounts }`; `view/payroll.js#netsOf` is the only net↔gross conversion |

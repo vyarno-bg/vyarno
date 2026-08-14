@@ -9,9 +9,9 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 ┌─ Refresh time (a pipeline run — by hand, or on whatever schedule you set) ─┐
 │                                                                       │
 │   Eurostat        БНБ           ЕЦБ           имот.bg      НСИ        │
-│   prc_hicp_*      XLSX          MIR (SDMX)    /sredni-     XLSX       │
-│   une_rt_m        (mortgage     (mortgage      ceni        (wages)    │
-│   earn_ses_*       stock)        new business)                        │
+│   prices · wages  XLSX          MIR (SDMX)    /sredni-     XLSX       │
+│   jobs · property (mortgage     (mortgage      ceni        (wages ·    │
+│                    stock)        new business)              housing)  │
 │        └──────────┴──────────────┴──────────────┴───────────┘         │
 │                              │                                        │
 │              pipeline/ (Python 3.11)                                  │
@@ -64,10 +64,11 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
     │                gen-version · strip-sourcemaps · check-identity
     └── src/         App.svelte · How.svelte · Market.svelte ·
                      Legal.svelte · Support.svelte · NotFound.svelte
-        ├── components/  the calculator's parts: DataBanner ·
-        │                DataPanel · DataLate (the overdue line /how/ and
-        │                /market/ carry, where there is no panel to open) ·
-        │                InputsCard · PayField · BasketEditor · PayslipTable ·
+        ├── components/  the calculator's parts — one per receipt row, plus
+        │                the inputs card, the pay field, the basket editor and
+        │                the share card. `DataLate` is the exception the name
+        │                does not fit: /how/ and /market/ mount it too, because
+        │                they carry the overdue line with no panel to open ·
         │                ResultsCard · ResultsAnswer · ResultsSummary ·
         │                RankedContributions ·
         │                PocketRow · PercentileRow · TaxWedgeRow · RentRow ·
@@ -89,8 +90,9 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
                      support.js    the donation rules — what may be offered
                      stores.js     lang · theme · област · the reader's figures
                      build.js      the build stamp (__BUILD_ID__, or "dev")
-                     tokens.css · card.css · disclosure.css · result-row.css ·
-                     fig-table.css
+                     *.css         the shared looks: palette and type, the
+                                   cards, the disclosure, the receipt row,
+                                   and the table two pages draw
                      WedgeChart.svelte  the tax wedge, drawn by / and /how/
                      SiteHeader.svelte  wordmark + route out + theme + language
                      SiteFooter.svelte  attribution + legal links + build stamp
@@ -133,7 +135,8 @@ dated entry; never mutate one.
 
 Every module that decides something has a test file named after it under
 `pipeline/tests/`. `clock.py` is the exception and stays one: it is a single
-`today()` returning the date in `Europe/Sofia`, with one production caller, and
+`today()` returning the date in `Europe/Sofia`, called where a run needs the
+date it is dated by, and
 the suites that care about the date call it rather than assert on it. Alongside
 those sit the suites named after an output rather than a module
 (`test_salary_dist.py`, `test_published_contracts.py`,
@@ -150,19 +153,18 @@ from, when, and what was done to it.
 
 The rest of the frame is carried where it means something rather than
 everywhere. `dataset` names the upstream file and the coordinates read out of
-it, and appears on the three payloads with a fixed set to name (`region_salary`,
-`sector_salary`, `unemployment` — the sector one names two files, because both
-language editions are read and each pins the other); `hicp_categories`,
-`mortgage` and `salary_dist` draw on several, and record
-provenance per row, per tier or per block instead. `payload_name`, `ref_period`, `published_at`,
+it, and appears wherever a payload has a fixed set to name — both НСИ wage
+payloads name two files each, because both language editions are read and each
+pins the other. A payload drawing on several cubes records provenance per row,
+per tier or per block instead. `payload_name`, `ref_period`, `published_at`,
 `unit` and `value` follow the same rule, and `methodology_change`,
 `is_preliminary` / `disclaimer` appear only where they apply. A single-figure
 payload carries most of the frame; a composite one carries it one level down.
 
 `is_preliminary` is the newest of these and the one to copy from: it is `null`
 where a publisher draws no such distinction, which is a different claim from
-`false`. Only НСИ mark a release provisional, so only their two payloads carry
-it as a boolean today.
+`false`. Only НСИ mark a release provisional, so it is a boolean only on theirs
+and `null` everywhere else.
 
 | File | Carries |
 |---|---|
@@ -215,7 +217,7 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 |---|---|
 | `sources/*.py` | Talking to one upstream, and proving the response is the one requested |
 | `transform.py` | Reshaping upstream rows into published shapes |
-| `validate.py` | The seven HICP gates, and the sector-wage gate that runs under `--source sector-salary` |
+| `validate.py` | The numbered HICP gates, plus a payload gate per family — region salary, city price, house market, НСИ housing, sector wage — each running only under its own `--source` |
 | `mortgage.py` / `payroll.py` | The dated legislative tables and the mortgage gates |
 | `publish.py` | The envelopes and the provenance frame |
 | `cli.py` | One arm per `--source`; exit codes **2** transform, **3** gate, **4** network |
@@ -251,9 +253,12 @@ it to the one thing it needs, and assume anything ever committed is permanent.
 ## CI
 
 `.github/workflows/ci.yml` runs on every push to every branch, on every pull
-request, and on demand: the pipeline suite (`pytest -q`, offline), the SPA
-suite (`npm run verify:math`), the production build, and a check that all twelve
-published payloads are committed and parse.
+request, and on demand. Its jobs are `pipeline` (pytest, offline), `site` (the
+module suites, the build and the built page in a browser), `windows` (the same
+run on `windows-latest`, so the Makefile-free path stays true), `authorship`
+(the commit author is a person, not an agent) and `data` (every published
+payload is committed and parses). Each reports its own suite count against the
+floor it has to clear.
 
 The two triggers cover different things. A push gates a branch before the merge
 and re-checks `main` after it. A pull request is what reaches a **fork** at
@@ -297,8 +302,10 @@ narrower claim than "this is the right number this quarter".
 `test_cli_dispatch.py` asserts it never takes write.
 
 **The enforcement is that the weekly check fails loudly, naming the pull
-request.** `freshness-check.yml` reports two things in one run: payloads over 30
-days old, and open `data/*` pull requests with how long each has been sitting.
+request.** `freshness-check.yml` reports two things in one run: payloads past
+**the cadence their own manifest row declares** — it shells out to
+`payload-cadence.mjs` for that, so one flat threshold cannot creep back in — and
+open `data/*` pull requests with how long each has been sitting.
 Both halves always run and one exit code covers them, because a payload is
 usually stale *because* its refresh is waiting in an unmerged PR — a check that
 exited on the staleness would hide the reason for it on exactly the weeks it

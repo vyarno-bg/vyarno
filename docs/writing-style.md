@@ -76,7 +76,7 @@ says something the code cannot.
 
 ### Write the constraint, never the diff
 
-**No comment in this repository describes an earlier version of this code.**
+**No comment here may describe an earlier version of this code.**
 `used to`, `no longer`, `previously`, `originally`, `left behind` and their kin
 are the phrasings to catch in yourself, in comments and docstrings alike.
 
@@ -109,8 +109,12 @@ Every one of these converts, and the converted form is shorter:
 | `// This assertion used to say the opposite` | `// The tempting argument for writing the default is that it makes the next visit stable. It does not:` |
 | `// The line used to cite ilc_di01` | `// A dataset that sounds like it belongs puts no figure on the page` |
 
-The recipe, when the check goes red: ask what the old version got **wrong**,
-then write that as something the code has to keep doing. Keep the numbers, keep
+**Nothing checks this — it is on you and on review**, which is why it is written
+down at this length. A regex over prose cannot tell a comment narrating this
+repository's edit history from one describing an upstream that changed its
+publication regime, and a guard that fires on legitimate text is one somebody
+silences. The recipe: ask what the old version got **wrong**, then write that as
+something the code has to keep doing. Keep the numbers, keep
 the failure, keep the length — this repository comments reasoning on purpose
 and the bar is not brevity. Drop the tense.
 
@@ -118,8 +122,8 @@ and the bar is not brevity. Drop the tense.
 reintroduce, which `testing-strategy.md` asks for — write it as the failure the
 guard catches, not as an incident report. And `docs/legal.md`'s retractions,
 which are dated records of what an upstream licence said and what a previous
-reading of it got wrong: those are evidence, the document argues its own case
-for keeping them, and it is exempt from the check.
+reading of it got wrong: those are evidence, and the document argues its own
+case for keeping them.
 
 ## Docs and user-facing copy
 

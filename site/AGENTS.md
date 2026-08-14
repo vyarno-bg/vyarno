@@ -58,10 +58,13 @@ bundle measurements included.
 | markup, colour, or a language choice                                   | `components/*.svelte` | `verify_render_*.mjs`, wiring in `verify_wiring.mjs`           |
 | chrome every page mounts, or a look two pages share                    | `lib/` (below)        | `verify_render_layout.mjs` · `verify_render_shell.mjs`         |
 
-**Never in a `$derived`.** Every `$derived` in `calculator.svelte.js` is a call
-into a `view/` module or `mirror.js` with named arguments — that layer has no pure
-function behind it, so anything computed there is computed where no unit test
-can reach. Moving the reactive graph out of `App.svelte` into a rune module did
+**Never in a `$derived`.** A `$derived` calls into a `view/` module or
+`mirror.js` with named arguments — that layer has no pure function behind it, so
+anything computed there is computed where no unit test can reach. What is left
+inline is arithmetic that decides nothing on its own: a subtraction of two
+figures already derived, a comparison against a dead band. The test is whether a
+wrong result would be a wrong NUMBER on screen; if it would, it belongs one
+layer down. Moving the reactive graph out of `App.svelte` into a rune module did
 not relax this.
 
 **Where a wrong wiring would be a wrong number, make the wrong wiring
@@ -81,8 +84,11 @@ silently inside an event handler.
 The split is by AUDIENCE, and getting it wrong is how six copies of one masthead
 happened.
 
-- **`components/*.svelte`** takes `calc` or a prop only `/` produces. Nothing
-  else imports them — a component another entry needs is not the calculator's.
+- **`components/*.svelte`** takes `calc` or a prop only `/` produces. A
+  component another entry needs is not the calculator's — `DataLate` is the one
+  that crossed and was not moved, because `/how/` and `/market/` carry the
+  overdue line with no panel to open. It takes rows rather than `calc`, which is
+  the tell.
 - **`lib/*.svelte`** is what more than one entry mounts: `SiteFooter` (the
   attribution and ЗЕТ чл. 4 identity every page owes), `SiteHeader` (a
   control bar, and a control that differs per page is one a reader learns
@@ -109,8 +115,8 @@ holds anything JavaScript has to select, interpolate or pass as an attribute** �
 a string a branch picks between, one carrying a `{slot}`, an `aria-label`, a
 `<title>`. **Long bilingual prose is inlined in its component** as paired
 `.l-bg` / `.l-en` spans, because a paragraph split between a copy file and a
-template is edited in two places and reads as neither; `How.svelte` and
-`ExplainerBand.svelte` are most of it. Moving prose from one to the other is a
+template is edited in two places and reads as neither; `Market.svelte`,
+`How.svelte` and `ExplainerBand.svelte` carry most of it. Moving prose from one to the other is a
 refactor and needs the same argument any other refactor does.
 
 A sentence can be false while every formula behind it is right, which is what

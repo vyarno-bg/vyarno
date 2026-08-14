@@ -24,7 +24,9 @@ pin the parser, live probes pin the premise.
 ## Layers, and they do not overlap
 
 `sources/{eurostat,bnb,ecb,imot,nsi}.py` call one upstream each and prove the
-response is the one asked for — **no math**. `transform.py` reshapes rows into
+response is the one asked for — **no math**. `imot.py` is the exception and says
+so: имот.bg publishes per-district prices and no city figure at all, so the
+median across districts has to be taken where the districts are read. `transform.py` reshapes rows into
 published shapes — **no network, no validation**. `validate.py` and
 `mortgage.py` hold the gates; a gate raises, it never repairs. `publish.py`
 writes the envelopes and the provenance frame. `cli.py` is one arm per
@@ -39,9 +41,9 @@ vyarno-pipeline refresh --source all --out ../data/published
 vyarno-pipeline refresh --source hicp --out ../data/published
 ```
 
-`--source`: `hicp`, `unemployment`, `mortgage`, `city-price`,
-`region-salary`, `sector-salary`, `salary-dist`, `payroll`, `house-market`,
-`all`. Ten arms write twelve files — `hicp` publishes the headline and the
+`--source`: `hicp`, `unemployment`, `mortgage`, `city-price`, `region-salary`,
+`sector-salary`, `salary-dist`, `payroll`, `house-market`, `nsi-housing`,
+`all` — `click.Choice` in `cli.py` is the list. Ten arms write twelve files — `hicp` publishes the headline and the
 categories, and `house-market` the transaction series and the structure one. Output is
 **committed** — the diff is the review.
 
@@ -58,8 +60,11 @@ one request per historical year each — around 650 requests at polite spacing.
 
 ## The seven HICP gates
 
-Named in order, and **seven gate lines printed is the pass condition** — a run
-that publishes with fewer has skipped one.
+Numbered below, and **a full release prints one line per gate** — a run that
+publishes with fewer has skipped one, usually `--skip-link-check`. A flash
+release is the legitimate short run: it writes the headline alone, so the gates
+with no inputs at that month do not run. The printed order is the order
+`cli.py` calls them in, which is not the numbering here.
 
 1. **classification agreement** — the two HICP cubes give each code the same
    label, per code. A shared code is not a shared meaning.
@@ -113,6 +118,8 @@ nothing in the suite can tell that from a correction.
 - A change to `sources/*` and a change to `docs/data-sources.md` are the **same
   commit**. A new connector also ships its licence terms, quoted verbatim and
   dated, in `docs/legal.md`.
-- Every module has a test file named after it under `tests/`. A new payload
-  with no gate is a number nobody checks.
+- Every module that decides something has a test file named after it under
+  `tests/`. `clock.py` and `regions.py` are the exceptions — a date and a join
+  table, exercised through every caller. A new payload with no gate is a number
+  nobody checks.
 - `docs/local-development.md` — reading the output, and debugging a failed run.

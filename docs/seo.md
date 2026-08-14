@@ -120,9 +120,9 @@ way out. Pressing it writes the preference, and being served a document does
 not — navigating is the «изрично поискана» act ЗЕТ чл. 4а's exemption turns on
 (`stores.js` header), and arriving from a search result is not.
 
-**What is not language-aware yet.** The footer's legal links, its route to
-`/support/` and the explainer's route into `/how/` are written as bare
-Bulgarian paths, so following one from an English page lands on the Bulgarian
+**What is not language-aware yet.** The footer's legal links and its routes to
+`/how/`, `/market/` and `/support/`, plus the explainer's route into `/how/`,
+are written as bare Bulgarian paths, so following one from an English page lands on the Bulgarian
 tree with the header's language link one tap away. Making them follow the
 reader's tree is the same pair authored in six more templates and belongs in its
 own change; the header's routes are done because the language control had to be
@@ -147,7 +147,9 @@ So `prerender.mjs` writes the language its entry declares and drops the other,
 reading `data-lang` off `<html>` rather than assuming `bg`, because that
 attribute is what `tokens.css` hides by and the two have to agree.
 `verify_render_prerender.mjs` §"the served pages carry one language, not two"
-counts the class over the raw file for all ten entries, in both directions —
+counts the class over the raw file for every prerendered entry — the list is
+derived from `PRERENDERED`, so a new route is covered by the commit that starts
+serving it — in both directions:
 the Bulgarian pages must carry no `.l-en` and the English ones no `.l-bg`, and
 each must still carry its own. It holds however a future pair is written: one of
 them is an `<a class="how-more l-en">` rather than a span today.
@@ -162,7 +164,7 @@ language reaches the root component as a prop and it sets the store; the Vite
 compile, which is the expensive half, still happens once per component.
 
 **This costs a reader nothing, in either state a reader can be in.** With
-JavaScript, `main.js` and its three siblings call `target.replaceChildren()`
+JavaScript, every entry's bootstrap calls `target.replaceChildren()`
 before `mount()`, so the prerendered markup is discarded wholesale and the
 client renders both languages from scratch — §"Why not hydration" is why the
 build renders a second time rather than hydrating. Without JavaScript, the half

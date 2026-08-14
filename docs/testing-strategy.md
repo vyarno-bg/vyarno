@@ -56,7 +56,7 @@ to do to count is §"The standard a test has to meet".
 | `site/scripts/verify_static_assets.mjs` | `node:test` | `robots.txt`, `llms.txt`, `security.txt`, the sitemap, the CSP, `_headers` |
 | `site/scripts/verify_suites.mjs` | `node:test` | That `package.json` names every suite on disk — an omitted one runs never |
 | `site/scripts/verify_docs_map.mjs` | `node:test` | That `docs/site.md`'s directory tree names the files that are there, both directions |
-| `site/scripts/verify_render_*.mjs` | `node:test` + Playwright | The built page, in a browser — ten suites over one harness |
+| `site/scripts/verify_render_*.mjs` | `node:test` + Playwright | The built page, in a browser, over one harness. `verify_render_prerender.mjs` is the exception the glob catches: it opens no browser, reading `dist/` off disk, because what a crawler is served is decided before any script runs |
 | `site/scripts/verify_render_contrast.mjs` | `node:test` + Playwright | What ratio each piece of text is painted at once every ancestor `opacity` and every translucent layer is composited, and every control boundary against 1.4.11's 3:1 — the half of WCAG `verify_contrast.mjs` cannot reach from `tokens.css` |
 | `verify_stores` · `verify_format` · `verify_template_safety` · `verify_contrast` · `verify_support` | `node:test` | Persistence, formatters, the `{@html}` invariants, WCAG ratios, the donation rules |
 
@@ -306,11 +306,11 @@ belongs here.
 
 ### Why source checks are normal here, and where the line actually falls
 
-**Seven suites read templates as text**, and none of them is an exception to
-anything. `verify_wiring.mjs` is the one that does it most, and it is joined by
-`verify_copy.mjs` (How, ExplainerBand, MethodDrawer, LeftoverRow, DataBanner),
-`verify_legal.mjs`, `verify_support.mjs`, `verify_contrast.mjs`,
-`verify_static_assets.mjs` and `verify_template_safety.mjs`.
+**Reading a template as text is normal here, not an exception.** `verify_wiring.mjs`
+is the suite that does it most; `verify_copy.mjs`, `verify_legal.mjs`,
+`verify_support.mjs`, `verify_contrast.mjs`, `verify_static_assets.mjs`,
+`verify_payload_prose.mjs` and `verify_template_safety.mjs` all do it too, each
+for a claim no runtime assertion can reach.
 
 The rule they are all keeping is the one stated above, and it is narrower than
 "do not read source": **never assert RENDERED BEHAVIOUR by grepping templates.**
@@ -403,7 +403,7 @@ entries between them. A key added to a section nobody listed was guarded by
 none of them, silently, which is the failure mode of every subset test: it does
 not go red, it goes absent.
 
-Written once over `bilingualEntries()` it covers all 319 and needs **no
+Written once over `bilingualEntries()` it covers every one of them and needs **no
 exception list at all** — strip `{placeholders}` first and the one key that was
 exempted by name, a bare `{s} · {p}`, falls out of the rule instead of out of a
 list. A hand list also buys less than it looks: it cannot catch a state added in
@@ -571,8 +571,9 @@ JSON fields, and the only judgement is which words assert one is the other.
 
 ### The second case: a payload's prose and the page's, about one figure
 
-`data/published/*.json` carries forty prose fields — `notes`, `method`,
-`disclaimer`, `_role`, `note`, `rate_basis` — all written by the pipeline to say
+`data/published/*.json` carries prose fields — `notes`, `method`, `disclaimer`,
+`_role`, `note`, `rate_basis`, `currency_history`; `PROSE_KEYS` in the suite is
+the list — all written by the pipeline to say
 what an upstream measures, and **none of them rendered by the SPA**. So nobody
 reads them in the normal course of things, and a sentence in one can go false
 and stay false with every gate green. That happened: `transform.py` wrote
@@ -650,8 +651,8 @@ complete: `src/lib/view/`, `mirror.js`, `legal.js` and `support.js` are at or ne
 |---|---|
 | `data.js` | `fetchJson`'s success return and its warn-and-return-null catch arm, which is the whole of what the coverage run reports uncovered. `verify_data_contracts.mjs` covers the fallback chains — the part that can pick a wrong number — with `fetch` stubbed. Covering the two remaining arms means a stub asserting that `fetch` was called, which tests the mock. The real coverage of them is the render suites, which load the page and make it fetch |
 
-**Python.** Everything below the CLI is 89–100%: gates, transforms, connectors,
-models. What is left is `cli.py`'s ten `_refresh_*` arms — fetch, transform,
+**Python.** Everything below the CLI is high and none of it is the gap: gates,
+transforms, connectors, models. What is left is `cli.py`'s ten `_refresh_*` arms — fetch, transform,
 validate, write, print — of which two are driven end to end through `respx`
 against real trimmed cubes and eight are not. Ten arms write twelve payloads —
 `_refresh_hicp` publishes the headline and the categories, `_refresh_house_market`

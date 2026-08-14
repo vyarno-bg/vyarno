@@ -186,7 +186,7 @@ index, published as it stands.
 
 The shipped sources document carries its own section, «Уговорка за
 преизчислените числа» / "Disclaimer on the figures we recompute", which names
-both and disclaims Eurostat's responsibility for them. It is a section rather
+what we recompute and disclaims Eurostat's responsibility for it. It is a section rather
 than a sentence so that a copy edit cannot dissolve it into a paragraph about
 something else. The same section states what is *not* modified — the price
 index — because that is what tells a reader whether a verify link's digits
@@ -242,7 +242,7 @@ The most permissive of the five: an express grant to distribute and reproduce,
 no non-commercial carve-out. Both conditions are met —
 `outstanding_stock.value_pct` is the housing column of the workbook verbatim,
 with `source_url` and `as_of`. **Forward constraint:** the moment we derive from
-БНБ — a spread, a rebase, a real-terms conversion of the 233-point history —
+БНБ — a spread, a rebase, a real-terms conversion of the monthly history —
 «не променяте или изопачавате» engages, and the house rule above covers it.
 
 **This document used to say the page "is not machine-readable … so re-verifying
@@ -606,7 +606,7 @@ while the identity still says the service is free.
 "fix" it by flipping `takesPayment` to match the copy.** Flipping it is correct
 only once payment is genuinely being taken.
 
-Three things about the reasoning, recorded in `legal.js` where they bind:
+The reasoning, recorded in `legal.js` where it binds:
 
 - **чл. 4 т. 4 wanted two routes and the page published one.** In full: «данни
   за кореспонденция, включително телефон и адрес на електронна поща, **за

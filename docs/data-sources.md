@@ -1,8 +1,8 @@
 # Data sources
 
-**Read this before touching `pipeline/sources/*`.** Every connector maps to
-exactly one entry below, and **this file is the source of truth for which
-external datasets we use.** Updating `pipeline/sources/*` without updating this
+**Read this before touching `pipeline/sources/*`.** Every dataset the pipeline
+reads has an entry below — a connector reading several has one per dataset — and
+**this file is the source of truth for which external datasets we use.** Updating `pipeline/sources/*` without updating this
 file, or vice versa, is a bug, not a refactor.
 
 > Any commit that changes `pipeline/src/vyarno_pipeline/sources/*` to add,
@@ -423,7 +423,7 @@ A hash over the ESMS page fails the other way: Eurostat revise that prose withou
 versioning it, so the guard goes red on a typo fix and the next person raises the
 tolerance until it is off.
 
-Two of the ten cubes **do** carry their meaning in their own labels —
+Two of the Eurostat cubes **do** carry their meaning in their own labels —
 `ilc_lvho02` is «Distribution of **population** by tenure status» and
 `cens_21dwob_r3`'s `DW_NOC` is «Unoccupied conventional dwellings». Gating those
 two is possible and is still not worth doing: they are the ones where the wrong
@@ -598,8 +598,9 @@ So the two halves stay apart all the way to the reader's browser:
 
 **Method.** Steps 1–2 run in the pipeline
 (`transform.py#build_ses_shape_ladder`, restated in the JSON's `shape.method`);
-steps 3–4 run in the reader's tab (`mirror.js#composeLadder`, over the level
-`view/region.js#regionQuarter` selects out of the НСИ payload).
+steps 3–4 run in the reader's tab (`mirror.js#composeLadder`, over the **national**
+level `view/country.js#nationalQuarter` selects out of `sector_salary.json` —
+not an област's, because the ladder Eurostat publishes is the country's).
 
 1. Fill the intermediate deciles by piecewise-lognormal interpolation in the
    standard-normal quantile z, matching the D1/median/D9 anchors exactly.
