@@ -91,12 +91,12 @@ the headline's month.
 **Eurostat's flash release separates them, and every field above states its own
 month for exactly this reason.** The all-items rate for a month is published
 about two weeks before that month's index and before any division — so
-`hicp_headline.json` can carry `ref_period` 2026-07 beside a `latest_index` at
-2026-06, with `hicp_categories.json` still wholly at 2026-06. Both figures are
-Eurostat's, at the months they name; neither is estimated, extrapolated or
-carried forward. Read the months, never assume them: the pair to compare a
-division against is `latest_index`, and the pair to date the national headline
-by is `ref_period`.
+`hicp_headline.json` can carry a `ref_period` a month ahead of its own
+`latest_index`, with `hicp_categories.json` still wholly at the earlier month.
+Both figures are Eurostat's, at the months they name; neither is estimated,
+extrapolated or carried forward. Read the months, never assume them: the pair to
+compare a division against is `latest_index`, and the pair to date the national
+headline by is `ref_period`.
 
 **`is_flash` is the fact rather than the evidence for it.** The two months imply
 the release shape, but a renderer that infers it re-derives the rule on every
@@ -106,18 +106,17 @@ So the publisher writes what it fetched, `validate.py#validate_headline_flash`
 requires the flag and the months to agree in both directions, and the site's
 banner and strip card mark the estimate off the field.
 
-The alternative was to omit `latest_index` until the full release caught up.
-That is worse, and not by a little: the SPA's fallback rebuilds the
-since-2020 cumulative from the divisions at current weights, which is 41.8%
-against the official index's 39.9% — €960 on €100,000 of somebody's savings —
-and it says on the page that the official index failed to load, which would not
-be true. A published figure at a stated month beats a better-aligned month with
-no figure in it.
+Omitting `latest_index` until the full release catches up is worse, and not by a
+little: the SPA's fallback rebuilds the since-2020 cumulative from the divisions
+at current weights, which runs high (§"Two since-2020 cumulatives") — hundreds of
+euro on a six-figure balance — and it says on the page that the official index
+failed to load, which would not be true. A published figure at a stated month
+beats a better-aligned month with no figure in it.
 
 **Year-end rule.** A year appears in `index_by_year` only once its December
 reading is published. Storing the latest available month under a calendar-year
-key would silently mean "June 2026" instead of "end of 2026" and contaminate
-the anchor dropdown, the cumulative-since-anchor math and the savings card.
+key would silently mean "mid-year" instead of "end of year" and contaminate the
+anchor dropdown, the cumulative-since-anchor math and the savings card.
 
 **Freshness rule.** Each category also carries `latest_index = {time, value}` —
 the freshest monthly reading. This is what "your basket is up X% since year Y"
@@ -155,18 +154,15 @@ an identity:
 I_total(m) / I_total(Dec, y−1)  ==  Σ_i w_i(y) · I_i(m) / I_i(Dec, y−1)
 ```
 
-Measured against live BG data for every month of 2021-01 → 2026-06 — 66 months
-— the largest deviation is **0.0091 pp** (2021-02 and 2021-05), and 14 of the
-66 sit above 0.005 pp. `validate_chain_reconciliation` allows **0.02 pp**: a
-little over twice the observed worst case, which is Eurostat's 2-decimal index
-rounding and nothing else. **Never widen it.**
+`validate_chain_reconciliation` allows **0.02 pp** — a little over twice the
+worst deviation measured across every published month, which is Eurostat's
+2-decimal index rounding and nothing else. **Never widen it.**
 
-The deviations cluster in 2021 and in mid-2025, which is what rounding on a
-chain-linked index looks like rather than a defect — but the figure is a
-measurement, not a constant, so re-measure it rather than quoting this line
-back. It has already moved once under this paragraph, by enough that a
-tolerance set from the old reading would sit below the real worst case: the
-number to trust is the one your run prints, not the one written here.
+The worst case is a measurement, not a constant, and it has already moved under
+this paragraph by enough that a tolerance set from the older reading would sit
+below the real one. Re-measure it; the number to trust is the one your run
+prints. Deviations cluster in a few stretches of the series, which is what
+rounding on a chain-linked index looks like rather than a defect.
 
 ### 2. The basket sum — approximate, a sanity band only
 
@@ -176,8 +172,8 @@ number to trust is the one your run prints, not the one written here.
 
 This is the arithmetic the SPA does for the user's own basket, so it is worth
 checking, but it is **not** an identity: a 12-month window straddles December's
-chain link and the official aggregate re-weights mid-flight. On BG data at
-2026-06 it sits **0.156 pp** from the headline — a real methodological gap.
+chain link and the official aggregate re-weights mid-flight, so it sits a
+fraction of a point from the headline — a real methodological gap.
 `validate_reconciliation` allows **0.5 pp**. Tightening it would fail on
 correct data; the precise check is gate 2, which catches strictly more.
 
@@ -187,90 +183,56 @@ strip shows Eurostat's headline, and `/how/` §инфлацията prints the t
 side. Three shapes keep that honest:
 
 - The sliders are seeded with the **exact** published `weight_pct`
-  (`view/basket.js#officialBasketWeights`), never rounded — rounding makes the default
-  basket sum to 97 and puts a third figure on screen.
+  (`view/basket.js#officialBasketWeights`), never rounded — rounding makes the
+  default basket sum to something other than 100 and puts a third figure on
+  screen.
 - The strip headline comes from `view/results.js#headlineRate`, which takes only
   `hicp_headline.json`, so it cannot be handed the categories and quietly
   become Σ(w·r).
 - **The prose that explains the gap branches on the two months**
-  (`view/results.js#monthsSplit`), because the 0.156 pp above is a SAME-MONTH figure.
-  During Eurostat's flash the headline is a month ahead of every division and
-  the two on screen are several times further apart — 1.26 pp at 2026-07
-  against 2026-06 — with almost all of the extra being the fortnight. Copy that
-  names the re-weighting either way is true and is not the reason for what a
-  reader is looking at, in the one paragraph they opened to check. Both surfaces
-  call the same function rather than each comparing the two strings, so a
-  correction cannot land on one and miss the other.
-
-## Worked example (current `data/published/`)
-
-```
-prc_hicp_minr RCH_A (TOTAL, 2026-06):  5.2%
-prc_hicp_minr RCH_A (CP01, 2026-06):   2.3%   (weight 22.323%)
-prc_hicp_minr RCH_A (CP07, 2026-06):  11.0%   (weight 14.277%)
-prc_hicp_minr RCH_A (CP12, 2026-06):   3.9%   (weight  1.415%)  Insurance & financial services
-prc_hicp_minr RCH_A (CP13, 2026-06):  10.3%   (weight  4.423%)  Personal care, social protection & misc
-
-prc_hicp_iw (2026, per-thousand ÷ 10):  CP01..CP13 sum to 99.999%
-
-Basket sum  Σ(w·r)/100 = 5.356%
-Headline                 5.200%
-Gap                      0.156 pp   ← the chain-link effect, not an error
-
-Chain identity at 2026-06, linked at Dec-2025:
-  Σ w_i(2026) · I_i(2026-06)/I_i(2025-12) = 103.4936
-  I_total(2026-06)/I_total(2025-12)       = 103.4972
-  Gap                                       0.0036 pp   (limit 0.02)
-```
-
-Since-year math, both operands as Eurostat publishes them:
-
-```
-CP01 latest_index (2026-06) = 184.98
-CP01 index_by_year["2020"]  = 115.65
-                    ratio − 1 = +59.95%
-```
+  (`view/results.js#monthsSplit`), because the methodological gap above is a
+  SAME-MONTH figure. During Eurostat's flash the headline is a month ahead of
+  every division and the two on screen are several times further apart, with
+  almost all of the extra being the fortnight. Copy that names the re-weighting
+  either way is true and is not the reason for what a reader is looking at, in
+  the one paragraph they opened to check. Both surfaces call the same function
+  rather than each comparing the two strings, so a correction cannot land on one
+  and miss the other.
 
 ## Two since-2020 cumulatives, and which card gets which
 
-The 12-month gap between the headline and Σ(w·r) is ~0.16 pp. Over five and a
-half years the same distinction opens to **~1.9 pp**, and at that size it stops
-being a footnote:
+The 12-month gap between the headline and Σ(w·r) is a fraction of a point. Over
+the years since the anchor the same distinction compounds into whole points, and
+at that size it stops being a footnote:
 
 ```
-TOTAL latest_index (2026-06)   = 139.87   (raw 148.86 ÷ 106.43 × 100)
-TOTAL index_by_year["2020"]    = 100.00
-allItemsCumulativeSince2020    = +39.87%   ← Eurostat's own all-items index
+allItemsCumulativeSince2020 = latest_index / index_by_year["2020"] − 1
+                              ← Eurostat's own all-items index
 
-officialCumulativeSince2020    = Σ w_i · (latest_index_i / idx_2020_i − 1) / Σ w_i
-                               = +41.76%   ← our reconstruction, 2026 weights
+officialCumulativeSince2020 = Σ w_i · (latest_index_i / idx_2020_i − 1) / Σ w_i
+                              ← our reconstruction, at current weights
 ```
 
 Both are honest arithmetic over published figures. Only the first is a figure
 Eurostat publishes: an annually re-chained index is not the same object as one
-set of current weights applied across six years, and the fixed-weight version
-runs high.
+set of current weights applied across the whole span, and the fixed-weight
+version runs high.
 
 **The savings card takes the first.** `view/results.js#savingsSince2020` reads
 `hicp_headline.json`'s TOTAL index and falls back to the divisions
 reconstruction only if that payload has no index — returning `basis` so the
-copy can say which it used. On €100,000 the two differ by €960, and the card's
-sentence names Eurostat, so it has to *be* Eurostat's number.
+copy can say which it used. The two differ by real money on a real balance, and
+the card's sentence names Eurostat, so it has to *be* Eurostat's number.
 
 `officialCumulativeSince2020` stays, because the anchor selector legitimately
 wants a basket-weighted cumulative per division. It is simply not what the
 savings sentence points at, and pointing it there is the failure above.
 
-**Verified against НСИ's own June-2026 press release**, which is the check that
-proves the 2020 base rather than assuming it (a 12-month rate is
-base-invariant and cannot reveal a base bug):
-
-| НСИ says | Recomputed from `prc_hicp_minr` I15 |
-|---|---|
-| 5-year accumulated (2026-06 vs 2021-06) **37.6%** | 37.6% |
-| 3-year accumulated (2026-06 vs 2023-06) **11.5%** | 11.5% |
-| Accumulated since Dec-2025 **3.5%** | 3.5% |
-| Month-on-month **−0.5%** | −0.5% |
+**The base was verified against НСИ's own press release**, which is the check
+that proves it rather than assuming it — a 12-month rate is base-invariant and
+cannot reveal a base bug. Their published 5-year, 3-year, since-December and
+month-on-month accumulated changes each reproduce from `prc_hicp_minr` I15 to
+the decimal.
 
 ## The user's own basket
 
@@ -383,10 +345,10 @@ the same manual calls ambiguous by name. Both concepts annualise and both
 exclude charges, so the annuity is fed the right KIND of rate either way — which
 of the two Bulgaria reports is unsettled, and no publisher has written it down.
 
-**Not the APRC.** The APRC (`new_business.aprc.value_pct`, 2.77% vs 2.43% at
-2026-05) folds charges into an annualised figure; feeding it into the annuity
-compounds them monthly as if they were interest and overstates the payment.
-**APRC is for comparing, the charge-free rate is for computing.**
+**Not the APRC.** The APRC (`new_business.aprc.value_pct`) sits above the
+charge-free rate because it folds charges into an annualised figure; feeding it
+into the annuity compounds them monthly as if they were interest and overstates
+the payment. **APRC is for comparing, the charge-free rate is for computing.**
 
 **Not the outstanding-stock rate either.** `mortgage.json` carries a third
 figure — the БНБ rate on the existing housing book — which is published, gated
@@ -406,40 +368,28 @@ maxAffordPrice = maxAffordLoan / (1 − minDownPaymentPct / 100)
 
 All three inputs come from `mortgage.json → lending_limits`:
 
-| Input | Value | Where it comes from |
-|---|---|---|
-| `minDownPaymentPct` | **15%** | `100 − LTV-O`; БНБ caps LTV-O at 85% |
-| `term` max | **30 years** | БНБ caps mortgage maturity at 30 years |
-| `prudentDstiPct` | **30%** of net | our line, stricter than the legal 50% |
+| Input | Where it comes from |
+|---|---|
+| `minDownPaymentPct` | `100 − ltv_max_pct`; БНБ cap the loan-to-value on origination |
+| `term` max | `maturity_max_years`; БНБ cap the maturity |
+| `prudentDstiPct` | `prudent_dsti_pct` — **30% of net**, our line, stricter than the DSTI-O ceiling БНБ permit |
 
-So 15% down is the largest loan a BG bank may legally write against a given
-price, and the term input is clamped at 30 years because a longer mortgage
-cannot be originated in Bulgaria.
+So the down payment is the smallest a BG bank may legally lend against, and the
+term input is clamped because a longer mortgage cannot be originated in
+Bulgaria.
 
 ### The affordability line is deliberately unflattering
 
-БНБ caps DSTI-O — debt service over monthly net income — at **50%**, and BG
-borrowers average **~38.5%**. We draw the line at **30%** and show all three,
-because a payment a bank will approve is not a payment that leaves room to live.
+DSTI-O is debt service over monthly net income. We draw the line at **30% of
+net** and show it beside both published figures — the ceiling БНБ permit
+(`dsti_max_pct`) and the average BG borrowers actually carry
+(`observed_weighted_avg_dsti_pct`) — because a payment a bank will approve is
+not a payment that leaves room to live.
 `test_mortgage.py::test_our_guidance_line_is_stricter_than_the_regulator_and_the_market`
-asserts `30 < 38.5 < 50`.
+asserts that ordering: our line below the observed average, below the cap.
 
-Worked example, on the payloads published at 2026-08-10 (Sofia median
-€2,505/m², 70 m², Sofia average gross €1,915 → net €1,486, AAR 2.41%, 25
-years). **Dated, because it is a snapshot and not a claim about today** — every
-figure in it moves with the next refresh, and an example that says "current"
-goes on saying it:
-
-```
-price          €175,350
-down payment    €26,302   (15%)
-loan           €149,048
-payment            €662/mo  = 44.5% of net → over our 30% line
-affordable      €118,098  ≈ 47 m² at the 30% line
-```
-
-**The payment is the annuity and nothing else**, which is what the 44.5% is a
-share of. Part of what the ГПР folds in beside it is one-off — the valuation,
+**The payment is the annuity and nothing else**, which is what the share of net
+is computed on. Part of what the ГПР folds in beside it is one-off — the valuation,
 arrangement — and part runs monthly alongside the instalment: property insurance
 is mandatory on a mortgaged home, life cover is often required or required for
 the advertised rate, and the account the instalment is collected from usually
@@ -477,8 +427,8 @@ APRC may differ across countries», so the set is not one this project can
 enumerate for Bulgaria from anything either publisher has written.
 
 БНБ's DSTI-O is debt service too, so those costs sit outside the regulator's
-ratio as well and the comparison against 50% is like for like. The gap is
-between the ratio and the reader's month, not inside the ratio.
+ratio as well and the comparison against their ceiling is like for like. The gap
+is between the ratio and the reader's month, not inside the ratio.
 
 ## Gross ↔ net (BG payroll)
 
@@ -487,11 +437,11 @@ payslip. Everything that compares the user against a published wage needs the
 **gross**, so the SPA inverts. Parameters come from `payroll.json`; the maths is
 `mirror.js`.
 
-Forward (`bgNetSalary`), for gross *G*, employee rate *R* = 13.78%, flat tax
-*T* = 10%, insurance ceiling *C* = €2,300
-(`payroll.json#max_insurable_income_eur`, which is where the figure below has to
-be read back from — a ceiling written here and nowhere else goes stale one
-statute later while the worked example beside it stays right):
+Forward (`bgNetSalary`), for gross *G*, employee contribution rate *R*
+(`employee_contrib_rates.total`), flat tax *T* (`income_tax_rate`) and insurance
+ceiling *C* (`max_insurable_income_eur`) — all three read from the payload every
+run, because a rate or a ceiling written into this file goes stale one statute
+later while the prose around it goes on reading as though it were checked:
 
 ```
 insurance = min(G, C) × R          ← the CEILING applies here
@@ -505,7 +455,7 @@ net       = G − insurance − tax
 Because the ceiling caps insurance but not tax, the inverse has two branches:
 
 ```
-G ≤ C:   G = net / (1 − R − T(1 − R))  = net / 0.77598
+G ≤ C:   G = net / (1 − R − T(1 − R))
 G > C:   G = (net + C·R·(1 − T)) / (1 − T)
 ```
 
@@ -516,11 +466,11 @@ check is the whole safeguard, and it is cheap.
 Taking the first branch unconditionally is a real, shipped defect in this
 class of calculator, not a hypothetical one. It is the branch that reads as
 obviously correct, and it *is* correct up to the ceiling; past it the insurance
-stops growing while the formula keeps assuming it does. For €2,100 net it
-returns €2,706.26 — exactly `2100 / 0.77598` — where the answer that pays
-€2,100.00 to the cent is **€2,650.27**. The tell is visible without knowing
-which is right: run €2,706.26 forward and it pays €2,150.38, so the deduction
-column printed under that gross does not add up to the net it was asked for.
+stops growing while the formula keeps assuming it does, so the gross it reports
+is too high by the contributions nobody owes. The tell is visible without
+knowing which answer is right: run that gross back through `bgNetSalary` and it
+pays more than the net asked for, so the deduction column printed under it does
+not add up.
 
 The error is one-directional, grows with salary, and appears only once the
 gross clears the ceiling — which is the band where nobody re-checks, because
@@ -538,16 +488,17 @@ rules make it checkable rather than decorative:
 1. **Each total is computed from the rounded figures above it**, not from full
    precision, so the column a reader adds up by hand is the column that
    balances.
-2. **The five fund lines are allocated by largest remainder**, so they sum
-   exactly to the contributions total. Rounding each line on its own does not:
-   at a gross of €601 the five lines round to €82.81 under a stated total of
-   €82.82, because sickness-maternity's 8.4114 loses its remainder and nothing
-   gives it back. Roughly one gross in every €2.50 of the range does this, so a
-   handful of round salaries will not surface it and the test sweeps.
+2. **The fund lines are allocated by largest remainder**, so they sum exactly to
+   the contributions total. Rounding each line on its own does not: a fund whose
+   cents fall just under the rounding point loses its remainder and nothing
+   gives it back, leaving the lines a cent short of the total stated above them.
+   It happens at a large minority of the grosses in the range, so a handful of
+   round salaries will not surface it and the test sweeps.
 
 `bgPayslipFromNet` additionally tries both cents either side of the inverted
-gross and keeps the one that reproduces the typed net — for €2,100 the exact
-inverse is €2,650.2733, and rounding it up works out a cent high.
+gross and keeps the one that reproduces the typed net — the exact inverse
+rarely lands on a whole cent, and rounding it the obvious way works out a cent
+off.
 
 **Full precision is still what everything else uses.** `bgNetSalary` is
 unrounded and remains the input to every comparison (the област comparator, the
@@ -559,18 +510,12 @@ rounding.
 
 The insurance ceiling caps one contract's contribution base. It is not a
 household allowance, so a household's gross is the sum of its earners' grosses
-and never the inverse of their combined net:
+and never the inverse of their combined net.
 
-| Two earners, €2,000 gross each | |
-|---|---|
-| each takes home | €1,551.96 |
-| together | €3,103.92 |
-| **inverted as one salary** | **€3,765.75 gross** |
-| **summed per contract** | **€4,000.00 gross** |
-
-The single inversion applies one ceiling to two people and lands €234 a month
-low. Nothing about the wrong figure looks wrong — it sits inside every plausible
-band — and the error grows with the household.
+Inverting the combined net as one salary applies one ceiling to two people, and
+lands the household's gross low by hundreds of euro a month once either earner
+clears it. Nothing about the wrong figure looks wrong — it sits inside every
+plausible band — and the error grows with the household.
 
 So `mirror.js#bgHouseholdPayroll` is the only entry point for more than one
 income: it maps `bgPayslipFromNet` over the earners and adds the columns
@@ -604,8 +549,9 @@ knows is not something to guess at, so the pay field takes both and
 `view/payroll.js#netsOf` is the **only** place one becomes the other. Everything below
 it — the basket, rent as a share of pay, the 30%-of-net mortgage line, the
 position on the earnings ladder — is a statement about take-home, and each is
-wrong by around 29% when fed a gross. The mortgage one is wrong in the direction
-that calls a home affordable, which `AGENTS.md` forbids in as many words.
+wrong by the whole deduction wedge when fed a gross. The mortgage one is wrong
+in the direction that calls a home affordable, which `AGENTS.md` forbids in as
+many words.
 
 The amounts travel inside a `pay` object carrying `{ basis, amounts }`, so an
 amount cannot reach a function without saying what it is. In gross mode the
@@ -622,11 +568,11 @@ edits it is its own kind of wrong.
 ### A household's raise is weighted by what they were paid BEFORE
 
 Each income carries its own raise, and the household's figure is
-`Σ net_now / Σ net_before − 1` — not the average of the rates. Two earners on
-€1,000 today, one of whom got +20% and one nothing, went from €1,833.33 to
-€2,000: a rise of **9.09%**, where the plain average says 10%. The
-overstatement always flatters, because the earner who got the rise is the one
-whose *current* pay is inflated by it.
+`Σ net_now / Σ net_before − 1` — not the average of the rates. Take two earners
+on the same pay today, one of whom got a rise and one nothing: the plain average
+of the two rates comes out above the household's real rise, because the earner
+who got the rise is the one whose *current* pay is inflated by it. The
+overstatement always flatters.
 
 In gross mode the before-and-after are converted to net **separately**, so a
 10% rise on a contract that clears the ceiling is correctly worth more than 10%
@@ -648,9 +594,9 @@ Bulgaria has two official inflation gauges:
   different treatment of owner-occupied housing, covering resident households
   only.
 
-June 2026: HICP **5.2%** vs national CPI **5.4%**. The largest per-category gap
-is transport (+11.0% vs +16.8%), a genuine methodological difference. The
-*ranking* agrees — transport is the fastest riser in both.
+The two land a little apart at the headline and further apart in some divisions
+— a genuine methodological difference, not an error, and one that leaves the
+*ranking* of the divisions broadly agreeing.
 
 **We keep one headline number.** A second competing figure confuses; instead
 the in-app explainer says in plain language why НСИ's number can differ. We do
@@ -663,46 +609,45 @@ take-home against НСИ's published average for the NACE Rev 2 section they
 picked, both net, `(net − ref) / ref` rounded to whole percent. Nothing else.
 
 **A rank is not available at that granularity and never will be from the current
-upstreams.** Probed 2026-08-06: `earn_ses_monthly` carries BG at
-no NACE section at all; `nace_r2=J` returns an empty `value` map over a
-`nace_r2` dimension of size 0, and the five categories the cube does carry for
-BG are broad groupings, of which only the whole-economy one is populated at the
-2022 vintage
+upstreams.** Probed 2026-08-06: `earn_ses_monthly` carries BG at no NACE section
+at all; `nace_r2=J` returns an empty `value` map over a `nace_r2` dimension of
+size 0, and the categories the cube does carry for BG are broad groupings, of
+which only the whole-economy one is populated
 ([`data-sources.md`](./data-sources.md) §"gross wage by economic activity" has
 the probes). So the site can report a distance from an average and cannot report
 a position in a distribution.
 
-**The two are not close, and the difference runs against the reader.** Earnings
-are right-skewed, so an average sits well above the middle. Read off the
-published SES shape in `salary_dist.json`:
+**The average and the middle are not close, and the difference runs against the
+reader.** Earnings are right-skewed, so an average sits well above the middle.
+Read off the published SES shape in `salary_dist.json`:
 
-| | gross | standing |
+| | Field | Standing |
 |---|---|---|
-| SES mean | 949 | published |
-| SES median (P50) | 705 | published |
-| median ÷ mean | **0.7429** | inputs are Eurostat's, **the division is ours** — the card shows both published figures and attributes the ratio to us |
-| the mean's own rung | **P66** | **modelled** — see below |
+| SES mean | `shape.ses_mean` | published |
+| SES median | `shape.ladder_ses.P50` | published |
+| median ÷ mean | `meanRungPosition#medianPct` | inputs are Eurostat's, **the division is ours** — the card shows both published figures and attributes the ratio to us |
+| the mean's own rung | `meanRungPosition#cut` | **modelled** — see below |
 
-So someone €500 below their sector's average may still be paid more than most
+So someone well below their sector's average may still be paid more than most
 people in it, and a card reporting only the gap would tell them the opposite.
 
 **The two figures are not equally solid, and the copy must not say them in one
 voice.** Eurostat publish D1, the median and D9 for BG and nothing between, so
-`SES_SURVEYED_CUTS` is `[10, 50, 90]`. The mean (949) falls between P60
-(838.99) and P70 (1010.66) — **both interpolated**, piecewise-lognormal in the
-normal quantile. So €949 against €705 is two published numbers, and "the average
-sits near the 66th rung" is read off modelled ones.
+`SES_SURVEYED_CUTS` is `[10, 50, 90]`. The mean falls between two rungs that are
+**both interpolated**, piecewise-lognormal in the normal quantile. So the mean
+against the median is two published numbers, and "the average sits near the Nth
+rung" is read off modelled ones.
 
-**The card shows the pair and derives one figure from it, not two.** `949` and
-`705` go on screen as published, with the sentence a reader needs to use them —
-half of employees earn less than the median — and the only number computed here
-is the rung. The median-to-mean ratio (`meanRungPosition#medianPct`, 74%) makes
-the same point one step further from the evidence, and stating both put two of
-our own percentages in a four-line caveat that a reader has to hold at once. Two
-published levels are easier to check than a ratio between them and easier to
-read than either. `COPY.sectorAverageFlatters` attributes the rung to us and
-dates the survey, and `verify_copy.mjs` §"the calibration states the skew in
-words and puts no level on screen" fails if either goes.
+**The card shows the pair and derives one figure from it, not two.** The mean
+and the median go on screen as published, with the sentence a reader needs to
+use them — half of employees earn less than the median — and the only number
+computed here is the rung. The median-to-mean ratio makes the same point one
+step further from the evidence, and stating both put two of our own percentages
+in a four-line caveat that a reader has to hold at once. Two published levels
+are easier to check than a ratio between them and easier to read than either.
+`COPY.sectorAverageFlatters` attributes the rung to us and dates the survey, and
+`verify_copy.mjs` §"the calibration states the skew in words and puts no level on
+screen" fails if either goes.
 
 What the modelling can and cannot move: a different interpolation between the
 published median and D9 shifts the rung by a few points, and cannot put the mean
@@ -713,16 +658,17 @@ measured; the exact rung is the illustration.
 **`mirror.js#meanRungPosition` publishes that correction, and it is exactly
 scale-invariant.** Re-levelling multiplies every rung and the mean by one
 factor, so the mean's rung is a property of the shape rather than of any
-particular average — P66 at anchors from €1,407 to €5,000, checked in
-`verify_mirror_math.mjs`. It reads Eurostat's ladder alone, so no НСИ figure and
-no payroll parameter enters it.
+particular average — one rung across every anchor `verify_mirror_math.mjs`
+sweeps. It reads Eurostat's ladder alone, so no НСИ figure and no payroll
+parameter enters it.
 
 **It takes no anchor, and that is deliberate.** Handed a sector average it would
 return a sector percentile — the figure the paragraph above says nobody
 publishes. There is no parameter to attempt it through, which is the same device
 `headlineRate` uses to stay unable to become Σ(w·r). Do not add one, and do not
-multiply a sector average by 0.7429 to produce a sector median: sector
-dispersions differ from the national one and nothing published says by how much.
+multiply a sector average by the national median-to-mean ratio to produce a
+sector median: sector dispersions differ from the national one and nothing
+published says by how much.
 
 ## The property market
 
@@ -734,12 +680,12 @@ it, which is exactly why nothing there rests on being trusted.
 **Every figure carries two links, and the second one is not a convenience.**
 Eurostat's databrowser opens a dataset with all of its units at once —
 `prc_hpi_hsnq` carries a count, two indices and three rates — so a reader
-following the table link under «16 227 dwellings sold» arrives at a view reading
-−19.8 for the same country and quarter, which is that dataset's
-quarter-on-quarter rate. One click from the page's argument to a figure that
-appears to contradict it. Deep-linking the unit would mean pinning a URL shape
-Eurostat do not document, so the answer is the `api_url` the payload already
-carries: it returns that figure and nothing else.
+following the table link under the dwellings-sold figure lands on a view whose
+default cell is that dataset's quarter-on-quarter rate for the same country and
+quarter. One click from the page's argument to a figure that appears to
+contradict it. Deep-linking the unit would mean pinning a URL shape Eurostat do
+not document, so the answer is the `api_url` the payload already carries: it
+returns that figure and nothing else.
 
 ### The average dwelling transaction
 
@@ -816,16 +762,16 @@ though they had not moved.
 `tipsho30` at the same unit is the same index divided by the national accounts
 deflator for private final consumption. **Both are Eurostat's, neither is
 computed here**, and they are published together because either one alone
-misleads: nominally the index sits far above its 2008 peak, deflated it sits
-below it, and a site whose whole subject is the gap between a number and what it
-buys cannot show only the first.
+misleads: the nominal line and the deflated one stand in different relations to
+the same pre-crisis peak, and a site whose whole subject is the gap between a
+number and what it buys cannot show only the first.
 
 The pair is drawn on one axis with nothing rescaled, which is a property the
 pipeline gates rather than the page assumes: **the four quarters of the base year
 each index names average to 100.** That identity is definitional, so anything
-else means the cube read is not the cube named — and `I15_Q` against `I25_Q` is
-the same series on two bases, both answering 200, one of them putting today at
-109 instead of 273.
+else means the cube read is not the cube named — `I15_Q` against `I25_Q` is the
+same series on two bases, and the levels they put today at differ by the whole
+rebasing factor.
 
 `tipsho30` has no `purchase` dimension. Eurostat deflate the total only, so
 there is no new-build/existing split to be had and nothing may imply one.
@@ -838,34 +784,34 @@ below_peak = (peak − latest) / peak × 100           (shortfallPct, null if no
 ```
 
 **An index level is an economist's object and the data was never the problem.**
-«272,63, при 100 за 2015 г.» asks a reader to hold three conventions at once —
-that an index carries no unit, that its anchor is a year somebody picked, and
-that 272,63 is a ratio written as though it were a quantity. Divided by the base
-it is defined against it becomes «×2,7 спрямо 2015 г.», which is a sentence. The
-chart's axis, its text alternative and the paragraph beside it are all in
-multiples; **the numbers table under it keeps the published index**, because
-that is the figure a sceptic checks against Eurostat's own table.
+A raw level printed «при 100 за базовата година» asks a reader to hold three
+conventions at once — that an index carries no unit, that its anchor is a year
+somebody picked, and that the level is a ratio written as though it were a
+quantity. Divided by the base it is defined against it becomes «×N спрямо
+базовата година», which is a sentence. The chart's axis, its text alternative
+and the paragraph beside it are all in multiples; **the numbers table under it
+keeps the published index**, because that is the figure a sceptic checks against
+Eurostat's own table.
 
 `indexTimesBase` takes the base as a parameter and has no default. `/100` would
 be right for `I15_Q` and wrong for `I25_Q` — the same measurement on a later
-base, putting today at about 109 — and the failure would be a plausible number
-rather than an error.
+base — and the failure would be a plausible number rather than an error.
 
 `shortfallPct` returns **null at or above the reference**, and that is the guard
 rather than a nicety. It feeds the one comparison this page can make that
-nothing else in Bulgaria publishes with sources attached — nominally the index
-is at its own highest, deflated it is below where it stood before the 2008 fall
-— and the reference is a series maximum, so the quarter that matters is the one
-the latest reading becomes that maximum. There the honest output is no sentence,
-not «0,0% под него» printed beside two identical numbers.
+nothing else in Bulgaria publishes with sources attached — where each index
+stands against the peak it fell from — and the reference is a series maximum, so
+the quarter that matters is the one the latest reading becomes that maximum.
+There the honest output is no sentence, not «0,0% под него» printed beside two
+identical numbers.
 
 **The base year is `price_index.base_year` and is never written into a
-sentence.** It was the literal «2015» in the chart's caption and in its text
-alternative while the payload carried it, and Eurostat rebase: the caption would
-have stayed on the page, beside a chart whose every digit was still correct,
-naming the wrong year. `verify_copy.mjs` §"the market page writes no year and no
-quarter into its own prose" holds the general form — every figure on that page
-is live, so it has no worked examples and no period belongs in its words.
+sentence.** Eurostat rebase, and a year typed into the chart's caption or its
+text alternative survives that: the caption stays on the page, beside a chart
+whose every digit is still correct, naming the wrong year. `verify_copy.mjs`
+§"the market page writes no year and no quarter into its own prose" holds the
+general form — every figure on that page is live, so it has no worked examples
+and no period belongs in its words.
 
 ### Eurostat's flags, and why the page draws them
 
@@ -874,8 +820,8 @@ apply to — `b` break in series, `e` estimate, `p` provisional, `d` definition
 differs. They are sparse: a quarter Eurostat did not flag has no entry, so the
 presence of one means something rather than being a default to filter.
 
-**A twenty-one-year line drawn unbroken across a break the publisher declared is
-a claim they declined to make**, on our behalf. The chart marks the break
+**A line drawn unbroken across a break the publisher declared is a claim they
+declined to make**, on our behalf. The chart marks the break
 quarters and the numbers table prints the letter per row, with a key naming only
 the letters the series actually carries — a legend for a marker that is nowhere
 on the chart is a question a reader cannot answer.
@@ -889,10 +835,10 @@ them into a cliff, which is the distortion this page exists not to make, and the
 way to keep it out is to leave no caller a floor to set.
 
 The clamp is `min(0, smallest)` rather than a constant zero, because Eurostat's
-annual rate ran from +34.6% to −26.8% and a plot that dropped its negative half
-would be describing a different market. What is invariant is that **the drawn
-scale contains zero**, which is what makes a bar twice as tall mean twice as
-much.
+annual rate has run tens of points either side of zero and a plot that dropped
+its negative half would be describing a different market. What is invariant is
+that **the drawn scale contains zero**, which is what makes a bar twice as tall
+mean twice as much.
 
 A plot whose figure is defined against a reference covers that reference as well
 as its data: the index chart's ×1 is the base every reading on it is a multiple
@@ -904,17 +850,17 @@ chart on the page, the drawn distances from the zero line to the smallest and th
 largest reading have to be in the same ratio as the published figures, which no
 floor can survive.
 
-Seven charts carry it — dwellings sold, the count's own year-on-year change
-against the price rate over the quarters they share, the index level with its
-deflated twin, the annual rate, the average deal split by purchase type, and the
-overburden share — plus a sparkline and a two-bar comparison per city, each of
-those columns on **one shared scale**, because six charts each drawn to its own
-range are six pictures of the same shape and comparing rows is the only reason to
-put a chart in a column.
+Every chart on the page carries it — dwellings sold, the count's own
+year-on-year change against the price rate over the quarters they share, the
+index level with its deflated twin, the annual rate, the average deal split by
+purchase type, and the overburden share — plus a sparkline and a two-bar
+comparison per city, each of those columns on **one shared scale**, because a
+column of charts each drawn to its own range is a column of pictures of the same
+shape and comparing rows is the only reason to put a chart in a column.
 
 Every chart is also published as a table inside a `<details>`. That is the WCAG
-text alternative, the only way to read one quarter off an eighty-five-quarter
-line, and what makes the page quotable — a `<title>` on each mark answers a
+text alternative, the only way to read one quarter off a line running back two
+decades, and what makes the page quotable — a `<title>` on each mark answers a
 pointer and leaves out touch, the keyboard and every screen reader. A `<details>`
 is a disclosure and not an input, so the rule that this page takes nothing from
 the reader is untouched.
@@ -937,9 +883,9 @@ that.
 
 **The extremes are the SERIES' own, never the drawn scale's.** `plotSeries`
 floors a chart's minimum at or below zero, which is right for an axis and wrong
-here: placed against zero, all six of these sit in the top fifth of their range
-and the strip says the same thing six times. `peak` and `trough` are the highest
-and lowest readings the publisher has actually printed.
+here: placed against zero, these rows bunch at the top of their tracks and the
+strip says the same thing once per row. `peak` and `trough` are the highest and
+lowest readings the publisher has actually printed.
 
 Out of range returns null rather than clamping, because the only legitimate call
 places a series' own latest against that same series' own extremes — a value
@@ -949,10 +895,11 @@ end of the track looking exactly like a record. A series shorter than
 empty cell on a strip of positions reads as a position.
 
 **A series whose value does not read on its own does not get a row.** Every
-value the strip prints stands alone — a count, «×2,7», «+14,8%», «6,9%» — so the
-position beside it adds a second fact rather than needing one. An index defined
-against a reference the row cannot print would read as a verdict instead: a dot
-at one end of a labelled line, with the level it is measured from nowhere on it.
+value the strip prints stands alone — a count, a multiple, a change, a share —
+so the position beside it adds a second fact rather than needing one. An index
+defined against a reference the row cannot print would read as a verdict
+instead: a dot at one end of a labelled line, with the level it is measured from
+nowhere on it.
 `verify_view_market.mjs` holds every row to one of the four units the column can
 write without a reference beside it.
 
