@@ -5,10 +5,14 @@
        the tab icon, the page and the share card all agree.
 
        Text-free by design: the mark says what the product does, not what it
-       is called, so a brand change leaves the artwork alone. Colours are the
-       light-theme --muted / --real tokens. -->
+       is called, so a brand change leaves the artwork alone.
+
+       The palette and the geometry are `scripts/make_og_image.py`'s: the same
+       twenty-two units, drawn there as favicon.ico and the three PNG sizes for
+       every surface that cannot read an SVG. Two drawings of one mark drift,
+       and they drift in the slot a reader recognises the site by. -->
   <rect width="22" height="22" rx="3" fill="#ECEEE8"/>
-  <rect x="3" y="7" width="4" height="12" rx="1" fill="#899085"/>
+  <rect x="3" y="7" width="4" height="12" rx="1" fill="#676E64"/>
   <rect x="15" y="3" width="4" height="16" rx="1" fill="#1C6B54"/>
   <path d="M7 19 H15" stroke="#1C6B54" stroke-width="1.4" stroke-dasharray="2 2" fill="none"/>
 </svg>
