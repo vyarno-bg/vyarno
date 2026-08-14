@@ -182,24 +182,13 @@ provider's identity reachable from every page). A page that declares its own
 `<footer>` fails `every_page_mounts_the_shared_footer_and_none_declares_its_own`,
 and a new build entry belongs in that test's list in the commit that adds it.
 
-`SiteHeader.svelte` is shared for a different reason, and it is worth stating
-because it decides what may go in it. **It is a control bar, and a control that
-behaves differently on one page than on another is a control a reader has to
-learn twice.** The language link, the theme button and the skip target are the
-same three affordances on all six entries, so they are written once. What
-legitimately differs is only which page you are on, which is the two props:
-
-| Prop | What it decides |
-|---|---|
-| `page` | the Bulgarian path — where the language control points, whether the wordmark jumps to `#main` or navigates home, and which route out is offered. `null` on `/404.html`, which is served for a path that matched nothing and therefore has no counterpart in the other tree |
-| `tagline` | the `{bg, en}` pair under the wordmark |
-
-The route out follows from `page` rather than from a third prop: `/` is the page
-every other one points back to, so it is the one that needs pointing OUT of — two
-content pills where the others carry one «← към калкулатора».
-
-A page whose masthead needs a third prop is a page asking for a second header.
-Say so out loud before adding one.
+`SiteHeader.svelte` is shared because it is a control bar, and a control that
+behaves differently per page is one a reader learns twice. It takes two props —
+`page` (the Bulgarian path: where the language link points, whether the wordmark
+jumps to `#main` or goes home, which route out shows; `null` on `/404.html`) and
+`tagline` (the `{bg, en}` under the wordmark). A masthead that needs a third
+prop is a page asking for a second header — `site/AGENTS.md` §"`components/` is
+the calculator's" is why.
 
 ## The five-layer split
 
@@ -547,6 +536,42 @@ claims the copy makes; they are not a substitute for exercising a formula.
 
 **The standard a new test has to meet: break the function on purpose and watch
 it go red.**
+
+## `src/lib/plot.js` — where a mark goes
+
+Pure geometry, a sibling of `mirror.js` rather than part of it: give it numbers
+and a box and it says where the marks go. Nothing in it knows about property,
+wages or inflation, which is the line between the two files.
+
+| Export | What it answers |
+|---|---|
+| `span` · `plotY` · `plotX` | a scale's range; a value's y in a box `h` tall; a point's x in one `w` wide |
+| `columnX` · `columnW` | a column's slot and its width, floored so a long series still draws |
+| `tickAt` | a tick's height as a PERCENTAGE of the plot |
+| `niceTicks` | an axis that ends on round numbers, and the values to label along it |
+| `yearTicks` | which years to mark on a time axis, and where each sits |
+| `sparkY` · `pathOf` | a value's y in the small box; a series as an SVG path |
+
+**Not a component, and the rule is why.** A component may keep display-shape
+helpers that cannot produce a wrong number on their own; axis labels are digits
+a reader reads and `niceTicks` decides them. Tested by `verify_plot.mjs`.
+
+**Every function takes its box**, because `/market/` draws one plot taller than
+the other five. `Market.svelte` binds them to its own 600-by-240 in six lines,
+so no call site spells the box out. The module's header carries the rest.
+
+## `src/lib/fig-table.css` — the table treatment two pages share
+
+Eight rules `/how/` and `/market/` had arrived at twice, byte for byte: the
+scroll box, its focus ring, the table's metrics, the cell padding and rule, the
+row-header weight, the cell colour, the numeric column, the marked row.
+
+A stylesheet rather than a component because Svelte scopes a component's styles
+to it, so a shared LOOK cannot be shared as one — and the fifty-one tables agree
+on the furniture and on nothing else. The cost is global selectors with no
+unused-selector warning behind them; only the two entries that need it import
+it, and every page-specific rule stays in its own component, one specificity
+step above.
 
 ## `src/lib/view/` — the derived values
 

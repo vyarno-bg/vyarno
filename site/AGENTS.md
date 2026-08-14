@@ -35,6 +35,13 @@ data.js               WHICH published number, and what if it is missing
         → components/ where it goes, what colour, which language
 ```
 
+**`plot.js` sits beside `mirror.js` and is not on that path.** It is pure too,
+and it takes numbers and a box and says where the marks go — nothing in it knows
+about property, wages or inflation, which is why it is not domain math. It is
+not a component either, and the reason is the rule below rather than taste: a
+tick VALUE is digits a reader reads off an axis, so axis arithmetic is exactly
+what a component may not keep.
+
 **`view/` is ten modules, one per subject, each paired with the suite of the
 same stem** — `view/home.js` with `verify_view_home.mjs`, and so on. There is no
 barrel: a component imports from the subject it is reaching into, so an import
@@ -47,7 +54,9 @@ bundle measurements included.
 | a formula — a rate, a real-terms change, an annuity                    | `mirror.js`           | `verify_mirror_math.mjs` (`verify_net_salary.mjs` for payroll) |
 | which published field feeds that formula, which fallback, which anchor | `view/<subject>.js`   | `verify_view_<subject>.mjs`, the suite of the same stem        |
 | a fallback chain over the payloads                                     | `data.js`             | `verify_data_contracts.mjs`                                    |
+| an axis, a tick, a coordinate — anything a chart is drawn with         | `plot.js`             | `verify_plot.mjs`                                              |
 | markup, colour, or a language choice                                   | `components/*.svelte` | `verify_render_*.mjs`, wiring in `verify_wiring.mjs`           |
+| chrome every page mounts, or a look two pages share                    | `lib/` (below)        | `verify_render_layout.mjs` · `verify_render_shell.mjs`         |
 
 **Never in a `$derived`.** Every `$derived` in `calculator.svelte.js` is a call
 into a `view/` module or `mirror.js` with named arguments — that layer has no pure
@@ -66,6 +75,24 @@ picks WORDS stays in the component that renders it. Its mutating handlers are
 arrow-function class fields, never methods: a template that passes a method
 bare hands over a detached function whose `this` is `undefined`, and that fails
 silently inside an event handler.
+
+## `components/` is the calculator's. `lib/` is everyone's
+
+The split is by AUDIENCE, and getting it wrong is how six copies of one masthead
+happened.
+
+- **`components/*.svelte`** takes `calc` or a prop only `/` produces. Nothing
+  else imports them — a component another entry needs is not the calculator's.
+- **`lib/*.svelte`** is what more than one entry mounts: `SiteFooter` (the
+  attribution and ЗЕТ чл. 4 identity every page owes) and `SiteHeader` (a
+  control bar, and a control that differs per page is one a reader learns
+  twice). Before adding a third prop to `SiteHeader`, stop: it takes `page` and
+  `tagline`, and a masthead that needs more is a page asking for a second header.
+- **`lib/*.css`** is a look two entries share — `fig-table.css` on `/how/` and
+  `/market/`. A stylesheet and not a component because Svelte scopes a
+  component's `<style>` to it, so a shared LOOK cannot be a shared component;
+  reach for a component only when the MARKUP is the same thing. `docs/site.md`
+  carries the cost of the global selectors and how it is bounded.
 
 ## Copy
 

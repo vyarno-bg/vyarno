@@ -46,6 +46,7 @@ to do to count is §"The standard a test has to meet".
 | `pipeline/tests/test_*.py` | pytest | Connectors, transforms, publish gates, the models, the CLI |
 | `pipeline/tests/test_published_contracts.py` | pytest | The JSON committed under `data/published/`, re-checked offline |
 | `site/scripts/verify_mirror_math.mjs` · `verify_net_salary.mjs` | `node:test` | Every formula, against worked examples |
+| `site/scripts/verify_plot.mjs` | `node:test` | The geometry every chart is drawn with — axis, ticks, coordinate mapping |
 | `site/scripts/verify_view_*.mjs` | `node:test` | Every derived value — which number feeds which formula, one suite per `src/lib/view/` module (§"Which `view/` module a test belongs to") |
 | `site/scripts/verify_copy.mjs` | `node:test` | Copy invariants, against the imported `COPY` object |
 | `site/scripts/verify_payload_prose.mjs` | `node:test` | Claims retired for being false, across the payloads' prose, `src/` and the entry shells (§"The second case") |
@@ -143,6 +144,7 @@ documentation actually has.
 | A CLI arm or an exit code | `test_cli*.py` |
 | A published-JSON field | `test_published_contracts.py`, and `verify_data_contracts.mjs` if the SPA reads it |
 | A formula in `mirror.js` | `verify_mirror_math.mjs` (or `verify_net_salary.mjs` for payroll) |
+| An axis, a tick or a coordinate in `plot.js` | `verify_plot.mjs` |
 | A derived value in a `view/` module | `verify_view_<stem>.mjs`, the suite of the same stem — §"Which `view/` module a test belongs to" |
 | A fallback chain in `data.js` | `verify_data_contracts.mjs` |
 | A number or date the UI formats | `verify_format.mjs` |
