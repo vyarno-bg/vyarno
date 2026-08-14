@@ -29,8 +29,9 @@
    * on a page that renders no inputs is where an input eventually gets added.
    */
   import { onMount } from "svelte";
-  import { lang, theme, chooseLang, langHref, toggleTheme } from "./lib/stores.js";
+  import { lang } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
+  import SiteHeader from "./lib/SiteHeader.svelte";
   import DataLate from "./components/DataLate.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
@@ -179,67 +180,7 @@
   <title>{t(COPY.howTitle, $lang)}</title>
 </svelte:head>
 
-<!-- The skip link, and it earns its place here more than on the calculator: the
-     header is four tab stops and the contents list below it is seven more, so a
-     keyboard reader arriving at a reference page passes eleven controls before
-     the first sentence. `#main` carries the same `scroll-margin-top` as the
-     sections, which is what keeps the sticky header off the landing. -->
-<a class="skip" href="#main">
-  <span class="l-bg">{COPY.skipK.bg}</span>
-  <span class="l-en">{COPY.skipK.en}</span>
-</a>
-<header class="site">
-  <div class="wrap bar">
-    <a class="brand" href="/">
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-        <rect x="2" y="6" width="4" height="14" rx="1" fill="var(--muted)" />
-        <rect x="16" y="2" width="4" height="18" rx="1" fill="var(--real)" />
-        <path
-          d="M6 20 L16 20"
-          stroke="var(--real)"
-          stroke-width="1.5"
-          stroke-dasharray="2 2"
-          fill="none"
-        />
-      </svg>
-      <span class="wm">
-        <span class="l-bg">Вярно</span>
-        <span class="l-en">Vyarno</span>
-        <small>
-          <span class="l-bg">числата</span>
-          <span class="l-en">the numbers</span>
-        </small>
-      </span>
-    </a>
-    <div class="controls">
-      <a class="pill back l-bg" href={langHref("/", "bg")}>← към калкулатора</a>
-      <a class="pill back l-en" href={langHref("/", "en")}>← to the calculator</a>
-      <button class="pill" onclick={toggleTheme} aria-label="Toggle theme">
-        {$theme === "dark" ? "☀" : "☾"}
-      </button>
-      <!-- The language control is a LINK, not a button, and there is one per
-           language: the two languages are two URLs now, and a handler that
-           flipped a store would be unreachable with JavaScript off — this entry
-           hardcodes its own `data-lang` and nothing on the served page can
-           change it. `chooseLang` records the choice on the way out; the
-           navigation happens whether or not it runs. -->
-      <a
-        class="pill l-bg"
-        href={langHref("/how/", "en")}
-        hreflang="en"
-        aria-label="смени езика"
-        onclick={() => chooseLang("en")}>EN</a
-      >
-      <a
-        class="pill l-en"
-        href={langHref("/how/", "bg")}
-        hreflang="bg"
-        aria-label="toggle language"
-        onclick={() => chooseLang("bg")}>BG</a
-      >
-    </div>
-  </div>
-</header>
+<SiteHeader page="/how/" tagline={COPY.taglineFigures} />
 
 <!--
   One stat block, used about a dozen times below.
@@ -1199,70 +1140,6 @@
 <SiteFooter page="how" />
 
 <style>
-  /* The legal and support pages' chrome, and deliberately the same one: three
-     pages a reader reaches from the same footer row should not each have their
-     own header. */
-  header.site {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--hdr);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
-  }
-  .bar {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    height: 54px;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-weight: 700;
-    font-size: var(--fs-h3);
-    letter-spacing: -0.01em;
-    text-decoration: none;
-  }
-  .brand .wm {
-    display: flex;
-    flex-direction: column;
-    line-height: 1;
-  }
-  .brand small {
-    font-family: var(--mono);
-    font-weight: 500;
-    font-size: var(--fs-micro);
-    color: var(--muted);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    display: block;
-    margin-top: 2px;
-  }
-  .controls {
-    margin-left: auto;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .pill {
-    font-family: var(--mono);
-    font-size: var(--fs-small);
-    padding: 5px 9px;
-    border: 1px solid var(--control-line);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--ink-2);
-    cursor: pointer;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  .pill:hover {
-    border-color: var(--muted);
-    color: var(--ink);
-  }
-
   main.how {
     padding: 30px 0 10px;
     max-width: 760px;
@@ -1428,24 +1305,6 @@
     outline: 2px solid var(--real);
     outline-offset: 2px;
   }
-  /* Skip link — off-screen until focused, the pattern SiteHeader.svelte uses on
-     the calculator. Sharing the class rather than the rule is not possible: a
-     Svelte component's styles are scoped to it. */
-  .skip {
-    position: absolute;
-    left: -999px;
-  }
-  .skip:focus {
-    left: 16px;
-    top: 10px;
-    z-index: 99;
-    background: var(--surface);
-    padding: 8px 12px;
-    border: 1px solid var(--ink);
-    border-radius: 6px;
-    color: var(--ink);
-    text-decoration: none;
-  }
   .fig-table {
     width: 100%;
     border-collapse: collapse;
@@ -1504,11 +1363,5 @@
   .fig-table a {
     color: var(--real-ink);
     text-decoration: none;
-  }
-
-  @media (max-width: 560px) {
-    .brand small {
-      display: none;
-    }
   }
 </style>

@@ -63,7 +63,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
     │                gen-version · strip-sourcemaps · check-identity
     └── src/         App.svelte · How.svelte · Market.svelte ·
                      Legal.svelte · Support.svelte · NotFound.svelte
-        ├── components/  the calculator's parts: SiteHeader · DataBanner ·
+        ├── components/  the calculator's parts: DataBanner ·
         │                DataPanel · DataLate (the overdue line /how/ and
         │                /market/ carry, where there is no panel to open) ·
         │                InputsCard · PayField · BasketEditor · PayslipTable ·
@@ -88,6 +88,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
                      stores.js     lang + theme, persisted
                      build.js      the build stamp (__BUILD_ID__, or "dev")
                      tokens.css · card.css · disclosure.css · result-row.css
+                     SiteHeader.svelte  wordmark + route out + theme + language
                      SiteFooter.svelte  attribution + legal links + build stamp
 ```
 

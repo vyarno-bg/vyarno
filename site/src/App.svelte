@@ -26,7 +26,10 @@
   // attribution and the legal links cannot be present on one page and missing
   // from another. See lib/SiteFooter.svelte.
   import SiteFooter from "./lib/SiteFooter.svelte";
-  import SiteHeader from "./components/SiteHeader.svelte";
+  // The masthead is shared with the same five, for a different reason — a
+  // control bar that behaves differently per page is one a reader learns twice.
+  // See lib/SiteHeader.svelte.
+  import SiteHeader from "./lib/SiteHeader.svelte";
   import DataBanner from "./components/DataBanner.svelte";
   import NationalStrip from "./components/NationalStrip.svelte";
   import ExplainerBand from "./components/ExplainerBand.svelte";
@@ -179,7 +182,7 @@
   <title>{t(COPY.title, $lang)}</title>
 </svelte:head>
 
-<SiteHeader />
+<SiteHeader page="/" tagline={COPY.brandSmall} />
 
 <DataBanner
   dataReady={calc.dataReady}
