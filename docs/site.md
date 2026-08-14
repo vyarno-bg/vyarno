@@ -157,15 +157,39 @@ site/
         ├── support.js    # the donation rules — what may be offered
         ├── stores.js     # lang · theme · област · the opt-in memory
         ├── build.js      # the build stamp (__BUILD_ID__, or "dev")
+        ├── SiteHeader.svelte  # wordmark + route out + theme + language
         ├── SiteFooter.svelte  # attribution + legal links + build stamp
         └── tokens.css · card.css · result-row.css · disclosure.css
 ```
+
+**The two components under `lib/` are the two every page mounts**, and they are
+there rather than in `components/` for that reason: `components/` is the
+calculator's own parts, and a file six entries import is not one of them.
 
 `SiteFooter.svelte` is shared by every page on purpose: it carries the upstream
 attribution (a licence condition) and the legal links (ЗЕТ чл. 4 wants the
 provider's identity reachable from every page). A page that declares its own
 `<footer>` fails `every_page_mounts_the_shared_footer_and_none_declares_its_own`,
 and a new build entry belongs in that test's list in the commit that adds it.
+
+`SiteHeader.svelte` is shared for a different reason, and it is worth stating
+because it decides what may go in it. **It is a control bar, and a control that
+behaves differently on one page than on another is a control a reader has to
+learn twice.** The language link, the theme button and the skip target are the
+same three affordances on all six entries, so they are written once. What
+legitimately differs is only which page you are on, which is the two props:
+
+| Prop | What it decides |
+|---|---|
+| `page` | the Bulgarian path — where the language control points, whether the wordmark jumps to `#main` or navigates home, and which route out is offered. `null` on `/404.html`, which is served for a path that matched nothing and therefore has no counterpart in the other tree |
+| `tagline` | the `{bg, en}` pair under the wordmark |
+
+The route out follows from `page` rather than from a third prop: `/` is the page
+every other one points back to, so it is the one that needs pointing OUT of — two
+content pills where the others carry one «← към калкулатора».
+
+A page whose masthead needs a third prop is a page asking for a second header.
+Say so out loud before adding one.
 
 ## The five-layer split
 

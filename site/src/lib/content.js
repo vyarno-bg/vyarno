@@ -197,6 +197,28 @@ export const COPY = {
   // control they cannot guess at from its content.
   themeToggle: { bg: "смени темата", en: "toggle theme" },
   langToggle: { bg: "смени езика", en: "toggle language" },
+  // The one route out of every page that is not the calculator, in the slot
+  // the calculator uses for its two routes in. The arrow is part of the string
+  // rather than a pseudo-element, because it is a direction and not decoration:
+  // read out, «← към калкулатора» and «към калкулатора» say the same thing, and
+  // seen, the arrow is what separates a way back from a fifth destination.
+  backToCalcK: { bg: "← към калкулатора", en: "← to the calculator" },
+  // What the masthead's wordmark is subtitled with, page by page. A tagline is
+  // a prop rather than markup inside the header because the header is shared
+  // and this is the one word in it that is about WHICH page you are on — and a
+  // string JavaScript passes as a prop belongs here rather than inlined in a
+  // template (`site/AGENTS.md` §Copy).
+  //
+  // `brandSmall` above covers the calculator and `/404.html`: the first is the
+  // page the promise is about, and the second is served for a path that matched
+  // nothing, so naming a subject it does not have would be a subtitle that
+  // lies. `/how/` and `/market/` share one key rather than holding two copies of
+  // «числата» — they are the two pages of published figures, and a header that
+  // called them different things would be claiming a distinction the tables do
+  // not make.
+  taglineFigures: { bg: "числата", en: "the numbers" },
+  taglineLegal: { bg: "правна информация", en: "legal information" },
+  taglineSupport: { bg: "подкрепа", en: "support" },
 
   // Inputs card
   yourNumbers: { bg: "Твоите числа", en: "Your numbers" },

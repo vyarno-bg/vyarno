@@ -60,7 +60,16 @@ const read = (...p) => readFileSync(join(SRC, ...p), "utf8");
  * happened; each time the fix was to widen this list, never to delete a test.
  */
 function calculatorSource() {
-  const parts = [read("App.svelte"), read("lib", "calculator.svelte.js")];
+  const parts = [
+    read("App.svelte"),
+    read("lib", "calculator.svelte.js"),
+    // The two `lib/` components the calculator mounts. `components/` is the
+    // calculator's own parts; what every page mounts lives beside the modules
+    // it is shared with, and naming those two here is what keeps a chrome
+    // invariant covered wherever the markup sits.
+    read("lib", "SiteHeader.svelte"),
+    read("lib", "SiteFooter.svelte"),
+  ];
   for (const name of readdirSync(join(SRC, "components")).sort()) {
     if (name.endsWith(".svelte")) parts.push(read("components", name));
   }
