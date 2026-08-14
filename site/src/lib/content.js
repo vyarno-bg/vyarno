@@ -2628,6 +2628,22 @@ export const COPY = {
     bg: "0 = без промяна спрямо година по-рано",
     en: "0 = no change on a year earlier",
   },
+  // The threshold is in the label, because a bar standing for "housing costs"
+  // is a bar a reader reads as a cost and this is a headcount over a line.
+  // «разполагаемия» and never a bare «дохода» — 40% of a gross figure is a
+  // different line, which `verify_payload_prose.mjs` holds every surface to.
+  mktPanelOverburden: {
+    bg: "дял от хората, които дават над 40% от разполагаемия си доход за жилище",
+    en: "share of people spending over 40% of their disposable income on housing",
+  },
+  // The direction, on the one chart here whose obvious reading is wrong: it is
+  // a ratio, and its fall happened while the bills in its numerator rose. Which
+  // end is the good end depends on whether the reader is over the line, so this
+  // says what moved and stops (P6).
+  mktRefOverburdenDown: {
+    bg: "надолу = по-малко хора над тази черта, а не по-малки сметки",
+    en: "down = fewer people over that line, not smaller bills",
+  },
   mktKeyNew: { bg: "ново строителство", en: "new builds" },
   mktKeyExisting: { bg: "съществуващи", en: "existing" },
   // A slot, never a written year: НСИ's city series starts where their workbook

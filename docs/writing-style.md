@@ -61,10 +61,18 @@ without its source link cannot be reviewed, only trusted.
 
 ## Code comments
 
-This codebase comments the reasoning rather than the mechanics, sometimes at
-length, and that is deliberate: a rule with no failure attached is one somebody
-will reasonably decide to relax. The bar is not brevity. It is that the comment
-says something the code cannot.
+This codebase comments the reasoning rather than the mechanics, and that is
+deliberate: a rule with no failure attached is one somebody will reasonably
+decide to relax. The comment has to say something the code cannot.
+
+**Five lines is the ceiling, and never more lines than the code under it.**
+Both halves bind — five lines over a two-line function is still a comment
+outweighing its subject. The tree has blocks that run past this and they are
+not a licence; edit one and it comes down to the cap with the rest of the file.
+Over the ceiling there is always a cut to make, and it is never the constraint
+or the number: it is the second telling of the same point, the worked example,
+the sentence restating the one above it. If it genuinely will not fit, the
+reasoning belongs in a doc and the comment names it in a clause.
 
 - **Comment the why.** `// 30% of net, deliberately stricter than the 50% БНБ
   permits`.
@@ -114,9 +122,9 @@ down at this length. A regex over prose cannot tell a comment narrating this
 repository's edit history from one describing an upstream that changed its
 publication regime, and a guard that fires on legitimate text is one somebody
 silences. The recipe: ask what the old version got **wrong**, then write that as
-something the code has to keep doing. Keep the numbers, keep
-the failure, keep the length — this repository comments reasoning on purpose
-and the bar is not brevity. Drop the tense.
+something the code has to keep doing. Keep the numbers and keep the failure —
+they are what the comment is for, and they fit inside the five lines. Drop the
+tense.
 
 **Two things this does not ban.** Naming a bug the code could plausibly
 reintroduce, which `testing-strategy.md` asks for — write it as the failure the
@@ -248,7 +256,8 @@ An anti-slop pass that flattens the house voice has done damage, not good.
 
 - **Em-dashes stay.** They are how this repo attaches a reason to a claim — the
   construction is on nearly every page and it is deliberate. Do not hunt them.
-- **Long why-comments stay**, for the reason above.
+- **The why stays.** Cutting a comment to the five-line cap means dropping the
+  retelling, never the constraint, the number or the failure it names.
 - **The Bulgarian stays Bulgarian.** Do not anglicise «Икономиката, честно», the
   publisher names, or the footer attribution — that footer is a licence
   condition of several upstreams, not decoration (`docs/legal.md`).

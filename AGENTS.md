@@ -218,14 +218,14 @@ knows.
   already on the calculator — reach for those before adding a parallel one. Read
   `git diff --stat` before you call something done: if a behaviour you can state
   in a sentence arrived as three hundred lines, most of them are a draft.
-- **Comments say why, never the mechanics.** Length is fine; this repository
-  comments reasoning on purpose. What is not fine is prose that outweighs what
-  it explains: **the reasoning lives in ONE place — the file that owns the
-  decision — and everywhere else names it in a clause.** Restated at four call
-  sites it is four things to keep true and three go stale in silence. A block
-  longer than the code under it is either carrying a failure worth that much,
-  with the numbers to prove it, or it is a first draft of itself. Cut it to the
-  constraint and the measurement.
+- **Comments say why, never the mechanics — in five lines or fewer, and never
+  more lines than the code under them.** Both halves bind. The tree has blocks
+  that run past this and they are not a licence; edit one and it comes down to
+  the cap with the rest of the file. What goes when you cut is the second
+  telling, never the constraint or the number. **The reasoning lives in ONE
+  place — the file that owns the decision — and everywhere else names it in a
+  clause**, because restated at four call sites it is four things to keep true
+  and three go stale in silence.
 - **A comment states the constraint, never the diff.** `// it used to be 92
   days`, `// this line previously named ilc_di01` — no comment here describes
   an earlier version of this code. Nothing checks it, so it is on you and on
