@@ -795,6 +795,10 @@ export const COPY = {
   // `rankLead` promises the rows add up to exactly the user's number — so the
   // remainder has to be on screen or the promise is false for anyone who
   // checks it with a calculator. {n} groups, {pp} their combined points.
+  // The accessible name for a ranked row's own name, which is a control: a
+  // screen reader otherwise meets «Транспорт и гориво, бутон» beside a link to
+  // Eurostat and has no way to tell the two destinations apart.
+  rankToRow: { bg: "Към „{c}“ в кошницата", en: 'Go to "{c}" in the basket' },
   rankRest: {
     bg: "останалите {n} групи заедно · {pp} пункта",
     en: "the other {n} groups together · {pp} points",

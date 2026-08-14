@@ -344,6 +344,37 @@ test("the route from the headline to the salary field lands on it", { skip }, as
   });
 });
 
+test("a ranked row sends the reader to the slider behind it", { skip }, async () => {
+  // The ranked list answers "which of the thirteen is my number made of" in the
+  // reader's own points, exactly — and it is a readout 3,500px from the
+  // controls. The route is what makes it navigation, so the assertion is that
+  // the row a reader tapped is the row they arrive at, focused: sending them to
+  // the basket generally is what the headline note already does.
+  await withApp(async (page, errors) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.waitForTimeout(200);
+
+    const row = page.locator(".rank .rankrow").first();
+    const code = await row.locator("a.vlink").innerText();
+    const cp = code.replace(/[^A-Z0-9]/g, "");
+    await row.locator("button.rk-to").click();
+    await page.waitForTimeout(300);
+
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.closest(".cat")?.id),
+      `cat-${cp}`,
+      `the top ranked row is ${cp} and the reader landed somewhere else`
+    );
+    const box = await page.locator(`#cat-${cp}`).boundingBox();
+    const height = page.viewportSize().height;
+    assert.ok(
+      box.y >= 0 && box.y + box.height <= height,
+      `${cp} sits at ${Math.round(box.y)}px in a ${height}px viewport — off screen`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the two official rates have a route between them, on one screen", { skip }, async () => {
   // The banner's official rate and the average-basket bar are visible together
   // on a 1100x1000 screen and differ for two compounding reasons — a flash

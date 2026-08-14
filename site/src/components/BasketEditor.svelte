@@ -252,7 +252,11 @@
   {#each calc.categories as c, i (c.cp_code)}
     {@const open = calc.openDivisions.has(i)}
     {@const edited = calc.splits[i] != null}
-    <div class="cat" class:open={open && calc.detailMode}>
+    <!-- The id is where a ranked row on the results card sends the reader:
+         `RankedContributions.svelte#toRow` says why the receipt is the
+         navigation. `cp_code` because it is published, unique and already this
+         block's key. -->
+    <div class="cat" id="cat-{c.cp_code}" class:open={open && calc.detailMode}>
       <div class="top">
         <span class="nm">
           {#if calc.detailMode && c.groups?.length}

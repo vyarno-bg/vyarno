@@ -83,6 +83,27 @@
    * do next.
    */
   let whyOpen = $state(false);
+
+  /**
+   * The row's own name, as the route to the control behind it.
+   *
+   * This list is the one place that answers "which of the thirteen is my number
+   * made of", in the reader's own points and exactly — and it is a readout,
+   * 3,500px from the sliders. Sending each row to its own slider makes the
+   * receipt the navigation for the instrument, so «транспорт и гориво +1,6
+   * пункта» is one tap from the control saying how much transport this
+   * household actually buys.
+   *
+   * Focus, then scroll, in `focusSalary`'s order and for a different reason: no
+   * keyboard is raised by a slider, but the row-level focus mark is what says
+   * on arrival which of thirteen the reader was sent to.
+   */
+  function toRow(code) {
+    const row = document.getElementById(`cat-${code}`);
+    if (!row) return;
+    row.querySelector("input")?.focus({ preventScroll: true });
+    row.scrollIntoView({ block: "center" });
+  }
 </script>
 
 <!-- WHAT'S PUSHING YOUR NUMBER UP
@@ -114,8 +135,23 @@
       <div class="rankrow" class:down={r.contributionPp < 0}>
         <div class="rankhead">
           <span class="rk">
-            <span class="l-bg">{r.division.bg_name}</span>
-            <span class="l-en">{r.division.en_name}</span>
+            <!-- Two destinations on one row, told apart by their glyph rather
+                 than by which words you tap: ↓ goes down this page, ↗ leaves
+                 for Eurostat. The name keeps `--ink-2`, so a column of five
+                 does not read as five links. -->
+            <button
+              type="button"
+              class="rk-to"
+              onclick={() => toRow(r.division.cp_code)}
+              aria-label={t(COPY.rankToRow, $lang, {
+                c: $lang === "bg" ? r.division.bg_name : r.division.en_name,
+              })}
+            >
+              <span class="l-bg">{r.division.bg_name}</span>
+              <span class="l-en">{r.division.en_name}</span><span class="to" aria-hidden="true"
+                >&nbsp;↓</span
+              >
+            </button>
             <a
               class="vlink"
               href={estatCatUrl(r.division)}
@@ -257,6 +293,27 @@
   }
   .rankhead .rk {
     color: var(--ink-2);
+  }
+  /* The name, as a control that does not look like five controls. It inherits
+     the row's ink and carries the affordance on the glyph alone; the underline
+     arrives on hover and focus, where it is unambiguously about this row. */
+  .rk-to {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .rk-to .to {
+    color: var(--real-ink);
+  }
+  .rk-to:hover,
+  .rk-to:focus-visible {
+    color: var(--ink);
+    text-decoration: underline;
   }
   .rankhead .rv {
     font-family: var(--mono);
