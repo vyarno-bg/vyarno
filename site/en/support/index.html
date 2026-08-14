@@ -82,7 +82,15 @@
       }
     </script>
 
+    <!-- The SVG serves the tab. The raster set serves everything that cannot
+       read one: Chrome paints the default globe in its history, its
+       restore-tabs card and its new-tab tiles for an SVG-only site, and iOS
+       crops apple-touch-icon to a square. One geometry, generated from the
+       same lockup as the OG card by scripts/make_og_image.py. -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#E8ECEF" />
     <link
       rel="preload"

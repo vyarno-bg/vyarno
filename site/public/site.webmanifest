@@ -1,0 +1,16 @@
+{
+  "name": "Вярно — икономиката, честно",
+  "short_name": "Вярно",
+  "description": "Личната ти инфлация, реалната ти заплата, данъкът, наемът и пътят до жилище — сметнато в браузъра ти от официални данни.",
+  "lang": "bg",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eceee8",
+  "theme_color": "#e8ecef",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

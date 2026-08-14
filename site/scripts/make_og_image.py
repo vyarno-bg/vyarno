@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Generate every bitmap the brand is drawn into, from one lockup.
 
-Run: `python3 scripts/make_og_image.py` from `site/`. It writes three files:
+Run: `python3 scripts/make_og_image.py` from `site/`. It writes:
 
     site/public/og-image.png   1200×630, the link-preview card
+    site/public/favicon.ico    16/32/48, the icon every surface can read
+    site/public/icon-180.png   the iOS home screen
+    site/public/icon-192.png   Android, and the manifest's small icon
+    site/public/icon-512.png   the installed app, and the splash
     docs/img/banner.bg.png     1200×348, the masthead of README.bg.md
     docs/img/banner.en.png     1200×348, the masthead of README.md
 
@@ -284,6 +288,49 @@ def lockup(c, top, strapline):
     c.text(strapline, 264, top + 190, SUB_SCALE, MUTED)
 
 
+# ---------------------------------------------------------------------------
+# The app icon — the mark alone, no wordmark, at the sizes surfaces ask for.
+#
+# `public/favicon.svg` is this same geometry in vector form and serves the tab.
+# These exist because a great many surfaces cannot read one: Chrome paints the
+# default globe in its history, its restore-tabs card and its new-tab tiles for
+# a site that ships SVG only, and iOS crops `apple-touch-icon` to a square, so a
+# 1200×630 banner in that slot arrives as a slice of its own middle.
+#
+# Geometry is favicon.svg's 22-unit box, scaled. Below 48px the dashed baseline
+# is a smear rather than a rule, so it is dropped and the two bars carry the
+# mark — one drawing with a stated threshold, never two artworks that drift.
+# Square, because every platform that wants a rounded icon applies its own mask.
+# ---------------------------------------------------------------------------
+ICON_UNITS = 22
+
+
+def build_icon(size):
+    at = lambda v: round(v * size / ICON_UNITS)  # noqa: E731
+    c = Canvas(size, size, PAPER)
+    c.rect(at(3), at(7), max(1, at(4)), max(1, at(12)), MUTED)
+    c.rect(at(15), at(3), max(1, at(4)), max(1, at(16)), REAL)
+    if size >= 48:
+        # Centred on the bar feet, the way a stroke is: drawn from y=19 down it
+        # sits a whole stroke below them and reads as two stray blocks rather
+        # than as the rule that joins "then" to "now".
+        for x in range(at(7), at(15), at(4)):
+            c.rect(x, at(19 - 0.7), at(2), max(1, at(1.4)), REAL)
+    return c
+
+
+def ico(sizes):
+    """An ICO container around PNG payloads, which every reader of one accepts."""
+    blobs = [(s, build_icon(s).to_png()) for s in sizes]
+    head = struct.pack("<HHH", 0, 1, len(blobs))
+    offset = len(head) + 16 * len(blobs)
+    entries = b""
+    for size, blob in blobs:
+        entries += struct.pack("<BBBBHHII", size, size, 0, 0, 1, 24, len(blob), offset)
+        offset += len(blob)
+    return head + entries + b"".join(b for _, b in blobs)
+
+
 def build_card():
     """The 1200×630 link preview."""
     c = Canvas(W, H, PAPER)
@@ -339,9 +386,15 @@ def main():
 
     targets = [
         (site / "public" / "og-image.png", card),
+        (site / "public" / "icon-180.png", build_icon(180)),
+        (site / "public" / "icon-192.png", build_icon(192)),
+        (site / "public" / "icon-512.png", build_icon(512)),
         (root / "docs" / "img" / "banner.bg.png", build_banner(STRAPLINE)),
         (root / "docs" / "img" / "banner.en.png", build_banner(STRAPLINE_EN)),
     ]
+    favicon = site / "public" / "favicon.ico"
+    favicon.write_bytes(ico((16, 32, 48)))
+    print(f"wrote {favicon.relative_to(root)} ({favicon.stat().st_size} bytes, 16/32/48)")
     for out, canvas in targets:
         out.write_bytes(canvas.to_png())
         print(f"wrote {out.relative_to(root)} ({out.stat().st_size} bytes, {canvas.w}×{canvas.h})")

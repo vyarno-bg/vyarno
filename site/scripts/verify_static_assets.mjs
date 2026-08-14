@@ -445,6 +445,48 @@ test("every build entry exists where vite.config.js expects it", () => {
   }
 });
 
+test("every icon a page declares is a file the build ships", () => {
+  // A `<link rel="icon">` pointing at nothing is invisible from inside: the
+  // page renders, every test passes, and what a reader sees in their history,
+  // their restore-tabs card and their bookmarks is the browser's default globe.
+  // One loop over `ENTRIES`, so an entry added to the build is covered by the
+  // reference it copies from its neighbour.
+  const declared = new Set();
+  for (const { file } of ENTRIES) {
+    const html = read(...file);
+    for (const [, href] of html.matchAll(
+      /<link\s+rel="(?:icon|apple-touch-icon|manifest)"[^>]*href="([^"]+)"/g
+    )) {
+      declared.add(href);
+      assert.ok(
+        existsSync(site("public", href.replace(/^\//, ""))),
+        `${file.join("/")} declares ${href} and public/ has no such file`
+      );
+    }
+  }
+  // The set itself, because the failure that started this is a page declaring
+  // FEWER icons than the surfaces reading it need — every file present, every
+  // link valid, and the globe still drawn.
+  for (const href of ["/favicon.svg", "/favicon.ico", "/icon-180.png", "/site.webmanifest"]) {
+    assert.ok(declared.has(href), `no build entry declares ${href}`);
+  }
+  // And the manifest names icons that exist, at the sizes it claims.
+  const manifest = JSON.parse(read("public", "site.webmanifest"));
+  for (const icon of manifest.icons) {
+    const png = site("public", icon.src.replace(/^\//, ""));
+    assert.ok(existsSync(png), `the manifest names ${icon.src} and public/ has no such file`);
+    // The PNG's own IHDR, not the filename: a 512 entry pointing at a 192 file
+    // is an installed icon upscaled to mush on somebody's home screen.
+    const head = readFileSync(png).subarray(16, 24);
+    const [w, h] = [head.readUInt32BE(0), head.readUInt32BE(4)];
+    assert.equal(
+      `${w}x${h}`,
+      icon.sizes,
+      `the manifest calls ${icon.src} ${icon.sizes} and the file is ${w}x${h}`
+    );
+  }
+});
+
 /** The `hreflang` set and the canonical of a built entry, as a crawler reads them. */
 function headLinks(html) {
   const alternates = {};
