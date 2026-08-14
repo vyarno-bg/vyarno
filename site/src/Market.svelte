@@ -2834,18 +2834,37 @@
     <p>
       <span class="l-bg"
         >Цената сама по себе си не казва много: тя зависи и от това колко печелят хората. Числото
-        отдолу мери точно това — не цената на едно жилище, а колко хора дават за жилище повече,
-        отколкото домакинството им може да носи.</span
+        отдолу не мери какво струва едно жилище — то брои хората, които дават за жилище над 40% от
+        разполагаемия доход на домакинството си.</span
       >
       <span class="l-en"
         >A price on its own says little: it depends on what people earn as well. The figure below
-        measures exactly that — not what one home costs, but how many people pay more for housing
-        than their household can carry.</span
+        does not measure what one home costs — it counts the people who spend more than 40% of their
+        household's disposable income on housing.</span
       >
     </p>
 
     <!-- Twenty years of the overburden share, which was one number ------- -->
     {#if overburdenSeries.points.length > 4}
+      <!-- The arithmetic before the definition: this is the one plot here
+           drawing a ratio, and it fell while the bills in its own numerator
+           rose. That the ratio CAN fall while they rise is a property of
+           division; that income has outrun them here is a claim about Bulgaria,
+           which §ratio does not make (P6). -->
+      <p>
+        <span class="l-bg"
+          >В това число се делят две неща едно на друго: разходите за жилище и разполагаемият доход
+          на домакинството. Стълбчето пада, когато разходите заемат по-малка част от дохода — а това
+          става и докато самите сметки растат, стига доходът да расте по-бързо от тях. Височината на
+          стълбчето не е размерът на сметките.</span
+        >
+        <span class="l-en"
+          >The figure divides one thing by another: what housing costs, and the household's
+          disposable income. A bar falls when housing takes a smaller share of that income — and
+          that happens while the bills themselves are going up, so long as income goes up faster
+          than they do. The height of a bar is not the size of the bills.</span
+        >
+      </p>
       <!-- **Two denominators, and both have to be named in the same breath.**
            The figure counts PEOPLE — everyone in a household over the line, not
            the households — while the 40% is a share of that HOUSEHOLD's
@@ -2856,29 +2875,36 @@
            the same series a card would have repeated. -->
       <p>
         <span class="l-bg"
-          >Официалното число брои хората, които живеят в домакинство, даващо над 40% от
-          разполагаемия си доход за жилище; процентът е дял от хората в частни домакинства{#if overburdenSeries.value != null},
-            а за {periodLong(overburdenSeries.refPeriod, "bg")} е {fmt(
+          >«Разходи за жилище» тук е всичко около него — ток, парно, вода, поддръжка, застраховка и
+          данък; наем за наемателите, а за собствениците с кредит — само лихвата, не и главницата.
+          Процентът е дял от хората, а не от домакинствата: брои всички, които живеят в домакинство
+          над чертата, от хората в частни домакинства{#if overburdenSeries.value != null}, а за
+            {periodLong(overburdenSeries.refPeriod, "bg")} те са {fmt(
               overburdenSeries.value
-            )}%{/if}. «Разходи за жилище» тук е всичко около него — ток, парно, вода, поддръжка,
-          застраховка и данък; наем за наемателите, а за собствениците с кредит — само лихвата, не и
-          главницата. Огромната част от хората живеят в собствено жилище без заем, така че този ред
-          се движи най-вече от сметките, а не от цените на сделките.</span
+            )}%{/if}. Огромната част от хората живеят в собствено жилище без заем, така че този ред
+          се движи от тези сметки, а не от цените на сделките.</span
         >
         <span class="l-en"
-          >The official figure counts people living in a household that spends more than 40% of its
-          disposable income on housing; the percentage is a share of the people in private
+          >"Housing costs" here is everything around the home — electricity, heating, water,
+          maintenance, insurance and tax; rent for tenants, and for owners with a loan the interest
+          alone, never the capital. The percentage is a share of people rather than of households:
+          it counts everyone living in a household over the line, out of the people in private
           households{#if overburdenSeries.value != null}, and for {periodLong(
               overburdenSeries.refPeriod,
               "en"
-            )} it is {fmt(overburdenSeries.value)}%{/if}. "Housing costs" here is everything around
-          it — electricity, heating, water, maintenance, insurance and tax; rent for tenants, and
-          for owners with a loan the interest alone, never the capital. Most people here live in a
-          home they own outright, so this series moves mainly with bills rather than with
-          transaction prices.</span
+            )} that is {fmt(overburdenSeries.value)}%{/if}. Most people here live in a home they own
+          outright, so this series moves with those bills rather than with transaction prices.</span
         >
       </p>
       {@const overburdenAxis = niceTicks(overburdenSeries.min, overburdenSeries.max, 4)}
+      <!-- Subject above the box and direction under it, because a reader who
+           scrolled to this chart sees a percentage falling under a heading
+           about incomes and reads a cost. Neither may be reachable only
+           through the paragraphs. -->
+      <p class="panel">
+        <span class="l-bg">{COPY.mktPanelOverburden.bg}</span>
+        <span class="l-en">{COPY.mktPanelOverburden.en}</span>
+      </p>
       <figure class="chart">
         <div class="plot">
           {@render yAxis(
@@ -2914,6 +2940,10 @@
           </svg>
           {@render xYears(xTicks(overburdenSeries))}
         </div>
+        <figcaption>
+          <span class="l-bg">{COPY.mktRefOverburdenDown.bg}</span>
+          <span class="l-en">{COPY.mktRefOverburdenDown.en}</span>
+        </figcaption>
       </figure>
       <p class="ss tsrc">
         {@render srcLine(
@@ -3377,8 +3407,9 @@
      head is separated from its cells: a rule, so the words read as a caption
      ABOUT the box rather than as the top line of it. It runs the full measure
      rather than stopping at the plot's left edge, because the label belongs to
-     the whole panel — the axis in the gutter included. */
-  .pair .panel {
+     the whole panel — the axis in the gutter included. Unscoped from `.pair`:
+     §ratio's plot is drawn alone and needs the label most. */
+  .panel {
     margin-top: 14px;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--line);
