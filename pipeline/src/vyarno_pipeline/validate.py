@@ -38,6 +38,8 @@ from collections.abc import Callable
 
 import httpx
 
+from vyarno_pipeline.payroll import EMPLOYER_RATE_DERIVATION
+
 # ---------------------------------------------------------------------------
 # Tolerances
 # ---------------------------------------------------------------------------
@@ -1092,10 +1094,19 @@ def validate_payroll(payload: dict) -> None:
          «от 0,4 до 1,1 на сто» is a parse that left the rate column.
       3. **Every НСИ section has a range.** A section the join lost renders no
          employer figure for whoever picked it, and nothing else notices.
-      4. **The employer total excludes ТЗПБ.** The two are published apart
-         because ТЗПБ is not one rate; a total that has absorbed the floor is
-         the one shape that makes the range on screen and the total under it
-         disagree, and it is what a well-meaning edit produces.
+      4. **Every employer line is the one its own statute sums to**, and the
+         five of them are the whole breakdown. ТЗПБ is published apart because
+         it is not one rate, so folding the 0,4% floor in — as a sixth key, or
+         into a line with the total made to agree — is right for the sectors at
+         the floor and wrong for the rest, under a figure claiming to be the
+         whole employer cost.
+
+         Checked against `EMPLOYER_RATE_DERIVATION` rather than against a
+         literal total, because the level is parliament's: a gate written as a
+         ceiling on the sum fires the year a fund is raised and blames the
+         appendix. The derivation moves in the same edit as the statute, so
+         this asks the only question that stays answerable — does each line
+         equal the pieces of law it cites.
     """
     wa = payload.get("work_accident")
     if not wa:
@@ -1139,10 +1150,28 @@ def validate_payroll(payload: dict) -> None:
             f"payroll: employer lines sum to {summed} under a stated total of "
             f"{stated}. The breakdown and the total must be the same number."
         )
-    if stated is None or stated >= 0.1852 + lo:
+    if stated is None:
         raise ValidationError(
-            f"payroll: the employer total is {stated}, at or above the "
-            f"{0.1852 + lo} it would be with ТЗПБ's floor folded in. The five "
-            f"capped funds are the total; ТЗПБ is published as a range beside "
-            f"them because it is not one rate."
+            "payroll: `employer_contrib_rates` states no total. The site prints "
+            "it as the employer's whole capped share, and an absent one falls "
+            "back to the SPA's frozen sentinel without saying so."
         )
+    lines = set(employer) - {"total"}
+    if lines != set(EMPLOYER_RATE_DERIVATION):
+        raise ValidationError(
+            f"payroll: the employer breakdown is keyed {sorted(lines)}, not the "
+            f"{sorted(EMPLOYER_RATE_DERIVATION)} capped funds. ТЗПБ belongs "
+            f"under `work_accident` as a range, and a sixth line here folds a "
+            f"rate that differs by sector into a total that claims not to vary."
+        )
+    for fund, working in EMPLOYER_RATE_DERIVATION.items():
+        derived = round(sum(working["employer_parts"]) / 100, 6)
+        if round(employer[fund], 6) != derived:
+            raise ValidationError(
+                f"payroll: the employer's {fund} line is published at "
+                f"{employer[fund]}, and {working['statute']} sums to {derived}. "
+                f"A line that is over its statute by a ТЗПБ-sized amount is the "
+                f"shape a folded accident rate takes once the total is made to "
+                f"agree with it; a line that is over for any other reason is a "
+                f"table that has drifted from the working beside it."
+            )
