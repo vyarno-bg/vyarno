@@ -62,9 +62,10 @@ export { CONTACT };
  * WHAT WE LEGALLY ARE, and it is the input to everything below.
  *
  * Вярно is one employed person's side project. There is no company, and there
- * will not be one unless something makes it necessary. Nobody has paid for
- * anything, the site carries no advertising, and it sells nothing — so it earns
- * nothing from any visitor.
+ * will not be one unless something makes it necessary. It sells nothing to a
+ * visitor and no visitor pays for anything, so it earns nothing FROM the
+ * people it serves — which is the limb чл. 1, ал. 3 turns on, and it is
+ * unaffected by who else might be paying.
  *
  * That is not a detail, it is the whole shape of the ЗЕТ чл. 4 obligation:
  *
@@ -163,14 +164,29 @@ export { CONTACT };
  * against the shipped copy, so it cannot quietly stay `false` while the site
  * advertises a price.
  *
- * **Advertising is part of this determination, not a separate question.** The
- * reasoning above rests on the service being free to the visitor and earning
- * nothing from them; carrying ads would make it revenue-earning and settle
- * чл. 1, ал. 3 against us outright, alongside the ЗЗП rules on identifying
- * commercial communication. **The project's direction closes this: Вярно carries no
- * advertising** (`docs/principles.md`). It is recorded here rather than merely
- * forbidden elsewhere, because the day someone reopens it, this comment and the
- * privacy notice change in the same release as the behaviour — not afterwards.
+ * **Advertising is open, and it costs this file less than it looks.** The
+ * reasoning above rests on the visitor paying nothing, not on nobody paying, so
+ * revenue from an advertiser settles чл. 1, ал. 3 the way the position below
+ * already assumes it is settled: Вярно IS an information-society service and
+ * owes the unconditional чл. 4 points, which is what it publishes today. The
+ * flag under `takesPayment` does not move either — it asks whether the SERVICE
+ * is provided срещу възнаграждение to its recipient, and an advertiser is not
+ * the recipient.
+ *
+ * What advertising does add is ЗЕТ чл. 5-6: a търговско съобщение has to be
+ * identifiable as one on sight and has to name the person on whose behalf it is
+ * made. That is a labelling duty on the ad, discharged where the ad is
+ * rendered, and it lands the day the first one ships — with the privacy notice
+ * and `docs/principles.md` §P10 in the same release, never afterwards. P10 is
+ * the constraint that does NOT relax: an advertiser may not change which figure
+ * is shown, which lender appears, or how affordable a home looks.
+ *
+ * **The ЗКНИП perimeter is the thing to keep an eye on**, and it is why the
+ * terms still say Вярно is not a кредитен посредник. That definition turns on
+ * presenting or offering credit agreements, or assisting in concluding one, for
+ * remuneration — so a bank's banner beside a mortgage figure is closer to that
+ * line than a bank's banner anywhere else on the site. Nothing here answers it;
+ * anyone placing one is deciding it, and should say so in writing first.
  *
  * **Donations, and the tempting argument this file declines to make.** The
  * tempting one: a донация under ЗЗД is gratuitous, so the service stays
@@ -565,8 +581,8 @@ const DOC_BODIES = [
         h: { bg: "Това не е финансов съвет", en: "This is not financial advice" },
         p: [
           {
-            bg: "Нищо на този сайт не е финансов, инвестиционен, данъчен, правен или кредитен съвет и нито едно число не е препоръка. Вярно не е кредитен посредник, не предлага кредити, не сравнява оферти на банки и не получава възнаграждение от кредитор, брокер или застраховател. Няма платено позициониране на кредитор, брокер или застраховател: никой от тях не плаща за присъствие тук и нито едно число не зависи от това кой плаща.",
-            en: "Nothing on this site is financial, investment, tax, legal or credit advice, and no figure it produces is a recommendation. Vyarno is not a credit intermediary, does not offer credit, does not compare bank offers, and receives no remuneration from any lender, broker or insurer. There is no paid placement of a lender, broker or insurer: none of them pays to appear here, and no figure depends on who is paying.",
+            bg: "Нищо на този сайт не е финансов, инвестиционен, данъчен, правен или кредитен съвет и нито едно число не е препоръка. Вярно не е кредитен посредник: не предлага кредити, не сравнява оферти на банки, не те насочва към конкретен кредитор и не участва в сключването на договор за кредит. Нито едно число тук не зависи от това кой плаща — кои данни показваме, как ги смятаме и колко достъпно излиза едно жилище се решава от източника и от метода.",
+            en: "Nothing on this site is financial, investment, tax, legal or credit advice, and no figure it produces is a recommendation. Vyarno is not a credit intermediary: it does not offer credit, does not compare bank offers, does not steer you towards a particular lender and takes no part in concluding a credit agreement. No figure here depends on who is paying — which data we show, how we compute it and how affordable a home comes out are decided by the source and the method.",
           },
           {
             bg: "Ипотечният панел прилага надзорните ограничения на БНБ и стандартна анюитетна формула върху публикувана лихва. Границата от 30% от нетния доход е наша и е по-строга от това, което законът допуска — тя не е решение на кредитор и никоя банка не е обвързана с нея. Решение за кредит взимат кредиторът и ти.",
@@ -676,8 +692,8 @@ const DOC_BODIES = [
             en: "The salary, rent, savings and basket you enter are computed entirely in your browser and are never sent anywhere. There is no server to receive them. We ask for no name, no e-mail address, there is no registration and there is no account. The only thing that takes you off the site is the donation link — what happens if you use it is set out below.",
           },
           {
-            bg: "Останалото описва сайта такъв, какъвто е в тази версия на документа. Днес на страницата се изпълнява точно едно нещо, което не е наш код: брояч на посещенията, който няма как да разбере кой си. Няма следящи скриптове, няма пиксели, няма реклама и няма бисквитки — нито наши, нито чужди. Разделът «Как броим посещенията» по-долу описва брояча дотам, докъдето стига. Ако някога добавим още нещо, което се изпълнява в твоя браузър или оставя следа в него, то получава свой раздел тук и версията на този документ се сменя — в същото издание, преди промяната да стигне до теб, а не след нея.",
-            en: "The rest describes the site as it stands in this version of the document. Today exactly one thing runs on the page that is not our own code: a visit counter that has no way of telling who you are. There is no tracking script, no pixel, no advertising and no cookie — neither ours nor anyone else's. The section “How visits are counted” below describes the counter as far as it goes. If we ever add anything else that runs in your browser or leaves anything in it, it gets its own section here and this document's version changes — in the same release, before the change reaches you, not after it.",
+            bg: "Останалото описва сайта такъв, какъвто е в тази версия на документа. Днес на страницата се изпълнява точно едно нещо, което не е наш код: брояч на посещенията, който няма как да разбере кой си. Няма следящи скриптове, няма пиксели и няма бисквитки — нито наши, нито чужди. Разделът «Как броим посещенията» по-долу описва брояча дотам, докъдето стига. Ако някога добавим още нещо, което се изпълнява в твоя браузър или оставя следа в него, то получава свой раздел тук и версията на този документ се сменя — в същото издание, преди промяната да стигне до теб, а не след нея.",
+            en: "The rest describes the site as it stands in this version of the document. Today exactly one thing runs on the page that is not our own code: a visit counter that has no way of telling who you are. There is no tracking script, no pixel and no cookie — neither ours nor anyone else's. The section “How visits are counted” below describes the counter as far as it goes. If we ever add anything else that runs in your browser or leaves anything in it, it gets its own section here and this document's version changes — in the same release, before the change reaches you, not after it.",
           },
           {
             bg: "Затова страницата е кратка: описва малко, защото сайтът прави малко. Ако това се промени, страницата ще стане по-дълга, а не по-обща.",
