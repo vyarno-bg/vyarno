@@ -4,10 +4,9 @@
  *
  * The arithmetic is covered by `verify_net_salary.mjs`, where payroll formulas
  * live. What is covered here is what those formulas get fed, and this subject
- * has exactly one wrong number that looks right: the DENOMINATOR. 22.4% of
- * gross and 34.7% of labour cost are the same euros over two bases, both are
- * true, and either one wired to the other's caller is a figure inside every
- * plausible band.
+ * has exactly one wrong number that looks right: the DENOMINATOR (docs/math.md
+ * §"The labour tax wedge, and the denominator that is the whole point"). Either
+ * one wired to the other's caller is a figure inside every plausible band.
  *
  * The second is the ТЗПБ range. Ten of nineteen НСИ sections span more than
  * one rate, so a panel that resolves a sector to a single number is wrong for

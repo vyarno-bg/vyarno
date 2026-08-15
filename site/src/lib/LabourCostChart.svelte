@@ -2,27 +2,17 @@
   What a job costs, divided into the three things that cost pays for.
 
   **This is not `WedgeChart` with a different series, and it may not become
-  one.** That chart's y-axis is a share of the GROSS salary; this one's is a
-  share of the TOTAL COST of employing somebody. They are the same euros over
-  two denominators, so a toggle that swapped one for the other inside a single
-  plot would leave a reader unable to say which they were looking at — the
-  blur `docs/math.md` §"Which rate goes into the annuity" refuses for the three
-  mortgage rates. Two components, each always drawing all of its own series,
-  each naming its own denominator in its own key. They may both mark the €2300
-  ceiling so a reader can line them up vertically; they may not share an axis.
+  one**: a share of the GROSS salary and a share of the TOTAL COST are the same
+  euros over two denominators, so the two charts may both mark the €2300 ceiling
+  and may not share an axis (docs/math.md §"The labour tax wedge, and the
+  denominator that is the whole point"). Each names its own in its own key.
 
-  **Stacked, because the wedge is a partition and not an opinion.** The three
-  bands are what reaches the person, what is deducted from their pay, and what
-  the employer pays on top — and they sum to 100% of the labour cost by
-  construction in `mirror.js#bgLabourCost`, not by three coincidences meeting.
-  A reader can see the wedge is the top two bands rather than a figure somebody
-  chose.
-
-  **The ТЗПБ rate the bands are drawn at is stated, never representative.** It
-  is set per economic activity, so most sectors are a range; the picture is
-  drawn at one named end of that range and the key says which, because the two
-  ends differ by 0.38 points of labour cost — a third of a pixel here. The
-  range itself is stated in words beside the chart, where it can be read.
+  **Stacked, because the wedge is a partition and not an opinion** — the three
+  bands sum to 100% of the labour cost by construction in
+  `mirror.js#bgLabourCost`, not by three coincidences meeting, which is what
+  lets a reader see the wedge IS the top two bands. Drawn at one named end of
+  the ТЗПБ range for the reason `bgLabourWedge` states, with the range itself in
+  words beside the chart.
 
   Every number arrives decided: `view/employer.js` samples the curve and this
   only maps those numbers onto a plot box. Inline SVG, no chart library and no
@@ -40,11 +30,10 @@
      * One `{index, gross, wedgeSharePct}` per contract, or none at all.
      *
      * The same arrangement `WedgeChart` uses and for the same reason: `/how/`
-     * renders no input and passes nothing, and a page that has a reader marks
-     * them. Without it the calculator draws the system's partition beside a
-     * sentence stating this reader's own rate, and above the ceiling those are
-     * different numbers — 34.7% on the plot against 32.8% in the text — with
-     * nothing saying why.
+     * renders no input and passes nothing, while a page that has a reader marks
+     * them. Unmarked, the calculator draws the system's partition beside a
+     * sentence stating this reader's own rate — above the ceiling 34.7% on the
+     * plot against 32.8% in the text, with nothing saying why.
      */
     markers = [],
   } = $props();
@@ -86,16 +75,11 @@
   }
 
   // **THE WEDGE SITS ON THE BASELINE, AND THAT IS WHAT MAKES IT READABLE.**
-  // A band stacked off the floor has a height nobody can measure — its top edge
-  // is at 65% and the quantity it stands for is 35%, so the one number on the
-  // chart names a region the reader has to subtract to find. Drawn from zero,
-  // the wedge's top edge IS its own value, read off the axis the way a bar is.
-  //
-  // It also puts this chart the same way up as `WedgeChart` above it: both
-  // falling to the right, both falling because contributions stop at the
-  // ceiling while the pay does not. Stacked the other way the green grew while
-  // the number shrank, and a reader had to work out that the label belonged to
-  // the band it was NOT touching.
+  // Off the floor its top edge is at 65% for a quantity of 35%, so the one
+  // number on the chart names a region the reader has to subtract to find.
+  // Drawn from zero the top edge IS the value, and this chart falls to the
+  // right like `WedgeChart` above it — both falling because contributions stop
+  // at the ceiling while the pay does not.
   const employerBand = $derived(
     band(
       () => 0,
