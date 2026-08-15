@@ -78,7 +78,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
         └── lib/     payloads.js   WHICH payloads exist at all (the manifest)
                      data.js       WHICH published number (fallback chains)
                      view/         WHICH input feeds which formula (the wiring),
-                                   ten modules, one per subject
+                                   eleven modules, one per subject
                      mirror.js     THE ARITHMETIC (the only domain math)
                      plot.js       PLOT GEOMETRY — a figure to a coordinate
                      calculator.svelte.js  the STATE everything reads
@@ -223,7 +223,7 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 | `cli.py` | One arm per `--source`; exit codes **2** transform, **3** gate, **4** network |
 | `site/src/lib/payloads.js` | Which payloads the page depends on, and which routes need each — the one list `loadAll`, the freshness verdict, `/version.json` and the sitemap all derive from |
 | `site/src/lib/data.js` | Which published number, including every fallback chain |
-| `site/src/lib/view/` | Which input feeds which formula — ten modules, one per subject, each paired with the suite of the same stem |
+| `site/src/lib/view/` | Which input feeds which formula — eleven modules, one per subject, each paired with the suite of the same stem |
 | `site/src/lib/mirror.js` | The arithmetic — the only domain math in the front end |
 
 ## Hosting and headers

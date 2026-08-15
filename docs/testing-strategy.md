@@ -156,7 +156,7 @@ documentation actually has.
 
 ### Which `view/` module a test belongs to
 
-The wiring layer is ten modules and ten suites, because the questions it answers
+The wiring layer is eleven modules and eleven suites, because the questions it answers
 are not one question. Each row below is one subject, and the sentence beside it
 is the whole of its remit — **on both sides of the pair**, so a function that
 moves between modules moves its test with it.
@@ -169,6 +169,7 @@ moves between modules moves its test with it.
 | What the results card claims | `view/results.js` | `verify_view_results.mjs` |
 | What leaves the page when a reader shares it | `view/share.js` | `verify_view_share.mjs` |
 | Where a household's pay stands once it is taxed | `view/payroll.js` | `verify_view_payroll.mjs` |
+| What the job costs, and how much of that never arrives | `view/employer.js` | `verify_view_employer.mjs` |
 | What is published about the област a reader picked | `view/region.js` | `verify_view_region.mjs` |
 | What a home costs the reader buying one | `view/home.js` | `verify_view_home.mjs` |
 | The figures `/how/` renders with nobody in them | `view/country.js` | `verify_view_country.mjs` |

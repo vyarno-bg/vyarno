@@ -515,7 +515,7 @@ are shaped to make a wrong wiring *unexpressible*:
 
 ### `src/lib/view/` — one module per subject
 
-**Ten modules, ten suites, same stem.** `view/home.js` is what
+**Eleven modules, eleven suites, same stem.** `view/home.js` is what
 `verify_view_home.mjs` tests, `view/market.js` is what `verify_view_market.mjs`
 tests, and so on for all ten.
 

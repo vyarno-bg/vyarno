@@ -9,7 +9,7 @@
  * looking at is two quarters behind. A payload that never loaded carries no
  * date at all, and `absent` is its own verdict rather than a silent pass.
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_freshness.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */

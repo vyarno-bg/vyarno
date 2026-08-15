@@ -11,7 +11,7 @@
  * publisher that does not own the figure, and a city's trend drawn from
  * another city's series.
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_country.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */
