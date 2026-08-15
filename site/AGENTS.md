@@ -151,10 +151,13 @@ test.
 - **No new packages without justification.** `package.json` is `svelte` +
   `@sveltejs/vite-plugin-svelte` + `vite`, and the test suites are Node's
   built-in runner with no framework.
-- **No third-party scripts, CDN fetches or hosted fonts.** The CSP in
+- **No CDN fetches or hosted fonts, and one third-party script.** The CSP in
   `public/_headers` is what makes the published privacy notice checkable rather
   than merely intended, and `verify_static_assets.mjs` pins every directive
-  exactly.
+  exactly — including the origin list, as literals, so admitting a second
+  measurer is a red test rather than a widened line. `analytics.js` and
+  `verify_analytics.mjs` are the pair; a custom event there is what P1 does not
+  survive.
 - **A test must not assert on layout.** Source-reading suites match on token
   sequence and blank comments first; a formatter run must not turn one red.
 - `docs/site.md` is this directory module by module.

@@ -58,10 +58,11 @@ published data payloads.
 
 Worth knowing before you look: **Вярно stores nothing about its users.**
 Personal figures — salary, rent, savings, basket — are computed in the browser
-and never sent anywhere. There is no account system, no database of users, no
-analytics profile and no server-side session. The threat model is therefore
-mostly about integrity (a wrong or tampered figure) and availability, not
-confidentiality of user data.
+and never sent anywhere. There is no account system, no database of users and
+no server-side session. Visits are counted, in aggregate, by a processor that
+sets no cookie and keeps no identifier past 24 hours; there is no profile to
+take. The threat model is therefore mostly about integrity (a wrong or tampered
+figure) and availability, not confidentiality of user data.
 
 An attack that changes a *published number* is the most serious class of bug
 this project has. Treat that as high severity even when it looks cosmetic.

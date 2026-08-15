@@ -30,33 +30,45 @@
 
 /*
   # --- Content Security Policy -------------------------------------------
-  # The app is a static bundle that fetches only its own JSON. Nothing here
-  # is aspirational: every directive below is what the app already does, so a
-  # third-party script, pixel or font added later FAILS rather than shipping
-  # quietly. That is the point: the published privacy notice says there is no
-  # third-party script, and this is what makes that checkable rather than
-  # merely intended. Relaxing a directive is allowed — docs/principles.md — but only
-  # in the same release as the notice sentence it would falsify, never before.
+  # The app is a static bundle that fetches its own JSON and counts visits.
+  # Nothing here is aspirational: every directive below is what the app already
+  # does, so a script, pixel or font from anywhere else FAILS rather than
+  # shipping quietly. That is the point — the published privacy notice names
+  # what runs, and this is what makes the list closed rather than merely
+  # intended. Relaxing a directive is allowed — docs/principles.md — but only in
+  # the same release as the notice section it would falsify, never before.
   #
-  #   script-src 'self'          — the Vite bundle, nothing else. No 'unsafe-inline'.
+  #   script-src 'self' plausible.io — the Vite bundle and the visit counter,
+  #                                 nothing else. No 'unsafe-inline': the
+  #                                 counter's init snippet lives in
+  #                                 src/lib/analytics.js precisely so this stays
+  #                                 shut. ONE origin rather than a class of
+  #                                 them, and verify_analytics.mjs reads the
+  #                                 origin off that module so the two cannot
+  #                                 drift.
   #   style-src  … 'unsafe-inline' — required: Svelte writes `style="..."`
   #                                 attributes throughout the template (bar
   #                                 widths, marker positions, verdict colours).
   #                                 Inline style ATTRIBUTES are blocked without
   #                                 it. This is the one relaxation, and it does
   #                                 not admit script.
-  #   img-src 'self' data:       — the favicon, the OG image, inline SVG.
-  #   connect-src 'self'         — /data/published/*.json and nothing else. The
-  #                                 browser never calls Eurostat, the ECB, BNB,
-  #                                 NSI or imot.bg; the pipeline does, at build
-  #                                 time (docs/principles.md §"Identity").
+  #   img-src 'self' data:       — the favicon, the OG image, inline SVG. No
+  #                                 remote origin: the counter posts with
+  #                                 `fetch`, so nothing here needs an image and
+  #                                 a pixel would be the cheapest way to add a
+  #                                 measurer nobody declared.
+  #   connect-src 'self' plausible.io — /data/published/*.json, and the counter's
+  #                                 own event endpoint. The browser never calls
+  #                                 Eurostat, the ECB, BNB, NSI or imot.bg; the
+  #                                 pipeline does, at build time
+  #                                 (docs/principles.md §"Identity").
   #   frame-ancestors 'none'     — the main app is not embeddable. If an
   #                                 embeddable surface is ever added, it gets
   #                                 its OWN block with `frame-ancestors *` and
   #                                 this one stays restrictive. Do not loosen it
   #                                 here to make an embed work.
   #   form-action 'none'         — there is no form and no endpoint to post to.
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://plausible.io; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
   # Belt and braces for frame-ancestors on older browsers.
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

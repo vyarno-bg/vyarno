@@ -964,10 +964,10 @@ test("the legal page is canonical, describable and not noindex", () => {
 // ---------------------------------------------------------------------------
 //
 // Nothing guarded these until now, and they are the mechanism behind two
-// user-facing claims rather than a hosting detail: `connect-src 'self'` is
-// what makes "no third-party script can run here" true rather than intended
-// (the privacy notice says so in as many words), and the two cache lifetimes
-// are what make a refresh reach people the same day.
+// user-facing claims rather than a hosting detail: the CSP's origin list is
+// what makes "these are the only two addresses your browser reaches" true
+// rather than intended (the privacy notice says so in as many words), and the
+// two cache lifetimes are what make a refresh reach people the same day.
 
 const HEADERS = read("public", "_headers");
 
@@ -1007,19 +1007,26 @@ test("the CSP still forbids everything the privacy notice says it forbids", () =
   );
 
   const required = {
+    // The two origin lists are written out as literals rather than built from
+    // `analytics.js`, and that is the whole guard. Derived from the module,
+    // they would agree with it by construction — a second origin added to both
+    // in one commit would pass, which is the exact change that has to be
+    // argued. `verify_analytics.mjs` checks the other direction, that the
+    // counter is not pointed somewhere these lines would block.
     "connect-src": [
-      "'self'",
-      "the browser could call a third party. The privacy notice states in " +
-        "both languages that it cannot, and this directive is the only thing " +
-        "making that true. Anything served at request time would live on this " +
-        "same origin precisely so this line never has to be widened.",
+      "'self' https://plausible.io",
+      "the browser could call an origin the privacy notice does not name. It " +
+        "names two, and this directive is the only thing keeping the list " +
+        "closed. Anything served at request time would live on our own origin " +
+        "precisely so this line never has to grow a third.",
     ],
     "script-src": [
-      "'self'",
-      "a third-party script could load — analytics, a pixel, a tag manager. " +
-        "The privacy notice says none runs here; this directive is what makes " +
-        "that true. Widening it is a decision, not a typo, and the notice " +
-        "sentence it would falsify has to change in the same release.",
+      "'self' https://plausible.io",
+      "another third-party script could load — a pixel, a tag manager, a " +
+        "second measurer. The visit counter is the one the notice describes " +
+        "and this is what makes it the only one. Widening it is a decision, " +
+        "not a typo, and the notice section it would falsify has to change in " +
+        "the same release.",
     ],
     "frame-ancestors": [
       "'none'",
@@ -1040,7 +1047,9 @@ test("the CSP still forbids everything the privacy notice says it forbids", () =
     "img-src": [
       "'self' data:",
       "images could be loaded from anywhere, which is a tracking pixel with " +
-        "extra steps. `data:` is needed for the inline SVG.",
+        "extra steps — and a pixel is how a measurer nobody declared would " +
+        "arrive now that one is declared. The counter posts with `fetch` and " +
+        "needs nothing here. `data:` is for the inline SVG.",
     ],
     "style-src": [
       "'self' 'unsafe-inline'",

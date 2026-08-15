@@ -17,8 +17,11 @@ import "./lib/tokens.css";
 import "./lib/fig-table.css";
 import { mount } from "svelte";
 import How from "./How.svelte";
+import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
 target.replaceChildren();
+
+startAnalytics();
 
 export default mount(How, { target });

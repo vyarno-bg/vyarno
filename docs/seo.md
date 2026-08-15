@@ -24,16 +24,15 @@ point somebody would edit it. Everything else is here.
 | The English tree | `site/en/*/index.html` | each of the five routes at a second address, declaring `en`, so a document exists for an English query to rank — below |
 | `hreflang`, reciprocal | each `.html` entry | `bg`, `en` and `x-default` on all ten, each set naming itself; `x-default` is the Bulgarian page. `verify_static_assets.mjs` checks the whole collection, because a one-sided set is discarded silently |
 
-Core Web Vitals need nothing: a static bundle, no third-party request at all
-(the CSP in `_headers` is what keeps that true), and self-hosted subsetted
-fonts.
+Core Web Vitals need nothing: a static bundle, one third-party request that is
+`async` and blocks no paint (the CSP in `_headers` is what keeps the list at
+one), and self-hosted subsetted fonts.
 
-Measurement is Search Console and Bing Webmaster Tools, and it lives outside
-this repository. **Verification by DNS TXT or a `<meta>` tag only.** A
-verification `<script>` is a third-party script, which `principles.md`
-§"Identity" rules out and the CSP would block — and analytics of any kind is on
-the closed list, because a measurement that can see what a consumer typed is a
-measurement of somebody's salary.
+Measurement is Search Console, Bing Webmaster Tools and the visit counter in
+`site/src/lib/analytics.js`. **Verification by DNS TXT or a `<meta>` tag only.**
+A verification `<script>` is a second third-party script, which the CSP blocks
+and which `principles.md` §"What is closed" refuses as a class — the counter was
+admitted on its properties, and a verification tag has none of them to offer.
 
 ## The prerendered pages
 
@@ -352,10 +351,13 @@ the `/data/published/` `Disallow` because RFC 9309 §2.2.1 does not merge a
 specific group with the catch-all. Reopening any of them to chase reach is a
 decision for a person, argued in the pull request, not an edit.
 
-**No analytics, ever.** `principles.md` closes session recording, any
-measurement that can see what a consumer typed, and a share count, a click
-event or a campaign parameter on an outgoing share. We do not find out whether
-sharing works, and that is the trade rather than an oversight.
+**Visits are counted; readers are not followed.** `principles.md` still closes
+session recording, any measurement that can see what a consumer typed, and a
+share count, a click event or a campaign parameter on an outgoing share — so we
+still do not find out whether sharing works, and that is the trade rather than
+an oversight. What the counter answers is which page was opened and where the
+reader arrived from, which is what the funding argument needs and the limit of
+what it is allowed to ask.
 
 **One URL per language is no longer the trade being made.** This section
 recorded the opposite: that the live page answered in two languages off one

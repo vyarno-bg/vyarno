@@ -17,8 +17,11 @@
 import "./lib/tokens.css";
 import { mount } from "svelte";
 import Legal from "./Legal.svelte";
+import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
 target.replaceChildren();
+
+startAnalytics();
 
 export default mount(Legal, { target });

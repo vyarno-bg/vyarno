@@ -7,6 +7,7 @@ import "./lib/card.css";
 import "./lib/result-row.css";
 import { mount } from "svelte";
 import App from "./App.svelte";
+import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
 
@@ -18,6 +19,8 @@ const target = document.getElementById("app");
 // a second one for the reader — it is discarded here, and the client renders
 // from scratch exactly as it does in dev, where the target is empty already.
 target.replaceChildren();
+
+startAnalytics();
 
 const app = mount(App, { target });
 

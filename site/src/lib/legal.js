@@ -48,8 +48,8 @@
  * Bump, always. The shortcut is only ever available before anything has been
  * served at all, and that moment has passed.
  */
-export const LEGAL_VERSION = "1.5";
-export const LEGAL_EFFECTIVE = { bg: "12 август 2026 г.", en: "12 August 2026" };
+export const LEGAL_VERSION = "1.6";
+export const LEGAL_EFFECTIVE = { bg: "15 август 2026 г.", en: "15 August 2026" };
 
 import { CONTACT, LEGAL_NAV, REPO_ISSUES_URL, REPO_SLUG } from "./legal-nav.js";
 
@@ -676,8 +676,8 @@ const DOC_BODIES = [
             en: "The salary, rent, savings and basket you enter are computed entirely in your browser and are never sent anywhere. There is no server to receive them. We ask for no name, no e-mail address, there is no registration and there is no account. The only thing that takes you off the site is the donation link — what happens if you use it is set out below.",
           },
           {
-            bg: "Останалото описва сайта такъв, какъвто е в тази версия на документа. Днес на страницата няма инструменти за анализ на посещаемостта, следящи скриптове, пиксели, реклама, скриптове на трети страни и бисквитки. Ако някога добавим нещо, което се изпълнява в твоя браузър или оставя следа в него, то получава свой раздел тук и версията на този документ се сменя — в същото издание, преди промяната да стигне до теб, а не след нея.",
-            en: "The rest describes the site as it stands in this version of the document. Today the page runs no audience-measurement tool, no tracking script, no pixel, no advertising, no third-party script and no cookie. If we ever add something that runs in your browser or leaves anything in it, it gets its own section here and this document's version changes — in the same release, before the change reaches you, not after it.",
+            bg: "Останалото описва сайта такъв, какъвто е в тази версия на документа. Днес на страницата се изпълнява точно едно нещо, което не е наш код: брояч на посещенията, който няма как да разбере кой си. Няма следящи скриптове, няма пиксели, няма реклама и няма бисквитки — нито наши, нито чужди. Разделът «Как броим посещенията» по-долу описва брояча дотам, докъдето стига. Ако някога добавим още нещо, което се изпълнява в твоя браузър или оставя следа в него, то получава свой раздел тук и версията на този документ се сменя — в същото издание, преди промяната да стигне до теб, а не след нея.",
+            en: "The rest describes the site as it stands in this version of the document. Today exactly one thing runs on the page that is not our own code: a visit counter that has no way of telling who you are. There is no tracking script, no pixel, no advertising and no cookie — neither ours nor anyone else's. The section “How visits are counted” below describes the counter as far as it goes. If we ever add anything else that runs in your browser or leaves anything in it, it gets its own section here and this document's version changes — in the same release, before the change reaches you, not after it.",
           },
           {
             bg: "Затова страницата е кратка: описва малко, защото сайтът прави малко. Ако това се промени, страницата ще стане по-дълга, а не по-обща.",
@@ -732,6 +732,35 @@ const DOC_BODIES = [
         ],
       },
       {
+        // The section the CSP widening is paid for with. It sits after the
+        // host's log rather than before it because it describes the same
+        // fields a second time, and the second telling is only short if the
+        // first has been read.
+        h: { bg: "Как броим посещенията", en: "How visits are counted" },
+        p: [
+          {
+            bg: "Освен журнала на хоста имаме и брояч: Plausible. Той се зарежда от plausible.io и при всяко отваряне на страница изпраща натам адреса на страницата, откъде си дошъл, ако си дошъл по връзка, вида и версията на браузъра, вида на устройството и държавата. Това са същите полета, които и без това стоят в журнала на хоста — разликата е, че ги виждаме преброени, а не разпилени.",
+            en: "Besides the host's log there is a counter: Plausible. It loads from plausible.io, and each time you open a page it sends there the page address, where you came from if you followed a link, the browser and its version, the kind of device, and the country. Those are the same fields the host's log already holds — the difference is that we see them counted rather than scattered.",
+          },
+          {
+            bg: "Не поставя бисквитка, не записва нищо в браузъра ти и не ти дава номер. Дали днес вече те е броил, познава по отпечатък, сметнат от твоя IP адрес, браузъра ти и нашия домейн заедно с една случайна стойност, която се сменя и изтрива на всеки 24 часа. След смяната старите отпечатъци не могат да се свържат с новите — включително твоите с твоите, така че няма как да те проследи от ден за ден, нито от сайт към сайт. Самият IP адрес не се съхранява: през него се получават отпечатъкът и държавата, и се изхвърля.",
+            en: "It sets no cookie, writes nothing in your browser and gives you no number. Whether it has counted you already today it works out from a fingerprint computed from your IP address, your browser and our domain together with a random value that is replaced and deleted every 24 hours. Once it is replaced the old fingerprints cannot be matched to the new ones — including yours to yours, so it cannot follow you from one day to the next, or from one site to another. The IP address itself is not stored: the fingerprint and the country are derived from it, and it is discarded.",
+          },
+          {
+            bg: "Това, което броячът не вижда, е по-важно от това, което вижда: числата, които въвеждаш. Заплатата, наемът, спестяванията и кошницата се смятат в твоя браузър и не се изпращат нито на нас, нито на него — няма събитие, което да ги носи, и няма ред код, който да изпрати такова. Не броим и споделянията: измерване, направено в мига, в който споделяш кошницата си, е измерване, което може да види какво си въвел, и затова го няма.",
+            en: "What the counter does not see matters more than what it does: the figures you type. The salary, the rent, the savings and the basket are computed in your browser and go neither to us nor to it — there is no event that carries them and no line of code that sends one. We do not count shares either: a measurement taken at the moment you share your basket is a measurement that can see what you typed, which is why there is none.",
+          },
+          {
+            bg: "Броячът се поддържа от Plausible Insights OÜ, Тарту, Естония, който обработва тези данни като наш обработващ, само по наше указание, въз основа на договор по чл. 28 от ОРЗД. Записите стоят на сървъри в Европейския съюз — в Германия, Словения и Финландия — и не го напускат. За разлика от журнала на хоста тук няма прехвърляне извън ЕС.",
+            en: "The counter is run by Plausible Insights OÜ, Tartu, Estonia, which processes this data as our processor, solely on our instructions, under a GDPR art. 28 contract. The records sit on servers inside the European Union — in Germany, Slovenia and Finland — and do not leave it. Unlike the host's log, there is no transfer outside the EU here.",
+          },
+          {
+            bg: "Защо изобщо броим: сайтът се издържа от дарения, това не се очаква да го носи безкрайно, а всяка друга издръжка изисква да можем да кажем колко хора четат. Ако не искаш да те броим, изпълни в конзолата на браузъра си localStorage.setItem('plausible_ignore', 'true') — броячът чете точно този ключ, преди да изпрати каквото и да било, и спира. Той не го записва: записваш го ти и ти го изтриваш. Разширение, което блокира броячи, също го спира, и не правим нищо, за да го заобиколим.",
+            en: "Why count at all: the site is kept going by donations, that is not expected to carry it indefinitely, and any other way of keeping it going requires being able to say how many people read it. If you would rather not be counted, run localStorage.setItem('plausible_ignore', 'true') in your browser's console — the counter reads exactly that key before it sends anything, and stops. It does not write the key: you write it and you delete it. An extension that blocks counters stops it too, and we do nothing to work around one.",
+          },
+        ],
+      },
+      {
         h: { bg: "Ако решиш да дариш", en: "If you choose to donate" },
         p: [
           {
@@ -774,12 +803,12 @@ const DOC_BODIES = [
         },
         p: [
           {
-            bg: "Обещанието не е достатъчно, затова е заложено в самата страница. Политиката за сигурност на съдържанието (Content-Security-Policy), с която сайтът се доставя, позволява на браузъра да се свързва само с vyarno.bg и никъде другаде, и да изпълнява само наш код. Ако някой добави следящ скрипт, той няма да проработи скришом — просто ще се счупи.",
-            en: "A promise is not enough, so it is nailed down in the page itself. The Content-Security-Policy the site is served with allows the browser to connect only to vyarno.bg and nowhere else, and to execute only our own code. If someone added a tracking script it would not quietly work — it would break.",
+            bg: "Обещанието не е достатъчно, затова е заложено в самата страница. Политиката за сигурност на съдържанието (Content-Security-Policy), с която сайтът се доставя, изброява поименно адресите, до които браузърът изобщо може да стигне, и те са два: vyarno.bg и plausible.io. Всичко останало браузърът блокира сам. Ако някой добави трети следящ скрипт, той няма да проработи скришом — просто ще се счупи. Списъкът стои в публичното хранилище и тест го сверява с това, което страницата наистина зарежда.",
+            en: "A promise is not enough, so it is nailed down in the page itself. The Content-Security-Policy the site is served with names the addresses the browser may reach at all, and there are two: vyarno.bg and plausible.io. Everything else the browser blocks by itself. If someone added a third tracking script it would not quietly work — it would break. The list is in the public repository, and a test checks it against what the page actually loads.",
           },
           {
-            bg: "Шрифтовете също са наши и се доставят от нашия адрес, а не от чужда мрежа за доставка на съдържание. В тази версия браузърът ти не праща нито една заявка към трето лице: всичко, което зарежда страницата, идва от vyarno.bg, а единственият друг адрес, до който изобщо може да стигне, е адресът за докладване на грешки на самия хост — описан по-горе и извън обхвата на политиката, защото докладите за грешки не се подчиняват на нейното правило за връзките. Ако някога се наложи да я разхлабим, това ще стане явно и видимо — и този раздел се сменя заедно с политиката, в същото издание.",
-            en: "The fonts are ours too and are served from our own address rather than a third-party network. As of this version your browser makes not one request to a third party: everything that loads the page comes from vyarno.bg, and the only other address it can reach at all is the host's own error-reporting address — described above, and outside what the policy governs, because error reports are not subject to its rule about connections. If that ever has to change, the policy must be relaxed explicitly and visibly — and this section changes with it, in the same release.",
+            bg: "Шрифтовете също са наши и се доставят от нашия адрес, а не от чужда мрежа за доставка на съдържание. Извън брояча, описан по-горе, в тази версия браузърът ти не се свързва с никого другиго: всичко останало, което зарежда страницата, идва от vyarno.bg. Има и трети адрес, до който може да стигне — този за докладване на грешки на самия хост, описан по-горе и извън обхвата на политиката, защото докладите за грешки не се подчиняват на нейното правило за връзките. Ако някога се наложи списъкът да се удължи, това ще стане явно и видимо — и този раздел се сменя заедно с политиката, в същото издание.",
+            en: "The fonts are ours too and are served from our own address rather than a third-party network. Apart from the counter described above, your browser contacts nobody else in this version: everything else that loads the page comes from vyarno.bg. There is a third address it can reach — the host's own error-reporting address, described above and outside what the policy governs, because error reports are not subject to its rule about connections. If that list ever has to grow, it will grow explicitly and visibly — and this section changes with the policy, in the same release.",
           },
         ],
       },
@@ -787,8 +816,8 @@ const DOC_BODIES = [
         h: { bg: "Твоите права", en: "Your rights" },
         p: [
           {
-            bg: "Администратор на лични данни по смисъла на ОРЗД (GDPR) е лицето, посочено в раздел „Идентификация“ по-долу. Правното основание за краткото записване на заявките е легитимният интерес да доставим страницата, да я защитим от злоупотреба и да преценим обобщено дали изобщо някой я ползва. Единственият получател на тези данни е хостът, който доставя страницата — Cloudflare, Inc. — и той ги обработва като наш обработващ, само по наше указание, въз основа на договор по чл. 28 от ОРЗД. Няма друг получател; за дарението важи разделът по-горе.",
-            en: "The data controller for the purposes of the GDPR is the person identified in the “Identification” section below. The legal basis for briefly logging requests is the legitimate interest in delivering the page, protecting it from abuse, and judging in aggregate whether anyone is using it at all. The only recipient of that data is the host that delivers the page — Cloudflare, Inc. — which processes it as our processor, solely on our instructions, under a GDPR art. 28 contract. There is no other recipient; for a donation, the section above applies.",
+            bg: "Администратор на лични данни по смисъла на ОРЗД (GDPR) е лицето, посочено в раздел „Идентификация“ по-долу. Правното основание за краткото записване на заявките и за броенето на посещенията е легитимният интерес да доставим страницата, да я защитим от злоупотреба и да преценим обобщено дали изобщо някой я ползва. Получателите са двама и всеки от тях обработва като наш обработващ, само по наше указание, въз основа на договор по чл. 28 от ОРЗД: хостът, който доставя страницата — Cloudflare, Inc. — и Plausible Insights OÜ, който брои посещенията. Няма друг получател; за дарението важи разделът по-горе.",
+            en: "The data controller for the purposes of the GDPR is the person identified in the “Identification” section below. The legal basis for briefly logging requests and for counting visits is the legitimate interest in delivering the page, protecting it from abuse, and judging in aggregate whether anyone is using it at all. There are two recipients, and each processes as our processor, solely on our instructions, under a GDPR art. 28 contract: the host that delivers the page — Cloudflare, Inc. — and Plausible Insights OÜ, which counts the visits. There is no other recipient; for a donation, the section above applies.",
           },
           {
             bg: "ОРЗД ти дава право на достъп, коригиране, изтриване, ограничаване, преносимост и възражение. Тук те опират в необичайна практическа граница: освен записа на заявките, който стои при хоста, и — ако си дарил — записа за дарението, ние не държим нищо, свързано с теб, така че няма към какво друго да се приложат. Ако все пак искаш да упражниш някое от тях или просто да провериш какво имаме, пиши на contact@vyarno.bg — отговаряме в срок до един месец.",
