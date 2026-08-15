@@ -383,6 +383,37 @@ def test_the_published_payroll_is_a_pipeline_output_and_never_behind_the_law() -
     )
 
 
+def test_the_table_itself_has_not_fallen_behind_the_calendar() -> None:
+    """The test above compares the payload with the table. This compares the
+    table with the year, and nothing else in the repository does.
+
+    Both halves of the check above resolve through `in_force_entry`, so they
+    agree with each other for as long as the newest entry is the newest entry —
+    including all of the year AFTER a ЗБДОО nobody transcribed. The payload
+    would rebuild, the citation cross-check would keep passing (the `idMat`
+    really is last year's act, which is what last year's entry cites), and the
+    site would serve a superseded ceiling, employer split and ТЗПБ table with
+    every figure looking ordinary.
+
+    The staleness banner does not cover it either: `view/freshness.js` measures
+    `as_of`, which every refresh stamps with today. A running pipeline is
+    exactly the case where the banner stays quiet — it reports a dead pipeline,
+    not a superseded statute.
+
+    A new entry is due every January whether or not a rate moved, because the
+    ТЗПБ appendix is re-enacted annually and `tzpb.dv_material_id` addresses one
+    act. So the year is the honest thing to assert on.
+    """
+    newest = BG_PAYROLL_TABLE[-1]
+    assert newest["effective_year"] >= clock.today().year, (
+        f"the newest BG_PAYROLL_TABLE entry is for {newest['effective_year']} "
+        f"and it is now {clock.today().isoformat()}. ЗБДОО is re-enacted every "
+        f"year, so `in_force_entry` is still resolving to {newest['effective_year']}'s "
+        "ceiling, employer split and ТЗПБ appendix. Add the new entry with its "
+        "own `tzpb.dv_material_id` and gazette pair."
+    )
+
+
 def test_every_employer_rate_reconstructs_from_the_statute_it_cites() -> None:
     """The table's rates against the pieces of law they are summed from.
 
