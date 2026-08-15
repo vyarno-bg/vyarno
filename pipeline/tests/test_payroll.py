@@ -415,9 +415,11 @@ def test_every_employer_rate_reconstructs_from_the_statute_it_cites() -> None:
 def test_the_pension_fund_is_not_split_sixty_forty() -> None:
     """Пенсии is 7,1+0,56+0,56, and 60:40 of 14,8 is a different number.
 
-    Named on its own because the other four funds ARE 60:40, so the wrong rule
-    is the one that generalises. It is worth 0,66 points of every labour cost
-    the site prints.
+    Named on its own because three of the five ARE 60:40, so the wrong rule is
+    the one that generalises. It is worth 0,66 points of every labour cost the
+    site prints. ДЗПО-УПФ is the other fund 60:40 does not describe — чл. 157,
+    ал. 3 sets it at 2,8/2,2 of five points, and the same rule applied there
+    would read 3,0.
     """
     entry = in_force_entry(date(2026, 8, 1))
     fund_total = (
