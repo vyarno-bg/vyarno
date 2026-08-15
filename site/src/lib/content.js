@@ -1323,11 +1323,17 @@ export const COPY = {
     bg: "доход {n}: струва <b>€{cost}</b>, стигат <b>€{net}</b> — не стигат <b>{wedge}%</b> от разхода{cap}",
     en: "income {n}: costs <b>€{cost}</b>, <b>€{net}</b> arrives - <b>{wedge}%</b> of the cost does not{cap}",
   },
-  // The assumptions, stated where the figures are — the same two the payslip
-  // drawer already states, because they bind the employer's block identically.
+  // The assumptions, stated where the figures are — the two the payslip drawer
+  // already states, because they bind the employer's block identically, plus
+  // the one only this block has. **The per-sector range is the one figure here
+  // the link does not reach**: ЗБДОО sets ТЗПБ by КИД-2025 activity and the
+  // picker offers the section НСИ publish wages by, so «в „Преработваща
+  // промишленост“ 0,5–1,1%» is our reading of the appendix rather than a row
+  // in it. A reader who opens the appendix to check finds twenty-four activity
+  // rows and no section, and P3 says whose grouping that is has to be said.
   employerCostAssumes: {
-    bg: "Тези вноски са на работодателя — не се удържат от заплатата ти. III категория труд, роден след 1959 г., както и фишът по-горе.",
-    en: "These contributions are the employer's - they are not deducted from your pay. Third labour category, born after 1959, as in the payslip above.",
+    bg: "Тези вноски са на работодателя — не се удържат от заплатата ти. III категория труд, роден след 1959 г., както и фишът по-горе. Диапазонът по сектор е наш: законът определя вноската по дейности, а секторът е разделът, по който НСИ публикува заплатите.",
+    en: "These contributions are the employer's - they are not deducted from your pay. Third labour category, born after 1959, as in the payslip above. The per-sector range is ours: the act sets the contribution by activity, and the sector is the section NSI publish wages by.",
   },
 
   standStillK: { bg: "за да не изоставаш", en: "to stand still" },
