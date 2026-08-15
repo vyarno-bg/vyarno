@@ -1450,11 +1450,19 @@ export function bgTaxWedge({
  * Capping only the employee's half would keep the wedge near 35% at every
  * salary, and the whole shape above €2300 would be wrong.
  *
- * **`workAccidentRate` is a required argument with no default.** ТЗПБ is set
- * per economic activity and is a RANGE until a sector narrows it, so there is
- * no rate this function could pick that some caller would not read as an
- * answer. A caller that has only a range calls this twice — `bgLabourWedge`
- * does exactly that.
+ * **`workAccidentRate` carries no default, and JavaScript cannot make that
+ * stick.** ТЗПБ is set per economic activity and is a RANGE until a sector
+ * narrows it, so there is no rate this function could pick that a caller would
+ * not read as an answer — but an omitted argument still arrives as `undefined`
+ * and falls to the zero branch below, which is a labour cost short by up to
+ * 1.1% of gross and complete-looking.
+ *
+ * So the guarantee is structural rather than syntactic: both callers take a
+ * `{min, max}` band from `view/employer.js#sectorWorkAccident`, which answers
+ * the act's whole span for a sector it does not know and therefore never
+ * answers nothing. A third caller is where that breaks, and it is the reason
+ * this paragraph is here rather than a `= 0` that reads as a considered
+ * default. A caller holding a range calls this twice — `bgLabourWedge` does.
  *
  * @param {number} gross  gross monthly salary in EUR
  * @param {object} [params]  from `payrollParams(data.payroll)`
@@ -1464,7 +1472,7 @@ export function bgTaxWedge({
  *            net:number, employeeDeductions:number, wedgePct:number,
  *            netSharePct:number, employeeSharePct:number, employerSharePct:number}}
  */
-export function bgLabourCost(gross, params = BG_PAYROLL_DEFAULT, workAccidentRate = 0) {
+export function bgLabourCost(gross, params = BG_PAYROLL_DEFAULT, workAccidentRate) {
   const g = Number(gross);
   const z = Number.isFinite(workAccidentRate) && workAccidentRate > 0 ? workAccidentRate : 0;
   if (!Number.isFinite(g) || g <= 0) {
