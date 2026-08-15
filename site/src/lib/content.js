@@ -1251,10 +1251,8 @@ export const COPY = {
   //
   // **EVERY SENTENCE HERE NAMES ITS DENOMINATOR, AND THAT IS NOT STYLE.** The
   // row above states «{eff}% от заплатата» and this block states «{wedge}% от
-  // общия разход за труд». They are the same euros — 22,4% and 34,7% — and a
-  // sentence carrying either figure without its base is not a rounder claim,
-  // it is a different one. A reader who takes the 34,7% for a share of their
-  // gross concludes their payslip is wrong.
+  // общия разход за труд» — docs/math.md §"The labour tax wedge, and the
+  // denominator that is the whole point" is what that rule protects.
   //
   // The framing rule from the wedge block above applies unchanged: this is
   // computable from published parameters and nobody has computed it, NEVER

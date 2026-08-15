@@ -32,23 +32,10 @@ is what makes the fetch pinned to ONE act rather than to whatever ДВ currently
 serves under a search. An entry pointing at the wrong material fails the
 issue/date cross-check below rather than publishing another year's rates.
 
-WHAT THE GATES CATCH
---------------------
-Every one of these is a *silent wrong answer* if it passes unchecked, and none
-of them is a network error:
-
-  - the appendix heading is absent — чл. 14 was restructured, and the parser
-    would otherwise read whichever table follows;
-  - the issue or the date on the page disagrees with the entry — the id points
-    at a different act;
-  - a rate outside КСО's 0,4–1,1 span — the third column is not the rate
-    column, or a footnote was read as a row;
-  - a duplicate or missing code — the row regex has caught something that is
-    not a division line.
-
 A ТЗПБ rate that is wrong by one band moves the employer's cost by 0.7% of
-gross. That is inside every plausible band, which is why the checks are on the
-structure rather than on the numbers looking sensible.
+gross. That is inside every plausible band, so none of what follows checks a
+figure for looking sensible — every gate is on the structure, and each states
+in its own message what reading it refuses.
 
 LICENCE
 -------

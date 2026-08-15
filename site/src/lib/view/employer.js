@@ -2,15 +2,11 @@
  * What a job costs, and how much of that cost never reaches the person doing it.
  *
  * The arithmetic is `mirror.js`'s. What lives here is what those formulas get
- * fed, and the wrong number that looks right: this subject's whole hazard is
- * the DENOMINATOR. The payroll module next door answers "what leaves your
- * gross" and gets 22.4%; this answers "what never arrives out of what you
- * cost" and gets 34.7%. Both are true, they are the same euros, and either one
- * printed without its base is a different claim from the one it looks like.
- *
- * So nothing here returns a bare percentage. Every figure travels with the
- * range it was computed over and the flag saying whether that range collapsed,
- * because a sector is a range of ТЗПБ rates far more often than it is a rate.
+ * fed, and this subject's whole hazard is the DENOMINATOR — docs/math.md §"The
+ * labour tax wedge, and the denominator that is the whole point". So nothing
+ * here returns a bare percentage: every figure travels with the range it was
+ * computed over and the flag saying whether that range collapsed, because a
+ * sector is a range of ТЗПБ rates far more often than it is a rate.
  *
  * One of the modules under `src/lib/view/`, paired with
  * `scripts/verify_view_employer.mjs`.
@@ -26,9 +22,8 @@ import { bgGrossFromNet, bgLabourCost, bgLabourWedge, payrollParams } from "../m
  * — and «0,4%» is a specific claim about them that happens to be the cheapest
  * one. The span says what is actually known.
  *
- * The two classifications this crosses are `payroll.py#NSI_SECTION_DIVISIONS`'s
- * problem, not this file's: ЗБДОО sets ТЗПБ by КИД-2025 division and НСИ
- * publish wages by NACE Rev. 2 section, so the pipeline resolves the join and
+ * ЗБДОО sets ТЗПБ by КИД-2025 division and НСИ publish wages by NACE Rev. 2
+ * section, so the join is `payroll.py#NSI_SECTION_DIVISIONS`'s problem and it
  * publishes a range per section. What this must not do is narrow one.
  *
  * @param {object|null} payroll  data.payroll (payroll.json), unmodified
@@ -51,22 +46,19 @@ export function sectorWorkAccident(payroll, sectorKey) {
  *
  * **It takes the published payload, not a params object**, under the same rule
  * as `payroll.js#taxWedgePanel`: a caller who cannot hand over rates cannot
- * hand over last year's. It also takes the payload rather than a pre-resolved
- * ТЗПБ range, so a caller cannot pass a single rate for a sector that spans
- * several.
+ * hand over last year's. Taking the payload rather than a pre-resolved ТЗПБ
+ * range also stops a caller passing one rate for a sector that spans several.
  *
  * **Per earner, and there is no argument through which a household total could
  * be passed.** The insurance ceiling is a property of one contract on the
- * employer's side exactly as it is on the employee's, so two people on €2,000
- * cost their employers full contributions on every euro while one person on
- * €4,000 does not. Adding the two nets and inverting once would understate the
- * household's labour cost by hundreds of euro a month —
- * `mirror.js#bgHouseholdPayroll` carries the worked example for the same
- * mistake one layer up.
+ * employer's side exactly as on the employee's, so two people on €2,000 cost
+ * full contributions on every euro while one on €4,000 does not; adding the
+ * nets and inverting once understates the household's labour cost by hundreds
+ * of euro a month (`mirror.js#bgHouseholdPayroll` has the worked example).
  *
- * **Each earner carries both ends of the range.** Where the sector is
- * unambiguous the two are equal and `ambiguous` is false; the template renders
- * one figure or two off that flag rather than off comparing floats.
+ * **Each earner carries both ends of the range**, equal where the sector is
+ * unambiguous, so the template renders one figure or two off `ambiguous` rather
+ * than off comparing floats.
  *
  * @param {object} args
  * @param {object|null} args.payroll  data.payroll
@@ -151,15 +143,14 @@ export function employerCostPanel({ payroll, pay, sectorKey = "" }) {
  * The labour-cost curve with nobody standing on it — the SYSTEM's partition.
  *
  * `/how/` takes no reader input at all, so this carries no personal figure:
- * published parameters evaluated across a salary range nobody typed. That is
- * the same ground `country.js#systemWedgeLadder` stands on, and the reason a
- * personal wedge rate stays off any shareable surface (P2) while this does not
- * have to.
+ * published parameters evaluated across a salary range nobody typed — the same
+ * ground `country.js#systemWedgeLadder` stands on, and the reason a personal
+ * wedge rate stays off any shareable surface (P2) while this does not have to.
  *
- * **It uses the statutory span rather than a sector**, because a page with no
- * input has no sector to use. The chart's own label names which end it is drawn
- * at, so «drawn at 0,4%» is a stated choice about the picture rather than a
- * claim about anybody's employer.
+ * **It uses the statutory span rather than a sector**, a page with no input
+ * having none to use. The chart's own label names which end it is drawn at, so
+ * «drawn at 0,4%» is a stated choice about the picture rather than a claim
+ * about anybody's employer.
  *
  * @param {object} args
  * @param {object|null} args.payroll  data.payroll
@@ -176,12 +167,10 @@ export function systemLabourWedge({ payroll }) {
     employerRatePct: 100 * params.totalEmployerRate,
     employeeRatePct: 100 * params.totalEmployeeRate,
     incomeTaxRatePct: 100 * params.incomeTaxRate,
-    // P3: the ТЗПБ figures on this page are the only ones on the site that come
-    // from a fetched act rather than a transcribed table, so the appendix that
-    // sets them is named and its ДВ permalink travels with it. Both empty
-    // rather than half-present, for the reason `country.js` states about the
-    // gazette pair: a caption reading «Приложение № 2А от —» is the one shape
-    // a hand-edited payload would survive as.
+    // P3: these are the only figures on the site fetched from an act rather
+    // than transcribed, so the appendix that sets them is named and its ДВ
+    // permalink travels with it. Both empty rather than half-present, for the
+    // reason `country.js` states about the gazette pair.
     appendix: (wa.source_url && String(wa.appendix || "")) || "",
     sourceUrl: (wa.appendix && String(wa.source_url || "")) || "",
     gazetteIssue: Number.isInteger(wa.gazette_issue) && wa.gazette_date ? wa.gazette_issue : null,

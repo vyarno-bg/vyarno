@@ -1422,12 +1422,9 @@ export function bgTaxWedge({
 //
 // **A DIFFERENT DENOMINATOR FROM EVERYTHING ABOVE, AND THAT IS THE POINT.**
 // `bgNetSalary().effectiveRatePct` is what leaves a GROSS salary; this is what
-// never arrives out of the TOTAL COST of employing somebody. 22.4% and 34.7%
-// are the same euros over two different bases, and a sentence carrying either
-// without naming its base is not a smaller claim — it is a different one.
-// `docs/math.md` §"Which rate goes into the annuity" refuses the same blur for
-// the three mortgage rates, and the two charts may not share a y-axis for the
-// same reason.
+// never arrives out of the TOTAL COST of employing somebody. `docs/math.md`
+// §"The labour tax wedge, and the denominator that is the whole point" is why
+// neither figure may travel without its base named beside it.
 
 /**
  * What one contract costs, and how that cost divides.
@@ -1439,10 +1436,9 @@ export function bgTaxWedge({
  *   wedge       = (labour cost − net) / labour cost
  *
  * **The flat 10% is inside the wedge**, which is the choice a reader is most
- * likely to expect otherwise. Under OECD methodology the wedge is every
- * compulsory levy on employing a person, income tax included; leaving it out
- * would answer a narrower question ("what do the contributions take") under a
- * name that means the wider one.
+ * likely to expect otherwise: under OECD methodology the wedge is every
+ * compulsory levy on employing a person, income tax included, and leaving the
+ * tax out answers "what do the contributions take" under the wider name.
  *
  * **Both sides stop at the same ceiling.** КСО чл. 6, ал. 3 puts contributions
  * on no more than the maximum insurable income and only THEN splits them
@@ -1452,18 +1448,14 @@ export function bgTaxWedge({
  * salary, and the whole shape above €2300 would be wrong.
  *
  * **`workAccidentRate` carries no default, and JavaScript cannot make that
- * stick.** ТЗПБ is set per economic activity and is a RANGE until a sector
- * narrows it, so there is no rate this function could pick that a caller would
- * not read as an answer — but an omitted argument still arrives as `undefined`
- * and falls to the zero branch below, which is a labour cost short by up to
- * 1.1% of gross and complete-looking.
- *
- * So the guarantee is structural rather than syntactic: both callers take a
- * `{min, max}` band from `view/employer.js#sectorWorkAccident`, which answers
- * the act's whole span for a sector it does not know and therefore never
- * answers nothing. A third caller is where that breaks, and it is the reason
- * this paragraph is here rather than a `= 0` that reads as a considered
- * default. A caller holding a range calls this twice — `bgLabourWedge` does.
+ * stick.** ТЗПБ is a RANGE until a sector narrows it, so no rate picked here
+ * would read as anything but an answer — yet an omitted argument arrives as
+ * `undefined` and falls to the zero branch below, a labour cost short by up to
+ * 1.1% of gross and complete-looking. The guarantee is therefore structural:
+ * both callers take a `{min, max}` band from
+ * `view/employer.js#sectorWorkAccident`, which answers the act's whole span for
+ * a sector it does not know and so never answers nothing. A third caller is
+ * where that breaks. A caller holding a range calls this twice.
  *
  * @param {number} gross  gross monthly salary in EUR
  * @param {object} [params]  from `payrollParams(data.payroll)`
