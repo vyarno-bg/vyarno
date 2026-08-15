@@ -1375,14 +1375,16 @@ category's figures rather than corrections to these.
 
 **No employer rate here is a cell anybody publishes**, which is why
 `EMPLOYER_RATE_DERIVATION` carries the working beside each one and
-`test_payroll.py` sums it back. Four of the five funds are a single 60:40 split
-— КСО чл. 6, ал. 3, т. 7 for ОЗМ and „Безработица“, ЗЗО чл. 40, ал. 1, т. 1 for
-health. Фонд „Пенсии“ is not, and that is the trap: чл. 6, ал. 3, т. 9 fixes it
-at 7,1/5,7 of the original 12,8 на сто, and чл. 6, ал. 1, т. 4's two 1-point
-rises are each split 0,56/0,44 on their own terms, giving **8,22% employer /
-6,58% employee**. Applying 60:40 to the fund's 14,8 gives 8,88 — a number that
-looks right, sits 0,66 points out, and would be wrong in the same direction for
-every salary on the site.
+`test_payroll.py` sums it back. Three of the five funds are a single 60:40
+split — КСО чл. 6, ал. 3, т. 7 for ОЗМ and „Безработица“, ЗЗО чл. 40, ал. 1,
+т. 1 for health. The other two each carry their own ratio, and фонд „Пенсии“ is
+the trap: чл. 6, ал. 3, т. 9 fixes it at 7,1/5,7 of the original 12,8 на сто,
+and чл. 6, ал. 1, т. 4's two 1-point rises are each split 0,56/0,44 on their
+own terms, giving **8,22% employer / 6,58% employee**. Applying 60:40 to the
+fund's 14,8 gives 8,88 — a number that looks right, sits 0,66 points out, and
+would be wrong in the same direction for every salary on the site. ДЗПО-УПФ is
+the quieter one: чл. 157, ал. 3 sets it at **2,8/2,2** of five points, where
+60:40 would read 3,0.
 
 **The ДВ citation is a field, not a caption.** `source_url` is
 dv.parliament.bg's landing page and can be nothing else: their permalinks are

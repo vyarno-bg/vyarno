@@ -737,9 +737,10 @@ const CONTRIB_KEY_BY_PUBLISHED = Object.freeze({
  * from `payroll.json`, and `test_payroll.py` holds these against the pipeline's
  * dated table.
  *
- * Фонд „Пенсии“ is 8.22% and not 8.88%: the other four funds are split 60:40
- * and this one is not (КСО чл. 6, ал. 3, т. 9 plus the two rises in чл. 6, ал.
- * 1, т. 4). `pipeline/.../payroll.py#EMPLOYER_RATE_DERIVATION` is where that
+ * Фонд „Пенсии“ is 8.22% and not 8.88%: three of the five funds are split
+ * 60:40 and this one is not (КСО чл. 6, ал. 3, т. 9 plus the two rises in чл.
+ * 6, ал. 1, т. 4). ДЗПО-УПФ is the other exception, at 2.8/2.2 under чл. 157,
+ * ал. 3. `pipeline/.../payroll.py#EMPLOYER_RATE_DERIVATION` is where that
  * reasoning lives, and it is named here rather than restated.
  */
 export const BG_2026_EMPLOYER_RATES = Object.freeze({
