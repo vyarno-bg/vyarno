@@ -25,7 +25,7 @@ import {
   sectorWorkAccident,
   systemLabourWedge,
 } from "../src/lib/view/employer.js";
-import { bgGrossFromNet, bgNetSalary, payrollParams } from "../src/lib/mirror.js";
+import { bgGrossFromNet, bgLabourWedge, bgNetSalary, payrollParams } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 
 const read = published;
@@ -221,6 +221,59 @@ test("an unambiguous sector collapses to one figure", () => {
   });
   assert.equal(panel.ambiguous, false);
   assert.ok(near(panel.earners[0].labourCostHigh, panel.earners[0].labourCostLow));
+});
+
+test("the panel and the curve it spreads collide only where the panel means to", () => {
+  // `employerCostPanel` spreads `bgLabourWedge(...)` and then writes its own
+  // keys over the top, so the two share one namespace and the spread order
+  // decides. Three keys are already produced by both halves — deliberately,
+  // since the panel's `workAccident` carries the `known` flag the curve has no
+  // way to know. A fourth arriving on either side would win silently, in the
+  // direction of whichever was written last, and every figure would still look
+  // ordinary.
+  if (!PAYROLL) return;
+  const params = payrollParams(PAYROLL);
+  const band = sectorWorkAccident(PAYROLL, "Manufacturing");
+  const curve = Object.keys(bgLabourWedge({ params, workAccident: band }));
+  // What the panel writes after the spread, in its own return literal.
+  const own = [
+    "workAccident",
+    "ambiguous",
+    "capGross",
+    "employerRatePct",
+    "earners",
+    "householdLabourCost",
+    "householdNet",
+    "householdWedgePct",
+  ];
+  assert.deepEqual(
+    own.filter((k) => curve.includes(k)).sort(),
+    ["ambiguous", "capGross", "workAccident"],
+    "the panel's keys and bgLabourWedge's overlap somewhere new — the spread " +
+      "order is deciding a value nobody chose"
+  );
+
+  // The keys the panel writes are what the sentence quotes; the keys it lets
+  // through are what the chart draws. They have to describe one band, and only
+  // the panel can be asked — recomputing the curve here would compare two
+  // correct answers and prove nothing.
+  const panel = employerCostPanel({
+    payroll: PAYROLL,
+    pay: { basis: "gross", amounts: [2000] },
+    sectorKey: "Manufacturing",
+  });
+  assert.ok(
+    near(panel.workAccidentMinPct, 100 * panel.workAccident.min) &&
+      near(panel.workAccidentMaxPct, 100 * panel.workAccident.max),
+    `the chart was sampled at ${panel.workAccidentMinPct}–${panel.workAccidentMaxPct}% ` +
+      `while the sentence states ${100 * panel.workAccident.min}–${100 * panel.workAccident.max}%`
+  );
+  assert.equal(
+    panel.ambiguous,
+    panel.workAccidentMaxPct > panel.workAccidentMinPct,
+    "the flag the copy branches on disagrees with the span the chart was drawn over"
+  );
+  assert.equal(panel.capGross, params.maxInsurable);
 });
 
 test("blanks describe nobody rather than costing zero", () => {
