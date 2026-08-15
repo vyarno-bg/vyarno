@@ -106,11 +106,12 @@ export function employerCostPanel({ payroll, pay, sectorKey = "" }) {
       labourCostHigh: high.labourCost,
       wedgePctLow: low.wedgePct,
       wedgePctHigh: high.wedgePct,
-      // Where this contract sits on the chart's own y-axis. Carried rather
-      // than recomputed in the component, because the marker and the sentence
-      // have to be the same arithmetic — a marker drawn a few points off the
-      // band it belongs to reads as the chart disagreeing with the text.
-      netSharePct: low.netSharePct,
+      // Where this contract's wedge tops out on the chart's own y-axis — the
+      // same quantity as `wedgePctLow`, named for the axis rather than for the
+      // sentence. Carried rather than subtracted in the component, because a
+      // marker drawn off the band it belongs to reads as the chart disagreeing
+      // with the text beside it.
+      wedgeSharePct: low.employerSharePct + low.employeeSharePct,
       overCap: gross >= params.maxInsurable,
     });
   });

@@ -1269,45 +1269,55 @@ export const COPY = {
     bg: "колко струва трудът ти на работодателя",
     en: "what your work costs your employer",
   },
-  // The three bands, named by what each one IS rather than by who pays it —
-  // «работодателят плаща отгоре» is the only one a reader has never seen on a
-  // payslip, so it says where the money goes rather than assuming they know.
+  // The figure the disclosure opens on. An employer wants the cost as a number
+  // before a sentence, so it is rendered in the row's own value type rather
+  // than left in the middle of a paragraph.
+  employerCostHeadK: { bg: "разход за труд на месец", en: "cost of employment a month" },
+  // The three bands. **None of these names a position**, because the chart puts
+  // the employer's contributions on the baseline — «плаща отгоре» read as a
+  // key to the band drawn lowest is a contradiction a reader has to resolve
+  // before they can read anything else. What each band IS survives the stack
+  // being reordered; where it sits does not.
   lcKeyNet: { bg: "стига до работника", en: "reaches the worker" },
   lcKeyEmployee: { bg: "удържа се от заплатата му", en: "deducted from their pay" },
-  lcKeyEmployer: { bg: "работодателят плаща отгоре", en: "the employer pays on top" },
+  lcKeyEmployer: { bg: "вноски на работодателя", en: "the employer's contributions" },
   // Under the picture, not in it. A percentage on this chart is a share of the
   // labour cost; the same quantity as a share of the salary is the other
   // chart's number, ten points lower and equally true.
   lcDenominator: {
-    bg: "Всички дялове са от <b>общия разход за труд</b> — бруто плюс осигуровките за сметка на работодателя. Картината е начертана при вноска за трудова злополука <b>{z}%</b>.",
-    en: "Every share is of the <b>total cost of employment</b> — gross pay plus the contributions the employer pays. The chart is drawn at a work-accident contribution of <b>{z}%</b>.",
+    bg: "Дяловете са от <b>общия разход за труд</b> — бруто плюс осигуровките на работодателя. Начертано при трудова злополука {z}%.",
+    en: "Shares are of the <b>total cost of employment</b> — gross plus the employer's contributions. Drawn at a work-accident rate of {z}%.",
   },
-  // One earner, sector known and on a single ТЗПБ rate.
+  // **The cost leads, in every one of the three.** An employer opening this row
+  // came for one number; the earlier wording opened on an eleven-euro ТЗПБ
+  // spread in four-digit precision and reached their own figure in the third
+  // clause. The range still ships — most sectors are one — but as the sentence
+  // that explains the first, never as the first.
   employerCostOne: {
-    bg: "Трудът ти струва на работодателя ≈ <b>€{cost}</b> на месец. От тях до сметката ти стигат <b>€{net}</b> — тоест <b>{wedge}%</b> от общия разход за труд не стигат до теб.",
-    en: "Your work costs your employer ≈ <b>€{cost}</b> a month. Of that, <b>€{net}</b> reaches your account - so <b>{wedge}%</b> of the total cost of employing you never reaches you.",
+    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedge}%</b> от разхода за труд не стигат до теб.",
+    en: "<b>€{net}</b> reaches your account: <b>{wedge}%</b> of the cost of employing you does not.",
   },
   // One earner whose sector spans several ТЗПБ rates. Ten of the nineteen НСИ
   // sections do, so this is the ordinary case rather than the edge one — the
   // range is stated in full and no midpoint is offered, because a midpoint is
   // a rate no statute sets.
   employerCostRange: {
-    bg: "Трудът ти струва на работодателя между <b>€{costLow}</b> и <b>€{costHigh}</b> на месец. Разликата е вноската за трудова злополука: тя се определя по икономическа дейност, а „{sector}“ обхваща дейности с вноска от <b>{zLow}%</b> до <b>{zHigh}%</b>. До сметката ти стигат <b>€{net}</b> — тоест <b>{wedgeLow}–{wedgeHigh}%</b> от общия разход за труд не стигат до теб.",
-    en: 'Your work costs your employer between <b>€{costLow}</b> and <b>€{costHigh}</b> a month. The difference is the work-accident contribution: it is set per economic activity, and "{sector}" covers activities charged anywhere from <b>{zLow}%</b> to <b>{zHigh}%</b>. Of that cost, <b>€{net}</b> reaches your account - so <b>{wedgeLow}–{wedgeHigh}%</b> of the total never reaches you.',
+    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedgeLow}–{wedgeHigh}%</b> от разхода за труд не стигат до теб. Точният дял зависи от вноската за трудова злополука — в „{sector}“ тя е между {zLow}% и {zHigh}%, което прави разхода до €{costHigh}.",
+    en: '<b>€{net}</b> reaches your account: <b>{wedgeLow}–{wedgeHigh}%</b> of the cost of employing you does not. The exact share turns on the work-accident contribution - in "{sector}" it runs {zLow}% to {zHigh}%, putting the cost as high as €{costHigh}.',
   },
   // No sector chosen. The fallback is the whole statutory span rather than its
   // floor: 0,4% is a specific claim about this reader that happens to be the
   // cheapest one, and what is actually known is the span.
   employerCostNoSector: {
-    bg: "Трудът ти струва на работодателя между <b>€{costLow}</b> и <b>€{costHigh}</b> на месец. Разликата е вноската за трудова злополука, която се определя по икономическа дейност и е между <b>{zLow}%</b> и <b>{zHigh}%</b>. До сметката ти стигат <b>€{net}</b> — тоест <b>{wedgeLow}–{wedgeHigh}%</b> от общия разход за труд не стигат до теб. Избери сектор горе, за да се стесни сметката.",
-    en: "Your work costs your employer between <b>€{costLow}</b> and <b>€{costHigh}</b> a month. The difference is the work-accident contribution, which is set per economic activity and runs from <b>{zLow}%</b> to <b>{zHigh}%</b>. Of that cost, <b>€{net}</b> reaches your account - so <b>{wedgeLow}–{wedgeHigh}%</b> of the total never reaches you. Choose a sector above to narrow it.",
+    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedgeLow}–{wedgeHigh}%</b> от разхода за труд не стигат до теб. Вноската за трудова злополука се определя по дейност и е между {zLow}% и {zHigh}% — избери сектор горе, за да се стесни сметката.",
+    en: "<b>€{net}</b> reaches your account: <b>{wedgeLow}–{wedgeHigh}%</b> of the cost of employing you does not. The work-accident contribution is set per activity and runs {zLow}% to {zHigh}% - choose a sector above to narrow it.",
   },
   // Several incomes. The household's own rate is total cost over total cost,
   // and each contract is then stated on its own — the ceiling is per contract
   // on the employer's side exactly as on the employee's.
   employerCostHousehold: {
-    bg: "Трудът на домакинството струва на работодателите ≈ <b>€{cost}</b> на месец, а до сметките ви стигат <b>€{net}</b> — <b>{wedge}%</b> от общия разход за труд не стигат до вас. Осигуровките спират на <b>€{cap}</b> бруто на месец поотделно за всяка заплата, не за сбора:",
-    en: "The household's work costs its employers ≈ <b>€{cost}</b> a month, and <b>€{net}</b> reaches your accounts - <b>{wedge}%</b> of the total cost never reaches you. Contributions stop at <b>€{cap}</b> gross a month for each wage on its own, not for the sum:",
+    bg: "До сметките ви стигат <b>€{net}</b>: <b>{wedge}%</b> от разхода за труд не стигат до вас. Осигуровките спират на <b>€{cap}</b> бруто поотделно за всяка заплата, не за сбора:",
+    en: "<b>€{net}</b> reaches your accounts: <b>{wedge}%</b> of the cost of employing you does not. Contributions stop at <b>€{cap}</b> gross for each wage on its own, not for the sum:",
   },
   employerCostEarnerLine: {
     bg: "доход {n}: струва <b>€{cost}</b>, стигат <b>€{net}</b> — не стигат <b>{wedge}%</b> от разхода{cap}",
@@ -1316,8 +1326,8 @@ export const COPY = {
   // The assumptions, stated where the figures are — the same two the payslip
   // drawer already states, because they bind the employer's block identically.
   employerCostAssumes: {
-    bg: "Сметката е за III категория труд и за роден след 1959 г., както и разбивката на фиша по-горе. Ставките са за сметка на работодателя и не се удържат от заплатата ти — те са отгоре.",
-    en: "Worked for the third labour category and someone born after 1959 - the same assumptions as the payslip above. These rates are the employer's own and are not deducted from your pay; they sit on top of it.",
+    bg: "Тези вноски са на работодателя — не се удържат от заплатата ти. III категория труд, роден след 1959 г., както и фишът по-горе.",
+    en: "These contributions are the employer's - they are not deducted from your pay. Third labour category, born after 1959, as in the payslip above.",
   },
 
   standStillK: { bg: "за да не изоставаш", en: "to stand still" },

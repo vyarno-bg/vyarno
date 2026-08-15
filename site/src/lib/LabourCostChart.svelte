@@ -37,7 +37,7 @@
     /** `points`, `capGross`, `peakWedgePct`, `workAccident` — from view/employer.js. */
     cost,
     /**
-     * One `{index, gross, netSharePct}` per contract, or none at all.
+     * One `{index, gross, wedgeSharePct}` per contract, or none at all.
      *
      * The same arrangement `WedgeChart` uses and for the same reason: `/how/`
      * renders no input and passes nothing, and a page that has a reader marks
@@ -85,30 +85,42 @@
     return `${top.join(" ")} ${bottom.join(" ")} Z`;
   }
 
-  const netBand = $derived(
+  // **THE WEDGE SITS ON THE BASELINE, AND THAT IS WHAT MAKES IT READABLE.**
+  // A band stacked off the floor has a height nobody can measure — its top edge
+  // is at 65% and the quantity it stands for is 35%, so the one number on the
+  // chart names a region the reader has to subtract to find. Drawn from zero,
+  // the wedge's top edge IS its own value, read off the axis the way a bar is.
+  //
+  // It also puts this chart the same way up as `WedgeChart` above it: both
+  // falling to the right, both falling because contributions stop at the
+  // ceiling while the pay does not. Stacked the other way the green grew while
+  // the number shrank, and a reader had to work out that the label belonged to
+  // the band it was NOT touching.
+  const employerBand = $derived(
     band(
       () => 0,
-      (p) => p.netSharePct
+      (p) => p.employerSharePct
     )
   );
   const employeeBand = $derived(
     band(
-      (p) => p.netSharePct,
-      (p) => p.netSharePct + p.employeeSharePct
+      (p) => p.employerSharePct,
+      (p) => p.employerSharePct + p.employeeSharePct
     )
   );
-  const employerBand = $derived(
+  const netBand = $derived(
     band(
-      (p) => p.netSharePct + p.employeeSharePct,
+      (p) => p.employerSharePct + p.employeeSharePct,
       () => 100
     )
   );
-  // The boundary between what reaches the person and what does not — the wedge
-  // itself, as a line, so the eye has one edge to follow rather than two washes
-  // to compare.
+  // The wedge's own top edge: everything below it never reaches the person.
   const wedgeEdge = $derived(
     cost.points
-      .map((p, i) => `${i ? "L" : "M"}${x(p.gross).toFixed(1)},${y(p.netSharePct).toFixed(1)}`)
+      .map(
+        (p, i) =>
+          `${i ? "L" : "M"}${x(p.gross).toFixed(1)},${y(p.employerSharePct + p.employeeSharePct).toFixed(1)}`
+      )
       .join(" ")
   );
 </script>
@@ -118,8 +130,8 @@
   viewBox="0 0 {W} {H}"
   role="img"
   aria-label={$lang === "bg"
-    ? `Как се дели общият разход за труд според брутната заплата: колко стига до работника, колко се удържа от заплатата му и колко плаща работодателят отгоре; осигуровки се плащат до ${fmt0(cost.capGross)} евро на месец`
-    : `How the total cost of employment divides by gross pay: what reaches the worker, what is deducted from their pay and what the employer pays on top; contributions are paid up to ${fmt0(cost.capGross)} euro a month`}
+    ? `Какъв дял от общия разход за труд не стига до работника, според брутната заплата: отдолу вноските на работодателя, над тях удръжките от заплатата, а най-отгоре това, което стига до работника; осигуровки се плащат до ${fmt0(cost.capGross)} евро на месец`
+    : `What share of the total cost of employment never reaches the worker, by gross pay: the employer's contributions along the bottom, the deductions from their pay above them, and what reaches the worker on top; contributions are paid up to ${fmt0(cost.capGross)} euro a month`}
 >
   <defs>
     <!-- The employer's band is the one a reader has never seen on a payslip,
@@ -151,10 +163,8 @@
 
   <!-- P3: every label is read off `cost`, never written in. The wedge at the
        ceiling is the maximum of the curve and the figure the prose quotes. -->
-  <text class="lc-lbl" x={PAD_X + 2} y={y(100 - cost.peakWedgePct) - 4}
-    >{fmt(cost.peakWedgePct)}%</text
-  >
-  <text class="lc-lbl" x={W - PAD_X} y={y(100 - cost.endWedgePct) - 4} text-anchor="end"
+  <text class="lc-lbl" x={PAD_X + 4} y={y(cost.peakWedgePct) + 12}>{fmt(cost.peakWedgePct)}%</text>
+  <text class="lc-lbl" x={W - PAD_X} y={y(cost.endWedgePct) + 12} text-anchor="end"
     >{fmt(cost.endWedgePct)}%</text
   >
   <text class="lc-lbl" x={x(cost.capGross) + 5} y={BASE + 13}>€{fmt0(cost.capGross)}</text>
@@ -162,23 +172,23 @@
   <!-- One marker per contract, on the boundary between what arrives and what
        does not — the line this chart is drawn to show. -->
   {#each markers as m (m.index)}
-    <circle class="lc-you" cx={x(Math.min(m.gross, maxGross))} cy={y(m.netSharePct)} r="4" />
+    <circle class="lc-you" cx={x(Math.min(m.gross, maxGross))} cy={y(m.wedgeSharePct)} r="4" />
   {/each}
 </svg>
 
 <div class="lc-key">
-  <span class="lk n"
-    ><span class="l-bg">{COPY.lcKeyNet.bg}</span><span class="l-en">{COPY.lcKeyNet.en}</span></span
+  <span class="lk e"
+    ><span class="l-bg">{COPY.lcKeyEmployer.bg}</span><span class="l-en"
+      >{COPY.lcKeyEmployer.en}</span
+    ></span
   >
   <span class="lk d"
     ><span class="l-bg">{COPY.lcKeyEmployee.bg}</span><span class="l-en"
       >{COPY.lcKeyEmployee.en}</span
     ></span
   >
-  <span class="lk e"
-    ><span class="l-bg">{COPY.lcKeyEmployer.bg}</span><span class="l-en"
-      >{COPY.lcKeyEmployer.en}</span
-    ></span
+  <span class="lk n"
+    ><span class="l-bg">{COPY.lcKeyNet.bg}</span><span class="l-en">{COPY.lcKeyNet.en}</span></span
   >
   <span class="lk c"
     ><span class="l-bg">{COPY.wedgeAxisCap.bg}</span><span class="l-en">{COPY.wedgeAxisCap.en}</span
@@ -234,9 +244,12 @@
     opacity: 0.45;
   }
   /* The wedge itself: the boundary between what arrives and what does not. */
+  /* The wedge's cap, in the same colour and weight as the falling line on the
+     chart above — one mark, one meaning, on both pictures. It binds the label
+     inside the band to the band the label counts. */
   .lc-edge {
     fill: none;
-    stroke: var(--real);
+    stroke: var(--erode);
     stroke-width: 2;
   }
   .lc-base {
