@@ -435,6 +435,17 @@ test("the payroll figures name the ДВ issue, not just its year", { skip }, asy
         `«${caption}» names an issue with no year beside it, and ДВ restarts its ` +
           "numbering every January"
       );
+      // The date is a reader's, never the payload's key. `dateShort` is what
+      // turns 2026-07-28 into «28.07.2026 г.» and «28 Jul 2026», and a caption
+      // reaching the page in ISO is one that skipped it — the same rule
+      // verify_render_market.mjs holds over the market page's periods, on the
+      // page whose citations are the whole point of the section.
+      assert.doesNotMatch(
+        caption,
+        /\d{4}-\d{2}/,
+        `«${caption}» dates a payroll figure in the notation the pipeline keys ` +
+          "it by rather than the one the other captions beside it use"
+      );
     }
     assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
   }, "/how/");
