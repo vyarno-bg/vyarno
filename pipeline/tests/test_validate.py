@@ -17,6 +17,7 @@ import pytest
 import respx
 
 from vyarno_pipeline.models import CategoryObservation, GroupObservation
+from vyarno_pipeline.payroll import EMPLOYER_RATE_DERIVATION
 from vyarno_pipeline.sources.eurostat import _cube_labels, _cube_to_rows
 from vyarno_pipeline.validate import (
     BASKET_SUM_TOLERANCE_PP,
@@ -996,8 +997,31 @@ def test_an_employer_total_that_has_absorbed_tzpb_is_refused() -> None:
     every other one, under a total that claims to be the whole employer cost.
     """
     rates = {**_payroll()["employer_contrib_rates"], "unemployment": 0.01, "total": 0.1892}
-    with pytest.raises(ValidationError, match="at or above"):
+    with pytest.raises(ValidationError, match="is published at"):
         validate_payroll(_payroll(employer_contrib_rates=rates))
+    # The same amount as a sixth key, which is the other shape the edit takes.
+    keyed = {**_payroll()["employer_contrib_rates"], "work_accident": 0.004, "total": 0.1892}
+    with pytest.raises(ValidationError, match="keyed"):
+        validate_payroll(_payroll(employer_contrib_rates=keyed))
+
+
+def test_parliament_raising_a_fund_is_not_read_as_a_folded_accident_rate(monkeypatch) -> None:
+    """The gate above may not fire on a legislative change.
+
+    An employer total higher than today's is what a fund being raised looks
+    like, and ЗБДОО 2026's own draft proposed exactly that — фонд „Пенсии“ from
+    14,8% to 16,8%. A gate written as a ceiling on the sum cannot tell that
+    apart from ТЗПБ folded in, and would have stopped the publish naming the
+    appendix, which would have been the one thing not wrong.
+
+    So the question asked is whether each line equals the statute beside it.
+    Move the derivation and the payload together — which is what a transcribed
+    rate change IS — and this passes at any level.
+    """
+    raised = {**EMPLOYER_RATE_DERIVATION["pension"], "employer_parts": (7.1, 0.56, 0.56, 2.0)}
+    monkeypatch.setitem(EMPLOYER_RATE_DERIVATION, "pension", raised)
+    rates = {**_payroll()["employer_contrib_rates"], "pension": 0.1022, "total": 0.2052}
+    validate_payroll(_payroll(employer_contrib_rates=rates))
 
 
 def test_the_shipped_payroll_payload_passes_its_own_gate() -> None:
