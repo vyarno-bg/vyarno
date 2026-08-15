@@ -14,7 +14,7 @@
  * print София's baseline under Варна's name
  * (`docs/site.md` §"A correct formula fed the wrong number").
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_region.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */

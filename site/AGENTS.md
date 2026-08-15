@@ -42,7 +42,7 @@ not a component either, and the reason is the rule below rather than taste: a
 tick VALUE is digits a reader reads off an axis, so axis arithmetic is exactly
 what a component may not keep.
 
-**`view/` is ten modules, one per subject, each paired with the suite of the
+**`view/` is eleven modules, one per subject, each paired with the suite of the
 same stem** — `view/home.js` with `verify_view_home.mjs`, and so on. There is no
 barrel: a component imports from the subject it is reaching into, so an import
 block naming five of them says the component is doing five things. `docs/site.md`

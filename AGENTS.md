@@ -151,7 +151,7 @@ conversation, not an edit.
 
 **Changing which number feeds a formula.** The `site/src/lib/view/` module that
 owns the subject, then the `site/scripts/verify_view_*.mjs` suite of the same
-stem — ten modules, ten suites, and `docs/testing-strategy.md` §"Where a test
+stem — eleven modules, eleven suites, and `docs/testing-strategy.md` §"Where a test
 belongs" says which. Never inside a
 `$derived`, and that did not relax when the reactive graph moved into
 `calculator.svelte.js`. `docs/site.md` §"A correct formula fed the wrong

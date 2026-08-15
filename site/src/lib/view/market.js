@@ -14,7 +14,7 @@
  * the page inputless: there is no signature here a reader's own salary could be
  * threaded into, so `/market/` cannot quietly become a calculator.
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_market.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */

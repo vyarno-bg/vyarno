@@ -10,7 +10,7 @@
  * offers, and compounding its fees monthly overstates the payment by ~€24 on
  * the published София median (`docs/math.md` §"Three rates").
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_home.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */

@@ -15,7 +15,7 @@
  * off two committed payloads, and a personal tax-wedge rate inverts above the
  * insurance ceiling. The dangerous ones look safe.
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_share.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */

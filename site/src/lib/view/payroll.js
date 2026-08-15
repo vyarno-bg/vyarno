@@ -10,7 +10,7 @@
  * and a percentile is read from the bottom — «top 63%» for a below-median
  * income reads as an achievement and is false.
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_payroll.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */

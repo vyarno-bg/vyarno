@@ -10,7 +10,7 @@
  * above it promises with the folded tail included, and the plain answer's
  * verdict is the one the pocket row took rather than a second opinion.
  *
- * One of the ten modules under `src/lib/view/`, paired with
+ * One of the eleven modules under `src/lib/view/`, paired with
  * `scripts/verify_view_results.mjs`; `docs/site.md` §"`src/lib/view/` — one
  * module per subject" says which one a new derived value goes in.
  */
