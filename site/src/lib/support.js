@@ -183,8 +183,8 @@ export const SUPPORT_COPY = Object.freeze({
    */
   explainK: { bg: "Кой плаща за това?", en: "Who pays for this?" },
   explainBody: {
-    bg: "Никой не ни плаща да ти показваме тези числа. Няма реклами, няма платена версия и не взимаме пари от банки, кредитни посредници, брокери или застрахователи — нито едно число тук не зависи от това кой плаща. Домейнът се плаща от дарения; хостингът е безплатен.",
-    en: "Nobody pays us to show it to you. There is no advertising, no paid version, and we take no money from a bank, a credit intermediary, a broker or an insurer — no figure here depends on who is paying. The domain is covered by donations; the hosting is free.",
+    bg: "Няма платена версия и нищо не е запазено за тези, които плащат. Нито едно число тук не зависи от това кой плаща: кои данни показваме, как ги смятаме и колко достъпно излиза едно жилище се решава от източника и от метода, и от нищо друго. Домейнът се плаща от дарения; хостингът е безплатен.",
+    en: "There is no paid version, and nothing is held back for whoever pays. No figure here depends on who is paying: which data we show, how we compute it and how affordable a home comes out are decided by the source and the method, and by nothing else. The domain is covered by donations; the hosting is free.",
   },
 
   /** The link that closes the explainer item, and the only route it offers. */

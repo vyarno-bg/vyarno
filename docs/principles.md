@@ -16,12 +16,15 @@ to satisfy, are in [`README.md`](./README.md) §"Who this is for".
   measures Bulgaria's official statistics against one household's own numbers:
   personal inflation, real wage, salary percentile, the tax wedge, rent,
   savings and the path to a home. **A public good: open source
-  (Apache-2.0), free to every visitor, and nothing is sold.** No paid tier, no
-  donor tier, no feature gating, no billing code. This is what the project *is*,
-  not a stage before monetisation — a change that makes any functionality
-  conditional on payment or supporter status does not get merged
-  (`CONTRIBUTING.md`, and a checkbox in the PR template).
-- **Sustained by donations**, which are gratuitous and buy nothing.
+  (Apache-2.0), and free to every visitor — nothing is sold to a reader.** No
+  paid tier, no donor tier, no feature gating, no billing code. That is what the
+  project *is*, and no funding decision reaches it: a change making any
+  functionality conditional on payment or supporter status does not get merged
+  (`CONTRIBUTING.md`, and a checkbox in the PR template). How the site is paid
+  for is a separate question, answered under §"What is closed" below.
+- **Sustained by donations today, and not by them alone indefinitely** — see
+  §"What is closed" on what an advertiser may and may not buy. Donations
+  themselves are gratuitous and buy nothing.
   `site/src/lib/support.js` carries the rules about how they may be asked for —
   two static surfaces (the footer line and the explainer's «Кой плаща за
   това?») pointing at `/support/`, no amounts in shipped copy, nothing
@@ -146,7 +149,7 @@ explainer deliberately teaches the method. That is what the project is for.
 | **P7** | **No unsourced defaults, no flattering defaults.** The raise field stays blank rather than pre-filled with an invented wage index. The affordability line stays at 30% of net — stricter than the 50% БНБ permits and the ~38.5% BG borrowers carry. |
 | **P8** | **Consumer math in the browser; reference math at build time.** The pipeline gates and publishes reference data; `mirror.js` is the only place a *consumer's* math happens, and it happens in their browser. New consumer features add pure functions there with a test in `verify_mirror_math.mjs` — never a fetch of the user's inputs. |
 | **P9** | **Verifiability scales down, not away.** If a format physically cannot carry a link, it carries the source name, the date and the domain. |
-| **P10** | **No commercial relationship may change a number, a ranking or a default.** Which figure is shown, and how affordable a home looks, cannot depend on who is paying. Nothing is sold and there is nothing to implement. |
+| **P10** | **No commercial relationship may change a number, a ranking or a default.** Which figure is shown, which lender appears, and how affordable a home looks cannot depend on who is paying. This is the principle advertising has to be built around rather than one it retires: the moment an advertiser can move a figure, every other number on the page is worth less, including the ones nobody paid for. An offer conditioned on any of the three is declined on those grounds, whatever it is worth. |
 | **P11** | **A figure nobody publishes is uncomputed, not concealed.** Where the site derives something an agency could have published and did not — the tax wedge is the shipped example — the framing is "this is computable from the official data and nobody has computed it for you", never "they do not want you to see it". Where an agency has a stated methodological reason, give it; where we cannot tell, say so in one line. Guarded by `verify_copy.mjs`. |
 
 **The calculator must keep working as a static page with no server.** A
@@ -182,13 +185,27 @@ margin are irrelevant to them, and none is an open question.
 | **A share count, a click event or a campaign parameter on an outgoing share** | P1. A measurement fired at the moment a basket is shared is a measurement that can see what somebody typed. We do not find out whether sharing works, and that is the trade rather than an oversight |
 | A second headline number (НСИ CPI alongside HICP) | Two competing headlines confuse. The distinction is explained in plain language instead ([`math.md`](./math.md)) — an editorial call rather than a promise, and the only row here that could be revisited |
 
-**Funding is decided, not open.** Вярно is a public good sustained by donations:
-Apache-2.0, every feature free to everyone, no paid tier, no donor tier, no
-billing code. Do not add pricing, billing, paywall or advertising code, copy or
-docs. Donations buy nothing — no supporter tier, no badge, no early access, no
-ad-free mode — because anything given in return makes the service възмездна,
-flips `LEGAL_FORM.takesPayment` and pulls in the rest of ЗЕТ чл. 4
+**What the reader pays is decided; who else pays is not.** Вярно is Apache-2.0,
+every feature free to everyone, no paid tier, no donor tier, no billing code —
+do not add pricing, billing or paywall code, copy or docs. Donations buy nothing
+— no supporter tier, no badge, no early access, no ad-free mode — because
+anything given in return makes the service възмездна, flips
+`LEGAL_FORM.takesPayment` and pulls in the rest of ЗЕТ чл. 4
 (`site/src/lib/support.js` rule 4, enforced by `verify_support.mjs`).
+
+**Advertising is open, and P10 is what it may not buy.** Donations are not
+expected to carry the site alone, so an advertiser paying is a live option and
+nothing in this repository should be written as though it were closed. What does
+not move is P10: which figure is shown, which lender appears and how affordable a
+home looks may not depend on who is paying, and an offer conditioned on any of
+them is declined on those grounds rather than negotiated. Three things land with
+the first ad and belong in its own release, not after it — ЗЕТ чл. 5-6 labelling
+so a търговско съобщение is identifiable on sight and names whose it is, a
+section in the privacy notice if the ad reaches the reader's browser from
+anywhere but our own origin (the CSP's origin list is the closed list, and it
+holds two), and the ЗКНИП question in `legal.js` §Advertising, which is sharpest
+for a lender's placement beside a mortgage figure and is answered by whoever
+places one.
 
 **How it may be asked is decided too, and the ceiling is two.** The footer
 line, one answer inside the explainer's closed disclosure, and `/support/`

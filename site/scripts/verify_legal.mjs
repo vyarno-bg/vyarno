@@ -252,7 +252,7 @@ test("the guard's commercial tripwire fires on a price and not on prose", () => 
   // widening the currency alternation must not make the guard fire on a
   // statutory figure the payslip copy legitimately names.
   for (const prose of [
-    "Вярно е безплатен и няма реклама.",
+    "Вярно е безплатен за всеки читател.",
     "Няма абонамент, няма профил и няма плащане.",
     "There is no subscription and nothing to buy.",
     "Максималният осигурителен доход е 4130 лв.",
@@ -529,13 +529,12 @@ test("the terms prohibit — in both languages — the things the licence relies
   // Bulgarian text while the English survives is a Bulgarian site with no
   // terms, and a check that searches the concatenation of both cannot see it.
   //
-  // The paid-placement clause is deliberately about LENDERS, brokers and
-  // insurers rather than advertising in general. What sits near the ЗКНИП
-  // perimeter is a lender paying to appear beside an affordability figure; a
-  // blanket "no paid placement anywhere" would be a wider promise than the
-  // credit posture needs, and nothing has decided that wider question.
-  // Hence the regex requires the scoped wording — a future blanket sentence
-  // must not be able to satisfy this check by accident.
+  // The clause held here is P10 — no figure depends on who is paying — and NOT
+  // a promise that nobody pays. Advertising is open (`LEGAL_FORM` §Advertising),
+  // so a check demanding the site deny it would fail the release that ships one
+  // and teach whoever hits it to delete the whole list. P10 survives that
+  // release: what an advertiser may never buy is which figure is shown, which
+  // lender appears, or how affordable a home looks.
   const terms = docById("terms");
   const text = Object.fromEntries(
     LANGS.map((lang) => [
@@ -574,7 +573,7 @@ test("the terms prohibit — in both languages — the things the licence relies
       "no-advice disclaimer": /не е финансов/,
       "not a recommendation": /не е препоръка/,
       "not a credit intermediary": /не е кредитен посредник/,
-      "no paid lender placement": /платено позициониране на кредитор/,
+      "no figure depends on who is paying": /не зависи от това кой плаща/,
     },
     en: {
       scraping: /crawling with a bot|scripted downloading/,
@@ -588,7 +587,7 @@ test("the terms prohibit — in both languages — the things the licence relies
       "no-advice disclaimer": /not financial/,
       "not a recommendation": /no figure[^.]*is a recommendation/,
       "not a credit intermediary": /not a credit intermediary/,
-      "no paid lender placement": /paid placement of a lender/,
+      "no figure depends on who is paying": /No figure here depends on who is paying/,
     },
   };
 
