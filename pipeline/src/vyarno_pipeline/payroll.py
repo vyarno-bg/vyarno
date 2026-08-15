@@ -184,11 +184,12 @@ EMPLOYER_RATE_DERIVATION: dict[str, dict[str, Any]] = {
 #      промишленост» runs 0,5% to 1,1% — so a section resolves to a RANGE and
 #      never to a representative rate. Picking the modal division would produce
 #      one confident number that is wrong for most of the people reading it.
-#   2. Rev. 2.1 moved work between divisions. Division 45 (trade and repair of
-#      motor vehicles) has no КИД-2025 successor of its own: the repair half
-#      is inside 95, which also serves section S. So 95 appears under two
-#      sections here, deliberately — a division belonging to one section is a
-#      property of one classification, and this map does not live inside one.
+#   2. Rev. 2.1 moved work between divisions, and for the one case that matters
+#      the act says so itself. Приложение № 2's Забележка: «Търговия на едро и
+#      дребно с автомобили и мотоциклети… (код по КИД-2008 = 45) се премества в
+#      икономическа дейност с код 46, 47 и 95 по КИД-2025». So 95 sits under two
+#      sections here — G by that note, S by Rev. 2 — and that sentence is the
+#      only published correspondence anywhere in this map.
 #
 # Keys are `sector_salary.json`'s `en_name` verbatim, including НСИ's own
 # missing spaces after commas. A key that stops matching drops that section's
@@ -207,7 +208,7 @@ NSI_SECTION_DIVISIONS: dict[str, tuple[str, ...]] = {
         "39",
     ),
     "Construction": ("41", "42", "43"),
-    # 95 carries what Rev. 2's division 45 called repair of motor vehicles.
+    # 46, 47 and 95 are what the appendix's own Забележка splits 45 into.
     "Wholesale and retail trade;repair of motor vehicles and motorcycles": ("46", "47", "95"),
     "Transportation and storage": ("49", "50", "51", "52", "53"),
     "Accommodation and food service activities": ("55", "56"),
