@@ -422,7 +422,7 @@ test("the payroll figures name the ДВ issue, not just its year", { skip }, asy
       ...(await page.locator("#pay .stat .ss").allInnerTexts()),
       ...(await page.locator("#pay p.cap").allInnerTexts()),
     ];
-    assert.equal(captions.length, 5, `the payroll section rendered ${captions.length} captions`);
+    assert.equal(captions.length, 6, `the payroll section rendered ${captions.length} captions`);
     for (const caption of captions) {
       assert.match(
         caption,
@@ -650,6 +650,96 @@ test("the country page's stat rows leave no orphaned cell", { skip }, async () =
       { viewport: { width, height: 900 } }
     );
   }
+});
+
+test("the labour-cost chart draws a partition rather than three washes", { skip }, async () => {
+  // The one suite that runs the app, and the only thing that would notice this
+  // chart rendering blank. Three properties, and each fails as a picture that
+  // still looks like a chart:
+  //
+  //  - the three bands are all painted. An unfilled one leaves a gap the eye
+  //    reads as a fourth category nobody named.
+  //  - they meet. The bands are a partition in `mirror.js#bgLabourCost`, and a
+  //    geometry bug that left daylight between two of them would draw the wedge
+  //    as bigger or smaller than it is while every number on the page stayed
+  //    right.
+  //  - the top of the stack is the top of the plot. The employer's band is the
+  //    part a reader has never seen, so a stack that stopped short would drop
+  //    exactly the series this chart was added for.
+  await withApp(async (page, errors) => {
+    const svg = page.locator("svg.lc").first();
+    assert.ok(await svg.count(), "the labour-cost chart is not on /how/ at all");
+
+    for (const cls of ["lc-net", "lc-employee", "lc-employer"]) {
+      const fill = await page
+        .locator(`.${cls}`)
+        .first()
+        .evaluate((el) => getComputedStyle(el).fill);
+      assert.ok(fill && fill !== "none", `.${cls} is unfilled (fill: ${fill})`);
+    }
+
+    // Sampled down one column of the plot: every y from the top of the frame to
+    // the baseline has to be inside exactly one band.
+    const gaps = await svg.evaluate((el) => {
+      const bands = ["lc-net", "lc-employee", "lc-employer"].map((c) =>
+        el.querySelector(`path.${c}`)
+      );
+      const baseY = Number(el.querySelector("line.lc-base").getAttribute("y1"));
+      const x = Number(el.querySelector("line.lc-cap").getAttribute("x1")) - 20;
+      const out = [];
+      for (let y = 11; y < baseY - 1; y += 0.5) {
+        const hits = bands.filter((b) => b.isPointInFill(new DOMPoint(x, y))).length;
+        if (hits === 0) out.push(y);
+      }
+      return { gaps: out.length, baseY };
+    });
+    assert.equal(
+      gaps.gaps,
+      0,
+      `${gaps.gaps} sampled heights fall in no band at all — the stack has holes, ` +
+        "so the wedge it draws is not the wedge it computes"
+    );
+
+    // The key names every band that is drawn, and nothing that is not.
+    assert.equal(await page.locator("svg.lc").count(), await page.locator(".lc-key").count());
+    const keyText = await page.locator(".lc-key").first().innerText();
+    assert.ok(keyText.trim().length > 0, "the chart's key rendered empty");
+
+    // The denominator is stated under the picture. Every percentage on this
+    // chart is a share of the labour cost, and the other chart on this page is
+    // the same euros over the gross — a figure ten points lower and as true.
+    const denom = await page.locator(".lc-denom").first().innerText();
+    assert.match(denom, /разход за труд|cost of employment/);
+
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
+});
+
+test("the two wedge charts state different denominators and share no axis", { skip }, async () => {
+  // `docs/math.md` §"Which rate goes into the annuity" refuses this blur for
+  // the three mortgage rates. Here it is two charts on one page measuring the
+  // same euros: 22.4% of gross and 34.7% of labour cost. Drawn on one axis, or
+  // captioned without their bases, a reader cannot say which they are reading.
+  await withApp(async (page, errors) => {
+    assert.ok(await page.locator("svg.wedge").count(), "the gross-side chart is missing");
+    assert.ok(await page.locator("svg.lc").count(), "the labour-cost chart is missing");
+
+    const gross = await page.locator(".wedge-key").first().innerText();
+    const cost = await page.locator(".lc-key").first().innerText();
+    assert.notEqual(
+      gross.trim(),
+      cost.trim(),
+      "both charts carry the same key, so nothing on screen says they are measured " +
+        "against different denominators"
+    );
+
+    // Both mark the ceiling, which is what lets a reader line them up, and
+    // that is the ONLY thing they are allowed to share.
+    assert.ok(await page.locator("line.wedge-cap").count());
+    assert.ok(await page.locator("line.lc-cap").count());
+
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
 });
 
 test.after(shutdown);

@@ -584,6 +584,53 @@ and `""` all coerce to 0, and 0 is a legitimate answer («нямаше увел�
 A blank read as "no raise" is an invented number (P7) that drags the household's
 figure down. The row names the missing income instead of answering around it.
 
+### The labour tax wedge, and the denominator that is the whole point
+
+Two figures, the same euros, and they are not interchangeable:
+
+```
+employee side   (gross − net) / gross                       = 22.402 %
+labour wedge    (labour cost − net) / labour cost           = 34.748 %
+  labour cost = gross + employer contributions
+  net         = gross − employee contributions − income tax
+```
+
+**The definition implemented is OECD/EC's**, stated because more than one is
+defensible: the wedge is every compulsory levy on employing a person, **the flat
+10% included**. Leaving the tax out would answer a narrower question — what do
+the contributions take — under a name that means the wider one.
+
+**Neither figure may appear without its base named in the same sentence.** They
+differ by twelve points, both are true, and a reader who takes 34.7% for a share
+of their gross concludes their payslip is wrong. This is the rule §"Which rate
+goes into the annuity" applies to the three mortgage rates, and the reason
+`/how/` draws two charts rather than one with a toggle: `WedgeChart` is a share
+of gross, `LabourCostChart` a share of labour cost, each names its denominator
+in its own key, and they may share the €2300 rule and nothing else.
+
+**Both sides stop at the same ceiling.** КСО чл. 6, ал. 3 puts contributions on
+no more than the maximum insurable income and only THEN splits them between
+осигурител and осигурено лице — one capped base, divided afterwards — while
+чл. 157, ал. 6 and ЗЗО чл. 40, ал. 1, т. 1 put ДЗПО and health on that same
+base. Capping only the employee's half would hold the wedge near 35% at every
+salary and make the entire shape above €2300 wrong. At €6000 the employer pays
+18.92% of €2300, not of €6000: €435.16, and the wedge is 20.5%.
+
+**ТЗПБ makes the answer a range, and the range is what ships.** The
+work-accident contribution is employer-only and set per economic activity
+(0.4%–1.1%, ЗБДОО's Приложение № 2А), so the wedge below the ceiling runs
+34.748% to 35.130%. Ten of the nineteen НСИ sections span several rates —
+«Преработваща промишленост» covers 0.5% to 1.1% — so a sector resolves to
+`{min, max}` and never to a representative rate. `bgLabourWedge` evaluates both
+ends and offers no midpoint, because a midpoint is a rate no statute sets, for
+a sector nobody is in. Where a section resolves to one rate the two ends are
+equal and the copy states one figure.
+
+**The three bands are a partition, not three measurements.** `bgLabourCost`
+returns `netSharePct + employeeSharePct + employerSharePct`, and they sum to 100
+by construction rather than by three roundings agreeing — which is what lets the
+stacked chart claim the wedge IS the top two bands.
+
 ## HICP vs the national CPI
 
 Bulgaria has two official inflation gauges:

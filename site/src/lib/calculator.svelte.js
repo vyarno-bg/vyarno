@@ -98,6 +98,7 @@ import {
   taxWedgePanel,
   payslipPanel,
 } from "./view/payroll.js";
+import { employerCostPanel, systemLabourWedge } from "./view/employer.js";
 import {
   regionQuarter as publishedRegionQuarter,
   regionNames,
@@ -782,6 +783,16 @@ export class Calculator {
   systemWedge = $derived(systemWedgeLadder({ payroll: this.data.payroll }));
   /** The same wedge as a shape, over the range the table's own rows span. */
   systemWedgeCurve = $derived(wedgeCurve({ payroll: this.data.payroll }));
+
+  /**
+   * The labour-cost partition with nobody standing on it — `/how/`'s own.
+   *
+   * Takes no pay and has no argument through which any could arrive, for the
+   * reason `systemWedge` above takes none: a personal wedge rate is closed on
+   * every shareable surface (P2), and the system's curve at published
+   * parameters is the version the closed list leaves open by name.
+   */
+  systemLabourCost = $derived(systemLabourWedge({ payroll: this.data.payroll }));
   /** The SES ladder as rows, each saying whether SES surveyed it or we modelled it. */
   payLadderRows = $derived(
     payLadder({
@@ -889,6 +900,28 @@ export class Calculator {
    */
   wedgePay = $derived(this.earnersDirty ? this.pay : { basis: this.payBasis, amounts: [] });
   wedge = $derived(taxWedgePanel({ payroll: this.data.payroll, pay: this.wedgePay }));
+
+  /**
+   * The same contracts costed from the employer's side, for the disclosure the
+   * wedge row carries.
+   *
+   * **It reads `wedgePay` rather than `pay`**, so the placeholder salary is
+   * withheld here exactly as it is from the row above it — a labour cost stated
+   * in euro about somebody who has typed nothing is the same P7 failure one
+   * denominator over, and it would be the more confident-sounding of the two.
+   *
+   * It takes `sectorKey` and not the resolved range: ТЗПБ is set per economic
+   * activity, ten of the nineteen НСИ sections span several rates, and a caller
+   * that could pass one rate could pass a representative one. Resolving the key
+   * is `view/employer.js#sectorWorkAccident`'s job, where a suite reaches it.
+   */
+  employerCost = $derived(
+    employerCostPanel({
+      payroll: this.data.payroll,
+      pay: this.wedgePay,
+      sectorKey: this.sectorKey,
+    })
+  );
 
   // How each earner compares with the chosen област's average wage — per
   // earner, because НСИ publish a wage rather than a household income. See
