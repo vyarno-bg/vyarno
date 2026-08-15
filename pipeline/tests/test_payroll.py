@@ -505,6 +505,29 @@ def test_a_section_spanning_several_rates_publishes_the_span() -> None:
     assert (construction["min"], construction["max"]) == (0.011, 0.011)
 
 
+def test_section_g_keeps_the_divisions_the_act_says_absorbed_45() -> None:
+    """The one entry in the map that no other check can see.
+
+    Everything else about `NSI_SECTION_DIVISIONS` is caught by rebuilding the
+    payload: move a division and some section's min or max moves with it. 46,
+    47 and 95 all sit at 0,5% in both of ЗБДОО 2026's appendices, so dropping
+    95 from section G changes no published figure and the whole suite stays
+    green — while quietly deleting the repair half of Rev. 2's division 45 from
+    the section a reader picks it by.
+
+    It is also the only join here anybody publishes, which is why it is pinned
+    to the membership rather than to a rate: Приложение № 2's Забележка sends
+    КИД-2008's 45 to «код 46, 47 и 95 по КИД-2025». The year one of the three
+    stops sharing a rate with the others, this is what says which list was
+    meant.
+    """
+    assert set(
+        NSI_SECTION_DIVISIONS["Wholesale and retail trade;repair of motor vehicles and motorcycles"]
+    ) == {"46", "47", "95"}
+    # And 95 stays in section S as well — it is in both, not moved between them.
+    assert "95" in NSI_SECTION_DIVISIONS["Other service activities"]
+
+
 def test_the_span_published_is_the_span_the_act_sets() -> None:
     wa = build_work_accident_block(_fixture_tzpb(date(2026, 8, 1)))
     assert (wa["min"], wa["max"]) == (0.004, 0.011)
