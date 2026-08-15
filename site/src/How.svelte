@@ -35,6 +35,7 @@
   import SiteFooter from "./lib/SiteFooter.svelte";
   import SiteHeader from "./lib/SiteHeader.svelte";
   import WedgeChart from "./lib/WedgeChart.svelte";
+  import LabourCostChart from "./lib/LabourCostChart.svelte";
   import DataLate from "./components/DataLate.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
@@ -711,6 +712,71 @@
         <span class="l-bg">{t(COPY.howSrc, "bg", { s: COPY.howSrcDv.bg, p: dvWhen.bg })}</span>
         <span class="l-en">{t(COPY.howSrc, "en", { s: COPY.howSrcDv.en, p: dvWhen.en })}</span>
       </p>
+    {/if}
+
+    <!-- **The second denominator, and it gets its own picture rather than a
+         second series on the one above.** Everything up to here is a share of
+         the GROSS salary; everything below is a share of what the job costs.
+         They are the same euros — 22,4% and 34,7% — and drawn on one axis a
+         reader cannot say which they are looking at. Both charts mark €2300 so
+         the two can be lined up vertically, and neither shares the other's
+         y-axis. -->
+    {#if calc.data.payroll && calc.systemLabourCost.points.length > 0}
+      <h3>
+        <span class="l-bg">Колко струва един работник</span>
+        <span class="l-en">What a worker costs</span>
+      </h3>
+      <p>
+        <span class="l-bg"
+          >Заплатата не е това, което трудът струва. Освен брутото работодателят внася и своя част
+          от същите пет фонда — <b>{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b> върху същия
+          осигурителен доход, със същата горна граница — плюс вноска за трудова злополука, която се
+          определя по икономическа дейност и е между
+          <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
+          и <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b>. Картината долу дели целия
+          разход за труд на три: колкото стига до работника, колкото се удържа от заплатата му и
+          колкото работодателят плаща отгоре. Горните две заедно са данъчният клин — при заплата под
+          границата той е <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> от общия разход за труд, а
+          над нея пада, защото осигуровките спират, а заплатата — не.</span
+        >
+        <span class="l-en"
+          >A salary is not what the work costs. On top of the gross, the employer pays its own share
+          of the same five funds — <b>{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b> on the
+          same insurable income, under the same ceiling — plus a work-accident contribution set per
+          economic activity, anywhere from
+          <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
+          to <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b>. The chart below divides the
+          whole cost of employment into three: what reaches the worker, what is deducted from their
+          pay, and what the employer pays on top. The top two together are the tax wedge — on a
+          salary under the ceiling it is <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> of the total
+          cost of employment, and above the ceiling it falls, because the contributions stop and the salary
+          does not.</span
+        >
+      </p>
+      <figure class="wedge-fig">
+        <LabourCostChart cost={calc.systemLabourCost} />
+      </figure>
+      <!-- P3: the ТЗПБ figures are the only ones on this page read out of a
+           fetched act rather than a transcribed table, so the appendix that
+           sets them is named and its ДВ permalink is the link. -->
+      {#if calc.systemLabourCost.sourceUrl}
+        <p class="cap">
+          <span class="l-bg"
+            >източник: <a href={calc.systemLabourCost.sourceUrl} target="_blank" rel="noopener"
+              >Държавен вестник · ЗБДОО 2026, {calc.systemLabourCost.appendix}</a
+            >
+            · бр. {fmt0(calc.systemLabourCost.gazetteIssue)} от {calc.systemLabourCost
+              .gazetteDate}</span
+          >
+          <span class="l-en"
+            >source: <a href={calc.systemLabourCost.sourceUrl} target="_blank" rel="noopener"
+              >State Gazette · ЗБДОО 2026, {calc.systemLabourCost.appendix}</a
+            >
+            · issue {fmt0(calc.systemLabourCost.gazetteIssue)} of {calc.systemLabourCost
+              .gazetteDate}</span
+          >
+        </p>
+      {/if}
     {/if}
   </section>
 

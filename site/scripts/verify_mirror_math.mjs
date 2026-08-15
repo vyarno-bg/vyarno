@@ -560,13 +560,57 @@ test("payrollParams maps the published payroll.json into the math params", () =>
   // the `total`, so the five lines fall back to the sentinel TOGETHER: a
   // per-field fallback would itemise some funds at the published rate and
   // others at last year's, and the rows would still sum to the total.
+  //
+  // The employer's five lines and the ТЗПБ span fall back the same way and for
+  // the same reason, and this payload carries neither. A partial employer read
+  // would render a labour-cost breakdown whose rows sum to less than the total
+  // printed under them; a ТЗПБ `min` without its `max` would report a sector as
+  // charged exactly its floor, which is a claim the act makes for no sector
+  // spanning more than one rate.
   assert.deepEqual(params, {
     rates: BG_PAYROLL_DEFAULT.rates,
     totalEmployeeRate: 0.1378,
+    employerRates: BG_PAYROLL_DEFAULT.employerRates,
+    totalEmployerRate: BG_PAYROLL_DEFAULT.totalEmployerRate,
+    workAccident: BG_PAYROLL_DEFAULT.workAccident,
     incomeTaxRate: 0.1,
     maxInsurable: 2111.64,
     minWageGross: 620.2,
   });
+});
+
+test("the employer's lines and the ТЗПБ span are read from the payload when it has them", () => {
+  // The other direction of the same guard: the sentinel exists for first paint,
+  // and a `payrollParams` that ignored the payload would keep computing last
+  // year's employer cost for as long as nobody noticed.
+  const params = payrollParams({
+    employee_contrib_rates: { total: 0.1378 },
+    employer_contrib_rates: {
+      pension: 0.09,
+      pension2: 0.03,
+      sickness_maternity: 0.02,
+      unemployment: 0.007,
+      health: 0.05,
+      total: 0.197,
+    },
+    work_accident: { min: 0.005, max: 0.009 },
+    income_tax_rate: 0.1,
+    max_insurable_income_eur: 2300,
+    min_wage_gross_eur: 620.2,
+  });
+  assert.equal(params.totalEmployerRate, 0.197);
+  assert.equal(params.employerRates.pension, 0.09);
+  assert.deepEqual(params.workAccident, { min: 0.005, max: 0.009 });
+});
+
+test("half a ТЗПБ span falls back to the sentinel rather than to its own floor", () => {
+  // A `min` that resolved beside a `max` that did not would render as a sector
+  // charged exactly its lowest rate — the cheapest of the readings available,
+  // presented as the only one.
+  for (const wa of [{ min: 0.005 }, { max: 0.009 }, { min: 0.009, max: 0.005 }, {}]) {
+    const params = payrollParams({ employee_contrib_rates: { total: 0.1378 }, work_accident: wa });
+    assert.deepEqual(params.workAccident, BG_PAYROLL_DEFAULT.workAccident, JSON.stringify(wa));
+  }
 });
 
 test("payrollParams uses the LIVE values, not the frozen sentinel", () => {

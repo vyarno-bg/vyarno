@@ -731,6 +731,46 @@ const CONTRIB_KEY_BY_PUBLISHED = Object.freeze({
   health: "health",
 });
 
+/**
+ * The осигурител's side of the same five funds, same insured person — III
+ * категория труд, born after 1959. Offline sentinel only; the live figures come
+ * from `payroll.json`, and `test_payroll.py` holds these against the pipeline's
+ * dated table.
+ *
+ * Фонд „Пенсии“ is 8.22% and not 8.88%: the other four funds are split 60:40
+ * and this one is not (КСО чл. 6, ал. 3, т. 9 plus the two rises in чл. 6, ал.
+ * 1, т. 4). `pipeline/.../payroll.py#EMPLOYER_RATE_DERIVATION` is where that
+ * reasoning lives, and it is named here rather than restated.
+ */
+export const BG_2026_EMPLOYER_RATES = Object.freeze({
+  pension: 0.0822,
+  pension2: 0.028,
+  sicknessMaternity: 0.021,
+  unemployment: 0.006,
+  health: 0.048,
+});
+
+/**
+ * Sum of the five employer lines — 18.52%, and ТЗПБ is deliberately NOT in it.
+ * That contribution is set per economic activity (0.4%–1.1%), so there is no
+ * one number to add; it arrives separately and is a range until a sector says
+ * otherwise.
+ */
+export const BG_2026_TOTAL_EMPLOYER_RATE = Object.freeze(
+  BG_2026_EMPLOYER_RATES.pension +
+    BG_2026_EMPLOYER_RATES.pension2 +
+    BG_2026_EMPLOYER_RATES.sicknessMaternity +
+    BG_2026_EMPLOYER_RATES.unemployment +
+    BG_2026_EMPLOYER_RATES.health
+);
+
+/**
+ * The ТЗПБ span КСО чл. 6, ал. 1, т. 7 sets, as the offline sentinel's fallback
+ * for a reader whose sector is unknown. Both ends, never a midpoint — a single
+ * figure here would be a rate no statute names.
+ */
+export const BG_2026_WORK_ACCIDENT = Object.freeze({ min: 0.004, max: 0.011 });
+
 /** Sum of all employee contributions — should equal 13.78%. */
 export const BG_2026_TOTAL_EMPLOYEE_RATE = Object.freeze(
   BG_2026_RATES.pension +
@@ -772,6 +812,9 @@ export const BG_2026_MIN_WAGE_GROSS = 620.2;
 export const BG_PAYROLL_DEFAULT = Object.freeze({
   rates: BG_2026_RATES,
   totalEmployeeRate: BG_2026_TOTAL_EMPLOYEE_RATE,
+  employerRates: BG_2026_EMPLOYER_RATES,
+  totalEmployerRate: BG_2026_TOTAL_EMPLOYER_RATE,
+  workAccident: BG_2026_WORK_ACCIDENT,
   incomeTaxRate: BG_2026_INCOME_TAX_RATE,
   maxInsurable: BG_2026_MAX_INSURABLE,
   minWageGross: BG_2026_MIN_WAGE_GROSS,
@@ -807,9 +850,41 @@ export function payrollParams(payload) {
     }
     lines[key] = v;
   }
+  // The employer's five lines, read all-or-nothing for the same reason as the
+  // employee's above: a partial read renders a labour-cost breakdown whose rows
+  // sum to less than the total printed under them.
+  const employerLines = {};
+  let employerComplete = true;
+  for (const [published, key] of Object.entries(CONTRIB_KEY_BY_PUBLISHED)) {
+    const v = (payload.employer_contrib_rates || {})[published];
+    if (!Number.isFinite(v)) {
+      employerComplete = false;
+      break;
+    }
+    employerLines[key] = v;
+  }
+
+  // ТЗПБ's span, from the payload's own `work_accident` block. Both ends or
+  // neither: a `min` that resolved and a `max` that did not would render as a
+  // sector charged exactly its floor, which is a claim the act does not make
+  // for any sector spanning more than one rate.
+  const wa = payload.work_accident || {};
+  const workAccident =
+    Number.isFinite(wa.min) && Number.isFinite(wa.max) && wa.min <= wa.max
+      ? Object.freeze({ min: wa.min, max: wa.max })
+      : BG_PAYROLL_DEFAULT.workAccident;
+
   return {
     rates: complete ? Object.freeze(lines) : BG_PAYROLL_DEFAULT.rates,
     totalEmployeeRate: num(rates.total, BG_PAYROLL_DEFAULT.totalEmployeeRate),
+    employerRates: employerComplete
+      ? Object.freeze(employerLines)
+      : BG_PAYROLL_DEFAULT.employerRates,
+    totalEmployerRate: num(
+      (payload.employer_contrib_rates || {}).total,
+      BG_PAYROLL_DEFAULT.totalEmployerRate
+    ),
+    workAccident,
     incomeTaxRate: num(payload.income_tax_rate, BG_PAYROLL_DEFAULT.incomeTaxRate),
     maxInsurable: num(payload.max_insurable_income_eur, BG_PAYROLL_DEFAULT.maxInsurable),
     minWageGross: num(payload.min_wage_gross_eur, BG_PAYROLL_DEFAULT.minWageGross),
@@ -1336,6 +1411,178 @@ export function bgTaxWedge({
     marginalBelowPct: bgMarginalRatePct(cap - 1, params),
     marginalAbovePct: bgMarginalRatePct(cap + 1, params),
     capRisePerMonth: rise,
+    points,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// THE LABOUR TAX WEDGE — the same gap, measured over what the job costs
+// ---------------------------------------------------------------------------
+//
+// **A DIFFERENT DENOMINATOR FROM EVERYTHING ABOVE, AND THAT IS THE POINT.**
+// `bgNetSalary().effectiveRatePct` is what leaves a GROSS salary; this is what
+// never arrives out of the TOTAL COST of employing somebody. 22.4% and 34.7%
+// are the same euros over two different bases, and a sentence carrying either
+// without naming its base is not a smaller claim — it is a different one.
+// `docs/math.md` §"Which rate goes into the annuity" refuses the same blur for
+// the three mortgage rates, and the two charts may not share a y-axis for the
+// same reason.
+
+/**
+ * What one contract costs, and how that cost divides.
+ *
+ * The definition is OECD/EC's, stated here because more than one is defensible:
+ *
+ *   labour cost = gross + employer contributions
+ *   net         = gross − employee contributions − income tax
+ *   wedge       = (labour cost − net) / labour cost
+ *
+ * **The flat 10% is inside the wedge**, which is the choice a reader is most
+ * likely to expect otherwise. Under OECD methodology the wedge is every
+ * compulsory levy on employing a person, income tax included; leaving it out
+ * would answer a narrower question ("what do the contributions take") under a
+ * name that means the wider one.
+ *
+ * **Both sides stop at the same ceiling.** КСО чл. 6, ал. 3 puts contributions
+ * on no more than the maximum insurable income and only THEN splits them
+ * between осигурител and осигурено лице, so there is one capped base; чл. 157,
+ * ал. 6 and ЗЗО чл. 40, ал. 1, т. 1 put ДЗПО and health on that same base.
+ * Capping only the employee's half would keep the wedge near 35% at every
+ * salary, and the whole shape above €2300 would be wrong.
+ *
+ * **`workAccidentRate` is a required argument with no default.** ТЗПБ is set
+ * per economic activity and is a RANGE until a sector narrows it, so there is
+ * no rate this function could pick that some caller would not read as an
+ * answer. A caller that has only a range calls this twice — `bgLabourWedge`
+ * does exactly that.
+ *
+ * @param {number} gross  gross monthly salary in EUR
+ * @param {object} [params]  from `payrollParams(data.payroll)`
+ * @param {number} workAccidentRate  ТЗПБ as a fraction, e.g. 0.005
+ * @returns {{gross:number, insurableBase:number, employerSocial:number,
+ *            employerAccident:number, employerTotal:number, labourCost:number,
+ *            net:number, employeeDeductions:number, wedgePct:number,
+ *            netSharePct:number, employeeSharePct:number, employerSharePct:number}}
+ */
+export function bgLabourCost(gross, params = BG_PAYROLL_DEFAULT, workAccidentRate = 0) {
+  const g = Number(gross);
+  const z = Number.isFinite(workAccidentRate) && workAccidentRate > 0 ? workAccidentRate : 0;
+  if (!Number.isFinite(g) || g <= 0) {
+    return {
+      gross: 0,
+      insurableBase: 0,
+      employerSocial: 0,
+      employerAccident: 0,
+      employerTotal: 0,
+      labourCost: 0,
+      net: 0,
+      employeeDeductions: 0,
+      wedgePct: 0,
+      netSharePct: 0,
+      employeeSharePct: 0,
+      employerSharePct: 0,
+    };
+  }
+
+  const { net, insurableBase } = bgNetSalary(g, params);
+  const employerSocial = insurableBase * params.totalEmployerRate;
+  const employerAccident = insurableBase * z;
+  const employerTotal = employerSocial + employerAccident;
+  const labourCost = g + employerTotal;
+
+  return {
+    gross: g,
+    insurableBase,
+    employerSocial,
+    employerAccident,
+    employerTotal,
+    labourCost,
+    net,
+    employeeDeductions: g - net,
+    wedgePct: (100 * (labourCost - net)) / labourCost,
+    // The three shares partition the labour cost and sum to 100 by
+    // construction, so the chart draws a partition rather than three
+    // independently computed bands that might not meet.
+    netSharePct: (100 * net) / labourCost,
+    employeeSharePct: (100 * (g - net)) / labourCost,
+    employerSharePct: (100 * employerTotal) / labourCost,
+  };
+}
+
+/**
+ * The labour-cost curve, sampled, plus the figures the panel states in words.
+ *
+ * **Evaluated at BOTH ends of the ТЗПБ range and never in the middle.** Ten of
+ * the nineteen НСИ sections span several ТЗПБ rates, so a section is a range;
+ * `wedgePctAtMin`/`wedgePctAtMax` are what a sentence quotes, and they collapse
+ * to one number where the sector is unambiguous. A midpoint would be a rate no
+ * statute sets, for a sector nobody is in.
+ *
+ * `points` carries the shares at the range's LOW end, which is what the stacked
+ * chart draws. The two ends differ by 0.38 points of labour cost at most — a
+ * third of a pixel on a 132-unit plot — so drawing both would be a precision
+ * the picture cannot carry; the band's own label states the range instead.
+ *
+ * The ceiling is forced into the sample for the reason `bgTaxWedge` forces it:
+ * it is the curve's only kink, and a sampler that steps over it draws a
+ * straight line.
+ *
+ * @param {object} args
+ * @param {object} args.params
+ * @param {{min:number, max:number}} args.workAccident  the sector's ТЗПБ range
+ * @param {number} [args.maxGross]
+ * @param {number} [args.steps]
+ * @returns {{capGross:number, wedgePctAtMin:number, wedgePctAtMax:number,
+ *            peakWedgePct:number, endWedgePct:number, ambiguous:boolean,
+ *            workAccident:{min:number, max:number},
+ *            points:Array<{gross:number, wedgePct:number, netSharePct:number,
+ *                          employeeSharePct:number, employerSharePct:number}>}}
+ */
+export function bgLabourWedge({
+  params = BG_PAYROLL_DEFAULT,
+  workAccident = BG_PAYROLL_DEFAULT.workAccident,
+  maxGross = 6000,
+  steps = 60,
+} = {}) {
+  const cap = params.maxInsurable;
+  const top = Math.max(maxGross, cap * 1.5);
+  const lo = workAccident?.min ?? 0;
+  const hi = workAccident?.max ?? lo;
+
+  const sampled = [];
+  for (let i = 1; i <= steps; i += 1) sampled.push((top * i) / steps);
+  sampled.push(cap);
+  const grosses = [...new Set(sampled)].sort((a, b) => a - b);
+
+  const points = grosses.map((gross) => {
+    const c = bgLabourCost(gross, params, lo);
+    return {
+      gross,
+      wedgePct: c.wedgePct,
+      netSharePct: c.netSharePct,
+      employeeSharePct: c.employeeSharePct,
+      employerSharePct: c.employerSharePct,
+    };
+  });
+
+  return {
+    capGross: cap,
+    // Quoted at the ceiling, where the curve peaks — below it the wedge is a
+    // constant and above it every extra euro dilutes it, exactly as the
+    // employee-side curve behaves and for the same reason.
+    wedgePctAtMin: bgLabourCost(cap, params, lo).wedgePct,
+    wedgePctAtMax: bgLabourCost(cap, params, hi).wedgePct,
+    peakWedgePct: bgLabourCost(cap, params, lo).wedgePct,
+    endWedgePct: bgLabourCost(top, params, lo).wedgePct,
+    // Whether this sector resolves to one rate or a span. The template renders
+    // «34,7%» or «34,7–35,1%» off this rather than off comparing two floats.
+    ambiguous: hi > lo,
+    workAccident: { min: lo, max: hi },
+    // The same two as percentages, because a template that multiplies by 100
+    // is arithmetic in the render layer — `verify_wiring.mjs` refuses to see
+    // it, and the figure it would produce is one no suite can reach.
+    workAccidentMinPct: 100 * lo,
+    workAccidentMaxPct: 100 * hi,
     points,
   };
 }

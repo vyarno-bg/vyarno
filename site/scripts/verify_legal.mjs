@@ -612,8 +612,8 @@ test("the sources page covers every upstream the footer credits", () => {
   const ids = UPSTREAMS.map((u) => u.id);
   assert.deepEqual(
     [...ids].sort(),
-    ["bnb", "ecb", "eurostat", "imot", "nsi"],
-    "UPSTREAMS no longer lists exactly the five connectors the pipeline runs. " +
+    ["bnb", "dv", "ecb", "eurostat", "imot", "nsi"],
+    "UPSTREAMS no longer lists exactly the six connectors the pipeline runs. " +
       "Adding or removing a connector moves this table in the same commit " +
       "(docs/data-sources.md)."
   );

@@ -466,6 +466,33 @@ export const UPSTREAMS = [
       "https://www.nsi.bg/pages/licenz-za-izpolzvaneto-na-statisticheskata-informaciya-proizvejdana-i-razprostranyavana-ot-nacionalniya-statisticheski-institut-485",
   },
   {
+    id: "dv",
+    name: { bg: "Държавен вестник", en: "State Gazette (Държавен вестник)" },
+    // The only upstream that is a LAW rather than a statistic, and the only one
+    // whose reuse nobody may condition. It is listed here anyway because this
+    // page answers "where does each number come from", and since the pipeline
+    // started reading ЗБДОО's ТЗПБ appendix rather than transcribing it, the
+    // honest answer for the labour-cost figures is «от акта».
+    provides: {
+      bg: "Осигурителната вноска за фонд „Трудова злополука и професионална болест“ по икономически дейности — приложението към Закона за бюджета на държавното обществено осигуряване, което я определя за годината. Тя е изцяло за сметка на работодателя и е единствената ставка в сметката за разхода за труд, която не е една и съща за всички.",
+      en: "The work-accident and occupational-disease contribution by economic activity — the appendix to the State Social Insurance Budget Act that sets it for the year. It is the employer's alone, and the only rate in the labour-cost figures that is not the same for everybody.",
+    },
+    requires: {
+      bg: "Нищо. ЗАПСП чл. 4, т. 1 изключва нормативните актове от авторско право, така че текстът на закон не е ничий, за да се лицензира — затова и редът „Данни от…“ в подножието не го изброява: той стои там, защото няколко от издателите го изискват като условие. Остава задължението към читателя, а не към издателя: числата сочат към самото приложение, с броя и датата на „Държавен вестник“, в който е обнародвано.",
+      en: "Nothing. ЗАПСП чл. 4, т. 1 puts legislative acts outside copyright, so the text of a statute is nobody's to license — which is why the footer's «Данни от…» line does not name it: that line is there because several of those publishers require the credit as a condition. What remains is owed to the reader rather than to the publisher, and the figures link to the appendix itself, with the issue and date of the gazette it was promulgated in.",
+    },
+    url: "https://dv.parliament.bg/",
+    // The gazette twice, and that is the honest answer rather than a gap:
+    // there IS no terms document, because ЗАПСП чл. 4, т. 1 leaves a statute
+    // outside copyright and nobody publishes conditions for reusing one. The
+    // provision is quoted in `requires` above, which is what P9 asks of a
+    // citation whose link cannot reach the instrument — the same arrangement
+    // `payroll.py` makes for the ДВ issue. A lex.bg document id sat here until
+    // it could not be resolved from any build environment, and a ЗЕТ чл. 4
+    // document may not carry a URL nobody has opened.
+    termsUrl: "https://dv.parliament.bg/",
+  },
+  {
     id: "imot",
     name: { bg: "имот.bg", en: "imot.bg" },
     // **The two paragraphs below are the shipped half of `docs/legal.md`

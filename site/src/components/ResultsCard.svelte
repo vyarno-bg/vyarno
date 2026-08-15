@@ -52,7 +52,11 @@
   <div class="r-rows">
     <PocketRow {calc} />
     <PercentileRow {calc} />
-    <TaxWedgeRow wedge={calc.wedge} />
+    <TaxWedgeRow
+      wedge={calc.wedge}
+      cost={calc.employerCost}
+      sectorNames={{ bg: calc.sector?.bgName ?? "", en: calc.sector?.enName ?? "" }}
+    />
     <RentRow {calc} />
     <HomeRow
       homeOn={calc.homeOn}

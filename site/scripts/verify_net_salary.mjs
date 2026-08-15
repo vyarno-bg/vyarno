@@ -45,11 +45,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  bgLabourCost,
+  bgLabourWedge,
   bgNetSalary,
   bgGrossFromNet,
   bgPayrollBreakdown,
   bgPayslipFromNet,
   payrollParams,
+  BG_PAYROLL_DEFAULT,
   BG_2026_RATES,
   BG_2026_INCOME_TAX_RATE,
   BG_2026_MAX_INSURABLE,
@@ -603,3 +606,104 @@ test("payrollParams falls back to ALL FIVE sentinel rates when one is missing", 
 
 console.log("All bgNetSalary / bgGrossFromNet tests passed.");
 console.log("Run with: node --test scripts/verify_net_salary.mjs");
+
+// ---------------------------------------------------------------------------
+// THE LABOUR TAX WEDGE — the same euros over a second denominator
+// ---------------------------------------------------------------------------
+//
+// Payroll math, so it lives here rather than in `verify_mirror_math.mjs`. The
+// figures below are worked from the statutes cited at the top of this file
+// plus the employer split in `payroll.py#EMPLOYER_RATE_DERIVATION`, never read
+// back out of the function under test.
+
+test("labour cost is gross plus the employer's own contributions", () => {
+  // €1000 gross, ТЗПБ 0.4%: employer 18.52% + 0.4% = 18.92% → €189.20.
+  const c = bgLabourCost(1000, BG_PAYROLL_DEFAULT, 0.004);
+  assert.ok(Math.abs(c.employerSocial - 185.2) < 0.01);
+  assert.ok(Math.abs(c.employerAccident - 4.0) < 0.01);
+  assert.ok(Math.abs(c.labourCost - 1189.2) < 0.01);
+  assert.ok(Math.abs(c.net - 775.98) < 0.01);
+});
+
+test("the wedge over labour cost is 34.75% at the ТЗПБ floor", () => {
+  // 1 − 775.98 / 1189.20. Below the ceiling it is a constant, so the same
+  // figure has to come back at any gross under €2300.
+  for (const gross of [700, 1000, 2000, 2300]) {
+    const c = bgLabourCost(gross, BG_PAYROLL_DEFAULT, 0.004);
+    assert.ok(
+      Math.abs(c.wedgePct - 34.748) < 0.01,
+      `${gross}: wedge ${c.wedgePct.toFixed(3)}% is not the constant below the ceiling`
+    );
+  }
+});
+
+test("the wedge over labour cost is 35.13% at the ТЗПБ ceiling rate", () => {
+  const c = bgLabourCost(1000, BG_PAYROLL_DEFAULT, 0.011);
+  assert.ok(Math.abs(c.wedgePct - 35.13) < 0.01, `got ${c.wedgePct.toFixed(3)}%`);
+});
+
+test("the two denominators do not agree, and both are right", () => {
+  // The failure this whole subject exists around: 22.402% of gross and 34.748%
+  // of labour cost are the same euros. A caller handed the wrong one gets a
+  // figure inside every plausible band.
+  const gross = 1000;
+  const employee = bgNetSalary(gross, BG_PAYROLL_DEFAULT).effectiveRatePct;
+  const wedge = bgLabourCost(gross, BG_PAYROLL_DEFAULT, 0.004).wedgePct;
+  assert.ok(Math.abs(employee - 22.402) < 0.01);
+  assert.ok(Math.abs(wedge - 34.748) < 0.01);
+  assert.ok(wedge > employee + 10, "the two rates must not be interchangeable");
+});
+
+test("both sides of the contribution stop at the one ceiling", () => {
+  // КСО чл. 6, ал. 3 caps the осигурителен доход before splitting it, and чл.
+  // 157, ал. 6 and ЗЗО чл. 40 put ДЗПО and health on that same base. At €6000
+  // the employer pays 18.92% of €2300, not of €6000 — €435.16, not €1135.20.
+  const c = bgLabourCost(6000, BG_PAYROLL_DEFAULT, 0.004);
+  assert.ok(Math.abs(c.employerTotal - 435.16) < 0.01, `got ${c.employerTotal.toFixed(2)}`);
+  assert.ok(Math.abs(c.wedgePct - 20.519) < 0.01, `got ${c.wedgePct.toFixed(3)}%`);
+});
+
+test("the three shares partition the labour cost exactly", () => {
+  for (const gross of [620.2, 1000, 2300, 2301, 6000, 20000]) {
+    const c = bgLabourCost(gross, BG_PAYROLL_DEFAULT, 0.007);
+    const total = c.netSharePct + c.employeeSharePct + c.employerSharePct;
+    assert.ok(Math.abs(total - 100) < 1e-9, `${gross}: bands sum to ${total}`);
+  }
+});
+
+test("the ceiling is forced into the sample even off the grid", () => {
+  // The curve's only kink is at the ceiling, and a sampler that steps over it
+  // draws a straight line — a wrong picture rather than a coarse one. The step
+  // count here is deliberately one the ceiling does NOT land on, because at 60
+  // steps over €6000 it lands on €2300 by coincidence and the forcing could be
+  // deleted with nothing going red.
+  const w = bgLabourWedge({ steps: 7, maxGross: 6000 });
+  assert.ok(
+    w.points.some((p) => p.gross === w.capGross),
+    "the ceiling is missing from a sample it does not divide evenly"
+  );
+});
+
+test("a sector's range gives two wedge figures and never a midpoint", () => {
+  // Ten of the nineteen НСИ sections span several ТЗПБ rates. A single figure
+  // for one of them is a rate no statute sets, for a sector nobody is in.
+  const w = bgLabourWedge({ workAccident: { min: 0.005, max: 0.011 } });
+  assert.equal(w.ambiguous, true);
+  assert.ok(w.wedgePctAtMax > w.wedgePctAtMin);
+  const mid = (w.wedgePctAtMin + w.wedgePctAtMax) / 2;
+  assert.ok(w.wedgePctAtMin < mid && mid < w.wedgePctAtMax, "neither end may be the midpoint");
+});
+
+test("an unambiguous sector reports one figure twice rather than a range", () => {
+  const w = bgLabourWedge({ workAccident: { min: 0.011, max: 0.011 } });
+  assert.equal(w.ambiguous, false);
+  assert.ok(Math.abs(w.wedgePctAtMin - w.wedgePctAtMax) < 1e-9);
+});
+
+test("a salary of zero or less costs nothing and reports no rate", () => {
+  for (const bad of [0, -1, NaN, null, undefined]) {
+    const c = bgLabourCost(bad, BG_PAYROLL_DEFAULT, 0.004);
+    assert.equal(c.labourCost, 0);
+    assert.equal(c.wedgePct, 0);
+  }
+});

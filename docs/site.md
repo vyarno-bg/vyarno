@@ -91,6 +91,7 @@ site/
 │   ├── verify_view_results.mjs    # what the results card claims
 │   ├── verify_view_share.mjs      # what leaves the page when a reader shares it
 │   ├── verify_view_payroll.mjs    # where a household's pay stands once it is taxed
+│   ├── verify_view_employer.mjs   # what a job costs, and what never reaches the worker
 │   ├── verify_view_region.mjs     # what is published about the област a reader picked
 │   ├── verify_view_home.mjs       # what a home costs the reader buying one
 │   ├── verify_view_country.mjs    # the figures /how/ renders with nobody in them
@@ -146,6 +147,7 @@ site/
         │   ├── spend.js      # what the price rise is charged against
         │   ├── home.js       # what a home costs the reader buying one
         │   ├── payroll.js    # where a household's pay stands once taxed
+        │   ├── employer.js   # what the job costs, and the other denominator
         │   ├── country.js    # the figures /how/ renders with nobody in them
         │   ├── share.js      # what leaves the page when a reader shares it
         │   └── market.js     # which published field feeds which figure on /market/
@@ -162,6 +164,9 @@ site/
         ├── SiteFooter.svelte  # attribution + legal links + build stamp
         ├── WedgeChart.svelte  # the tax wedge as a curve — `/` marks the
         │                      # reader's contracts on it, `/how/` marks nobody
+        ├── LabourCostChart.svelte  # the same wedge over TOTAL LABOUR COST,
+        │                      # stacked. A second component and never a mode
+        │                      # on the one above: different denominator
         └── tokens.css · card.css · result-row.css · disclosure.css ·
             fig-table.css
 ```
@@ -523,6 +528,7 @@ tests, and so on for all ten.
 | `spend.js` | How much of their money is the price rise charged against? | `verify_view_spend.mjs` |
 | `home.js` | What does a home cost the reader buying one? | `verify_view_home.mjs` |
 | `payroll.js` | Where does a household's pay stand once it has been taxed? | `verify_view_payroll.mjs` |
+| `employer.js` | What does the job cost, and how much of that never arrives? | `verify_view_employer.mjs` |
 | `country.js` | What does `/how/` render with nobody in it? | `verify_view_country.mjs` |
 | `share.js` | What leaves the page when a reader shares it? | `verify_view_share.mjs` |
 | `market.js` | Which published field feeds which figure on `/market/`? | `verify_view_market.mjs` |

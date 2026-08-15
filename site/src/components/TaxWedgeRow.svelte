@@ -13,12 +13,17 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer } from "$lib/format.js";
+  import { number, integer, label } from "$lib/format.js";
   import WedgeChart from "$lib/WedgeChart.svelte";
+  import LabourCostChart from "$lib/LabourCostChart.svelte";
 
   const {
     /** The whole panel from view/payroll.js#taxWedgePanel: points, cap, peak, earners. */
     wedge,
+    /** view/employer.js#employerCostPanel — the same contracts, costed. */
+    cost,
+    /** The chosen section's own name in both languages, or empty strings. */
+    sectorNames = { bg: "", en: "" },
   } = $props();
 
   const fmt = (x, d = 1) => number(x, d, $lang);
@@ -26,6 +31,27 @@
 
   /** The single earner, when there is exactly one — the row's original case. */
   const only = $derived(wedge.earners.length === 1 ? wedge.earners[0] : null);
+
+  /** The one employer-side earner, on the same test as `only` above. */
+  const costOnly = $derived(cost?.earners.length === 1 ? cost.earners[0] : null);
+  /**
+   * Which of the three employer sentences the disclosure states.
+   *
+   * Decided here rather than as three `{#if}` branches around three near-identical
+   * blocks, because the difference between them is only which figures the
+   * sentence carries — and the branch that would go wrong is the one that prints
+   * the single-rate sentence for a sector spanning four rates, which is the
+   * ordinary case rather than the edge one.
+   */
+  const costCase = $derived(
+    !costOnly
+      ? "household"
+      : !cost.workAccident.known
+        ? "noSector"
+        : cost.ambiguous
+          ? "range"
+          : "one"
+  );
 </script>
 
 <!-- THE TAX WEDGE — the tax wedge.
@@ -144,6 +170,126 @@
        marker list is the whole of the difference between the two. -->
   <WedgeChart {wedge} markers={wedge.earners} />
 
+  <!-- The employer's side, folded away. **The default view of this row does not
+       move**: a reader who never opens this sees the same 22.4%, the same
+       payslip and the same curve they saw before it existed. What is inside is
+       the OTHER denominator — a share of the total cost of employing them,
+       never of their salary — and every sentence in it says so, because the two
+       figures are the same euros and either one read as the other is wrong by
+       twelve points in a direction nothing on screen would flag. -->
+  {#if cost && cost.earners.length}
+    <details class="rr-more">
+      <summary class="disclose">
+        <span class="dc-caret" aria-hidden="true">›</span>
+        <span class="l-bg">{COPY.discloseEmployerCost.bg}</span>
+        <span class="l-en">{COPY.discloseEmployerCost.en}</span>
+      </summary>
+      <div class="rr-note rr-more-body">
+        {#if costCase === "one"}
+          <span class="l-bg"
+            >{@html t(COPY.employerCostOne, "bg", {
+              cost: fmt0(costOnly.labourCostLow),
+              net: fmt0(costOnly.net),
+              wedge: fmt(costOnly.wedgePctLow),
+            })}</span
+          >
+          <span class="l-en"
+            >{@html t(COPY.employerCostOne, "en", {
+              cost: fmt0(costOnly.labourCostLow),
+              net: fmt0(costOnly.net),
+              wedge: fmt(costOnly.wedgePctLow),
+            })}</span
+          >
+        {:else if costOnly}
+          <span class="l-bg"
+            >{@html t(
+              costCase === "range" ? COPY.employerCostRange : COPY.employerCostNoSector,
+              "bg",
+              {
+                costLow: fmt0(costOnly.labourCostLow),
+                costHigh: fmt0(costOnly.labourCostHigh),
+                net: fmt0(costOnly.net),
+                wedgeLow: fmt(costOnly.wedgePctLow),
+                wedgeHigh: fmt(costOnly.wedgePctHigh),
+                zLow: fmt(cost.workAccidentMinPct),
+                zHigh: fmt(cost.workAccidentMaxPct),
+                sector: label(sectorNames.bg),
+              }
+            )}</span
+          >
+          <span class="l-en"
+            >{@html t(
+              costCase === "range" ? COPY.employerCostRange : COPY.employerCostNoSector,
+              "en",
+              {
+                costLow: fmt0(costOnly.labourCostLow),
+                costHigh: fmt0(costOnly.labourCostHigh),
+                net: fmt0(costOnly.net),
+                wedgeLow: fmt(costOnly.wedgePctLow),
+                wedgeHigh: fmt(costOnly.wedgePctHigh),
+                zLow: fmt(cost.workAccidentMinPct),
+                zHigh: fmt(cost.workAccidentMaxPct),
+                sector: label(sectorNames.en),
+              }
+            )}</span
+          >
+        {:else}
+          <span class="l-bg"
+            >{@html t(COPY.employerCostHousehold, "bg", {
+              cost: fmt0(cost.householdLabourCost),
+              net: fmt0(cost.householdNet),
+              wedge: fmt(cost.householdWedgePct),
+              cap: fmt0(cost.capGross),
+            })}</span
+          >
+          <span class="l-en"
+            >{@html t(COPY.employerCostHousehold, "en", {
+              cost: fmt0(cost.householdLabourCost),
+              net: fmt0(cost.householdNet),
+              wedge: fmt(cost.householdWedgePct),
+              cap: fmt0(cost.capGross),
+            })}</span
+          >
+          <ul class="cost-earners">
+            {#each cost.earners as e (e.index)}
+              <li>
+                <span class="l-bg"
+                  >{@html t(COPY.employerCostEarnerLine, "bg", {
+                    n: fmt0(e.ordinal),
+                    cost: fmt0(e.labourCostLow),
+                    net: fmt0(e.net),
+                    wedge: fmt(e.wedgePctLow),
+                    cap: e.overCap ? COPY.wedgeEarnerOverCap.bg : "",
+                  })}</span
+                >
+                <span class="l-en"
+                  >{@html t(COPY.employerCostEarnerLine, "en", {
+                    n: fmt0(e.ordinal),
+                    cost: fmt0(e.labourCostLow),
+                    net: fmt0(e.net),
+                    wedge: fmt(e.wedgePctLow),
+                    cap: e.overCap ? COPY.wedgeEarnerOverCap.en : "",
+                  })}</span
+                >
+              </li>
+            {/each}
+          </ul>
+        {/if}
+
+        <!-- The partition, drawn. `$lib/LabourCostChart.svelte` and never
+             `WedgeChart` with another series: the two charts measure the same
+             euros against different denominators, so they may mark the same
+             ceiling and may not share an axis. -->
+        <LabourCostChart {cost} markers={cost.earners} />
+
+        <p class="cost-assumes">
+          <span class="l-bg">{COPY.employerCostAssumes.bg}</span>
+          <span class="l-en">{COPY.employerCostAssumes.en}</span>
+        </p>
+      </div>
+    </details>
+  {/if}
+
   <!-- Why the curve does what the chart shows. It explains the picture rather
        than qualifying it: the sentences above state the reader's own rate and
        the chart draws the shape, and neither becomes less true unopened. The
@@ -179,10 +325,19 @@
      which every folded block on the card shares — a second one here would give
      this row a deeper step than its neighbours for no reason a reader could
      name. */
-  .wedge-earners {
+  .wedge-earners,
+  .cost-earners {
     margin: 7px 0 0;
     padding: 0 0 0 10px;
     border-left: 1px solid var(--line-2);
     list-style: none;
+  }
+  /* The two assumptions the payslip drawer already states, restated where the
+     employer's figures are because they bind that block identically and a
+     reader who opened only this one has not seen them. */
+  .cost-assumes {
+    margin: 8px 0 0;
+    font-size: var(--fs-small);
+    color: var(--muted);
   }
 </style>
