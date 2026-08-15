@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-10",
+  "as_of": "2026-08-15",
   "source": "legislation",
   "source_url": "https://dv.parliament.bg/",
   "gazette_issue": 68,
@@ -17,11 +17,107 @@
     "health": 0.032,
     "total": 0.1378
   },
+  "employer_contrib_rates": {
+    "pension": 0.0822,
+    "pension2": 0.028,
+    "sickness_maternity": 0.021,
+    "unemployment": 0.006,
+    "health": 0.048,
+    "total": 0.1852
+  },
+  "work_accident": {
+    "min": 0.004,
+    "max": 0.011,
+    "classification": "КИД-2025",
+    "appendix": "Приложение № 2А към чл. 14, т. 2",
+    "source_url": "https://dv.parliament.bg/DVWeb/showMaterialDV.jsp?idMat=244982",
+    "gazette_issue": 68,
+    "gazette_date": "2026-07-28",
+    "section_classification": "КИД-2008",
+    "by_nsi_section": {
+      "Agriculture,forestry and fishing": {
+        "min": 0.007,
+        "max": 0.011
+      },
+      "Mining and quarrying": {
+        "min": 0.007,
+        "max": 0.011
+      },
+      "Manufacturing": {
+        "min": 0.005,
+        "max": 0.011
+      },
+      "Electricity,gas,steam and air conditioning supply": {
+        "min": 0.009,
+        "max": 0.009
+      },
+      "Water supply,sewerage,waste management and remediation activities": {
+        "min": 0.009,
+        "max": 0.011
+      },
+      "Construction": {
+        "min": 0.011,
+        "max": 0.011
+      },
+      "Wholesale and retail trade;repair of motor vehicles and motorcycles": {
+        "min": 0.005,
+        "max": 0.005
+      },
+      "Transportation and storage": {
+        "min": 0.007,
+        "max": 0.011
+      },
+      "Accommodation and food service activities": {
+        "min": 0.005,
+        "max": 0.005
+      },
+      "Information and communication": {
+        "min": 0.004,
+        "max": 0.007
+      },
+      "Financial and insurance activities": {
+        "min": 0.004,
+        "max": 0.004
+      },
+      "Real estate activities": {
+        "min": 0.011,
+        "max": 0.011
+      },
+      "Professional,scientific and technical activities": {
+        "min": 0.004,
+        "max": 0.005
+      },
+      "Administrative and support service activities": {
+        "min": 0.005,
+        "max": 0.011
+      },
+      "Public administration and defence;compulsory social security": {
+        "min": 0.007,
+        "max": 0.007
+      },
+      "Education": {
+        "min": 0.005,
+        "max": 0.005
+      },
+      "Human health and social work activities": {
+        "min": 0.005,
+        "max": 0.005
+      },
+      "Arts,entertainment and recreation": {
+        "min": 0.005,
+        "max": 0.007
+      },
+      "Other service activities": {
+        "min": 0.004,
+        "max": 0.005
+      }
+    }
+  },
   "income_tax_rate": 0.1,
   "max_insurable_income_eur": 2300.0,
   "max_insurable_income_bgn": 4498.41,
   "min_wage_gross_eur": 620.2,
   "min_wage_gross_bgn": 1213.0,
   "scheduled_changes": [],
-  "notes": "Bulgarian payroll parameters for employee net-pay math (effective 2026). Employee social contributions total 13.78% (III категория труд, born after 1959) plus a 10% flat income tax; social contributions are capped at the maximum insurable income (the income-tax base is NOT capped). Legislative constants — there is no machine-readable feed; maintained as a dated table in pipeline/src/vyarno_pipeline/payroll.py. State Social Insurance Budget Act 2026 (ЗБДОО 2026), adopted by the National Assembly on 2026-07-22, promulgated in ДВ бр. 68 of 2026-07-28 and in force 2026-08-01: the maximum insurable income rises to €2300 for all insured persons. The five employee contribution rates, the 10% flat tax and the €620.20 minimum wage are unchanged from 2026-01-01."
+  "notes": "Bulgarian payroll parameters for employee net-pay math (effective 2026). Employee social contributions total 13.78% (III категория труд, born after 1959) plus a 10% flat income tax; social contributions are capped at the maximum insurable income (the income-tax base is NOT capped). The employer pays a further 18.52% on the same capped base, and that total EXCLUDES ТЗПБ, which is set per economic activity and published under `work_accident` as a range. Legislative constants — there is no machine-readable feed; maintained as a dated table in pipeline/src/vyarno_pipeline/payroll.py, except the ТЗПБ table, which is read from Държавен вестник. State Social Insurance Budget Act 2026 (ЗБДОО 2026), adopted by the National Assembly on 2026-07-22, promulgated in ДВ бр. 68 of 2026-07-28 and in force 2026-08-01: the maximum insurable income rises to €2300 for all insured persons. The five employee contribution rates, the 10% flat tax and the €620.20 minimum wage are unchanged from 2026-01-01."
 }

@@ -1,6 +1,6 @@
 """Bulgarian payroll parameters — the single source of truth.
 
-These are *legislative* constants (social-contribution rates, the flat
+Most of these are *legislative* constants (social-contribution rates, the flat
 income-tax rate, the maximum insurable income, the statutory minimum
 wage), not a scraped series: there is no machine-readable API that
 publishes them. But the app's contract is "the SPA is a renderer; the
@@ -9,6 +9,15 @@ in the SPA's `mirror.js`, we keep ONE dated table here and publish it to
 `data/published/payroll.json`. To update after a legislative change:
 edit the table below (add a new effective-dated entry — do NOT mutate an
 old one) and run `vyarno-pipeline refresh --source payroll`.
+
+The one exception is ТЗПБ, and the line between them is whether a figure
+EXISTS as a published cell. The employer's 8,22% for фонд „Пенсии“ does not:
+it is КСО чл. 6, ал. 3, т. 9's 7,1 plus чл. 6, ал. 1, т. 4's two 0,56 rises,
+added up by a reader, so it is transcribed here with the arithmetic beside it.
+The ТЗПБ rate for each of 87 economic activities does exist as a table, moves
+every year, and is 87 chances to mistype — so it is fetched from Държавен
+вестник by `sources/dv.py` and merged in at build time. `tzpb` on each entry
+below is the address of the act, not the rates.
 
 Why effective-dated entries rather than a single current set: Bulgarian
 payroll parameters change on statutory boundaries (usually 1 January,
@@ -112,6 +121,124 @@ def _gazette(entry: dict[str, Any]) -> tuple[int | None, str | None]:
 
 
 # ---------------------------------------------------------------------------
+# How each employer rate in the table below is arrived at, in the statute's own
+# pieces. `test_payroll.py` sums these and asserts they reproduce the entries,
+# which is the only thing standing between a mistyped 8,22 and a published one.
+#
+# Only фонд „Пенсии“ needs the working. КСО чл. 6, ал. 3, т. 7 splits ОЗМ and
+# „Безработица“ 60:40 and ЗЗО чл. 40, ал. 1, т. 1 splits health the same way,
+# so those three are one multiplication. Пенсии is not 60:40 and never has
+# been: чл. 6, ал. 3, т. 9 fixes it at 5,7/7,1 of the original 12,8, and the
+# two 1-point rises in чл. 6, ал. 1, т. 4 are each split 0,56/0,44 on their own
+# terms. Reading the fund at 60:40 gives 8,88 — a plausible number, 0,66 points
+# out, and wrong in the same direction for every salary on the site.
+# ---------------------------------------------------------------------------
+EMPLOYER_RATE_DERIVATION: dict[str, dict[str, Any]] = {
+    "pension": {
+        # чл. 6, ал. 1, т. 2, б. „а“ — 12,8 на сто, lifted by т. 4's two rises.
+        "employer_parts": (7.1, 0.56, 0.56),
+        "employee_parts": (5.7, 0.44, 0.44),
+        "statute": "КСО чл. 6, ал. 1, т. 2, б. „а“ и т. 4; разпределение чл. 6, ал. 3, т. 9",
+    },
+    "pension2": {
+        # чл. 157, ал. 1, т. 1, б. „в“ — 5 на сто, split by ал. 3 as 2,8/2,2.
+        "employer_parts": (2.8,),
+        "employee_parts": (2.2,),
+        "statute": "КСО чл. 157, ал. 1, т. 1, б. „в“; разпределение чл. 157, ал. 3",
+    },
+    "sickness_maternity": {
+        # чл. 6, ал. 1, т. 5 — 3,5 на сто, 60:40.
+        "employer_parts": (2.1,),
+        "employee_parts": (1.4,),
+        "statute": "КСО чл. 6, ал. 1, т. 5; разпределение чл. 6, ал. 3, т. 7",
+    },
+    "unemployment": {
+        # чл. 6, ал. 1, т. 6 — едно на сто, 60:40.
+        "employer_parts": (0.6,),
+        "employee_parts": (0.4,),
+        "statute": "КСО чл. 6, ал. 1, т. 6; разпределение чл. 6, ал. 3, т. 7",
+    },
+    "health": {
+        # ЗБНЗОК 2026 чл. 2 — 8 на сто, 60:40. The rate is the NHIF budget
+        # act's and not ЗЗО's: ЗЗО чл. 29, ал. 3 delegates it a year at a time.
+        "employer_parts": (4.8,),
+        "employee_parts": (3.2,),
+        "statute": "ЗБНЗОК 2026 чл. 2; разпределение ЗЗО чл. 40, ал. 1, т. 1",
+    },
+}
+
+# ---------------------------------------------------------------------------
+# НСИ's economic-activity sections, in КИД-2025 divisions — the join that lets
+# a reader's chosen sector say anything about ТЗПБ.
+#
+# **THE TWO SIDES ARE DIFFERENT CLASSIFICATIONS, AND THAT IS THE WHOLE
+# CAVEAT.** НСИ publish average wages by NACE Rev. 2 (КИД-2008) SECTION —
+# `sector_salary.json`'s twenty rows, keyed by their English name. ЗБДОО sets
+# ТЗПБ by КИД-2025 DIVISION, which is NACE Rev. 2.1. So this map crosses a
+# revision as well as a level, and it is ours rather than anybody's published
+# correspondence.
+#
+# Two consequences the site has to state rather than smooth over:
+#
+#   1. A section spans several rates. Ten of the nineteen do — «Преработваща
+#      промишленост» runs 0,5% to 1,1% — so a section resolves to a RANGE and
+#      never to a representative rate. Picking the modal division would produce
+#      one confident number that is wrong for most of the people reading it.
+#   2. Rev. 2.1 moved work between divisions. Division 45 (trade and repair of
+#      motor vehicles) has no КИД-2025 successor of its own: the repair half
+#      is inside 95, which also serves section S. So 95 appears under two
+#      sections here, deliberately — a division belonging to one section is a
+#      property of one classification, and this map does not live inside one.
+#
+# Keys are `sector_salary.json`'s `en_name` verbatim, including НСИ's own
+# missing spaces after commas. A key that stops matching drops that section's
+# range silently, so `test_payroll.py` checks every key against the published
+# payload rather than trusting this list.
+# ---------------------------------------------------------------------------
+NSI_SECTION_DIVISIONS: dict[str, tuple[str, ...]] = {
+    "Agriculture,forestry and fishing": ("01", "02", "03"),
+    "Mining and quarrying": ("05", "06", "07", "08", "09"),
+    "Manufacturing": tuple(f"{d:02d}" for d in range(10, 34)),
+    "Electricity,gas,steam and air conditioning supply": ("35",),
+    "Water supply,sewerage,waste management and remediation activities": (
+        "36",
+        "37",
+        "38",
+        "39",
+    ),
+    "Construction": ("41", "42", "43"),
+    # 95 carries what Rev. 2's division 45 called repair of motor vehicles.
+    "Wholesale and retail trade;repair of motor vehicles and motorcycles": ("46", "47", "95"),
+    "Transportation and storage": ("49", "50", "51", "52", "53"),
+    "Accommodation and food service activities": ("55", "56"),
+    "Information and communication": ("58", "59", "60", "61", "62", "63"),
+    "Financial and insurance activities": ("64", "65", "66"),
+    "Real estate activities": ("68",),
+    "Professional,scientific and technical activities": (
+        "69",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "75",
+    ),
+    "Administrative and support service activities": (
+        "77",
+        "78",
+        "79",
+        "80",
+        "81",
+        "82",
+    ),
+    "Public administration and defence;compulsory social security": ("84",),
+    "Education": ("85",),
+    "Human health and social work activities": ("86", "87", "88"),
+    "Arts,entertainment and recreation": ("90", "91", "92", "93"),
+    "Other service activities": ("94", "95", "96"),
+}
+
+# ---------------------------------------------------------------------------
 # The dated table. Newest entries LAST. Each entry is the full parameter set
 # in force from `effective_from` until the next entry's `effective_from`.
 # `scheduled_changes` documents a known future change that is not yet a full
@@ -130,6 +257,32 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
             "sickness_maternity": 0.0140,  # ОЗМ
             "unemployment": 0.0040,  # Безработица
             "health": 0.0320,  # ЗОВ, НЗОК
+        },
+        # The осигурител's side of the SAME five funds, same insured person —
+        # III категория труд, born after 1959. Each line is a statute plus its
+        # split, and `EMPLOYER_RATE_DERIVATION` below carries the arithmetic
+        # that turns the second into the first. They sum to 18,52%, and ТЗПБ
+        # is deliberately not among them: it is per economic activity, so it
+        # is a range rather than a rate and arrives from `tzpb` instead.
+        "employer_contrib_rates": {
+            "pension": 0.0822,
+            "pension2": 0.0280,
+            "sickness_maternity": 0.0210,
+            "unemployment": 0.0060,
+            "health": 0.0480,
+        },
+        # ЗБДОО 2026 legislates the WHOLE of 2026 and splits it at 1 August
+        # (чл. 14), so both entries in this table read their ТЗПБ table out of
+        # one act and differ only in which appendix. The citation rides here
+        # rather than on the entry because this entry's own `gazette_issue` is
+        # null — its parameters come from several instruments — while its ТЗПБ
+        # table comes from exactly one, and `dv.py` refuses a material whose
+        # header disagrees with the pair below.
+        "tzpb": {
+            "dv_material_id": 244982,
+            "appendix": "Приложение № 2 към чл. 14, т. 1",
+            "gazette_issue": 68,
+            "gazette_date": date(2026, 7, 28),
         },
         "income_tax_rate": 0.10,  # flat PIT, no tax-free allowance
         "max_insurable_income_bgn": 4130.0,
@@ -195,15 +348,15 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
         # figures that look like corrections and are not — the enacted text
         # keeps every rate and moves only the ceiling.
         #
-        # ЗБДОО 2026 does change two things this table deliberately does not
-        # carry. ТЗПБ moves for seven economic activities, and it is wholly
-        # employer-side: `employee_contrib_rates` and the tax wedge in
-        # `mirror.js` are the employee's own deductions, so no figure the reader
-        # sees depends on it. Държавни служители start paying personal
-        # contributions at 80:20 until 2026-12-31, then 60:40 — a different
-        # insured category from the III категория труд employee this table
-        # models. Adding either would mean a second parameter set and a question
-        # the calculator does not ask.
+        # One change in ЗБДОО 2026 this table still does not carry: държавни
+        # служители, съдии, прокурори и следователи start paying a personal
+        # share at 80:20 until 2026-12-31 and 60:40 after. That is a different
+        # insured category from the III категория труд employee modelled here,
+        # and НОИ publish its split beside this one — so the figures that look
+        # like corrections to the rates below (пенсии 11,8/3,0, ОЗМ 2,8/0,7)
+        # are another category's, not a newer reading of this one. Carrying it
+        # would mean a second parameter set and a question the calculator does
+        # not ask.
         "effective_from": date(2026, 8, 1),
         "effective_year": 2026,
         "employee_contrib_rates": {
@@ -212,6 +365,24 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
             "sickness_maternity": 0.0140,
             "unemployment": 0.0040,
             "health": 0.0320,
+        },
+        "employer_contrib_rates": {
+            "pension": 0.0822,
+            "pension2": 0.0280,
+            "sickness_maternity": 0.0210,
+            "unemployment": 0.0060,
+            "health": 0.0480,
+        },
+        # Приложение № 2А, not № 2: чл. 14, т. 2 is the table in force from
+        # 1 August, and it moves seven activities. Reading the other one would
+        # be right for eighty sectors and wrong for seven — «Производство на
+        # хранителни продукти» at 0,7% instead of 0,9%, «Архитектурни и
+        # инженерни дейности» at 0,7% instead of 0,5%.
+        "tzpb": {
+            "dv_material_id": 244982,
+            "appendix": "Приложение № 2А към чл. 14, т. 2",
+            "gazette_issue": 68,
+            "gazette_date": date(2026, 7, 28),
         },
         "income_tax_rate": 0.10,
         # EUR-NATIVE, and this is the first entry that has to be. Bulgaria
@@ -256,7 +427,65 @@ def in_force_entry(as_of: date) -> dict[str, Any]:
     return applicable[-1] if applicable else BG_PAYROLL_TABLE[0]
 
 
-def build_payroll_payload(as_of: date) -> dict[str, Any]:
+def build_work_accident_block(fetched: dict[str, Any]) -> dict[str, Any]:
+    """The ТЗПБ block: the statutory span, and the range each НСИ section spans.
+
+    **The per-division table is not published and the per-section ranges are.**
+    The site's only question is "what does the reader's sector cost", and it
+    asks it with an НСИ section key; 87 division rows would be a payload field
+    nothing reads, which is a number nobody checks. What a reader can verify is
+    the link, and that reaches the appendix itself.
+
+    A section resolving to ONE rate still publishes `min == max` rather than a
+    scalar, so the template renders a range or a figure by comparing them and
+    never by asking whether a field is present. The alternative — a scalar for
+    the unambiguous nine and a range for the other ten — is two shapes for one
+    fact, and the branch that forgets the second one prints «0,5%» over a
+    sector that runs to 1,1%.
+
+    Raises ValueError when a section names a division the act does not carry:
+    that is the join going stale, and the failure it would otherwise produce is
+    a narrower range than the law sets.
+    """
+    activities = fetched["activities"]
+
+    # ДВ set these as percentages and the payload carries fractions, and the
+    # division is not exact: 1.1 / 100 is 0.011000000000000001, which is
+    # outside the 0,4–1,1 span КСО sets and would fail its own gate. Rounded
+    # once, here, so every consumer of a rate compares the same value.
+    def frac(pct: float) -> float:
+        return round(pct / 100, 6)
+
+    by_section: dict[str, dict[str, Any]] = {}
+    for section, divisions in NSI_SECTION_DIVISIONS.items():
+        missing = [d for d in divisions if d not in activities]
+        if missing:
+            raise ValueError(
+                f"{fetched['appendix']} carries no rate for КИД division(s) "
+                f"{missing} — mapped to «{section}» by NSI_SECTION_DIVISIONS. "
+                f"КИД-2025 has been renumbered, and dropping them silently "
+                f"would narrow that section's published range."
+            )
+        rates = sorted({frac(activities[d]["rate_pct"]) for d in divisions})
+        by_section[section] = {"min": rates[0], "max": rates[-1]}
+
+    all_rates = sorted({frac(row["rate_pct"]) for row in activities.values()})
+    return {
+        "min": all_rates[0],
+        "max": all_rates[-1],
+        "classification": "КИД-2025",
+        "appendix": fetched["appendix"],
+        "source_url": fetched["source_url"],
+        "gazette_issue": fetched["gazette_issue"],
+        "gazette_date": fetched["gazette_date"],
+        # Which section the ranges are keyed by, so the SPA never has to guess
+        # that these are НСИ's own labels rather than ЗБДОО's activity names.
+        "section_classification": "КИД-2008",
+        "by_nsi_section": by_section,
+    }
+
+
+def build_payroll_payload(as_of: date, *, tzpb: dict[str, Any] | None = None) -> dict[str, Any]:
     """Assemble the `payroll.json` payload for the set in force on `as_of`.
 
     Each amount is published as a EUR/BGN pair, and `_pair` derives whichever
@@ -270,6 +499,14 @@ def build_payroll_payload(as_of: date) -> dict[str, Any]:
     rates = dict(e["employee_contrib_rates"])
     total = round(sum(rates.values()), 6)
     rates_out = {**rates, "total": total}
+
+    employer = dict(e["employer_contrib_rates"])
+    # The employer total EXCLUDES ТЗПБ, and the field name cannot say so — so
+    # the constraint is stated here and in the payload's `notes`. ТЗПБ is per
+    # economic activity, so there is no one number to add; a `total` quietly
+    # carrying the 0,4% floor would understate every construction employer by
+    # 0,7% of gross and read like the whole figure.
+    employer_out = {**employer, "total": round(sum(employer.values()), 6)}
 
     max_ins_eur, max_ins_bgn = _pair(e, "max_insurable_income")
     min_wage_eur, min_wage_bgn = _pair(e, "min_wage_gross")
@@ -301,6 +538,12 @@ def build_payroll_payload(as_of: date) -> dict[str, Any]:
         "effective_from": e["effective_from"].isoformat(),
         "bgn_per_eur": BGN_PER_EUR,
         "employee_contrib_rates": rates_out,
+        "employer_contrib_rates": employer_out,
+        # Absent when the build did not fetch it, and `validate.py` refuses to
+        # publish a payroll payload in that state. It may not default to the
+        # 0,4% floor or to an empty map: both render as a labour cost that is
+        # complete and too low, and the reader has no way to tell.
+        **({"work_accident": build_work_accident_block(tzpb)} if tzpb else {}),
         "income_tax_rate": e["income_tax_rate"],
         "max_insurable_income_eur": max_ins_eur,
         "max_insurable_income_bgn": max_ins_bgn,
@@ -317,8 +560,12 @@ def build_payroll_payload(as_of: date) -> dict[str, Any]:
             f"total {total * 100:.2f}% (III категория труд, born after 1959) "
             f"plus a {e['income_tax_rate'] * 100:.0f}% flat income tax; social "
             "contributions are capped at the maximum insurable income (the "
-            "income-tax base is NOT capped). Legislative constants — there is "
-            "no machine-readable feed; maintained as a dated table in "
-            "pipeline/src/vyarno_pipeline/payroll.py. " + e.get("note", "")
+            "income-tax base is NOT capped). The employer pays a further "
+            f"{employer_out['total'] * 100:.2f}% on the same capped base, and "
+            "that total EXCLUDES ТЗПБ, which is set per economic activity and "
+            "published under `work_accident` as a range. Legislative constants "
+            "— there is no machine-readable feed; maintained as a dated table "
+            "in pipeline/src/vyarno_pipeline/payroll.py, except the ТЗПБ table, "
+            "which is read from Държавен вестник. " + e.get("note", "")
         ),
     }

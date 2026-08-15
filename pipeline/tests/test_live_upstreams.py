@@ -33,8 +33,10 @@ import httpx
 import pytest
 
 from vyarno_pipeline import clock
+from vyarno_pipeline.payroll import BG_PAYROLL_TABLE, NSI_SECTION_DIVISIONS
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS, REGIONS_BY_CODE, SOFIA_CITY_CODE
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
+from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import SERIES_KEYS, fetch_mir_series
 from vyarno_pipeline.sources.eurostat import (
     CP_DIVISIONS,
@@ -562,3 +564,55 @@ def test_the_imot_city_dropdown_still_offers_exactly_the_cities_we_cover():
         f"cover. Add the row, with the slug read from its Location header, or a "
         f"whole city stays invisible to the picker with nothing saying so."
     )
+
+
+# ---------------------------------------------------------------------------
+# Държавен вестник — the ТЗПБ appendix behind the employer's side of the wedge
+# ---------------------------------------------------------------------------
+
+
+def test_dv_still_serves_the_zbdoo_material_the_payroll_table_addresses():
+    """Each dated entry's `idMat` must still resolve to the act it names.
+
+    This is the one upstream addressed by an opaque id rather than by a query
+    anyone could reconstruct, so it is also the one that can silently start
+    pointing somewhere else. `fetch_tzpb_appendix` refuses a material whose own
+    header disagrees with the entry, and this is what runs that refusal against
+    the live gazette rather than against a fixture of it.
+
+    Shape and span, never the individual rates: ЗБДОО resets them every year by
+    design, and a test pinning this year's would fail on the law changing.
+    """
+    for entry in BG_PAYROLL_TABLE:
+        citation = entry["tzpb"]
+        try:
+            got = fetch_tzpb_appendix(
+                citation["dv_material_id"],
+                citation["appendix"],
+                expect_issue=citation["gazette_issue"],
+                expect_date=citation["gazette_date"].isoformat(),
+            )
+        except httpx.HTTPError as e:
+            _skip_if_blocked_here(e, "dv.parliament.bg", "Network error, not a layout change.")
+
+        activities = got["activities"]
+        assert len(activities) >= 80, (
+            f"{citation['appendix']} now carries {len(activities)} economic "
+            f"activities. ЗБДОО appendices run to 87; a short read publishes no "
+            f"ТЗПБ rate for whatever it dropped."
+        )
+        rates = {row["rate_pct"] for row in activities.values()}
+        assert min(rates) >= 0.4 and max(rates) <= 1.1, (
+            f"{citation['appendix']} spans {min(rates)}–{max(rates)}%, outside "
+            f"КСО чл. 6, ал. 1, т. 7. Either the code moved or this is no "
+            f"longer the rate column."
+        )
+        # Every division the section join names has to be present, or a whole
+        # НСИ section loses its range with nothing on screen to say so.
+        for section, divisions in NSI_SECTION_DIVISIONS.items():
+            missing = [d for d in divisions if d not in activities]
+            assert not missing, (
+                f"{citation['appendix']} no longer carries КИД division(s) "
+                f"{missing}, which NSI_SECTION_DIVISIONS maps to «{section}». "
+                f"КИД has been renumbered — re-derive the join."
+            )

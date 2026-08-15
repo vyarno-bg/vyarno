@@ -31,6 +31,7 @@ from vyarno_pipeline.validate import (
     validate_headline_flash,
     validate_link_status,
     validate_meta_labels_cover,
+    validate_payroll,
     validate_reconciliation,
     validate_sector_salary,
 )
@@ -928,3 +929,81 @@ def test_city_gate_admits_a_city_with_no_history_at_all():
     validate_city_price(
         [_city(historical=[], baseline_year=0, since_baseline_median_pct=0.0)], _COVERED
     )
+
+
+# ---------------------------------------------------------------------------
+# The payroll payload — the employer half and its ТЗПБ block
+# ---------------------------------------------------------------------------
+
+
+def _payroll(**over) -> dict:
+    """A payroll payload that passes, so each test below breaks exactly one thing."""
+    payload = {
+        "employer_contrib_rates": {
+            "pension": 0.0822,
+            "pension2": 0.028,
+            "sickness_maternity": 0.021,
+            "unemployment": 0.006,
+            "health": 0.048,
+            "total": 0.1852,
+        },
+        "work_accident": {
+            "min": 0.004,
+            "max": 0.011,
+            "by_nsi_section": {"Construction": {"min": 0.011, "max": 0.011}},
+        },
+    }
+    payload.update(over)
+    return payload
+
+
+def test_a_payroll_payload_with_no_tzpb_block_is_refused() -> None:
+    """A missing accident rate does not read as zero — it reads as finished."""
+    with pytest.raises(ValidationError, match="no `work_accident` block"):
+        validate_payroll(_payroll(work_accident=None))
+
+
+def test_a_tzpb_span_outside_the_code_is_refused() -> None:
+    """КСО чл. 6, ал. 1, т. 7 bounds what ЗБДОО may set, so this cannot widen."""
+    with pytest.raises(ValidationError, match="outside КСО"):
+        validate_payroll(_payroll(work_accident={**_payroll()["work_accident"], "max": 0.048}))
+
+
+def test_a_section_range_wider_than_the_act_is_refused() -> None:
+    """A section's range is a selection from the appendix and cannot exceed it."""
+    wa = {**_payroll()["work_accident"], "by_nsi_section": {"X": {"min": 0.002, "max": 0.011}}}
+    with pytest.raises(ValidationError, match="not inside the act's own"):
+        validate_payroll(_payroll(work_accident=wa))
+
+
+def test_a_payload_with_no_section_ranges_is_refused() -> None:
+    """Every reader would silently fall back to the whole 0,4–1,1 span."""
+    wa = {**_payroll()["work_accident"], "by_nsi_section": {}}
+    with pytest.raises(ValidationError, match="`by_nsi_section` is empty"):
+        validate_payroll(_payroll(work_accident=wa))
+
+
+def test_employer_lines_that_do_not_sum_to_their_total_are_refused() -> None:
+    rates = {**_payroll()["employer_contrib_rates"], "health": 0.05}
+    with pytest.raises(ValidationError, match="sum to"):
+        validate_payroll(_payroll(employer_contrib_rates=rates))
+
+
+def test_an_employer_total_that_has_absorbed_tzpb_is_refused() -> None:
+    """The two are published apart because ТЗПБ is a range, not a rate.
+
+    Folding the floor in is right for the sectors sitting at 0,4% and wrong for
+    every other one, under a total that claims to be the whole employer cost.
+    """
+    rates = {**_payroll()["employer_contrib_rates"], "unemployment": 0.01, "total": 0.1892}
+    with pytest.raises(ValidationError, match="at or above"):
+        validate_payroll(_payroll(employer_contrib_rates=rates))
+
+
+def test_the_shipped_payroll_payload_passes_its_own_gate() -> None:
+    published = json.loads(
+        (Path(__file__).resolve().parents[2] / "data" / "published" / "payroll.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    validate_payroll(published)
