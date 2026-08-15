@@ -707,3 +707,23 @@ test("a salary of zero or less costs nothing and reports no rate", () => {
     assert.equal(c.wedgePct, 0);
   }
 });
+
+test("an omitted ТЗПБ rate costs nothing, and that is a degradation not a default", () => {
+  // `bgLabourCost` cannot force its third argument — JS has no such thing — so
+  // what it CAN do is not pretend zero was chosen. This pins the degradation so
+  // a future caller that forgets the rate fails here rather than shipping a
+  // labour cost that is short by up to 1.1% of gross and looks finished.
+  const withRate = bgLabourCost(2000, BG_PAYROLL_DEFAULT, 0.011);
+  const without = bgLabourCost(2000, BG_PAYROLL_DEFAULT);
+  assert.equal(without.employerAccident, 0);
+  assert.ok(withRate.employerAccident > 0);
+  assert.ok(
+    withRate.labourCost > without.labourCost,
+    "a contract with an accident contribution has to cost more than one without"
+  );
+  // The two callers in the tree both resolve a band first, so neither can
+  // reach this state — `sectorWorkAccident` answers the act's span for an
+  // unknown sector rather than answering nothing.
+  const span = bgLabourWedge({ workAccident: undefined });
+  assert.ok(span.workAccident.max > 0, "the curve must not fall back to no accident rate at all");
+});
