@@ -176,6 +176,24 @@
       en: t(COPY.howSrcDvIssue, "en", { issue: gazetteIssue, date: dateShort(gazetteDate, "en") }),
     };
   });
+  // The same citation for the ТЗПБ appendix, which dates itself off a different
+  // block: `work_accident` carries the gazette pair of the act it was fetched
+  // from, and `systemWedge`'s is the entry's own. They agree today because one
+  // ЗБДОО sets both, and they are read apart so the day they stop agreeing the
+  // caption under the chart still names the act the chart was drawn from.
+  const tzpbWhen = $derived.by(() => {
+    const { gazetteIssue, gazetteDate } = calc.systemLabourCost;
+    return {
+      bg: t(COPY.howSrcDvIssue, "bg", {
+        issue: integer(gazetteIssue, "bg"),
+        date: dateShort(gazetteDate, "bg"),
+      }),
+      en: t(COPY.howSrcDvIssue, "en", {
+        issue: integer(gazetteIssue, "en"),
+        date: dateShort(gazetteDate, "en"),
+      }),
+    };
+  });
   // The index of all twenty-seven city pages, and the fallback only. Each city
   // row carries its own page and `cityHome.sourceUrl` is what the cards use —
   // this is what a card links to when the payload has not loaded, which is the
@@ -762,15 +780,13 @@
             >източник: <a href={calc.systemLabourCost.sourceUrl} target="_blank" rel="noopener"
               >Държавен вестник · ЗБДОО 2026, {calc.systemLabourCost.appendix}</a
             >
-            · бр. {fmt0(calc.systemLabourCost.gazetteIssue)} от {calc.systemLabourCost
-              .gazetteDate}</span
+            · {tzpbWhen.bg}</span
           >
           <span class="l-en"
             >source: <a href={calc.systemLabourCost.sourceUrl} target="_blank" rel="noopener"
               >State Gazette · ЗБДОО 2026, {calc.systemLabourCost.appendix}</a
             >
-            · issue {fmt0(calc.systemLabourCost.gazetteIssue)} of {calc.systemLabourCost
-              .gazetteDate}</span
+            · {tzpbWhen.en}</span
           >
         </p>
       {/if}
