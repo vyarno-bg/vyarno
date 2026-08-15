@@ -89,9 +89,11 @@ behind guards nothing — it will pass a suite that lost half its tests.
 - adding a dependency to either toolchain — `site/package.json` declares **no
   `dependencies` at all**: three devDependencies build the app (`svelte`,
   `@sveltejs/vite-plugin-svelte`, `vite`) and the rest lint it, type-check it
-  or drive a browser. Nothing third-party reaches the reader, and the repo
-  ships zero test-framework dependencies on purpose — the suites run on
-  `node:test` and pytest;
+  or drive a browser. No package reaches the reader, and the repo ships zero
+  test-framework dependencies on purpose — the suites run on `node:test` and
+  pytest. The one file the reader's browser fetches from anywhere but our own
+  origin is the visit counter in `site/src/lib/analytics.js`, and the CSP's
+  origin list is closed at two;
 - adding an upstream data source, or retargeting an existing one;
 - changing a published JSON's schema, or what `data/published/` contains;
 - anything that changes a number a reader sees.

@@ -175,10 +175,11 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" id="metaTheme" content="#E8ECEF" />
     <!--
-    Self-hosted fonts. No third-party CSS / no Google Fonts: CSP
-    "no third-party scripts" is a locked tenet (docs/principles.md §"Identity").
-    Only the Cyrillic + Latin subsets are shipped — keeps total
-    transfer under 250 kB.
+    Self-hosted fonts. No third-party CSS / no Google Fonts: `font-src 'self'`
+    admits nothing, and the CSP's origin list is closed at two — our own and
+    the visit counter's (docs/principles.md §"Identity"). A hosted font would
+    be a third, for a file we already ship. Only the Cyrillic + Latin subsets
+    are shipped — keeps total transfer under 250 kB.
   -->
     <link
       rel="preload"

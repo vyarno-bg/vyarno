@@ -780,9 +780,28 @@ Verified against the code on 2026-07-30 and corrected where it did not hold.
 - **The response headers in `site/public/_headers` are served by the live
   origin** — confirmed 2026-08-12 against vyarno.bg, every declared rule
   arriving as written. That matters because the privacy notice points at the CSP
-  as the thing that makes "no third-party script" checkable rather than
-  promised, and a declaration a server never applies would make that sentence
-  false.
+  as the thing that makes the two-origin list checkable rather than promised,
+  and a declaration a server never applies would make that sentence false.
+- **The visit counter, and why it needs no consent banner.** Plausible
+  (Plausible Insights OÜ, Tartu, Estonia; read 2026-08-15) sets no cookie and
+  writes nothing to the terminal equipment, so ЗЕТ чл. 4а — the transposition of
+  ePrivacy art. 5(3) — is not engaged by storage. It does **read** one key,
+  `plausible_ignore`, which brings the "gaining access to information already
+  stored" limb into view; that read is covered by the same provision's
+  strictly-necessary exemption, because the only information it accesses is an
+  instruction the reader themselves put there to switch the counting off, and
+  honouring it is not something they can be asked to consent to. **The notice
+  names the key rather than only the practice**, so the exemption rests on a
+  lever a reader can actually reach.
+  The lawful basis for the processing itself is legitimate interest, art. 6(1)(f):
+  the daily salt is discarded every 24 hours, so no identifier survives to build
+  a profile from, there is no cross-site join available to the processor, and
+  the fields are the ones the host's log already held. Processing is EU-only —
+  Germany, Slovenia and Finland — so unlike the Cloudflare log there is no
+  art. 46 transfer to account for, which is why the notice can say so plainly.
+  **A measurer that failed any of those is a different decision**, not a
+  substitution: `docs/principles.md` §"What is closed" refuses the class rather
+  than judging products one by one.
 - **The origin also adds headers this repository never declared, and one of
   them reaches the reader's browser.** `NEL` and `Report-To` ask the browser to
   post a report about a failed request to the host's reporting address; the
@@ -798,8 +817,11 @@ Verified against the code on 2026-07-30 and corrected where it did not hold.
 - **Art. 30 register of processing.** The art. 30(5) exemption for
   organisations under 250 people is not available for processing that is more
   than occasional, and serving a website logs continuously. The register covers
-  two operations, not one — the request log, and the donation records
-  §Donations describes — and costs nothing to keep; keep it. **The art. 2(2)(c)
+  three operations — the request log, the visit counting above, and the donation
+  records §Donations describes — and costs nothing to keep; keep it. The counter
+  is a separate entry rather than a line under the log: different processor,
+  different purpose, and an art. 30(1)(d) recipient the log's entry does not
+  name. **The art. 2(2)(c)
   household exemption is NOT available** — a public website is by definition not
   purely personal or household activity, and C-101/01 *Lindqvist* settled that.
 - **The vulnerability safe-harbour** («няма да предприемаме действия срещу теб»

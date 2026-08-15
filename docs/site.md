@@ -108,6 +108,7 @@ site/
 │   ├── verify_support.mjs         # the donation rules (support.js ↔ FUNDING.yml)
 │   ├── verify_template_safety.mjs # the {@html} invariants, both directions
 │   ├── verify_static_assets.mjs   # robots · llms · security.txt · sitemap · CSP
+│   ├── verify_analytics.mjs       # the one third-party request, and its section in the notice
 │   ├── verify_suites.mjs          # every suite on disk is named by a runner
 │   ├── verify_docs_map.mjs        # this tree names the files that are there
 │   ├── render-dist.mjs            # dist/ readers, shared, no browser
@@ -158,6 +159,8 @@ site/
         ├── legal.js      # the four legal documents + the ЗЕТ чл. 4 identity
         ├── legal-nav.js  # contact addresses + document names (every page)
         ├── support.js    # the donation rules — what may be offered
+        ├── analytics.js  # the visit counter — the only third-party request,
+        │                 # and the only place a consumer figure could leave
         ├── stores.js     # lang · theme · област · the opt-in memory
         ├── build.js      # the build stamp (__BUILD_ID__, or "dev")
         ├── SiteHeader.svelte  # wordmark + route out + theme + language
@@ -921,8 +924,9 @@ rules over the whole card rather than per row.
 
 The tax wedge is **inline SVG with no library**; the comparison bars are plain
 divs with a width, because a bar needs no SVG. **No chart library**, and that is
-a standing answer rather than a default: nothing third-party reaches the reader
-(`AGENTS.md` §Boundaries), and a chart library would be the first thing to. `plot.js` holds the axis, the ticks and the coordinate mapping — the
+a standing answer rather than a default: the CSP's origin list is closed at two
+and neither of them serves one (`AGENTS.md` §Boundaries), so a chart library
+would be the third. `plot.js` holds the axis, the ticks and the coordinate mapping — the
 arithmetic a component may not keep, because a tick value is digits a reader
 reads off an axis. `verify_plot.mjs` is its suite; `WedgeChart.svelte` carries
 why each mark is placed where it is.
@@ -1049,8 +1053,10 @@ Every directive is what the app already does rather than a wish, and
 would pass for `connect-src 'self' https://api.example.com`, which is the
 precise widening the test refuses.
 
-- **CSP** — `script-src 'self'` with no `'unsafe-inline'`; `connect-src 'self'`
-  (the browser fetches our JSON and nothing else); `font-src 'self'`;
+- **CSP** — `script-src 'self' https://plausible.io` with no `'unsafe-inline'`
+  (the counter's init snippet lives in `analytics.js` so that stays shut);
+  `connect-src 'self' https://plausible.io` (our JSON and the counter's event
+  endpoint, nothing else); `font-src 'self'`;
   `img-src 'self' data:`; `frame-ancestors 'none'`; `object-src 'none'`;
   `form-action 'none'`; `base-uri 'self'`. The one relaxation is
   `style-src 'unsafe-inline'`, required because Svelte writes `style="..."`
@@ -1179,8 +1185,9 @@ down payment.
   literals in components other than styling and data attributes.
 - **No new packages without justification.** `package.json` is `svelte` +
   `@sveltejs/vite-plugin-svelte` + `vite`.
-- **No third-party scripts or CDN fetches.** The CSP is intentional; assets are
-  self-hosted.
+- **No third-party scripts or CDN fetches beyond the visit counter.** The CSP's
+  origin list is closed at two and pinned as literals by
+  `verify_static_assets.mjs`; assets are self-hosted.
 
 ## Cross-references
 

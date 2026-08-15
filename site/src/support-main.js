@@ -16,8 +16,11 @@
 import "./lib/tokens.css";
 import { mount } from "svelte";
 import Support from "./Support.svelte";
+import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
 target.replaceChildren();
+
+startAnalytics();
 
 export default mount(Support, { target });

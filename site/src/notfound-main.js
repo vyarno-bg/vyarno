@@ -9,5 +9,8 @@
 import "./lib/tokens.css";
 import { mount } from "svelte";
 import NotFound from "./NotFound.svelte";
+import { startAnalytics } from "./lib/analytics.js";
+
+startAnalytics();
 
 export default mount(NotFound, { target: document.getElementById("app") });

@@ -181,12 +181,16 @@ The interesting entries are the ones that are not there:
   type-check it or drive a browser. What ships is Svelte's compiled output.
 - **The site has no test framework.** Its suite runs on `node:test`, built into
   Node. The pipeline uses pytest, Python's standard.
-- **The page loads nothing third-party.** No CDN script, no hosted font, no
-  analytics pixel. Fonts are self-hosted — IBM's and Adobe's own builds,
-  vendored byte for byte and never re-subset here, because both families carry
-  a Reserved Font Name and OFL 1.1 counts subsetting a webfont as modification
-  (`NOTICE`). The CSP in `site/public/_headers` is what makes the
-  nothing-third-party claim checkable rather than merely intended.
+- **The page loads one third-party file, and the list is closed.** A visit
+  counter that sets no cookie, writes nothing to the browser and keeps no
+  identifier past 24 hours — described in the privacy notice's own section. No
+  CDN script, no hosted font, no pixel beside it. Fonts are self-hosted — IBM's
+  and Adobe's own builds, vendored byte for byte and never re-subset here,
+  because both families carry a Reserved Font Name and OFL 1.1 counts
+  subsetting a webfont as modification (`NOTICE`). The CSP in
+  `site/public/_headers` names the two origins as literals, and
+  `verify_static_assets.mjs` fails on a third — which is what makes the closed
+  list checkable rather than merely intended.
 
 What is verified, and by what:
 

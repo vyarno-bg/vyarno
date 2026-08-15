@@ -45,9 +45,13 @@ to satisfy, are in [`README.md`](./README.md) §"Who this is for".
   below are the boundary any such thing would have to respect.
 - **Tenet:** every number traces to an official upstream series via a verifiable
   URL inside the published JSON. No bluff. Nothing third-party is loaded to
-  render it either — no CDN script, no hosted font, no analytics pixel; the CSP
-  in `site/public/_headers` is what makes that checkable rather than merely
-  intended ([`site.md`](./site.md) §"Conventions for anyone touching `site/`").
+  render it either — no CDN script, no hosted font, no pixel. **The CSP's origin
+  list is the closed list**, and it holds exactly two: our own origin and
+  `plausible.io`, which counts visits and is described in the privacy notice's
+  own section. A third is a decision priced in three edits — the header, the
+  notice, a version bump — and `verify_static_assets.mjs` pins the two lists as
+  literals so it cannot be made quietly
+  ([`site.md`](./site.md) §"Conventions for anyone touching `site/`").
 - **Licensing, and the one distinction that matters.** The CODE is openly
   licensed (Apache-2.0). **The FIGURES in `data/published/` are not ours to
   license** — they belong to Eurostat, the ЕЦБ, БНБ, НСИ and имот.bg under each
@@ -162,7 +166,8 @@ margin are irrelevant to them, and none is an open question.
 |---|---|
 | Crowd-sourced "average real basket" from users | Requires collecting personal spending on a server. P1. The privacy-preserving version — comparing your basket to the *official* one, locally — is what the site already does |
 | Accounts, saved profiles, email capture, cross-device sync | Same. "Remember my basket **across devices**" is the one-line request that converts a client-side convenience into a server-side store of somebody's spending pattern — a new decision against P1, not an extension of the local one. The local half is what the `vyarno_inputs` switch does, and the boundary is the word *devices*: it writes to the reader's own `localStorage`, off until they turn it on, and no request carries it |
-| **Session recording, or any measurement that can see what a consumer typed** | P1 without qualification. A replay of the calculator is a recording of somebody's salary being entered |
+| **Session recording, or any measurement that can see what a consumer typed** | P1 without qualification. A replay of the calculator is a recording of somebody's salary being entered. **The visit counter is the line, not a step towards it**: `site/src/lib/analytics.js` sends the pageview the loaded script sends by itself, calls `window.plausible(...)` nowhere, and `verify_analytics.mjs` fails on a call appearing. A custom event is the one edit that could carry a figure off the device, so it is refused as a class rather than judged per event |
+| **A second measurer, a pixel, a tag manager, or an analytics product that sets an identifier** | The counter was admitted on properties, not on need: no cookie, no storage write, no identifier that survives 24 hours, no cross-site join, EU-only processing, and an opt-out the reader controls. Anything that fails one of those is a different decision and gets argued as one. Two measurers also make the notice's "exactly one thing that is not our code" false, which is a sentence a reader can check |
 | **Selling, sharing or brokering user data** | P1. There is nothing to sell — we hold nothing — and building the capability in order to sell it is what P1 exists to prevent |
 | **Any commercial relationship that changes a number** | P10. If money could alter which figure is shown, which lender appears, or how affordable a home looks, it is declined regardless of margin |
 | Advice ("cut your spending on X", "refinance now") | P6 |
