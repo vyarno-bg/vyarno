@@ -185,6 +185,18 @@
         <span class="l-en">{COPY.discloseEmployerCost.en}</span>
       </summary>
       <div class="rr-note rr-more-body">
+        <!-- The number the employer opened this for, in the row's own value
+             type. Everything under it explains this figure; nothing under it
+             states it again. -->
+        <div class="cost-head">
+          <span class="cost-head-v mono"
+            >€{fmt0(costOnly ? costOnly.labourCostLow : cost.householdLabourCost)}</span
+          >
+          <span class="cost-head-k">
+            <span class="l-bg">{COPY.employerCostHeadK.bg}</span>
+            <span class="l-en">{COPY.employerCostHeadK.en}</span>
+          </span>
+        </div>
         {#if costCase === "one"}
           <span class="l-bg"
             >{@html t(COPY.employerCostOne, "bg", {
@@ -337,6 +349,30 @@
      reader who opened only this one has not seen them. */
   .cost-assumes {
     margin: 8px 0 0;
+    font-size: var(--fs-small);
+    color: var(--muted);
+  }
+  /* The cost, set like the row's own headline rather than like body copy —
+     baseline-aligned with its caption so the euro figure reads as the answer
+     and the caption as its unit. */
+  .cost-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin-bottom: 6px;
+  }
+  /* One step below the row's own 22,4% and in the same face: this is the
+     answer inside a disclosure, not a second headline competing with the
+     card's. */
+  .cost-head-v {
+    font-size: var(--fs-strong);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .cost-head-k {
     font-size: var(--fs-small);
     color: var(--muted);
   }

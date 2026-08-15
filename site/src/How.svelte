@@ -728,29 +728,26 @@
       </h3>
       <p>
         <span class="l-bg"
-          >Заплатата не е това, което трудът струва. Освен брутото работодателят внася и своя част
-          от същите пет фонда — <b>{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b> върху същия
-          осигурителен доход, със същата горна граница — плюс вноска за трудова злополука, която се
-          определя по икономическа дейност и е между
+          >Освен брутото работодателят внася и своя част от същите пет фонда — <b
+            >{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b
+          >
+          върху същия осигурителен доход и до същата граница — плюс вноска за трудова злополука между
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
-          и <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b>. Картината долу дели целия
-          разход за труд на три: колкото стига до работника, колкото се удържа от заплатата му и
-          колкото работодателят плаща отгоре. Горните две заедно са данъчният клин — при заплата под
-          границата той е <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> от общия разход за труд, а
-          над нея пада, защото осигуровките спират, а заплатата — не.</span
+          и <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> според дейността. Долу: колко
+          от целия разход за труд не стига до работника. Под границата това е
+          <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b>, а над нея пада — осигуровките спират,
+          заплатата не.</span
         >
         <span class="l-en"
-          >A salary is not what the work costs. On top of the gross, the employer pays its own share
-          of the same five funds — <b>{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b> on the
-          same insurable income, under the same ceiling — plus a work-accident contribution set per
-          economic activity, anywhere from
+          >On top of the gross, the employer pays its own share of the same five funds — <b
+            >{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b
+          >
+          on the same insurable income, under the same ceiling — plus a work-accident contribution of
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
-          to <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b>. The chart below divides the
-          whole cost of employment into three: what reaches the worker, what is deducted from their
-          pay, and what the employer pays on top. The top two together are the tax wedge — on a
-          salary under the ceiling it is <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> of the total
-          cost of employment, and above the ceiling it falls, because the contributions stop and the salary
-          does not.</span
+          to <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> depending on the activity.
+          Below: how much of the whole cost of employment never reaches the worker. Under the
+          ceiling that is <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b>, and above it it falls —
+          contributions stop, the salary does not.</span
         >
       </p>
       <figure class="wedge-fig">
