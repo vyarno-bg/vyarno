@@ -1067,3 +1067,82 @@ def validate_hpi_across_publishers(nsi_housing: dict, house_market: dict) -> Non
                 f"routes. A gap means a wrong quarter, a wrong column or a wrong "
                 f"purchase type on our side — find which. Do not widen this."
             )
+
+
+# ---------------------------------------------------------------------------
+# The payroll payload — both sides of the wedge, and the ТЗПБ block
+# ---------------------------------------------------------------------------
+
+
+def validate_payroll(payload: dict) -> None:
+    """Gate `payroll.json` before it is written.
+
+    The employee half has never needed one: it is five constants that a pytest
+    parity check already holds against `mirror.js`. The employer half does,
+    because it is the first payroll figure assembled from a FETCH, and every
+    way that fetch can go quietly wrong ends as a labour cost that looks
+    finished.
+
+    Four properties, each a wrong number on screen rather than an exception:
+
+      1. **The ТЗПБ block exists.** Without it the site has no accident rate at
+         all, and the employer's cost renders 0,4–1,1 points light — inside
+         every plausible band, for every reader at once.
+      2. **Its span is КСО чл. 6, ал. 1, т. 7's.** A range that has escaped
+         «от 0,4 до 1,1 на сто» is a parse that left the rate column.
+      3. **Every НСИ section has a range.** A section the join lost renders no
+         employer figure for whoever picked it, and nothing else notices.
+      4. **The employer total excludes ТЗПБ.** The two are published apart
+         because ТЗПБ is not one rate; a total that has absorbed the floor is
+         the one shape that makes the range on screen and the total under it
+         disagree, and it is what a well-meaning edit produces.
+    """
+    wa = payload.get("work_accident")
+    if not wa:
+        raise ValidationError(
+            "payroll: no `work_accident` block. ТЗПБ is employer-only and per "
+            "economic activity, so its absence does not read as zero — it reads "
+            "as a labour cost that is complete and up to 1,1% of gross short. "
+            "The ДВ fetch is not best-effort; fix it rather than publishing."
+        )
+
+    lo, hi = wa.get("min"), wa.get("max")
+    if not isinstance(lo, float) or not isinstance(hi, float) or not 0.004 <= lo <= hi <= 0.011:
+        raise ValidationError(
+            f"payroll: ТЗПБ spans {lo}–{hi}, outside КСО чл. 6, ал. 1, т. 7's "
+            f"«от 0,4 до 1,1 на сто». ЗБДОО may place any activity anywhere "
+            f"inside that span and nowhere outside it, so this is the act "
+            f"disagreeing with the code it is set under, not a wide year."
+        )
+
+    sections = wa.get("by_nsi_section") or {}
+    for name, band in sections.items():
+        s_lo, s_hi = band.get("min"), band.get("max")
+        if not (isinstance(s_lo, float) and isinstance(s_hi, float) and lo <= s_lo <= s_hi <= hi):
+            raise ValidationError(
+                f"payroll: section {name!r} spans {s_lo}–{s_hi}, which is not "
+                f"inside the act's own {lo}–{hi}. A section's range is a "
+                f"selection from the appendix and cannot exceed it."
+            )
+    if not sections:
+        raise ValidationError(
+            "payroll: `by_nsi_section` is empty, so no reader's sector resolves "
+            "to a ТЗПБ range and the card falls back to the whole span for "
+            "everyone — silently more vague than the law is."
+        )
+
+    employer = payload.get("employer_contrib_rates") or {}
+    stated = employer.get("total")
+    summed = round(sum(v for k, v in employer.items() if k != "total"), 6)
+    if stated != summed:
+        raise ValidationError(
+            f"payroll: employer lines sum to {summed} under a stated total of "
+            f"{stated}. The breakdown and the total must be the same number."
+        )
+    if stated is None or stated >= 0.1852 + lo:
+        raise ValidationError(
+            f"payroll: the employer total is {stated}, at or above the "
+            f"{0.1852 + lo} it would be with ТЗПБ's floor folded in. The five "
+            f"capped funds are the total; ТЗПБ is published as a range beside "
+            f"them because it is not one rate."
+        )

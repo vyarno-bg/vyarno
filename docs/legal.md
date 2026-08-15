@@ -569,6 +569,76 @@ homepage, for a payload whose own notes describe it as a transcription of the
 State Social Insurance Budget Act and the ЗДДФЛ rate. The attribution should
 name the instrument, not the agency.
 
+The same conclusion covers `sources/dv.py`, which fetches ЗБДОО's ТЗПБ appendix
+from Държавен вестник rather than transcribing it. ЗАПСП чл. 4, т. 1 puts
+«нормативни и индивидуални актове на държавни органи за управление» outside
+copyright, so the gazette imposes no condition on reproducing an act it
+promulgates — which is why the footer's «Данни от …» line, which exists because
+several publishers require the credit, does not name it. The duty that remains
+is provenance, and `work_accident` carries the ДВ permalink, the issue and its
+date so a reader reaches the appendix itself.
+
+#### The statute reads behind the employer rates
+
+Each read below was made against the primary text on **2026-08-15** and is
+quoted verbatim, because none of these rates is a cell anyone publishes —
+`payroll.py#EMPLOYER_RATE_DERIVATION` is what turns them into the figures the
+site prints, and this is what a reviewer checks that derivation against.
+
+**КСО** (consolidated text as published by МТСП,
+`mlsp.government.bg/.../kso24.pdf`):
+
+- чл. 6, ал. 1, т. 2, б. „а“ — фонд „Пенсии“ for those born after 31 December
+  1959: «12,8 на сто, а за работещите при условията на I или II категория труд
+  и за лицата по чл. 69а – 15,8 на сто».
+- чл. 6, ал. 1, т. 4 — «осигурителната вноска за фонд "Пенсии" се увеличава,
+  както следва: а) от 1 януари 2017 г. – с 1 процентен пункт, от който 0,56 за
+  сметка на осигурителя и 0,44 за сметка на осигуреното лице; б) от 1 януари
+  2018 г. – с 1 процентен пункт, от който 0,56 за сметка на осигурителя и 0,44
+  за сметка на осигуреното лице».
+- чл. 6, ал. 3, т. 9 — «от 1 януари 2011 г. осигурителната вноска за фонд
+  "Пенсии" за лицата, родени след 31 декември 1959 г., се разпределя, както
+  следва: а) 5,7 на сто за сметка на осигуреното лице …; б) 7,1 на сто за
+  сметка на осигурителя …». So the employer's line is 7,1 + 0,56 + 0,56 = 8,22
+  and the employee's 5,7 + 0,44 + 0,44 = 6,58.
+- чл. 6, ал. 1, т. 5 — «3,5 на сто за фонд "Общо заболяване и майчинство"»;
+  т. 6 — «едно на сто за фонд "Безработица"»; ал. 3, т. 7 — «от 1 януари 2009
+  г. осигурителната вноска за фондовете "Общо заболяване и майчинство" и
+  "Безработица" се разпределя в съотношение 60:40».
+- чл. 6, ал. 1, т. 7 — «от 0,4 до 1,1 на сто за фонд "Трудова злополука и
+  професионална болест", определени със Закона за бюджета на държавното
+  обществено осигуряване за съответната година по групи основни икономически
+  дейности»; ал. 6 — «Осигурителните вноски за фонд "Трудова злополука и
+  професионална болест" … са за сметка на осигурителите».
+- чл. 157, ал. 1, т. 1, б. „в“ — универсален пенсионен фонд «от 2007 г. – 5 на
+  сто»; ал. 3 — «за сметка на осигуреното лице – 2,2 на сто … за сметка на
+  осигурителя – 2,8 на сто»; ал. 6 — ДЗПО contributions are due «върху
+  доходите, за които се дължат осигурителни вноски за държавното обществено
+  осигуряване».
+
+**ЗБДОО 2026** (ДВ бр. 68 от 28.07.2026,
+`dv.parliament.bg/DVWeb/showMaterialDV.jsp?idMat=244982`):
+
+- чл. 9 — the maximum insurable income, «от 1 януари до 31 юли … 2 111,64
+  евро» and «от 1 август до 31 декември … 2 300 евро».
+- чл. 14 — «Определя се следният размер на осигурителната вноска за Фонд
+  „Трудова злополука и професионална болест“ по групи основни икономически
+  дейности за 2026 г.: 1. от 1 януари до 31 юли – съгласно приложение № 2;
+  2. от 1 август до 31 декември – съгласно приложение № 2А».
+
+**ЗБНЗОК 2026** (same issue, `…?idMat=244981`), чл. 2 — «Размерът на
+задължителната здравноосигурителна вноска за 2026 г. е 8 на сто». **ЗЗО** чл.
+40, ал. 1, т. 1 puts the contribution on «доходът, върху който се дължат вноски
+за държавното обществено осигуряване» and splits it 60:40.
+
+**Why the ceiling bounds the employer too**, which the shape of the curve above
+€2300 depends on: КСО чл. 6, ал. 3's opening sentence puts contributions «върху
+не повече от максималния месечен размер на осигурителния доход» and only THEN
+says they «се разпределят между осигурителите и осигурените». There is one
+capped base and the split is applied to it. чл. 157, ал. 6 puts ДЗПО on that
+same base, and ЗЗО чл. 40, ал. 1, т. 1 does the same for health — so all six
+employer lines stop at the ceiling, exactly as the employee's do.
+
 ## The published identity (ЗЕТ чл. 4)
 
 `site/src/lib/legal.js` declares `LEGAL_FORM` — today `natural_person`,

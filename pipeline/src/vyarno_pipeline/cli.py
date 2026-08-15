@@ -38,7 +38,7 @@ from vyarno_pipeline.mortgage import (
     validate_freshness,
     validate_rate_series,
 )
-from vyarno_pipeline.payroll import build_payroll_payload
+from vyarno_pipeline.payroll import build_payroll_payload, in_force_entry
 from vyarno_pipeline.publish import (
     CITY_PRICE_FILE,
     HICP_CATEGORIES_FILE,
@@ -62,6 +62,7 @@ from vyarno_pipeline.publish import (
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_SOURCE_URL
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
+from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import (
     EURO_SWITCH_PERIOD,
     SERIES_KEYS,
@@ -134,6 +135,7 @@ from vyarno_pipeline.validate import (
     validate_link_status,
     validate_meta_labels_cover,
     validate_nsi_housing,
+    validate_payroll,
     validate_reconciliation,
     validate_region_salary,
     validate_sector_salary,
@@ -963,21 +965,41 @@ def _refresh_salary_dist(out: Path, as_of: date) -> None:
 
 
 def _refresh_payroll(out: Path, as_of: date) -> None:
-    """Build payroll.json from the dated legislative table.
+    """Build payroll.json from the dated legislative table plus the ТЗПБ table.
 
-    No network: the BG payroll parameters (contribution rates, flat tax,
-    max insurable income, minimum wage) are legislative constants with no
+    Most BG payroll parameters (contribution rates both sides, flat tax, max
+    insurable income, minimum wage) are legislative constants with no
     machine-readable feed, so they live in `payroll.py` as a dated table.
     Publishing them makes the SPA's gross→net math data-driven instead of
     hardcoded — to reflect a law change, edit the table and re-run this.
+
+    The one network call is ТЗПБ: 87 per-activity rates that ЗБДОО resets every
+    year, read from the act itself by `sources/dv.py`. It is not best-effort.
+    A payroll payload with no `work_accident` block fails `validate.py`, so a
+    ДВ outage stops the run rather than publishing a labour cost that is
+    complete-looking and short by up to 1,1% of gross.
     """
     click.echo("→ building payroll.json (BG payroll parameters)...")
-    payload = build_payroll_payload(as_of)
+    entry = in_force_entry(as_of)
+    citation = entry["tzpb"]
+    click.echo(f"  fetching {citation['appendix']} from ДВ...")
+    tzpb = fetch_tzpb_appendix(
+        citation["dv_material_id"],
+        citation["appendix"],
+        expect_issue=citation["gazette_issue"],
+        expect_date=citation["gazette_date"].isoformat(),
+    )
+    click.echo(f"  read {len(tzpb['activities'])} economic activities")
+    payload = build_payroll_payload(as_of, tzpb=tzpb)
+    validate_payroll(payload)
     write_payload(payload, target_dir=out, filename=PAYROLL_FILE)
     r = payload["employee_contrib_rates"]["total"]
+    wa = payload["work_accident"]
     click.echo(
         f"OK: wrote {PAYROLL_FILE} (employee {r * 100:.2f}% + "
-        f"{payload['income_tax_rate'] * 100:.0f}% tax, cap "
+        f"{payload['income_tax_rate'] * 100:.0f}% tax, employer "
+        f"{payload['employer_contrib_rates']['total'] * 100:.2f}% + ТЗПБ "
+        f"{wa['min'] * 100:.1f}–{wa['max'] * 100:.1f}%, cap "
         f"€{payload['max_insurable_income_eur']:.2f}, min wage "
         f"€{payload['min_wage_gross_eur']:.2f}, effective "
         f"{payload['effective_year']})"

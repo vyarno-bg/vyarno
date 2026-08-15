@@ -35,7 +35,8 @@ Every entry carries a provenance tag:
 | **ЕЦБ MIR new-business APRC** — `M.BG.B.A2C.A.C.A.2250.{BGN,EUR}.N` | VERIFIED | `new_business.aprc.value_pct` — the same loans' all-in cost with fees (ГПР). |
 | **БНБ housing-loan rate** — `s_ir_loan_oa_hh_bg.xlsx` | VERIFIED | `outstanding_stock.value_pct`, with `book_volume_eur_m` beside it. Monthly back to 2007-01. |
 | **БНБ lending limits** — dated table in `mortgage.py` | VERIFIED | `mortgage.json → lending_limits`. Borrower-based measures, not scraped. |
-| **BG payroll parameters** — dated table in `payroll.py` | VERIFIED | `payroll.json`. Legislative constants, not scraped. |
+| **BG payroll parameters** — dated table in `payroll.py` | VERIFIED | `payroll.json`. Contribution rates BOTH sides, the flat tax, the insurance ceiling and the minimum wage. Legislative constants, not scraped. |
+| **ТЗПБ by economic activity** — ДВ `showMaterialDV.jsp?idMat=…` | VERIFIED | `payroll.json → work_accident`. ЗБДОО's Приложение № 2/2А — the accident contribution the employer pays alone, 87 КИД-2025 divisions, published as a range per НСИ section. The only payroll figure that is a table rather than a reading. |
 | **Individual earnings distribution** — `earn_ses_monthly` | VERIFIED | The percentile ladder's **shape** (D1 / median / mean / D9 gross, 4-yearly). |
 | **Average gross wage by област** — НСИ `Labour_1.1.2.2_EUR_EN.xlsx` + `_EUR.xlsx` | VERIFIED | `region_salary.json`. All 28 области, both language editions, НСИ's published quarters from 2020-Q1. |
 | **€/m² by city** — `imot.bg/sredni-ceni` | VERIFIED | `city_price.json`. 27 cities, each with its own district count and its own year window. |
@@ -1353,10 +1354,11 @@ via `mirror.js#payrollParams(data.payroll)` and threads the result through
 `bgNetSalary` / `bgGrossFromNet` / `buildLadder`. The `mirror.js` `BG_2026_*`
 constants are an **offline sentinel only**, parity-tested by `test_payroll.py`.
 
-An entry carries the five employee contribution lines (pension, pension2,
-sickness-maternity, unemployment, health), the flat personal income tax and its
-absence of an allowance, the maximum insurable income and the statutory minimum
-gross wage. **The figures live in `BG_PAYROLL_TABLE` and nowhere else**, this
+An entry carries the five contribution lines **on both sides** — pension,
+pension2, sickness-maternity, unemployment, health, once for the осигурено лице
+and once for the осигурител — the flat personal income tax and its absence of
+an allowance, the maximum insurable income and the statutory minimum gross
+wage. **The figures live in `BG_PAYROLL_TABLE` and nowhere else**, this
 file included: `build_payroll_payload(as_of)` picks whichever entry was in force
 on the publish date, so what shipped is read off `payroll.json`'s
 `effective_from` and not off a list somebody has to remember to update.
@@ -1365,10 +1367,22 @@ on the publish date, so what shipped is read off `payroll.json`'s
 outranks the act itself in search for months after it is superseded: the last
 ЗБДОО draft carried a higher insurance ceiling and a raised фонд "Пенсии" rate
 for those born after 1959, and neither was enacted. Read the promulgated text.
-Two changes that act does make sit outside this table on purpose — ТЗПБ moves
-are wholly employer-side, and държавни служители begin paying personal
-contributions at 80:20, a different insured category from the III категория труд
-employee modelled here.
+One change that act does make sits outside this table on purpose: държавни
+служители begin paying personal contributions at 80:20, a different insured
+category from the III категория труд employee modelled here — and НОИ publish
+its split beside this one, so пенсии 11,8/3,0 and ОЗМ 2,8/0,7 are another
+category's figures rather than corrections to these.
+
+**No employer rate here is a cell anybody publishes**, which is why
+`EMPLOYER_RATE_DERIVATION` carries the working beside each one and
+`test_payroll.py` sums it back. Four of the five funds are a single 60:40 split
+— КСО чл. 6, ал. 3, т. 7 for ОЗМ and „Безработица“, ЗЗО чл. 40, ал. 1, т. 1 for
+health. Фонд „Пенсии“ is not, and that is the trap: чл. 6, ал. 3, т. 9 fixes it
+at 7,1/5,7 of the original 12,8 на сто, and чл. 6, ал. 1, т. 4's two 1-point
+rises are each split 0,56/0,44 on their own terms, giving **8,22% employer /
+6,58% employee**. Applying 60:40 to the fund's 14,8 gives 8,88 — a number that
+looks right, sits 0,66 points out, and would be wrong in the same direction for
+every salary on the site.
 
 **The ДВ citation is a field, not a caption.** `source_url` is
 dv.parliament.bg's landing page and can be nothing else: their permalinks are
@@ -1394,12 +1408,65 @@ An entry therefore sets **exactly one** of `<field>_eur` / `<field>_bgn`;
 both or neither is set**, so the two can never disagree in the output.
 
 **To reflect a law change: add a new effective-dated entry — never mutate an old
-one — and re-run `--source payroll`** (no network). `build_payroll_payload(as_of)`
+one — and re-run `--source payroll`.** `build_payroll_payload(as_of)`
 picks whichever entry was in force on the publish date, so an entry can be
 landed before it takes effect. `scheduled_changes` documents
 known-but-not-yet-effective changes so the SPA can surface them, and each one's
 `effective_from` must be an **ISO date, never a condition** — "2026 (pending the
 regular state budget)" was true until it wasn't, and nothing could tell.
+
+## Държавен вестник — `sources/dv.py`
+
+The one payroll figure that is fetched, and the line is whether it exists as a
+published cell. КСО чл. 6, ал. 1, т. 7 sets only the span — «от 0,4 до 1,1 на
+сто» — and delegates the per-activity rates to the year's ЗБДОО; чл. 6, ал. 6
+puts the whole line on the осигурител. That is 87 rows in an appendix, reset
+every year: a table, and 87 chances to mistype. The rate splits above are the
+opposite — no cell anywhere holds 8,22 — so they stay transcribed and this is
+read from the act.
+
+### `showMaterialDV.jsp?idMat=…` — Приложение № 2 / № 2А към чл. 14
+
+**The `idMat` cannot be derived and is recorded per entry.** ДВ build their
+permalinks from an id the issue number does not yield, so «бр. 68 от
+28.07.2026» reaches nothing on its own — the id is found once and stored on the
+entry it belongs to. That is also what pins the fetch to ONE act rather than to
+whatever a search currently returns, and `fetch_tzpb_appendix` refuses a
+material whose own «брой: N, от дата D.M.YYYY» header disagrees with the
+entry's citation.
+
+**Name the appendix, never "the ТЗПБ table".** ЗБДОО 2026 legislates the whole
+year and чл. 14 splits it: Приложение № 2 runs 1 January – 31 July, № 2А from
+1 August. Seven activities move between them — food manufacturing 0,7→0,9%,
+architectural and engineering 0,7→0,5%, sport 0,5→0,7%. A parser that took the
+first table it found would be right for eighty sectors and wrong for seven,
+which is the shape of wrong that never announces itself.
+
+**Two classifications meet here, and the site has to say so.** ЗБДОО sets ТЗПБ
+by **КИД-2025 division** (NACE Rev. 2.1); НСИ publish wages by **NACE Rev. 2
+section** (`sector_salary.json`). `payroll.py#NSI_SECTION_DIVISIONS` is the
+join, it is ours rather than anybody's published correspondence, and it carries
+two consequences that may not be smoothed over:
+
+- **Ten of the nineteen sections span several rates.** «Преработваща
+  промишленост» runs 0,5% to 1,1%. A section therefore resolves to a RANGE and
+  never to a representative rate — a modal division would give one confident
+  figure that is wrong for most of the people reading it.
+- **Rev. 2.1 moved work between divisions.** Division 45 (trade and repair of
+  motor vehicles) has no КИД-2025 successor of its own; its repair half sits
+  inside 95, which also serves section S. So 95 appears under two sections in
+  the join, deliberately.
+
+`build_work_accident_block` **raises** if a section names a division the
+appendix does not carry, because dropping it silently narrows that section's
+published range — more precise-looking, and wrong.
+
+**What the payload carries.** `work_accident` publishes the act's own span,
+the appendix name, its ДВ permalink and issue, and `by_nsi_section` with a
+`{min, max}` per section — always both, even where they are equal, so no
+template branches on which shape it got. The 87 division rows are **not**
+published: nothing renders them, and a payload field nothing reads is a number
+nobody checks.
 
 ### БНБ lending limits — `mortgage.py#BNB_LENDING_LIMITS`
 

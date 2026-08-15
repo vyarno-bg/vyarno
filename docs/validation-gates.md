@@ -231,6 +231,45 @@ nothing here rounds.
 names. Do not widen the band — every failure it is written for puts the parse on
 a column that is not a wage.
 
+## Payroll gates (`--source payroll`)
+
+`validate.py#validate_payroll`. The employee half of `payroll.json` has never
+needed a gate — five constants, parity-tested against `mirror.js` by
+`test_payroll.py`. The employer half does, because it is the first payroll
+figure assembled from a **fetch**, and every way that fetch goes quietly wrong
+ends as a labour cost that looks finished.
+
+Four properties, each of them a wrong number on screen rather than an exception:
+
+1. **The ТЗПБ block exists.** ДВ being unreachable is not a reason to publish
+   without it. Absent, the site has no accident rate at all and the employer's
+   cost renders 0,4–1,1 points light — inside every plausible band, for every
+   reader at once. So the fetch is not best-effort; the run stops.
+2. **Its span is the code's.** КСО чл. 6, ал. 1, т. 7 bounds what ЗБДОО may set
+   at «от 0,4 до 1,1 на сто», and ЗБДОО may place any activity anywhere inside
+   it. A published range outside that is a parse that has left the rate column,
+   not a wide year.
+3. **Every НСИ section resolves to a range inside that span.** A section the
+   join lost renders no employer figure for whoever picked it; a section
+   claiming a range wider than the act's is a selection that has stopped being
+   a selection.
+4. **The employer total excludes ТЗПБ.** The two are published apart because
+   ТЗПБ is not one rate. A total that has absorbed the 0,4% floor is right for
+   the sectors sitting at the floor and wrong for the rest, under a figure that
+   claims to be the whole employer cost — which is what a well-meaning edit
+   produces, and what makes it survive a spot check.
+
+`sources/dv.py` raises before any of this (exit 2) when the appendix heading is
+absent, the material's own ДВ header disagrees with the entry's citation, a rate
+falls outside the statutory span, a division code repeats, or fewer than 80 rows
+parse. `payroll.py#build_work_accident_block` raises when a section names a
+division the appendix does not carry.
+
+**What to do when it trips:** read the appendix the error names at the ДВ
+permalink in `work_accident.source_url`. Do not fall back to the floor and do
+not default the block to empty — both publish a labour cost that is complete
+and too low.
+
 ## Property-market gates (`--source house-market`)
 
 Two blocks, run before either payload is written.
@@ -352,7 +391,7 @@ detail.
 | `region-salary` | all 28 области present, no district row we do not name, София-city the maximum. The connector guards exit 2; the payload gate exits 3 | Three-part regression guard on the row selector — an off-by-one that shifts every reading by one област passes any two of them |
 | `sector-salary` | gate 8 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
 | `salary-dist` | No published-JSON gate. The arm fetches, transforms and writes | **The P1 floor is not here.** It applies after the ladder is re-levelled to today's София average, which happens in the reader's browser (`mirror.js#composeLadder`, minimum wage out of `payroll.json`) — flooring an unlevelled rung would floor a number that is not a wage |
-| `payroll` | no network; parity-checked against the SPA sentinel. `payroll.py` raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | `test_payroll.py` reads `mirror.js` |
+| `payroll` | the four payroll gates (above) over the assembled payload, plus `sources/dv.py`'s five refusals on the fetched appendix. `payroll.py` still raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | One network call — ЗБДОО's ТЗПБ appendix. It is not best-effort: no `work_accident` block, no publish. `test_payroll.py` reads `mirror.js` and rebuilds the shipped payload from a committed ДВ fixture |
 | `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
 | `nsi-housing` | every published figure is a cell НСИ published, and the national price index change reconciles with Eurostat's at the newest shared quarter | The reconciliation reads `house_market.json` off disk and says so when it is absent rather than passing quietly |
 | `house-market` | the two blocks above: the derivation reproduces, the purchase codes are not swapped, the average is inside €10k–€500k, both indices average 100 across the base year they name, every published flag is one of Eurostat's own letters at a quarter the series carries, and the tenure and census identities hold. Gate 6 over every published `api_url` unless `--skip-link-check` | One arm, two payloads — the stems both start `house_market` because `refresh.yml` matches them against the `--source` name, and a payload no arm owns publishes nothing while the run reports success |
