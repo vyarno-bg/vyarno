@@ -166,3 +166,39 @@ test("the privacy notice describes the counter, in both languages", () => {
     }
   }
 });
+
+test("the notice discloses the events a reader cannot find in the source", () => {
+  // v1.6 described pageviews and nothing else while outbound-link clicks, file
+  // downloads and scroll-and-dwell were being sent — switched on in the
+  // counter's dashboard, so no file here contradicted it and no test could
+  // read it. Prose is the only evidence available, which is why the check is
+  // that the prose EXISTS rather than that it matches a config.
+  //
+  // A weak guard by this suite's standards, and deliberately kept: what it
+  // catches is the summary somebody shortens back to "we count visits", which
+  // is exactly how the first version was written.
+  const privacy = DOCS.find((d) => d.id === "privacy");
+  const disclosed = {
+    // `\w` is ASCII-only in JS, so a Cyrillic stem cannot be matched with one —
+    // the same trap `legal.js#commercialSignals` records about `\b`. These are
+    // literal enough not to need it.
+    bg: [/извън vyarno\.bg/, /свалянето на файл/, /докъде си стигнал/, /колко време/],
+    en: [/off vyarno\.bg/, /[Dd]ownloading a file/, /how far down/, /how long/],
+  };
+  for (const [lang, patterns] of Object.entries(disclosed)) {
+    const text = privacy.sections
+      .flatMap((s) => [s.h[lang], ...s.p.map((p) => p[lang])])
+      .join("\n");
+    for (const re of patterns) {
+      assert.match(
+        text,
+        re,
+        `the ${lang} privacy notice no longer discloses ${re}. The counter ` +
+          "records a followed link with its destination, a download, the " +
+          "scroll depth and the dwell time; a notice that lists only the " +
+          "pageview understates it, on the page whose own standard is that " +
+          "«не събираме нищо» slips easily into being untrue."
+      );
+    }
+  }
+});

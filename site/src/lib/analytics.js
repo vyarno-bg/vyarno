@@ -46,6 +46,16 @@ export const PLAUSIBLE_ORIGIN = "https://plausible.io";
  * The site's own script. The domain it reports is compiled into this filename,
  * so pointing it at another file reports another site's traffic rather than
  * failing.
+ *
+ * **What it measures is compiled in too, and that is the trap.** Outbound-link
+ * clicks, file downloads and form submissions are switched on in the counter's
+ * dashboard and arrive already `true`; `init()` below passes no options and so
+ * overrides none of them. Nothing in this repository shows that, which is how
+ * the notice shipped at v1.6 describing pageviews alone while three more event
+ * kinds were being sent. **Changing a switch in that dashboard is a change to
+ * the privacy notice** — it is the one part of this module's behaviour that a
+ * reader comparing the code against the page cannot check, so it is disclosed
+ * in prose rather than evidenced by a test.
  */
 export const PLAUSIBLE_SCRIPT = `${PLAUSIBLE_ORIGIN}/js/pa-tnlh8vRTKSTvMuk-iNmsc.js`;
 
