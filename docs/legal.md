@@ -802,6 +802,18 @@ Verified against the code on 2026-07-30 and corrected where it did not hold.
   **A measurer that failed any of those is a different decision**, not a
   substitution: `docs/principles.md` §"What is closed" refuses the class rather
   than judging products one by one.
+- **What the counter measures is set in ITS dashboard, not in this repository,
+  and art. 13(1)(c) is owed on all of it.** Outbound-link clicks with the
+  destination address, file downloads, form submissions, scroll depth and dwell
+  time arrive switched on in the generated script; `analytics.js` passes no
+  options and overrides none. v1.6 of the notice described the pageview alone
+  and was therefore incomplete for four days — found by driving the built
+  bundle in a browser and reading the posted bodies, which is the only way to
+  see it, because no file in the tree disagrees with a notice that is short.
+  **Treat a switch in that dashboard as an edit to the notice**, with the
+  version bump the rule at the top of `legal.js` asks for. Nothing there may be
+  switched on that carries a figure the reader typed; that is P1 and it is
+  guarded on our side by `verify_analytics.mjs` refusing a custom event.
 - **The origin also adds headers this repository never declared, and one of
   them reaches the reader's browser.** `NEL` and `Report-To` ask the browser to
   post a report about a failed request to the host's reporting address; the

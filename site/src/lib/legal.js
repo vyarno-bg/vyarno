@@ -48,8 +48,8 @@
  * Bump, always. The shortcut is only ever available before anything has been
  * served at all, and that moment has passed.
  */
-export const LEGAL_VERSION = "1.6";
-export const LEGAL_EFFECTIVE = { bg: "15 август 2026 г.", en: "15 August 2026" };
+export const LEGAL_VERSION = "1.7";
+export const LEGAL_EFFECTIVE = { bg: "16 август 2026 г.", en: "16 August 2026" };
 
 import { CONTACT, LEGAL_NAV, REPO_ISSUES_URL, REPO_SLUG } from "./legal-nav.js";
 
@@ -755,8 +755,17 @@ const DOC_BODIES = [
         h: { bg: "Как броим посещенията", en: "How visits are counted" },
         p: [
           {
-            bg: "Освен журнала на хоста имаме и брояч: Plausible. Той се зарежда от plausible.io и при всяко отваряне на страница изпраща натам адреса на страницата, откъде си дошъл, ако си дошъл по връзка, вида и версията на браузъра, вида на устройството и държавата. Това са същите полета, които и без това стоят в журнала на хоста — разликата е, че ги виждаме преброени, а не разпилени.",
-            en: "Besides the host's log there is a counter: Plausible. It loads from plausible.io, and each time you open a page it sends there the page address, where you came from if you followed a link, the browser and its version, the kind of device, and the country. Those are the same fields the host's log already holds — the difference is that we see them counted rather than scattered.",
+            bg: "Освен журнала на хоста имаме и брояч: Plausible. Той се зарежда от plausible.io и при всяко отваряне на страница изпраща натам адреса ѝ заедно с това, което стои след въпросителната в него, откъде си дошъл, ако си дошъл по връзка, вида и версията на браузъра, вида на устройството и държавата. Това са същите полета, които и без това стоят в журнала на хоста — разликата е, че ги виждаме преброени, а не разпилени.",
+            en: "Besides the host's log there is a counter: Plausible. It loads from plausible.io, and each time you open a page it sends there the page address including anything after the question mark in it, where you came from if you followed a link, the browser and its version, the kind of device, and the country. Those are the same fields the host's log already holds — the difference is that we see them counted rather than scattered.",
+          },
+          {
+            // The paragraph the first version of this section did not have, and
+            // the omission is the reason it is worded as a list rather than a
+            // summary: these three are switched on in the counter's own
+            // dashboard, so nothing in the repository shows them and a reader
+            // comparing the code against this page cannot find them.
+            bg: "Освен самото отваряне се броят и три неща, които правиш на страницата. Натиснеш ли връзка, която води извън vyarno.bg — към Евростат, ЕЦБ, НСИ, БНБ, имот.bg или към страница за дарение — се записва, че е натисната връзка, и адресът, към който води. Записва се и свалянето на файл. Записва се докъде си стигнал надолу по страницата и колко време е стояла отворена пред теб. Никое от трите не носи число, което си въвел, и никое не казва кой си: остава на същото ниво като посещението — какво е отворено и какво е натиснато, без човек отзад.",
+            en: "Besides the opening itself, three things you do on the page are counted. Follow a link that leads off vyarno.bg — to Eurostat, the ECB, НСИ, БНБ, imot.bg or a donation page — and it is recorded that a link was followed, together with the address it leads to. Downloading a file is recorded. So is how far down the page you got and how long it stayed open in front of you. None of the three carries a figure you typed and none of them says who you are: they stay at the level the visit itself is at — what was opened and what was clicked, with no person behind it.",
           },
           {
             bg: "Не поставя бисквитка, не записва нищо в браузъра ти и не ти дава номер. Дали днес вече те е броил, познава по отпечатък, сметнат от твоя IP адрес, браузъра ти и нашия домейн заедно с една случайна стойност, която се сменя и изтрива на всеки 24 часа. След смяната старите отпечатъци не могат да се свържат с новите — включително твоите с твоите, така че няма как да те проследи от ден за ден, нито от сайт към сайт. Самият IP адрес не се съхранява: през него се получават отпечатъкът и държавата, и се изхвърля.",
