@@ -113,6 +113,15 @@
     counts users or collects a rating, and a badge nothing measures is the one
     kind of decoration docs/principles.md rules out by name.
 
+    `sameAs` IS here, and it is the one addition the rule below admits. It says
+    the Facebook page posting under this name is this project's — a claim about
+    a channel we run, not an organisational fact about the provider, which is
+    what that rule is guarding against. It sits on the WebApplication and never
+    on the Person: the provider is a natural person and a `sameAs` there would
+    be a statement about the human, which is a different thing to publish.
+    verify_legal.mjs reads the address off legal-nav.js#FACEBOOK_URL, so this
+    and the footer cannot end up naming different accounts.
+
     A ld+json block is inert data rather than script, so `script-src 'self'`
     in public/_headers does not reach it and no nonce is needed. Check that
     with a real browser if this block ever grows, because the failure mode is
@@ -149,6 +158,7 @@
         "isAccessibleForFree": true,
         "license": "https://www.apache.org/licenses/LICENSE-2.0",
         "codeRepository": "https://github.com/vyarno-bg/vyarno",
+        "sameAs": ["https://www.facebook.com/vyarno"],
         "dateModified": "__DATA_LASTMOD__",
         "author": {
           "@type": "Person",

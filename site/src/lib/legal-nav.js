@@ -58,6 +58,27 @@ export const REPO_URL = `https://github.com/${REPO_SLUG}`;
 export const REPO_ISSUES_URL = `${REPO_URL}/issues`;
 
 /**
+ * The project's Facebook page.
+ *
+ * **It exists to make the page verifiable, not to be a contact route.** A
+ * reader who meets an economics post from «Вярно» on Facebook has no way to
+ * tell it from an account using the name, and the check they can actually
+ * perform is the reverse one: does vyarno.bg link back? So the address is
+ * published in two places that a stranger and a crawler each read — the footer
+ * on every page, and `sameAs` on the WebApplication node in `index.html` —
+ * and `verify_legal.mjs` holds both to this constant so they cannot name
+ * different accounts.
+ *
+ * **Deliberately NOT a row in `IDENTITY`.** ЗЕТ чл. 4 т. 4 wants correspondence
+ * data for пряка и навременна връзка, and the two routes published there are
+ * answered on a stated commitment. A page's message inbox carries no such
+ * commitment, it needs an account with a third party to use, and publishing it
+ * under чл. 4 would promise a channel nobody has undertaken to monitor — the
+ * `issues` row's own note is what that costs when it stops being true.
+ */
+export const FACEBOOK_URL = "https://www.facebook.com/vyarno";
+
+/**
  * The four documents, in the order they are published and linked, with the
  * short label used in the footer and the on-page contents list.
  */
