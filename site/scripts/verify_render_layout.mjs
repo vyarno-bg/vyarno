@@ -542,4 +542,41 @@ test("a narrow column folds the ranked table and still adds up", { skip }, async
   });
 });
 
+test("the two marked links in the footer stay on one row", { skip }, async () => {
+  // They are one flex item so that `justify-content: space-between` cannot
+  // place them independently. Left as two, the row count decided where each
+  // went: at 1100px the source finished one line and the Facebook page opened
+  // the next, alone at the left edge beside the build stamp, reading as a
+  // stray rather than as the pair it is.
+  //
+  // Asserted as "same row", not as coordinates, because the widths move with
+  // every copy edit — and checked at a width where the row is genuinely tight,
+  // since a wide viewport fits everything and proves nothing.
+  //
+  // NOT a gutter check. `--gutter` computes to 0 on a phone, so a footer link
+  // ending at the viewport edge is the content edge and not an overflow; a
+  // check written against the padding box there can never go red. What guards
+  // `flex: 0 1 auto` is the pair of `the header fits a 320px phone` cases on
+  // the English routes, whose longer labels push the document wide the moment
+  // the pair may not shrink.
+  await withApp(
+    async (page, errors) => {
+      const rows = await page.evaluate(() => {
+        const marked = [...document.querySelectorAll("footer.site .marks a")];
+        return marked.map((a) => Math.round(a.getBoundingClientRect().top));
+      });
+      assert.equal(rows.length, 2, `the footer carries ${rows.length} marked links, expected 2`);
+      assert.equal(
+        rows[0],
+        rows[1],
+        `the source and the Facebook page are drawn on different rows (${rows.join(" vs ")}), ` +
+          "so one of them is alone at the end of the footer"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/",
+    { viewport: { width: 1100, height: 800 } }
+  );
+});
+
 test.after(shutdown);

@@ -34,8 +34,16 @@ import {
   unpublishedIdentityFields,
 } from "../src/lib/legal.js";
 import { COPY, HOME } from "../src/lib/content.js";
-import { CONTACT, LEGAL_NAV, REPO_OWNER, REPO_SLUG, REPO_URL } from "../src/lib/legal-nav.js";
+import {
+  CONTACT,
+  FACEBOOK_URL,
+  LEGAL_NAV,
+  REPO_OWNER,
+  REPO_SLUG,
+  REPO_URL,
+} from "../src/lib/legal-nav.js";
 import { BUILD_ID } from "../src/lib/build.js";
+import { blankComments } from "./live-copy.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const read = (...p) => readFileSync(join(HERE, "..", ...p), "utf-8");
@@ -1064,6 +1072,75 @@ test("the footer credits every upstream the pipeline pulls from", () => {
         "it as a licence condition."
     );
     assert.ok(note.en.includes(en), `the footer no longer credits ${source} in English ("${en}").`);
+  }
+});
+
+test("the Facebook page is claimed from one address, in both places that claim it", () => {
+  // The link exists so a reader who meets a post under this name can check it
+  // against the project's own domain. Two copies of the address make that
+  // check, and a stale one sends a stranger to an account that is not ours —
+  // which is a false statement about who is behind the site, the same class of
+  // failure as an invented registration number.
+  //
+  // Read off `legal-nav.js`, never restated here: a hand-kept expectation in a
+  // test is a third copy, and it goes stale in the direction that passes.
+  assert.match(
+    FACEBOOK_URL,
+    /^https:\/\/www\.facebook\.com\/[A-Za-z0-9.]+$/,
+    `FACEBOOK_URL is ${FACEBOOK_URL}, which is not a page address on facebook.com`
+  );
+
+  // Comments blanked first, and this file's own comments are why: they name
+  // `legal-nav.js#FACEBOOK_URL` in prose, so a check reading the raw source
+  // passes on the explanation while the markup below it carries a literal.
+  const footer = blankComments(FOOTER);
+  assert.match(
+    footer,
+    /href=\{FACEBOOK_URL\}/,
+    "the footer no longer links the Facebook page from the shared constant. " +
+      "Every page carries this footer, so the link is the site's own evidence " +
+      "that the page is ours; a literal here is a second address to keep true."
+  );
+  assert.doesNotMatch(
+    footer,
+    /facebook\.com/,
+    "the footer writes a facebook.com address directly into the markup. " +
+      "There is one address and `legal-nav.js` holds it."
+  );
+
+  // The machine-readable half. `sameAs` is what an entity resolver reads to
+  // decide the page and the site are one thing, and it is the half nobody looks
+  // at — so it is the half that quietly ends up pointing somewhere else.
+  const root = read("", "index.html");
+  const blocks = [
+    ...root.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
+  ].map(([, body]) => JSON.parse(body));
+  const app = blocks.find((b) => b["@type"] === "WebApplication");
+  assert.ok(app, "index.html no longer carries a WebApplication node to claim the page from");
+  assert.deepEqual(
+    app.sameAs,
+    [FACEBOOK_URL],
+    "index.html's sameAs does not name exactly the Facebook page legal-nav.js " +
+      "declares. A sameAs pointing elsewhere tells a search engine some other " +
+      "account is this project."
+  );
+
+  // On the app, never on the provider. The provider is a natural person and
+  // `IDENTITY`'s own note says so; a `sameAs` on that node publishes a claim
+  // about the human rather than about the project's channel.
+  for (const node of [app.author, app.publisher]) {
+    assert.equal(
+      node?.["@type"],
+      "Person",
+      "the structured data's provider stopped being a Person, which is a " +
+        "separate test's subject and this one's precondition"
+    );
+    assert.ok(
+      !("sameAs" in node),
+      "a sameAs was added to the Person node. The Facebook page belongs to the " +
+        "project; putting it on the provider states that a natural person's " +
+        "identity is that account, which is not what is published on /legal/."
+    );
   }
 });
 

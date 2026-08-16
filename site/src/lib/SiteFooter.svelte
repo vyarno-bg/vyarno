@@ -4,7 +4,7 @@
    * one place, so the upstream attribution and the legal links cannot exist
    * on one page and be missing from another.
    *
-   * Three things live here and they are not interchangeable:
+   * Five things live here and they are not interchangeable:
    *
    * 1. **Upstream attribution** (`COPY.footerNote`) — a licence condition of
    *    several publishers and the product's credibility claim. Never shorten
@@ -17,7 +17,11 @@
    *    and the page renders every one".
    * 3. **The build stamp** — so a support conversation can start with "which
    *    build are you on" instead of guessing. Discreet on purpose.
-   * 4. **The support line** — one quiet sentence and one link, because the
+   * 4. **The two marked links** — the source and the Facebook page. Neither
+   *    is inside the legal nav, because that landmark is labelled "legal" and
+   *    holds what discharges ЗЕТ чл. 4; both are here so that a reader who met
+   *    this project somewhere else can check it against its own domain.
+   * 5. **The support line** — one quiet sentence and one link, because the
    *    project is donation-funded and a person is entitled to know that
    *    without being interrupted by it. The rules governing how this may be
    *    asked (no modal, no amounts, nothing conditioned on use, nothing given
@@ -28,7 +32,7 @@
   // ~30 kB of terms of use on the calculator's critical path. `support.js` is
   // tiny and safe to pull in here for the same reason.
   import { COPY, t } from "./content.js";
-  import { CONTACT, LEGAL_NAV, REPO_URL } from "./legal-nav.js";
+  import { CONTACT, FACEBOOK_URL, LEGAL_NAV, REPO_URL } from "./legal-nav.js";
   import { SUPPORT_COPY, footerDonateLink } from "./support.js";
   import { BUILD_ID } from "./build.js";
 
@@ -121,38 +125,80 @@
     {/if}
 
     <!--
-      The source, next to the build stamp and not inside the legal nav: those
-      four links discharge ЗЕТ чл. 4 and this one does not, and a landmark
-      labelled "legal" should hold only what is.
+      The two links that carry a mark: the source, and the Facebook page. Both
+      answer the same question for a reader who met this project somewhere else
+      — is this really them — and neither belongs in the `legal-links` nav,
+      because that landmark is labelled "legal" and holds what discharges
+      ЗЕТ чл. 4. A repository and a social page are not that.
 
-      The mark is inline SVG from GitHub's own Octicons set, drawn in
-      `currentColor`. Not an <img>, not a webfont, not a CDN sprite — the CSP
-      is `img-src 'self' data:` and `connect-src 'self'`, and the privacy
-      notice's claim that the browser makes not one third-party request is what
-      that policy exists to keep true. An icon is not a reason to spend it.
+      Both marks are inline SVG in `currentColor` — GitHub's own Octicon and
+      Facebook's own "f". Not an <img>, not a webfont, not a CDN sprite: the CSP
+      admits script and images from our own origin and the visit counter and
+      nothing else, and an icon is not a reason to spend that. Each is used to
+      point at our own page on that service, which is what a brand mark is for;
+      nothing here is co-branded and no endorsement is implied.
 
-      `aria-hidden` on the SVG with the label in a real text span, rather than
+      `aria-hidden` on each SVG with the label in a real text span, rather than
       an `aria-label` on the anchor: the label is also what a reader sees when
       the viewport has room, so the sighted and the announced name are the same
       string instead of two that can drift.
+
+      They sit in ONE flex item rather than two, because `justify-content:
+      space-between` places every item independently: as two, the row count
+      decided where each landed, and at 1100px the source finished one line
+      while the Facebook page opened the next alone at the left edge beside the
+      build stamp — a stray rather than the pair it is. Grouped, they break
+      between themselves and nowhere else, which is the only break that reads as
+      deliberate. `verify_render_layout.mjs` §"the two marked links in the
+      footer stay on one row" holds it at the width where the row is tight.
     -->
-    <a class="repo" href={REPO_URL} target="_blank" rel="noopener">
-      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-        <path
-          fill="currentColor"
-          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
-             0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
-             -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
-             .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
-             -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27
-             .68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
-             .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
-             0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
-        />
-      </svg>
-      <span class="l-bg">{COPY.repoK.bg}</span>
-      <span class="l-en">{COPY.repoK.en}</span>
-    </a>
+    <span class="marks">
+      <a class="marked" href={REPO_URL} target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path
+            fill="currentColor"
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+               0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+               -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+               .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+               -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27
+               .68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+               .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+               0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+          />
+        </svg>
+        <span class="l-bg">{COPY.repoK.bg}</span>
+        <span class="l-en">{COPY.repoK.en}</span>
+      </a>
+
+      <!--
+        Why this link exists at all: a page posting about the economy under this
+        name cannot be verified from Facebook's side, and the check a reader can
+        actually run is whether the site links back. So this line is the
+        evidence, `legal-nav.js#FACEBOOK_URL` is the single address it and the
+        `sameAs` in `index.html` are both read from, and `verify_legal.mjs`
+        fails if the two ever name different accounts.
+
+        `rel="me"` beside `noopener` states in markup what the label states in
+        words — that the far end is this same identity. It is not a contact
+        route, and `FACEBOOK_URL` records why it is not published as one.
+      -->
+      <a class="marked" href={FACEBOOK_URL} target="_blank" rel="me noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            fill="currentColor"
+            d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978
+               .401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0
+               0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686
+               1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386
+               2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373
+               -12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"
+          />
+        </svg>
+        <span class="l-bg">{COPY.facebookK.bg}</span>
+        <span class="l-en">{COPY.facebookK.en}</span>
+      </a>
+    </span>
 
     <span class="build" title="build">{BUILD_ID}</span>
   </div>
@@ -229,24 +275,49 @@
     color: var(--real-ink);
     border-bottom-color: var(--real);
   }
-  /* The legal links' treatment plus the mark, so the source sits in the same
-     row of small type rather than announcing itself. The icon is baseline-
-     aligned to the label by `vertical-align`, not by flex centring: this is
-     one line of text inside a `baseline`-aligned footer row, and a flex
-     container here would take the anchor's own baseline off the row and drop
-     it a pixel below the links beside it. */
-  .repo {
+  /* The two links that carry a mark — the source and the Facebook page. The
+     legal links' treatment plus the glyph, so each sits in the same row of
+     small type rather than announcing itself. One selector rather than one per
+     destination: the marks differ, nothing about the treatment does, and a
+     parallel rule is a second place for a hover colour to go stale.
+
+     The icon is baseline-aligned to the label by `vertical-align`, not by flex
+     centring: this is one line of text inside a `baseline`-aligned footer row,
+     and a flex container here would take the anchor's own baseline off the row
+     and drop it a pixel below the links beside it. */
+  /* The pair, as one item in the row. NOT `display: flex` — `.foot` aligns on
+     baselines, and a nested flex container publishes its own baseline and drops
+     the pair a pixel below the links beside it, which is the trap the
+     `vertical-align` note below already records for the anchors themselves.
+     Left as a block of inline anchors, the two break between each other when
+     the row runs out and each keeps its icon welded to its label by the
+     `white-space: nowrap` they carry.
+
+     `flex: 0 1 auto` rather than `0 0 auto`, and it is load-bearing on the
+     ENGLISH routes: "The code on GitHub" and "Vyarno on Facebook" are the
+     longer pair, and an item that may not shrink carries them past a 320px
+     viewport instead of breaking between them — which widens the document and
+     fails `verify_render_layout.mjs` §"the header fits a 320px phone" on all
+     five `/en/` routes. Not a gutter question: `--gutter` computes to 0 at that
+     width, so a footer link ending at the viewport edge is the content edge. */
+  .marks {
+    flex: 0 1 auto;
+  }
+  .marks .marked + .marked {
+    margin-left: 14px;
+  }
+  .marked {
     color: var(--ink-2);
     text-decoration: none;
     border-bottom: 1px solid var(--line);
     white-space: nowrap;
     flex: 0 0 auto;
   }
-  .repo svg {
+  .marked svg {
     vertical-align: -2px;
     margin-right: 5px;
   }
-  .repo:hover {
+  .marked:hover {
     color: var(--real-ink);
     border-bottom-color: var(--real);
   }

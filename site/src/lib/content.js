@@ -1518,6 +1518,12 @@ export const COPY = {
   // product is not allowed to print. The mark alone carries no name for a
   // screen reader, so the label is not decoration: it is the link's text.
   repoK: { bg: "Кодът в GitHub", en: "The code on GitHub" },
+  // The Facebook link's text, and it names the PROJECT rather than the
+  // platform. «Facebook» alone would be a link whose label is the destination's
+  // brand — true, and no use to the reader this line is for, who is checking
+  // whether a page posting under this name is ours. «Вярно във Facebook» is
+  // the claim itself, which is the whole reason the link is in the footer.
+  facebookK: { bg: "Вярно във Facebook", en: "Vyarno on Facebook" },
 
   // National strip
   stripHead: { bg: "Страната накратко", en: "The country at a glance" },
