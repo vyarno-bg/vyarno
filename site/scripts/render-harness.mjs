@@ -8,22 +8,26 @@
  * costs a reader who has to scroll past the strip, the basket and the payroll
  * cases to reach the one they came for.
  *
- * **`--test-concurrency=2` in `package.json`, and the reason is Windows.** With
- * the runner's default — one process per core — four Chromiums and four servers
- * run at once, and every test opens a FRESH browser context (it has to; see
- * `withApp`), so no connection is ever reused between tests. A run is therefore
- * on the order of a hundred page loads times a dozen assets, in four processes,
- * against four loopback servers. On a Windows CI runner that exhausts the
- * socket pool: an asset request comes back `net::ERR_NO_BUFFER_SPACE`, the
- * bundle never finishes, and `openApp`'s predicate times out thirty seconds
- * later in whichever suite happened to be unlucky — twice observed, in two
- * different files, on two different branches.
+ * **`--test-concurrency=1` in `package.json`, and the reason is Windows.** Left
+ * at the runner's default — one process per core — four Chromiums and four
+ * servers run at once, and every test opens a FRESH browser context (it has to;
+ * see `withApp`), so no connection is ever reused between tests. A run is
+ * therefore on the order of a hundred page loads times a dozen assets, in four
+ * processes, against four loopback servers. On a Windows CI runner that
+ * exhausts the socket pool: an asset request comes back
+ * `net::ERR_NO_BUFFER_SPACE` and the bundle never finishes, failing whichever
+ * suite happened to be unlucky. Three times observed, in three different files,
+ * on three different branches — the third at a cap of 2, which is what settled
+ * it: halving the peak lowered the odds and left the ceiling where it was.
  *
- * The cap halves the peak rather than proving the ceiling gone, and that is the
- * honest description of it: the failure cannot be reproduced on Linux, so what
- * was measured is the cost (37s to 43s locally, against 78s at
- * `--test-concurrency=1`) and not the cure. If it recurs, 1 is the next step
- * and the argument for it is already here.
+ * Serial costs 78s locally against 43s at 2, and that trade is not close. A
+ * suite whose failure is a coin toss is one whose green stops being evidence,
+ * and every one of those failures cost more than 35s to read.
+ *
+ * **There is no 0.** If `ERR_NO_BUFFER_SPACE` returns from here, the next move
+ * is the connection count itself — a browser context reused across the tests
+ * that can share one, or the servers collapsed to a single instance — not
+ * another number in this flag.
  *
  * It lives in the npm script rather than in the Windows job so that `make
  * check` and CI run the identical command — and because the flag is silently
