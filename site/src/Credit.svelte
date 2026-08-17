@@ -260,8 +260,8 @@
     <p>
       <span class="l-bg"
         >„Нов бизнес“ в статистиката значи всяко ново споразумение с банка. Предоговарянето на стар
-        кредит също е споразумение, затова влиза вътре. ЕЦБ отчитат двете поотделно, а заглавията за
-        рекорден месец по жилищно кредитиране ги събират в едно число.</span
+        кредит също е споразумение, затова се брои като нов бизнес. ЕЦБ отчитат двете поотделно, а
+        заглавията за рекорден месец по жилищно кредитиране ги събират в едно число.</span
       >
       <span class="l-en"
         >In the statistics, new business means any new agreement, and repricing an existing loan is
@@ -309,15 +309,16 @@
           които са теглили кредит наскоро. Калкулаторът тук спира да нарича вноската поносима над {number(
             limits.prudentDstiPct,
             0
-          )}% от чистия доход, по-строго и от тавана на БНБ, и от това, което тези хора носят, и не
-          се мести.</span
+          )}% от чистия доход, по-строго и от тавана на БНБ, и от това, което тези хора носят. Тази
+          граница не се мести.</span
         >
         <span class="l-en"
           >The first three have been in force since {dateShort(limits.effectiveFrom, $lang)} and bind
           every bank in the country. The last is not a requirement but a measurement: that is how much
           of their income people who borrowed recently put towards the payment. The calculator here stops
           calling a payment bearable above {number(limits.prudentDstiPct, 0)}% of net income,
-          stricter than the BNB ceiling and than what those borrowers carry, and it does not move.</span
+          stricter than the BNB ceiling and than what those borrowers carry. That line does not
+          move.</span
         >
       </p>
       <p class="note">
@@ -362,16 +363,14 @@
       </div>
       <p>
         <span class="l-bg"
-          >Сумата е на БНБ, а лихвата до нея е на ЕЦБ, и това не е разсеяност: ЕЦБ публикуват колко
-          струва дългът, но не и колко е голям, а БНБ отчитат и двете в един ред. Затова всяко число
-          тук носи собствения си източник. Двете описват едни и същи кредити, което пък се проверява
-          при всяко обновяване.</span
+          >ЕЦБ публикуват колко струва дългът, но не и колко е голям. Затова лихвата е тяхна, а
+          сумата до нея е на БНБ. Че двете описват едни и същи кредити, се проверява при всяко
+          обновяване.</span
         >
         <span class="l-en"
-          >The amount is BNB's and the rate beside it is the ECB's, and that is not carelessness:
-          the ECB publish what the debt costs but not how large it is, while BNB report both in one
-          row. So every figure here carries its own source. That the two describe the same book is
-          checked on every refresh.</span
+          >The ECB publish what the debt costs but not how large it is. So the rate is theirs and
+          the amount beside it is BNB's. That the two describe the same loans is checked on every
+          refresh.</span
         >
       </p>
 
@@ -515,9 +514,8 @@
       </h2>
       <p class="lede">
         <span class="l-bg"
-          >Досега на тази страница пишеше колко струват парите. Това е другото: колко пари имат
-          българските домакинства в банките и колко дължат на тях. И двете растат, но дългът расте
-          по-бързо.</span
+          >Дотук ставаше дума колко струват парите. Тук е другото: колко имат българските
+          домакинства в банките и колко дължат на тях. И двете растат, но дългът расте по-бързо.</span
         >
         <span class="l-en"
           >Everything above says what money costs. This says how much of it there is: what Bulgarian
@@ -664,16 +662,16 @@
       <p class="cap">
         <span class="l-bg"
           >Дългът тук е с {number(savings.crossCheckPct, 1, $lang)}% по-голям от общото в таблицата
-          по-горе и двете числа са верни. Просто БНБ и ЕЦБ броят малко различни неща: БНБ броят само
-          домакинствата, а ЕЦБ броят заедно с тях и сдруженията с нестопанска цел, тоест читалища,
-          църкви, синдикати. Затова и двете суми тук са на ЕЦБ. Така сравняваме едно и също.</span
+          по-горе и двете числа са верни. БНБ и ЕЦБ броят малко различни неща: БНБ броят само
+          домакинствата, а ЕЦБ броят с тях и сдруженията с нестопанска цел, тоест читалища, църкви,
+          синдикати. Затова и двете суми тук са на ЕЦБ: така се дели едно и също.</span
         >
         <span class="l-en"
           >The debt here is {number(savings.crossCheckPct, 1, $lang)}% larger than the total in the
-          table above, and both figures are right. BNB and the ECB simply count slightly different
-          things: BNB count households alone, while the ECB count the non-profits that serve them
-          too, meaning community centres, churches and trade unions. So both amounts here are the
-          ECB's. That way we are comparing like with like.</span
+          table above, and both figures are right. BNB and the ECB count slightly different things:
+          BNB count households alone, while the ECB count the non-profits that serve them too,
+          meaning community centres, churches and trade unions. So both amounts here are the ECB's,
+          and the ratio divides like by like.</span
         >
       </p>
     </section>
@@ -744,16 +742,15 @@
         >Сумите под лихвите са на БНБ, защото ЕЦБ публикуват цената, но не и колко се дължи. При
         картите сумата е само това, върху което наистина текат лихви: парите, останали неплатени
         след гратисния период. С карти се харчи много повече, но по-голямата част се връща навреме и
-        не струва нищо. При овърдрафта извадихме картите от сметката. Лихвата над сумата е на ЕЦБ и
-        в нея картите не влизат, затова не бива да влизат и в сумата.</span
+        не струва нищо. При овърдрафта извадихме картите: лихвата над сумата е на ЕЦБ и не важи за
+        карти.</span
       >
       <span class="l-en"
         >The amounts under the rates are BNB's, because the ECB publish the price and not how much
         is owed. For cards, the amount is only what interest actually runs on: the money left unpaid
         after the interest-free period. Far more than that is spent on cards, but most of it is paid
-        back in time and costs nothing. For overdrafts we took the cards out. The rate above the
-        amount is the ECB's and it does not cover cards, so the amount under it must not include
-        them either.</span
+        back in time and costs nothing. For overdrafts we took the cards out: the rate above the
+        amount is the ECB's and does not cover cards.</span
       >
     </p>
   </section>
@@ -805,27 +802,27 @@
           >Когато в новините излезе едно число за необслужваните кредити, то обикновено е за всички
           кредити на банките наведнъж. Това е третото число тук, а не първото. Фирмите изостават с
           плащанията по-често от хората във всяко тримесечие, което ЕЦБ публикуват, затова общото
-          число е по-високо от това за домакинствата. Тук са и трите, всяко със своята връзка.</span
+          число е по-високо от това за домакинствата.</span
         >
         <span class="l-en"
           >When a single figure for bad loans turns up in the news, it is usually for all the banks'
           lending at once. That is the third figure here, not the first. Companies fall behind on
           their payments more often than people do in every quarter the ECB publish, so the combined
-          figure sits above the household one. All three are here, each with its own link.</span
+          figure sits above the household one.</span
         >
       </p>
       <p class="cap">
         <span class="l-bg"
           >Числата са на тримесечие и излизат около пет месеца след тримесечието, което описват,
-          затова са по-стари от всяка лихва на тази страница и всяко носи своето тримесечие.
-          Процентът се смята върху всички кредити към същите клиенти. БНБ публикуват свой процент в
-          надзорния си доклад, който се смята по друг начин и не съвпада с тези.</span
+          затова са по-стари от всяка лихва на тази страница. Процентът се смята върху всички
+          кредити към същите клиенти. БНБ публикуват свой процент в надзорния си доклад, който се
+          смята по друг начин и не съвпада с тези.</span
         >
         <span class="l-en"
           >These are quarterly and land about five months after the quarter they describe, so they
-          are older than every rate on this page and each carries its own quarter. The percentage is
-          taken over every loan to those same borrowers. BNB publish a figure of their own in their
-          supervisory report; it is worked out differently and does not match these.</span
+          are older than every rate on this page. The percentage is taken over every loan to those
+          same borrowers. BNB publish a figure of their own in their supervisory report; it is
+          worked out differently and does not match these.</span
         >
       </p>
 
