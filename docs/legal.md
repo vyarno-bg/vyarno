@@ -227,6 +227,12 @@ Three live consequences:
    our own conclusion look like a reading rather than the plain text.
 3. **A paid feed engages the "obtainable free of charge" disclosure.** Cheap to
    satisfy; it has to be deliberate.
+4. **The modification clause has one instance on the site, and it is marked.**
+   «Euro in the bank for every euro owed» on `/credit/` is one ЕЦБ BSI series
+   divided by another, which is exactly the "calculation of growth rates" the
+   third quote names. The page states it as ours, links both operands and names
+   the month, so the disclosure is on the figure rather than in a footer. The
+   two LEVELS beside it are the ЕЦБ's own and are printed unmodified.
 
 ### БНБ
 
