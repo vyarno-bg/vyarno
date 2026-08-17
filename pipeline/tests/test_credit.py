@@ -14,6 +14,7 @@ import pytest
 from vyarno_pipeline.credit import (
     PRODUCT_BANDS,
     blended_stock_rate,
+    cross_check_household_stock,
     cross_check_stock_rate,
     product_block,
     validate_card_above_mortgage,
@@ -22,6 +23,8 @@ from vyarno_pipeline.credit import (
     validate_npl_freshness,
     validate_npl_scopes,
     validate_product_series,
+    validate_savings_series,
+    validate_savings_window,
     validate_stock_series,
 )
 from vyarno_pipeline.mortgage import MortgageValidationError
@@ -208,3 +211,68 @@ def test_the_published_outstanding_block_adds_up_and_names_two_publishers():
     assert block["cross_check"]["delta_pp"] < 0.30
     latest = block["volume_by_period"]["total"][block["ref_period"]]
     assert latest == pytest.approx(block["total_eur_m"], abs=0.01)
+
+
+def _levels(start_year: int = 2022, months: int = 54, base: float = 30_000.0) -> dict[str, float]:
+    out: dict[str, float] = {}
+    year, month = start_year, 1
+    for i in range(months):
+        out[f"{year}-{month:02d}"] = base + i
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return out
+
+
+def test_a_month_missing_from_the_middle_stops_the_run():
+    # The chart spaces its points evenly, so a hole does not draw as a hole —
+    # it shortens the axis and slides every later reading left under year
+    # labels that no longer describe it.
+    series = _levels()
+    validate_savings_series(series, "deposits")
+    del series["2024-06"]
+    with pytest.raises(MortgageValidationError, match="expected 2024-06"):
+        validate_savings_series(series, "deposits")
+
+
+def test_a_level_series_is_bounded_and_long_enough():
+    with pytest.raises(MortgageValidationError, match="outside"):
+        validate_savings_series({**_levels(), "2026-06": 56.47}, "deposits")
+    with pytest.raises(MortgageValidationError, match="at least"):
+        validate_savings_series(_levels(months=12), "deposits")
+    with pytest.raises(MortgageValidationError, match="not sorted"):
+        validate_savings_series(dict(reversed(list(_levels().items()))), "deposits")
+
+
+def test_the_two_lines_may_not_cover_different_windows():
+    deposits, loans = _levels(), _levels()
+    validate_savings_window(deposits, loans)
+    # БНБ publish the loan side from 2007 and the deposit side does not exist
+    # before 2022, so running the longer line on alone is the available mistake.
+    loans["2021-12"] = 14_000.0
+    with pytest.raises(MortgageValidationError, match="different months"):
+        validate_savings_window(deposits, loans)
+
+
+def test_bsi_sits_above_bnb_by_the_npish_lending_and_never_below_it():
+    ok = cross_check_household_stock(31_544.88, 30_862.889, "2026-06")
+    assert ok["delta_pct"] == pytest.approx(2.21, abs=0.01)
+    # S.14+S.15 cannot come in under S.14 alone, so a negative gap is a read
+    # error rather than a small disagreement between two publishers.
+    with pytest.raises(MortgageValidationError, match="outside"):
+        cross_check_household_stock(30_000.0, 30_862.889, "2026-06")
+    with pytest.raises(MortgageValidationError, match="outside"):
+        cross_check_household_stock(40_000.0, 30_862.889, "2026-06")
+
+
+def test_the_published_savings_block_divides_one_flow_by_itself():
+    payload = json.loads(PUBLISHED.read_text(encoding="utf-8"))
+    block = payload["savings"]
+    deposits, loans = block["deposits_by_period"], block["loans_by_period"]
+    assert list(deposits) == list(loans)
+    assert block["ratio"] == pytest.approx(block["deposits_eur_m"] / block["loans_eur_m"], abs=1e-4)
+    # The ratio's denominator is BSI's own loan level and not БНБ's total in
+    # `outstanding`, which counts a different sector and would put two
+    # populations either side of the divide.
+    assert block["loans_eur_m"] != payload["outstanding"]["total_eur_m"]
+    assert block["loans_eur_m"] == pytest.approx(deposits and loans[block["ref_period"]])
+    for key in ("deposits_source_url", "loans_source_url"):
+        assert block[key].startswith("https://data-api.ecb.europa.eu/service/data/BSI/")

@@ -456,6 +456,7 @@ def write_credit_payload(
     products: dict,
     outstanding: dict,
     non_performing: dict,
+    savings: dict,
     target_dir: Path,
     filename: str = CREDIT_FILE,
 ) -> Path:
@@ -477,6 +478,12 @@ def write_credit_payload(
     block inherits the envelope's `source`** — each carries its own, because the
     rates are ЕЦБ MIR, the euro amounts are БНБ workbooks (MIR publishes no
     outstanding volume for BG at all) and the arrears ratio is ЕЦБ CBD2.
+
+    `savings` is the other side of the same household's balance sheet, from a
+    fourth ECB flow. It carries its own loan level rather than reusing
+    `outstanding`'s, and the two differ: BSI counts S.14+S.15 where БНБ's
+    consumer and housing blocks count S.14. Dividing across that seam would put
+    two populations in one ratio, so the block that gets divided is one flow's.
     """
     payload = _envelope(
         as_of=as_of,
@@ -498,4 +505,5 @@ def write_credit_payload(
     payload.update(products)
     payload["outstanding"] = outstanding
     payload["non_performing"] = non_performing
+    payload["savings"] = savings
     return write_payload(payload, target_dir, filename)

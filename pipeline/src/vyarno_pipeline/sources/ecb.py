@@ -284,6 +284,106 @@ CONSUMER_KEYS: dict[str, str] = {
 OUTSTANDING_SERIES_START = "2022-01"
 
 
+# ---------------------------------------------------------------------------
+# BSI — Balance Sheet Items, the levels underneath the MIR prices
+# ---------------------------------------------------------------------------
+# MIR says what money COSTS. BSI says how much of it there is: the stock of
+# deposits households have placed with BG banks, and the stock of loans those
+# banks have made to them, monthly and on one balance sheet.
+#
+# BSI IS NOT MIR: 11 key dimensions rather than 10, in the order below. Same two
+# structural rules though — filter in the path, and verify the response
+# describes what was asked for.
+#
+# WHY `U6` AND NOT `U2`
+# ---------------------
+# `COUNT_AREA` is the counterparty's residence, and it carries three values for
+# BG: `U2` the whole euro area, `U6` domestic, `U5` the other member states.
+# They add up — at 2026-06 the deposit total is U6 56,472.6 + U5 451.8 = U2
+# 56,924.4 — so `U2` counts €452 m placed in Bulgarian banks by households
+# resident ELSEWHERE in the euro area. The page's claim is about households in
+# Bulgaria, and the two lines are divided by each other, so both take `U6`.
+#
+# The cost of that choice is the deposit BREAKDOWN: `L21` overnight, `L22`
+# agreed maturity and `L23` at notice are published on `U2` alone and 404 on
+# `U6` (probed 2026-08-17). A split of one population charted against a total of
+# another is not a split, so the payload carries the totals and no breakdown.
+# `A21` and `A23` do not exist for BG at all, on any counterpart area.
+#
+# WHY BOTH LINES COME FROM HERE AND NOT ONE OF THEM FROM БНБ
+# ----------------------------------------------------------
+# `credit.json#outstanding` already carries what households owe, from БНБ's
+# workbooks, and it is the better figure for the table it feeds — it splits by
+# purpose, which BSI cannot. It is the wrong figure to divide deposits by:
+# БНБ's own footnote says «данните за кредитите за потребление и за жилищните
+# кредити се отнасят само за сектор Домакинства», so those two blocks are S.14
+# while every BSI series here is S.14+S.15. BSI runs 2.2–6.1% above БНБ across
+# the window for that reason, always above and never below.
+#
+# A ratio between two populations is wrong under any caption you can give it, so
+# the pair that gets divided is one publisher's, one sector's and one
+# counterpart area's. `credit.py#cross_check_household_stock` holds the two
+# against each other rather than letting them drift apart unwatched.
+# fmt: off
+# Column-aligned on purpose: this is a reference table read against the
+# ECB's own dimension list, not ordinary code.
+BSI_SERIES_KEY_DIMS: tuple[str, ...] = (
+    "FREQ",              # M     monthly
+    "REF_AREA",          # BG    Bulgaria
+    "ADJUSTMENT",        # N     neither seasonally nor working-day adjusted
+    "BS_REP_SECTOR",     # A     MFIs excluding ESCB
+    "BS_ITEM",           # L20   deposit liabilities · A20 loans
+    "MATURITY_ORIG",     # A     total
+    "DATA_TYPE",         # 1     outstanding amounts at the end of the period
+    "COUNT_AREA",        # U6    domestic
+    "BS_COUNT_SECTOR",   # 2250  households + NPISH (S.14 + S.15)
+    "CURRENCY_TRANS",    # Z01   all currencies combined
+    "BS_SUFFIX",         # E     euro
+)
+
+BSI_KEYS: dict[str, str] = {
+    "household_deposits": "M.BG.N.A.L20.A.1.U6.2250.Z01.E",
+    "household_loans":    "M.BG.N.A.A20.A.1.U6.2250.Z01.E",
+}
+# fmt: on
+
+BSI_DATAFLOW = "BSI"
+
+# Every BG household series in this flow begins here and there is no deeper
+# history to ask for: enumerating the whole `BS_ITEM` dimension with a bare `.`
+# returns fourteen series and thirteen of them start at this month (probed
+# 2026-08-17, `firstNObservations=1`). A window opened wider returns the same 54
+# months rather than failing, so this constant documents the limit more than it
+# enforces it — and the limit is why the chart it feeds stops where it does.
+BSI_SERIES_START = "2022-01"
+
+
+def bsi_url(series_key: str, start_period: str = BSI_SERIES_START) -> str:
+    """Provenance URL for one BSI series. Also the URL we actually fetch."""
+    return f"{BASE}/{BSI_DATAFLOW}/{series_key}?format=jsondata&startPeriod={start_period}"
+
+
+def fetch_bsi_series(
+    series_key: str,
+    start_period: str = BSI_SERIES_START,
+    timeout: float = 60.0,
+) -> dict[str, float]:
+    """Fetch one fully-specified BSI series → {"YYYY-MM": millions of euro}."""
+    url = bsi_url(series_key, start_period)
+    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+        r = client.get(url)
+        r.raise_for_status()
+        return parse_bsi_series(r.json(), expect_key=series_key)
+
+
+def parse_bsi_series(
+    payload: dict[str, Any],
+    expect_key: str | None = None,
+) -> dict[str, float]:
+    """SDMX-JSON → {"YYYY-MM": value}, verifying the series identity."""
+    return _parse_sdmx_series(payload, BSI_SERIES_KEY_DIMS, expect_key, BSI_DATAFLOW)
+
+
 # Human-readable provenance URL for a series key (what we cite in the JSON
 # so a reader can click through to the same numbers).
 def series_url(series_key: str, start_period: str = "2020-01") -> str:

@@ -28,6 +28,7 @@ import {
   creditProducts,
   creditRates,
   creditRenegotiation,
+  creditSavings,
 } from "../src/lib/view/credit.js";
 
 const CREDIT = JSON.parse(
@@ -293,4 +294,66 @@ test("a missing outstanding or arrears block drops its section rather than throw
 
 test("a missing credit payload drops the section rather than throwing", () => {
   for (const payload of [null, undefined, {}]) assert.deepEqual(creditProducts(payload), []);
+});
+
+test("the savings ratio divides one population by itself, never across publishers", () => {
+  const savings = creditSavings(CREDIT);
+  // The seam this guards: `outstanding.total_eur_m` is БНБ's and counts sector
+  // Домакинства alone in two of its blocks, while both figures here are BSI's
+  // and count the non-profit institutions with them. The two differ by about a
+  // fiftieth, which is small enough to look like a rounding slip and is a
+  // different population.
+  assert.equal(savings.loansEurM, CREDIT.savings.loans_eur_m);
+  assert.notEqual(savings.loansEurM, CREDIT.outstanding.total_eur_m);
+  assert.equal(savings.depositsEurM, CREDIT.savings.deposits_eur_m);
+  assert.ok(Math.abs(savings.ratio - savings.depositsEurM / savings.loansEurM) < 1e-4);
+  // The page prints one publisher over this pair, so neither URL may be БНБ's.
+  for (const url of [savings.depositsSourceUrl, savings.loansSourceUrl]) {
+    assert.match(url, /data-api\.ecb\.europa\.eu\/service\/data\/BSI\//);
+  }
+});
+
+test("both lines cover the same months, and the chart is told one scale", () => {
+  const savings = creditSavings(CREDIT);
+  const { deposits, loans } = savings.series;
+  assert.deepEqual(
+    deposits.points.map((p) => p.period),
+    loans.points.map((p) => p.period)
+  );
+  // A component reaching for `deposits.max` would be right only while deposits
+  // are the larger, and the subject of the chart is that gap closing. Asserting
+  // it against today's payload proves nothing — deposits ARE the larger, so
+  // `deposits.max` and the max of the pair are the same number. The scale has
+  // to be read off a pair where they differ, or the claim is untested.
+  assert.equal(savings.scaleMax, deposits.max);
+  const crossed = creditSavings({
+    savings: {
+      deposits_by_period: { "2022-01": 100, "2022-02": 110 },
+      loans_by_period: { "2022-01": 90, "2022-02": 400 },
+    },
+  });
+  assert.equal(crossed.scaleMax, 400);
+  // Levels, so the floor is zero — an axis cropped to the pair's own range
+  // draws the gap as a cliff.
+  assert.equal(deposits.min, 0);
+  assert.equal(loans.min, 0);
+});
+
+test("the cushion is read at both ends of the window, from that end's two levels", () => {
+  const savings = creditSavings(CREDIT);
+  const { deposits, loans } = savings.series;
+  assert.ok(Math.abs(savings.ratioFirst - deposits.first.value / loans.first.value) < 1e-9);
+  assert.ok(Math.abs(savings.ratioLatest - deposits.latest.value / loans.latest.value) < 1e-9);
+  // The latest end is the figure the pipeline gated and the card prints, so the
+  // two arithmetics have to agree or one of them is being read off a stale key.
+  assert.ok(Math.abs(savings.ratioLatest - savings.ratio) < 1e-4);
+});
+
+test("a missing savings block drops its section rather than throwing", () => {
+  assert.equal(creditSavings(null), null);
+  assert.equal(creditSavings({}), null);
+  const empty = creditSavings({ savings: {} });
+  assert.equal(empty.ratio, null);
+  assert.equal(empty.depositsEurM, null);
+  assert.deepEqual(empty.series.deposits.points, []);
 });

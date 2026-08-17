@@ -469,6 +469,31 @@ publish already divided.** Nothing here computes them; `I3632` is
 `gross non-performing / total gross loans and advances` at the counterparty scope
 asked for, and the only decision is which scope — `docs/data-sources.md` §CBD2.
 
+## What households have against what they owe — one division, one population
+
+```
+ratio = deposits_eur_m / loans_eur_m        both ЕЦБ BSI, same month
+```
+
+The two levels are published and the division is ours, so the page marks it as
+ours and links both operands (P3). It is arithmetic over two measurements rather
+than anything carried forward, which is what keeps it out of P5's territory.
+
+**The denominator is BSI's own loan level and never `outstanding.total_eur_m`,
+which sits on the same page about a fiftieth below it.** БНБ's footnote is the
+reason: «данните за кредитите за потребление и за жилищните кредити се отнасят
+само за сектор Домакинства», so two of their four blocks are S.14 while every
+BSI series is S.14+S.15. A ratio taken across that seam is two populations
+divided by each other, and it would be wrong under any caption available for it.
+BSI has run 2.2–6.1% above БНБ across the window, above it in all 54 months, and
+`credit.py#cross_check_household_stock` fails on a gap that is negative or wide.
+
+**The window is 54 months because the deposit series has no more.** Both lines
+are cut to the months both publish, and `validate_savings_window` is what holds
+that: the loan side reaches 2007 on БНБ's workbooks, so drawing the longer line
+on alone is the available mistake, and two lines over two windows would put a
+ratio on the page with no date.
+
 ## Gross ↔ net (BG payroll)
 
 The salary field collects **net** take-home, because that is the number on the
