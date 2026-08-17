@@ -2273,12 +2273,12 @@ export const COPY = {
     bg: "средна лихва по всички изплащани кредити",
     en: "average rate across every loan being repaid",
   },
-  howKLtv: { bg: "минимално самоучастие (БНБ)", en: "minimum down payment (BNB)" },
+  howKLtv: { bg: "минимално самоучастие", en: "minimum down payment" },
   howKDsti: {
-    bg: "максимална вноска от чистия доход (БНБ)",
-    en: "most of take-home that may go to the payment (BNB)",
+    bg: "максимална вноска от чистия доход",
+    en: "most of take-home that may go to the payment",
   },
-  howKMaturity: { bg: "максимален срок (БНБ)", en: "maximum term (BNB)" },
+  howKMaturity: { bg: "максимален срок", en: "maximum term" },
   howKObserved: {
     bg: "колко от дохода отива за вноска при новите кредити",
     en: "how much of income goes to the payment on new loans",
