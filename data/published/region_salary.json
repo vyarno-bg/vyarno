@@ -1,14 +1,14 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-10",
+  "as_of": "2026-08-17",
   "source": "nsi",
   "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.2_EUR_EN.xlsx",
-  "notes": "Average GROSS monthly wage by област (BG districts), as published by НСИ and unmodified. Each област's `value_eur` is НСИ's latest published QUARTERLY average at 2026-Q1 (preliminary); `series_by_period` is their full quarterly series from the `{year}trimes` sheets. 28 области, Sofia cap. highest at 1915 EUR and Blagoevgrad lowest at 968 EUR. Nothing in this file is computed by us — no gap, no ratio, no national average. The quarter is НСИ's own reporting period and avoids the March bonus spike that dominates their single-month readings; the Q4 column taken is `IV`, not `IV incl.annual bonuses`. Област names are НСИ's own in each language, from the English and Bulgarian editions of the same table. All values in EUR (fixed 1.95583 BGN/EUR).",
+  "notes": "Average GROSS monthly wage by област (BG districts), as published by НСИ and unmodified. Each област's `value_eur` is НСИ's latest published QUARTERLY average at 2026-Q2 (preliminary); `series_by_period` is their full quarterly series from the `{year}trimes` sheets. 28 области, Sofia cap. highest at 1943 EUR and Blagoevgrad lowest at 1012 EUR. Nothing in this file is computed by us — no gap, no ratio, no national average. The quarter is НСИ's own reporting period and avoids the March bonus spike that dominates their single-month readings; the Q4 column taken is `IV`, not `IV incl.annual bonuses`. Област names are НСИ's own in each language, from the English and Bulgarian editions of the same table. All values in EUR (fixed 1.95583 BGN/EUR).",
   "payload_name": "region_salary",
   "source_url_bg": "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.2_EUR.xlsx",
   "dataset": "Labour_1.1.2.2_EUR_EN.xlsx + Labour_1.1.2.2_EUR.xlsx:sheet={year}trimes:district rows",
-  "ref_period": "2026-Q1",
-  "published_at": "2026-08-10",
+  "ref_period": "2026-Q2",
+  "published_at": "2026-08-17",
   "unit": "eur_per_month",
   "is_preliminary": true,
   "regions": [
@@ -16,7 +16,7 @@
       "code": "vidin",
       "en_name": "Vidin",
       "bg_name": "Видин",
-      "value_eur": 995.0,
+      "value_eur": 1025.0,
       "series_by_period": {
         "2020-Q1": 477.0,
         "2020-Q2": 499.0,
@@ -42,14 +42,15 @@
         "2025-Q2": 930.0,
         "2025-Q3": 912.0,
         "2025-Q4": 944.0,
-        "2026-Q1": 995.0
+        "2026-Q1": 995.0,
+        "2026-Q2": 1025.0
       }
     },
     {
       "code": "vratsa",
       "en_name": "Vratsa",
       "bg_name": "Враца",
-      "value_eur": 1245.0,
+      "value_eur": 1330.0,
       "series_by_period": {
         "2020-Q1": 624.0,
         "2020-Q2": 658.0,
@@ -75,14 +76,15 @@
         "2025-Q2": 1176.0,
         "2025-Q3": 1153.0,
         "2025-Q4": 1257.0,
-        "2026-Q1": 1245.0
+        "2026-Q1": 1245.0,
+        "2026-Q2": 1330.0
       }
     },
     {
       "code": "lovech",
       "en_name": "Lovech",
       "bg_name": "Ловеч",
-      "value_eur": 1113.0,
+      "value_eur": 1129.0,
       "series_by_period": {
         "2020-Q1": 515.0,
         "2020-Q2": 530.0,
@@ -108,14 +110,15 @@
         "2025-Q2": 1014.0,
         "2025-Q3": 1010.0,
         "2025-Q4": 1051.0,
-        "2026-Q1": 1113.0
+        "2026-Q1": 1113.0,
+        "2026-Q2": 1129.0
       }
     },
     {
       "code": "montana",
       "en_name": "Montana",
       "bg_name": "Монтана",
-      "value_eur": 1033.0,
+      "value_eur": 1057.0,
       "series_by_period": {
         "2020-Q1": 502.0,
         "2020-Q2": 521.0,
@@ -141,14 +144,15 @@
         "2025-Q2": 975.0,
         "2025-Q3": 969.0,
         "2025-Q4": 979.0,
-        "2026-Q1": 1033.0
+        "2026-Q1": 1033.0,
+        "2026-Q2": 1057.0
       }
     },
     {
       "code": "pleven",
       "en_name": "Pleven",
       "bg_name": "Плевен",
-      "value_eur": 1107.0,
+      "value_eur": 1152.0,
       "series_by_period": {
         "2020-Q1": 504.0,
         "2020-Q2": 505.0,
@@ -174,14 +178,15 @@
         "2025-Q2": 1070.0,
         "2025-Q3": 1068.0,
         "2025-Q4": 1096.0,
-        "2026-Q1": 1107.0
+        "2026-Q1": 1107.0,
+        "2026-Q2": 1152.0
       }
     },
     {
       "code": "veliko-tarnovo",
       "en_name": "Veliko Tarnovo",
       "bg_name": "Велико Търново",
-      "value_eur": 1069.0,
+      "value_eur": 1112.0,
       "series_by_period": {
         "2020-Q1": 514.0,
         "2020-Q2": 528.0,
@@ -207,14 +212,15 @@
         "2025-Q2": 1021.0,
         "2025-Q3": 1024.0,
         "2025-Q4": 1063.0,
-        "2026-Q1": 1069.0
+        "2026-Q1": 1069.0,
+        "2026-Q2": 1112.0
       }
     },
     {
       "code": "gabrovo",
       "en_name": "Gabrovo",
       "bg_name": "Габрово",
-      "value_eur": 1102.0,
+      "value_eur": 1158.0,
       "series_by_period": {
         "2020-Q1": 577.0,
         "2020-Q2": 575.0,
@@ -240,14 +246,15 @@
         "2025-Q2": 1027.0,
         "2025-Q3": 1004.0,
         "2025-Q4": 1071.0,
-        "2026-Q1": 1102.0
+        "2026-Q1": 1102.0,
+        "2026-Q2": 1158.0
       }
     },
     {
       "code": "razgrad",
       "en_name": "Razgrad",
       "bg_name": "Разград",
-      "value_eur": 1087.0,
+      "value_eur": 1110.0,
       "series_by_period": {
         "2020-Q1": 572.0,
         "2020-Q2": 567.0,
@@ -273,14 +280,15 @@
         "2025-Q2": 1040.0,
         "2025-Q3": 1016.0,
         "2025-Q4": 1085.0,
-        "2026-Q1": 1087.0
+        "2026-Q1": 1087.0,
+        "2026-Q2": 1110.0
       }
     },
     {
       "code": "ruse",
       "en_name": "Ruse",
       "bg_name": "Русе",
-      "value_eur": 1144.0,
+      "value_eur": 1185.0,
       "series_by_period": {
         "2020-Q1": 546.0,
         "2020-Q2": 548.0,
@@ -306,14 +314,15 @@
         "2025-Q2": 1073.0,
         "2025-Q3": 1082.0,
         "2025-Q4": 1137.0,
-        "2026-Q1": 1144.0
+        "2026-Q1": 1144.0,
+        "2026-Q2": 1185.0
       }
     },
     {
       "code": "silistra",
       "en_name": "Silistra",
       "bg_name": "Силистра",
-      "value_eur": 1016.0,
+      "value_eur": 1056.0,
       "series_by_period": {
         "2020-Q1": 467.0,
         "2020-Q2": 481.0,
@@ -339,14 +348,15 @@
         "2025-Q2": 940.0,
         "2025-Q3": 950.0,
         "2025-Q4": 995.0,
-        "2026-Q1": 1016.0
+        "2026-Q1": 1016.0,
+        "2026-Q2": 1056.0
       }
     },
     {
       "code": "varna",
       "en_name": "Varna",
       "bg_name": "Варна",
-      "value_eur": 1304.0,
+      "value_eur": 1360.0,
       "series_by_period": {
         "2020-Q1": 615.0,
         "2020-Q2": 621.0,
@@ -372,14 +382,15 @@
         "2025-Q2": 1207.0,
         "2025-Q3": 1181.0,
         "2025-Q4": 1258.0,
-        "2026-Q1": 1304.0
+        "2026-Q1": 1304.0,
+        "2026-Q2": 1360.0
       }
     },
     {
       "code": "dobrich",
       "en_name": "Dobrich",
       "bg_name": "Добрич",
-      "value_eur": 1034.0,
+      "value_eur": 1088.0,
       "series_by_period": {
         "2020-Q1": 526.0,
         "2020-Q2": 540.0,
@@ -405,14 +416,15 @@
         "2025-Q2": 999.0,
         "2025-Q3": 994.0,
         "2025-Q4": 1006.0,
-        "2026-Q1": 1034.0
+        "2026-Q1": 1034.0,
+        "2026-Q2": 1088.0
       }
     },
     {
       "code": "targovishte",
       "en_name": "Targovishte",
       "bg_name": "Търговище",
-      "value_eur": 1075.0,
+      "value_eur": 1142.0,
       "series_by_period": {
         "2020-Q1": 532.0,
         "2020-Q2": 538.0,
@@ -438,14 +450,15 @@
         "2025-Q2": 1049.0,
         "2025-Q3": 1037.0,
         "2025-Q4": 1100.0,
-        "2026-Q1": 1075.0
+        "2026-Q1": 1075.0,
+        "2026-Q2": 1142.0
       }
     },
     {
       "code": "shumen",
       "en_name": "Shumen",
       "bg_name": "Шумен",
-      "value_eur": 1132.0,
+      "value_eur": 1178.0,
       "series_by_period": {
         "2020-Q1": 544.0,
         "2020-Q2": 565.0,
@@ -471,14 +484,15 @@
         "2025-Q2": 1091.0,
         "2025-Q3": 1053.0,
         "2025-Q4": 1095.0,
-        "2026-Q1": 1132.0
+        "2026-Q1": 1132.0,
+        "2026-Q2": 1178.0
       }
     },
     {
       "code": "burgas",
       "en_name": "Burgas",
       "bg_name": "Бургас",
-      "value_eur": 1133.0,
+      "value_eur": 1175.0,
       "series_by_period": {
         "2020-Q1": 550.0,
         "2020-Q2": 555.0,
@@ -504,14 +518,15 @@
         "2025-Q2": 1047.0,
         "2025-Q3": 1023.0,
         "2025-Q4": 1116.0,
-        "2026-Q1": 1133.0
+        "2026-Q1": 1133.0,
+        "2026-Q2": 1175.0
       }
     },
     {
       "code": "sliven",
       "en_name": "Sliven",
       "bg_name": "Сливен",
-      "value_eur": 1028.0,
+      "value_eur": 1074.0,
       "series_by_period": {
         "2020-Q1": 514.0,
         "2020-Q2": 510.0,
@@ -537,14 +552,15 @@
         "2025-Q2": 981.0,
         "2025-Q3": 964.0,
         "2025-Q4": 1012.0,
-        "2026-Q1": 1028.0
+        "2026-Q1": 1028.0,
+        "2026-Q2": 1074.0
       }
     },
     {
       "code": "stara-zagora",
       "en_name": "Stara Zagora",
       "bg_name": "Стара Загора",
-      "value_eur": 1214.0,
+      "value_eur": 1230.0,
       "series_by_period": {
         "2020-Q1": 605.0,
         "2020-Q2": 614.0,
@@ -570,14 +586,15 @@
         "2025-Q2": 1114.0,
         "2025-Q3": 1113.0,
         "2025-Q4": 1143.0,
-        "2026-Q1": 1214.0
+        "2026-Q1": 1214.0,
+        "2026-Q2": 1230.0
       }
     },
     {
       "code": "yambol",
       "en_name": "Yambol",
       "bg_name": "Ямбол",
-      "value_eur": 1034.0,
+      "value_eur": 1079.0,
       "series_by_period": {
         "2020-Q1": 514.0,
         "2020-Q2": 528.0,
@@ -603,14 +620,15 @@
         "2025-Q2": 969.0,
         "2025-Q3": 977.0,
         "2025-Q4": 1033.0,
-        "2026-Q1": 1034.0
+        "2026-Q1": 1034.0,
+        "2026-Q2": 1079.0
       }
     },
     {
       "code": "blagoevgrad",
       "en_name": "Blagoevgrad",
       "bg_name": "Благоевград",
-      "value_eur": 968.0,
+      "value_eur": 1012.0,
       "series_by_period": {
         "2020-Q1": 436.0,
         "2020-Q2": 441.0,
@@ -636,14 +654,15 @@
         "2025-Q2": 935.0,
         "2025-Q3": 922.0,
         "2025-Q4": 956.0,
-        "2026-Q1": 968.0
+        "2026-Q1": 968.0,
+        "2026-Q2": 1012.0
       }
     },
     {
       "code": "kyustendil",
       "en_name": "Kyustendil",
       "bg_name": "Кюстендил",
-      "value_eur": 1007.0,
+      "value_eur": 1032.0,
       "series_by_period": {
         "2020-Q1": 461.0,
         "2020-Q2": 482.0,
@@ -669,14 +688,15 @@
         "2025-Q2": 910.0,
         "2025-Q3": 901.0,
         "2025-Q4": 917.0,
-        "2026-Q1": 1007.0
+        "2026-Q1": 1007.0,
+        "2026-Q2": 1032.0
       }
     },
     {
       "code": "pernik",
       "en_name": "Pernik",
       "bg_name": "Перник",
-      "value_eur": 1101.0,
+      "value_eur": 1154.0,
       "series_by_period": {
         "2020-Q1": 501.0,
         "2020-Q2": 500.0,
@@ -702,14 +722,15 @@
         "2025-Q2": 1047.0,
         "2025-Q3": 1025.0,
         "2025-Q4": 1074.0,
-        "2026-Q1": 1101.0
+        "2026-Q1": 1101.0,
+        "2026-Q2": 1154.0
       }
     },
     {
       "code": "sofia-oblast",
       "en_name": "Sofia",
       "bg_name": "София",
-      "value_eur": 1294.0,
+      "value_eur": 1363.0,
       "series_by_period": {
         "2020-Q1": 667.0,
         "2020-Q2": 653.0,
@@ -735,14 +756,15 @@
         "2025-Q2": 1212.0,
         "2025-Q3": 1187.0,
         "2025-Q4": 1248.0,
-        "2026-Q1": 1294.0
+        "2026-Q1": 1294.0,
+        "2026-Q2": 1363.0
       }
     },
     {
       "code": "sofiya",
       "en_name": "Sofia cap.",
       "bg_name": "София(столица)",
-      "value_eur": 1915.0,
+      "value_eur": 1943.0,
       "series_by_period": {
         "2020-Q1": 936.0,
         "2020-Q2": 937.0,
@@ -768,14 +790,15 @@
         "2025-Q2": 1784.0,
         "2025-Q3": 1776.0,
         "2025-Q4": 1859.0,
-        "2026-Q1": 1915.0
+        "2026-Q1": 1915.0,
+        "2026-Q2": 1943.0
       }
     },
     {
       "code": "kardzhali",
       "en_name": "Kardzhali",
       "bg_name": "Кърджали",
-      "value_eur": 1046.0,
+      "value_eur": 1069.0,
       "series_by_period": {
         "2020-Q1": 514.0,
         "2020-Q2": 502.0,
@@ -801,14 +824,15 @@
         "2025-Q2": 987.0,
         "2025-Q3": 980.0,
         "2025-Q4": 1008.0,
-        "2026-Q1": 1046.0
+        "2026-Q1": 1046.0,
+        "2026-Q2": 1069.0
       }
     },
     {
       "code": "pazardzhik",
       "en_name": "Pazardzhik",
       "bg_name": "Пазарджик",
-      "value_eur": 1064.0,
+      "value_eur": 1129.0,
       "series_by_period": {
         "2020-Q1": 525.0,
         "2020-Q2": 543.0,
@@ -834,14 +858,15 @@
         "2025-Q2": 1028.0,
         "2025-Q3": 1005.0,
         "2025-Q4": 1042.0,
-        "2026-Q1": 1064.0
+        "2026-Q1": 1064.0,
+        "2026-Q2": 1129.0
       }
     },
     {
       "code": "plovdiv",
       "en_name": "Plovdiv",
       "bg_name": "Пловдив",
-      "value_eur": 1187.0,
+      "value_eur": 1228.0,
       "series_by_period": {
         "2020-Q1": 585.0,
         "2020-Q2": 586.0,
@@ -867,14 +892,15 @@
         "2025-Q2": 1123.0,
         "2025-Q3": 1110.0,
         "2025-Q4": 1172.0,
-        "2026-Q1": 1187.0
+        "2026-Q1": 1187.0,
+        "2026-Q2": 1228.0
       }
     },
     {
       "code": "smolyan",
       "en_name": "Smolyan",
       "bg_name": "Смолян",
-      "value_eur": 994.0,
+      "value_eur": 1021.0,
       "series_by_period": {
         "2020-Q1": 482.0,
         "2020-Q2": 478.0,
@@ -900,14 +926,15 @@
         "2025-Q2": 921.0,
         "2025-Q3": 913.0,
         "2025-Q4": 946.0,
-        "2026-Q1": 994.0
+        "2026-Q1": 994.0,
+        "2026-Q2": 1021.0
       }
     },
     {
       "code": "haskovo",
       "en_name": "Haskovo",
       "bg_name": "Хасково",
-      "value_eur": 990.0,
+      "value_eur": 1035.0,
       "series_by_period": {
         "2020-Q1": 485.0,
         "2020-Q2": 486.0,
@@ -933,7 +960,8 @@
         "2025-Q2": 931.0,
         "2025-Q3": 917.0,
         "2025-Q4": 977.0,
-        "2026-Q1": 990.0
+        "2026-Q1": 990.0,
+        "2026-Q2": 1035.0
       }
     }
   ],
