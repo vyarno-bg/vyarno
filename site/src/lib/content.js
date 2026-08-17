@@ -211,17 +211,15 @@ export const COPY = {
   // control they cannot guess at from its content.
   themeToggle: { bg: "смени темата", en: "toggle theme" },
   langToggle: { bg: "смени езика", en: "toggle language" },
-  // The one route out of every page that is not the calculator, in the slot
-  // the calculator uses for its two routes in. The arrow is part of the string
-  // rather than a pseudo-element, because it is a direction and not decoration:
-  // read out, «← към калкулатора» and «към калкулатора» say the same thing, and
-  // seen, the arrow is what separates a way back from a fifth destination.
-  // The same bar and the same rule: «← към калкулатора» is 153px and "← to the
-  // calculator" was 169px, on a bar that has 16px less to give in English
-  // because "Vyarno" is wider than «Вярно». The article and the preposition are
-  // what a header sheds first — nothing about a back link needs them, and the
-  // arrow already says which direction it goes.
-  backToCalcK: { bg: "← към калкулатора", en: "← calculator" },
+  // The calculator's name in the masthead's route row, where it is a
+  // destination among peers rather than a way back — so no arrow, which is a
+  // direction and would claim the calculator sits behind this page.
+  // It names what is there rather than where it is: «начало» / "home" is 40px
+  // shorter and tells a reader who has not met that convention nothing at all.
+  calcNavK: { bg: "калкулаторът", en: "calculator" },
+  // The route row's accessible name. It is the second `<nav>` a page carries,
+  // after the footer's legal landmark, and two unlabelled ones read alike.
+  routesNavK: { bg: "страниците на сайта", en: "site pages" },
   // What the masthead's wordmark is subtitled with, page by page. A tagline is
   // a prop rather than markup inside the header because the header is shared
   // and this is the one word in it that is about WHICH page you are on — and a

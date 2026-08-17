@@ -1,6 +1,6 @@
 <!--
-  The masthead: wordmark, one route out, theme toggle, language toggle — plus
-  the skip link that has to precede it in the tab order.
+  The masthead: wordmark, the routes to every other page, theme toggle, language
+  toggle — plus the skip link that has to precede it in the tab order.
 
   Shared by every page for the same reason `SiteFooter.svelte` is, and it is a
   different reason. The footer is shared because it carries obligations — the
@@ -14,21 +14,36 @@
   So exactly two props, and they are the two things a page knows about itself:
 
     page     the Bulgarian path, which decides where the language control
-             points, where the wordmark goes and which route out is offered.
-             `null` on /404.html, which is served for a path that matched
+             points, where the wordmark goes and which route is left out of the
+             row. `null` on /404.html, which is served for a path that matched
              nothing and therefore has no counterpart in the other tree.
     tagline  the {bg, en} pair under the wordmark.
 
   Everything else — the pills, the glyphs, the accessible names, the rules that
-  drop the tagline and tighten the spacing on a phone — is the same on all six
-  entries and lives here once. It owns no state: the two toggles write to the `theme`/`lang` stores in
-  $lib/stores.js, which every other component reads from directly.
+  drop the tagline and fold the routes onto the control row — is the same on all
+  six entries and lives here once. It owns no state: the two toggles write to
+  the `theme`/`lang` stores in $lib/stores.js, which every other component reads
+  from directly.
+
+  EVERY TARGET IS AT LEAST 44x44 CSS PX, AND THAT IS WHAT DECIDES THE LAYOUT.
+  The wordmark, three route pills and the two toggles need 400px at that floor
+  and a 360px phone gives 328px, so the routes cannot share the wordmark's row
+  there. They take their own below 760px and join it above, which is the one
+  breakpoint rule the tagline already follows at 560px.
 -->
 <script>
   import { theme, lang, chooseLang, langHref, toggleTheme } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
 
   const { page = null, tagline = COPY.brandSmall } = $props();
+
+  // The calculator is an entry here rather than a way back, which is why its
+  // label carries no arrow: from `/market/` it is beside you, not behind you.
+  const ROUTES = [
+    { href: "/", label: COPY.calcNavK },
+    { href: "/how/", label: COPY.howNavK },
+    { href: "/market/", label: COPY.marketNavK },
+  ];
 
   /**
    * Where the language control points, and it is this page's own address.
@@ -57,7 +72,8 @@
      and on every other page navigates away instead. So a keyboard or
      screen-reader user has no signposted way past the header without this.
      `scroll-margin-top` on #main keeps the sticky header off the target once
-     it lands. -->
+     it lands. It is the one control under the 44px floor, because a target
+     that is off-screen until focused has no size to hold. -->
 <a class="skip" href="#main">
   <span class="l-bg">{COPY.skipK.bg}</span>
   <span class="l-en">{COPY.skipK.en}</span>
@@ -85,57 +101,43 @@
         </small>
       </span>
     </a>
+    <!-- Written out rather than folded behind a `☰`. The tap a disclosure costs
+         is not the objection; `☰` has to be recognised before it can be used
+         and a row of words does not, and this site is read by people who came
+         for one number rather than by people who read interfaces.
+
+         The labels are ONE WORD EACH IN BOTH LANGUAGES, and the English half is
+         the one to watch: «числата» is 71px and "the numbers" was 106px, which
+         is what put every English page's bar past the right edge of a 360px
+         phone while the Bulgarian one fitted. One anchor per language, because
+         the href differs and a pair is how this codebase writes anything that
+         does — an English reader sent to the Bulgarian page would arrive at a
+         document that declares `bg`, since the URL is what decides the language. -->
+    <nav class="routes" aria-label={t(COPY.routesNavK, $lang)}>
+      {#each ROUTES.filter((r) => r.href !== page) as route (route.href)}
+        <a class="pill l-bg" href={langHref(route.href, "bg")}>{route.label.bg}</a>
+        <a class="pill l-en" href={langHref(route.href, "en")}>{route.label.en}</a>
+      {/each}
+    </nav>
     <div class="controls">
-      <!-- The route out, and which one it is follows from where the reader is.
-           The calculator is the page every other one points back to, so it is
-           the one that needs pointing OUT of — two content routes, in the slot
-           every other entry uses for its single way back.
-
-           They are links among two buttons on purpose: `.pill` is this bar's
-           vocabulary for "a control up here", and giving navigation its own
-           treatment would add a second one to a bar with four items in it.
-
-           One anchor per language, because the href differs and a pair is how
-           this codebase writes anything that does. The route is the reader's
-           own tree's: an English reader sent to the Bulgarian page would
-           arrive at a document that declares `bg` and be read it in Bulgarian,
-           since the URL is what decides the language.
-
-           The labels are ONE WORD EACH, IN BOTH LANGUAGES, and the English
-           half is the half to watch: «числата» is 71px and "the numbers" was
-           106px, which is what put every English page's bar past the right
-           edge of a 360px phone while the Bulgarian one fitted. The bar has to
-           stay on one line at 360px rather than growing a second row on every
-           phone, and a length rule kept in one language is not a rule. -->
-      {#if page === "/"}
-        <a class="pill nav l-bg" href={langHref("/how/", "bg")}>{COPY.howNavK.bg}</a>
-        <a class="pill nav l-en" href={langHref("/how/", "en")}>{COPY.howNavK.en}</a>
-        <a class="pill nav l-bg" href={langHref("/market/", "bg")}>{COPY.marketNavK.bg}</a>
-        <a class="pill nav l-en" href={langHref("/market/", "en")}>{COPY.marketNavK.en}</a>
-      {:else if page}
-        <a class="pill back l-bg" href={langHref("/", "bg")}>{COPY.backToCalcK.bg}</a>
-        <a class="pill back l-en" href={langHref("/", "en")}>{COPY.backToCalcK.en}</a>
-      {/if}
-      <button class="pill" onclick={toggleTheme} aria-label={t(COPY.themeToggle, $lang)}>
+      <button class="pill icon" onclick={toggleTheme} aria-label={t(COPY.themeToggle, $lang)}>
         {$theme === "dark" ? "☀" : "☾"}
       </button>
       <!-- The language control, and it is a LINK rather than a button: the two
            languages are two URLs, and a handler that flipped a store would be
            unreachable with JavaScript off, where every entry hardcodes its own
-           `data-lang` and nothing on the page can change it. One anchor per
-           language for the same reason as the pair above — the Bulgarian
-           reader's control points at the English tree and the English reader's
-           points back. `chooseLang` records the choice on the way out; the
-           navigation happens whether or not it runs. -->
+           `data-lang` and nothing on the page can change it. `chooseLang`
+           records the choice on the way out; the navigation happens whether or
+           not it runs. -->
       <a
-        class="pill l-bg"
+        class="pill icon l-bg"
         href={langHref(here, "en")}
         hreflang="en"
         aria-label={COPY.langToggle.bg}
         onclick={() => chooseLang("en")}>EN</a
       >
       <a
-        class="pill l-en"
+        class="pill icon l-en"
         href={langHref(here, "bg")}
         hreflang="bg"
         aria-label={COPY.langToggle.en}
@@ -155,34 +157,34 @@
     border-bottom: 1px solid var(--line);
   }
   /**
-   * The bar wraps rather than overflowing, and `min-height` rather than
-   * `height` is what lets it.
+   * One row that wraps into two, rather than two rows that merge into one.
    *
-   * This is a floor and not a layout: at every width where the row fits, an
-   * auto height resolves to exactly the 54px the minimum sets, so nothing
-   * moves. What it removes is the other outcome. A fixed height with no wrap
-   * does not make the content fit — it makes the overflow leave the box, and a
-   * control past the right edge scrolls the whole DOCUMENT sideways, taking the
-   * sticky header and every paragraph with it on the narrowest phones.
+   * `.routes` is a third flex item taking a full basis below 760px, so the same
+   * nav — one DOM, one set of links — sits on its own line there and between
+   * the wordmark and the controls above it. Rendering it twice and showing one
+   * copy per width would put every route in the document twice for every
+   * crawler and every reader whose software ignores `display`.
    *
-   * Measured, at 360px, before the rules below: /en/ ran to 383px and every
-   * English page to 386px, while their Bulgarian counterparts fitted. The bar
-   * is decided by words, and words are a per-language length — so a bar that
-   * can only fit or break is one that will break in some language eventually,
-   * whatever any one measurement says today.
+   * `min-height` rather than `height`, and it is a floor and not a layout: a
+   * fixed height with no wrap does not make content fit, it makes the overflow
+   * leave the box, and a control past the right edge scrolls the whole DOCUMENT
+   * sideways on the narrowest phones.
    */
   .bar {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     column-gap: 16px;
-    row-gap: 4px;
-    min-height: 54px;
+    min-height: 56px;
   }
+  /* The floor reaches the wordmark too: below 560px the tagline is hidden,
+     which left this box 22px tall — the smallest target in the header, and the
+     one that goes home from five of the six entries. */
   .brand {
     display: flex;
     align-items: center;
     gap: 9px;
+    min-height: 44px;
     font-weight: 700;
     font-size: var(--fs-h3);
     letter-spacing: -0.01em;
@@ -203,25 +205,33 @@
     display: block;
     margin-top: 2px;
   }
+  .routes,
   .controls {
-    margin-left: auto;
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
   }
-  /* No `display` here, deliberately. `.controls` is a flex container, so an
-     anchor is blockified anyway — and a `display` declaration on the pill ties
-     on specificity with `html[data-lang] .l-en` in `tokens.css` once Svelte's
-     scoping class is added, which would leave the hidden half of every pair
-     showing or not depending on stylesheet order.
-
-     `text-decoration` and `white-space` are on the shared rule rather than on
-     an `a.pill` of their own: four of the five pills in this bar are anchors,
-     and the button ignores both. */
+  .routes {
+    order: 3;
+    flex-basis: 100%;
+    padding-bottom: 8px;
+  }
+  .controls {
+    margin-left: auto;
+  }
+  /* No `display` here, deliberately. `.controls` and `.routes` are flex
+     containers, so an anchor is blockified anyway — and a `display` declaration
+     on the pill ties on specificity with `html[data-lang] .l-en` in
+     `tokens.css` once Svelte's scoping class is added, which would leave the
+     hidden half of every pair showing or not depending on stylesheet order.
+     That is why the 44px height is bought with `padding` and a stated
+     `line-height` rather than with `inline-flex`. */
   .pill {
     font-family: var(--mono);
     font-size: var(--fs-small);
-    padding: 5px 9px;
+    line-height: 18px;
+    padding: 12px;
     border: 1px solid var(--control-line);
     border-radius: 999px;
     background: var(--surface);
@@ -229,53 +239,44 @@
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
+    text-align: center;
+  }
+  /* The two controls labelled by a glyph or two letters. Without a width floor
+     the theme button renders 23.8px wide at 360px — under WCAG 2.5.8's 24x24
+     minimum, not merely under 2.5.5's 44x44. */
+  .pill.icon {
+    min-width: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
   .pill:hover {
     border-color: var(--muted);
     color: var(--ink);
   }
-  /* On a narrow bar the tagline is what has to give. Four controls plus the
-     wordmark plus «икономиката, честно» do not fit a 360px bar: measured, the
-     tagline wraps to two lines inside a bar fixed at 54px, so it is the brand
-     promise rendered as a layout fault. The wordmark still says whose page this
-     is, the `<h1>` under it says what the page does, and a route to where the
-     numbers come from is worth more on a phone than a subtitle is.
-
-     560px rather than the width the wrap was measured at, because one bar gets
-     one breakpoint. The calculator carries four controls and the other entries
-     three, so the two crowd at different widths — and a rule that fired at a
-     different width per page would be a bar a reader learns twice, which is
-     the whole reason this file is shared. Dropping it at the wider of the two
-     costs a subtitle between 400px and 560px and buys the same header
-     everywhere. */
+  /* On a narrow bar the tagline is what has to give: measured, «икономиката,
+     честно» wraps to two lines beside the wordmark and the two toggles, so it
+     is the brand promise rendered as a layout fault. One bar gets one
+     breakpoint — a rule that fired at a different width per page would be a bar
+     a reader learns twice, which is the whole reason this file is shared. */
   @media (max-width: 560px) {
     .brand small {
       display: none;
     }
   }
-  /**
-   * The bar tightens before it wraps, and this is where the room comes from.
-   *
-   * Four controls and a wordmark is what a 360px phone cannot hold at desk
-   * spacing, and the calculator is the page that carries four. Ten pixels off
-   * the bar's gap, two off each control's gap and two off each pill's sides is
-   * 28px on that bar — measured, /en/ goes from 383px to 355px inside a 360px
-   * viewport, and the Bulgarian pages gain the same margin they did not have.
-   *
-   * Spacing rather than type: the labels are the smallest thing in the header
-   * already, and a pill set smaller than `--fs-small` on the device most
-   * readers arrive on is a control they can see and not read.
-   */
-  @media (max-width: 480px) {
-    .bar {
-      column-gap: 10px;
+  /* Where the routes stop needing a line of their own. 760px is measured rather
+     than picked off a device list: it is the width at which the wordmark, four
+     route pills and the two toggles fit one line at the 44px floor in BOTH
+     languages, English being the binding half. */
+  @media (min-width: 760px) {
+    .routes {
+      order: 2;
+      flex-basis: auto;
+      margin-left: auto;
+      padding-bottom: 0;
     }
     .controls {
-      gap: 6px;
-    }
-    .pill {
-      padding-left: 7px;
-      padding-right: 7px;
+      order: 3;
+      margin-left: 0;
     }
   }
   /* Off-screen until focused. `left` rather than `display: none` or
