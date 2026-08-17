@@ -588,13 +588,11 @@
     <p>
       <span class="l-bg"
         >От брутната заплата първо се удържат осигуровките за сметка на работника, а данъкът върху
-        дохода се начислява върху остатъка. Ставките са в закона и се сменят с него, не с пазара —
-        затова ги четем от публикуваните параметри, а не ги пишем в кода.</span
+        дохода се начислява върху остатъка. Ставките са в закона и се сменят с него, не с пазара.</span
       >
       <span class="l-en"
         >Employee social contributions come out of the gross first, and income tax is charged on
-        what is left. The rates are in statute and change with it rather than with the market —
-        which is why they are read from published parameters rather than written into the code.</span
+        what is left. The rates are in statute and change with it rather than with the market.</span
       >
     </p>
 
@@ -636,17 +634,15 @@
         >Данъкът е един за всички, но осигуровки се плащат само до определена заплата. Под тази
         граница от всяко увеличение се удържа едно и също. Над нея осигуровките спират, така че от
         увеличението остава само данъкът — и колкото по-висока е заплатата, толкова по-малка част от
-        нея взима държавата. Картината долу показва цялата извивка, а таблицата под нея — точните
-        числа при няколко заплати; и двете са сметнати от ставките и границата горе. Никоя
-        институция не ги публикува: никой не е длъжен да ги състави.</span
+        нея взима държавата. И кривата, и таблицата под нея са сметнати от ставките и границата
+        горе. Никоя институция не ги публикува: никой не е длъжен да ги състави.</span
       >
       <span class="l-en"
         >The tax is the same for everyone, but contributions are only paid up to a certain salary.
         Below that line the same share comes out of any raise. Above it contributions stop, so only
         the tax comes out of a raise — and the higher the pay, the smaller the share of it the state
-        takes. The chart below draws the whole curve and the table under it gives the exact figures
-        at a few salaries; both are worked out from the rates and the line above. No agency
-        publishes them: nobody is obliged to put them together.</span
+        takes. Both the curve below and the table under it are worked out from the rates and the
+        line above. No agency publishes them: nobody is obliged to put them together.</span
       >
     </p>
 
@@ -750,10 +746,10 @@
           >
           върху същия осигурителен доход и до същата граница — плюс вноска за трудова злополука между
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
-          и <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> според дейността. Долу: колко
-          от целия разход за труд не стига до работника. Под границата това е
-          <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b>, а над нея пада — осигуровките спират,
-          заплатата не.</span
+          и <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> според дейността. Под
+          границата
+          <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> от целия разход за труд не стига до работника,
+          а над нея делът пада — осигуровките спират, заплатата не.</span
         >
         <span class="l-en"
           >On top of the gross, the employer pays its own share of the same five funds — <b
@@ -762,9 +758,9 @@
           on the same insurable income, under the same ceiling — plus a work-accident contribution of
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
           to <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> depending on the activity.
-          Below: how much of the whole cost of employment never reaches the worker. Under the
-          ceiling that is <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b>, and above it it falls —
-          contributions stop, the salary does not.</span
+          Under the ceiling <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> of the whole cost of employment
+          never reaches the worker, and above it the share falls — contributions stop, the salary does
+          not.</span
         >
       </p>
       <figure class="wedge-fig">
@@ -1005,16 +1001,14 @@
       <span class="l-bg"
         >Това е средното по споразуменията, подписани миналия месец, и от него се смята вноската.
         Три различни числа обаче се наричат „лихвата по жилищен кредит“, ГПР-то е второто от тях, а
-        БНБ поставя и три граници на всеки нов кредит. Всичко това — заедно с това за колко време е
-        фиксирана лихвата и колко от „новите“ кредити всъщност са предоговорени стари — е на
+        БНБ поставя и три граници на всеки нов кредит. Всичко това е на
         <a href={langHref("/credit/", $lang)}>страницата за кредитите</a>.</span
       >
       <span class="l-en"
         >This is the average across the agreements signed last month, and it is what the monthly
         payment is computed from. Three different numbers go by "the mortgage rate" though, the APRC
-        is the second of them, and БНБ place three limits on every new loan besides. All of that —
-        with how long the rate is fixed for and how much of «new» lending is an old loan repriced —
-        is on <a href={langHref("/credit/", $lang)}>the borrowing page</a>.</span
+        is the second of them, and БНБ place three limits on every new loan besides. All of that is
+        on <a href={langHref("/credit/", $lang)}>the borrowing page</a>.</span
       >
     </p>
   </section>
@@ -1083,8 +1077,7 @@
           >имот.bg публикува по едно число на квартал и нито едно за София като цяло. Медианата на
           {fmt0(calc.cityHome.nDistricts)} квартала и сравнението с {calc.cityHome.baselineYear} г. са
           наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. Колко заплати
-          струва жилище стои в калкулатора, до самата цена. Числата по сключени сделки — колко жилища
-          се купуват, колко се плаща за тях и как се движи официалният индекс — са на
+          струва жилище стои в калкулатора, до самата цена. Числата по сключени сделки са на
           <a href="/market/">страницата за пазара</a>, защото идват от Евростат и НСИ и мерят друго.</span
         >
         <span class="l-en"
@@ -1093,8 +1086,7 @@
           {fmt0(calc.cityHome.nDistricts)} districts, and the comparison with {calc.cityHome
             .baselineYear}, are our arithmetic over their figures — which is why they are named here
           rather than attributed to them. How many salaries a home is sits in the calculator, next
-          to the price itself. The figures from closed sales — how many dwellings are bought, what
-          is paid for them and how the official index moves — are on
+          to the price itself. The figures from closed sales are on
           <a href="/market/">the market page</a>, because they come from Eurostat and НСИ and
           measure something else.</span
         >
