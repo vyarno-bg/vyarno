@@ -39,6 +39,26 @@
  * emit nginx, because the translation depends on a deployment this repository
  * does not describe, and a generator for a config we cannot test would be a
  * guess with authority.
+ *
+ * ## A mismatch is not always a config that drifted
+ *
+ * **A CDN that cached a response keeps the HEADERS it stored with it, and a
+ * revalidation does not refresh them.** `/robots.txt` has been failing on a CSP
+ * with no `https://plausible.io` in `script-src` or `connect-src` — which is
+ * this project's own CSP as it read before the visit counter was admitted. The
+ * origin is correct and serves the declared header; one edge object is old.
+ *
+ * The two requests that tell those apart, and the reason the diagnosis is worth
+ * writing down rather than re-deriving:
+ *
+ *     curl -sSI https://vyarno.bg/robots.txt          → HIT,  W/"9e08…", stale CSP
+ *     curl -sSI https://vyarno.bg/robots.txt?cb=1     → MISS,  "9e08…", declared CSP
+ *
+ * Same body, same etag value, weak against strong. A cache miss going to the
+ * origin proves the config; the hit is a stored copy whose 304s keep it alive
+ * past any `max-age`. The fix is a purge at the CDN and not an edit here, and
+ * editing `_headers` to match the stale copy would make a real drift permanently
+ * invisible — which is what the failure message below is warning against.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
