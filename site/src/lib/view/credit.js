@@ -145,6 +145,7 @@ export function creditLimits(mortgage) {
     dstiMaxPct: l.dsti_max_pct ?? null,
     maturityMaxYears: l.maturity_max_years ?? null,
     observedDstiPct: l.observed_weighted_avg_dsti_pct ?? null,
+    observedDstiPeriod: l.observed_dsti_ref_period ?? null,
     prudentDstiPct: l.prudent_dsti_pct ?? null,
     effectiveFrom: l.effective_from ?? null,
     sourceUrl: l.source_url ?? null,

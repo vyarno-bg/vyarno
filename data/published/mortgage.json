@@ -539,6 +539,7 @@
     "source": "bnb",
     "source_url": "https://bnb.bg/AboutUs/PressOffice/POPressReleases/POPRDate/PR_20240911_1_EN",
     "observed_weighted_avg_dsti_pct": 38.5,
+    "observed_dsti_ref_period": "2024-Q1",
     "observed_dsti_source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/bs_mpp_overview_en.pdf",
     "min_down_payment_pct": 15.0,
     "prudent_dsti_pct": 30.0
