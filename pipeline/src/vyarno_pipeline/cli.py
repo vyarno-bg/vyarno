@@ -30,10 +30,17 @@ import httpx
 
 from vyarno_pipeline import clock
 from vyarno_pipeline.credit import (
+    STOCK_SERIES_START,
+    blended_stock_rate,
+    cross_check_stock_rate,
     product_block,
     validate_card_above_mortgage,
+    validate_card_nesting,
     validate_credit_freshness,
+    validate_npl_freshness,
+    validate_npl_scopes,
     validate_product_series,
+    validate_stock_series,
 )
 from vyarno_pipeline.mortgage import (
     MortgageValidationError,
@@ -73,16 +80,27 @@ from vyarno_pipeline.publish import (
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS
 from vyarno_pipeline.sources.bnb import (
     FIXATION_BUCKETS,
+    LOAN_PURPOSES,
+    SHEET_NAME,
     fetch_housing_fixation_bg,
     fetch_housing_stock_rate_bg,
+    fetch_loan_stock_bg,
+    fetch_overdraft_card_stock_bg,
 )
 from vyarno_pipeline.sources.bnb import FIXATION_URL as BNB_FIXATION_URL
+from vyarno_pipeline.sources.bnb import OVERDRAFT_SHEET as BNB_OVERDRAFT_SHEET
+from vyarno_pipeline.sources.bnb import OVERDRAFT_URL as BNB_OVERDRAFT_URL
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_SOURCE_URL
 from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import (
+    CBD2_NPL_SCOPES,
     CONSUMER_KEYS,
     EURO_SWITCH_PERIOD,
+    OUTSTANDING_SERIES_START,
     SERIES_KEYS,
+    cbd2_npl_key,
+    cbd2_url,
+    fetch_cbd2_series,
     fetch_mir_series,
     fixation_rate_key,
     series_url,
@@ -1406,11 +1424,16 @@ if __name__ == "__main__":
 def _refresh_credit(out: Path, as_of: date) -> None:
     """Refresh `credit.json` — household borrowing other than a home loan.
 
-    Five ECB MIR series and the same splice `mortgage` uses, then one band per
-    product (`credit.py`). The card figure is the one worth the arm: 21% on a
-    balance carried past the interest-free period is the highest price a
-    Bulgarian household routinely pays for money, and nothing on this site said
-    it.
+    Three questions, three upstreams, and they only answer the page together:
+
+      what it COSTS      ЕЦБ MIR, five products spliced at the euro (`ecb.py`)
+      what is OWED       БНБ's two stock workbooks, because every MIR
+                         outstanding-amount VOLUME key for BG is a 404
+      what is NOT PAID   ЕЦБ CBD2, the household-scoped NPL ratio
+
+    The card figure is the one worth the arm: 21% on a balance carried past the
+    interest-free period is the highest price a Bulgarian household routinely
+    pays for money, and €371 m of it is being paid on.
 
     Exits: 4 on network, 2 on a changed upstream shape, 3 on a gate.
     """
@@ -1419,18 +1442,46 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         raw = {
             name: fetch_mir_series(key)
             for name, key in CONSUMER_KEYS.items()
-            if "term_bgn" not in name
+            if "term_bgn" not in name and not key.endswith(".O")
         }
+        # The outstanding-stock legs start at 2022-01 rather than 2020-01, and
+        # asking for a 2020 start returns the same 54 months rather than
+        # failing, so the argument is documentation more than necessity.
+        for name in ("deposit_term_stock_eur", "household_stock_eur"):
+            raw[name] = fetch_mir_series(CONSUMER_KEYS[name], start_period=OUTSTANDING_SERIES_START)
         # The mortgage rate for the gate below, fetched rather than read off the
         # neighbouring payload: an arm that depends on a file another arm wrote
         # succeeds or fails by the order they ran in, and `--source credit`
         # alone would compare today's card rate against whatever was on disk.
         mortgage_now = fetch_mir_series(SERIES_KEYS["new_business_aar_eur"])
+        click.echo("→ fetching ECB CBD2 non-performing loans (households vs companies)...")
+        npl = {scope: fetch_cbd2_series(cbd2_npl_key(scope)) for scope in CBD2_NPL_SCOPES}
     except httpx.HTTPError as e:
-        click.echo(f"ERROR: ECB MIR fetch failed: {e}", err=True)
+        click.echo(f"ERROR: ECB fetch failed: {e}", err=True)
         sys.exit(4)
     except ValueError as e:
-        click.echo(f"ERROR: ECB MIR response shape/identity check failed: {e}", err=True)
+        click.echo(f"ERROR: ECB response shape/identity check failed: {e}", err=True)
+        sys.exit(2)
+
+    try:
+        click.echo(
+            "→ fetching BNB outstanding balances (loans by purpose, then overdraft/cards)..."
+        )
+        stock = fetch_loan_stock_bg()
+        revolving = fetch_overdraft_card_stock_bg()
+        click.echo(
+            f"  loan book {len(stock['housing'])} monthly rows, overdraft/cards {len(revolving)}"
+        )
+    except httpx.HTTPError as e:
+        click.echo(
+            f"ERROR: BNB fetch failed: {e}\n"
+            f"       If this is a TLS 'unable to get local issuer certificate' "
+            f"error, see docs/data-sources.md §'BNB TLS setup'.",
+            err=True,
+        )
+        sys.exit(4)
+    except ValueError as e:
+        click.echo(f"ERROR: BNB XLSX layout changed: {e}", err=True)
         sys.exit(2)
 
     spliced = {
@@ -1457,6 +1508,61 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         f"deposits {len(deposits['deposit_term'])} (from {since})"
     )
 
+    # ---- the outstanding book, assembled before the gates that read it ------
+    # Four blocks that PARTITION what households owe, and one of them contains
+    # the other two figures the page prints. БНБ's «Овърдрафт» already includes
+    # «в т.ч. кредитни карти», so the total adds the overdraft block whole and
+    # the card and overdraft-proper amounts are drawn out of it below.
+    revolving_by_period = {r["period"]: r for r in revolving}
+    stock_periods = sorted(
+        {p for rows in stock.values() for p in (r["period"] for r in rows)}
+        & set(revolving_by_period) - {p for p in revolving_by_period if p < STOCK_SERIES_START}
+    )
+    stock_by_purpose = {purpose: {r["period"]: r for r in rows} for purpose, rows in stock.items()}
+    stock_ref = stock_periods[-1]
+
+    def stock_volumes(period: str) -> dict[str, float]:
+        """The four amounts that add up to what households owe, at one month."""
+        out = {p: stock_by_purpose[p][period]["volume_eur_m"] for p in LOAN_PURPOSES}
+        out["overdraft"] = revolving_by_period[period]["overdraft_eur_m"]
+        return out
+
+    volume_by_period = {
+        purpose: {p: stock_by_purpose[purpose][p]["volume_eur_m"] for p in stock_periods}
+        for purpose in LOAN_PURPOSES
+    }
+    volume_by_period["overdraft"] = {
+        p: revolving_by_period[p]["overdraft_eur_m"] for p in stock_periods
+    }
+    volume_by_period["total"] = {p: round(sum(stock_volumes(p).values()), 3) for p in stock_periods}
+
+    ref_row = revolving_by_period[stock_ref]
+    # ЕЦБ A2Z1 «revolving loans and overdrafts» EXCLUDES card credit and БНБ's
+    # block includes it, so the amount that belongs beside the 6.45% already on
+    # the page is the block less its own sub-block. The rate that subtraction
+    # leaves behind is gated against A2Z1 below, which is what proves it
+    # happened — €205 m at 6.46% looks no more right than €695 m at 13.2%.
+    overdraft_ex_cards_eur_m = round(ref_row["overdraft_eur_m"] - ref_row["card_eur_m"], 3)
+    overdraft_ex_cards_rate_pct = round(
+        (
+            ref_row["overdraft_eur_m"] * ref_row["overdraft_rate_pct"]
+            - ref_row["card_eur_m"] * ref_row["card_rate_pct"]
+        )
+        / overdraft_ex_cards_eur_m,
+        4,
+    )
+    stock_blocks = {
+        purpose: {
+            "volume_eur_m": stock_by_purpose[purpose][stock_ref]["volume_eur_m"],
+            "rate_pct": stock_by_purpose[purpose][stock_ref]["rate_pct"],
+        }
+        for purpose in LOAN_PURPOSES
+    }
+    stock_blocks["overdraft"] = {
+        "volume_eur_m": ref_row["overdraft_eur_m"],
+        "rate_pct": ref_row["overdraft_rate_pct"],
+    }
+
     try:
         click.echo("→ gate: one plausibility band per product...")
         for product, series in (
@@ -1477,8 +1583,51 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             mortgage_now[max(mortgage_now)],
         )
 
+        click.echo("→ gate: one plausibility band per outstanding block...")
+        for product in LOAN_PURPOSES:
+            validate_stock_series(volume_by_period[product], product)
+        validate_stock_series(volume_by_period["overdraft"], "overdraft")
+        validate_stock_series(
+            {p: revolving_by_period[p]["card_outside_grace_eur_m"] for p in stock_periods},
+            "card_outside_grace",
+        )
+
+        click.echo("→ gate: the card balance is inside the card is inside the overdraft...")
+        for period in stock_periods:
+            validate_card_nesting(revolving_by_period[period])
+
+        click.echo("→ gate: БНБ's revolving cells reproduce the ЕЦБ rates beside them...")
+        card_cross = cross_check_stock_rate(
+            ref_row["card_outside_grace_rate_pct"],
+            spliced["card_aar"][max(spliced["card_aar"])],
+            "card credit carried past the interest-free period (A2Z3)",
+        )
+        overdraft_cross = cross_check_stock_rate(
+            overdraft_ex_cards_rate_pct,
+            spliced["overdraft_aar"][max(spliced["overdraft_aar"])],
+            "overdrafts and revolving credit, card credit taken out (A2Z1)",
+        )
+
+        click.echo("→ gate: the four blocks blended are the ЕЦБ's household stock rate...")
+        household_stock_ref = max(raw["household_stock_eur"])
+        stock_cross = cross_check_stock_rate(
+            round(blended_stock_rate(stock_blocks), 4),
+            raw["household_stock_eur"][household_stock_ref],
+            "every household loan on the books, blended over the four blocks (A20)",
+        )
+        click.echo(
+            f"  blended {stock_cross['bnb_pct']}% vs ЕЦБ {stock_cross['ecb_mir_pct']}% "
+            f"→ Δ {stock_cross['delta_pp']} pp"
+        )
+
+        click.echo("→ gate: companies fall behind more often than households...")
+        validate_npl_scopes(npl)
+        npl_ref = max(npl["households"])
+        validate_npl_freshness(npl_ref, as_of)
+
         click.echo("→ gate: freshness...")
         validate_credit_freshness(max(spliced["consumer_aar"]), as_of)
+        validate_freshness(stock_ref, as_of, "BNB household outstanding balances")
     except MortgageValidationError as e:
         click.echo(f"GATE FAILED: {e}", err=True)
         sys.exit(3)
@@ -1496,6 +1645,24 @@ def _refresh_credit(out: Path, as_of: date) -> None:
                 "aprc_ref_period": consumer_aprc_ref,
                 "aprc_source_url": series_url(CONSUMER_KEYS["consumer_aprc_eur"]),
                 "monthly_volume_eur_m": spliced["consumer_volume"][max(spliced["consumer_volume"])],
+                # БНБ print the same month's new lending at 691.192 m against the
+                # ЕЦБ's 701.85, and the two are the same series rather than two
+                # definitions: over the euro era they have agreed to 0.1% in five
+                # months of six, and the RATES agree to 0.002 pp every month — a
+                # 1.5% slice of lending at a different price would move an 8.76%
+                # weighted average and it does not. So this stays the ЕЦБ's
+                # figure, one publisher per number, and the gap is a vintage.
+                "monthly_volume_note": (
+                    "ЕЦБ MIR's own new-business volume. БНБ's workbooks print the "
+                    "same figure from their own vintage and it can sit ~1% away in "
+                    "the newest month; the two are one series reported by one "
+                    "institution, not two measurements to average"
+                ),
+                "stock_eur_m": stock_blocks["consumer"]["volume_eur_m"],
+                "stock_rate_pct": stock_blocks["consumer"]["rate_pct"],
+                "stock_ref_period": stock_ref,
+                "stock_source": "bnb",
+                "stock_source_url": BNB_SOURCE_URL,
             },
         ),
         "overdraft": product_block(
@@ -1504,6 +1671,27 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             spliced["overdraft_aar"],
             f"MIR {CONSUMER_KEYS['overdraft_aar_eur']}",
             series_url(CONSUMER_KEYS["overdraft_aar_eur"]),
+            {
+                "stock_eur_m": overdraft_ex_cards_eur_m,
+                "stock_rate_pct": overdraft_ex_cards_rate_pct,
+                "stock_ref_period": stock_ref,
+                "stock_source": "bnb",
+                "stock_source_url": BNB_OVERDRAFT_URL,
+                "stock_dataset": (
+                    f"{BNB_OVERDRAFT_URL.rsplit('/', 1)[-1]}, sheet {BNB_OVERDRAFT_SHEET}, "
+                    f"Овърдрафт × в евро, less its «в т.ч. кредитни карти» sub-block"
+                ),
+                # Stated rather than left to be inferred: the ЕЦБ's item excludes
+                # card credit and БНБ's block includes it, so this amount is a
+                # subtraction and the reader is told so.
+                "stock_basis": (
+                    "БНБ's overdraft balances with the card sub-block taken out, "
+                    "because ЕЦБ A2Z1 excludes card credit and БНБ's «Овърдрафт» "
+                    "includes it. The rate the subtraction leaves is gated against "
+                    "A2Z1, which is the evidence it was done"
+                ),
+                "stock_cross_check": overdraft_cross,
+            },
         ),
         "card": product_block(
             "what a credit-card balance costs once it is carried past the "
@@ -1513,10 +1701,26 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             f"MIR {CONSUMER_KEYS['card_aar_eur']}",
             series_url(CONSUMER_KEYS["card_aar_eur"]),
             {
-                "no_volume": (
-                    "BG reports no business volume and no APRC for this item, so "
-                    "there is no figure here for how much card debt is carried"
-                )
+                "no_aprc": (
+                    "BG reports no APRC for this item — the ЕЦБ collect "
+                    "DATA_TYPE_MIR=C on instalment credit only — so the rate here "
+                    "carries no fees-included companion the way consumer credit does"
+                ),
+                # The amount is БНБ's and the rate above is the ЕЦБ's, so this
+                # figure carries its own source line on the page. They are the
+                # same balances: БНБ's «в т.ч. извън безлихвен гратисен период»
+                # cell reproduces A2Z3 to 0.014 pp, which the gate holds.
+                "stock_eur_m": ref_row["card_outside_grace_eur_m"],
+                "stock_rate_pct": ref_row["card_outside_grace_rate_pct"],
+                "stock_ref_period": stock_ref,
+                "stock_source": "bnb",
+                "stock_source_url": BNB_OVERDRAFT_URL,
+                "stock_dataset": (
+                    f"{BNB_OVERDRAFT_URL.rsplit('/', 1)[-1]}, sheet {BNB_OVERDRAFT_SHEET}, "
+                    f"Овърдрафт × в т.ч. кредитни карти × в т.ч. извън безлихвен "
+                    f"гратисен период × в евро"
+                ),
+                "stock_cross_check": card_cross,
             },
         ),
         "deposit_overnight": product_block(
@@ -1545,15 +1749,136 @@ def _refresh_credit(out: Path, as_of: date) -> None:
                     "the BGN leg of this key is a 404 — BG reported term deposits "
                     "by maturity bucket and never at this total before the euro"
                 ),
+                "monthly_volume_eur_m": raw["deposit_term_volume_eur"][
+                    max(raw["deposit_term_volume_eur"])
+                ],
+                "monthly_volume_source_url": series_url(CONSUMER_KEYS["deposit_term_volume_eur"]),
+                # **The two rates answer two questions and the second is the one
+                # most people are living in.** 1.58% is what a deposit opened
+                # last month was quoted; 0.55% is what the money already in one
+                # is earning, because most of it was locked in when deposits paid
+                # nothing. A page showing only the first tells a reader their
+                # savings are keeping up better than they are.
+                "stock_rate_pct": raw["deposit_term_stock_eur"][max(raw["deposit_term_stock_eur"])],
+                "stock_ref_period": max(raw["deposit_term_stock_eur"]),
+                "stock_source_url": series_url(CONSUMER_KEYS["deposit_term_stock_eur"]),
             },
         ),
     }
 
-    write_credit_payload(as_of=as_of, products=products, target_dir=out)
+    outstanding = {
+        # The question the rest of this payload does not answer. Every figure
+        # beside it is a price; this is the quantity, and «21% на кредитна
+        # карта» means something different once a reader knows €371 m of the
+        # country's card balances are being charged it.
+        "_role": (
+            "what Bulgarian households owe, block by block, and what the "
+            "balance in each is being charged. The four blocks partition the "
+            "book, and БНБ's overdraft block already contains the card "
+            "balances, so they are drawn out of it rather than added to it"
+        ),
+        "source": "bnb",
+        "dataset": (
+            f"{BNB_SOURCE_URL.rsplit('/', 1)[-1]}, sheet {SHEET_NAME} "
+            f"(Кредити за потребление · Жилищни кредити · Други кредити) and "
+            f"{BNB_OVERDRAFT_URL.rsplit('/', 1)[-1]}, sheet {BNB_OVERDRAFT_SHEET} "
+            f"(Овърдрафт), all × в евро"
+        ),
+        "source_url": BNB_SOURCE_URL,
+        "overdraft_source_url": BNB_OVERDRAFT_URL,
+        "ref_period": stock_ref,
+        "total_eur_m": round(sum(stock_volumes(stock_ref).values()), 3),
+        # **The blended rate is a gate's working, not a figure to print.** The
+        # published rate here is the ЕЦБ's own A20, so the amount is БНБ's and
+        # the rate beside it is a publisher's rather than our arithmetic — and
+        # the gate has already shown the two describe the same book.
+        "rate_pct": raw["household_stock_eur"][max(raw["household_stock_eur"])],
+        "rate_source": "ecb",
+        "rate_ref_period": max(raw["household_stock_eur"]),
+        "rate_source_url": series_url(CONSUMER_KEYS["household_stock_eur"]),
+        "rate_dataset": f"MIR {CONSUMER_KEYS['household_stock_eur']}",
+        "cross_check": stock_cross,
+        "blocks": [
+            {
+                "block": block,
+                "volume_eur_m": stock_blocks[block]["volume_eur_m"],
+                "rate_pct": stock_blocks[block]["rate_pct"],
+            }
+            # Largest first, which is the order the page draws them and the order
+            # a reader would ask about: the mortgage book is three fifths of what
+            # households owe and nothing else comes near it.
+            for block in sorted(stock_blocks, key=lambda b: -stock_blocks[b]["volume_eur_m"])
+        ],
+        "volume_by_period": volume_by_period,
+        "series_starts": STOCK_SERIES_START,
+        "why_it_starts_there": (
+            "the loan workbook begins here. The overdraft workbook reaches back "
+            "to 2000 and is cut to match, because a total assembled from four "
+            "series over four windows is four questions added together"
+        ),
+        "currency": "EUR",
+        "methodology_change": BNB_METHODOLOGY_CHANGE_NOTE,
+    }
+
+    npl_ref = max(npl["households"])
+    non_performing = {
+        # **Whose loans, over what portfolio.** The figure in the news is a
+        # ratio over a bank's whole credit portfolio, and corporate lending —
+        # which defaults at about twice the household rate in every quarter the
+        # ЕЦБ publish — is most of that denominator. Both scopes are here so the
+        # difference is something a reader can see rather than take on trust.
+        "_role": (
+            "the share of household lending that is not being repaid on time, "
+            "and the same share for lending to companies. A single "
+            "portfolio-wide ratio mixes the two and is read as the first"
+        ),
+        "source": "ecb",
+        "dataset": (
+            "CBD2 I3632, gross non-performing loans and advances as a share of "
+            "total gross loans and advances, BS_COUNT_SECTOR S1M households and "
+            "NPISH · S11 non-financial corporations · _Z every counterparty"
+        ),
+        "source_url": cbd2_url(cbd2_npl_key("households")),
+        "ref_period": npl_ref,
+        "households_pct": round(npl["households"][npl_ref], 2),
+        "corporations_pct": round(npl["corporations"][npl_ref], 2),
+        "all_counterparties_pct": round(npl["all"][npl_ref], 2),
+        "households_by_period": {p: round(v, 2) for p, v in npl["households"].items()},
+        "corporations_by_period": {p: round(v, 2) for p, v in npl["corporations"].items()},
+        "scope_source_urls": {scope: cbd2_url(cbd2_npl_key(scope)) for scope in CBD2_NPL_SCOPES},
+        "reporting_population": (
+            "every bank operating in Bulgaria — domestic groups and stand-alone "
+            "banks together with foreign-controlled subsidiaries and branches "
+            "(CB_REP_SECTOR 67). The narrower 67-minus-foreign population "
+            "(CB_REP_SECTOR 11) reports a household ratio well above this one "
+            "because it is looking at a minority of the country's lending"
+        ),
+        "denominator": (
+            "total gross loans and advances to the same counterparty sector. It "
+            "is not БНБ's own supervisory credit-portfolio ratio, which is built "
+            "on a different denominator and published quarterly in a PDF"
+        ),
+        "quarterly": (
+            "CBD2 is quarterly and lands about five months after the quarter it "
+            "describes, so this figure is older than every monthly rate beside it "
+            "and says which quarter it is"
+        ),
+    }
+
+    write_credit_payload(
+        as_of=as_of,
+        products=products,
+        outstanding=outstanding,
+        non_performing=non_performing,
+        target_dir=out,
+    )
     click.echo(
         f"OK: wrote {CREDIT_FILE} — consumer {products['consumer']['value_pct']}%, "
         f"card {products['card']['value_pct']}%, term deposit "
-        f"{products['deposit_term']['value_pct']}%"
+        f"{products['deposit_term']['value_pct']}%, households owe "
+        f"€{outstanding['total_eur_m'] / 1000:.1f} bn at {outstanding['rate_pct']}%, "
+        f"NPL households {non_performing['households_pct']}% vs companies "
+        f"{non_performing['corporations_pct']}% ({npl_ref})"
     )
 
 

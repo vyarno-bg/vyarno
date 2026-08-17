@@ -405,6 +405,19 @@ label, where the value is perfectly plausible for what it is.
 | **Card above mortgage** | `BS_ITEM` swapped between `A2Z3` and `A2C`. Unsecured revolving credit is not cheaper than a secured home loan, anywhere, ever — so this is a claim about which series is which rather than about the market. The mortgage rate is FETCHED for the comparison rather than read off `mortgage.json`, so the arm does not succeed or fail by which order the arms ran in | 3 |
 | **Freshness** (150 days) | MIR quietly stopping, on the same window the mortgage arm uses | 3 |
 
+The euro amounts need their own, because **a volume band is not a rate band**:
+the stock blocks run from €0.2 bn to €18.6 bn, so one range over all of them
+admits every cell in the workbook.
+
+| Gate | What it catches | Exit |
+|---|---|---|
+| **Per-block volume bands** (`credit.py#STOCK_BANDS`) | «Други кредити» at €0.29 bn read into the consumer slot, forty times too small. The two large blocks overlap because over nineteen years they have occupied the same range, so what a band separates is orders of magnitude, not today's levels. It does **not** catch a maturity bucket read as its block's total — `bnb.py` asserts the blank maturity label for that | 3 |
+| **Card nesting** (`validate_card_nesting`) | БНБ's «в т.ч.» read flat. €695 m ⊃ €490 m ⊃ €371 m, and summed instead of contained they report roughly twice what is owed — every one of the three being a believable card balance is what makes this worth a gate | 3 |
+| **Three БНБ-vs-ЕЦБ cross-checks** (`cross_check_stock_rate`, 0.30 pp) | A workbook column drifting away from the ЕЦБ series it is. The card cell against `A2Z3` (observed 0.014 pp), the overdraft block **less its card sub-block** against `A2Z1` (0.021 pp), and the four blocks blended by volume against `A20` (0.049 pp) | 3 |
+| **The blend** (`blended_stock_rate`) | **The only gate that catches a wrong euro amount.** Transposing the consumer and housing volumes leaves four believable amounts and four believable rates, and moves the blend by almost a full point away from a figure the ЕЦБ publish independently | 3 |
+| **NPL band + ordering** (`validate_npl_scopes`) | CBD2 switching `I3632` to a fraction, so «0,02% не се обслужват»; and the two counterparty codes swapped, which leaves both figures plausible while the page says the opposite of the truth. Corporates have run above households in all 25 published quarters. It does **not** assert households below the whole-portfolio ratio — that was false before 2024 | 3 |
+| **NPL freshness** (300 days) | Two quarterly release cycles passing with nothing landing. Wider than the 150-day MIR window on purpose: CBD2 lands about five months after its quarter, so 2026-Q1 is already 139 days old on the day it is the freshest published | 3 |
+
 ## Which gates run for which `--source`
 
 | `--source` | Gates | Notes |
@@ -412,6 +425,7 @@ label, where the value is perfectly plausible for what it is.
 | `hicp` (full release) | 1-7 (gate 6 unless `--skip-link-check`) | The full set; writes both payloads |
 | `hicp` (flash) | 1, 5, 6 and 7 — 2, 3 and 4 have no inputs at the flash month | Writes `hicp_headline.json` only, exit 0 |
 | `mortgage` | the five mortgage gates + freshness on both tiers | No best-effort tier |
+| `credit` | the four rate gates plus the six on the euro amounts and the arrears ratio (above). Three upstreams, all hard-required: ЕЦБ MIR, ЕЦБ CBD2 and two БНБ workbooks | The euro amounts have no second publisher — every MIR outstanding-amount volume key for BG is a 404 — so the blend against `A20` is what stands in for one |
 | `city-price` | bounds [100, 10000] €/m², per city; a count below 60% of that city's own, or a city-year dropping over 20% of its rows, raises inside `imot.py` — and the arm **catches it and skips that city**, because one unreadable city is not a reason to publish nothing for the other twenty-six. The skip is reported, never silent. Then `validate_city_price` on the payload: every code one `regions.py` covers, no duplicate, a name in both languages, the median inside its own min-max, the published years unbroken and in order, and the headline since-baseline percentage equal to the newest year's | Publishes `n_dropped` per city-year, so the drop is never silent; `snapshot_date` off имот.bg's own list, so the payload is dated by them rather than by us; and `city_pages` beside `cities`, so a city nobody read is never reported as one имот.bg do not publish |
 | `region-salary` | all 28 области present, no district row we do not name, София-city the maximum. The connector guards exit 2; the payload gate exits 3 | Three-part regression guard on the row selector — an off-by-one that shifts every reading by one област passes any two of them |
 | `sector-salary` | gate 8 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |

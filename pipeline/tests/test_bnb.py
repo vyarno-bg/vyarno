@@ -25,18 +25,28 @@ import pytest
 import respx
 
 from vyarno_pipeline.sources.bnb import (
+    LABEL_CARD,
     LABEL_EUR,
     LABEL_HOUSING,
+    LABEL_OUTSIDE_GRACE,
     LABEL_VOLUMES,
+    LOAN_PURPOSES,
+    OVERDRAFT_SHEET,
+    OVERDRAFT_URL,
     ROW_CURRENCY,
     ROW_MATURITY,
     ROW_PURPOSE,
     ROW_SECTION,
     SHEET_NAME,
     SOURCE_URL,
-    _locate_housing_eur_columns,
+    _locate_overdraft_card_columns,
+    _locate_purpose_eur_columns,
     fetch_housing_stock_rate_bg,
+    fetch_loan_stock_bg,
+    fetch_overdraft_card_stock_bg,
     parse_housing_stock_xlsx,
+    parse_loan_stock_xlsx,
+    parse_overdraft_card_stock_xlsx,
 )
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "bnb_housing_loans_oa_hh_bg.xlsx"
@@ -85,7 +95,7 @@ def test_workbook_really_does_break_households_down_by_purpose():
 
 
 def test_locates_the_housing_eur_total_columns():
-    rate_col, volume_col = _locate_housing_eur_columns(fixture_rows())
+    rate_col, volume_col = _locate_purpose_eur_columns(fixture_rows())
     rows = fixture_rows()
     assert rows[ROW_PURPOSE][rate_col] == LABEL_HOUSING
     assert rows[ROW_CURRENCY][rate_col] == LABEL_EUR
@@ -97,7 +107,7 @@ def test_locates_the_housing_eur_total_columns():
 
 def test_picks_the_total_column_not_a_maturity_bucket():
     """The buckets sit immediately to the right; we must not grab one."""
-    rate_col, _ = _locate_housing_eur_columns(fixture_rows())
+    rate_col, _ = _locate_purpose_eur_columns(fixture_rows())
     rows = fixture_rows()
     assert rows[ROW_MATURITY][rate_col + 1] == "до 1 година"
     assert rows[ROW_MATURITY][rate_col + 2] == "над 1 до 5 години"
@@ -115,34 +125,34 @@ def test_raises_when_a_required_header_label_disappears(row_idx, label, expected
     rows = fixture_rows()
     rows[row_idx] = tuple(("RENAMED" if c == label else c) for c in rows[row_idx])
     with pytest.raises(ValueError, match=expected_error):
-        _locate_housing_eur_columns(rows)
+        _locate_purpose_eur_columns(rows)
 
 
 def test_raises_when_the_currency_sub_blocks_are_reordered():
     """If USD came first we would silently publish a USD rate."""
     rows = fixture_rows()
-    rate_col, _ = _locate_housing_eur_columns(rows)
+    rate_col, _ = _locate_purpose_eur_columns(rows)
     rows[ROW_CURRENCY] = tuple(
         ("в щатски долари" if i == rate_col else c) for i, c in enumerate(rows[ROW_CURRENCY])
     )
     with pytest.raises(ValueError, match="expected 'в евро'"):
-        _locate_housing_eur_columns(rows)
+        _locate_purpose_eur_columns(rows)
 
 
 def test_raises_when_the_total_column_becomes_a_maturity_bucket():
     """The subtlest drift: still housing, still EUR, but a different concept."""
     rows = fixture_rows()
-    rate_col, _ = _locate_housing_eur_columns(rows)
+    rate_col, _ = _locate_purpose_eur_columns(rows)
     rows[ROW_MATURITY] = tuple(
         ("над 5 години" if i == rate_col else c) for i, c in enumerate(rows[ROW_MATURITY])
     )
     with pytest.raises(ValueError, match="expected a blank maturity label"):
-        _locate_housing_eur_columns(rows)
+        _locate_purpose_eur_columns(rows)
 
 
 def test_raises_on_a_truncated_sheet():
     with pytest.raises(ValueError, match="expected at least"):
-        _locate_housing_eur_columns([(1,), (2,)])
+        _locate_purpose_eur_columns([(1,), (2,)])
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +209,7 @@ def test_raises_when_the_rate_cell_is_not_numeric():
     """A text cell where a rate belongs means the layout moved."""
     wb = openpyxl.load_workbook(FIXTURE_PATH)
     ws = wb[SHEET_NAME]
-    rate_col, _ = _locate_housing_eur_columns(list(ws.iter_rows(values_only=True)))
+    rate_col, _ = _locate_purpose_eur_columns(list(ws.iter_rows(values_only=True)))
     for row in ws.iter_rows(min_row=1, max_row=ws.max_row):
         if hasattr(row[0].value, "strftime"):
             row[rate_col].value = "n/a"
@@ -250,3 +260,124 @@ def test_fetch_raises_on_tls_or_network_failure():
     )
     with pytest.raises(httpx.ConnectError):
         fetch_housing_stock_rate_bg()
+
+
+# ---------------------------------------------------------------------------
+# The other two purposes, and the revolving workbook
+# ---------------------------------------------------------------------------
+# What the mortgage panel needed was one cell. `credit.json` needs the same
+# sheet's other two purposes and a second workbook, and the tests below are
+# about the two ways that goes wrong quietly: a purpose's block located by
+# counting rather than by reading its own label, and БНБ's «в т.ч.» nesting
+# read as three amounts to add up.
+
+OVERDRAFT_FIXTURE = Path(__file__).parent / "fixtures" / "bnb_overdraft_card_oa_hh_bg.xlsx"
+OVERDRAFT_BYTES = OVERDRAFT_FIXTURE.read_bytes()
+
+
+def test_each_purpose_lands_on_its_own_block():
+    """Three purposes, three column pairs, none of them shared."""
+    rows = fixture_rows()
+    located = {p: _locate_purpose_eur_columns(rows, label) for p, label in LOAN_PURPOSES.items()}
+    assert len(set(located.values())) == 3, f"two purposes resolved to the same columns: {located}"
+    for purpose, (rate_col, volume_col) in located.items():
+        assert rows[ROW_PURPOSE][rate_col] == LOAN_PURPOSES[purpose]
+        assert rows[ROW_PURPOSE][volume_col] == LOAN_PURPOSES[purpose]
+        assert rows[ROW_CURRENCY][rate_col] == LABEL_EUR
+        assert (rows[ROW_MATURITY][rate_col] or "") == ""
+
+
+def test_the_purposes_are_the_sizes_that_tell_them_apart():
+    """Consumer ~€11 bn, housing ~€18 bn, «Други кредити» ~€0.3 bn.
+
+    Reading one purpose's column where another belongs is the failure a band
+    cannot catch on its own, because every one of these is a believable
+    household total. The order of magnitude is what separates them.
+    """
+    latest = {p: parse_loan_stock_xlsx(FIXTURE_BYTES, p)[-1] for p in LOAN_PURPOSES}
+    assert latest["housing"]["volume_eur_m"] > latest["consumer"]["volume_eur_m"]
+    assert latest["consumer"]["volume_eur_m"] > 20 * latest["other"]["volume_eur_m"]
+    # And the rates separate them the other way round: unsecured consumer
+    # credit costs well over twice a secured home loan.
+    assert latest["consumer"]["rate_pct"] > 2 * latest["housing"]["rate_pct"]
+
+
+def test_the_housing_wrapper_is_the_general_parse():
+    assert parse_loan_stock_xlsx(FIXTURE_BYTES, "housing") == parse_housing_stock_xlsx(
+        FIXTURE_BYTES
+    )
+
+
+def test_the_revolving_workbook_reads_all_three_nested_blocks():
+    rows = parse_overdraft_card_stock_xlsx(OVERDRAFT_BYTES)
+    assert rows[0]["period"] == "2000-03", "the workbook reaches back to 2000"
+    assert rows == sorted(rows, key=lambda r: r["period"])
+    latest = rows[-1]
+    # БНБ nest these «в т.ч.»: the card balance is part of the card block, and
+    # the card block is part of the overdraft one. Summed rather than contained
+    # they would report roughly twice what is actually owed.
+    assert latest["card_outside_grace_eur_m"] <= latest["card_eur_m"] <= latest["overdraft_eur_m"]
+    # The balance being charged interest costs more than the block that
+    # contains it, which is the whole reason the sub-column exists.
+    assert latest["card_outside_grace_rate_pct"] > latest["card_rate_pct"]
+
+
+def test_an_uncomputed_cell_comes_back_as_none_rather_than_zero():
+    """БНБ write «nc» through the early 2000s, and 0% is a rate.
+
+    Rendered as «0,00%» an `nc` reads as a bank lending for nothing, and as a
+    volume it reads as nobody owing anything.
+    """
+    early = parse_overdraft_card_stock_xlsx(OVERDRAFT_BYTES)[0]
+    assert early["card_eur_m"] is None
+    assert early["card_rate_pct"] is None
+
+
+@pytest.mark.parametrize(
+    "row_idx, label, expected_error",
+    [
+        (ROW_PURPOSE, LABEL_CARD, "in both halves"),
+        (ROW_MATURITY, LABEL_OUTSIDE_GRACE, "right of the"),
+    ],
+)
+def test_the_revolving_walk_raises_when_a_label_moves(row_idx, label, expected_error):
+    """The nesting is asserted from the labels, never counted off."""
+    wb = openpyxl.load_workbook(OVERDRAFT_FIXTURE)
+    rows = list(wb[OVERDRAFT_SHEET].iter_rows(values_only=True))
+    rows[row_idx] = tuple(("RENAMED" if c == label else c) for c in rows[row_idx])
+    with pytest.raises(ValueError, match=expected_error):
+        _locate_overdraft_card_columns(rows)
+
+
+def test_the_revolving_walk_raises_when_the_sub_column_becomes_the_total():
+    """The subtlest drift in this workbook, and the one that halves a figure.
+
+    БНБ label the block's own column with nothing and put «в т.ч. извън
+    безлихвен гратисен период» beside it. If that label ever moved onto the
+    block's own column we would read €371 m — the balance being charged
+    interest — as €490 m, every card balance including the ones inside the
+    interest-free period. Both are card debt and neither looks wrong.
+    """
+    wb = openpyxl.load_workbook(OVERDRAFT_FIXTURE)
+    rows = list(wb[OVERDRAFT_SHEET].iter_rows(values_only=True))
+    card_rate_col = _locate_overdraft_card_columns(rows)["card"][0]
+    rows[ROW_MATURITY] = tuple(
+        (LABEL_OUTSIDE_GRACE if i == card_rate_col else c) for i, c in enumerate(rows[ROW_MATURITY])
+    )
+    with pytest.raises(ValueError, match="expected a blank label"):
+        _locate_overdraft_card_columns(rows)
+
+
+@respx.mock
+def test_fetch_loan_stock_returns_every_purpose_from_one_download():
+    route = respx.get(SOURCE_URL).mock(return_value=httpx.Response(200, content=FIXTURE_BYTES))
+    stock = fetch_loan_stock_bg()
+    assert route.call_count == 1, "three purposes, one request"
+    assert set(stock) == set(LOAN_PURPOSES)
+
+
+@respx.mock
+def test_fetch_overdraft_card_points_at_the_revolving_workbook():
+    respx.get(OVERDRAFT_URL).mock(return_value=httpx.Response(200, content=OVERDRAFT_BYTES))
+    assert OVERDRAFT_URL.endswith("s_ir_ovdr_cc_oa_hh_bg.xlsx")
+    assert fetch_overdraft_card_stock_bg()[-1]["overdraft_eur_m"] > 0

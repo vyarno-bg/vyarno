@@ -1,13 +1,19 @@
-"""БНБ XLSX connector — the mortgage outstanding stock.
+"""БНБ XLSX connector — what households owe, and what the balances cost.
 
-One number: **the average rate every Bulgarian household with a home loan is
-currently paying.** Not what a new borrower is quoted (that is ЕЦБ MIR new
-business, `ecb.py`) — this is the average across the whole existing €18 bn
-book, including loans signed years ago.
+Two questions, three workbooks. **The rate every Bulgarian household with a home
+loan is currently paying** is the mortgage panel's (`mortgage.json`); the same
+sheet's volume half, plus a second workbook for the revolving products, is
+**how much is owed on each** (`credit.json`).
 
     file  : s_ir_loan_oa_hh_bg.xlsx
     sheet : LOAN_OA_HH
     cell  : Жилищни кредити (housing loans) · в евро (EUR) · maturity total
+
+**The euro amounts come from here and can come from nowhere else.** Every ЕЦБ
+MIR outstanding-amount VOLUME key for BG is a 404 — `…{A20,A22,A2B,L21,L22}.…B.
+….O` at every date — so MIR publishes the price of the stock and never its size.
+БНБ publish both in the same row, which is the argument for reading the workbook
+rather than adding a key that does not exist.
 
 **Do not use `s_ir_loan_oa_rm_hh_bg.xlsx`.** That workbook covers "loans other
 than overdraft for the household sector" — every purpose blended, consumer
@@ -38,6 +44,14 @@ longer say what we expect:
 
 We take the *total* column (row 6 blank), not a maturity bucket, because the
 honest answer to "what does the average mortgage holder pay" is the whole book.
+
+**The walk takes the purpose it is looking for, and the three are not
+interchangeable.** «Кредити за потребление», «Жилищни кредити» and «Други
+кредити» sit at three offsets in each half, and their blocks are not even the
+same width — the housing block of the new-business workbook carries four
+fixation buckets where the other two carry three. A copy of this walk per
+purpose would be three places for БНБ to break one of and two of them to keep
+passing.
 
 TLS PREREQUISITE
 ----------------
@@ -70,7 +84,7 @@ SHEET_NAME = "LOAN_OA_HH"
 # that floats is БНБ's to give or nobody's.
 #
 # Its header grammar is the one above — section / purpose / currency / bucket on
-# the same four rows — so `_locate_housing_eur_columns` finds the housing EUR
+# the same four rows — so `_locate_purpose_eur_columns` finds the housing EUR
 # block here unchanged, and the four buckets are the columns to its right.
 FIXATION_URL = (
     "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_nbf_hh_bg.xlsx"
@@ -84,11 +98,48 @@ FIXATION_SHEET = "LOAN_NBF_HH"
 FIXATION_LABELS = ("до 1 година2", "над 1 до 5 години", "над 5 до 10 години", "над 10 години")
 FIXATION_BUCKETS = ("up_to_1y", "1y_to_5y", "5y_to_10y", "over_10y")
 
+# The third workbook, and the only published size of the two revolving products.
+# ЕЦБ MIR carries their RATES and no volume at all for BG — `A2Z1`/`A2Z3` with
+# `.B.` is a 404 at every date — so «21% on a carried card balance» was a price
+# with nothing beside it until this file. It is a different sheet grammar from
+# the two above: no purpose row, because there is only one purpose, and the card
+# block is nested INSIDE the overdraft one as «в т.ч.».
+#
+#   row 3  col 1  "Ефективен годишен процент" · col 7 "Обеми в млн. евро"
+#   row 4  col 1  "Овърдрафт2"                 · col 3 "в т.ч. кредитни карти2"
+#   row 5  col 1  "в евро"                     (currency, as the others)
+#   row 6  col 4  "в т.ч. извън безлихвен гратисен период"
+#
+# The trailing digits are БНБ's footnote markers and are part of the cell text.
+OVERDRAFT_URL = (
+    "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_ovdr_cc_oa_hh_bg.xlsx"
+)
+OVERDRAFT_SHEET = "OVDR_CC_OA_HH"
+LABEL_OVERDRAFT = "Овърдрафт2"
+LABEL_CARD = "в т.ч. кредитни карти2"
+LABEL_OUTSIDE_GRACE = "в т.ч. извън безлихвен гратисен период"
+LABEL_RATES = "Ефективен годишен процент"
+
 # Header labels we require. If БНБ renames any of these we raise, rather than
 # read a neighbouring cell.
 LABEL_VOLUMES = "Обеми в млн. евро"  # marks where the volume half starts
-LABEL_HOUSING = "Жилищни кредити"  # the purpose block we want
+LABEL_HOUSING = "Жилищни кредити"  # the purpose block the mortgage panel wants
 LABEL_EUR = "в евро"  # the currency sub-block we want
+
+# The three purposes БНБ split household lending into, keyed by the name the
+# payload uses. They partition the sector's non-overdraft lending, which is what
+# lets `credit.py` add them up and check the total against a rate the ЕЦБ
+# publish independently.
+#
+# «Други кредити» is the residual and it is small (~€0.3 bn against consumer
+# credit's €11 bn). It is carried anyway rather than folded into consumer,
+# because folding it would put loans for education, business and everything else
+# a household borrows for under a heading that says «за потребление».
+LOAN_PURPOSES: dict[str, str] = {
+    "consumer": "Кредити за потребление",
+    "housing": LABEL_HOUSING,
+    "other": "Други кредити",
+}
 
 # Zero-based row indices of the header rows (openpyxl `values_only` rows).
 ROW_SECTION = 2  # row 3: rates | volumes
@@ -114,6 +165,39 @@ def fetch_housing_stock_rate_bg() -> list[dict[str, Any]]:
     return parse_housing_stock_xlsx(body)
 
 
+def fetch_loan_stock_bg() -> dict[str, list[dict[str, Any]]]:
+    """All three purposes of the outstanding book, one download.
+
+    Returns `{"consumer": [...], "housing": [...], "other": [...]}`, each a list
+    of `{"period", "rate_pct", "volume_eur_m"}` oldest first.
+
+    Raises the same two as `fetch_housing_stock_rate_bg`.
+    """
+    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
+        r = client.get(SOURCE_URL)
+        r.raise_for_status()
+        body = r.content
+    return {purpose: parse_loan_stock_xlsx(body, purpose) for purpose in LOAN_PURPOSES}
+
+
+def fetch_overdraft_card_stock_bg() -> list[dict[str, Any]]:
+    """Overdraft and credit-card balances, and what each costs (EUR).
+
+    One dict per month, oldest first:
+        {"period": "2026-06", "overdraft_rate_pct": 13.1999,
+         "overdraft_eur_m": 695.071, "card_rate_pct": 16.0124,
+         "card_eur_m": 490.317, "card_outside_grace_rate_pct": 21.1636,
+         "card_outside_grace_eur_m": 370.974}
+
+    Raises the same two as `fetch_housing_stock_rate_bg`.
+    """
+    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
+        r = client.get(OVERDRAFT_URL)
+        r.raise_for_status()
+        body = r.content
+    return parse_overdraft_card_stock_xlsx(body)
+
+
 def fetch_housing_fixation_bg() -> list[dict[str, Any]]:
     """New housing lending split by initial rate-fixation period (EUR).
 
@@ -132,8 +216,8 @@ def fetch_housing_fixation_bg() -> list[dict[str, Any]]:
     return parse_housing_fixation_xlsx(body)
 
 
-def _locate_housing_eur_columns(rows: list[tuple]) -> tuple[int, int]:
-    """Find (rate_col, volume_col) for housing loans in EUR, maturity total.
+def _locate_purpose_eur_columns(rows: list[tuple], purpose: str = LABEL_HOUSING) -> tuple[int, int]:
+    """Find (rate_col, volume_col) for one purpose in EUR, maturity total.
 
     Pure header inspection — see the module docstring for the layout. Raises
     ValueError with the actual header contents when anything is off, so the
@@ -148,7 +232,7 @@ def _locate_housing_eur_columns(rows: list[tuple]) -> tuple[int, int]:
     def cells(row_idx: int) -> list[str]:
         return [(c.strip() if isinstance(c, str) else "") for c in rows[row_idx]]
 
-    section, purpose, currency, maturity = (
+    section, purposes, currency, maturity = (
         cells(ROW_SECTION),
         cells(ROW_PURPOSE),
         cells(ROW_CURRENCY),
@@ -164,23 +248,23 @@ def _locate_housing_eur_columns(rows: list[tuple]) -> tuple[int, int]:
             f"Row reads: {[c for c in section if c]!r}"
         )
 
-    housing_cols = [i for i, c in enumerate(purpose) if c == LABEL_HOUSING]
-    rate_blocks = [i for i in housing_cols if i < volume_start]
-    volume_blocks = [i for i in housing_cols if i >= volume_start]
+    purpose_cols = [i for i, c in enumerate(purposes) if c == purpose]
+    rate_blocks = [i for i in purpose_cols if i < volume_start]
+    volume_blocks = [i for i in purpose_cols if i >= volume_start]
     if not rate_blocks or not volume_blocks:
         raise ValueError(
-            f"BNB: expected {LABEL_HOUSING!r} in both the rates and volumes "
+            f"BNB: expected {purpose!r} in both the rates and volumes "
             f"halves of header row {ROW_PURPOSE + 1} (divider at col "
-            f"{volume_start}); found it at {housing_cols!r}. "
-            f"Row reads: {[(i, c) for i, c in enumerate(purpose) if c]!r}"
+            f"{volume_start}); found it at {purpose_cols!r}. "
+            f"Row reads: {[(i, c) for i, c in enumerate(purposes) if c]!r}"
         )
     rate_col, volume_col = rate_blocks[0], volume_blocks[0]
 
-    # The housing block must start with the EUR sub-block...
+    # The block must start with the EUR sub-block...
     for col, what in ((rate_col, "rate"), (volume_col, "volume")):
         if currency[col] != LABEL_EUR:
             raise ValueError(
-                f"BNB: {what} housing block at col {col} is headed "
+                f"BNB: {what} {purpose!r} block at col {col} is headed "
                 f"{currency[col]!r}, expected {LABEL_EUR!r}. "
                 f"BNB may have reordered the currency sub-blocks."
             )
@@ -189,11 +273,24 @@ def _locate_housing_eur_columns(rows: list[tuple]) -> tuple[int, int]:
         if maturity[col] != "":
             raise ValueError(
                 f"BNB: expected a blank maturity label at col {col} "
-                f"(the '{LABEL_HOUSING}' total), got {maturity[col]!r}. "
+                f"(the {purpose!r} total), got {maturity[col]!r}. "
                 f"Reading a maturity bucket instead of the total would "
                 f"silently change what this number means."
             )
     return rate_col, volume_col
+
+
+def _number(row: tuple, col: int) -> float | None:
+    """One cell as a float, or None where БНБ printed something else.
+
+    **«nc» is what they write in a cell they did not compute, and 0 is a
+    number.** Zero-filled, an uncomputed rate renders as «0,00%» — a bank
+    lending for nothing — and an uncomputed balance renders as nobody owing
+    anything. Both are figures a reader would believe. So the absence survives
+    to the gate, which decides whether the month is publishable.
+    """
+    cell = row[col] if col < len(row) else None
+    return float(cell) if isinstance(cell, (int, float)) else None
 
 
 def _sheet_rows(body: bytes, sheet_name: str) -> list[tuple]:
@@ -201,6 +298,11 @@ def _sheet_rows(body: bytes, sheet_name: str) -> list[tuple]:
     # БНБ's workbooks carry a print header openpyxl cannot parse. It is
     # cosmetic and unrelated to the cells we read, so mute just that warning
     # rather than letting it clutter every pipeline run.
+    #
+    # **The read has to happen inside the block, not after it.** `read_only`
+    # parses a sheet lazily, so the warning fires on `iter_rows` rather than on
+    # `load_workbook` — suppression that ends at the load is suppression that
+    # covers nothing, and four workbooks a run print it four times.
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",
@@ -221,20 +323,20 @@ def _sheet_rows(body: bytes, sheet_name: str) -> list[tuple]:
                 f"have served an error page with HTTP 200, or changed the "
                 f"download URL."
             ) from e
-    if sheet_name not in wb.sheetnames:
-        raise ValueError(
-            f"Sheet {sheet_name!r} not found in BNB XLSX; available sheets: {wb.sheetnames}"
-        )
-    return list(wb[sheet_name].iter_rows(values_only=True))
+        if sheet_name not in wb.sheetnames:
+            raise ValueError(
+                f"Sheet {sheet_name!r} not found in BNB XLSX; available sheets: {wb.sheetnames}"
+            )
+        return list(wb[sheet_name].iter_rows(values_only=True))
 
 
-def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
-    """Parse the BNB workbook → the housing-loan EUR outstanding-rate series.
+def parse_loan_stock_xlsx(body: bytes, purpose: str = "housing") -> list[dict[str, Any]]:
+    """Parse the BNB workbook → one purpose's EUR outstanding rate and volume.
 
     Pure function: tests pass the committed fixture, no network.
     """
     rows = _sheet_rows(body, SHEET_NAME)
-    rate_col, volume_col = _locate_housing_eur_columns(rows)
+    rate_col, volume_col = _locate_purpose_eur_columns(rows, LOAN_PURPOSES[purpose])
 
     out: list[dict[str, Any]] = []
     for row in rows:
@@ -245,7 +347,7 @@ def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
         rate = row[rate_col] if rate_col < len(row) else None
         if not isinstance(rate, (int, float)):
             raise ValueError(
-                f"BNB: housing EUR rate cell (col {rate_col}) is "
+                f"BNB: {purpose} EUR rate cell (col {rate_col}) is "
                 f"{rate!r} for {row[0]:%Y-%m}, expected a number. "
                 f"Re-verify the layout against docs/data-sources.md."
             )
@@ -265,13 +367,123 @@ def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
     return out
 
 
+def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
+    """The housing purpose of the above, which is the mortgage panel's tier."""
+    return parse_loan_stock_xlsx(body, "housing")
+
+
+def _locate_overdraft_card_columns(rows: list[tuple]) -> dict[str, tuple[int, int]]:
+    """Find (rate_col, volume_col) for each block of the overdraft workbook.
+
+    Returns a key per block: `overdraft`, `card`, `card_outside_grace`.
+
+    **The nesting is the thing to get right, and it is not visible in a value.**
+    «в т.ч. кредитни карти» is INSIDE «Овърдрафт», and «в т.ч. извън безлихвен
+    гратисен период» is inside that again, so the three volumes are €695 m ⊃
+    €490 m ⊃ €371 m rather than three amounts to add up. Every one of them is a
+    plausible card balance on its own, which is why the labels are asserted
+    instead of the columns being counted off.
+    """
+    if len(rows) <= ROW_MATURITY:
+        raise ValueError(
+            f"BNB sheet {OVERDRAFT_SHEET!r} has only {len(rows)} rows; "
+            f"expected at least {ROW_MATURITY + 1} header rows."
+        )
+
+    def cells(row_idx: int) -> list[str]:
+        return [(c.strip() if isinstance(c, str) else "") for c in rows[row_idx]]
+
+    section, products, currency, grace = (
+        cells(ROW_SECTION),
+        cells(ROW_PURPOSE),
+        cells(ROW_CURRENCY),
+        cells(ROW_MATURITY),
+    )
+
+    volume_start = next((i for i, c in enumerate(section) if c == LABEL_VOLUMES), None)
+    if volume_start is None or LABEL_RATES not in section:
+        raise ValueError(
+            f"BNB: header row {ROW_SECTION + 1} of {OVERDRAFT_SHEET!r} no longer carries "
+            f"both {LABEL_RATES!r} and {LABEL_VOLUMES!r}. Row reads: "
+            f"{[c for c in section if c]!r}"
+        )
+
+    found: dict[str, tuple[int, int]] = {}
+    for block, label in (("overdraft", LABEL_OVERDRAFT), ("card", LABEL_CARD)):
+        eur = [
+            i
+            for i, c in enumerate(products)
+            if c == label and i < len(currency) and currency[i] == LABEL_EUR
+        ]
+        halves = [i for i in eur if i < volume_start], [i for i in eur if i >= volume_start]
+        if not halves[0] or not halves[1]:
+            raise ValueError(
+                f"BNB: expected {label!r} headed {LABEL_EUR!r} in both halves of "
+                f"header row {ROW_PURPOSE + 1} (divider at col {volume_start}); found "
+                f"it at {eur!r}. Row reads: "
+                f"{[(i, c) for i, c in enumerate(products) if c]!r}"
+            )
+        rate_col, volume_col = halves[0][0], halves[1][0]
+        for col in (rate_col, volume_col):
+            if grace[col] != "":
+                raise ValueError(
+                    f"BNB: expected a blank label at col {col} (the {label!r} total), "
+                    f"got {grace[col]!r}. Reading the sub-column as the block's own "
+                    f"total would report the balance carried past the interest-free "
+                    f"period as the whole balance."
+                )
+        found[block] = (rate_col, volume_col)
+
+    # The card block's own sub-column, one to the right in each half. This is
+    # the ЕЦБ's «extended credit card credit» and the only one of the three
+    # that is money actually being charged interest.
+    rate_col, volume_col = found["card"]
+    for col in (rate_col + 1, volume_col + 1):
+        if col >= len(grace) or grace[col] != LABEL_OUTSIDE_GRACE:
+            raise ValueError(
+                f"BNB: expected {LABEL_OUTSIDE_GRACE!r} at col {col}, right of the "
+                f"{LABEL_CARD!r} total; got "
+                f"{grace[col] if col < len(grace) else '(past the end of the row)'!r}."
+            )
+    found["card_outside_grace"] = (rate_col + 1, volume_col + 1)
+    return found
+
+
+def parse_overdraft_card_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
+    """Parse `s_ir_ovdr_cc_oa_hh_bg.xlsx` → the revolving balances and rates.
+
+    Pure function: tests pass the committed fixture, no network.
+    """
+    rows = _sheet_rows(body, OVERDRAFT_SHEET)
+    cols = _locate_overdraft_card_columns(rows)
+
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row[0], datetime):
+            continue
+        # БНБ write «nc» in a cell they did not compute, and the early 2000s are
+        # full of them. `number` turns those into None and the gate decides
+        # whether a month is publishable, rather than a zero reaching a chart.
+        month: dict[str, Any] = {"period": row[0].strftime("%Y-%m")}
+        for block, (rate_col, volume_col) in cols.items():
+            month[f"{block}_rate_pct"] = _number(row, rate_col)
+            month[f"{block}_eur_m"] = _number(row, volume_col)
+        out.append(month)
+    if not out:
+        raise ValueError(
+            f"BNB: no dated data rows found in {OVERDRAFT_SHEET!r}. The workbook layout changed."
+        )
+    out.sort(key=lambda r: r["period"])
+    return out
+
+
 def parse_housing_fixation_xlsx(body: bytes) -> list[dict[str, Any]]:
     """Parse `s_ir_loan_nbf_hh_bg.xlsx` → new housing lending by fixation.
 
     Pure function: tests pass the committed fixture, no network.
     """
     rows = _sheet_rows(body, FIXATION_SHEET)
-    rate_col, volume_col = _locate_housing_eur_columns(rows)
+    rate_col, volume_col = _locate_purpose_eur_columns(rows, LABEL_HOUSING)
     labels = [(c.strip() if isinstance(c, str) else "") for c in rows[ROW_MATURITY]]
     # The buckets are the four columns right of each block's total, and their
     # labels are asserted rather than counted on: БНБ ordering the housing block
@@ -287,10 +499,6 @@ def parse_housing_fixation_xlsx(body: bytes) -> list[dict[str, Any]]:
                 f"{FIXATION_SHEET!r} before trusting the fixed/floating split."
             )
 
-    def number(row: tuple, col: int) -> float | None:
-        cell = row[col] if col < len(row) else None
-        return float(cell) if isinstance(cell, (int, float)) else None
-
     out: list[dict[str, Any]] = []
     for row in rows:
         if not isinstance(row[0], datetime):
@@ -298,13 +506,13 @@ def parse_housing_fixation_xlsx(body: bytes) -> list[dict[str, Any]]:
         out.append(
             {
                 "period": row[0].strftime("%Y-%m"),
-                "total_eur_m": number(row, volume_col),
-                "total_rate_pct": number(row, rate_col),
+                "total_eur_m": _number(row, volume_col),
+                "total_rate_pct": _number(row, rate_col),
                 "volume_eur_m": {
-                    b: number(row, volume_col + 1 + i) for i, b in enumerate(FIXATION_BUCKETS)
+                    b: _number(row, volume_col + 1 + i) for i, b in enumerate(FIXATION_BUCKETS)
                 },
                 "rate_pct": {
-                    b: number(row, rate_col + 1 + i) for i, b in enumerate(FIXATION_BUCKETS)
+                    b: _number(row, rate_col + 1 + i) for i, b in enumerate(FIXATION_BUCKETS)
                 },
             }
         )

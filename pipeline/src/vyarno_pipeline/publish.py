@@ -454,6 +454,8 @@ def write_mortgage_payload(
 def write_credit_payload(
     as_of: date,
     products: dict,
+    outstanding: dict,
+    non_performing: dict,
     target_dir: Path,
     filename: str = CREDIT_FILE,
 ) -> Path:
@@ -469,6 +471,12 @@ def write_credit_payload(
     the two deposit series. The deposit rates are here on purpose: a card rate
     with nothing beside it is a number, and beside what saving pays it is a
     comparison, which is the strongest honest form (P6).
+
+    `outstanding` is the quantity under those prices and `non_performing` is
+    what is not being paid back. **Three publishers' data in one payload, so no
+    block inherits the envelope's `source`** — each carries its own, because the
+    rates are ЕЦБ MIR, the euro amounts are БНБ workbooks (MIR publishes no
+    outstanding volume for BG at all) and the arrears ratio is ЕЦБ CBD2.
     """
     payload = _envelope(
         as_of=as_of,
@@ -479,11 +487,15 @@ def write_credit_payload(
             "consumption (rate and APRC), overdrafts and revolving credit, and "
             "extended credit card credit — the balance carried past the "
             "interest-free period. The two deposit series are the comparator. "
-            "Card and overdraft rates carry no volume and no APRC: BG reports "
-            "neither for those items, so the payload states a price with no "
-            "quantity rather than implying one."
+            "The euro amounts under those rates are БНБ's own workbooks, because "
+            "every ECB MIR outstanding-amount volume key for BG is a 404: MIR "
+            "publishes what the stock costs and never how big it is. The arrears "
+            "ratios are ECB CBD2, split by counterparty, because the "
+            "portfolio-wide figure that reaches the news is not a household one."
         ),
     )
-    payload["schema_version"] = "1.0"
+    payload["schema_version"] = "1.1"
     payload.update(products)
+    payload["outstanding"] = outstanding
+    payload["non_performing"] = non_performing
     return write_payload(payload, target_dir, filename)
