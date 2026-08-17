@@ -369,6 +369,25 @@
               <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
             {/each}
             <path class="plot-line" d={path(line, axis)} />
+            <!-- **The one quarter the paragraph above this chart names.** A
+                 share that never leaves 84-100% on an axis that has to contain
+                 zero is a flat line with a notch in it, and «най-ниската му
+                 стойност е през декември 2022 г.» sends a reader to find that
+                 notch across nineteen years. The axis is not cropped to fix
+                 that — it may not be — so the mark is what carries the reading
+                 instead. Guarded on the trough not being the last point, which
+                 is the case where `.plot-last` already marks it. -->
+            {#if fixationHistory.trough && fixationHistory.trough !== line.points.at(-1)}
+              {@const i = line.points.findIndex((p) => p.period === fixationHistory.trough.period)}
+              {#if i >= 0}
+                <circle
+                  class="plot-peak"
+                  cx={xOf(i, line.points.length)}
+                  cy={yOf(fixationHistory.trough.value, axis)}
+                  aria-hidden="true"
+                />
+              {/if}
+            {/if}
             {@render lastPoint(line, axis)}
             <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
             {#each line.points as p, i (p.period)}
@@ -384,6 +403,13 @@
           </svg>
           {@render xYears(xTicks(line))}
         </div>
+        <figcaption>
+          <span class="key peak"
+            ><span class="l-bg">{COPY.crdKeyTrough.bg}</span><span class="l-en"
+              >{COPY.crdKeyTrough.en}</span
+            ></span
+          >
+        </figcaption>
       </figure>
       <p class="note">
         <a href={fixationHistory.sourceUrl} rel="noopener">{t(COPY.crdWhoseBnb, $lang)}</a>
@@ -1411,6 +1437,23 @@
   }
   :global(.plot-last.floor) {
     fill: var(--ink-2);
+  }
+  /* The ring on a series' own record reading, and its key. `--real` here rather
+     than the index chart's `--series-2`, for the reason every other mark on
+     these plots takes its line's colour: a ring drawn in a hue the line is not
+     names a series that is not there. */
+  :global(.plot-peak) {
+    r: 4.2;
+    fill: none;
+    stroke: var(--real);
+    stroke-width: 2;
+  }
+  .chart figcaption .key.peak::before {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--real);
+    vertical-align: -1px;
   }
   /* The legend. Each key carries the stroke of the line it names, drawn as a
      short rule before the word rather than a swatch, so the mark in the caption
