@@ -23,10 +23,14 @@ import { fileURLToPath } from "node:url";
 import {
   creditFixation,
   creditLimits,
+  creditProducts,
   creditRates,
   creditRenegotiation,
 } from "../src/lib/view/credit.js";
 
+const CREDIT = JSON.parse(
+  readFileSync(fileURLToPath(new URL("../../data/published/credit.json", import.meta.url)), "utf8")
+);
 const PUBLISHED = JSON.parse(
   readFileSync(
     fileURLToPath(new URL("../../data/published/mortgage.json", import.meta.url)),
@@ -122,4 +126,40 @@ test("every reader of a missing payload gets nulls rather than a thrown page", (
     assert.equal(creditRenegotiation(payload).share.value, null);
     assert.equal(creditLimits(payload), null);
   }
+});
+
+test("the products come out dearest first, with the deposits marked as paid not charged", () => {
+  const products = creditProducts(CREDIT);
+  assert.deepEqual(
+    products.map((p) => p.key),
+    ["card", "consumer", "overdraft", "deposit_term", "deposit_overnight"]
+  );
+  // Dearest first is the order, and it is the point: the figure a reader is
+  // least likely to know is the one the section opens on.
+  const lending = products.filter((p) => !p.isDeposit);
+  for (let i = 1; i < lending.length; i += 1) {
+    assert.ok(
+      lending[i - 1].rate.value >= lending[i].rate.value,
+      `${lending[i - 1].key} (${lending[i - 1].rate.value}%) should not sit below ${lending[i].key}`
+    );
+  }
+  assert.deepEqual(
+    products.filter((p) => p.isDeposit).map((p) => p.key),
+    ["deposit_term", "deposit_overnight"]
+  );
+});
+
+test("the card block carries no volume and no APRC, because BG publishes neither", () => {
+  const card = creditProducts(CREDIT).find((p) => p.key === "card");
+  assert.equal(card.monthlyVolumeEurM, null);
+  assert.equal(card.aprcPct, null);
+  // A price with no quantity has to say it is one (P11), and the page prints
+  // this string rather than leaving the absence to be noticed.
+  assert.ok(card.noVolume.length > 20);
+  const consumer = creditProducts(CREDIT).find((p) => p.key === "consumer");
+  assert.ok(consumer.aprcPct >= consumer.rate.value);
+});
+
+test("a missing credit payload drops the section rather than throwing", () => {
+  for (const payload of [null, undefined, {}]) assert.deepEqual(creditProducts(payload), []);
 });

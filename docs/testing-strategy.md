@@ -655,7 +655,7 @@ complete: `src/lib/view/`, `mirror.js`, `legal.js` and `support.js` are at or ne
 **Python.** Everything below the CLI is high and none of it is the gap: gates,
 transforms, connectors, models. What is left is `cli.py`'s ten `_refresh_*` arms — fetch, transform,
 validate, write, print — of which two are driven end to end through `respx`
-against real trimmed cubes and eight are not. Ten arms write twelve payloads —
+against real trimmed cubes and eight are not. Eleven arms write thirteen payloads —
 `_refresh_hicp` publishes the headline and the categories, `_refresh_house_market`
 the market and its structure — so the twelve in `data/published/` counts files
 and never arms.

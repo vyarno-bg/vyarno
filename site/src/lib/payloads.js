@@ -304,6 +304,21 @@ export const PAYLOADS = Object.freeze(
       refPeriod: (p) => p?.[p?.headline]?.ref_period ?? p?.new_business?.ref_period ?? null,
     },
     {
+      key: "credit",
+      file: "credit",
+      pages: ["credit"],
+      // ECB MIR, the same monthly release `mortgage` reads.
+      cadenceDays: 31,
+      name: { bg: "Лихви по потребителски кредити", en: "Consumer credit rates" },
+      feeds: {
+        bg: "какво струват потребителският кредит, овърдрафтът и кредитната карта — и какво плаща депозитът",
+        en: "what a consumer loan, an overdraft and a credit card cost — and what a deposit pays",
+      },
+      // Five products, one release, so any of them dates the file. Consumer
+      // credit is the one with a volume behind it.
+      refPeriod: (p) => p?.consumer?.ref_period ?? null,
+    },
+    {
       key: "unemployment",
       file: "unemployment",
       pages: ["home"],

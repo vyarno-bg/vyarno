@@ -234,6 +234,7 @@ def test_refresh_advertises_exactly_the_supported_sources(tmp_path):
         "hicp",
         "unemployment",
         "mortgage",
+        "credit",
         "city-price",
         "region-salary",
         "sector-salary",

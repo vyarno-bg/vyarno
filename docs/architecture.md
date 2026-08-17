@@ -18,7 +18,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │              sources/*.py → transform.py → validate.py → publish.py   │
 │                              │             (driven by cli.py)         │
 │                              ▼                                        │
-│                    data/published/*.json   ← 12 payloads, committed   │
+│                    data/published/*.json   ← 13 payloads, committed   │
 └──────────────────────────────┼────────────────────────────────────────┘
                                │  dev middleware, or copied into dist/
                                ▼
@@ -50,7 +50,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │   │   ├── payroll.py    # dated BG payroll-law table (no network)
 │   │   └── sources/      # eurostat · bnb · ecb · imot · nsi
 │   └── tests/       `pytest -q` offline; `-m live` hits real upstreams
-├── data/published/  12 payloads, committed — these ARE served to the site
+├── data/published/  13 payloads, committed — these ARE served to the site
 └── site/            Vite 8 + Svelte 5, eleven build entries · AGENTS.md
     ├── index.html · how/index.html · market/index.html ·
     │                legal/index.html · support/index.html · 404.html
@@ -145,7 +145,7 @@ those sit the suites named after an output rather than a module
 
 ## What `data/published/` carries
 
-Twelve envelopes, all committed.
+Thirteen envelopes, all committed.
 
 **Five fields are on every one of them**: `schema_version`, `as_of`, `source`,
 `source_url`, `notes`. That is the provenance floor — where the figure came
@@ -175,7 +175,8 @@ and `null` everywhere else.
 | `region_salary.json` (25 KB) | НСИ's published quarterly gross wage for each of the 28 области, with their own name for it in both languages; each row's headline is their latest quarter. Keyed by `code`, which is the join to `city_price.json` |
 | `sector_salary.json` (19 KB) | НСИ's published quarterly gross wage by economic activity — 19 NACE Rev 2 sections plus the all-activities total, each with `en_name`, `bg_name` (both НСИ's own, from their two language editions), `value_eur` and the full quarterly series. **An average, and the country's**, where `region_salary` is per област: nobody publishes a distribution by activity for BG, so there is no median and no rank in here to read |
 | `city_price.json` | Per-city €/m² for the 27 cities имот.bg cover: each city's district count, summary and its OWN year window, chosen from how far back имот.bg's coverage of it supports a comparison. Keyed by the same `code`. No per-district dict — nothing read it |
-| `mortgage.json` (17 KB) | Two rate tiers (`new_business` with nested `aprc`, `outstanding_stock`), the БНБ↔ЕЦБ `cross_check`, and `lending_limits` |
+| `mortgage.json` (28 KB) | Two rate tiers (`new_business` with nested `aprc`, `outstanding_stock`), the БНБ↔ЕЦБ `cross_check`, `lending_limits`, the `fixation` split over four initial-fixation buckets and the `new_business_split` between pure new lending and renegotiation |
+| `credit.json` | What the same household pays on everything that is not a home — consumer credit with its ГПР, overdrafts, credit-card balances carried past the interest-free period — and the two deposit series that are the comparator |
 | `unemployment.json` | BG unemployment — **monthly**, seasonally adjusted, 2020-01 onward (`une_rt_m`, not the annual `une_rt_a`) |
 | `house_market.json` (40 KB) | The quarterly transaction market: `deals` and `value` (how many dwellings households bought and what they paid), `avg_deal_eur`, and `price_index` beside `price_index_real` — the nominal series and the same series deflated, so a rise in prices is never reported as a rise in what a home costs in real terms |
 | `house_market_structure.json` | `tenure`, `census_dwellings` and `housing_cost_overburden` — what the country owns rather than rents, the census dwelling stock, and the share spending over 40% of income on housing. Annual, so it moves on a different clock from the quarterly market above and carries its own `ref_period` |
