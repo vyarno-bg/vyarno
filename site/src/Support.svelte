@@ -105,18 +105,23 @@
   main.support {
     scroll-margin-top: 64px;
     padding: 30px 0 10px;
-    max-width: 680px;
+    /* This page carries two cards and no figure, so the column IS the measure —
+       there is nothing here that wants the width a chart would. */
+    max-width: var(--measure);
   }
   h1 {
     font-family: var(--serif);
-    font-size: clamp(1.5625rem, 4vw, 2rem);
-    line-height: 1.15;
-    letter-spacing: -0.015em;
+    font-size: var(--fs-title);
+    line-height: 1.12;
+    letter-spacing: -0.018em;
     margin: 0;
   }
+  /* The one sub-heading level on the page, and it stays in the sans at
+     `--fs-h3`: three short answers under one title, where a serif section head
+     at `--fs-h2` would read as four documents rather than one. */
   h2 {
-    font-size: var(--fs-lead);
-    line-height: 1.3;
+    font-size: var(--fs-h3);
+    line-height: 1.25;
     margin: 30px 0 0;
     color: var(--ink);
   }

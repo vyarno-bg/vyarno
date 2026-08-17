@@ -1372,25 +1372,29 @@
 <SiteFooter page="how" />
 
 <style>
+  /* The column a FIGURE gets. A sentence gets `--measure` below and is
+     narrower — the two were one number, which set every paragraph on this page
+     85 characters wide. Tables and charts keep the column. */
   main.how {
     padding: 30px 0 10px;
-    max-width: 760px;
+    max-width: var(--col);
     /* The skip link's target, offset by the same amount the sections are: a
        bare `#main` jump parks the h1 under the 54px sticky header. */
     scroll-margin-top: 64px;
   }
   h1 {
     font-family: var(--serif);
-    font-size: clamp(1.5625rem, 4vw, 2rem);
-    line-height: 1.15;
-    letter-spacing: -0.015em;
+    font-size: var(--fs-title);
+    line-height: 1.12;
+    letter-spacing: -0.018em;
     margin: 0;
   }
   h2 {
     font-family: var(--serif);
-    font-size: var(--fs-h3);
-    line-height: 1.25;
-    margin: 0 0 8px;
+    font-size: var(--fs-h2);
+    line-height: 1.2;
+    letter-spacing: -0.012em;
+    margin: 0 0 10px;
     color: var(--ink);
   }
   section {
@@ -1401,6 +1405,7 @@
   }
   p {
     margin: 12px 0 0;
+    max-width: var(--measure);
     font-size: var(--fs-lead);
     line-height: 1.62;
     color: var(--ink-2);
@@ -1408,8 +1413,12 @@
   .lead {
     margin-top: 12px;
   }
+  /* A source line is not prose: one string of mono at the 11px floor, and
+     holding it to the reading measure wraps a period away from the publisher it
+     belongs to. It takes the width of the figure it dates. */
   .cap {
     margin-top: 6px;
+    max-width: none;
     font-family: var(--mono);
     font-size: var(--fs-micro);
     color: var(--muted);

@@ -597,21 +597,24 @@
   .stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    /* Wide enough that two tiles' labels do not read as one paragraph now that
+       nothing but the gap separates them. */
+    gap: 22px;
     /* Cards in the same row stay the same height, so the row reads as a row of
        tiles rather than a ragged edge. Their captions do NOT stretch to meet
        the bottom — see `.ss`. */
     align-items: stretch;
   }
   /* Every stat card has the same internal structure regardless of height:
-     headline, label, source caption, each following the one above it. */
+     headline, label, source caption, each following the one above it. It is
+     hung from a rule rather than drawn as a box, which `docs/site.md` §"A figure
+     is hung from a rule, not drawn in a box" argues for all three pages that
+     carry these. */
   .stat {
     flex: 1 1 180px;
     min-width: 0;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 13px 15px;
+    border-top: 2px solid var(--ink);
+    padding-top: 11px;
     display: flex;
     flex-direction: column;
   }
@@ -654,11 +657,15 @@
   .stat .ss > div + div {
     margin-top: 5px;
   }
+  /* `--fs-figure` and not `--fs-h2`: the figure is the reason the tile exists
+     and has to outrank «СТРАНАТА НАКРАТКО» above it, so the two sizes are
+     separate steps rather than one token doing both jobs. */
   .stat .sv {
-    font-size: var(--fs-h2);
+    font-size: var(--fs-figure);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
     display: flex;
     align-items: baseline;
     gap: 8px;

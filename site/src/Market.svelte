@@ -629,10 +629,9 @@
   The gridlines a y label needs in order to be a scale rather than a caption.
 
   Drawn for every tick EXCEPT the two that already have a rule of their own:
-  zero, which the axis line marks, and the reference the publisher defines,
-  which is dashed because it is a threshold rather than furniture. Two rules on
-  one height paint a heavier line at exactly the place the page means something
-  quieter.
+  zero, which the axis line marks, and the base the payload declares, which is
+  dashed. Two rules on one height paint a heavier line at exactly the place the
+  page means something quieter.
 
   Before the data in document order, so a column sits on top of its gridline.
 -->
@@ -689,9 +688,9 @@
 {/snippet}
 
 <!-- The same years as rules inside the box. Quiet, and behind the data: a
-     gridline is furniture, and this page's only emphatic rules are zero and a
-     reference the publisher defines. The first tick is skipped where it sits on
-     the left edge, which the plot's own border already marks. -->
+     gridline is furniture, and this page's only emphatic rules are zero and the
+     base a payload declares. The first tick is skipped where it sits on the
+     left edge, which the plot's own border already marks. -->
 {#snippet yearRules(ticks, h = CH_H)}
   {#each ticks as tick (tick.year)}
     {#if tick.at > 0.5}
@@ -723,6 +722,53 @@
 {/snippet}
 
 <!--
+  The newest reading, marked.
+
+  Every figure on this page is the last point of some series, and on a plot 85
+  quarters wide that point is a seven-pixel stub at the right edge with nothing
+  to say it is the one the prose above just quoted. The mark takes the ground as
+  its stroke so it reads as a point rather than as the line getting thicker —
+  `chart.css#.plot-last` carries the rest.
+-->
+{#snippet lastPoint(series, axis, h = CH_H, second = false)}
+  {@const p = series.points[series.points.length - 1]}
+  {#if p}
+    <circle
+      class="plot-last {second ? 'second' : ''}"
+      cx={CH_W}
+      cy={yOf(p.value, axis, h)}
+      aria-hidden="true"
+    />
+  {/if}
+{/snippet}
+
+<!--
+  The series names, in a gutter to the right of the plot at the height each
+  line ends on.
+
+  **A key under a plot is a lookup and a label on the line is not.** Holding a
+  swatch in mind, carrying it up into the picture and finding the matching stroke
+  is work a reader does once per series per glance, and on the index chart — two
+  lines that cross twice — it is the whole reading. Written where the line ends,
+  there is nothing to carry.
+
+  Positioned exactly as the y ticks are, because it is the same problem: a
+  percentage `top` against a cell the grid has stretched to the plot's height.
+  `chart.css` closes the column below 760px, where the key under the figure does
+  the naming instead, so both are kept rather than one replacing the other.
+-->
+{#snippet sLabels(items)}
+  <div class="slabels" aria-hidden="true">
+    <!-- Keyed by position, not by text: two series can read the same multiple
+         in the same quarter, and a duplicate key is a runtime failure on a
+         chart that was drawing correctly the day before the figures converged. -->
+    {#each items as item, i (i)}
+      <span class="slabel" style="top:{item.at.toFixed(2)}%">{item.label}</span>
+    {/each}
+  </div>
+{/snippet}
+
+<!--
   A city's own history, drawn small enough to sit in a table cell.
 
   Six of them share one scale (`cities.priceScale`) because six sparklines each
@@ -733,7 +779,7 @@
 {#snippet spark(series, scale, label)}
   {#if series.points.length > 2}
     <svg class="spark" viewBox="0 0 {SP_W} {SP_H}" role="img" aria-label={label}>
-      <line class="plot-ref" x1="0" y1={spY(0, scale)} x2={SP_W} y2={spY(0, scale)} />
+      <line class="plot-base" x1="0" y1={spY(0, scale)} x2={SP_W} y2={spY(0, scale)} />
       <path
         class="plot-line"
         d={series.points
@@ -1407,7 +1453,7 @@
         reference: indexScale.reference,
       }}
       <figure class="chart">
-        <div class="plot">
+        <div class="plot labelled">
           <!-- The axis is in multiples, which is what makes it readable at all.
                «272,63» names no unit, is anchored to a year somebody picked, and
                connects to nothing a reader has ever paid; «×2,7» is the same
@@ -1444,7 +1490,7 @@
             {@render gridlines(indexAxis, indexScale.reference, CH_TALL)}
             {@render yearRules(xTicks(indexSeries), CH_TALL)}
             <line
-              class="plot-ref"
+              class="plot-base"
               x1="0"
               y1={yOf(indexScale.reference, indexAxis, CH_TALL)}
               x2={CH_W}
@@ -1475,6 +1521,8 @@
               d={path({ ...indexRealSeries, ...indexAxis }, CH_TALL)}
             />
             <path class="plot-line" d={path({ ...indexSeries, ...indexAxis }, CH_TALL)} />
+            {@render lastPoint({ ...indexRealSeries, ...indexAxis }, indexAxis, CH_TALL, true)}
+            {@render lastPoint({ ...indexSeries, ...indexAxis }, indexAxis, CH_TALL)}
             {@render dots({ ...indexSeries, ...indexAxis }, times, CH_TALL)}
             <line
               class="plot-axis"
@@ -1484,6 +1532,16 @@
               y2={yOf(0, indexAxis, CH_TALL)}
             />
           </svg>
+          <!-- The two series' own current multiples, which is what a reader
+               came for and what an axis eleven ticks long makes them estimate.
+               Read off the last POINT rather than out of `reading`, so the digits
+               and the mark beside them cannot come from two different quarters. -->
+          {@render sLabels(
+            [indexSeries, indexRealSeries]
+              .map((s) => s.points.at(-1))
+              .filter(Boolean)
+              .map((p) => ({ at: tickAt(p.value, indexAxis), label: times(p.value) }))
+          )}
           {@render xYears(xTicks(indexSeries))}
         </div>
         <figcaption>
@@ -1739,7 +1797,7 @@
       {#if dealNewSeries.points.length > 4}
         {@const dealAxis = niceTicks(dealScale.min, dealScale.max, 4)}
         <figure class="chart">
-          <div class="plot">
+          <div class="plot labelled">
             {@render yAxis(
               dealAxis.values.map((v) => ({
                 at: tickAt(v, dealAxis),
@@ -1761,6 +1819,8 @@
               {@render yearRules(xTicks(dealNewSeries))}
               <path class="plot-line" d={path({ ...dealNewSeries, ...dealAxis })} />
               <path class="plot-line second" d={path({ ...dealExistingSeries, ...dealAxis })} />
+              {@render lastPoint({ ...dealExistingSeries, ...dealAxis }, dealAxis, CH_H, true)}
+              {@render lastPoint({ ...dealNewSeries, ...dealAxis }, dealAxis, CH_H)}
               {@render dots({ ...dealNewSeries, ...dealAxis }, (v) => `${fmt0(v)} €`)}
               <line
                 class="plot-axis"
@@ -1770,6 +1830,12 @@
                 y2={yOf(0, dealAxis)}
               />
             </svg>
+            {@render sLabels(
+              [dealNewSeries, dealExistingSeries]
+                .map((s) => s.points.at(-1))
+                .filter(Boolean)
+                .map((p) => ({ at: tickAt(p.value, dealAxis), label: `${fmt0(p.value)} €` }))
+            )}
             {@render xYears(xTicks(dealNewSeries))}
           </div>
           <figcaption>
@@ -2985,31 +3051,37 @@
 
 <style>
   /* `.wrap` centres itself and stops at `--maxw`, which is 1120px — a measure
-     for the calculator's three-column card and far too wide for prose. The
-     column was capped per SECTION instead, at 46rem with no auto margin, so
-     every heading and every table sat against the left edge of a container
-     twice their width and the page read as though it had slipped. One measure
-     on the main element, the same 760px `/how/` uses, and the sections inherit
-     it. */
+     for the calculator's two-column grid and far too wide for a document. The
+     column was capped per SECTION instead, so every heading and every table sat
+     against the left edge of a container twice their width and the page read as
+     though it had slipped. One column on the main element and the sections
+     inherit it.
+
+     **The column is what a FIGURE gets; a sentence gets `--measure` and is
+     narrower.** The two were one number, which set every paragraph here 85
+     characters wide — a line a reader loses on the way back to the left margin.
+     Charts and tables keep the full column, which is the whole point of having
+     two. */
   main.market {
     padding: 30px 0 10px;
-    max-width: 760px;
+    max-width: var(--col);
     /* The skip link's target, offset by the same amount the sections are: a
        bare `#main` jump parks the h1 under the 54px sticky header. */
     scroll-margin-top: 64px;
   }
   h1 {
     font-family: var(--serif);
-    font-size: clamp(1.5625rem, 4vw, 2rem);
-    line-height: 1.15;
-    letter-spacing: -0.015em;
+    font-size: var(--fs-title);
+    line-height: 1.12;
+    letter-spacing: -0.018em;
     margin: 0;
   }
   h2 {
     font-family: var(--serif);
-    font-size: var(--fs-h3);
-    line-height: 1.25;
-    margin: 0 0 8px;
+    font-size: var(--fs-h2);
+    line-height: 1.2;
+    letter-spacing: -0.012em;
+    margin: 0 0 10px;
     color: var(--ink);
   }
   section {
@@ -3020,9 +3092,16 @@
   }
   p {
     margin: 12px 0 0;
+    max-width: var(--measure);
     font-size: var(--fs-lead);
     line-height: 1.62;
     color: var(--ink-2);
+  }
+  /* A source line is not prose: it is one string of mono at the 11px floor, and
+     holding it to the reading measure wraps a period away from the publisher it
+     belongs to. It takes the figure's width, because that is what it dates. */
+  p.ss {
+    max-width: none;
   }
   .lead {
     margin-top: 12px;
@@ -3101,7 +3180,9 @@
   .stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    /* Wide enough that two tiles' labels do not read as one paragraph now that
+       nothing but the gap separates them. */
+    gap: 22px;
     align-items: stretch;
     margin-top: 16px;
   }
@@ -3115,26 +3196,30 @@
   .answers {
     margin-top: 20px;
   }
+  /* Hung from a rule rather than drawn as a box — `docs/site.md` §"A figure is
+     hung from a rule, not drawn in a box" is the argument, and it covers the
+     same tile on `/credit/` and in the calculator's strip. */
   .stat {
     flex: 1 1 150px;
     min-width: 0;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 13px 15px;
+    border-top: 2px solid var(--ink);
+    padding-top: 11px;
     display: flex;
     flex-direction: column;
   }
+  /* `--fs-figure` and not `--fs-h2`: a card's number has to outrank the heading
+     of a section carrying four of them, so the two are separate steps. */
   .stat .sv {
-    font-size: var(--fs-h2);
+    font-size: var(--fs-figure);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
   .stat .sl {
     font-size: var(--fs-meta);
     color: var(--ink-2);
-    margin-top: 6px;
+    margin-top: 8px;
     line-height: 1.35;
   }
   /* Pinned to the foot, so the source captions line up across a row whatever
@@ -3249,8 +3334,11 @@
   .key.one::before {
     background: var(--real);
   }
+  /* The token the second line is actually stroked with. A swatch that names a
+     colour nowhere on the plot is worse than no swatch: it sends a reader
+     looking for a stroke that is not there. */
   .key.two::before {
-    background: var(--ink-2);
+    background: var(--series-2);
   }
   /* The marked quarters' swatch, drawn at the tint the columns are drawn at, or
      the key names a colour that is nowhere on the plot. Taller than a line
@@ -3466,7 +3554,7 @@
   .spark .plot-line {
     stroke-width: 1.5;
   }
-  .spark .plot-ref {
+  .spark .plot-base {
     stroke-width: 1;
   }
   .fig-table .spark-col,
@@ -3481,7 +3569,7 @@
     fill: var(--real);
   }
   .now-deals {
-    fill: var(--ink-2);
+    fill: var(--series-2);
   }
   /* Zero, on a column whose whole reading is which side of it a bar falls. Drawn
      LAST, so it sits on top of a bar that crosses it rather than under one, and

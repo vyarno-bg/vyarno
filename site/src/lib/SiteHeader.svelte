@@ -226,13 +226,19 @@
      hidden half of every pair showing or not depending on stylesheet order.
      That is why the 44px height is bought with `padding` and a stated
      `line-height` rather than with `inline-flex`. */
+  /* **The corner is the site's own, not a lozenge.** `--radius` is 3px and the
+     cards are 6px, so a fully-rounded control was the one shape on the page
+     borrowed from somewhere else — six of them across the top of a ledger, which
+     is the first thing a reader sees and the one place the palette's argument is
+     easiest to undo. 6px is the card's, because a control and a card are the two
+     boxes this site draws. */
   .pill {
     font-family: var(--mono);
     font-size: var(--fs-small);
     line-height: 18px;
     padding: 12px;
     border: 1px solid var(--control-line);
-    border-radius: 999px;
+    border-radius: 6px;
     background: var(--surface);
     color: var(--ink-2);
     cursor: pointer;

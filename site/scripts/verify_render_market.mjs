@@ -1150,7 +1150,7 @@ test("the six-city table draws each city's own history on one shared scale", { s
       assert.ok(n >= 6, `the six-city table draws ${n} histories`);
 
       const zeros = await sparks.evaluateAll((els) =>
-        els.map((el) => Number(el.querySelector("line.plot-ref").getAttribute("y1")).toFixed(3))
+        els.map((el) => Number(el.querySelector("line.plot-base").getAttribute("y1")).toFixed(3))
       );
       assert.equal(
         new Set(zeros).size,
