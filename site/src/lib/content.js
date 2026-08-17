@@ -2740,6 +2740,13 @@ export const COPY = {
   // above the chart already names the quarter and how far under it today sits;
   // the ring is what lets a reader find that quarter on the picture instead of
   // counting columns, and this names the ring.
+  // The key for the ring on the fixation share's lowest reading. Its own string
+  // rather than `mktKeyPeak` reused: that one names a high and this one names a
+  // low, and a share sitting at a record LOW is the opposite claim.
+  crdKeyTrough: {
+    bg: "най-ниското ниво досега",
+    en: "the lowest level so far",
+  },
   mktKeyPeak: {
     bg: "най-високото ниво досега",
     en: "the highest level so far",
