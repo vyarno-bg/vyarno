@@ -94,11 +94,11 @@
   <p class="lede">
     <span class="l-bg"
       >Какво струва един жилищен кредит, за колко време му е фиксирана лихвата и кой всъщност взема
-      «новите» кредити — по данни на БНБ и ЕЦБ, всяко число със своя източник, период и връзка.</span
+      новите кредити — по данни на БНБ и ЕЦБ, всяко число със своя източник, период и връзка.</span
     >
     <span class="l-en"
       >What a home loan costs, how long its rate is fixed for, and who is actually taking out the
-      «new» loans — from BNB and the ECB, every figure with its source, its period and a link.</span
+      new loans — from BNB and the ECB, every figure with its source, its period and a link.</span
     >
   </p>
 
@@ -163,38 +163,43 @@
     <p>
       <span class="l-bg"
         >БНБ броят заедно кредитите с плаваща лихва и тези, фиксирани за до една година, и го казват
-        в бележка под таблицата. Затова първият ред отдолу не значи «фиксирана за година» — значи
-        «банката може да я промени в рамките на година». Обратното на това е четвъртият ред.</span
+        в бележка под таблицата. Затова първият ред отдолу не значи, че лихвата е фиксирана за
+        година — значи, че банката може да я промени в рамките на година. Обратното на това е
+        четвъртият ред.</span
       >
       <span class="l-en"
         >BNB count variable-rate loans and loans fixed for up to a year as one bucket, and say so in
-        a footnote under the table. So the first row below does not mean «fixed for a year» — it
-        means «the bank may change it within a year». The fourth row is what the opposite looks
-        like.</span
+        a footnote under the table. So the first row below does not mean the rate is fixed for a
+        year — it means the bank may change it within a year. The fourth row is what the opposite
+        looks like.</span
       >
     </p>
-    <table class="fig">
-      <thead>
-        <tr>
-          <th>{t(COPY.crdColFixation, $lang)}</th>
-          <th class="num">{t(COPY.crdColShare, $lang)}</th>
-          <th class="num">{t(COPY.crdColRate, $lang)}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each fixation.buckets as bucket (bucket.bucket)}
+    <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.crdTblFixation, $lang)}>
+      <table class="fig-table">
+        <thead>
           <tr>
-            <th scope="row">{t(BUCKET_LABEL[bucket.bucket] ?? COPY.crdFixUpTo1y, $lang)}</th>
-            <td class="num">{bucket.sharePct === null ? "—" : `${number(bucket.sharePct, 2)}%`}</td>
-            <td class="num"
-              >{bucket.ratePct === null
-                ? t(COPY.crdNoLending, $lang)
-                : `${number(bucket.ratePct, 2)}%`}</td
-            >
+            <th scope="col">{t(COPY.crdColFixation, $lang)}</th>
+            <th scope="col" class="num">{t(COPY.crdColShare, $lang)}</th>
+            <th scope="col" class="num">{t(COPY.crdColRate, $lang)}</th>
           </tr>
-        {/each}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {#each fixation.buckets as bucket (bucket.bucket)}
+            <tr>
+              <th scope="row">{t(BUCKET_LABEL[bucket.bucket] ?? COPY.crdFixUpTo1y, $lang)}</th>
+              <td class="num"
+                >{bucket.sharePct === null ? "—" : `${number(bucket.sharePct, 2)}%`}</td
+              >
+              <td class="num"
+                >{bucket.ratePct === null
+                  ? t(COPY.crdNoLending, $lang)
+                  : `${number(bucket.ratePct, 2)}%`}</td
+              >
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
     <p class="note">
       <span class="l-bg"
         >Обемите са само на БНБ. ЕЦБ публикуват лихвите по четирите групи, но не и колко е отпуснато
@@ -213,8 +218,8 @@
   <!-- 3 ------------------------------------------------------------------ -->
   <section id="renegotiation">
     <h2>
-      <span class="l-bg">Колко от «новото кредитиране» е ново</span>
-      <span class="l-en">How much of «new lending» is new</span>
+      <span class="l-bg">Колко от новото кредитиране наистина е ново</span>
+      <span class="l-en">How much of new lending is actually new</span>
     </h2>
     <div class="stats">
       <div class="stat wide">
@@ -233,12 +238,12 @@
     </div>
     <p>
       <span class="l-bg"
-        >«Нов бизнес» в статистиката значи всяко ново споразумение, а предоговарянето на съществуващ
+        >В статистиката нов бизнес значи всяко ново споразумение, а предоговарянето на съществуващ
         кредит е споразумение. ЕЦБ отчитат двете поотделно; заглавията за рекорден месец по жилищно
         кредитиране — не.</span
       >
       <span class="l-en"
-        >«New business» in the statistics means any new agreement, and repricing an existing loan is
+        >In the statistics, new business means any new agreement, and repricing an existing loan is
         an agreement. The ECB report the two apart; headlines about a record month of home lending
         do not.</span
       >
@@ -253,16 +258,27 @@
         <span class="l-en">How far a loan is allowed to go</span>
       </h2>
       <div class="stats">
-        {@render limitStat(`${number(limits.minDownPaymentPct, 0)}%`, COPY.howKLtv)}
-        {@render limitStat(`${number(limits.dstiMaxPct, 0)}%`, COPY.howKDsti)}
-        {@render limitStat(`${limits.maturityMaxYears}`, COPY.howKMaturity)}
-        {@render limitStat(`${number(limits.observedDstiPct, 1)}%`, COPY.howKObserved)}
+        {@render limitStat(`${number(limits.minDownPaymentPct, 0)}%`, COPY.howKLtv, null, null)}
+        {@render limitStat(`${number(limits.dstiMaxPct, 0)}%`, COPY.howKDsti, null, null)}
+        {@render limitStat(`${limits.maturityMaxYears}`, COPY.howKMaturity, null, null)}
+        <!-- The one measurement among three legal limits, so it is the one that
+             carries a period: the banking-system column of БНБ's macroprudential
+             review, years behind every ЕЦБ figure beside it (P4). It also has a
+             source of its own — the limits press release does not contain it. -->
+        {@render limitStat(
+          `${number(limits.observedDstiPct, 1)}%`,
+          COPY.howKObserved,
+          limits.observedSourceUrl,
+          limits.observedDstiPeriod
+        )}
       </div>
-      {#snippet limitStat(value, label)}
+      {#snippet limitStat(value, label, href, period)}
         <div class="stat">
           <strong>{value}</strong>
           <span class="lbl">{t(label, $lang)}</span>
-          <a class="src" href={limits.sourceUrl} rel="noopener">{t(COPY.crdWhoseBnb, $lang)}</a>
+          <a class="src" href={href ?? limits.sourceUrl} rel="noopener"
+            >{t(COPY.crdWhoseBnb, $lang)}{period ? ` · ${period.replace("-", " ")}` : ""}</a
+          >
         </div>
       {/snippet}
       <p>
@@ -282,7 +298,7 @@
         >
       </p>
       <p class="note">
-        <a href={limits.sourceUrl} rel="noopener">БНБ</a>
+        <a href={limits.sourceUrl} rel="noopener">{t(COPY.crdWhoseBnb, $lang)}</a>
         ·
         <a href={limits.observedSourceUrl} rel="noopener">
           <span class="l-bg">наблюдаваното съотношение</span>
@@ -310,7 +326,7 @@
     </p>
     <div class="stats">
       {#each products as product (product.key)}
-        <div class="stat wide" class:pays={product.isDeposit}>
+        <div class="stat" class:pays={product.isDeposit}>
           <strong>{number(product.rate.value, 2)}%</strong>
           <span class="lbl">{t(PRODUCT_LABEL[product.key], $lang)}</span>
           <a class="src" href={product.rate.sourceUrl} rel="noopener"
@@ -322,40 +338,6 @@
     <p class="note">
       <span class="l-bg">{COPY.crdNoVolume.bg}</span>
       <span class="l-en">{COPY.crdNoVolume.en}</span>
-    </p>
-  </section>
-
-  <!-- 6 ------------------------------------------------------------------ -->
-  <section id="uncomputed">
-    <h2>
-      <span class="l-bg">Какво никой не публикува</span>
-      <span class="l-en">What nobody publishes</span>
-    </h2>
-    <p>
-      <span class="l-bg"
-        >БНБ публикуват броя на кредитите на домакинствата — по размер и по вид, всяко тримесечие.
-        Броя на <em>кредитополучателите</em> не публикува никой: едно домакинство може да държи кредитна
-        карта, овърдрафт и ипотека, и това са три кредита. Затова «кредити на човек» може да се сметне,
-        а «длъжници на човек» — не, и двете не бива да излизат под една дума. Няма и официална статистика
-        за ГПР на небанковите кредитори.</span
-      >
-      <span class="l-en"
-        >BNB publish the number of household loans — by size and by product, every quarter. The
-        number of <em>borrowers</em> is published by nobody: one household can hold a credit card, an
-        overdraft and a mortgage, and that is three loans. So «loans per person» is computable and «borrowers
-        per person» is not, and the two must never appear under one word. There is no official APRC series
-        for non-bank lenders either.</span
-      >
-    </p>
-    <p>
-      <span class="l-bg"
-        >Това е неизчислено, не скрито. Където нещо липсва, страницата го казва, вместо да сложи на
-        мястото му число, което никой не е измерил.</span
-      >
-      <span class="l-en"
-        >That is uncomputed, not concealed. Where something is missing this page says so, rather
-        than putting a figure nobody measured in its place.</span
-      >
     </p>
   </section>
 </main>
@@ -429,8 +411,15 @@
     font-size: var(--fs-small);
     color: var(--ink-2);
   }
+  /* Five products read as one ladder, dearest to cheapest. At the shared 200px
+     basis the fifth falls past the row and grows to a full-width bar, which
+     reads as a different kind of thing rather than the last rung of the same
+     one. */
+  #other .stat {
+    flex-basis: 170px;
+  }
   /* What the bank pays you, drawn as the other direction. `--real` is this
-     app's «your number is the good one» colour and the deposit rows are the
+     app's "your number is the good one" colour and the deposit rows are the
      only figures on this page that are money coming towards the reader. */
   .stat.pays strong {
     color: var(--real-ink);
