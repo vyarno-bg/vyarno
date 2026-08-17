@@ -3115,16 +3115,12 @@ export const COPY = {
   crdPConsumer: { bg: "потребителски кредит", en: "a consumer loan" },
   crdPOverdraft: { bg: "овърдрафт и револвиращ кредит", en: "an overdraft or a revolving line" },
   crdPDepositTerm: {
-    bg: "срочен депозит — това пък плаща банката на теб",
-    en: "a term deposit — this is what the bank pays you",
+    bg: "срочен депозит, това плаща банката на теб",
+    en: "a term deposit, this is what the bank pays you",
   },
   crdPDepositOvernight: {
     bg: "пари, останали по разплащателната сметка",
     en: "money left in a current account",
-  },
-  crdNoVolume: {
-    bg: "БНБ не отчитат нито обем, нито ГПР по това перо, така че колко такъв дълг се носи не се публикува",
-    en: "BNB report neither a volume nor an APRC for this item, so how much such debt is carried is not published",
   },
   crdWhoseEcb: { bg: "ЕЦБ", en: "ECB" },
 };

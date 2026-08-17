@@ -94,11 +94,11 @@
   <p class="lede">
     <span class="l-bg"
       >Какво струва един жилищен кредит, за колко време му е фиксирана лихвата и кой всъщност взема
-      новите кредити — по данни на БНБ и ЕЦБ, всяко число със своя източник, период и връзка.</span
+      новите кредити, по данни на БНБ и ЕЦБ, с източник, период и връзка за всяко число.</span
     >
     <span class="l-en"
       >What a home loan costs, how long its rate is fixed for, and who is actually taking out the
-      new loans — from BNB and the ECB, every figure with its source, its period and a link.</span
+      new loans, from BNB and the ECB, with a source, a period and a link on every figure.</span
     >
   </p>
 
@@ -125,15 +125,15 @@
     </div>
     <p>
       <span class="l-bg"
-        >Първата е лихвата, от която се смята вноската. Втората е ГПР — същите кредити, но с
-        таксите, които банката изисква, за да отпусне заема; тя е по-висока и не е числото, с което
-        се амортизира кредит. Третата не е за нов кредитополучател: тя е средното по вече изплащания
+        >Първата е лихвата, от която се смята вноската. Втората е ГПР: същите кредити, но с таксите,
+        които банката изисква, за да отпусне заема, така че тя е по-висока и не е числото, с което
+        се амортизира кредит. Третата не е за нов кредитополучател, а е средното по вече изплащания
         портфейл, в който има договори отпреди години.</span
       >
       <span class="l-en"
-        >The first is the rate the monthly payment is computed from. The second is the APRC — the
-        same loans with the charges the bank requires in order to lend; it is higher, and it is not
-        the figure a loan is amortised with. The third is not for a new borrower at all: it is the
+        >The first is the rate the monthly payment is computed from. The second is the APRC: the
+        same loans with the charges the bank requires in order to lend, so it is higher and it is
+        not the figure a loan is amortised with. The third is not for a new borrower at all, but the
         average across the book already being repaid, which holds agreements signed years ago.</span
       >
     </p>
@@ -164,13 +164,13 @@
       <span class="l-bg"
         >БНБ броят заедно кредитите с плаваща лихва и тези, фиксирани за до една година, и го казват
         в бележка под таблицата. Затова първият ред отдолу не значи, че лихвата е фиксирана за
-        година — значи, че банката може да я промени в рамките на година. Обратното на това е
-        четвъртият ред.</span
+        година, а че банката може да я промени в рамките на година. Обратното на това е четвъртият
+        ред.</span
       >
       <span class="l-en"
         >BNB count variable-rate loans and loans fixed for up to a year as one bucket, and say so in
         a footnote under the table. So the first row below does not mean the rate is fixed for a
-        year — it means the bank may change it within a year. The fourth row is what the opposite
+        year, but that the bank may change it within a year. The fourth row is what the opposite
         looks like.</span
       >
     </p>
@@ -200,26 +200,13 @@
         </tbody>
       </table>
     </div>
-    <p class="note">
-      <span class="l-bg"
-        >Обемите са само на БНБ. ЕЦБ публикуват лихвите по четирите групи, но не и колко е отпуснато
-        по всяка от тях в евро — тази серия просто не съществува за България след приемането на
-        еврото, така че разпределението идва от една институция и е сверено с другата само по
-        лихвите.</span
-      >
-      <span class="l-en"
-        >The volumes are BNB's alone. The ECB publish the four buckets' rates but not how much was
-        lent in each in euro — that series does not exist for Bulgaria after euro adoption — so the
-        split comes from one institution and is checked against the other on the rates only.</span
-      >
-    </p>
   </section>
 
   <!-- 3 ------------------------------------------------------------------ -->
   <section id="renegotiation">
     <h2>
-      <span class="l-bg">Колко от новото кредитиране наистина е ново</span>
-      <span class="l-en">How much of new lending is actually new</span>
+      <span class="l-bg">Колко от новото кредитиране е стар кредит</span>
+      <span class="l-en">How much of new lending is an old loan</span>
     </h2>
     <div class="stats">
       <div class="stat wide">
@@ -239,13 +226,13 @@
     <p>
       <span class="l-bg"
         >В статистиката нов бизнес значи всяко ново споразумение, а предоговарянето на съществуващ
-        кредит е споразумение. ЕЦБ отчитат двете поотделно; заглавията за рекорден месец по жилищно
-        кредитиране — не.</span
+        кредит също е споразумение. ЕЦБ отчитат двете поотделно, а заглавията за рекорден месец по
+        жилищно кредитиране не ги разделят.</span
       >
       <span class="l-en"
         >In the statistics, new business means any new agreement, and repricing an existing loan is
-        an agreement. The ECB report the two apart; headlines about a record month of home lending
-        do not.</span
+        an agreement too. The ECB report the two apart, while headlines about a record month of home
+        lending do not.</span
       >
     </p>
   </section>
@@ -284,17 +271,19 @@
       <p>
         <span class="l-bg"
           >Първите три са в сила от {limits.effectiveFrom} г. и важат за всяка банка в страната. Последната
-          не е ничие изискване — тя е линията, при която калкулаторът на този сайт спира да нарича една
-          вноска поносима — по-строго и от тавана на БНБ, и от това, което новите кредитополучатели в
-          България реално носят, и не се мести: едно жилище не става достъпно, защото калкулаторът е казал,
-          че е.</span
+          не е изискване, а измерване: толкова от дохода си отделят за вноска хората, които са теглили
+          кредит наскоро. Калкулаторът тук спира да нарича вноската поносима над {number(
+            limits.prudentDstiPct,
+            0
+          )}% от чистия доход, по-строго и от тавана на БНБ, и от това, което тези хора носят, и не
+          се мести.</span
         >
         <span class="l-en"
           >The first three have been in force since {limits.effectiveFrom} and bind every bank in the
-          country. The last is nobody's requirement — it is the line at which this site's calculator stops
-          calling a payment affordable. It is stricter than the BNB ceiling and than what new Bulgarian
-          borrowers actually carry, and it does not move: a home does not become affordable because a
-          calculator said so.</span
+          country. The last is not a requirement but a measurement: that is how much of their income people
+          who borrowed recently put towards the payment. The calculator here stops calling a payment bearable
+          above {number(limits.prudentDstiPct, 0)}% of net income, stricter than the BNB ceiling and
+          than what those borrowers carry, and it does not move.</span
         >
       </p>
       <p class="note">
@@ -317,11 +306,11 @@
     <p>
       <span class="l-bg"
         >Жилищният кредит е най-евтиният начин да вземеш пари назаем в България, защото зад него
-        стои жилището. Ето какво струват другите — и накрая какво плаща банката на теб.</span
+        стои жилището. Ето какво струват другите, и накрая какво плаща банката на теб.</span
       >
       <span class="l-en"
         >A home loan is the cheapest way to borrow in Bulgaria, because the home stands behind it.
-        Here is what the others cost — and, at the end, what the bank pays you.</span
+        Here is what the others cost, and at the end what the bank pays you.</span
       >
     </p>
     <div class="stats">
@@ -335,10 +324,6 @@
         </div>
       {/each}
     </div>
-    <p class="note">
-      <span class="l-bg">{COPY.crdNoVolume.bg}</span>
-      <span class="l-en">{COPY.crdNoVolume.en}</span>
-    </p>
   </section>
 </main>
 
