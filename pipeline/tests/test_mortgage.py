@@ -27,12 +27,20 @@ from vyarno_pipeline.mortgage import (
     RATE_MAX_PCT,
     RATE_MIN_PCT,
     MortgageValidationError,
+    cross_check_fixation_rates,
     cross_check_outstanding,
     latest_period,
     lending_limits_at,
     validate_aprc_above_aar,
+    validate_fixation_rows,
     validate_freshness,
+    validate_new_business_split,
     validate_rate_series,
+)
+from vyarno_pipeline.sources.bnb import (
+    FIXATION_BUCKETS,
+    FIXATION_SHEET,
+    parse_housing_fixation_xlsx,
 )
 
 
@@ -292,7 +300,7 @@ def test_published_json_has_no_scraped_offer_tier():
 def test_published_json_names_its_headline_tier_explicitly():
     """The SPA reads `headline` rather than inferring from key order."""
     payload = json.loads(PUBLISHED.read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "2.0"
+    assert payload["schema_version"] == "3.0"
     assert payload["headline"] == "new_business"
     assert payload["headline"] in payload
 
@@ -334,3 +342,85 @@ def test_latest_period_picks_the_newest_month():
     assert latest_period({"2025-12": 1.0, "2026-05": 2.0, "2026-01": 3.0}) == "2026-05"
     with pytest.raises(MortgageValidationError):
         latest_period({})
+
+
+# ---------------------------------------------------------------------------
+# The fixed/floating split, and the renegotiation split — schema 3.0
+# ---------------------------------------------------------------------------
+
+FIXATION_XLSX = Path(__file__).parent / "fixtures" / "bnb_housing_new_business_fixation_bg.xlsx"
+
+
+def _fixation_row(**over):
+    row = {
+        "period": "2026-06",
+        "total_eur_m": 100.0,
+        "total_rate_pct": 2.4,
+        "volume_eur_m": dict(zip(FIXATION_BUCKETS, [99.0, 1.0, 0.0, 0.0])),
+        "rate_pct": dict(zip(FIXATION_BUCKETS, [2.4, 3.0, 0.0, 2.5])),
+    }
+    return {**row, **over}
+
+
+def test_fixation_buckets_must_add_up_to_the_total_bnb_prints():
+    rows = [_fixation_row(period=f"2025-{m:02d}") for m in range(1, 13)] * 3
+    validate_fixation_rows(rows)
+    # A bucket dropping out of the workbook leaves every other cell intact, so
+    # nothing but the sum can see it.
+    rows[5] = _fixation_row(volume_eur_m=dict(zip(FIXATION_BUCKETS, [90.0, 1.0, 0.0, 0.0])))
+    with pytest.raises(MortgageValidationError, match="buckets sum to"):
+        validate_fixation_rows(rows)
+
+
+def test_a_bucket_that_was_lent_into_must_carry_a_plausible_rate():
+    rows = [_fixation_row(period=f"2025-{m:02d}") for m in range(1, 13)] * 3
+    rows[2] = _fixation_row(rate_pct=dict(zip(FIXATION_BUCKETS, [24.0, 3.0, 0.0, 2.5])))
+    with pytest.raises(MortgageValidationError, match="outside"):
+        validate_fixation_rows(rows)
+    # A bucket nobody lent into prints 0, and 0 is not a rate to be judged.
+    rows[2] = _fixation_row(
+        volume_eur_m=dict(zip(FIXATION_BUCKETS, [100.0, 0.0, 0.0, 0.0])),
+        rate_pct=dict(zip(FIXATION_BUCKETS, [2.4, 0.0, 0.0, 0.0])),
+    )
+    validate_fixation_rows(rows)
+
+
+def test_pure_new_lending_and_renegotiation_partition_new_business():
+    total = {"2026-05": 599.12, "2026-06": 768.56}
+    pure = {"2026-05": 479.79, "2026-06": 615.33}
+    reneg = {"2026-05": 119.33, "2026-06": 153.23}
+    validate_new_business_split(total, pure, reneg)
+    with pytest.raises(MortgageValidationError, match="partition"):
+        validate_new_business_split(total, pure, {**reneg, "2026-06": 53.23})
+
+
+def test_the_two_publishers_must_agree_on_each_fixation_bucket():
+    bnb = {"up_to_1y": 2.4051, "1y_to_5y": 2.9582, "5y_to_10y": 0.0, "over_10y": 2.5234}
+    cross_check_fixation_rates(bnb, {"up_to_1y": 2.41, "1y_to_5y": 2.96, "over_10y": 2.52})
+    with pytest.raises(MortgageValidationError, match="Fixation cross-check"):
+        cross_check_fixation_rates(bnb, {"up_to_1y": 8.76})
+
+
+def test_the_bnb_fixation_workbook_reads_as_the_housing_block():
+    rows = parse_housing_fixation_xlsx(FIXATION_XLSX.read_bytes())
+    assert len(rows) > 200, "the workbook runs monthly from 2007-01"
+    latest = rows[-1]
+    assert set(latest["volume_eur_m"]) == set(FIXATION_BUCKETS)
+    # The claim the whole block exists to make: Bulgaria's mortgage market
+    # floats. If this ever reads below half, the column has moved.
+    floating = latest["volume_eur_m"]["up_to_1y"] / latest["total_eur_m"]
+    assert floating > 0.9, f"{FIXATION_SHEET}: floating share read {floating:.1%}"
+
+
+def test_published_json_carries_the_split_and_names_its_one_publisher():
+    payload = json.loads(PUBLISHED.read_text(encoding="utf-8"))
+    fixation = payload["fixation"]
+    assert [b["bucket"] for b in fixation["buckets"]] == list(FIXATION_BUCKETS)
+    assert round(sum(b["share_pct"] for b in fixation["buckets"])) == 100
+    # The euro leg of MIR publishes no volume by fixation, so this block has one
+    # source and the payload has to say so rather than implying two.
+    assert fixation["source"] == "bnb"
+    assert "no second publisher" in fixation["cross_check"]
+    split = payload["new_business_split"]
+    assert split["pure_new_eur_m"] + split["renegotiated_eur_m"] > 0
+    assert 0 < split["renegotiated_share_pct"] < 100

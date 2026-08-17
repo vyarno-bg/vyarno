@@ -216,6 +216,123 @@ def cross_check_outstanding(
     }
 
 
+# The four fixation buckets are the whole of new housing lending, so they add
+# up to the total БНБ prints beside them. The slack is rounding on five printed
+# figures, not a modelling allowance — at €767m a month, 0.05 is 0.007%.
+FIXATION_SUM_TOLERANCE_EUR_M = 0.05
+
+# A BUCKET is not a market average and cannot be bounded like one. The thin ones
+# hold a single month's slice — «над 10 години» has taken as little as €24,000,
+# which is one loan — so its printed rate is that borrower's rate: measured,
+# buckets run 1.76% to 14.82% while the month's own total never passes 9.45%.
+# Hence the total keeps the headline band above and the buckets get this.
+#
+# **It does not separate housing from consumer credit, and nothing here claims
+# it does.** The consumer block in the same workbook reads 8.7–13.4%, inside
+# this range on both ends. What stops us reading that block is the header
+# assertion in `sources/bnb.py`, which checks the four bucket LABELS sit where
+# the housing block says they do. This bound catches a decimal point, not a
+# column.
+BUCKET_RATE_MAX_PCT = 16.0
+
+# `pure new loans` and `renegotiation` partition `new business` by the ЕЦБ's own
+# definition, and BG reports them to the cent: the largest disagreement over 78
+# months is 0.01. Anything past this is not rounding, it is the two series
+# having stopped describing one population.
+SPLIT_SUM_TOLERANCE_EUR_M = 0.05
+
+
+def validate_fixation_rows(rows: list[dict[str, Any]]) -> None:
+    """The four buckets are all of new housing lending, and each is plausible.
+
+    Two failures, and the first is why this gate is worth its lines. БНБ
+    reordering the housing block would move money between buckets while leaving
+    every total intact — the sum check cannot see that, so `bnb.py` asserts the
+    labels — but a bucket dropping out of the workbook, or a column drifting
+    into the consumer block beside it, breaks the sum and is caught here.
+    """
+    if len(rows) < MIN_SERIES_MONTHS:
+        raise MortgageValidationError(
+            f"BNB fixation split: only {len(rows)} months, expected at least {MIN_SERIES_MONTHS}."
+        )
+    for row in rows:
+        total = row["total_eur_m"]
+        parts = row["volume_eur_m"]
+        if total is None or any(v is None for v in parts.values()):
+            raise MortgageValidationError(
+                f"BNB fixation split: {row['period']} has an unreadable cell — "
+                f"total {total!r}, buckets {parts!r}."
+            )
+        summed = sum(parts.values())
+        if abs(summed - total) > FIXATION_SUM_TOLERANCE_EUR_M:
+            raise MortgageValidationError(
+                f"BNB fixation split: {row['period']} buckets sum to {summed:.3f} m "
+                f"against a printed total of {total:.3f} m, over the "
+                f"{FIXATION_SUM_TOLERANCE_EUR_M} m tolerance. A bucket is missing or "
+                f"a column has drifted out of the housing block."
+            )
+        if not (RATE_MIN_PCT <= row["total_rate_pct"] <= RATE_MAX_PCT):
+            raise MortgageValidationError(
+                f"BNB fixation split: {row['period']} total rate {row['total_rate_pct']}% is "
+                f"outside the headline band [{RATE_MIN_PCT}, {RATE_MAX_PCT}]%."
+            )
+        # A bucket nobody lent into carries a rate of 0, which is not a rate.
+        for bucket, volume in parts.items():
+            rate = row["rate_pct"][bucket]
+            if volume > 0 and not (RATE_MIN_PCT <= rate <= BUCKET_RATE_MAX_PCT):
+                raise MortgageValidationError(
+                    f"BNB fixation split: {row['period']} {bucket} lent {volume} m at "
+                    f"{rate}%, outside [{RATE_MIN_PCT}, {BUCKET_RATE_MAX_PCT}]%."
+                )
+
+
+def cross_check_fixation_rates(
+    bnb_rates: dict[str, float | None],
+    ecb_rates: dict[str, float],
+) -> None:
+    """БНБ and ЕЦБ MIR on the same four buckets — the same reason as the book.
+
+    The volumes are БНБ's alone (the euro leg publishes none), so the rates
+    beside them are the only part of this block a second publisher can confirm.
+    A bucket only one of them prints is skipped rather than failed: the ЕЦБ omit
+    a month nobody lent in and БНБ print a zero.
+    """
+    for bucket, ecb_pct in ecb_rates.items():
+        bnb_pct = bnb_rates.get(bucket)
+        if not bnb_pct or not ecb_pct:
+            continue
+        if abs(bnb_pct - ecb_pct) > CROSS_CHECK_TOLERANCE_PP:
+            raise MortgageValidationError(
+                f"Fixation cross-check failed on {bucket}: BNB {bnb_pct}% vs ECB MIR "
+                f"{ecb_pct}% differ by {abs(bnb_pct - ecb_pct):.4f} pp (tolerance "
+                f"{CROSS_CHECK_TOLERANCE_PP} pp). The workbook column and the series "
+                f"key have stopped describing the same bucket."
+            )
+
+
+def validate_new_business_split(
+    total: dict[str, float],
+    pure: dict[str, float],
+    renegotiated: dict[str, float],
+) -> None:
+    """Pure new lending plus renegotiation is new business, month by month."""
+    shared = sorted(set(total) & set(pure) & set(renegotiated))
+    if not shared:
+        raise MortgageValidationError(
+            "New-business split: the three volume series share no month. "
+            "The pure/renegotiated legs start at 2020-01 — check the splice."
+        )
+    for period in shared:
+        summed = pure[period] + renegotiated[period]
+        if abs(summed - total[period]) > SPLIT_SUM_TOLERANCE_EUR_M:
+            raise MortgageValidationError(
+                f"New-business split: {period} pure {pure[period]} + renegotiated "
+                f"{renegotiated[period]} = {summed:.3f} m against new business "
+                f"{total[period]} m. IR_BUS_COV P and R partition N — one of the "
+                f"three keys is reading a different population."
+            )
+
+
 def latest_period(series: dict[str, float]) -> str:
     """Newest "YYYY-MM" key in a sorted-by-period series."""
     if not series:

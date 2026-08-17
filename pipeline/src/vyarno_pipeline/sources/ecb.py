@@ -105,8 +105,45 @@ SERIES_KEYS: dict[str, str] = {
     "new_business_volume_eur": "M.BG.B.A2C.A.B.A.2250.EUR.N",
     # Outstanding stock — cross-check only; BNB is the published source.
     "outstanding_aar_eur":     "M.BG.B.A22.A.R.A.2250.EUR.O",
+    # New business split by what it actually is. IR_BUS_COV carries four values
+    # for BG, not two: P «pure new loans» and R «renegotiation» partition N, to
+    # the cent, every month since 2020-01. So «new lending» is two populations
+    # and the ECB publish the seam — a fifth of it is households repricing a
+    # loan they already had, which is a different fact from a fifth more houses
+    # being bought.
+    "new_business_aar_pure_bgn":   "M.BG.B.A2C.A.R.A.2250.BGN.P",
+    "new_business_aar_pure_eur":   "M.BG.B.A2C.A.R.A.2250.EUR.P",
+    "new_business_aar_reneg_bgn":  "M.BG.B.A2C.A.R.A.2250.BGN.R",
+    "new_business_aar_reneg_eur":  "M.BG.B.A2C.A.R.A.2250.EUR.R",
+    "new_business_vol_pure_bgn":   "M.BG.B.A2C.A.B.A.2250.BGN.P",
+    "new_business_vol_pure_eur":   "M.BG.B.A2C.A.B.A.2250.EUR.P",
+    "new_business_vol_reneg_bgn":  "M.BG.B.A2C.A.B.A.2250.BGN.R",
+    "new_business_vol_reneg_eur":  "M.BG.B.A2C.A.B.A.2250.EUR.R",
 }
 # fmt: on
+
+# `MATURITY_NOT_IRATE`, the fifth dimension, is the INITIAL RATE-FIXATION
+# PERIOD on new business and not the loan's maturity — the ECB's own title for
+# `F` reads «loans to households for house purchase with a variable rate and an
+# interest rate fixation period of up to one year». `A` is therefore "all
+# fixations", which is what every key above pins.
+#
+# The rates split four ways and the volumes do not: `…{F,I,O,P}.B.…EUR.N` is a
+# 404 at every bucket and every date, so the euro leg carries no volume by
+# fixation and the share has to come from БНБ's own workbook
+# (`bnb.fetch_housing_fixation_bg`). The BGN leg did carry it, which is why the
+# rates below still splice.
+FIXATION_KEYS: dict[str, str] = {
+    "up_to_1y": "F",
+    "1y_to_5y": "I",
+    "5y_to_10y": "O",
+    "over_10y": "P",
+}
+
+
+def fixation_rate_key(bucket: str, currency: str) -> str:
+    """The A2C new-business AAR series for one initial rate-fixation bucket."""
+    return f"M.BG.B.A2C.{FIXATION_KEYS[bucket]}.R.A.2250.{currency}.N"
 
 
 # Human-readable provenance URL for a series key (what we cite in the JSON

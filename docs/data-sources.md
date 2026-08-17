@@ -34,6 +34,9 @@ Every entry carries a provenance tag:
 | **ЕЦБ MIR new-business rate** — `M.BG.B.A2C.A.R.A.2250.{BGN,EUR}.N` | VERIFIED | `mortgage.json → new_business.value_pct`. **The mortgage headline** — the rate excluding charges; `R` is AAR-or-NDER and which one BG reports is unsettled. |
 | **ЕЦБ MIR new-business APRC** — `M.BG.B.A2C.A.C.A.2250.{BGN,EUR}.N` | VERIFIED | `new_business.aprc.value_pct` — the same loans' all-in cost with fees (ГПР). |
 | **БНБ housing-loan rate** — `s_ir_loan_oa_hh_bg.xlsx` | VERIFIED | `outstanding_stock.value_pct`, with `book_volume_eur_m` beside it. Monthly back to 2007-01. |
+| **БНБ new business by rate fixation** — `s_ir_loan_nbf_hh_bg.xlsx` | VERIFIED | `mortgage.json → fixation`. Rates AND volumes for four initial-fixation buckets, monthly 2007-01 →, in euro. **The only source of the fixed/floating split after euro adoption** — ЕЦБ MIR's euro leg publishes no volume by fixation. Same 4-row header grammar as the workbook above, so one locator reads both. |
+| **ЕЦБ MIR rate by fixation** — `M.BG.B.A2C.{F,I,O,P}.R.A.2250.{BGN,EUR}.N` | VERIFIED | The cross-check on `fixation`'s rates. `MATURITY_NOT_IRATE` on new business is the INITIAL RATE-FIXATION PERIOD, not maturity — the ЕЦБ's own title for `F` says «with a variable rate and an interest rate fixation period of up to one year». |
+| **ЕЦБ MIR pure new / renegotiated** — `…A2C.A.{R,B}.A.2250.{BGN,EUR}.{P,R}` | VERIFIED | `mortgage.json → new_business_split`. `IR_BUS_COV` carries four values for BG, not two: `P` and `R` partition `N` to the cent, monthly from 2020-01. |
 | **БНБ lending limits** — dated table in `mortgage.py` | VERIFIED | `mortgage.json → lending_limits`. Borrower-based measures, not scraped. |
 | **BG payroll parameters** — dated table in `payroll.py` | VERIFIED | `payroll.json`. Contribution rates BOTH sides, the flat tax, the insurance ceiling and the minimum wage. Legislative constants, not scraped. |
 | **ТЗПБ by economic activity** — ДВ `showMaterialDV.jsp?idMat=…` | VERIFIED | `payroll.json → work_accident`. ЗБДОО's Приложение № 2/2А — the accident contribution the employer pays alone, 87 КИД-2025 divisions, published as a range per НСИ section. The only payroll figure that is a table rather than a reading. |
@@ -66,6 +69,10 @@ Every entry carries a provenance tag:
 | `prc_hicp_ctr` / `prc_hicp_ctrb` as a BG cross-check | WRONG | Euro-area aggregate cubes: `geo=BG` and `geo=DE` both return an empty `value` map with HTTP 200, while `geo=EA` returns tens of thousands of observations. They cannot cross-check a Bulgarian figure. |
 | A pay **distribution** by sector for BG (any publisher) | WRONG | Probed 2026-08-06. `earn_ses_monthly` with `nace_r2=J&geo=BG` returns HTTP 200, `"value": {}`, `nace_r2` size **0** — section J is not a category in the cube. Its five `nace_r2` categories for BG are all broad groupings and none is a NACE section: `B-S_X_O` (whole economy), `B-N`, `B-F`, `G-N`, `P-S`. At the 2022 vintage `salary_dist.json` reads, only `B-S_X_O` carries any values; the other four stop at 2018. **So no section-level median, decile or spread exists at any vintage.** НСИ's `Labour_1.1.2.1` publishes a sector **average** and nothing else, which is why the sector card compares against an average and says so. |
 | Per-decile HBS weights | WRONG | Eurostat publishes BG household budget structure by **quintile** (`hbs_str_t223`), not decile, in ECOICOP ver.1, latest vintage 2020. |
+| **ЕЦБ MIR new-business VOLUME by fixation, euro leg** — `…A2C.{F,I,O,P}.B.A.2250.EUR.N` | WRONG | Probed 2026-08-17: **404 at every bucket**, at every date. BG reported volume by fixation on the BGN leg alone, which stopped at euro adoption, so the share of new lending that floats comes from БНБ's workbook or from nobody. The RATES by fixation are published on both legs and do continue. |
+| **ЕЦБ MIR ГПР by fixation** | WRONG | Probed 2026-08-17. `DATA_TYPE_MIR=C` exists for BG on four series only, all at `MATURITY_NOT_IRATE=A`. БНБ's `s_ir_aprc_bg.xlsx` does carry the breakdown, so the answer is "not from the ЕЦБ" rather than "nobody". |
+| A **borrower** count, for banks or non-banks | WRONG | БНБ publish the number of household LOANS quarterly by size bracket and by product (`loan_dyn_qcat_eur_bg.xlsx`, `2026_cred_type_eur_bg.xlsx` — 2,884,325 loans worth €31.5 bn at 2026-Q2). Nothing divides that by people: one household holds a card, an overdraft and a mortgage as three loans. So loans per capita is computable and borrowers per capita is not, and the two must never be printed under one word. |
+| `lex.bg` as a statute source | BLOCKED | Cloudflare managed challenge on every path including `/robots.txt`, from a hosted runner. Statute text comes from ДВ by `idMat` (`sources/dv.py`), which works. |
 | An offered-rate ("best offer") mortgage tier | WRONG | Rate-comparison sites and per-bank pages publish advertised promotional "from" rates: conditional on terms they do not state, editorially curated, with no methodology and no revision policy. Nothing in that class can carry the five properties in [`README.md`](./README.md) §"Who this is for", so the class is excluded rather than any particular site being judged. ЕЦБ MIR **APRC** answers the same question officially — and comes out higher. `test_mortgage.py` asserts the `indicative_offer` key is absent from the published JSON. |
 | `prc_hpi_q` **as a €/m² level** | VERIFIED, unusable for a level | A transaction-based **index** and an annual rate, with no absolute €/m² at any geography. Both are published — `house_market.json` carries them — and neither can price a square metre, which is why the home block's level still comes from имот.bg. |
 | A **transaction** price per m² for any Bulgarian city, from anyone | WRONG | Probed 2026-08-12. Every НСИ city series is an index or a percentage (`HPI_2.4` 2025=100, `HPI_2.6` y/y, `HSI_2.4.5` y/y), and their own лв./кв.м survey «Пазарни цени на жилища» ran «I тримесечие 1993 - II тримесечие 2014» and was discontinued. So `/market/` compares **change against change** — имот.bg's asking-price movement beside НСИ's transaction-price movement, each labelled as the different measurement it is — and never a € level against a € level. The page says so out loud (P11). |
@@ -677,6 +684,23 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
 ```
 
 Unfixed, `refresh --source mortgage` exits **4** and the error points back here.
+
+### Finding a БНБ file at all
+
+**Every `/Statistics/**/index.htm` path that does not exist answers 200 with an
+identical Site Studio shell** — 16,803 bytes to a library user-agent, 27,264 to
+a browser one. So a 200 from bnb.bg proves nothing and a byte count is the
+test. The paths that DO exist render server-side and carry their download links
+in the HTML.
+
+Do not guess them. `https://www.bnb.bg/bnbweb/websites/bnb/sitenavigation.js`
+is the site's own navigation tree, and every real path is an `addNode(...)`
+argument in it — 116 under `Statistics/` alone, plus `BankSupervision/` and
+`RegistersAndServices/`. Extract the paths, fetch those, read the `<table>`
+rows for the `bnb_download/` links and their Bulgarian labels. That is how
+`s_ir_loan_nbf_hh_bg.xlsx` was found; guessing filenames from the ones we
+already had would not have produced it.
+
 
 ### `s_ir_loan_oa_hh_bg.xlsx` — household loans by purpose
 
