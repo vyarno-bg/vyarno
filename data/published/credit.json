@@ -95,12 +95,7 @@
     "aprc_ref_period": "2026-06",
     "aprc_source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2B.A.C.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
     "monthly_volume_eur_m": 701.85,
-    "monthly_volume_note": "ЕЦБ MIR's own new-business volume. БНБ's workbooks print the same figure from their own vintage and it can sit ~1% away in the newest month; the two are one series reported by one institution, not two measurements to average",
-    "stock_eur_m": 11301.239,
-    "stock_rate_pct": 6.9058,
-    "stock_ref_period": "2026-06",
-    "stock_source": "bnb",
-    "stock_source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx"
+    "monthly_volume_note": "ЕЦБ MIR's own new-business volume. БНБ's workbooks print the same figure from their own vintage and it can sit ~1% away in the newest month; the two are one series reported by one institution, not two measurements to average"
   },
   "overdraft": {
     "_role": "what going past zero on a current account costs, and what a revolving credit line costs — the same item to the ЕЦБ",

@@ -176,7 +176,7 @@ site/
         │                      # stacked. A second component and never a mode
         │                      # on the one above: different denominator
         └── tokens.css · card.css · result-row.css · disclosure.css ·
-            fig-table.css
+            fig-table.css · chart.css
 ```
 
 **The components under `lib/` are the ones more than one entry mounts**, and
@@ -512,6 +512,23 @@ on the furniture and on nothing else. The cost is global selectors with no
 unused-selector warning behind them; only the two entries that need it import
 it, and every page-specific rule stays in its own component, one specificity
 step above.
+
+## `src/lib/chart.css` — the chart frame two pages share
+
+The same argument one section up, for pictures instead of tables. `/market/` and
+`/credit/` both draw inline SVG with the tick labels as HTML in a gutter beside
+the box, and they agree on the frame and on nothing else: columns with a seasonal
+tint and sparklines on one page, nineteen years of crossing levels on the other.
+
+What is shared is the grid that makes a percentage `top` land on its own
+gridline, the box that holds marks and no text, and what a gridline, a year rule,
+a zero axis and a reference threshold look like. **Every mark is `.plot-*`, and
+the prefix is load-bearing**: these selectors are global wherever the file is
+loaded and both pages carry their own `.cap`, `.num`, `.scroll` and `.stat`, so a
+mark sharing one of those names would take its rule and draw a chart that renders,
+looks plausible and is not the data. Page-specific marks — `/market/`'s bars and
+break rules, `/credit/`'s quiet total line — stay in their own component, one
+specificity step above.
 
 ## `src/lib/view/` — the derived values
 

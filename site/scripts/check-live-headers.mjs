@@ -197,6 +197,119 @@ const DISCLOSED = new Map([
   ["speculation-rules", "same-origin prefetch, served from /cdn-cgi/ on this origin"],
 ]);
 
+/**
+ * The routes whose address has to resolve to exactly one canonical form.
+ *
+ * Every page of the site, both language trees, because the failure is per route:
+ * `/credit/` shipped as the sixth route and `https://vyarno.bg/credit` 404'd
+ * until the host learned about it, while `/how` had redirected for months. A
+ * list stated once here is a route covered the day it is added, which is the
+ * same lesson `verify_render_layout.mjs` records for the footer.
+ */
+const ROUTES = [
+  "/how/",
+  "/market/",
+  "/credit/",
+  "/legal/",
+  "/support/",
+  "/en/how/",
+  "/en/market/",
+  "/en/credit/",
+  "/en/legal/",
+  "/en/support/",
+];
+
+/**
+ * One address per page, and the host is part of the address.
+ *
+ * **This is the class of drift `_headers` cannot see at all.** A header is a
+ * property of a response; this is about which response you get, and it is
+ * decided in a CDN dashboard rather than in this repository — so nothing in the
+ * build can go red for it and only a live request can tell.
+ *
+ * Two rules, and both were broken here:
+ *
+ * - **`www` must 301 to the apex.** `www.vyarno.bg` answered 522 (the CDN could
+ *   not reach an origin for it) while the apex served fine, so every link,
+ *   citation and QR code written with the `www` a person expects reached a
+ *   Cloudflare error page.
+ * - **A slash-less route must redirect ONCE to its trailing-slash form.** Two
+ *   hops is a redirect chain a crawler discounts and a reader pays for twice;
+ *   zero hops means two URLs serve one page, which splits whatever authority
+ *   either has and gives an unfurler a choice to get wrong.
+ *
+ * `redirect: "manual"` throughout, deliberately: `follow` is what the header
+ * probes below use and it would report a 301 chain as a clean 200, which is
+ * precisely the state this exists to find.
+ */
+async function checkCanonicalHost(origin) {
+  const bad = [];
+  const url = new URL(origin);
+  const apex = url.hostname.replace(/^www\./, "");
+
+  // The `www` host, asked for the root. Its own try/catch: a DNS name that does
+  // not resolve is a different report from one that resolves and misbehaves, and
+  // a site with no `www` record at all is not broken.
+  const wwwUrl = `${url.protocol}//www.${apex}/`;
+  try {
+    const res = await fetch(wwwUrl, { method: "HEAD", redirect: "manual" });
+    const location = res.headers.get("location");
+    if (res.status !== 301) {
+      bad.push(
+        `   ${wwwUrl} — HTTP ${res.status}, expected 301 to the apex\n` +
+          (location ? `     location: ${location}\n` : "") +
+          "     A 5xx here is the shape the 522 took: the apex serves and the\n" +
+          "     host a reader types does not. Add the redirect rule at the CDN."
+      );
+    } else if (!location || new URL(location, wwwUrl).hostname !== apex) {
+      bad.push(`   ${wwwUrl} — 301s to ${location}, which is not ${apex}`);
+    } else {
+      console.log(`ok www.${apex} 301s to ${apex}`);
+    }
+  } catch (err) {
+    bad.push(`   ${wwwUrl} — ${err.message} (no www record, or it does not answer)`);
+  }
+
+  for (const route of ROUTES) {
+    const slashless = route.replace(/\/$/, "");
+    const target = new URL(slashless, origin);
+    let res;
+    try {
+      res = await fetch(target, { method: "HEAD", redirect: "manual" });
+    } catch (err) {
+      bad.push(`   ${target} — ${err.message}`);
+      continue;
+    }
+    if (res.status < 300 || res.status > 399) {
+      bad.push(
+        `   ${slashless} — HTTP ${res.status}, expected a redirect to ${route}\n` +
+          "     A 404 means the host has not been told about this route; a 200\n" +
+          "     means two URLs serve one page and neither is canonical."
+      );
+      continue;
+    }
+    const location = res.headers.get("location");
+    const landed = location ? new URL(location, target).pathname : null;
+    if (landed !== route) {
+      bad.push(
+        `   ${slashless} — ${res.status} to ${location ?? "(no location)"}, wanted ${route}`
+      );
+      continue;
+    }
+    // One hop and no more: the trailing-slash form must answer for itself.
+    const final = await fetch(new URL(route, origin), { method: "HEAD", redirect: "manual" });
+    if (final.status >= 300 && final.status <= 399) {
+      bad.push(
+        `   ${route} — ${slashless} redirects here and this redirects on to ` +
+          `${final.headers.get("location")}, so the route is a two-hop chain`
+      );
+      continue;
+    }
+    console.log(`ok ${slashless} → ${route} (${res.status}), and ${route} answers ${final.status}`);
+  }
+  return bad;
+}
+
 const origin = process.argv[2] ?? ORIGIN;
 const blocks = parseHeaders(readFileSync(join(SITE, "public", "_headers"), "utf8"));
 if (blocks.length === 0) {
@@ -208,6 +321,16 @@ console.log(`Checking ${origin} against site/public/_headers\n`);
 
 let problems = 0;
 let unprobed = 0;
+
+// The canonical-host rules first, because a route that does not resolve to one
+// address makes every header result below ambiguous about which URL it describes.
+const canonical = await checkCanonicalHost(origin);
+if (canonical.length) {
+  problems += canonical.length;
+  console.log(`\nFAIL canonical host and route form — ${canonical.length} problem(s)`);
+  for (const line of canonical) console.log(line);
+}
+console.log();
 
 // One request per PATH, not per rule. `/*` and `/` both resolve to `/`, and
 // the expected set is the merge of every matching block either way — asking
@@ -280,7 +403,7 @@ for (const [path, patterns] of probes) {
 
 console.log();
 if (problems === 0 && unprobed === 0) {
-  console.log("The origin serves every header _headers declares.");
+  console.log("The origin serves one address per route, with every header _headers declares.");
   process.exit(0);
 }
 if (problems === 0) {
@@ -288,8 +411,10 @@ if (problems === 0) {
   process.exit(1);
 }
 console.log(
-  `${problems} header(s) the origin does not serve as declared.\n` +
-    "`_headers` is the contract: fix the server to match it, and change the\n" +
-    "declaration only in the release that means to change the policy."
+  `${problems} problem(s) the origin does not serve as declared.\n` +
+    "`_headers` is the contract for the headers: fix the server to match it, and\n" +
+    "change the declaration only in the release that means to change the policy.\n" +
+    "The canonical-host rules are not in `_headers` and cannot be — they decide\n" +
+    "WHICH response you get, which is a CDN rule rather than a header."
 );
 process.exit(1);

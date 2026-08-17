@@ -21,6 +21,12 @@
    *    is inside the legal nav, because that landmark is labelled "legal" and
    *    holds what discharges ЗЕТ чл. 4; both are here so that a reader who met
    *    this project somewhere else can check it against its own domain.
+   * 6. **The content routes** — one per page of published figures, in the order
+   *    the masthead offers them, absent on the page a reader is already on. They
+   *    are a list rather than a block each, and that is the whole reason this
+   *    section exists: written as one `{#if}` per route the footer fell a route
+   *    behind the site, and `/credit/` shipped without ever reaching it. A third
+   *    copy would have been the third place to remember.
    * 5. **The support line** — one quiet sentence and one link, because the
    *    project is donation-funded and a person is entitled to know that
    *    without being interrupted by it. The rules governing how this may be
@@ -56,6 +62,27 @@
   const DONATE = footerDonateLink();
 
   /**
+   * The pages of published figures, in the masthead's own order.
+   *
+   * **A list, because two `{#if}` blocks had already let the footer fall behind
+   * the site**: `/credit/` shipped as the sixth route and reached the masthead's
+   * `ROUTES` and not this file, so every page's footer offered a reader two of
+   * the three places there are to go. A third block would have been a third
+   * place to forget.
+   *
+   * The labels are the footer's own and longer than the masthead's — «кредити»
+   * is a chip in a row of four, «Кредитите в България» is a line in a row of
+   * links, and the same word does not do both jobs. The `page` values are the
+   * ones each route passes to this component, so a route that forgets the prop
+   * links to itself, which `verify_render_layout.mjs` catches per page.
+   */
+  const CONTENT_ROUTES = [
+    { href: "/how/", page: "how", label: COPY.howFooterK },
+    { href: "/market/", page: "market", label: COPY.marketFooterK },
+    { href: "/credit/", page: "credit", label: COPY.creditFooterK },
+  ];
+
+  /**
    * The year in the attribution line, from the reader's own clock.
    *
    * Read at render rather than baked at build: `prerender.mjs` freezes this
@@ -68,11 +95,32 @@
 </script>
 
 <footer class="site">
+  <!--
+    THREE ROWS, AND THE ORDER IS THE POINT: where a reader can go, then whose
+    the data is, then who pays for it. They were one flex row, and at 1280px that
+    row carried the attribution, four document links, support, contact, two
+    content routes, two marked links and the build stamp — ten items under
+    `space-between`, so the licence-condition credit competed for space with a
+    build hash and lost it first at every width. The rows below give each group
+    its own line and let it wrap inside it.
+  -->
   <div class="wrap foot mono">
-    <span class="credits">
-      <span class="l-bg">{t(COPY.footerNote, "bg", { year: YEAR })}</span>
-      <span class="l-en">{t(COPY.footerNote, "en", { year: YEAR })}</span>
-    </span>
+    <!--
+      The pages of published figures. A `nav` landmark of its own rather than
+      items in the legal one: that landmark is labelled "legal" and holds what
+      discharges ЗЕТ чл. 4, and a page of figures is not that — the same
+      distinction the marked links below are kept out of it for.
+    -->
+    {#if CONTENT_ROUTES.some((r) => r.page !== page)}
+      <nav class="routes" aria-label={t(COPY.footerRoutesK, "bg")}>
+        {#each CONTENT_ROUTES.filter((r) => r.page !== page) as route (route.href)}
+          <a class="route-link" href={route.href}>
+            <span class="l-bg">{route.label.bg}</span>
+            <span class="l-en">{route.label.en}</span>
+          </a>
+        {/each}
+      </nav>
+    {/if}
 
     <nav class="legal-links" aria-label="legal">
       {#each LEGAL_NAV as doc (doc.id)}
@@ -90,39 +138,6 @@
         <span class="l-en">{COPY.contactK.en}</span>
       </a>
     </nav>
-
-    <!--
-      `/how/`, and deliberately OUTSIDE the nav above for the reason the repo
-      link below gives: that landmark is labelled "legal" and holds what
-      discharges ЗЕТ чл. 4. A page of published figures is not that.
-
-      It is here as well as in the header because the header's own route out is
-      the one the reader is not on: `/legal/` and `/support/` carry «← към
-      калкулатора» in that slot, so without this line a reader who walked into
-      one of those has no way to the numbers at all.
-      Absent on `/how/` itself: a page that links to itself is noise, which is
-      the rule the four document links above already follow.
-    -->
-    {#if page !== "how"}
-      <a class="how-link" href="/how/">
-        <span class="l-bg">{COPY.howFooterK.bg}</span>
-        <span class="l-en">{COPY.howFooterK.en}</span>
-      </a>
-    {/if}
-
-    <!--
-      The second content route, on the same rule as the first: reachable from
-      every page, absent on itself. Two links rather than one because they
-      answer different questions — `/how/` is how the calculator's own figures
-      are worked out, `/market/` is what the property market is doing — and a
-      reader who wants the second is not served by being sent to the first.
-    -->
-    {#if page !== "market"}
-      <a class="how-link" href="/market/">
-        <span class="l-bg">{COPY.marketFooterK.bg}</span>
-        <span class="l-en">{COPY.marketFooterK.en}</span>
-      </a>
-    {/if}
 
     <!--
       The two links that carry a mark: the source, and the Facebook page. Both
@@ -204,6 +219,20 @@
   </div>
 
   <!--
+    The upstream attribution, on its own line. «Данни от Евростат / ЕЦБ / НСИ /
+    БНБ / имот.bg» is a licence condition of several of those five publishers
+    rather than decoration, and in the row above it was the first thing to be
+    squeezed by a build hash. Never shorten it, and never move it out of
+    `footer.site` — `verify_render_shell.mjs` checks it is DRAWN and not merely
+    present, because `display: none` leaves every text-level guard green while
+    the credit reaches nobody.
+  -->
+  <div class="wrap credits mono">
+    <span class="l-bg">{t(COPY.footerNote, "bg", { year: YEAR })}</span>
+    <span class="l-en">{t(COPY.footerNote, "en", { year: YEAR })}</span>
+  </div>
+
+  <!--
     The support line sits BELOW the credits row, on its own, muted. It is a
     statement of how the project is funded, not a call to action: one
     sentence, no amount, no button styling, no colour that competes with the
@@ -244,13 +273,31 @@
     flex-wrap: wrap;
     line-height: 1.6;
   }
+  /* The attribution's own line, above the funding one and drawn like it: both
+     are statements rather than navigation, and the row above is navigation. */
   .credits {
-    flex: 1 1 auto;
+    padding: 2px 0 0;
+    font-size: var(--fs-fine);
+    color: var(--muted);
+    line-height: 1.6;
   }
+  /* The two nav groups take the row's width between them and each wraps inside
+     itself, so a group never interleaves with the other one — which is what
+     `space-between` over ten loose items did at every width between 900 and
+     1300px. */
+  .routes,
   .legal-links {
     display: flex;
     gap: 14px;
     flex-wrap: wrap;
+  }
+  /* The content routes lead the row. `1 1 auto` rather than `0 0 auto`: they are
+     the longest labels in the footer («Пазарът на жилища» beside «Кредитите в
+     България»), and an item that may not shrink carries them past a 320px
+     viewport and widens the document — the failure `.marks` records below for
+     the English pair, on the group most likely to hit it first. */
+  .routes {
+    flex: 1 1 auto;
   }
   .legal-links a {
     color: var(--ink-2);
@@ -261,17 +308,16 @@
     color: var(--real-ink);
     border-bottom-color: var(--real);
   }
-  /* Drawn exactly like the links in the nav beside it: it sits in the same row
-     of small type, and being outside that landmark is a fact about the
+  /* Drawn exactly like the links in the nav beside it: they sit in the same row
+     of small type, and being a different landmark is a fact about the
      accessibility tree rather than something a reader should be able to see. */
-  .how-link {
+  .route-link {
     color: var(--ink-2);
     text-decoration: none;
     border-bottom: 1px solid var(--line);
     white-space: nowrap;
-    flex: 0 0 auto;
   }
-  .how-link:hover {
+  .route-link:hover {
     color: var(--real-ink);
     border-bottom-color: var(--real);
   }

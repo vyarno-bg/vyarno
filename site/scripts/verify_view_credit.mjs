@@ -21,8 +21,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import {
+  creditArrears,
   creditFixation,
   creditLimits,
+  creditOutstanding,
   creditProducts,
   creditRates,
   creditRenegotiation,
@@ -149,15 +151,144 @@ test("the products come out dearest first, with the deposits marked as paid not 
   );
 });
 
-test("the card block carries no volume and no APRC, because BG publishes neither", () => {
+test("the card block carries no APRC, because BG publishes none", () => {
   const card = creditProducts(CREDIT).find((p) => p.key === "card");
-  assert.equal(card.monthlyVolumeEurM, null);
+  assert.equal(card.monthlyVolumeEurM, null, "no NEW BUSINESS volume: the ЕЦБ key is a 404");
   assert.equal(card.aprcPct, null);
-  // A price with no quantity has to say it is one (P11), and the page prints
-  // this string rather than leaving the absence to be noticed.
-  assert.ok(card.noVolume.length > 20);
+  // A missing figure has to say it is one (P11), and the page prints this
+  // string rather than leaving the absence to be noticed. The volume is no
+  // longer one of them — БНБ publish it — so this names the APRC alone.
+  assert.ok(card.noAprc.length > 20);
+  assert.doesNotMatch(card.noAprc, /volume/i, "the volume exists now; only the APRC does not");
   const consumer = creditProducts(CREDIT).find((p) => p.key === "consumer");
   assert.ok(consumer.aprcPct >= consumer.rate.value);
+});
+
+test("a quantity beside a rate carries its own publisher, never the rate's", () => {
+  // ЕЦБ MIR publishes no outstanding volume for BG at all, so every amount on
+  // this page is БНБ's while the rate above it is the ЕЦБ's. A card that
+  // rendered one source line over the pair would credit one publisher with the
+  // other's number, which is the single worst error this page could make.
+  for (const product of creditProducts(CREDIT).filter((p) => p.stockEurM !== null)) {
+    assert.equal(product.stockSource, "bnb", product.key);
+    assert.match(product.stockSourceUrl, /bnb\.bg/, product.key);
+    assert.match(product.rate.sourceUrl, /ecb\.europa\.eu/, product.key);
+    assert.match(product.stockRefPeriod, /^\d{4}-\d{2}$/, product.key);
+  }
+  const card = creditProducts(CREDIT).find((p) => p.key === "card");
+  const overdraft = creditProducts(CREDIT).find((p) => p.key === "overdraft");
+  // The card figure is the balance being CHARGED interest, which is a subset of
+  // every card balance — and the overdraft figure is БНБ's block with that card
+  // block taken out, so the two cannot both be reading the same cell.
+  assert.ok(card.stockEurM > 0 && overdraft.stockEurM > 0);
+  assert.notEqual(card.stockEurM, overdraft.stockEurM);
+  // Only the derived one claims to be derived.
+  assert.ok(overdraft.stockBasis.includes("card"));
+  assert.equal(card.stockBasis, null);
+});
+
+test("an amount only sits beside a rate that describes it", () => {
+  // **The bug this exists for shipped and was caught in a screenshot.** The
+  // consumer card's headline is what a loan signed LAST MONTH costs (8.76%,
+  // new business); what is owed on consumer credit is an €11.3 bn book at
+  // 6.91%. Rendered together they read as «8.76% on €11.3 bn» — a rate over a
+  // population it does not describe, which is the denominator swap this whole
+  // project exists to prevent, printed on the page that argues it.
+  //
+  // Card and overdraft may carry both, and the reason is a fact about MIR
+  // rather than a preference: revolving credit is reported as new business
+  // EQUAL to the outstanding amount, which is why БНБ's outstanding cells
+  // reproduce A2Z3 and A2Z1 to 0.02 pp and the pipeline gates that they do.
+  const REVOLVING = new Set(["card", "overdraft"]);
+  for (const product of creditProducts(CREDIT)) {
+    if (product.stockEurM === null) continue;
+    assert.ok(
+      REVOLVING.has(product.key),
+      `${product.key} pairs an amount with a rate that is not the rate on it`
+    );
+  }
+  const consumer = creditProducts(CREDIT).find((p) => p.key === "consumer");
+  assert.equal(consumer.stockEurM, null, "consumer credit's stock belongs to the owed table");
+  // …and it is in that table, beside the rate that IS its own.
+  const block = creditOutstanding(CREDIT).blocks.find((b) => b.block === "consumer");
+  assert.ok(block.volumeEurM > 1000);
+  assert.notEqual(block.ratePct, consumer.rate.value);
+});
+
+test("the deposit card shows both what is quoted and what is earned", () => {
+  // A saver is quoted the new-business rate and is living in the stock one,
+  // and most of the money in a term deposit was locked in when they paid
+  // nothing. Showing only the first tells a reader their savings are keeping up
+  // better than they are.
+  const term = creditProducts(CREDIT).find((p) => p.key === "deposit_term");
+  assert.ok(term.monthlyVolumeEurM > 0, "how much went in last month");
+  assert.ok(term.stockRatePct > 0, "what the money already in one earns");
+  assert.ok(
+    term.stockRatePct < term.rate.value,
+    `the stock rate (${term.stockRatePct}%) should sit below the quoted one (${term.rate.value}%)`
+  );
+  // Both are the ЕЦБ's own, so this pair shares one publisher and the card
+  // does not need a second attribution the way the card and overdraft do.
+  assert.match(term.stockSourceUrl, /ecb\.europa\.eu/);
+  assert.equal(term.stockSource, null);
+});
+
+test("the outstanding blocks add up to the total, and the rate is not ours", () => {
+  const owed = creditOutstanding(CREDIT);
+  const summed = owed.blocks.reduce((total, b) => total + b.volumeEurM, 0);
+  assert.ok(Math.abs(summed - owed.totalEurM) < 0.01, `${summed} against ${owed.totalEurM}`);
+  assert.ok(Math.abs(owed.blocks.reduce((s, b) => s + b.sharePct, 0) - 100) < 0.01);
+  // **The published rate is the ЕЦБ's own A20, not the blend the pipeline gates
+  // with.** Printing our arithmetic where a publisher's figure belongs is the
+  // thing `outstanding.rate_source` exists to keep visible, so the two URLs
+  // have to come off different hosts.
+  assert.match(owed.sourceUrl, /bnb\.bg/);
+  assert.match(owed.rate.sourceUrl, /ecb\.europa\.eu/);
+  // Largest block first, which is the order the page draws them.
+  for (let i = 1; i < owed.blocks.length; i += 1) {
+    assert.ok(owed.blocks[i - 1].volumeEurM >= owed.blocks[i].volumeEurM);
+  }
+});
+
+test("every stock series is drawn from zero, whatever its own floor is", () => {
+  const owed = creditOutstanding(CREDIT);
+  for (const [name, series] of Object.entries(owed.series)) {
+    assert.equal(series.min, 0, `${name} must contain zero`);
+    assert.ok(series.points.length > 200, `${name} goes back to ${owed.startsAt}`);
+    assert.deepEqual(
+      series.points.map((p) => p.period),
+      [...series.points.map((p) => p.period)].sort(),
+      `${name} must be oldest first`
+    );
+  }
+  // A y-axis cropped to a debt series' own range turns nineteen years of
+  // ordinary growth into a cliff, and «nobody owes anything» is the floor that
+  // means something for a euro amount.
+  const housing = owed.series.housing;
+  assert.ok(housing.first.value < housing.latest.value / 5, "the growth is real, not a crop");
+});
+
+test("the arrears block keeps households and companies apart", () => {
+  const npl = creditArrears(CREDIT);
+  // The claim the page makes, and the only one CBD2 supports in every quarter.
+  assert.ok(npl.corporations > npl.households);
+  for (const period of Object.values(npl.series)) {
+    assert.ok(period.points.length > 8);
+    assert.equal(period.min, 0);
+  }
+  // Three scopes, three links: a reader checking «whose loans» has to be able
+  // to reach the series each figure came from rather than one standing for all.
+  assert.equal(new Set(Object.values(npl.scopeSourceUrls)).size, 3);
+  for (const url of Object.values(npl.scopeSourceUrls)) assert.match(url, /CBD2/);
+  assert.match(npl.refPeriod, /^\d{4}-Q[1-4]$/, "quarterly, and it says so");
+  assert.ok(npl.denominator.length > 20, "whose loans over what portfolio, in the payload");
+});
+
+test("a missing outstanding or arrears block drops its section rather than throwing", () => {
+  for (const payload of [null, undefined, {}]) {
+    assert.equal(creditOutstanding(payload), null);
+    assert.equal(creditArrears(payload), null);
+  }
 });
 
 test("a missing credit payload drops the section rather than throwing", () => {
