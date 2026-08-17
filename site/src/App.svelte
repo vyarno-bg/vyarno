@@ -388,7 +388,7 @@
   .calc h1 {
     font-family: var(--serif);
     font-weight: 600;
-    font-size: clamp(1.5rem, 3.6vw, 2.25rem);
+    font-size: var(--fs-title);
     letter-spacing: -0.015em;
     line-height: 1.1;
     margin: 0 0 8px;
