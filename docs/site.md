@@ -1166,6 +1166,27 @@ other pages. Three properties of it are load-bearing rather than cosmetic:
 
 A new size is a new token or an existing one — never a fresh `px` value.
 
+### Only one of the two families declares a `unicode-range`
+
+IBM's files are its own **split** builds — 16–21 kB each, Cyrillic and nothing
+else — so the range on them states what the file actually contains, and Latin
+body copy falls through to the system stack. Adobe ships Source Serif 4 as one
+face per weight covering Latin, Greek and Cyrillic together, which is why those
+files are 60–82 kB. A Cyrillic range over them threw away glyphs that were
+already in the file: **every heading in the `/en/` tree rendered in Georgia while
+its Bulgarian counterpart rendered in Source Serif** — two designs of one page,
+at the size a reader notices first. The range is gone from the serif faces and
+the font's own cmap decides, which is what a font that was never subsetted is
+entitled to.
+
+The cost is paid by English readers only. With the range, a page whose serif
+carried no Cyrillic never fetched the file; now it does — two weights across the
+site, behind `font-display: swap`. The alternative was a second typeface for half
+the audience. **This is not a licence question and must not become one**: the
+files are byte-for-byte Adobe's, and widening a `unicode-range` modifies a
+stylesheet rather than a font. Re-subsetting is still the thing that would
+breach OFL condition 3 (`tokens.css` header).
+
 ### `--col` is what a figure gets, `--measure` is what a sentence gets
 
 Two tokens and not one, because a chart wants width and a line of prose does

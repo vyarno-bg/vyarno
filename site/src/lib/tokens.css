@@ -4,8 +4,23 @@
  *
  * Fonts: "IBM Plex Sans" / "IBM Plex Mono" + Source Serif 4, all self-hosted
  * woff2 under /fonts/. NO Google Fonts / no third-party CSS — locked tenet
- * (docs/principles.md §"Identity"). Cyrillic subsets shipped; Latin glyphs fall through
- * the system stack so EN copy still renders correctly.
+ * (docs/principles.md §"Identity").
+ *
+ * **The two families are shipped differently, and only one of them declares a
+ * `unicode-range`.** IBM's are its own SPLIT builds — 16-21 kB each, Cyrillic
+ * and nothing else — so the range is what the file actually contains and Latin
+ * body copy falls through to the system stack. Adobe ships Source Serif 4 as one
+ * face per weight covering Latin, Greek and Cyrillic together, which is why
+ * those files are 60-82 kB; a Cyrillic range over them threw away glyphs that
+ * were in the file, so every heading in the `/en/` tree rendered in Georgia
+ * while its Bulgarian counterpart rendered in Source Serif. Two designs of one
+ * page. The range is gone from the serif faces and the font's own cmap decides,
+ * which is what a font that was never subsetted is entitled to.
+ *
+ * What that costs is paid by English readers only: with the range the file was
+ * never fetched on a page with no Cyrillic in the serif, and now it is. Two
+ * weights, `font-display: swap`, and the alternative was a second typeface for
+ * half the audience.
  *
  * EVERY FONT FILE HERE IS ITS PUBLISHER'S OWN BUILD, BYTE FOR BYTE, AND THAT
  * IS WHAT KEEPS THE NAMES USABLE
@@ -103,7 +118,6 @@
   font-weight: 400;
   font-display: swap;
   src: url("/fonts/source-serif/SourceSerif4-Regular.ttf.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
 }
 @font-face {
   font-family: "Source Serif 4";
@@ -111,7 +125,6 @@
   font-weight: 600;
   font-display: swap;
   src: url("/fonts/source-serif/SourceSerif4-Semibold.ttf.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
 }
 @font-face {
   font-family: "Source Serif 4";
@@ -119,7 +132,6 @@
   font-weight: 700;
   font-display: swap;
   src: url("/fonts/source-serif/SourceSerif4-Bold.ttf.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
 }
 @font-face {
   font-family: "Source Serif 4";
@@ -127,7 +139,6 @@
   font-weight: 400;
   font-display: swap;
   src: url("/fonts/source-serif/SourceSerif4-It.ttf.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
 }
 @font-face {
   font-family: "Source Serif 4";
@@ -135,7 +146,6 @@
   font-weight: 600;
   font-display: swap;
   src: url("/fonts/source-serif/SourceSerif4-SemiboldIt.ttf.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
 }
 @font-face {
   font-family: "Source Serif 4";
@@ -143,7 +153,6 @@
   font-weight: 700;
   font-display: swap;
   src: url("/fonts/source-serif/SourceSerif4-BoldIt.ttf.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
 }
 
 /* ---------- Tokens ---------- */
