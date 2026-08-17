@@ -1524,7 +1524,14 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             deposits["deposit_overnight"],
             f"MIR {CONSUMER_KEYS['deposit_overnight_eur']}",
             series_url(CONSUMER_KEYS["deposit_overnight_eur"]),
-            {"series_starts": since},
+            {
+                "series_starts": since,
+                "why_it_starts_there": (
+                    "the BGN leg of this key does publish back to 2020 and is cut "
+                    "here: its pair starts at the euro, and two deposit products "
+                    "drawn over two periods do not compare"
+                ),
+            },
         ),
         "deposit_term": product_block(
             "what a term deposit earns — the comparator, because a borrowing "

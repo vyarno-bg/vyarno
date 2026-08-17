@@ -94,8 +94,12 @@ BNB_LENDING_LIMITS = [
             "https://bnb.bg/AboutUs/PressOffice/POPressReleases/POPRDate/PR_20240911_1_EN"
         ),
         # What BG borrowers actually average, from the BNB's own monitoring —
-        # so the SPA can say where its guidance line sits versus reality.
+        # so the SPA can say where its guidance line sits versus reality. The
+        # banking-system series in that PDF, whose newest column is 2024 Q1;
+        # it carries its own period because it is years behind every ECB figure
+        # beside it and a reader may not take it for this month's (P4).
         "observed_weighted_avg_dsti_pct": 38.5,
+        "observed_dsti_ref_period": "2024-Q1",
         "observed_dsti_source_url": (
             "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/bs_mpp_overview_en.pdf"
         ),
