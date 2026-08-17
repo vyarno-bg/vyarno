@@ -45,7 +45,7 @@
     creditRenegotiation,
     creditSavings,
   } from "./lib/view/credit.js";
-  import { integer, number, periodLong } from "./lib/format.js";
+  import { dateShort, integer, number, periodLong } from "./lib/format.js";
   import { niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   const { payloads = null, servedLang = null } = $props();
@@ -301,20 +301,20 @@
       {/snippet}
       <p>
         <span class="l-bg"
-          >Първите три са в сила от {limits.effectiveFrom} г. и важат за всяка банка в страната. Последната
-          не е изискване, а измерване: толкова от дохода си отделят за вноска хората, които са теглили
-          кредит наскоро. Калкулаторът тук спира да нарича вноската поносима над {number(
+          >Първите три са в сила от {dateShort(limits.effectiveFrom, $lang)} и важат за всяка банка в
+          страната. Последната не е изискване, а измерване: толкова от дохода си отделят за вноска хората,
+          които са теглили кредит наскоро. Калкулаторът тук спира да нарича вноската поносима над {number(
             limits.prudentDstiPct,
             0
           )}% от чистия доход, по-строго и от тавана на БНБ, и от това, което тези хора носят, и не
           се мести.</span
         >
         <span class="l-en"
-          >The first three have been in force since {limits.effectiveFrom} and bind every bank in the
-          country. The last is not a requirement but a measurement: that is how much of their income people
-          who borrowed recently put towards the payment. The calculator here stops calling a payment bearable
-          above {number(limits.prudentDstiPct, 0)}% of net income, stricter than the BNB ceiling and
-          than what those borrowers carry, and it does not move.</span
+          >The first three have been in force since {dateShort(limits.effectiveFrom, $lang)} and bind
+          every bank in the country. The last is not a requirement but a measurement: that is how much
+          of their income people who borrowed recently put towards the payment. The calculator here stops
+          calling a payment bearable above {number(limits.prudentDstiPct, 0)}% of net income,
+          stricter than the BNB ceiling and than what those borrowers carry, and it does not move.</span
         >
       </p>
       <p class="note">
