@@ -123,12 +123,15 @@
   </h1>
   <p class="lede">
     <span class="l-bg"
-      >Какво струва един жилищен кредит, за колко време му е фиксирана лихвата и кой всъщност взема
-      новите кредити, по данни на БНБ и ЕЦБ, с източник, период и връзка за всяко число.</span
+      >Какво струва да вземеш пари назаем в България: жилищен кредит, потребителски, овърдрафт,
+      кредитна карта. Колко дължат домакинствата, колко имат в банките и каква част от кредитите не
+      се връща. Всяко число е на БНБ или на ЕЦБ, с посочен период и връзка към източника.</span
     >
     <span class="l-en"
-      >What a home loan costs, how long its rate is fixed for, and who is actually taking out the
-      new loans, from BNB and the ECB, with a source, a period and a link on every figure.</span
+      >What it costs to borrow money in Bulgaria: a home loan, a consumer loan, an overdraft, a
+      credit card. How much households owe, how much they hold in the banks, and how much of it is
+      not being repaid. Every figure is BNB's or the ECB's, with its period and a link to the
+      source.</span
     >
   </p>
 
@@ -195,14 +198,14 @@
       <span class="l-bg"
         >БНБ броят заедно кредитите с плаваща лихва и тези, фиксирани за до една година, и го казват
         в бележка под таблицата. Затова първият ред отдолу не значи, че лихвата е фиксирана за
-        година, а че банката може да я промени в рамките на година. Обратното на това е четвъртият
-        ред.</span
+        година, а че банката може да я промени в рамките на година. Четвъртият ред е обратното:
+        лихва, фиксирана за над десет години.</span
       >
       <span class="l-en"
         >BNB count variable-rate loans and loans fixed for up to a year as one bucket, and say so in
         a footnote under the table. So the first row below does not mean the rate is fixed for a
-        year, but that the bank may change it within a year. The fourth row is what the opposite
-        looks like.</span
+        year, but that the bank may change it within a year. The fourth row is the opposite: a rate
+        fixed for more than ten years.</span
       >
     </p>
     <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.crdTblFixation, $lang)}>
@@ -256,9 +259,9 @@
     </div>
     <p>
       <span class="l-bg"
-        >В статистиката нов бизнес значи всяко ново споразумение, а предоговарянето на съществуващ
-        кредит също е споразумение. ЕЦБ отчитат двете поотделно, а заглавията за рекорден месец по
-        жилищно кредитиране не ги разделят.</span
+        >„Нов бизнес“ в статистиката значи всяко ново споразумение с банка. Предоговарянето на стар
+        кредит също е споразумение, затова влиза вътре. ЕЦБ отчитат двете поотделно, а заглавията за
+        рекорден месец по жилищно кредитиране ги събират в едно число.</span
       >
       <span class="l-en"
         >In the statistics, new business means any new agreement, and repricing an existing loan is
@@ -706,8 +709,9 @@
                line rather than a share of the one above. -->
           {#if product.stockEurM !== null}
             <span class="qty"
-              >{t(COPY.crdStockOf, $lang)} <strong>{integer(product.stockEurM, $lang)}</strong>
-              {t(COPY.crdStockUnit, $lang)}</span
+              ><strong>{integer(product.stockEurM, $lang)}</strong>
+              {t(COPY.crdStockUnit, $lang)}
+              {t(COPY.crdStockOf, $lang)}</span
             >
             <a class="src" href={product.stockSourceUrl} rel="noopener"
               >{t(COPY.crdWhoseBnb, $lang)} · {periodLong(product.stockRefPeriod, $lang)}</a
@@ -718,9 +722,9 @@
                pair shares the source line above rather than adding one. -->
           {#if product.monthlyVolumeEurM !== null && product.isDeposit}
             <span class="qty"
-              >{t(COPY.crdDepositNew, $lang)}
-              <strong>{integer(product.monthlyVolumeEurM, $lang)}</strong>
-              {t(COPY.crdStockUnit, $lang)}</span
+              ><strong>{integer(product.monthlyVolumeEurM, $lang)}</strong>
+              {t(COPY.crdStockUnit, $lang)}
+              {t(COPY.crdDepositNew, $lang)}</span
             >
           {/if}
           {#if product.stockRatePct !== null && product.isDeposit}
@@ -737,17 +741,19 @@
     </div>
     <p class="cap">
       <span class="l-bg"
-        >Сумите под лихвите са на БНБ, защото ЕЦБ не публикуват колко се дължи по нито един от тези
-        продукти. При картите числото е точно това, което се плаща лихва по него: остатъкът, останал
-        след гратисния период, а не всичко изтеглено с карта. При овърдрафта е блокът на БНБ без
-        картите в него, защото ЕЦБ слагат границата там, а БНБ не.</span
+        >Сумите под лихвите са на БНБ, защото ЕЦБ публикуват цената, но не и колко се дължи. При
+        картите сумата е само това, върху което наистина текат лихви: парите, останали неплатени
+        след гратисния период. С карти се харчи много повече, но по-голямата част се връща навреме и
+        не струва нищо. При овърдрафта извадихме картите от сметката. Лихвата над сумата е на ЕЦБ и
+        в нея картите не влизат, затова не бива да влизат и в сумата.</span
       >
       <span class="l-en"
-        >The amounts under the rates are BNB's, because the ECB publish no outstanding balance for
-        any of these products. For cards the figure is exactly the balance interest is charged on:
-        what is left after the interest-free period, not everything ever spent on a card. For the
-        overdraft it is BNB's block without the cards inside it, because the ECB draw the boundary
-        there and BNB do not.</span
+        >The amounts under the rates are BNB's, because the ECB publish the price and not how much
+        is owed. For cards, the amount is only what interest actually runs on: the money left unpaid
+        after the interest-free period. Far more than that is spent on cards, but most of it is paid
+        back in time and costs nothing. For overdrafts we took the cards out. The rate above the
+        amount is the ECB's and it does not cover cards, so the amount under it must not include
+        them either.</span
       >
     </p>
   </section>
@@ -796,34 +802,30 @@
       </div>
       <p>
         <span class="l-bg"
-          >Когато в новините се появи едно число за необслужваните кредити, то обикновено е по целия
-          по всички кредити на банките, взети заедно. Това е третото тук, а не първото. Фирмите
-          изостават по-често от домакинствата във всяко тримесечие, което ЕЦБ публикуват, така че
-          общото число се изтегля нагоре от половината, която не е за хората. Затова тази страница
-          показва и трите, с отделна връзка за всяко.</span
+          >Когато в новините излезе едно число за необслужваните кредити, то обикновено е за всички
+          кредити на банките наведнъж. Това е третото число тук, а не първото. Фирмите изостават с
+          плащанията по-често от хората във всяко тримесечие, което ЕЦБ публикуват, затова общото
+          число е по-високо от това за домакинствата. Тук са и трите, всяко със своята връзка.</span
         >
         <span class="l-en"
-          >When a single non-performing-loans figure turns up in the news it is usually the one over
-          a bank's whole credit portfolio. That is the third figure here, not the first. Companies
-          fall behind more often than households in every quarter the ECB publish, so the
-          portfolio-wide number is pulled up by the half that is not about people. Which is why this
-          page shows all three, each with its own link.</span
+          >When a single figure for bad loans turns up in the news, it is usually for all the banks'
+          lending at once. That is the third figure here, not the first. Companies fall behind on
+          their payments more often than people do in every quarter the ECB publish, so the combined
+          figure sits above the household one. All three are here, each with its own link.</span
         >
       </p>
       <p class="cap">
         <span class="l-bg"
           >Числата са на тримесечие и излизат около пет месеца след тримесечието, което описват,
-          затова са по-стари от всяка лихва на тази страница и носят своя период. Процентът се смята
-          върху всички кредити към същите клиенти. Това не е съотношението, което БНБ публикуват в
-          тримесечния си надзорен доклад: то е върху друг знаменател и двете не са едно и също
-          число.</span
+          затова са по-стари от всяка лихва на тази страница и всяко носи своето тримесечие.
+          Процентът се смята върху всички кредити към същите клиенти. БНБ публикуват свой процент в
+          надзорния си доклад, който се смята по друг начин и не съвпада с тези.</span
         >
         <span class="l-en"
           >These are quarterly and land about five months after the quarter they describe, so they
-          are older than every rate on this page and carry their own period. The percentage is taken
-          over every loan to those same borrowers. This is not the ratio BNB publish in their
-          quarterly supervisory report: that one is built on a different denominator and the two are
-          not the same number.</span
+          are older than every rate on this page and each carries its own quarter. The percentage is
+          taken over every loan to those same borrowers. BNB publish a figure of their own in their
+          supervisory report; it is worked out differently and does not match these.</span
         >
       </p>
 
