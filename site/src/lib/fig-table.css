@@ -89,6 +89,17 @@
   border-bottom: 1px solid var(--rule);
   vertical-align: baseline;
 }
+/* **The column heads are ruled off from the body, and the body's rules stay
+   hairlines.** Every rule in these tables was `--rule` at 5%, so the line under
+   the heads carried the same weight as the line between two data rows — which on
+   the thirteen-row basket table leaves nothing saying where the labels stop and
+   the figures start, and a reader scrolling back up to check a column name finds
+   fourteen identical rules. One rule at the boundary that matters, in the token
+   that rules a page, and the hairlines below it are then free to stay as faint as
+   a ledger wants. */
+.fig-table thead th {
+  border-bottom: 1px solid var(--line);
+}
 .fig-table tbody th {
   font-weight: 500;
   color: var(--ink);

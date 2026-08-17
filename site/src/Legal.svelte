@@ -188,10 +188,14 @@
      little: a bare `#main` jump parks the first heading underneath it, and a
      reader who is told they arrived somewhere has to arrive there. The deep
      links in this page's own contents list carry the same offset. */
+  /* The column a definition list and an identity table get; prose below is held
+     to `--measure` and is narrower. Four legal documents read end to end is the
+     longest continuous reading on the site, so the line length matters here more
+     than anywhere. */
   .legal {
     scroll-margin-top: 64px;
     padding: 26px 0 10px;
-    max-width: 760px;
+    max-width: var(--col);
   }
   .toc {
     display: flex;
@@ -236,16 +240,16 @@
      «Поверителност» goes past it. */
   h1 {
     font-family: var(--serif);
-    font-size: clamp(1.5625rem, 4vw, 2rem);
-    line-height: 1.15;
-    letter-spacing: -0.015em;
+    font-size: var(--fs-title);
+    line-height: 1.12;
+    letter-spacing: -0.018em;
     margin: 0 0 16px;
   }
   h2 {
     font-family: var(--serif);
     font-size: var(--fs-h2);
     line-height: 1.2;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.012em;
     margin: 0 0 4px;
   }
   h3 {
@@ -256,6 +260,7 @@
   }
   p {
     margin: 9px 0 0;
+    max-width: var(--measure);
     font-size: var(--fs-lead);
     line-height: 1.62;
     color: var(--ink-2);

@@ -513,6 +513,14 @@ unused-selector warning behind them; only the two entries that need it import
 it, and every page-specific rule stays in its own component, one specificity
 step above.
 
+**One rule in a table is heavier than the others, and it is the one under the
+column heads.** Every rule had been `--rule` at 5%, so the line separating the
+labels from the figures carried the same weight as the line between two data
+rows: on the thirteen-row basket table that is fourteen identical hairlines and
+nothing saying where the head stops. The head takes `--line`, which is the token
+that rules a page, and the body rules are then free to stay as faint as a ledger
+wants them.
+
 ## `src/lib/chart.css` — the chart frame two pages share
 
 The same argument one section up, for pictures instead of tables. `/market/` and
@@ -521,14 +529,50 @@ the box, and they agree on the frame and on nothing else: columns with a seasona
 tint and sparklines on one page, nineteen years of crossing levels on the other.
 
 What is shared is the grid that makes a percentage `top` land on its own
-gridline, the box that holds marks and no text, and what a gridline, a year rule,
-a zero axis and a reference threshold look like. **Every mark is `.plot-*`, and
-the prefix is load-bearing**: these selectors are global wherever the file is
-loaded and both pages carry their own `.cap`, `.num`, `.scroll` and `.stat`, so a
-mark sharing one of those names would take its rule and draw a chart that renders,
-looks plausible and is not the data. Page-specific marks — `/market/`'s bars and
-break rules, `/credit/`'s quiet total line — stay in their own component, one
-specificity step above.
+gridline, the box that holds marks and no text, the two gutters of HTML text
+either side of it, and what a gridline, a year rule, a zero axis and a base rule
+look like. **Every mark is `.plot-*`, and the prefix is load-bearing**: these
+selectors are global wherever the file is loaded and both pages carry their own
+`.cap`, `.num`, `.scroll` and `.stat`, so a mark sharing one of those names would
+take its rule and draw a chart that renders, looks plausible and is not the data.
+Page-specific marks — `/market/`'s bars and break rules, `/credit/`'s quiet total
+line — stay in their own component, one specificity step above.
+
+Four things about the marks are decisions rather than defaults.
+
+- **A second series is `--series-2`, an ink blue, and it is a third hue because
+  the other two mean something.** `--real` says «your number is the good one» and
+  `--erode` says «this costs you», so a neutral measurement drawn in either
+  announces which is the bad news. What had been doing the job — `--ink-2`, the
+  body ink — is not a hue at all: against `--real` it separates by ΔE 8.8 in
+  normal vision and 2.7 under protanopia (OKLab ×100), so for roughly one reader
+  in twelve the two lines were one colour and the dash was the only cue. The blue
+  measures 16.5 normal / 15.8 CVD-worst in the light theme and 16.1 / 14.6 in the
+  dark, and the dark step was picked as the passing candidate closest to the green
+  in lightness, so the supporting series stops out-weighing the one it supports.
+- **`.plot-base` is the datum a series is measured against** — the base year on an
+  index, zero on a sparkline — and it is drawn as furniture in `--muted`, told
+  apart from the zero axis by its dash. It had been `--erode`, which made the
+  loudest mark on every plot a line carrying no measurement and said, in the one
+  colour reserved for a loss, that a publisher's choice of base year was bad news.
+  **There is no threshold mark in the shared frame**, and adding one is not this
+  rule recoloured: a threshold is a claim about what a figure ought to be, which
+  is why the 30%-of-net affordability line in `HomeRow` gets the accent this one
+  gave up.
+- **`--grid` is one step up from `--rule`.** A hairline between rows of text has
+  the rows themselves to be found by; a gridline has to be findable across an
+  empty plot, or a reader cannot carry a column down onto its value. 0.11 light
+  and 0.13 dark, because a light rule on a dark ground reads fainter at the same
+  alpha.
+- **`.plot-last` marks the newest reading and `.slabels` writes its value beside
+  it.** Every figure on these pages is the last point of some series, and on a
+  plot 85 quarters wide that point is a seven-pixel stub with nothing to say it
+  is the one the prose just quoted. The value goes in a third grid column of HTML
+  rather than a `<text>` at the line's end, for the reason the tick labels do:
+  inside an SVG scaled to the viewport an 11px label reaches a phone at 6.2px.
+  The column is opt-in (`.plot.labelled`) so a single-series plot gives up no
+  width to it, and it closes below 760px, where the key under the figure names
+  the lines on its own.
 
 ## `src/lib/view/` — the derived values
 
@@ -1027,17 +1071,32 @@ call reaches, and what identifies them is the thumb's `2px solid var(--real)`.
 
 ### The type scale
 
-Nine steps, `--fs-micro` (11px) through `--fs-h2` (22px), and **every
+Eleven steps, `--fs-micro` (11px) through `--fs-figure` (28→36px), and **every
 `font-size` in the app is one of them** — component styles, inline styles, both
-other pages. Two properties of it are load-bearing rather than cosmetic:
+other pages. Three properties of it are load-bearing rather than cosmetic:
 
 - **The steps are `rem`, and `html` carries no `font-size`.** A reader who has
   raised the default size in their browser gets a proportionally bigger page.
   That is the accessibility setting the web actually honours and the first thing
   someone with weak eyesight reaches for; a hand-tuned `px` ladder ignores it
-  outright, however carefully its steps are chosen. Sizes that must track the
-  viewport (`h1`, the big result figure) use `clamp()` with **rem** bounds for
-  the same reason.
+  outright, however carefully its steps are chosen. **A step that tracks the
+  viewport keeps a `rem` term inside its `clamp()` for the same reason**, and
+  that is where the rule had been leaking: five entries each wrote
+  `clamp(1.5625rem, 4vw, 2rem)` for their `h1`, whose middle term is pure
+  viewport, so between the two bounds the one heading on a page ignored the
+  reader's setting exactly as a `px` size would. `--fs-title` is that curve with
+  the setting inside it, and it is one token rather than five copies.
+- **The bottom seven steps and the top four are spaced differently on purpose.**
+  11–17px moves in single pixels because what it separates is a caption from a
+  label from a hint, distinctions a reader resolves by position and colour; a
+  bigger step there just makes the small print big. Above `--fs-lead` the job
+  changes — a heading has to outrank its own body copy across a paragraph break,
+  and `--fs-h3` at 19px over 16px body was 1.19x, which is a bold sentence rather
+  than a section title. The top is geometric at roughly 1.25 a step, `--fs-h2`
+  sits half again over body, and the three document pages moved their section
+  headings onto it. `--fs-figure` is separate from `--fs-h2` because a stat card's
+  number has to outrank the heading of a section carrying twenty of them, so the
+  two sizes move in opposite directions the moment either is tuned.
 - **The floor is 11px, and 16px is a floor for form controls.** The ledger look
   leans on small mono captions and should, but the floor is what decides
   whether source lines, unit suffixes and the "≈ €128" column stay inside what
@@ -1051,6 +1110,52 @@ other pages. Two properties of it are load-bearing rather than cosmetic:
   the zoom rule does not touch.
 
 A new size is a new token or an existing one — never a fresh `px` value.
+
+### `--col` is what a figure gets, `--measure` is what a sentence gets
+
+Two tokens and not one, because a chart wants width and a line of prose does
+not. `--col` (48rem) is the single-column document `/how/`, `/market/`,
+`/credit/` and `/legal/` are laid out in; `--measure` (38rem) is the cap on
+every `p` inside them, so tables and plots run the full column while the text
+beside them sets 66–70 Cyrillic characters to the line.
+
+They had been one number, `max-width: 760px` on the `main` element, which put
+every paragraph on those pages at about 85 characters — past the band a reader
+gets back to the left margin from without losing the line. Being `px` it also
+handed a reader who raised their font size a **longer** line in characters
+rather than the same one bigger, which is the `rem` rule above failing in the
+one place it was least visible. `/credit/` had no cap at all and inherited
+`.wrap`'s 1120px, so two sibling documents a reader moves between drew the same
+chart at two widths.
+
+**A source caption is not prose and is exempt** (`p.ss` on `/market/`, `.cap` on
+`/how/` and `/credit/`): it is one string of mono at the 11px floor, and holding
+it to the reading measure wraps a reference period away from the publisher it
+belongs to. It takes the width of the figure it dates.
+
+### A figure is hung from a rule, not drawn in a box
+
+The `.stat` tile is the unit all three of `/market/`, `/credit/` and the
+calculator's «Страната накратко» strip are built from, and each drew it the same
+way: `--surface`, a 1px `--line` border, a 6–8px radius. **The border was doing
+no work.** `--line` against `--paper` is 1.40:1 and `--surface` against `--paper`
+is 1.08:1, so six tiles in a row were six rectangles a reader could only just
+find, and what they added was a rectangle rather than a boundary.
+
+What replaces it is the treatment a ruled document already implies: a 2px
+`--ink` rule across the top of each tile with the figure hung under it, the
+label at `--fs-meta` below that, and the source caption last behind its own
+hairline. The rules across a row read as one broken line, which is what a table
+of figures looks like in print, and the tile's own extent is given by the rule
+plus the gap rather than by four edges. The row gap goes to 22px in the same
+change: with no box, the gap is the only thing keeping two tiles' labels from
+reading as one paragraph.
+
+**What this may not cost.** The figure, its label and its source line stay in
+that order, the caption keeps its rule and stays the last element, and nothing
+moves behind an interaction — `verify_render_strip.mjs` holds the caption to
+within 16px of the content it dates and holds each row flush to the widest, and
+both still pass because neither is a claim about the border.
 
 ## Hosting: `public/_headers`
 

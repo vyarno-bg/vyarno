@@ -81,13 +81,21 @@
   const savings = $derived(creditSavings(data.credit ?? null));
   const arrears = $derived(creditArrears(data.credit ?? null));
 
-  // The box every chart on this page is drawn in, in its own units. Two sizes,
-  // and the taller one is for the debt levels: nineteen years of two lines that
-  // cross needs the height to show where, and the arrears chart is six years of
-  // two lines that never do.
+  /**
+   * The box every chart on this page is drawn in, in its own units. Two sizes,
+   * and the taller one is for the debt levels: nineteen years of two lines that
+   * cross needs the height to show where.
+   *
+   * **4:1 is a strip, not a plot.** At 600x150 the rate series' whole descent
+   * from 8.4% to 2.6% is 90 units of a box 600 wide, so a nineteen-year fall
+   * reads as a slope of about eight degrees and the year the prose points at is
+   * a wiggle. 600x230 is the same honest scale at a shape a reader can take a
+   * value off — near the 2.5:1 the two panels on `/market/` are drawn at, which
+   * is the other page a reader arrives here from.
+   */
   const CH_W = 600,
-    CH_H = 150,
-    CH_TALL = 200;
+    CH_H = 230,
+    CH_TALL = 300;
   const yOf = (v, axis, h = CH_H) => plotY(v, axis, h);
   const xOf = (i, n) => plotX(i, n, CH_W);
   // A year rule's x. `yearTicks` answers in a percentage so one value places
@@ -250,6 +258,7 @@
               <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
             {/each}
             <path class="plot-line" d={path(line, axis)} />
+            {@render lastPoint(line, axis)}
             <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
             {#each line.points as p, i (p.period)}
               <rect
@@ -360,6 +369,7 @@
               <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
             {/each}
             <path class="plot-line" d={path(line, axis)} />
+            {@render lastPoint(line, axis)}
             <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
             {#each line.points as p, i (p.period)}
               <rect
@@ -605,6 +615,9 @@
               <path class="plot-line total" d={path(stock.total, axis, CH_TALL)} />
               <path class="plot-line" d={path(stock.housing, axis, CH_TALL)} />
               <path class="plot-line second" d={path(stock.consumer, axis, CH_TALL)} />
+              {@render lastPoint(stock.total, axis, CH_TALL, "total")}
+              {@render lastPoint(stock.consumer, axis, CH_TALL, "second")}
+              {@render lastPoint(stock.housing, axis, CH_TALL)}
               <line
                 class="plot-axis"
                 x1="0"
@@ -792,6 +805,8 @@
               {/each}
               <path class="plot-line" d={path(held.deposits, axis)} />
               <path class="plot-line second" d={path(held.loans, axis)} />
+              {@render lastPoint(held.loans, axis, CH_H, "second")}
+              {@render lastPoint(held.deposits, axis)}
               <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
               <!-- One hit box per month carrying both readings, because the
                    question a reader has at a given month is the gap rather than
@@ -1001,6 +1016,9 @@
             <path class="plot-line floor" d={path(mortgageLine, axis, CH_TALL)} />
             <path class="plot-line second" d={path(consumer, axis, CH_TALL)} />
             <path class="plot-line" d={path(card, axis, CH_TALL)} />
+            {@render lastPoint(mortgageLine, axis, CH_TALL, "floor")}
+            {@render lastPoint(consumer, axis, CH_TALL, "second")}
+            {@render lastPoint(card, axis, CH_TALL)}
             <line
               class="plot-axis"
               x1="0"
@@ -1156,6 +1174,8 @@
               {/each}
               <path class="plot-line second" d={path(arrears.series.corporations, axis)} />
               <path class="plot-line" d={path(arrears.series.households, axis)} />
+              {@render lastPoint(arrears.series.corporations, axis, CH_H, "second")}
+              {@render lastPoint(arrears.series.households, axis)}
               <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
               {#each arrears.series.households.points as p, i (p.period)}
                 <rect
@@ -1191,6 +1211,21 @@
      and these place them: HTML in a gutter beside the box, because inside an SVG
      scaled to the viewport an 11px label reaches a phone at 6.2px. `chart.css`
      carries the grid that makes a percentage `top` land on its own gridline. -->
+<!--
+  The newest reading, marked.
+
+  Every figure on this page is the last point of some series, and on a plot 230
+  quarters wide that point is a stub at the right edge with nothing to say it is
+  the one the paragraph above just quoted. `chart.css#.plot-last` paints the
+  ground around it so it reads as a point rather than as the line thickening.
+-->
+{#snippet lastPoint(series, axis, h = CH_H, cls = "")}
+  {@const p = series?.points?.[series.points.length - 1]}
+  {#if p}
+    <circle class="plot-last {cls}" cx={CH_W} cy={yOf(p.value, axis, h)} aria-hidden="true" />
+  {/if}
+{/snippet}
+
 {#snippet yAxis(ticks)}
   <div class="yaxis" aria-hidden="true">
     {#each ticks as tick (tick.label)}
@@ -1217,23 +1252,28 @@
 <SiteFooter page="credit" />
 
 <style>
+  /* The same column `/how/` and `/market/` take, and it had been the wrapper's
+     full 1120px here — so a reader moving between three sibling documents met
+     the same chart at two different widths and the same paragraph at two
+     different lengths. */
   .credit {
     padding-bottom: 64px;
+    max-width: var(--col);
   }
   /* The same lockup `/how/` and `/market/` give their titles — three content
      pages that a reader arrives at from each other should not each announce
      themselves in a different voice. */
   h1 {
     font-family: var(--serif);
-    font-size: clamp(1.5625rem, 4vw, 2rem);
-    line-height: 1.15;
-    letter-spacing: -0.015em;
+    font-size: var(--fs-title);
+    line-height: 1.12;
+    letter-spacing: -0.018em;
     margin: 28px 0 10px;
   }
   .lede {
     font-size: var(--fs-lead);
     color: var(--ink-2);
-    max-width: 62ch;
+    max-width: var(--measure);
     margin: 0 0 8px;
   }
   section {
@@ -1241,13 +1281,14 @@
   }
   h2 {
     font-family: var(--serif);
-    font-size: var(--fs-h3);
-    line-height: 1.25;
-    margin: 0 0 8px;
+    font-size: var(--fs-h2);
+    line-height: 1.2;
+    letter-spacing: -0.012em;
+    margin: 0 0 10px;
     color: var(--ink);
   }
   p {
-    max-width: 66ch;
+    max-width: var(--measure);
     margin: 0 0 12px;
   }
   .note {
@@ -1268,31 +1309,40 @@
   .stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin: 0 0 14px;
+    /* Wide enough that two tiles' labels do not read as one paragraph now that
+       nothing but the gap separates them. */
+    gap: 22px;
+    /* Air above the tiles' rules. A single wide tile directly under its `h2`
+       otherwise reads as a heading with an underline rather than as the top of a
+       figure, which is the one place this treatment is ambiguous. */
+    margin: 8px 0 14px;
   }
+  /* Hung from a rule rather than drawn as a box — `docs/site.md` §"A figure is
+     hung from a rule, not drawn in a box" is the argument, and it covers the
+     same tile on `/market/` and in the calculator's strip. */
   .stat {
     flex: 1 1 200px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding: 12px 14px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    gap: 4px;
+    border-top: 2px solid var(--ink);
+    padding-top: 11px;
   }
   .stat.wide {
     flex-basis: 100%;
   }
+  /* `--fs-figure` and not `--fs-h2`: thirteen of these sit under four section
+     headings, and a card's number has to outrank the heading over it. */
   .stat strong {
-    font-size: var(--fs-h2, 1.375rem);
-    line-height: 1.05;
-    letter-spacing: -0.02em;
+    font-size: var(--fs-figure);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
     font-variant-numeric: tabular-nums;
   }
   .stat .lbl {
-    font-size: var(--fs-small);
+    font-size: var(--fs-meta);
     color: var(--ink-2);
+    line-height: 1.35;
   }
   /* Five products read as one ladder, dearest to cheapest. At the shared 200px
      basis the fifth falls past the row and grows to a full-width bar, which
@@ -1311,6 +1361,10 @@
     font-family: var(--mono);
     font-size: var(--fs-micro);
     color: var(--muted);
+    /* The provenance is a third register under the figure and its label, so it
+       gets more air than the 4px between those two — at the flex gap it read as
+       a second line of the label. */
+    margin-top: 4px;
   }
   /* The quantity under a price. Set at the label's size rather than the
      figure's: it is a second number on a card whose headline is the rate, and
@@ -1327,7 +1381,7 @@
   .cap {
     font-size: var(--fs-small);
     color: var(--muted);
-    max-width: 66ch;
+    max-width: var(--measure);
   }
   /* The debt total is context for the two lines that cross over it, so it is
      the quiet one — a third saturated stroke would make the picture a contest
@@ -1347,6 +1401,16 @@
   :global(.plot-line.floor) {
     stroke: var(--ink-2);
     stroke-width: 1.5;
+  }
+  /* The end markers for the two lines that are not `--real` or `--series-2`.
+     Each takes the stroke of its own line, or the mark at the end of a series
+     names a colour the series is not drawn in. */
+  :global(.plot-last.total) {
+    fill: var(--ink-2);
+    opacity: 0.55;
+  }
+  :global(.plot-last.floor) {
+    fill: var(--ink-2);
   }
   /* The legend. Each key carries the stroke of the line it names, drawn as a
      short rule before the word rather than a swatch, so the mark in the caption

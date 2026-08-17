@@ -200,7 +200,24 @@
      stops refreshing. */
   --erode-ink: #9c2b21;
   --gain-band: rgba(28, 107, 84, 0.07);
+  /* **The second measurement on a shared scale, and it is a THIRD hue because
+     the other two are spoken for.** `--real` means "your number is the good
+     one" and `--erode` means "this costs you", so drawing one of two equally
+     neutral series in either says which is the bad news — and the neutral ink
+     that was doing the job is not a hue at all: `--ink-2` against `--real` is
+     ΔE 8.8 in normal vision and 2.7 under protanopia, which is one line to
+     roughly one reader in twelve. An ink blue carries no gain/loss meaning in
+     this app and separates at ΔE 16.5 normal / 15.8 CVD-worst (measured in
+     OKLab ×100), so the dash pattern goes back to being a second cue instead of
+     the only one. */
+  --series-2: #2a5fb0;
   --rule: rgba(23, 33, 27, 0.05); /* faint ledger rule */
+  /* A chart's own gridlines, one step up from `--rule`.
+     `--rule` is a ledger hairline between rows of TEXT, where the eye has the
+     rows themselves to follow; a gridline has to be findable across an empty
+     plot so a reader can carry a column down onto its value. At `--rule`'s 5%
+     it is not, in either theme. */
+  --grid: rgba(23, 33, 27, 0.11);
   --stamp: #b23a2e; /* official-mark accent (source refs) */
   --hdr: rgba(236, 238, 232, 0.88);
   --track: #17211b0a;
@@ -211,30 +228,38 @@
   --mono: "IBM Plex Mono", ui-monospace, monospace;
 
   /* ---------- The type scale ----------
-     Nine steps, and every font-size in the app is one of them. Two rules
+     Eleven steps, and every font-size in the app is one of them. Three rules
      about it are load-bearing rather than cosmetic.
 
-     1. **The steps are in `rem`, never `px`.** A reader who has raised the
-        default font size in their browser — the single most common thing a
+     1. **Every step is in `rem`, and a step that tracks the viewport keeps a
+        `rem` term in the middle of its `clamp()`.** A reader who has raised
+        the default font size in their browser — the single most common thing a
         person with weak eyesight does, and the accessibility setting the web
-        actually honours — gets a proportionally bigger page. A `px` size
-        ignores that setting outright, which is why the old hand-tuned ladder
-        (9px … 21px) could not be scaled by the people who most needed to.
-     2. **The floor is 11px, not 9px.** The ledger look leans on small mono
-        captions and it should; but the previous floor put source lines, unit
-        suffixes and the "≈ €128" column under the threshold at which ordinary
-        middle-aged eyesight reads comfortably, and this page is read by people
-        checking what their groceries cost. The scale is compressed rather than
-        uniformly enlarged: the bottom rose ~22%, the top ~6%, so the hierarchy
-        survives while nothing is tiny any more.
+        actually honours — gets a proportionally bigger page. `clamp(x, 4vw, y)`
+        fails that between its bounds as completely as a `px` size does: the
+        middle term is pure viewport, so the one heading on a page ignores the
+        setting at every width where the clamp is not pinned. `1.35rem + 1.4vw`
+        is the same curve with the reader's own size inside it.
+     2. **The floor is 11px.** The ledger look leans on small mono captions and
+        it should; but a lower floor puts source lines, unit suffixes and the
+        "≈ €128" column under the threshold at which ordinary middle-aged
+        eyesight reads comfortably, and this page is read by people checking
+        what their groceries cost.
+     3. **The bottom seven steps are a UI ladder and the top four are a
+        typographic one, and they are spaced differently on purpose.** The
+        11-17px run moves in single pixels because what it separates is a
+        caption from a label from a hint — distinctions a reader resolves by
+        position and colour, where a larger step would just make the small
+        print big. Above `--fs-lead` the job changes: a heading has to outrank
+        its own body copy across a paragraph break, and 1.19x does not do it —
+        a section title set three pixels over its lede reads as a bold
+        sentence. So the top of the ladder is geometric, at roughly 1.25 a
+        step, and `--fs-h2` sits half again over body.
 
      `--fs-lead` (16px) is also the floor for every `<input>` and `<select>`:
      iOS Safari zooms the viewport when a focused field is smaller than that,
      which yanks the layout sideways mid-typing. Do not drop a form control
-     below it.
-
-     Sizes that must track the viewport (the h1, the big result figure) use
-     `clamp()` with rem bounds, for the same reason as rule 1. */
+     below it. */
   --fs-micro: 0.6875rem; /* 11px — mono tags, stamps, the wordmark tagline */
   --fs-fine: 0.75rem; /* 12px — source captions, unit suffixes */
   --fs-small: 0.8125rem; /* 13px — hints, legends, chips, toggles */
@@ -242,11 +267,32 @@
   --fs-body: 0.9375rem; /* 15px — secondary body copy */
   --fs-lead: 1rem; /* 16px — primary body copy AND every form control */
   --fs-strong: 1.0625rem; /* 17px — emphasised body, big-figure sub-labels */
-  --fs-h3: 1.1875rem; /* 19px — the wordmark, sub-headings */
-  --fs-h2: 1.375rem; /* 22px — section headings */
+  --fs-h3: 1.25rem; /* 20px — the wordmark, sub-headings */
+  --fs-h2: 1.5rem; /* 24px — section headings */
+  --fs-title: clamp(1.625rem, 1.35rem + 1.4vw, 2.375rem); /* 26→38px — one h1 per page */
+  /* The figure on a stat card, and it is a step of its own rather than
+     `--fs-h2` reused. A card's number has to outrank the heading of the
+     section holding twenty of them, so the two sizes move in opposite
+     directions the moment either is tuned. */
+  --fs-figure: clamp(1.75rem, 1.5rem + 1.25vw, 2.25rem); /* 28→36px */
 
   /* Layout */
   --maxw: 1120px;
+  /* A single-column document page: `/how/`, `/market/`, `/credit/`, `/legal/`
+     and `/support/` all stop here rather than at `--maxw`, which is a measure
+     for the calculator's two-column grid and far too wide for a page that is
+     read top to bottom. In `rem` so it grows with the reader's own font size —
+     a `px` column at a raised size is a column with fewer words in it. */
+  --col: 48rem;
+  /* **The line length prose is set to, and it is narrower than `--col`.** A
+     figure wants the width; a sentence does not. Measured on this page's own
+     faces, 38rem is 66-70 Cyrillic characters in Source Serif and about 72 in
+     IBM Plex Sans — inside the 60-75 band a reader returns to the left margin
+     without losing the line. The pages had capped the whole column instead, at
+     `760px`, which set every paragraph 85 characters wide and, being `px`,
+     handed a reader who raised their font size a LONGER line rather than the
+     same one bigger. */
+  --measure: 38rem;
   --gutter: clamp(16px, 4vw, 56px);
   --radius: 3px;
 }
@@ -278,7 +324,17 @@ html[data-theme="dark"] {
      --erode over it is 3.90:1 on --surface and 4.18:1 on --paper-2. */
   --erode-ink: #e58873;
   --gain-band: rgba(79, 176, 143, 0.11);
+  /* Same role and the same measurement as the light theme's, stepped for this
+     ground rather than inverted from it: ΔE 16.1 normal / 14.6 CVD-worst
+     against `--real`, and picked from the passing candidates as the one closest
+     to the green in lightness, so the supporting series does not out-weigh the
+     one it supports the way a warm white did here. */
+  --series-2: #62a2ee;
   --rule: rgba(231, 236, 225, 0.055);
+  /* 0.13 rather than the light theme's 0.11: a light rule on a dark ground
+     carries less apparent weight than the mirror-image dark one, so the same
+     alpha reads fainter here. */
+  --grid: rgba(231, 236, 225, 0.13);
   --stamp: #db6a57;
   --hdr: rgba(16, 20, 15, 0.86);
   --track: #e7ece111;
