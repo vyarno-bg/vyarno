@@ -3084,10 +3084,15 @@ export const COPY = {
     en: "that much of new home lending carries a rate the bank can change within a year",
   },
   crdKReneg: {
-    bg: "толкова от «новия бизнес» е предоговорен стар кредит, а не купено ново жилище",
-    en: "that much of «new business» is an old loan repriced, not a home newly bought",
+    bg: "толкова от новото кредитиране е предоговорен стар кредит, а не купено ново жилище",
+    en: "that much of new lending is an old loan repriced, not a home newly bought",
   },
-  // The fixation table.
+  // The fixation table. The label names the box for a reader who lands on it
+  // by keyboard, so it says what the rows ARE rather than repeating the heading.
+  crdTblFixation: {
+    bg: "новото жилищно кредитиране по срок на фиксиране",
+    en: "new home lending by rate-fixation period",
+  },
   crdColFixation: { bg: "Лихвата е фиксирана за", en: "Rate fixed for" },
   crdColShare: { bg: "Дял от новото кредитиране", en: "Share of new lending" },
   crdColRate: { bg: "Средна лихва", en: "Average rate" },

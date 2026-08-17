@@ -36,7 +36,7 @@ hreflang alternate, so quote whichever you read and cite its own URL.
   new home loan, the same loans' APRC, what the book already being repaid
   averages, and how long the rate on new lending is fixed for — 99.6% of it
   carries a rate the bank may change within a year. Also how much of what is
-  reported as «new lending» is an existing loan repriced, and the БНБ limits
+  reported as new lending is an existing loan repriced, and the БНБ limits
   every mortgage is bound by. No input on the page, and no lender named on it:
   БНБ's registers are linked so a reader can check their own.
 - https://vyarno.bg/legal/ — terms of use, privacy, the provider's identity
