@@ -27,7 +27,7 @@ the head tags, and which half of every `.l-bg` / `.l-en` string survives
 implementation of anything. They exist because a page ranks as a DOCUMENT and
 the served document carries one language: `/` put no English in front of a
 search engine at all, and an `hreflang` alternate had no address to point at
-([`seo.md`](./seo.md) §"Ten pages, five routes, two languages").
+([`seo.md`](./seo.md) §"Twelve pages, six routes, two languages").
 
 Which language a reader gets is decided by the URL, and the preference in
 `stores.js` supplies the default at `/` alone. The header's language control is

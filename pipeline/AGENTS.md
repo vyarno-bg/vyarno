@@ -41,9 +41,9 @@ vyarno-pipeline refresh --source all --out ../data/published
 vyarno-pipeline refresh --source hicp --out ../data/published
 ```
 
-`--source`: `hicp`, `unemployment`, `mortgage`, `city-price`, `region-salary`,
-`sector-salary`, `salary-dist`, `payroll`, `house-market`, `nsi-housing`,
-`all` — `click.Choice` in `cli.py` is the list. Ten arms write twelve files — `hicp` publishes the headline and the
+`--source`: `hicp`, `unemployment`, `mortgage`, `credit`, `city-price`,
+`region-salary`, `sector-salary`, `salary-dist`, `payroll`, `house-market`,
+`nsi-housing`, `all` — `click.Choice` in `cli.py` is the list. Eleven arms write thirteen files — `hicp` publishes the headline and the
 categories, and `house-market` the transaction series and the structure one. Output is
 **committed** — the diff is the review.
 
