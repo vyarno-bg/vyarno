@@ -146,7 +146,7 @@
     <div class="stats">
       {#each [[rates.aar, COPY.howKAar], [rates.aprc, COPY.howKAprc], [rates.outstanding, COPY.howKStock]] as [figure, label] (label.bg)}
         <div class="stat">
-          <strong>{figure.value === null ? "—" : `${number(figure.value, 2)}%`}</strong>
+          <strong>{figure.value === null ? "—" : `${number(figure.value, 2, $lang)}%`}</strong>
           <span class="lbl">{t(label, $lang)}</span>
           {#if figure.sourceUrl}
             <a class="src" href={figure.sourceUrl} rel="noopener"
@@ -184,7 +184,7 @@
         <strong
           >{fixation.floating.value === null
             ? "—"
-            : `${number(fixation.floating.value, 1)}%`}</strong
+            : `${number(fixation.floating.value, 1, $lang)}%`}</strong
         >
         <span class="lbl">{t(COPY.crdKFloating, $lang)}</span>
         {#if fixation.floating.sourceUrl}
@@ -198,14 +198,12 @@
       <span class="l-bg"
         >БНБ броят заедно кредитите с плаваща лихва и тези, фиксирани за до една година, и го казват
         в бележка под таблицата. Затова първият ред отдолу не значи, че лихвата е фиксирана за
-        година, а че банката може да я промени в рамките на година. Четвъртият ред е обратното:
-        лихва, фиксирана за над десет години.</span
+        година, а че банката може да я промени в рамките на година.</span
       >
       <span class="l-en"
         >BNB count variable-rate loans and loans fixed for up to a year as one bucket, and say so in
         a footnote under the table. So the first row below does not mean the rate is fixed for a
-        year, but that the bank may change it within a year. The fourth row is the opposite: a rate
-        fixed for more than ten years.</span
+        year, but that the bank may change it within a year.</span
       >
     </p>
     <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.crdTblFixation, $lang)}>
@@ -222,12 +220,12 @@
             <tr>
               <th scope="row">{t(BUCKET_LABEL[bucket.bucket] ?? COPY.crdFixUpTo1y, $lang)}</th>
               <td class="num"
-                >{bucket.sharePct === null ? "—" : `${number(bucket.sharePct, 2)}%`}</td
+                >{bucket.sharePct === null ? "—" : `${number(bucket.sharePct, 2, $lang)}%`}</td
               >
               <td class="num"
                 >{bucket.ratePct === null
                   ? t(COPY.crdNoLending, $lang)
-                  : `${number(bucket.ratePct, 2)}%`}</td
+                  : `${number(bucket.ratePct, 2, $lang)}%`}</td
               >
             </tr>
           {/each}
@@ -247,7 +245,7 @@
         <strong
           >{renegotiation.share.value === null
             ? "—"
-            : `${number(renegotiation.share.value, 1)}%`}</strong
+            : `${number(renegotiation.share.value, 1, $lang)}%`}</strong
         >
         <span class="lbl">{t(COPY.crdKReneg, $lang)}</span>
         {#if renegotiation.share.sourceUrl}
@@ -279,15 +277,20 @@
         <span class="l-en">How far a loan is allowed to go</span>
       </h2>
       <div class="stats">
-        {@render limitStat(`${number(limits.minDownPaymentPct, 0)}%`, COPY.howKLtv, null, null)}
-        {@render limitStat(`${number(limits.dstiMaxPct, 0)}%`, COPY.howKDsti, null, null)}
+        {@render limitStat(
+          `${number(limits.minDownPaymentPct, 0, $lang)}%`,
+          COPY.howKLtv,
+          null,
+          null
+        )}
+        {@render limitStat(`${number(limits.dstiMaxPct, 0, $lang)}%`, COPY.howKDsti, null, null)}
         {@render limitStat(`${limits.maturityMaxYears}`, COPY.howKMaturity, null, null)}
         <!-- The one measurement among three legal limits, so it is the one that
              carries a period: the banking-system column of БНБ's macroprudential
              review, years behind every ЕЦБ figure beside it (P4). It also has a
              source of its own — the limits press release does not contain it. -->
         {@render limitStat(
-          `${number(limits.observedDstiPct, 1)}%`,
+          `${number(limits.observedDstiPct, 1, $lang)}%`,
           COPY.howKObserved,
           limits.observedSourceUrl,
           limits.observedDstiPeriod
@@ -308,7 +311,8 @@
           страната. Последната не е изискване, а измерване: толкова от дохода си отделят за вноска хората,
           които са теглили кредит наскоро. Калкулаторът тук спира да нарича вноската поносима над {number(
             limits.prudentDstiPct,
-            0
+            0,
+            $lang
           )}% от чистия доход, по-строго и от тавана на БНБ, и от това, което тези хора носят. Тази
           граница не се мести.</span
         >
@@ -316,7 +320,7 @@
           >The first three have been in force since {dateShort(limits.effectiveFrom, $lang)} and bind
           every bank in the country. The last is not a requirement but a measurement: that is how much
           of their income people who borrowed recently put towards the payment. The calculator here stops
-          calling a payment bearable above {number(limits.prudentDstiPct, 0)}% of net income,
+          calling a payment bearable above {number(limits.prudentDstiPct, 0, $lang)}% of net income,
           stricter than the BNB ceiling and than what those borrowers carry. That line does not
           move.</span
         >
@@ -514,13 +518,11 @@
       </h2>
       <p class="lede">
         <span class="l-bg"
-          >Дотук ставаше дума колко струват парите. Тук е другото: колко имат българските
-          домакинства в банките и колко дължат на тях. И двете растат, но дългът расте по-бързо.</span
+          >Парите в банките и дългът към тях растат заедно, но дългът расте по-бързо.</span
         >
         <span class="l-en"
-          >Everything above says what money costs. This says how much of it there is: what Bulgarian
-          households have in the banks, and what they owe them. Both are growing, and the debt is
-          growing faster.</span
+          >The money in the banks and the debt to them are growing together, but the debt is growing
+          faster.</span
         >
       </p>
       <div class="stats">
@@ -567,7 +569,7 @@
           <a href={savings.loansSourceUrl} rel="noopener">дълга</a>, за един и същи месец.</span
         >
         <span class="l-en"
-          >in the bank for every €1 owed. In {periodLong(savings.from, $lang)} it was {number(
+          >in the bank for every euro owed. In {periodLong(savings.from, $lang)} it was {number(
             savings.ratioFirst,
             2,
             $lang
@@ -680,23 +682,22 @@
   <!-- 7 ------------------------------------------------------------------ -->
   <section id="other">
     <h2>
-      <span class="l-bg">Всичко останало, което един човек плаща за пари</span>
-      <span class="l-en">Everything else a person pays for money</span>
+      <span class="l-bg">Какво плащаш за пари, и какво ти плащат</span>
+      <span class="l-en">What you pay for money, and what you are paid</span>
     </h2>
     <p>
       <span class="l-bg"
         >Жилищният кредит е най-евтиният начин да вземеш пари назаем в България, защото зад него
-        стои жилището. Ето какво струват другите, и накрая какво плаща банката на теб.</span
+        стои жилището.</span
       >
       <span class="l-en"
-        >A home loan is the cheapest way to borrow in Bulgaria, because the home stands behind it.
-        Here is what the others cost, and at the end what the bank pays you.</span
+        >A home loan is the cheapest way to borrow in Bulgaria, because the home stands behind it.</span
       >
     </p>
     <div class="stats">
       {#each products as product (product.key)}
         <div class="stat" class:pays={product.isDeposit}>
-          <strong>{number(product.rate.value, 2)}%</strong>
+          <strong>{number(product.rate.value, 2, $lang)}%</strong>
           <span class="lbl">{t(PRODUCT_LABEL[product.key], $lang)}</span>
           <a class="src" href={product.rate.sourceUrl} rel="noopener"
             >{t(COPY.crdWhoseEcb, $lang)} · {periodLong(product.rate.refPeriod, $lang)}</a
@@ -739,18 +740,16 @@
     </div>
     <p class="cap">
       <span class="l-bg"
-        >Сумите под лихвите са на БНБ, защото ЕЦБ публикуват цената, но не и колко се дължи. При
-        картите сумата е само това, върху което наистина текат лихви: парите, останали неплатени
-        след гратисния период. С карти се харчи много повече, но по-голямата част се връща навреме и
-        не струва нищо. При овърдрафта извадихме картите: лихвата над сумата е на ЕЦБ и не важи за
-        карти.</span
+        >При картите сумата е само това, върху което наистина текат лихви: парите, останали
+        неплатени след гратисния период. С карти се харчи много повече, но по-голямата част се връща
+        навреме и не струва нищо. При овърдрафта извадихме картите: лихвата над сумата е на ЕЦБ и не
+        важи за карти.</span
       >
       <span class="l-en"
-        >The amounts under the rates are BNB's, because the ECB publish the price and not how much
-        is owed. For cards, the amount is only what interest actually runs on: the money left unpaid
-        after the interest-free period. Far more than that is spent on cards, but most of it is paid
-        back in time and costs nothing. For overdrafts we took the cards out: the rate above the
-        amount is the ECB's and does not cover cards.</span
+        >For cards, the amount is only what interest actually runs on: the money left unpaid after
+        the interest-free period. Far more than that is spent on cards, but most of it is paid back
+        in time and costs nothing. For overdrafts we took the cards out: the rate above the amount
+        is the ECB's and does not cover cards.</span
       >
     </p>
   </section>
