@@ -19,17 +19,24 @@
              nothing and therefore has no counterpart in the other tree.
     tagline  the {bg, en} pair under the wordmark.
 
-  Everything else — the pills, the glyphs, the accessible names, the rules that
-  drop the tagline and fold the routes onto the control row — is the same on all
-  six entries and lives here once. It owns no state: the two toggles write to
-  the `theme`/`lang` stores in $lib/stores.js, which every other component reads
-  from directly.
+  Everything else — the route words, the two boxed toggles, the glyphs, the
+  accessible names and the rule that folds the routes onto the control row — is
+  the same on all six entries and lives here once. It owns no state: the two
+  toggles write to the `theme`/`lang` stores in $lib/stores.js, which every other
+  component reads from directly.
 
-  EVERY TARGET IS AT LEAST 44x44 CSS PX, AND THAT IS WHAT DECIDES THE LAYOUT.
-  The wordmark, three route pills and the two toggles need 400px at that floor
-  and a 360px phone gives 328px, so the routes cannot share the wordmark's row
-  there. They take their own below 760px and join it above, which is the one
-  breakpoint rule the tagline already follows at 560px.
+  **A ROUTE IS A WORD AND A TOGGLE IS A BOX, and the shapes carry the
+  difference.** Four navigating lozenges beside two switching ones meant the
+  first thing a reader met was six identical outlined boxes to sort out. It also
+  cost the width that made the bar a compromise: without the pills' borders and
+  side padding, all four routes plus the current-page mark fit ONE row at 360px
+  in both languages — measured, with the document not widening and no target
+  under 44x44 — where three bordered pills had needed 400px against a 328px
+  budget.
+
+  EVERY TARGET IS STILL AT LEAST 44x44 CSS PX. The routes take their own line
+  below 760px and join the wordmark's above it; 320px is the one width where
+  they wrap to two lines, and that is below what this bar is designed to hold.
 -->
 <script>
   import { theme, lang, chooseLang, langHref, toggleTheme } from "$lib/stores.js";
@@ -113,9 +120,32 @@
          does — an English reader sent to the Bulgarian page would arrive at a
          document that declares `bg`, since the URL is what decides the language. -->
     <nav class="routes" aria-label={t(COPY.routesNavK, $lang)}>
-      {#each ROUTES.filter((r) => r.href !== page) as route (route.href)}
-        <a class="pill l-bg" href={langHref(route.href, "bg")}>{route.label.bg}</a>
-        <a class="pill l-en" href={langHref(route.href, "en")}>{route.label.en}</a>
+      {#each ROUTES as route (route.href)}
+        {#if route.href === page}
+          <!-- **Marked, not removed.** Dropping the current route left the bar a
+               different shape on every page — «имоти» is third from the left on
+               `/` and second on `/credit/` — so a reader could not learn where a
+               route lives, and on a phone, where the tagline that names the page
+               was hidden, nothing on screen said which of the four they were
+               reading. The `--real-soft` band with `--real-ink` on it is the
+               chip the strip already uses for «this is the one», so it is a mark
+               a reader has met.
+
+               A `span` rather than an `a` with `aria-current`, because the
+               target does not go anywhere: a 44px tap that reloads the page a
+               reader is on is a control that lies. `aria-current` on a
+               non-link would announce a state with no role to hold it, so the
+               visually-hidden word is what carries it. -->
+          <span class="route here l-bg"
+            >{route.label.bg}<span class="sr">{COPY.hereK.bg}</span></span
+          >
+          <span class="route here l-en"
+            >{route.label.en}<span class="sr">{COPY.hereK.en}</span></span
+          >
+        {:else}
+          <a class="route l-bg" href={langHref(route.href, "bg")}>{route.label.bg}</a>
+          <a class="route l-en" href={langHref(route.href, "en")}>{route.label.en}</a>
+        {/if}
       {/each}
     </nav>
     <div class="controls">
@@ -153,7 +183,12 @@
     z-index: 50;
     background: var(--hdr);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
+    /* `--control-line` and not `--line`. The bar's bottom edge is the boundary
+       between two surfaces a reader has to be able to tell apart while one of
+       them slides under the other, and `--line` on `--paper` is 1.40:1 — a rule
+       that is not there. This is the one page rule that is doing a control's
+       job, which is the distinction `tokens.css` draws between the two tokens. */
+    border-bottom: 1px solid var(--control-line);
   }
   /**
    * One row that wraps into two, rather than two rows that merge into one.
@@ -219,26 +254,82 @@
   .controls {
     margin-left: auto;
   }
-  /* No `display` here, deliberately. `.controls` and `.routes` are flex
-     containers, so an anchor is blockified anyway — and a `display` declaration
-     on the pill ties on specificity with `html[data-lang] .l-en` in
+  /* No `display` on `.pill` or `.route`, deliberately. `.controls` and `.routes`
+     are flex containers, so an anchor is blockified anyway — and a `display`
+     declaration here ties on specificity with `html[data-lang] .l-en` in
      `tokens.css` once Svelte's scoping class is added, which would leave the
      hidden half of every pair showing or not depending on stylesheet order.
      That is why the 44px height is bought with `padding` and a stated
      `line-height` rather than with `inline-flex`. */
-  /* **The corner is the site's own, not a lozenge.** `--radius` is 3px and the
-     cards are 6px, so a fully-rounded control was the one shape on the page
-     borrowed from somewhere else — six of them across the top of a ledger, which
-     is the first thing a reader sees and the one place the palette's argument is
-     easiest to undo. 6px is the card's, because a control and a card are the two
-     boxes this site draws. */
+
+  /**
+   * A route, and it is a word on a bar rather than a box.
+   *
+   * **Six outlined lozenges across the top of a ledger was the one place on this
+   * site that looked like a component library.** Four of them navigated and two
+   * changed a setting, drawn identically, so the first thing a reader met was six
+   * boxes to tell apart. Words for the destinations and a box only on the two
+   * controls makes the distinction the shape rather than something to read: the
+   * routes are the masthead's sections, the boxed pair are switches.
+   *
+   * WCAG 1.4.11 is not what the border was buying. It asks 3:1 of a control whose
+   * BOUNDARY identifies it — a text field with no visible edge, the case
+   * `--control-line` exists for — and a word inside a `nav` landmark is
+   * identified by being a word inside a `nav`. 2.5.5 still binds and is bought
+   * the same way it was: 13px on a stated `line-height` inside 12px of vertical
+   * padding is 44px tall, and `verify_render_layout.mjs` measures every drawn
+   * target in the bar at 360px in both languages.
+   */
+  .route {
+    font-family: var(--mono);
+    font-size: var(--fs-small);
+    line-height: 20px;
+    padding: 12px 6px;
+    color: var(--ink-2);
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: var(--radius);
+    /* Reserved at rest so hovering a route does not move the one beside it. */
+    box-shadow: inset 0 -2px 0 transparent;
+  }
+  .route:hover {
+    color: var(--ink);
+    box-shadow: inset 0 -2px 0 var(--real);
+  }
+  /* The page a reader is on. `--real-soft` under `--real-ink` is the pair the
+     national strip's «up» chip already uses, and the reason it is a band rather
+     than the hover's underline is that the two must not be confusable: an
+     underline appearing under the cursor and an underline meaning "you are here"
+     are one mark doing two jobs. */
+  .route.here {
+    color: var(--real-ink);
+    background: var(--real-soft);
+    box-shadow: none;
+  }
+  /* Announced, never drawn. `clip-path` rather than `display: none`, which takes
+     the text out of the accessibility tree along with the layout. */
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* **The corner is the site's own, not a lozenge.** `--radius` is what every
+     field and picker on the site is drawn with (`card.css`), and these two are
+     the same kind of thing — something you operate. A fully-rounded box was the
+     one shape in the tree borrowed from somewhere else, at the top of every
+     page. The tag name is spelled out rather than written as markup because
+     `verify_template_safety.mjs` scans this file's source for a text-entry
+     surface, and it is right to: it cannot tell a comment from a template. */
   .pill {
     font-family: var(--mono);
     font-size: var(--fs-small);
     line-height: 18px;
     padding: 12px;
     border: 1px solid var(--control-line);
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: var(--surface);
     color: var(--ink-2);
     cursor: pointer;
@@ -258,16 +349,18 @@
     border-color: var(--muted);
     color: var(--ink);
   }
-  /* On a narrow bar the tagline is what has to give: measured, «икономиката,
-     честно» wraps to two lines beside the wordmark and the two toggles, so it
-     is the brand promise rendered as a layout fault. One bar gets one
-     breakpoint — a rule that fired at a different width per page would be a bar
-     a reader learns twice, which is the whole reason this file is shared. */
-  @media (max-width: 560px) {
-    .brand small {
-      display: none;
-    }
-  }
+  /* **The tagline is drawn at every width, and it is free.** `.brand` carries a
+     44px floor for the target; the wordmark and the tagline stacked are 20 + 2 +
+     11 = 33px, so the line sits inside a box the bar was already paying for and
+     the header is 97px on a phone either way — measured at 320, 360 and 390 in
+     both languages.
+
+     It had been hidden below 560px, which is the width where it matters most:
+     the tagline is the page's own name on five of the six entries («ЧИСЛАТА»,
+     «ИМОТИ», «КРЕДИТИТЕ», «ПОДКРЕПА»), so a phone reader had nothing on screen
+     saying which of them they were reading, and on `/` they never saw the one
+     sentence the project leads with. Both languages fit on one line at 320px:
+     «икономиката, честно» is the longest and it is 137px of an available 216. */
   /* Where the routes stop needing a line of their own. 760px is measured rather
      than picked off a device list: it is the width at which the wordmark, four
      route pills and the two toggles fit one line at the 44px floor in BOTH
@@ -279,9 +372,16 @@
       margin-left: auto;
       padding-bottom: 0;
     }
+    /* Ruled off from the routes, because on one line the two groups are 22px
+       apart and the routes are 20px apart from each other — so the break between
+       "places to go" and "switches" was smaller than the gaps inside either. On
+       the phone the controls sit beside the wordmark instead and the routes have
+       a line of their own, which is separation enough without a rule. */
     .controls {
       order: 3;
       margin-left: 0;
+      padding-left: 15px;
+      border-left: 1px solid var(--line);
     }
   }
   /* Off-screen until focused. `left` rather than `display: none` or

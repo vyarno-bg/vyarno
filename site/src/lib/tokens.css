@@ -219,7 +219,12 @@
      it is not, in either theme. */
   --grid: rgba(23, 33, 27, 0.11);
   --stamp: #b23a2e; /* official-mark accent (source refs) */
-  --hdr: rgba(236, 238, 232, 0.88);
+  /* The sticky bar's own ground, and the alpha is a legibility floor rather than
+     a taste. At 0.88 with a 10px blur, body copy scrolling under the masthead is
+     still readable through it — two overlapping texts at the top of every page,
+     and the one a reader is trying to read is the one behind. 0.96 leaves the
+     ground reading as the page's rather than as a slab and stops the text. */
+  --hdr: rgba(236, 238, 232, 0.96);
   --track: #17211b0a;
 
   /* Typography */
@@ -336,7 +341,10 @@ html[data-theme="dark"] {
      alpha reads fainter here. */
   --grid: rgba(231, 236, 225, 0.13);
   --stamp: #db6a57;
-  --hdr: rgba(16, 20, 15, 0.86);
+  /* Same legibility floor as the light theme's, and it needs more of it: a
+     bright glyph shows through a dark veil at an alpha where a dark glyph has
+     stopped showing through a light one. */
+  --hdr: rgba(16, 20, 15, 0.97);
   --track: #e7ece111;
 }
 

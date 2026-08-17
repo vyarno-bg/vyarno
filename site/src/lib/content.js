@@ -220,6 +220,12 @@ export const COPY = {
   // The route row's accessible name. It is the second `<nav>` a page carries,
   // after the footer's legal landmark, and two unlabelled ones read alike.
   routesNavK: { bg: "страниците на сайта", en: "site pages" },
+  // Announced after the current route's name and never drawn: sighted readers
+  // have the marked chip, and a screen reader has nothing to read a colour off.
+  // A word rather than `aria-current`, because the element carrying it is a
+  // `span` — the current page is not a link — and `aria-current` on something
+  // with no link role states a position in a set the element is not in.
+  hereK: { bg: " — тази страница", en: " — this page" },
   // What the masthead's wordmark is subtitled with, page by page. A tagline is
   // a prop rather than markup inside the header because the header is shared
   // and this is the one word in it that is about WHICH page you are on — and a
@@ -2238,6 +2244,11 @@ export const COPY = {
   // and the others did not, which read as the odd one out rather than as
   // emphasis, and a list rendered from one loop cannot carry a decoration only
   // some members have.
+  // Paired with `howFooterK` under it on purpose. «Твоите числа» beside «Числата
+  // за България» is the whole difference between the two pages said in four
+  // words; «Калкулаторът» names the tool and leaves a reader to work out what it
+  // calculates.
+  calcFooterK: { bg: "Твоите числа", en: "Your own numbers" },
   howFooterK: { bg: "Числата за България", en: "Bulgaria's numbers" },
   marketFooterK: { bg: "Пазарът на жилища", en: "The property market" },
   creditFooterK: { bg: "Кредитите в България", en: "Borrowing in Bulgaria" },
@@ -2245,6 +2256,23 @@ export const COPY = {
   // legal nav beside it is labelled "legal"; this one holds the pages of
   // figures, which is a different landmark and needs a different name.
   footerRoutesK: { bg: "страници с числа", en: "pages of figures" },
+  // The three group labels a reader SEES in the footer, drawn in the same
+  // register `Legal.svelte`'s identity rows draw a `dt` in. Eleven links in one
+  // undifferentiated row is a list of eleven things to read; a page of this
+  // site, a legal document and an address somewhere else are three kinds of
+  // destination, and saying which is which costs three words.
+  //
+  // Separate keys from `footerRoutesK` above, which names the same group for a
+  // screen reader: «страници с числа» is what a landmark is called and «Страници»
+  // is what a column is headed, and one string cannot be both without reading
+  // wrong in one of the two places.
+  footerGroupPagesK: { bg: "Страници", en: "Pages" },
+  footerGroupLegalK: { bg: "Документи", en: "Documents" },
+  // Names the two links under it — the repository and the Facebook page — by
+  // what they are rather than by where they are. A group headed «Другаде» tells
+  // a reader the destination is not here, which they can see from the address,
+  // and does not tell them it is the source code.
+  footerGroupProjectK: { bg: "Проектът", en: "The project" },
 
   // Stat labels. Each one says what the number IS, so the figure above it can
   // be a bare number and the caption under it can be a source and a date.

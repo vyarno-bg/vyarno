@@ -21,12 +21,12 @@
    *    is inside the legal nav, because that landmark is labelled "legal" and
    *    holds what discharges ЗЕТ чл. 4; both are here so that a reader who met
    *    this project somewhere else can check it against its own domain.
-   * 6. **The content routes** — one per page of published figures, in the order
-   *    the masthead offers them, absent on the page a reader is already on. They
-   *    are a list rather than a block each, and that is the whole reason this
-   *    section exists: written as one `{#if}` per route the footer fell a route
-   *    behind the site, and `/credit/` shipped without ever reaching it. A third
-   *    copy would have been the third place to remember.
+   * 6. **The content routes** — the calculator and the three pages of figures,
+   *    in the order the masthead offers them, absent on the page a reader is
+   *    already on. They are a list rather than a block each, and that is the
+   *    whole reason this section exists: written as one `{#if}` per route the
+   *    footer fell a route behind the site, and `/credit/` shipped without ever
+   *    reaching it. A fourth copy would have been the fourth place to remember.
    * 5. **The support line** — one quiet sentence and one link, because the
    *    project is donation-funded and a person is entitled to know that
    *    without being interrupted by it. The rules governing how this may be
@@ -43,7 +43,9 @@
   import { BUILD_ID } from "./build.js";
 
   /**
-   * Which page this footer is on: `"legal"`, `"support"`, or `""` elsewhere.
+   * Which page this footer is on: one of the `page` values in `CONTENT_ROUTES`
+   * below, `"legal"`, `"support"`, or `""` — which is `/404.html`, the one
+   * document with no counterpart to leave out.
    *
    * It exists so a page does not link to itself, which is noise — on `/legal/`
    * the document links become in-page fragments. One name rather than a
@@ -75,8 +77,18 @@
    * links, and the same word does not do both jobs. The `page` values are the
    * ones each route passes to this component, so a route that forgets the prop
    * links to itself, which `verify_render_layout.mjs` catches per page.
+   *
+   * **The calculator is one of them, and its absence was the failure this list
+   * was built to prevent happening one route further along.** Five of the six
+   * entries offered no way back to `/` at all: the masthead carries it, and a
+   * reader who arrived at `/legal/` from a search result and scrolled to the
+   * bottom had every page of figures except the one the site is for. The header
+   * is not the answer — it is above the fold on a document that runs 12,000px,
+   * which is precisely the case the module docstring gives for the footer
+   * existing.
    */
   const CONTENT_ROUTES = [
+    { href: "/", page: "calc", label: COPY.calcFooterK },
     { href: "/how/", page: "how", label: COPY.howFooterK },
     { href: "/market/", page: "market", label: COPY.marketFooterK },
     { href: "/credit/", page: "credit", label: COPY.creditFooterK },
@@ -96,15 +108,26 @@
 
 <footer class="site">
   <!--
-    THREE ROWS, AND THE ORDER IS THE POINT: where a reader can go, then whose
-    the data is, then who pays for it. They were one flex row, and at 1280px that
-    row carried the attribution, four document links, support, contact, two
-    content routes, two marked links and the build stamp — ten items under
+    TWO ZONES, AND THE ORDER IS THE POINT: where a reader can go, then whose the
+    data is and who pays for it. They were one flex row, and at 1280px that row
+    carried the attribution, four document links, support, contact, two content
+    routes, two marked links and the build stamp — ten items under
     `space-between`, so the licence-condition credit competed for space with a
-    build hash and lost it first at every width. The rows below give each group
-    its own line and let it wrap inside it.
+    build hash and lost it first at every width.
+
+    **The navigation zone is a table of three labelled rows, not eleven links in
+    a line.** A page of this site, a legal document and an address on somebody
+    else's service are three kinds of destination, and drawn identically they are
+    eleven things a reader has to read to find the one they came for. The label
+    column is the register `Legal.svelte` gives a `dt` — 11px mono, uppercase,
+    `--muted` — because that is already this site's way of saying "what follows is
+    of this kind", and a footer is not the place to invent a second one.
+
+    The three landmarks underneath are unchanged: the `nav` labels serve a screen
+    reader and the visible headings serve everybody, and the two are separate
+    strings because «страници с числа» reads wrong as a column head.
   -->
-  <div class="wrap foot mono">
+  <div class="wrap foot">
     <!--
       The pages of published figures. A `nav` landmark of its own rather than
       items in the legal one: that landmark is labelled "legal" and holds what
@@ -112,6 +135,10 @@
       distinction the marked links below are kept out of it for.
     -->
     {#if CONTENT_ROUTES.some((r) => r.page !== page)}
+      <p class="glabel mono">
+        <span class="l-bg">{COPY.footerGroupPagesK.bg}</span>
+        <span class="l-en">{COPY.footerGroupPagesK.en}</span>
+      </p>
       <nav class="routes" aria-label={t(COPY.footerRoutesK, "bg")}>
         {#each CONTENT_ROUTES.filter((r) => r.page !== page) as route (route.href)}
           <a class="route-link" href={route.href}>
@@ -122,6 +149,10 @@
       </nav>
     {/if}
 
+    <p class="glabel mono">
+      <span class="l-bg">{COPY.footerGroupLegalK.bg}</span>
+      <span class="l-en">{COPY.footerGroupLegalK.en}</span>
+    </p>
     <nav class="legal-links" aria-label="legal">
       {#each LEGAL_NAV as doc (doc.id)}
         <a href={page === "legal" ? `#${doc.id}` : `/legal/#${doc.id}`}>
@@ -138,6 +169,11 @@
         <span class="l-en">{COPY.contactK.en}</span>
       </a>
     </nav>
+
+    <p class="glabel mono">
+      <span class="l-bg">{COPY.footerGroupProjectK.bg}</span>
+      <span class="l-en">{COPY.footerGroupProjectK.en}</span>
+    </p>
 
     <!--
       The two links that carry a mark: the source, and the Facebook page. Both
@@ -214,18 +250,20 @@
         <span class="l-en">{COPY.facebookK.en}</span>
       </a>
     </span>
-
-    <span class="build" title="build">{BUILD_ID}</span>
   </div>
 
   <!--
-    The upstream attribution, on its own line. «Данни от Евростат / ЕЦБ / НСИ /
-    БНБ / имот.bg» is a licence condition of several of those five publishers
-    rather than decoration, and in the row above it was the first thing to be
-    squeezed by a build hash. Never shorten it, and never move it out of
-    `footer.site` — `verify_render_shell.mjs` checks it is DRAWN and not merely
-    present, because `display: none` leaves every text-level guard green while
-    the credit reaches nobody.
+    The upstream attribution, and it opens the imprint zone rather than trailing
+    the navigation. «Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg» is a licence
+    condition of several of those five publishers rather than decoration, and in
+    one flex row it was the first thing a build hash squeezed. The rule above it
+    is what makes the zone a zone: below the rule are statements about the
+    project, above it are places to go, and the stamp that had been sitting
+    between the two is now the last thing on the page, which is the value it has.
+    Never shorten it, and never move it out of `footer.site` —
+    `verify_render_shell.mjs` checks it is DRAWN and not merely present, because
+    `display: none` leaves every text-level guard green while the credit reaches
+    nobody.
   -->
   <div class="wrap credits mono">
     <span class="l-bg">{t(COPY.footerNote, "bg", { year: YEAR })}</span>
@@ -245,14 +283,17 @@
     whatever else is declared in support.js.
   -->
   <div class="wrap support mono">
-    <span class="l-bg">{SUPPORT_COPY.line.bg}</span>
-    <span class="l-en">{SUPPORT_COPY.line.en}</span>
-    {#if DONATE}
-      <a class="donate" href={DONATE.url} target="_blank" rel="noopener">
-        <span class="l-bg">{SUPPORT_COPY.donateK.bg} {DONATE.label}</span>
-        <span class="l-en">{SUPPORT_COPY.donateK.en} {DONATE.label}</span>
-      </a>
-    {/if}
+    <span class="line">
+      <span class="l-bg">{SUPPORT_COPY.line.bg}</span>
+      <span class="l-en">{SUPPORT_COPY.line.en}</span>
+      {#if DONATE}
+        <a class="donate" href={DONATE.url} target="_blank" rel="noopener">
+          <span class="l-bg">{SUPPORT_COPY.donateK.bg} {DONATE.label}</span>
+          <span class="l-en">{SUPPORT_COPY.donateK.en} {DONATE.label}</span>
+        </a>
+      {/if}
+    </span>
+    <span class="build" title="build">{BUILD_ID}</span>
   </div>
 </footer>
 
@@ -262,42 +303,72 @@
     border-top: 1px solid var(--line);
     background: var(--paper-2);
   }
+  /* **A label column and a links column, so a group announces its kind before a
+     reader reads its items.** `minmax(min-content, auto)` on the first track and
+     not a fixed width: the label is one word in each language and «Документи» is
+     wider than "Documents", so a number picked for one is loose or clipped in the
+     other.
+
+     `row-gap` is larger than `column-gap` because the rows are what a reader
+     scans down and the items inside one are read across. */
   .foot {
-    padding: 18px 0 10px;
-    font-size: var(--fs-fine);
+    padding: 20px 0 14px;
+    font-size: var(--fs-small);
     color: var(--muted);
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(min-content, auto) 1fr;
     align-items: baseline;
-    gap: 10px 18px;
-    flex-wrap: wrap;
+    gap: 12px 26px;
     line-height: 1.6;
   }
-  /* The attribution's own line, above the funding one and drawn like it: both
-     are statements rather than navigation, and the row above is navigation. */
+  /* Below the width where a label and its links share a line without the links
+     column becoming a two-word ribbon. One column, label above its own group,
+     which is the same reading order with the axis turned. */
+  @media (max-width: 560px) {
+    .foot {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .glabel {
+      margin-top: 16px;
+    }
+    .glabel:first-child {
+      margin-top: 0;
+    }
+  }
+  /* The register `Legal.svelte` gives an identity row's `dt`, and deliberately
+     the same one: this site already says "what follows is of this kind" in 11px
+     uppercase mono, and a footer inventing a second way to say it is one more
+     thing for a reader to learn. */
+  .glabel {
+    margin: 0;
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  /* The imprint: the licence-condition attribution, the funding sentence and the
+     build stamp, ruled off from the navigation above. The rule is what makes the
+     zone legible as one — below it are statements about the project, above it are
+     places to go — and it is `--line-2` rather than `--line` because the footer's
+     own top border is already `--line` and two rules of one weight 100px apart
+     read as a box nobody drew. */
   .credits {
-    padding: 2px 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--line-2);
     font-size: var(--fs-fine);
     color: var(--muted);
     line-height: 1.6;
   }
-  /* The two nav groups take the row's width between them and each wraps inside
-     itself, so a group never interleaves with the other one — which is what
-     `space-between` over ten loose items did at every width between 900 and
-     1300px. */
+  /* Each group wraps inside its own cell, so a group never interleaves with
+     another one — which is what `space-between` over ten loose items did at every
+     width between 900 and 1300px. */
   .routes,
   .legal-links {
     display: flex;
-    gap: 14px;
+    gap: 8px 16px;
     flex-wrap: wrap;
-  }
-  /* The content routes lead the row. `1 1 auto` rather than `0 0 auto`: they are
-     the longest labels in the footer («Пазарът на жилища» beside «Кредитите в
-     България»), and an item that may not shrink carries them past a 320px
-     viewport and widens the document — the failure `.marks` records below for
-     the English pair, on the group most likely to hit it first. */
-  .routes {
-    flex: 1 1 auto;
   }
   .legal-links a {
     color: var(--ink-2);
@@ -339,15 +410,16 @@
      the row runs out and each keeps its icon welded to its label by the
      `white-space: nowrap` they carry.
 
-     `flex: 0 1 auto` rather than `0 0 auto`, and it is load-bearing on the
-     ENGLISH routes: "The code on GitHub" and "Vyarno on Facebook" are the
-     longer pair, and an item that may not shrink carries them past a 320px
-     viewport instead of breaking between them — which widens the document and
-     fails `verify_render_layout.mjs` §"the header fits a 320px phone" on all
-     five `/en/` routes. Not a gutter question: `--gutter` computes to 0 at that
-     width, so a footer link ending at the viewport edge is the content edge. */
+     `min-width: 0` for what `flex: 0 1 auto` bought while this row was a flex
+     container, and the failure is the same: "The code on GitHub" and "Vyarno on
+     Facebook" are the longer pair, and a cell that cannot shrink below its
+     content carries them past a 320px viewport instead of breaking between them
+     — which widens the document and fails `verify_render_layout.mjs` §"the
+     header fits a 320px phone" on all five `/en/` routes. Not a gutter question:
+     `--gutter` computes to 0 at that width, so a footer link ending at the
+     viewport edge is the content edge. */
   .marks {
-    flex: 0 1 auto;
+    min-width: 0;
   }
   .marks .marked + .marked {
     margin-left: 14px;
@@ -375,6 +447,7 @@
   .build {
     letter-spacing: 0.03em;
     flex: 0 0 auto;
+    margin-left: auto;
   }
   /* Quieter than the credits above it, and no link styling of its own — the
      link is the "Подкрепа" item in the nav row. This is a fact about the
@@ -397,6 +470,22 @@
     font-size: var(--fs-fine);
     color: var(--muted);
     line-height: 1.6;
+    /* The funding sentence and the build stamp share a line, the stamp pushed to
+       the end by its own `margin-left: auto`. It had a line of its own between the
+       navigation and the attribution, which is the footer's most prominent
+       position given to its least useful item. `baseline` and not `center`: they
+       are two runs of the same 12px mono and a centred stamp sits a pixel off the
+       sentence beside it. */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 18px;
+  }
+  /* The sentence takes the row and the stamp takes what is left, so a wrap
+     happens inside the sentence rather than between the sentence and its own
+     donate link. */
+  .support .line {
+    flex: 1 1 auto;
   }
   /* The legal links' treatment exactly, and that is the whole specification:
      no background, no padding box, no accent fill. A donate link that reads
