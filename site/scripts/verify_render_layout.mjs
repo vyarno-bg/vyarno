@@ -577,4 +577,71 @@ test("the two marked links in the footer stay on one row", { skip }, async () =>
   );
 });
 
+test(
+  "every segmented control on the calculator shows which half is pressed",
+  { skip },
+  async () => {
+    // A rule over ALL of them, and that is what makes it worth writing: the
+    // failure it catches is a class rather than an instance. `.seg` / `.segbtn`
+    // had lived in `BasketEditor`'s scoped `<style>`, so Svelte gave the rules to
+    // that component's markup and to nothing else — and `PayField`, which writes
+    // the same class names, rendered the browser default: two 2px-outset Arial
+    // boxes, identical whichever was pressed, in a fill that ignored the theme.
+    //
+    // What that cost is the selected state on the control that decides whether
+    // the number a reader typed is read as net or as gross, about a third apart,
+    // with every figure on the page derived from it.
+    //
+    // **The font check is the half that generalises.** Two different backgrounds
+    // could be arranged by accident; a control drawn in the UA's font is one no
+    // stylesheet reached at all, which is the shape of the bug rather than this
+    // instance of it.
+    await withApp(async (page, errors) => {
+      const groups = await page.evaluate(() =>
+        [...document.querySelectorAll(".m-grid .seg")].map((seg) => ({
+          label: seg.getAttribute("aria-label") ?? "?",
+          buttons: [...seg.querySelectorAll(".segbtn")].map((b) => {
+            const s = getComputedStyle(b);
+            return {
+              text: b.innerText.trim(),
+              pressed: b.getAttribute("aria-pressed") === "true",
+              bg: s.backgroundColor,
+              font: s.fontFamily,
+              height: Math.round(b.getBoundingClientRect().height),
+            };
+          }),
+        }))
+      );
+      assert.ok(groups.length >= 2, `the calculator drew ${groups.length} segmented controls`);
+
+      for (const g of groups) {
+        const on = g.buttons.filter((b) => b.pressed);
+        const off = g.buttons.filter((b) => !b.pressed);
+        assert.ok(
+          on.length === 1 && off.length >= 1,
+          `"${g.label}" has ${on.length} pressed halves`
+        );
+        assert.notEqual(
+          on[0].bg,
+          off[0].bg,
+          `"${g.label}" paints its pressed and unpressed halves the same (${on[0].bg}), so ` +
+            "nothing on screen says which reading is in force"
+        );
+        for (const b of g.buttons) {
+          assert.match(
+            b.font,
+            /Plex Mono/,
+            `"${g.label}" draws "${b.text}" in ${b.font} — no stylesheet reached it, which is what ` +
+              "a class name copied into a second component gets when the rules are scoped to the first"
+          );
+          // WCAG 2.5.8 asks 24x24 of a pointer target. These decide what every
+          // figure under them means, so they are not held at the minimum.
+          assert.ok(b.height >= 32, `"${g.label}" draws "${b.text}" ${b.height}px tall`);
+        }
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
 test.after(shutdown);
