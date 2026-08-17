@@ -92,10 +92,10 @@ component as a prop. `data.js` is not imported and must not be: that layer is
 `fetch`, and there is no fetch in a Node build step. A payload that will not
 parse fails the build rather than being rendered around.
 
-### Ten pages, five routes, two languages
+### Twelve pages, six routes, two languages
 
 **Every route is served at two addresses: `/how/` and `/en/how/`, and so on for
-all five.** The entries are eleven files in `site/` — five Bulgarian, five
+all six.** The entries are thirteen files in `site/` — six Bulgarian, six
 English, plus the 404 — and each hardcodes the language it declares in
 `<html data-lang>`. `vite.config.js#rollupOptions.input` is the list; a count
 written here is one nothing checks.
@@ -380,7 +380,7 @@ what it is allowed to ask.
 recorded the opposite: that the live page answered in two languages off one
 address, that `hreflang` was therefore not expressible, and that undoing it was
 an architecture decision rather than an SEO one. It was taken, and the argument
-is above in §"Ten pages, five routes, two languages" — the short form is that
+is above in §"Twelve pages, six routes, two languages" — the short form is that
 the door this paragraph left open turned out to lead somewhere. The half a
 crawler never saw was not weakly indexed, it was never served: every entry
 declared `data-lang="bg"` and `prerender.mjs` strips the language the entry does

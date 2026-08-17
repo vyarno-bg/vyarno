@@ -54,7 +54,7 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 └── site/            Vite 8 + Svelte 5, eleven build entries · AGENTS.md
     ├── index.html · how/index.html · market/index.html ·
     │                legal/index.html · support/index.html · 404.html
-    ├── en/           the same five routes, declaring `en`
+    ├── en/           the same six routes, declaring `en`
     ├── public/      _headers (CSP + cache) · robots.txt · llms.txt ·
     │                .well-known/security.txt · favicon · og cards · fonts
     ├── eslint.config.js · .prettierrc.json · svelte.config.js

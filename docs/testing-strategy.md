@@ -672,8 +672,8 @@ broken, which is worse than the gap.
 What *was* worth testing there is the dispatcher above those arms
 (`test_cli_dispatch.py`): forty lines of pure branching, no network, guarding
 one specific bug — a connector wired to `--source <name>` but missing from
-`--source all`. That ships a panel where eleven payloads are current and the
-twelfth is months old, and the staleness banner only catches it after it has
+`--source all`. That ships a panel where every payload but one is current and
+that one is months old, and the staleness banner only catches it after it has
 shipped. It
 also documented a piece of dead code: `refresh()`'s `else: unknown source`
 branch is unreachable through the CLI, because `--source`'s `click.Choice`
