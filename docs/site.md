@@ -200,18 +200,73 @@ unchecked for both.
 `SiteHeader.svelte` is shared because it is a control bar, and a control that
 behaves differently per page is one a reader learns twice. It takes two props —
 `page` (the Bulgarian path: where the language link points, whether the wordmark
-jumps to `#main` or goes home, which route the row leaves out; `null` on
+jumps to `#main` or goes home, which route the row MARKS; `null` on
 `/404.html`) and `tagline` (the `{bg, en}` under the wordmark). A masthead that
 needs a third prop is a page asking for a second header — `site/AGENTS.md`
 §"`components/` is the calculator's" is why. A new route is one entry in its
 `ROUTES` list.
 
+**A route is a word and a toggle is a box, and the shapes carry the
+difference.** Four navigating lozenges beside two switching ones meant the first
+thing a reader met was six identical outlined boxes to sort out, and it is also
+what made the bar a compromise: three bordered pills needed 400px against a
+360px phone's 328px budget. Without the borders and side padding all FOUR routes
+fit one row at 360px in both languages, measured, with no target under 44×44 and
+the document not widening — so the current page is marked rather than dropped.
+
+**Marked rather than dropped, and that is the part that was costing a reader.**
+Removing the current route left the bar a different shape on every page — «имоти»
+third from the left on `/` and second on `/credit/` — so nobody could learn where
+a route lives; and the tagline that names the page was hidden below 560px, so a
+phone reader had nothing on screen saying which of the four they were reading.
+The mark is `--real-soft` under `--real-ink`, the chip the national strip already
+uses for "this is the one", on a `span` rather than an `a`: a 44px tap that
+reloads the page you are on is a control that lies, so the state travels as a
+visually-hidden word instead of `aria-current` on something with no link role.
+The tagline is drawn at every width now and costs nothing — `.brand` already
+carries a 44px floor and the wordmark plus tagline stack to 33px.
+
 **Every target in that header is at least 44×44 CSS px**, and the floor is what
-puts the routes on a row of their own below 760px — the wordmark, the pills and
-the two toggles need 400px at it, and a 360px phone gives 328px.
-`verify_render_layout.mjs` holds it over every route in both languages at 320px
-and 360px, which is the check nothing in the repo was making when the theme
-button drifted to 23.8px wide.
+puts the routes on a row of their own below 760px. `verify_render_layout.mjs`
+holds it over every route in both languages at 320px and 360px, which is the
+check nothing in the repo was making when the theme button drifted to 23.8px
+wide. 320px is the one width where the four routes wrap to two lines, and the
+test exempts it by name: it is below what this bar is designed to hold.
+
+**The sticky bar's ground is a legibility floor, not a taste.** `--hdr` was 0.88
+with a 10px blur, at which body copy scrolling under the masthead is still
+readable through it — two overlapping texts at the top of every page, and the one
+the reader wants is the one behind. 0.96 light and 0.97 dark stop it while the
+ground still reads as the page's rather than as a slab; the dark theme needs more
+because a bright glyph shows through a dark veil at an alpha where a dark glyph
+has stopped showing through a light one. Its bottom edge is `--control-line` and
+not `--line`, which is the one page rule doing a control's job: the boundary
+between two surfaces one of which slides under the other, and `--line` on
+`--paper` is 1.40:1.
+
+### The footer is a table of labelled groups, then an imprint
+
+Eleven links in one undifferentiated row is a list of eleven things to read. A
+page of this site, a legal document and an address on somebody else's service are
+three kinds of destination, so each gets a labelled row: the label column is the
+register `Legal.svelte` gives an identity row's `dt` — 11px uppercase mono,
+`--muted` — because that is already how this site says "what follows is of this
+kind". Below 560px the grid turns and the label sits above its own group. The
+three `nav` landmarks are unchanged; the `aria-label` and the visible heading are
+separate strings, because «страници с числа» reads wrong as a column head.
+
+Under a `--line-2` rule sits the imprint: the attribution, the funding sentence
+and the build stamp. **The stamp had a line of its own between the navigation and
+the attribution** — the footer's most prominent position given to its least
+useful item — and now ends the last line, which is the value it has.
+
+**`CONTENT_ROUTES` includes `/`, and its absence was a real hole.** Five of the
+six entries offered no way back to the calculator at all: the masthead carries
+it, but `/legal/` runs 12,000px and the header is above the fold, which is
+precisely the case the footer exists for. `verify_render_layout.mjs`'s own route
+list had the same gap — it named the three pages ABOUT figures and not the page
+that computes them, so the loop reported green over all five. Both lists carry
+`/` now.
 
 `WedgeChart.svelte` is shared by the two pages that draw the tax wedge: `/`
 marks each of the reader's contracts on the curve, `/how/` marks nobody. Drawn

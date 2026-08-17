@@ -319,7 +319,7 @@
   basketMonth={calc.basketRefPeriod}
 />
 
-<SiteFooter />
+<SiteFooter page="calc" />
 
 <style>
   /* The header is sticky, so an unadorned #main jump parks the first heading

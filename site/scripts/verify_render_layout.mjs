@@ -162,7 +162,14 @@ for (const path of BAR_ROUTES) {
               `on ${path} at 360px the control row has wrapped — ${bar.rowGap}px of ` +
                 "clear air between two controls"
             );
-            assert.equal(bar.taglineShown, false, `${path} still draws the tagline at 360px`);
+            // **Drawn, and the assertion is the other way round on purpose.**
+            // The tagline is the page's own name on five of the six entries, so
+            // hiding it on a phone left a reader with nothing saying which page
+            // they were on; it fits inside the 44px floor `.brand` already
+            // carries, so the header is 97px here either way. What would be a
+            // regression is it costing a row, and the `rowGap` check above is
+            // what holds that.
+            assert.equal(bar.taglineShown, true, `${path} hides the tagline at 360px`);
           }
           assert.deepEqual(errors, [], errors.join(" | "));
         },
@@ -183,7 +190,13 @@ for (const path of BAR_ROUTES) {
 // named `/how/` and `/how/` was still fine. The rule is "every content route,
 // from every page, except its own", and stated that way a seventh route is
 // covered the moment it is added to the list below.
-const CONTENT_ROUTES = ["/how/", "/market/", "/credit/"];
+//
+// **`/` is on the list, and leaving it off is how the same failure happened
+// again.** The rule is every content route, and the calculator is one — but the
+// list named the three pages ABOUT figures and not the page that computes them,
+// so five of the six footers offered no way back to `/` and this loop reported
+// green over all of them.
+const CONTENT_ROUTES = ["/", "/how/", "/market/", "/credit/"];
 
 test("every page carries a route to every other page of figures", { skip }, async () => {
   for (const path of [...CONTENT_ROUTES, "/legal/", "/support/", "/"]) {
