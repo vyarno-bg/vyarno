@@ -895,13 +895,8 @@
        for. At 360px anything longer here pushes the last two cards past the
        fold, on a page whose first job is to answer four questions. -->
   <p class="lead">
-    <span class="l-bg"
-      >Официалните числа за жилищата в България. Под всяко пише кой го публикува и за кой период е.</span
-    >
-    <span class="l-en"
-      >The official figures for housing in Bulgaria. Under each one is who publishes it and which
-      period it describes.</span
-    >
+    <span class="l-bg">Официалните числа за жилищата в България.</span>
+    <span class="l-en">The official figures for housing in Bulgaria.</span>
   </p>
   <!--
     The four answers, before anything else on the page.
@@ -1725,12 +1720,12 @@
         <span class="l-bg"
           >За едно жилище са платени средно <b>{fmt0(deal.avg.value)} €</b> през тримесечието —
           {fmt0(deal.newBuild)} € за новото строителство и {fmt0(deal.existing)} € за съществуващото.
-          Картинката отдолу е същото за всяко тримесечие, двата реда на един мащаб.</span
+          Двата реда отдолу са на един мащаб.</span
         >
         <span class="l-en"
           >A dwelling changed hands for <b>{fmt0(deal.avg.value)} €</b> on average in the quarter —
           {fmt0(deal.newBuild)} € for a new build and {fmt0(deal.existing)} € for an existing dwelling.
-          The chart below is the same figure every quarter, both lines on one scale.</span
+          The two lines below are drawn on one scale.</span
         >
       </p>
 
