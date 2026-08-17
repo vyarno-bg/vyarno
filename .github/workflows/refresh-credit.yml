@@ -1,0 +1,27 @@
+# Monthly credit refresh (ECB MFI interest rates, households, non-housing).
+#
+# The same release as the mortgage arm — one ECB MFI publication carries every
+# BS_ITEM this reads — so the same window applies: month M lands between the
+# last day of M+1 and the 5th of M+2, and the 6th catches every observed one.
+#
+# An hour after `refresh-mortgage`, not beside it. The two arms open PRs against
+# the same repository and the credit arm's card-above-mortgage gate compares a
+# figure this release also moves; running them in sequence keeps the two
+# branches from being cut from different halves of one publication.
+
+name: refresh-credit
+
+on:
+  schedule:
+    - cron: "0 5 6 * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    uses: ./.github/workflows/refresh.yml
+    with:
+      source: credit
