@@ -21,9 +21,14 @@
 
 <div class="r-brand mono">
   <span class="wm2">
+    <!-- The mark whole, at 13px: bars and the rule that joins their feet,
+         `SiteHeader.svelte`'s geometry. It carries the rule at this size
+         because the rule is one unbroken stroke, and a stroke shrinks where
+         a row of dashes turns to grit. -->
     <svg width="13" height="13" viewBox="0 0 22 22" aria-hidden="true">
       <rect x="2" y="6" width="4" height="14" rx="1" fill="var(--muted)" />
       <rect x="16" y="2" width="4" height="18" rx="1" fill="var(--real)" />
+      <path d="M6 19.25 L16 19.25" stroke="var(--real)" stroke-width="1.5" fill="none" />
     </svg>
     vyarno.bg
   </span>

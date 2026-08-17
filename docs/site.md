@@ -1184,7 +1184,9 @@ them. Regenerate it in the same commit as a copy change that reaches the frame,
 and **look at it before committing** — nothing checks these pixels either.
 
 `favicon.svg` is the same mark as the in-app wordmark — a short bar, a tall bar,
-a dashed baseline between them — and is text-free.
+one solid rule joining their feet — and is text-free. The Facebook profile
+picture is a fourth copy of it that we cannot re-render, so the geometry here
+follows that image rather than leading it.
 
 ## How a JSON becomes a rendered number
 

@@ -1216,3 +1216,37 @@ test("every HTML entry carries a <noscript> with the upstream attribution", () =
     );
   }
 });
+
+test("every drawing of the mark joins the two bars with one unbroken rule", () => {
+  // The mark is drawn four times — here, in the two components, and in
+  // `make_og_image.py`, which renders the icons, the share cards, the README
+  // banners and the Facebook cover. Four drawings drift, and this brand has
+  // a fifth copy nobody can re-render: the Facebook profile picture, uploaded
+  // once and cropped round by Facebook. The rule joining the bars is what
+  // drifted before — dashed in one place, missing in another, solid in the
+  // picture a stranger meets the brand through.
+  //
+  // The generator is not read here: its output is a committed PNG, so a mark
+  // that moved shows up in the diff as pixels a reviewer can look at.
+  const DRAWINGS = [
+    ["public", "favicon.svg"],
+    ["src", "lib", "SiteHeader.svelte"],
+    ["src", "components", "ResultsWordmark.svelte"],
+  ];
+  for (const parts of DRAWINGS) {
+    const svg = read(...parts).match(/<svg[\s\S]*?<\/svg>/)?.[0];
+    const name = parts.join("/");
+    assert.ok(svg, `${name} draws no <svg> at all`);
+    assert.equal(
+      (svg.match(/<path/g) ?? []).length,
+      1,
+      `${name} does not draw exactly one rule between the mark's two bars`
+    );
+    assert.doesNotMatch(
+      svg,
+      /stroke-dasharray/,
+      `${name} dashes the rule. It is solid on the Facebook profile picture, ` +
+        "which is the one copy of this mark we cannot re-render."
+    );
+  }
+});
