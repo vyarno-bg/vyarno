@@ -2296,6 +2296,10 @@ export const COPY = {
     en: "a {m2} m² home at that median",
   },
   howKUnemp: { bg: "безработица, сезонно изгладена", en: "unemployment, seasonally adjusted" },
+  howChartUnemp: {
+    bg: "Безработица от {from} до {to}: тръгва от {fromPct}%, стига {peakPct}% през {peakAt}, слиза до {troughPct}% през {troughAt}, а последното измерване е {toPct}%.",
+    en: "Unemployment from {from} to {to}: starts at {fromPct}%, reaches {peakPct}% in {peakAt}, falls to {troughPct}% in {troughAt}, and the latest reading is {toPct}%.",
+  },
 
   // Table column headings.
   howColGroup: { bg: "група", en: "group" },
@@ -3251,6 +3255,20 @@ export const COPY = {
   },
   crdKeyFirms: { bg: "фирми", en: "companies" },
   crdKeyHouseholds: { bg: "домакинства", en: "households" },
+  // The dip is what the chart is for, so the label names the trough before the
+  // level. A share that has spent nineteen years near its ceiling has no peak
+  // worth naming.
+  crdChartFixation: {
+    bg: "Дял на новото жилищно кредитиране с лихва, която банката може да промени до година, от {from} до {to}: държи се над {troughPct}% през целия период, с най-ниска стойност през {troughAt}, а последното измерване е {toPct}%.",
+    en: "Share of new home lending carrying a rate the bank can change within a year, from {from} to {to}: it stays above {troughPct}% throughout, at its lowest in {troughAt}, and the latest reading is {toPct}%.",
+  },
+  crdChartPrices: {
+    bg: "Три лихви от {from} до {to}: по кредитна карта от {cardFrom}% до {cardTo}%, по потребителски кредит от {consFrom}% до {consTo}% с връх {consPeak}% през {consPeakAt}, по нов жилищен кредит от {mortFrom}% до {mortTo}%.",
+    en: "Three rates from {from} to {to}: on a credit card from {cardFrom}% to {cardTo}%, on a consumer loan from {consFrom}% to {consTo}% peaking at {consPeak}% in {consPeakAt}, on a new home loan from {mortFrom}% to {mortTo}%.",
+  },
+  crdKeyCard: { bg: "карта", en: "card" },
+  crdKeyConsumerLoan: { bg: "потребителски", en: "consumer loan" },
+  crdKeyMortgage: { bg: "нов жилищен", en: "new home loan" },
 };
 
 /**

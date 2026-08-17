@@ -478,3 +478,44 @@ export function quarterGrid(payload) {
   // oldest first without a second comparator to keep in step with the first.
   return [...byYear.values()];
 }
+
+/**
+ * The unemployment rate as a series, for the curve beside the figure.
+ *
+ * **The axis floors at zero and the whole point is that it can.** The series
+ * runs 6,7% down to 2,9%, so cropped to its own band the fall reads as
+ * unemployment approaching nothing; against zero it reads as what it is, a
+ * little over half of what it was. This is a rate, so zero means something.
+ *
+ * `trough` is carried beside `peak` because the two are the whole shape: the
+ * lockdown month and the record low the series ends near. Both come off the
+ * points rather than out of the prose — nothing recomputes a sentence.
+ *
+ * Its own measurement of a `{period: value}` map rather than an import of
+ * `view/market.js#plotSeries`, which is the same arithmetic: that module is 967
+ * lines about the property market and `/how/` fetches none of its payloads, so
+ * an import here is that whole module in this page's bundle for one reducer.
+ *
+ * @param {{series_by_period?: Record<string, number>, source_url?: string}|null} payload
+ * @returns {{points: Array<{period: string, value: number}>, min: number,
+ *            max: number, peak: object|null, trough: object|null,
+ *            latest: object|null, from: string|null, to: string|null,
+ *            sourceUrl: string|null}|null} null below two points, where there
+ *            is no line to draw
+ */
+export function unemploymentHistory(payload) {
+  const points = seriesCells(payload);
+  if (points.length < 2) return null;
+  const values = points.map((p) => p.value);
+  return {
+    points,
+    min: Math.min(0, ...values),
+    max: Math.max(0, ...values),
+    peak: points.reduce((best, p) => (best.value >= p.value ? best : p)),
+    trough: points.reduce((worst, p) => (worst.value <= p.value ? worst : p)),
+    latest: points[points.length - 1],
+    from: points[0].period,
+    to: points[points.length - 1].period,
+    sourceUrl: payload?.source_url ?? null,
+  };
+}

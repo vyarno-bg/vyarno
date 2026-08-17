@@ -593,14 +593,19 @@ test("mounting adds no second title or description to the head", { skip }, async
   // entry file put there, so a component that declares a `<meta
   // name="description">` leaves the reader's page carrying two — and a crawler
   // that DOES run the bundle takes the first, which is no longer the one
-  // somebody edited. `App.svelte` and `How.svelte` each carry a comment saying
+  // somebody edited.
+  //
+  // `head > title` and not `title`: a `<title>` inside an SVG is the accessible
+  // name of a shape, and a chart hangs one on every point it lets a pointer
+  // find. A bare selector counts those, so the check went red at 79 over a
+  // page whose head was correct. `App.svelte` and `How.svelte` each carry a comment saying
   // the description belongs in the entry file; this is the check behind it, and
   // it needs a browser because the tag never exists until the bundle mounts.
   for (const path of ["/", "/how/"]) {
     await withApp(
       async (page, errors) => {
         const head = await page.evaluate(() => ({
-          titles: [...document.querySelectorAll("title")].map((el) => el.textContent),
+          titles: [...document.querySelectorAll("head > title")].map((el) => el.textContent),
           descriptions: document.querySelectorAll('meta[name="description"]').length,
           canonicals: document.querySelectorAll('link[rel="canonical"]').length,
         }));
@@ -751,6 +756,39 @@ test("the two wedge charts state different denominators and share no axis", { sk
     assert.ok(await page.locator("line.wedge-cap").count());
     assert.ok(await page.locator("line.lc-cap").count());
 
+    assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
+  }, "/how/");
+});
+
+test("the unemployment curve is drawn, from zero, with the survey's caveat", { skip }, async () => {
+  // The figure above it is 3,0% and the series behind it runs from a 6,7%
+  // lockdown month, so a cropped axis would draw the fall as unemployment
+  // ending. And the caveat is what stops the number being read as the one in
+  // the news: this is the labour force survey's count, not the people
+  // registered at the labour offices, which is a different and larger figure.
+  await withApp(async (page, errors) => {
+    const chart = page.locator("main #work .chart");
+    assert.equal(await chart.locator("svg.pane .plot-line").count(), 1, "no line was drawn");
+    const labels = await chart
+      .locator(".yaxis .plot-tick")
+      .evaluateAll((els) => els.map((el) => el.textContent.trim()));
+    assert.ok(labels.length >= 4, `the unemployment axis drew ${labels.length} ticks`);
+    const values = labels.map((label) => Number(label.replace(/[^\d]/g, "")));
+    assert.equal(Math.min(...values), 0, `the axis floors at ${Math.min(...values)}%`);
+    const steps = values.slice(1).map((v, i) => v - values[i]);
+    for (const step of steps) {
+      assert.ok(
+        Math.abs(step - steps[0]) < 1e-9,
+        `the axis labels ${labels.join(" \u00b7 ")} are not evenly spaced`
+      );
+    }
+    // The years under the plot, so a reader can say WHEN the peak was.
+    assert.ok(
+      (await chart.locator(".xyears .plot-tick").count()) >= 3,
+      "the plot has no time axis"
+    );
+    const caveat = await page.locator("main #work .cap").first().innerText();
+    assert.match(caveat, /бюрата по труда|labour offices/);
     assert.deepEqual(errors, [], `the page logged errors: ${errors.join(" | ")}`);
   }, "/how/");
 });

@@ -120,11 +120,34 @@ export function creditFixation(mortgage) {
         "БНБ's own volume in the shortest fixation bucket over the total " +
         "they print beside it, in the same row of the same workbook.",
     }),
-    // One number a month, oldest first, so the page can draw the line without
-    // knowing which key order the JSON happened to serialise in.
-    sharesByPeriod: Object.entries(block?.floating_share_by_period ?? {})
-      .map(([period, share]) => ({ period, share }))
-      .sort((a, b) => a.period.localeCompare(b.period)),
+  };
+}
+
+/**
+ * The floating share as a series, for the curve under the headline.
+ *
+ * **The axis has to be the whole 0–100%, which `plotLevels` gives it, and the
+ * flat line that produces IS the finding.** The series has never been below
+ * 84% in nineteen years, so cropping to its own band would draw the one dip as
+ * a collapse in fixing and hide what the chart is for: on this scale a reader
+ * sees that the dip never got far from the ceiling it returned to.
+ *
+ * `trough` is carried as well as `peak` because the dip is the event — the
+ * peak of a series pinned near 100% names no month in particular.
+ *
+ * @param {object|null} mortgage
+ */
+export function creditFixationHistory(mortgage) {
+  const block = mortgage?.fixation ?? null;
+  // Oldest first, whatever order the JSON serialised in — `plotLevels` sorts.
+  const series = plotLevels(block?.floating_share_by_period);
+  if (series.points.length < 2) return null;
+  return {
+    series,
+    peak: series.peak,
+    trough: series.trough,
+    latest: series.latest,
+    sourceUrl: block.source_url ?? null,
   };
 }
 
@@ -254,6 +277,7 @@ function plotLevels(entries) {
     min: Math.min(0, ...values),
     max: Math.max(0, ...values),
     peak: points.reduce((best, p) => (best && best.value >= p.value ? best : p), null),
+    trough: points.reduce((worst, p) => (worst && worst.value <= p.value ? worst : p), null),
     first: points[0] ?? null,
     latest: points[points.length - 1] ?? null,
     from: points[0]?.period ?? null,
@@ -402,4 +426,49 @@ export function creditProducts(credit) {
       };
     })
     .filter(Boolean);
+}
+
+/**
+ * Three of those prices over the same six years, on one scale.
+ *
+ * **Three series and not five, and the two left off are left off for opposite
+ * reasons.** The overdraft's shape is the mortgage's — a steady fall — so a
+ * fourth line adds a repetition rather than a contrast; the deposit series
+ * start in 2026-01 and six points is not a curve. What is left is the card
+ * against the consumer loan against the mortgage, which is the comparison §8
+ * makes in words.
+ *
+ * **The reason the flat lines earn their place is the one they are drawn
+ * beside.** Singly the card moves 1,6 pp and the mortgage 0,56 pp across the
+ * window, which is a card with decoration on it. Together they say that the
+ * ЕЦБ's own rate went from below zero to 4% and back over these months and only
+ * the consumer loan followed — a reading three separate charts would not carry
+ * and three headline figures cannot.
+ *
+ * `scaleMax` is returned rather than left to the component for the reason
+ * `creditSavings` states: three lines on one axis need ONE scale, and a
+ * component reaching for the card's own max is right only while the card is
+ * dearest.
+ *
+ * **The mortgage rate comes off `mortgage.json` and the other two off
+ * `credit.json`**, so this takes both payloads. They are one publisher's
+ * figures — ЕЦБ MIR, the same table — which is what lets them share an axis at
+ * all.
+ *
+ * @param {object|null} credit
+ * @param {object|null} mortgage
+ */
+export function creditProductHistory(credit, mortgage) {
+  const card = plotLevels(credit?.card?.series_by_period);
+  const consumer = plotLevels(credit?.consumer?.series_by_period);
+  const mortgageRate = plotLevels(mortgage?.new_business?.series_by_period);
+  const drawn = [card, consumer, mortgageRate];
+  if (drawn.some((series) => series.points.length < 2)) return null;
+  return {
+    series: { card, consumer, mortgage: mortgageRate },
+    scaleMax: Math.max(...drawn.map((series) => series.max)),
+    sourceUrl: credit?.card?.source_url ?? null,
+    from: card.from,
+    to: card.to,
+  };
 }
