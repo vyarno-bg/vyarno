@@ -100,7 +100,7 @@
   "overdraft": {
     "_role": "what going past zero on a current account costs, and what a revolving credit line costs — the same item to the ЕЦБ",
     "source": "ecb",
-    "dataset": "MIR M.BG.B.A2Z1.A.R.A.2250.EUR.N",
+    "dataset": "MIR M.BG.B.A2Z1.A.R.A.2250.BGN.N spliced with M.BG.B.A2Z1.A.R.A.2250.EUR.N",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2Z1.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
     "ref_period": "2026-06",
     "value_pct": 6.45,
@@ -200,7 +200,7 @@
   "card": {
     "_role": "what a credit-card balance costs once it is carried past the interest-free period — «extended credit card credit», which is the card debt that is not repaid in full each month",
     "source": "ecb",
-    "dataset": "MIR M.BG.B.A2Z3.A.R.A.2250.EUR.N",
+    "dataset": "MIR M.BG.B.A2Z3.A.R.A.2250.BGN.N spliced with M.BG.B.A2Z3.A.R.A.2250.EUR.N",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2Z3.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
     "ref_period": "2026-06",
     "value_pct": 21.15,
