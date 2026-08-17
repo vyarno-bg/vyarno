@@ -37,5 +37,5 @@ essentials, because they apply to every message you write:
 - None of the tells: binary contrast ("it's not X, it's Y"), throat-clearing,
   colon reveals, negative listing, a closing paragraph restating the one above,
   or comprehensive / seamless / robust / leverage.
-- Em-dashes stay — they are how this repo attaches a reason to a claim.
+- No em-dashes in user-facing copy. A full stop, a colon or a comma instead.
 - New user-facing copy is written in both BG and EN in the same commit.

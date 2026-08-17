@@ -234,6 +234,7 @@ easy to produce without noticing.
 
 | Tell | Looks like |
 |---|---|
+| Em-dash reason | "the rate is fixed — the bank may still change it" |
 | Binary contrast | "This isn't a refactor. It's a rewrite." |
 | Throat-clearing | "Here's the thing." "Let's take a look at…" |
 | Colon reveal | "The best part: it validates on read." |
@@ -254,8 +255,6 @@ easy to produce without noticing.
 
 An anti-slop pass that flattens the house voice has done damage, not good.
 
-- **Em-dashes stay.** They are how this repo attaches a reason to a claim — the
-  construction is on nearly every page and it is deliberate. Do not hunt them.
 - **The why stays.** Cutting a comment to the five-line cap means dropping the
   retelling, never the constraint, the number or the failure it names.
 - **The Bulgarian stays Bulgarian.** Do not anglicise «Икономиката, честно», the
@@ -279,10 +278,9 @@ Adapted, not adopted — the rules above are tailored to this repository and two
 of them deliberately contradict their source.
 
 - [`yzhao062/agent-style`](https://github.com/yzhao062/agent-style), CC BY 4.0 —
-  the generation-time model, and rules 03, 04, 08, A, D, E and H. Its RULE-B
-  (avoid em-dashes) and RULE-G (title-case headings) are **not** adopted: both
-  fight the house voice, which uses em-dashes structurally and sentence case
-  throughout.
+  the generation-time model, and rules 03, 04, 08, A, D, E, H and RULE-B (avoid
+  em-dashes). Its RULE-G (title-case headings) is **not** adopted: this repo is
+  sentence case throughout.
 - [`petergyang/no-ai-slop`](https://github.com/petergyang/no-ai-slop), MIT — the
   tell catalogue.
 - [`yetone/kill-ai-slop`](https://github.com/yetone/kill-ai-slop), MIT — the

@@ -307,6 +307,24 @@ body {
     color 0.2s;
 }
 
+/* A last line holding one word reads as a mistake rather than as a paragraph
+   ending, and at these measures it happens on most of them. `pretty` costs the
+   browser a few extra line-break passes over the last lines only; `balance` is
+   capped at a few lines by the spec, which is why headings get it and body
+   copy does not. Both degrade to the normal greedy break where unsupported. */
+p,
+li,
+figcaption,
+.lbl,
+.lede {
+  text-wrap: pretty;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
 .mono {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;

@@ -247,8 +247,9 @@ knows.
 - **None of the tells**: binary contrast ("it's not X, it's Y"),
   throat-clearing, colon reveals, negative listing, a closing paragraph that
   restates the one above it, or comprehensive / seamless / robust / leverage.
-- **Em-dashes stay.** They are how this repo attaches a reason to a claim, and
-  a cleanup pass that strips them has flattened the voice, not cleaned it.
+- **No em-dashes in user-facing copy.** A dash attaching a reason to a claim
+  reads as machine-written. Use a full stop, a colon or a comma, whichever the
+  sentence actually wants; where none fits, the sentence is two sentences.
 - **A PR body fills `.github/pull_request_template.md` and stops.** No per-file
   walkthrough — the Files tab is the walkthrough.
 - Headings sentence case. Specific numbers over intensifiers. New user-facing
