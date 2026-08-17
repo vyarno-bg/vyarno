@@ -252,10 +252,15 @@
     letter-spacing: -0.012em;
     margin: 0 0 4px;
   }
+  /* The third level, and it was `--fs-lead` — body size, told apart from the
+     paragraph under it by weight alone. Four documents run end to end here and
+     the h3 is what a reader scanning for «Какво може да правиш» is scanning
+     for; at the body's own size it reads as a bold sentence. 20 / 24 / 38 over
+     16px body, with the family carrying the h2/h3 split as well as the size. */
   h3 {
-    font-size: var(--fs-lead);
-    line-height: 1.3;
-    margin: 26px 0 0;
+    font-size: var(--fs-h3);
+    line-height: 1.25;
+    margin: 30px 0 0;
     color: var(--ink);
   }
   p {

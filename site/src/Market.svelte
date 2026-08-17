@@ -1521,6 +1521,23 @@
               d={path({ ...indexRealSeries, ...indexAxis }, CH_TALL)}
             />
             <path class="plot-line" d={path({ ...indexSeries, ...indexAxis }, CH_TALL)} />
+            <!-- The quarter the paragraph above this chart names, marked on the
+                 chart. «нивото днес е с 4,3% под най-високото, което Евростат е
+                 отчитал — през Q3 2008» is a sentence about a point a reader
+                 then has to find by eye across eighty-five columns; a ring puts
+                 the sentence and the picture in the same place. Only the
+                 deflated line has an interior peak — the nominal one is still
+                 rising, so its highest reading IS its last point and already
+                 carries the newest-reading mark. -->
+            {#if indexRealSeries.peak && indexRealSeries.peak !== indexRealSeries.points.at(-1)}
+              {@const i = indexRealSeries.points.indexOf(indexRealSeries.peak)}
+              <circle
+                class="plot-peak"
+                cx={lineX(i, indexRealSeries.points.length)}
+                cy={yOf(indexRealSeries.peak.value, indexAxis, CH_TALL)}
+                aria-hidden="true"
+              />
+            {/if}
             {@render lastPoint({ ...indexRealSeries, ...indexAxis }, indexAxis, CH_TALL, true)}
             {@render lastPoint({ ...indexSeries, ...indexAxis }, indexAxis, CH_TALL)}
             {@render dots({ ...indexSeries, ...indexAxis }, times, CH_TALL)}
@@ -1566,6 +1583,13 @@
                that is no longer on the picture. A mark with no key is a mark a
                reader cannot account for, and these two are the only ones on the
                plot with nothing in the caption to look them up in. -->
+          {#if indexRealSeries.peak && indexRealSeries.peak !== indexRealSeries.points.at(-1)}
+            <span class="key peak"
+              ><span class="l-bg">{COPY.mktKeyPeak.bg}</span><span class="l-en"
+                >{COPY.mktKeyPeak.en}</span
+              ></span
+            >
+          {/if}
           {#if Object.values(indexSeries.flags).some((f) => f.includes("b"))}
             <span class="key brk"
               ><span class="l-bg">{COPY.mktKeyBreak.bg}</span><span class="l-en"
@@ -3356,6 +3380,25 @@
   /* The marked quarters' swatch, drawn at the tint the columns are drawn at, or
      the key names a colour that is nowhere on the plot. Taller than a line
      swatch because what it stands for is a bar. */
+  /* The ring on the deflated line's own highest reading. Hollow, in that line's
+     colour, with the ground as its stroke so it reads as a ring on the line
+     rather than as a third series' marker — the same device `.plot-last` uses
+     for the newest point, filled there and open here because one is a value and
+     the other is a record. */
+  :global(.plot-peak) {
+    r: 4.2;
+    fill: none;
+    stroke: var(--series-2);
+    stroke-width: 2;
+  }
+  .key.peak::before {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: none;
+    border: 2px solid var(--series-2);
+    vertical-align: -1px;
+  }
   /* The break's own swatch: a vertical dotted rule, because that is what the
      mark is. A 14x3 block like the line keys above would name a horizontal
      stroke nowhere on this plot. */
