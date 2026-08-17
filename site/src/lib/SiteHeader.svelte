@@ -85,13 +85,11 @@
       <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
         <rect x="2" y="6" width="4" height="14" rx="1" fill="var(--muted)" />
         <rect x="16" y="2" width="4" height="18" rx="1" fill="var(--real)" />
-        <path
-          d="M6 20 L16 20"
-          stroke="var(--real)"
-          stroke-width="1.5"
-          stroke-dasharray="2 2"
-          fill="none"
-        />
+        <!-- One unbroken rule, matching favicon.svg and the bitmaps
+             `scripts/make_og_image.py` draws. Solid because the Facebook
+             profile picture is solid, and that copy of the mark is not ours
+             to re-render. -->
+        <path d="M6 19.25 L16 19.25" stroke="var(--real)" stroke-width="1.5" fill="none" />
       </svg>
       <span class="wm">
         <span class="l-bg">Вярно</span>

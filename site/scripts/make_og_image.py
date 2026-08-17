@@ -11,6 +11,7 @@ Run: `python3 scripts/make_og_image.py` from `site/`. It writes:
     site/public/icon-512.png   the installed app, and the splash
     docs/img/banner.bg.png     1200×348, the masthead of README.bg.md
     docs/img/banner.en.png     1200×348, the masthead of README.md
+    docs/img/facebook-cover.png  1640×624, the cover of the Facebook page
 
 Why this file exists. The wordmark is *drawn into the bitmap*, so a brand or
 palette change cannot be a find-and-replace — the pixels have to be
@@ -350,36 +351,40 @@ SUB_SCALE = 4
 HEAD_SCALE = 7
 
 
-def lockup(c, top, strapline):
+def lockup(c, top, strapline, left=MARGIN, right=RIGHT):
     """Mark, wordmark and strapline, with the domain set against the margin.
 
     `top` is the rule the block hangs from; everything below is measured from
-    it, so the card and the banner cannot disagree about the geometry.
+    it, so the card and the banner cannot disagree about the geometry. `left`
+    and `right` shift the whole block as one — the cover is wider than the card
+    and insets further, and a block re-laid out per canvas is a second lockup.
     """
-    # "Then" (short, muted) against "now" (tall, green), with a dashed
-    # baseline between them — the same three shapes as favicon.svg and the
-    # in-app SVG in SiteHeader.svelte, at 8× their size.
+    dx = left - MARGIN
+    # "Then" (short, muted) against "now" (tall, green), joined by one
+    # unbroken rule — the same three shapes as favicon.svg and the in-app SVG
+    # in SiteHeader.svelte, at 8× their size. Solid rather than dashed because
+    # the Facebook profile picture draws it solid and we cannot re-render that
+    # copy; a mark differing between the two is what somebody spots first.
     base = top + 171
-    c.rect(MARGIN, base - 88, 26, 88, MUTED)
-    c.rect(204, base - 158, 26, 158, REAL)
-    for dx in range(128, 200, 12):
-        c.rect(dx, base - 8, 7, 4, REAL)
+    c.rect(left, base - 88, 26, 88, MUTED)
+    c.rect(204 + dx, base - 158, 26, 158, REAL)
+    c.rect(122 + dx, base - 9, 82, 9, REAL)
 
     # The wordmark sits on the same baseline as the mark's two bars.
-    c.text(WORDMARK, 260, base - GLYPH_H * WM_SCALE, WM_SCALE, INK)
+    c.text(WORDMARK, 260 + dx, base - GLYPH_H * WM_SCALE, WM_SCALE, INK)
 
     # The address, ranged right on the wordmark's own line. It balances a
     # composition that is otherwise all in the left third, and it is the one
     # thing on the artwork a reader might retype.
     c.text(
         DOMAIN,
-        RIGHT - c.width_of(DOMAIN, SUB_SCALE),
+        right - c.width_of(DOMAIN, SUB_SCALE),
         base - GLYPH_H * SUB_SCALE,
         SUB_SCALE,
         MUTED,
     )
 
-    c.text(strapline, 264, top + 190, SUB_SCALE, MUTED)
+    c.text(strapline, 264 + dx, top + 190, SUB_SCALE, MUTED)
 
 
 # ---------------------------------------------------------------------------
@@ -391,9 +396,9 @@ def lockup(c, top, strapline):
 # a site that ships SVG only, and iOS crops `apple-touch-icon` to a square, so a
 # 1200×630 banner in that slot arrives as a slice of its own middle.
 #
-# Geometry is favicon.svg's 22-unit box, scaled. Below 48px the dashed baseline
-# is a smear rather than a rule, so it is dropped and the two bars carry the
-# mark — one drawing with a stated threshold, never two artworks that drift.
+# Geometry is favicon.svg's 22-unit box, scaled, at every size the mark is
+# whole: an unbroken rule still reads as a rule when it is one pixel tall, so
+# no size drops it and there is one drawing here rather than two that drift.
 # Square, because every platform that wants a rounded icon applies its own mask.
 # ---------------------------------------------------------------------------
 ICON_UNITS = 22
@@ -404,12 +409,9 @@ def build_icon(size):
     c = Canvas(size, size, PAPER)
     c.rect(at(3), at(7), max(1, at(4)), max(1, at(12)), MUTED)
     c.rect(at(15), at(3), max(1, at(4)), max(1, at(16)), REAL)
-    if size >= 48:
-        # Centred on the bar feet, the way a stroke is: drawn from y=19 down it
-        # sits a whole stroke below them and reads as two stray blocks rather
-        # than as the rule that joins "then" to "now".
-        for x in range(at(7), at(15), at(4)):
-            c.rect(x, at(19 - 0.7), at(2), max(1, at(1.4)), REAL)
+    # Its foot level with the bars': hung below them it reads as a block under
+    # the mark rather than as the ground "then" and "now" both stand on.
+    c.rect(at(7), at(19 - 1.4), at(15) - at(7), max(1, at(1.4)), REAL)
     return c
 
 
@@ -452,6 +454,47 @@ def build_banner(strapline):
     return c
 
 
+# ---------------------------------------------------------------------------
+# The Facebook cover.
+#
+# 1640×624 is what Facebook asks to be given; what it SHOWS is smaller and
+# differs per device, and that is the whole of the layout below. Two crops eat
+# the artwork and neither is opt-out: the sides go on a phone, so anything that
+# has to be read lives inside COVER_SAFE, and the profile picture is pasted
+# over the bottom-left corner on a desktop, so the block under the rule is
+# centred rather than ranged left the way the card's is.
+#
+# It carries no figure, for the reason CARDS gives — a cover is cached by
+# Facebook and by everyone who screenshots it, and it is changed by hand.
+# ---------------------------------------------------------------------------
+COVER_W, COVER_H = 1640, 624
+COVER_MARGIN = 180  # = the safe band's left edge, so the lockup starts on it
+COVER_SAFE = (COVER_MARGIN, COVER_W - COVER_MARGIN)
+
+# The six subjects, in the order the header lists them. It is the one line on
+# the cover that says the site is more than an inflation calculator, and the
+# nearest thing to a menu a picture can carry.
+COVER_NAV = "ИНФЛАЦИЯ · ЗАПЛАТИ · ДАНЪЦИ · НАЕМ · ИМОТИ · КРЕДИТИ"
+COVER_HEAD = "СМЕТНИ СВОИТЕ ЧИСЛА"
+COVER_SOURCE = "ЕВРОСТАТ, ЕЦБ, НСИ, БНБ, ИМОТ.BG"
+
+
+def build_cover():
+    """The 1640×624 Facebook cover: the shared lockup, then a centred block."""
+    c = Canvas(COVER_W, COVER_H, PAPER)
+    left, right = COVER_SAFE
+    c.rect(left, 300, right - left, 1, LINE_2)
+
+    lockup(c, 44, STRAPLINE, left=left, right=right)
+
+    centred = lambda s, scale: (COVER_W - c.width_of(s, scale)) // 2  # noqa: E731
+    c.text(COVER_NAV, centred(COVER_NAV, SUB_SCALE), 336, SUB_SCALE, MUTED)
+    c.text(COVER_HEAD, centred(COVER_HEAD, HEAD_SCALE), 412, HEAD_SCALE, ERODE)
+    c.text(COVER_SOURCE, centred(COVER_SOURCE, SUB_SCALE), 486, SUB_SCALE, MUTED)
+    c.rect((COVER_W - 260) // 2, 548, 260, 4, REAL)
+    return c
+
+
 def main():
     site = Path(__file__).resolve().parents[1]
     root = site.parent
@@ -464,6 +507,9 @@ def main():
         DOMAIN,
         STRAPLINE,
         STRAPLINE_EN,
+        COVER_NAV,
+        COVER_HEAD,
+        COVER_SOURCE,
         *(line for _, _, headline, source in CARDS for line in (headline, source)),
     )
     missing = sorted({ch for s in strings for ch in s if ch not in FONT})
@@ -496,12 +542,28 @@ def main():
         if 264 + card.width_of(strapline, SUB_SCALE) > RIGHT:
             sys.exit(f"the strapline overflows the right margin: {strapline}")
 
+    # The cover's own margin check, and it is the one that matters most: a line
+    # wider than the safe band is not clipped by the file, it is clipped by
+    # Facebook on every phone, after the image is uploaded and looks right on
+    # the desktop it was uploaded from.
+    cover = build_cover()
+    safe = COVER_SAFE[1] - COVER_SAFE[0]
+    for line, scale in (
+        (COVER_NAV, SUB_SCALE),
+        (COVER_HEAD, HEAD_SCALE),
+        (COVER_SOURCE, SUB_SCALE),
+    ):
+        over = cover.width_of(line, scale) - safe
+        if over > 0:
+            sys.exit(f"cover: {line!r} runs {over}px past what a phone shows of it")
+
     targets = [(site / "public" / name, drawn) for name, drawn in cards] + [
         (site / "public" / "icon-180.png", build_icon(180)),
         (site / "public" / "icon-192.png", build_icon(192)),
         (site / "public" / "icon-512.png", build_icon(512)),
         (root / "docs" / "img" / "banner.bg.png", build_banner(STRAPLINE)),
         (root / "docs" / "img" / "banner.en.png", build_banner(STRAPLINE_EN)),
+        (root / "docs" / "img" / "facebook-cover.png", cover),
     ]
     favicon = site / "public" / "favicon.ico"
     favicon.write_bytes(ico((16, 32, 48)))
