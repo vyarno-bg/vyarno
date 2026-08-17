@@ -133,4 +133,31 @@ test("the English page is in English and carries the same figures", { skip }, as
   }, "/en/credit/");
 });
 
+test(
+  "the English page writes its figures the way an English reader reads them",
+  { skip },
+  async () => {
+    // `format.js#number` defaults to Bulgarian, so a call site that does not hand
+    // it the reader's language renders «2,41%» on the English page — where a
+    // comma is the thousands mark, so the rate reads as two hundred and forty
+    // one. Every percentage here goes through that one function.
+    await withApp(async (page, errors) => {
+      const percents = await page
+        .locator("main.credit strong, main.credit td.num")
+        .evaluateAll((els) =>
+          els.map((el) => el.textContent.trim()).filter((text) => text.endsWith("%"))
+        );
+      assert.ok(percents.length >= 12, `the English page drew ${percents.length} percentages`);
+      for (const shown of percents) {
+        assert.match(
+          shown,
+          /^\d{1,3}(,\d{3})*(\.\d+)?%$/,
+          `«${shown}» is not an English number — its decimal mark reads as a thousands separator`
+        );
+      }
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, "/en/credit/");
+  }
+);
+
 test.after(shutdown);

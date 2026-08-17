@@ -146,7 +146,7 @@
     <div class="stats">
       {#each [[rates.aar, COPY.howKAar], [rates.aprc, COPY.howKAprc], [rates.outstanding, COPY.howKStock]] as [figure, label] (label.bg)}
         <div class="stat">
-          <strong>{figure.value === null ? "—" : `${number(figure.value, 2)}%`}</strong>
+          <strong>{figure.value === null ? "—" : `${number(figure.value, 2, $lang)}%`}</strong>
           <span class="lbl">{t(label, $lang)}</span>
           {#if figure.sourceUrl}
             <a class="src" href={figure.sourceUrl} rel="noopener"
@@ -184,7 +184,7 @@
         <strong
           >{fixation.floating.value === null
             ? "—"
-            : `${number(fixation.floating.value, 1)}%`}</strong
+            : `${number(fixation.floating.value, 1, $lang)}%`}</strong
         >
         <span class="lbl">{t(COPY.crdKFloating, $lang)}</span>
         {#if fixation.floating.sourceUrl}
@@ -222,12 +222,12 @@
             <tr>
               <th scope="row">{t(BUCKET_LABEL[bucket.bucket] ?? COPY.crdFixUpTo1y, $lang)}</th>
               <td class="num"
-                >{bucket.sharePct === null ? "—" : `${number(bucket.sharePct, 2)}%`}</td
+                >{bucket.sharePct === null ? "—" : `${number(bucket.sharePct, 2, $lang)}%`}</td
               >
               <td class="num"
                 >{bucket.ratePct === null
                   ? t(COPY.crdNoLending, $lang)
-                  : `${number(bucket.ratePct, 2)}%`}</td
+                  : `${number(bucket.ratePct, 2, $lang)}%`}</td
               >
             </tr>
           {/each}
@@ -247,7 +247,7 @@
         <strong
           >{renegotiation.share.value === null
             ? "—"
-            : `${number(renegotiation.share.value, 1)}%`}</strong
+            : `${number(renegotiation.share.value, 1, $lang)}%`}</strong
         >
         <span class="lbl">{t(COPY.crdKReneg, $lang)}</span>
         {#if renegotiation.share.sourceUrl}
@@ -279,15 +279,20 @@
         <span class="l-en">How far a loan is allowed to go</span>
       </h2>
       <div class="stats">
-        {@render limitStat(`${number(limits.minDownPaymentPct, 0)}%`, COPY.howKLtv, null, null)}
-        {@render limitStat(`${number(limits.dstiMaxPct, 0)}%`, COPY.howKDsti, null, null)}
+        {@render limitStat(
+          `${number(limits.minDownPaymentPct, 0, $lang)}%`,
+          COPY.howKLtv,
+          null,
+          null
+        )}
+        {@render limitStat(`${number(limits.dstiMaxPct, 0, $lang)}%`, COPY.howKDsti, null, null)}
         {@render limitStat(`${limits.maturityMaxYears}`, COPY.howKMaturity, null, null)}
         <!-- The one measurement among three legal limits, so it is the one that
              carries a period: the banking-system column of БНБ's macroprudential
              review, years behind every ЕЦБ figure beside it (P4). It also has a
              source of its own — the limits press release does not contain it. -->
         {@render limitStat(
-          `${number(limits.observedDstiPct, 1)}%`,
+          `${number(limits.observedDstiPct, 1, $lang)}%`,
           COPY.howKObserved,
           limits.observedSourceUrl,
           limits.observedDstiPeriod
@@ -308,7 +313,8 @@
           страната. Последната не е изискване, а измерване: толкова от дохода си отделят за вноска хората,
           които са теглили кредит наскоро. Калкулаторът тук спира да нарича вноската поносима над {number(
             limits.prudentDstiPct,
-            0
+            0,
+            $lang
           )}% от чистия доход, по-строго и от тавана на БНБ, и от това, което тези хора носят. Тази
           граница не се мести.</span
         >
@@ -316,7 +322,7 @@
           >The first three have been in force since {dateShort(limits.effectiveFrom, $lang)} and bind
           every bank in the country. The last is not a requirement but a measurement: that is how much
           of their income people who borrowed recently put towards the payment. The calculator here stops
-          calling a payment bearable above {number(limits.prudentDstiPct, 0)}% of net income,
+          calling a payment bearable above {number(limits.prudentDstiPct, 0, $lang)}% of net income,
           stricter than the BNB ceiling and than what those borrowers carry. That line does not
           move.</span
         >
@@ -696,7 +702,7 @@
     <div class="stats">
       {#each products as product (product.key)}
         <div class="stat" class:pays={product.isDeposit}>
-          <strong>{number(product.rate.value, 2)}%</strong>
+          <strong>{number(product.rate.value, 2, $lang)}%</strong>
           <span class="lbl">{t(PRODUCT_LABEL[product.key], $lang)}</span>
           <a class="src" href={product.rate.sourceUrl} rel="noopener"
             >{t(COPY.crdWhoseEcb, $lang)} · {periodLong(product.rate.refPeriod, $lang)}</a
