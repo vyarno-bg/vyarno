@@ -170,6 +170,14 @@ export const PRERENDERED = Object.freeze(
       ],
     },
     {
+      name: "credit",
+      source: "src/Credit.svelte",
+      pages: [
+        ["credit", "index.html"],
+        ["en", "credit", "index.html"],
+      ],
+    },
+    {
       name: "legal",
       source: "src/Legal.svelte",
       pages: [

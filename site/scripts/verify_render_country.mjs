@@ -156,13 +156,15 @@ test("every figure on the country page names a source and a period", { skip }, a
       );
     }
 
-    // The five publishers, each reachable from the page that names their
-    // figures. The footer's attribution line is a licence condition; these are
-    // the links that make it checkable.
+    // The publishers THIS page names, each reachable from it. The footer's
+    // attribution line is a licence condition; these are the links that make it
+    // checkable. БНБ is not among them: §`#loan` is a pointer now and the
+    // outstanding book and the lending limits render on `/credit/`, where
+    // `verify_render_credit.mjs` makes the same assertion over the same host.
     const hrefs = await page
       .locator("main.how a[href^='https://']")
       .evaluateAll((els) => els.map((el) => el.getAttribute("href")).join(" "));
-    for (const host of ["ec.europa.eu", "nsi.bg", "imot.bg", "ecb.europa.eu", "bnb.bg"]) {
+    for (const host of ["ec.europa.eu", "nsi.bg", "imot.bg", "ecb.europa.eu"]) {
       assert.ok(
         hrefs.includes(host),
         `/how/ renders figures from ${host} and links to none of them`

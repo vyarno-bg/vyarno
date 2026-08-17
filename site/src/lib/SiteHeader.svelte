@@ -43,6 +43,7 @@
     { href: "/", label: COPY.calcNavK },
     { href: "/how/", label: COPY.howNavK },
     { href: "/market/", label: COPY.marketNavK },
+    { href: "/credit/", label: COPY.creditNavK },
   ];
 
   /**

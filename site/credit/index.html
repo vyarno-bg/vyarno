@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="bg" data-lang="bg" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вярно — кредитите</title>
+    <!--
+    The description names what this page answers that the calculator does not:
+    how long a Bulgarian mortgage's rate is fixed for, and how much of what is
+    reported as new lending is an existing loan repriced. Kept under ~160
+    characters so a search result does not truncate mid-clause.
+  -->
+    <meta
+      name="description"
+      content="Какво струва жилищният кредит в България, за колко време е фиксирана лихвата и колко от «новите» кредити са предоговорени стари — с източник и период."
+    />
+    <link rel="canonical" href="https://vyarno.bg/credit/" />
+    <!--
+      The same page in the other language, and itself. `hreflang` is reciprocal
+      by definition — Google discards a set where a page names an alternate that
+      does not name it back — so all eight entries carry all three lines and
+      each one names ITSELF among them. `verify_static_assets.mjs` holds the
+      whole collection to that rather than checking this file alone, because a
+      one-sided set fails silently: both pages keep serving, and the pair is
+      simply never treated as a pair.
+
+      x-default is the Bulgarian page. It is what a search engine serves a
+      reader whose language it cannot place, and this is a calculator of
+      Bulgarian prices, Bulgarian payroll law and Sofia housing written for a
+      person living in Bulgaria (docs/README.md §"Who this is for") — the same
+      reasoning that makes BG the default in `stores.js` and keeps
+      `navigator.language` out of it.
+    -->
+    <link rel="alternate" hreflang="bg" href="https://vyarno.bg/credit/" />
+    <link rel="alternate" hreflang="en" href="https://vyarno.bg/en/credit/" />
+    <link rel="alternate" hreflang="x-default" href="https://vyarno.bg/credit/" />
+    <!--
+      EU snippet opt-in. Google truncates snippets and image previews in the EU
+      for publishers who have not asked otherwise, and that limit governs how
+      much of a page can appear in a result AND in an AI Overview. Both
+      directives are the maximum: this is a public good whose whole purpose is
+      that the number reaches the person with its source attached, so a longer
+      quotation of it is the outcome we want.
+
+      Consistent with robots.txt rather than in tension with it — the note on
+      the allowed agents already records that Googlebot and Bingbot are allowed
+      and that AI Overviews are built on those same indexes. 404.html keeps its
+      bare noindex and must never gain these.
+    -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+
+    <!--
+    `website`, the same as the calculator's, and NOT `article`. OGP's article
+    type is for a dated piece by someone, and its whole vocabulary —
+    published_time, modified_time, author — is metadata this page has none of
+    and must not invent (P7). It is deliberately undated: every FIGURE on it
+    carries the period it describes, and the page carries no moment of its own
+    because it has none. Declaring it an article hands an unfurler a shape it
+    will look for a byline and a date in, and find neither.
+  -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Вярно · vyarno.bg" />
+    <meta property="og:locale" content="bg_BG" />
+    <!--
+    Same as the calculator's, and for the same reason: bg_BG is this document's
+    locale and en_US is the one its counterpart is in. Open Graph is what an
+    unfurler reads and `hreflang` is what a search engine reads, so the pair of
+    URLs is stated in both vocabularies rather than in whichever came first.
+  -->
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://vyarno.bg/credit/" />
+    <meta property="og:title" content="Вярно — кредитите" />
+    <!--
+      «Плаваща» is the word said out loud, and the description may not use it
+      alone: the bucket БНБ publish holds variable-rate loans TOGETHER WITH
+      one-year fixations, so «плаваща» would promise a split they do not make.
+      «лихва, която банката може да промени до година» is the same fact in the
+      words the workbook's own footnote uses. An unfurl is the one line of this
+      page a reader meets before the section that qualifies it.
+    -->
+    <meta
+      property="og:description"
+      content="Лихви, ГПР и ограниченията на БНБ по жилищните кредити — и колко от новото кредитиране е с лихва, която банката може да промени до година."
+    />
+    <!--
+    This page's own card. The figures on its first screen — 99,6%, 19,9%, three
+    rates — move every month, so none of them may go ON the card: a preview is
+    cached hard by every platform (docs/principles.md P4). The headline says
+    what the page answers and the answers stay where a refresh reaches them.
+
+    scripts/make_og_image.py's CARDS block carries the rest: why a card per
+    page, why one per language, and what an entry with none unfurls as.
+  -->
+    <meta property="og:image" content="https://vyarno.bg/og-credit.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Вярно · vyarno.bg — кредитите в България, по данни на БНБ и ЕЦБ"
+    />
+    <!-- The shape, which no og: tag can state. See /how/ for what X does without it. -->
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!--
+    Structured data, and the two things it deliberately does not say.
+
+    NOT a Dataset node, for the reason index.html spells out at length: that
+    would describe data/published/ as a dataset this project publishes and
+    offers for reuse, and НСИ's licence forbids distributing производни и
+    сборни произведения outright (docs/legal.md §НСИ).
+
+    NOT a FAQPage either, though the sections below are questions and it would
+    parse. An FAQ node has to carry its answers as TEXT, which would mean
+    writing today's figures into strings that nothing recomputes — the one
+    failure this page is most exposed to (docs/principles.md P3, P4, and
+    `verify_copy.mjs` §"no page writes a live figure into its prose"). Google
+    also stopped showing FAQ rich results for most sites, so the trade is a
+    frozen number against nothing.
+
+    What is left is a WebPage that says what the page is and whose it is.
+
+    `dateModified` is a SLOT filled by scripts/gen-jsonld.mjs, and it takes the
+    SAME value as the calculator's: both pages are prerendered from the
+    published payloads in one build, so a refreshed payload genuinely changes
+    what a visitor sees on either. A literal date here is one that stops being
+    true at the next refresh, in the field a crawler reads freshness off.
+
+    THE LICENCE SITS ON THE APPLICATION, NEVER ON THE PAGE, and the distinction
+    is the same one the footer's licence clause is scope-checked for — in the
+    form a machine actually parses. `license` on a schema.org node states the
+    terms of THAT node's content, and this page's content is Eurostat's, the
+    ЕЦБ's, БНБ's, НСИ's and имот.bg's figures under five separate sets of terms
+    (docs/legal.md). Apache-2.0 on the WebPage tells a citing agent that a table
+    of НСИ's quarterly wages is ours to give away, which is the one claim
+    AGENTS.md forbids by name — and it says it to the reader least able to check,
+    on the page built for exactly that reader. The WebApplication below is the
+    code, which is what the grant covers; a consumer wanting the page's terms
+    follows the footer to /legal/#sources, where each publisher's own wording is.
+  -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Кредитите в България, с числата на институциите",
+        "url": "https://vyarno.bg/credit/",
+        "inLanguage": "bg",
+        "dateModified": "__DATA_LASTMOD__",
+        "isPartOf": {
+          "@type": "WebApplication",
+          "name": "Вярно",
+          "url": "https://vyarno.bg/",
+          "license": "https://www.apache.org/licenses/LICENSE-2.0"
+        },
+        "description": "Какво струва един жилищен кредит в България, за колко време му е фиксирана лихвата, колко от новото кредитиране е предоговорен стар кредит и докъде БНБ позволява да стигне един заем. Всяко число носи публикуващата институция, периода и връзка за проверка."
+      }
+    </script>
+
+    <!-- The SVG serves the tab. The raster set serves everything that cannot
+       read one: Chrome paints the default globe in its history, its
+       restore-tabs card and its new-tab tiles for an SVG-only site, and iOS
+       crops apple-touch-icon to a square. One geometry, generated from the
+       same lockup as the OG card by scripts/make_og_image.py. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#E8ECEF" />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <!--
+        `scripts/prerender.mjs` writes this page — figures and all — into #app
+        at build time, so a reader with JavaScript off already has the numbers.
+        What they lose is the calculator behind the link, which is what these
+        two sentences say. The upstream attribution is a licence condition that
+        must appear on every page including this one, whether the bundle runs or
+        the prerender step ever stops running.
+      -->
+      <div
+        style="
+          max-width: 40rem;
+          margin: 3rem auto;
+          padding: 0 1.25rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.55;
+        "
+      >
+        <p lang="bg">
+          Числата на тази страница се четат и без JavaScript. Тази страница няма какво да смята — на
+          нея няма нито едно поле за въвеждане. Калкулаторът има, и там JavaScript трябва.
+        </p>
+        <p lang="en">
+          The figures on this page read without JavaScript. There is nothing here to compute — this
+          page has no input field of any kind. The calculator does, and there JavaScript is needed.
+        </p>
+        <p>
+          <small
+            >Данни от Евростат / ЕЦБ / НСИ / БНБ / имот.bg · Data from Eurostat / ECB / NSI / BNB /
+            imot.bg</small
+          >
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/credit-main.js"></script>
+  </body>
+</html>

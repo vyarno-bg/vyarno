@@ -14,6 +14,7 @@ is the list to read this off — a count written here is a count nothing checks)
 | `index.html` → `src/main.js` → `App.svelte` | `/` | the calculator |
 | `how/index.html` → `src/how-main.js` → `How.svelte` | `/how/` | the country's figures, with their sources |
 | `market/index.html` → `src/market-main.js` → `Market.svelte` | `/market/` | the residential property market, with every figure sourced |
+| `credit/index.html` → `src/credit-main.js` → `Credit.svelte` | `/credit/` | what borrowing costs, and how long a mortgage's rate is fixed for |
 | `legal/index.html` → `src/legal-main.js` → `Legal.svelte` | `/legal/` | terms, privacy, ЗЕТ чл. 4 identity, sources |
 | `support/index.html` → `src/support-main.js` → `Support.svelte` | `/support/` | how the project is paid for |
 | `en/index.html`, `en/how/…`, `en/market/…`, `en/legal/…`, `en/support/…` | `/en/…` | those five again, declaring `en` |
@@ -96,6 +97,8 @@ site/
 │   ├── verify_view_home.mjs       # what a home costs the reader buying one
 │   ├── verify_view_country.mjs    # the figures /how/ renders with nobody in them
 │   ├── verify_view_market.mjs     # which published field feeds which market figure
+│   ├── verify_view_credit.mjs     # …and which feeds which borrowing figure
+│   ├── verify_render_credit.mjs   # /credit/ in a browser: the figures arrive, the shares sum
 │   ├── verify_wiring.mjs          # which value the template feeds which function
 │   ├── verify_copy.mjs            # copy invariants, against the imported COPY
 │   ├── verify_payload_prose.mjs   # retired claims, across payload prose and page alike
@@ -131,7 +134,8 @@ site/
 │   ├── _headers · robots.txt · llms.txt · .well-known/security.txt
 │   ├── favicon.svg · og-*.png · fonts/ (self-hosted, vendored unmodified)
 └── src/
-    ├── App.svelte · How.svelte · Market.svelte · Legal.svelte · Support.svelte
+    ├── App.svelte · How.svelte · Market.svelte · Credit.svelte · Legal.svelte
+    │   · Support.svelte
     │   · NotFound.svelte
     ├── components/   # the calculator, one file per part
     └── lib/
@@ -151,7 +155,8 @@ site/
         │   ├── employer.js   # what the job costs, and the other denominator
         │   ├── country.js    # the figures /how/ renders with nobody in them
         │   ├── share.js      # what leaves the page when a reader shares it
-        │   └── market.js     # which published field feeds which figure on /market/
+        │   ├── market.js     # which published field feeds which figure on /market/
+        │   └── credit.js     # …and on /credit/
         ├── calculator.svelte.js  # the STATE the components read
         ├── content.js    # BG/EN copy + presets + HOME constants
         ├── share-card.js # the PNG a reader sends, drawn on a canvas
@@ -543,6 +548,7 @@ tests, and so on for all ten.
 | `country.js` | What does `/how/` render with nobody in it? | `verify_view_country.mjs` |
 | `share.js` | What leaves the page when a reader shares it? | `verify_view_share.mjs` |
 | `market.js` | Which published field feeds which figure on `/market/`? | `verify_view_market.mjs` |
+| `credit.js` | Which published field feeds which figure on `/credit/`? | `verify_view_credit.mjs` |
 
 What the pairing buys is not tidiness. It makes *where is the test for this
 function* answerable from the filename, and it makes moving a function between

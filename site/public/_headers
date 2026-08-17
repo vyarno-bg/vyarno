@@ -124,7 +124,7 @@
 # The entry points must never be cached hard, or a user keeps loading a bundle
 # that points at assets which no longer exist.
 #
-# `/`, `/how/` and `/market/` carry the published figures in their markup
+# `/`, `/how/`, `/market/` and `/credit/` carry the published figures in their markup
 # (scripts/prerender.mjs), so those documents age the way the data does and this
 # line has a second job: a hard cache on any of them serves last month's
 # inflation, or last quarter's house prices, to a reader whose browser never
@@ -150,6 +150,12 @@
 /market/index.html
   Cache-Control: public, max-age=0, must-revalidate
 
+/credit/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/credit/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
 /legal/
   Cache-Control: public, max-age=0, must-revalidate
 
@@ -162,11 +168,11 @@
 /support/index.html
   Cache-Control: public, max-age=0, must-revalidate
 
-# The English tree. Five more documents rather than five renderings of the five
-# above: each is a separate entry with its own canonical, and `/en/`, `/en/how/`
-# and `/en/market/` carry the published figures in their markup exactly as their
-# Bulgarian counterparts do, so the same pairing with the 300 s on
-# `/data/published/*` applies to them.
+# The English tree. Six more documents rather than six renderings of the six
+# above: each is a separate entry with its own canonical, and `/en/`, `/en/how/`,
+# `/en/market/` and `/en/credit/` carry the published figures in their markup
+# exactly as their Bulgarian counterparts do, so the same pairing with the 300 s
+# on `/data/published/*` applies to them.
 /en/
   Cache-Control: public, max-age=0, must-revalidate
 
@@ -183,6 +189,12 @@
   Cache-Control: public, max-age=0, must-revalidate
 
 /en/market/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/credit/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/en/credit/index.html
   Cache-Control: public, max-age=0, must-revalidate
 
 /en/legal/

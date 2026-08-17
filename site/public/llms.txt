@@ -32,6 +32,13 @@ hreflang alternate, so quote whichever you read and cite its own URL.
   figure that is our arithmetic states the arithmetic and links the queries
   that reproduce it. The page takes no position on the market — several of the
   figures on it point in different directions and all of them are shown.
+- https://vyarno.bg/credit/ — what borrowing costs in Bulgaria: the rate on a
+  new home loan, the same loans' APRC, what the book already being repaid
+  averages, and how long the rate on new lending is fixed for — 99.6% of it
+  carries a rate the bank may change within a year. Also how much of what is
+  reported as «new lending» is an existing loan repriced, and the БНБ limits
+  every mortgage is bound by. No input on the page, and no lender named on it:
+  БНБ's registers are linked so a reader can check their own.
 - https://vyarno.bg/legal/ — terms of use, privacy, the provider's identity
   under ЗЕТ чл. 4, and each upstream's own licence wording.
 - https://vyarno.bg/support/ — who pays for the project. It is free for
@@ -39,6 +46,7 @@ hreflang alternate, so quote whichever you read and cite its own URL.
 - https://vyarno.bg/en/ — the calculator, in English
 - https://vyarno.bg/en/how/ — the country's figures, in English
 - https://vyarno.bg/en/market/ — the residential property market, in English
+- https://vyarno.bg/en/credit/ — what borrowing costs, in English
 - https://vyarno.bg/en/legal/ — terms, privacy and the sources, in English
 - https://vyarno.bg/en/support/ — who pays for the project, in English
 

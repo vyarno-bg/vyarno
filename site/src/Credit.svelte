@@ -1,0 +1,394 @@
+<script>
+  /**
+   * `/credit/` — what borrowing costs in Bulgaria, and what a Bulgarian
+   * borrower is actually signing.
+   *
+   * The sixth route, built like `/market/`: prerendered in both languages,
+   * every figure carrying its publisher, the period it describes and a link to
+   * the table it came from. **No input on it, ever.** Every derived value takes
+   * payloads rather than scalars (`view/credit.js`), so a reader's own salary
+   * has no signature to be threaded into and this page cannot drift into the
+   * calculator that already exists at `/`.
+   *
+   * NO LENDER APPEARS ON IT. P10 forbids a commercial relationship moving which
+   * lender a reader sees, and the cheapest way to keep that true is to have no
+   * list to move: БНБ's own registers are linked so a reader can check the firm
+   * in front of them, and nothing here is reproduced or ranked.
+   *
+   * THE PAGE DESCRIBES AND DOES NOT ADVISE (P6), and this is the page where
+   * that is hardest. «99,6% плаваща» plus «лихвата може да се промени» writes
+   * "fix your rate" for the reader without our writing it, and that is the
+   * honest form: the comparison and the number, with what to do about it left
+   * where it belongs. `verify_copy.mjs` holds the vocabulary.
+   *
+   * The words are here and the wiring is in `view/credit.js`, which is the
+   * split the rest of the SPA uses: a claim about which payload field feeds
+   * which figure is one a test can hold, and an expression inside a `$derived`
+   * is not.
+   */
+  import { onMount } from "svelte";
+  import { lang } from "./lib/stores.js";
+  import SiteFooter from "./lib/SiteFooter.svelte";
+  import SiteHeader from "./lib/SiteHeader.svelte";
+  import DataLate from "./components/DataLate.svelte";
+  import { COPY, t } from "./lib/content.js";
+  import { loadAll } from "./lib/data.js";
+  import { payloadsFor } from "./lib/payloads.js";
+  import { dataAge } from "./lib/view/freshness.js";
+  import {
+    creditFixation,
+    creditLimits,
+    creditRates,
+    creditRenegotiation,
+  } from "./lib/view/credit.js";
+  import { number, periodLong } from "./lib/format.js";
+
+  const { payloads = null, servedLang = null } = $props();
+
+  if (servedLang) lang.set(servedLang);
+
+  // `"credit"` rather than the whole manifest: the calculator's payroll table
+  // and percentile ladder render nothing here, and `payloadsFor` is what stops
+  // a reader of this page paying for them (`payloads.js`).
+  let data = $state(payloads ?? {});
+  // Set in `onMount` and never seeded from the prop: the verdict is a function
+  // of the clock, and the build's clock is not the reader's.
+  let late = $state([]);
+
+  onMount(async () => {
+    data = await loadAll("credit");
+    late = dataAge(data, payloadsFor("credit")).overdue;
+  });
+
+  const mortgage = $derived(data.mortgage ?? null);
+  const rates = $derived(creditRates(mortgage));
+  const fixation = $derived(creditFixation(mortgage));
+  const renegotiation = $derived(creditRenegotiation(mortgage));
+  const limits = $derived(creditLimits(mortgage));
+
+  const BUCKET_LABEL = {
+    up_to_1y: COPY.crdFixUpTo1y,
+    "1y_to_5y": COPY.crdFix1to5,
+    "5y_to_10y": COPY.crdFix5to10,
+    over_10y: COPY.crdFixOver10,
+  };
+</script>
+
+<SiteHeader page="/credit/" tagline={COPY.creditTagline ?? COPY.brandSmall} />
+
+<main id="main" class="credit wrap">
+  <h1>
+    <span class="l-bg">Кредитите в България</span>
+    <span class="l-en">Borrowing in Bulgaria</span>
+  </h1>
+  <p class="lede">
+    <span class="l-bg"
+      >Какво струва един жилищен кредит, за колко време му е фиксирана лихвата и кой всъщност взема
+      «новите» кредити — по данни на БНБ и ЕЦБ, всяко число със своя източник, период и връзка.</span
+    >
+    <span class="l-en"
+      >What a home loan costs, how long its rate is fixed for, and who is actually taking out the
+      «new» loans — from BNB and the ECB, every figure with its source, its period and a link.</span
+    >
+  </p>
+
+  <DataLate rows={late} inset />
+
+  <!-- 1 ------------------------------------------------------------------ -->
+  <section id="rates">
+    <h2>
+      <span class="l-bg">Трите лихви, и на какъв въпрос отговаря всяка</span>
+      <span class="l-en">The three rates, and which question each answers</span>
+    </h2>
+    <div class="stats">
+      {#each [[rates.aar, COPY.howKAar], [rates.aprc, COPY.howKAprc], [rates.outstanding, COPY.howKStock]] as [figure, label] (label.bg)}
+        <div class="stat">
+          <strong>{figure.value === null ? "—" : `${number(figure.value, 2)}%`}</strong>
+          <span class="lbl">{t(label, $lang)}</span>
+          {#if figure.sourceUrl}
+            <a class="src" href={figure.sourceUrl} rel="noopener"
+              >{periodLong(figure.refPeriod, $lang)}</a
+            >
+          {/if}
+        </div>
+      {/each}
+    </div>
+    <p>
+      <span class="l-bg"
+        >Първата е лихвата, от която се смята вноската. Втората е ГПР — същите кредити, но с
+        таксите, които банката изисква, за да отпусне заема; тя е по-висока и не е числото, с което
+        се амортизира кредит. Третата не е за нов кредитополучател: тя е средното по вече изплащания
+        портфейл, в който има договори отпреди години.</span
+      >
+      <span class="l-en"
+        >The first is the rate the monthly payment is computed from. The second is the APRC — the
+        same loans with the charges the bank requires in order to lend; it is higher, and it is not
+        the figure a loan is amortised with. The third is not for a new borrower at all: it is the
+        average across the book already being repaid, which holds agreements signed years ago.</span
+      >
+    </p>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------------ -->
+  <section id="fixation">
+    <h2>
+      <span class="l-bg">Колко дълго е фиксирана лихвата</span>
+      <span class="l-en">How long the rate is fixed for</span>
+    </h2>
+    <div class="stats">
+      <div class="stat wide">
+        <strong
+          >{fixation.floating.value === null
+            ? "—"
+            : `${number(fixation.floating.value, 1)}%`}</strong
+        >
+        <span class="lbl">{t(COPY.crdKFloating, $lang)}</span>
+        {#if fixation.floating.sourceUrl}
+          <a class="src" href={fixation.floating.sourceUrl} rel="noopener"
+            >{t(COPY.crdWhoseBnb, $lang)} · {periodLong(fixation.period, $lang)}</a
+          >
+        {/if}
+      </div>
+    </div>
+    <p>
+      <span class="l-bg"
+        >БНБ броят заедно кредитите с плаваща лихва и тези, фиксирани за до една година, и го казват
+        в бележка под таблицата. Затова първият ред отдолу не значи «фиксирана за година» — значи
+        «банката може да я промени в рамките на година». Обратното на това е четвъртият ред.</span
+      >
+      <span class="l-en"
+        >BNB count variable-rate loans and loans fixed for up to a year as one bucket, and say so in
+        a footnote under the table. So the first row below does not mean «fixed for a year» — it
+        means «the bank may change it within a year». The fourth row is what the opposite looks
+        like.</span
+      >
+    </p>
+    <table class="fig">
+      <thead>
+        <tr>
+          <th>{t(COPY.crdColFixation, $lang)}</th>
+          <th class="num">{t(COPY.crdColShare, $lang)}</th>
+          <th class="num">{t(COPY.crdColRate, $lang)}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each fixation.buckets as bucket (bucket.bucket)}
+          <tr>
+            <th scope="row">{t(BUCKET_LABEL[bucket.bucket] ?? COPY.crdFixUpTo1y, $lang)}</th>
+            <td class="num">{bucket.sharePct === null ? "—" : `${number(bucket.sharePct, 2)}%`}</td>
+            <td class="num"
+              >{bucket.ratePct === null
+                ? t(COPY.crdNoLending, $lang)
+                : `${number(bucket.ratePct, 2)}%`}</td
+            >
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+    <p class="note">
+      <span class="l-bg"
+        >Обемите са само на БНБ. ЕЦБ публикуват лихвите по четирите групи, но не и колко е отпуснато
+        по всяка от тях в евро — тази серия просто не съществува за България след приемането на
+        еврото, така че разпределението идва от една институция и е сверено с другата само по
+        лихвите.</span
+      >
+      <span class="l-en"
+        >The volumes are BNB's alone. The ECB publish the four buckets' rates but not how much was
+        lent in each in euro — that series does not exist for Bulgaria after euro adoption — so the
+        split comes from one institution and is checked against the other on the rates only.</span
+      >
+    </p>
+  </section>
+
+  <!-- 3 ------------------------------------------------------------------ -->
+  <section id="renegotiation">
+    <h2>
+      <span class="l-bg">Колко от «новото кредитиране» е ново</span>
+      <span class="l-en">How much of «new lending» is new</span>
+    </h2>
+    <div class="stats">
+      <div class="stat wide">
+        <strong
+          >{renegotiation.share.value === null
+            ? "—"
+            : `${number(renegotiation.share.value, 1)}%`}</strong
+        >
+        <span class="lbl">{t(COPY.crdKReneg, $lang)}</span>
+        {#if renegotiation.share.sourceUrl}
+          <a class="src" href={renegotiation.share.sourceUrl} rel="noopener"
+            >{t(COPY.crdWhoseEcb, $lang)} · {periodLong(renegotiation.share.refPeriod, $lang)}</a
+          >
+        {/if}
+      </div>
+    </div>
+    <p>
+      <span class="l-bg"
+        >«Нов бизнес» в статистиката значи всяко ново споразумение, а предоговарянето на съществуващ
+        кредит е споразумение. ЕЦБ отчитат двете поотделно; заглавията за рекорден месец по жилищно
+        кредитиране — не.</span
+      >
+      <span class="l-en"
+        >«New business» in the statistics means any new agreement, and repricing an existing loan is
+        an agreement. The ECB report the two apart; headlines about a record month of home lending
+        do not.</span
+      >
+    </p>
+  </section>
+
+  <!-- 4 ------------------------------------------------------------------ -->
+  {#if limits}
+    <section id="limits">
+      <h2>
+        <span class="l-bg">Докъде може да стигне един кредит</span>
+        <span class="l-en">How far a loan is allowed to go</span>
+      </h2>
+      <div class="stats">
+        {@render limitStat(`${number(limits.minDownPaymentPct, 0)}%`, COPY.howKLtv)}
+        {@render limitStat(`${number(limits.dstiMaxPct, 0)}%`, COPY.howKDsti)}
+        {@render limitStat(`${limits.maturityMaxYears}`, COPY.howKMaturity)}
+        {@render limitStat(`${number(limits.observedDstiPct, 1)}%`, COPY.howKObserved)}
+      </div>
+      {#snippet limitStat(value, label)}
+        <div class="stat">
+          <strong>{value}</strong>
+          <span class="lbl">{t(label, $lang)}</span>
+          <a class="src" href={limits.sourceUrl} rel="noopener">{t(COPY.crdWhoseBnb, $lang)}</a>
+        </div>
+      {/snippet}
+      <p>
+        <span class="l-bg"
+          >Първите три са в сила от {limits.effectiveFrom} г. и важат за всяка банка в страната. Последната
+          не е ничие изискване — тя е линията, при която калкулаторът на този сайт спира да нарича една
+          вноска поносима — по-строго и от тавана на БНБ, и от това, което новите кредитополучатели в
+          България реално носят, и не се мести: едно жилище не става достъпно, защото калкулаторът е казал,
+          че е.</span
+        >
+        <span class="l-en"
+          >The first three have been in force since {limits.effectiveFrom} and bind every bank in the
+          country. The last is nobody's requirement — it is the line at which this site's calculator stops
+          calling a payment affordable. It is stricter than the BNB ceiling and than what new Bulgarian
+          borrowers actually carry, and it does not move: a home does not become affordable because a
+          calculator said so.</span
+        >
+      </p>
+      <p class="note">
+        <a href={limits.sourceUrl} rel="noopener">БНБ</a>
+        ·
+        <a href={limits.observedSourceUrl} rel="noopener">
+          <span class="l-bg">наблюдаваното съотношение</span>
+          <span class="l-en">the observed ratio</span>
+        </a>
+      </p>
+    </section>
+  {/if}
+
+  <!-- 5 ------------------------------------------------------------------ -->
+  <section id="uncomputed">
+    <h2>
+      <span class="l-bg">Какво никой не публикува</span>
+      <span class="l-en">What nobody publishes</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >БНБ публикуват броя на кредитите на домакинствата — по размер и по вид, всяко тримесечие.
+        Броя на <em>кредитополучателите</em> не публикува никой: едно домакинство може да държи кредитна
+        карта, овърдрафт и ипотека, и това са три кредита. Затова «кредити на човек» може да се сметне,
+        а «длъжници на човек» — не, и двете не бива да излизат под една дума. Няма и официална статистика
+        за ГПР на небанковите кредитори.</span
+      >
+      <span class="l-en"
+        >BNB publish the number of household loans — by size and by product, every quarter. The
+        number of <em>borrowers</em> is published by nobody: one household can hold a credit card, an
+        overdraft and a mortgage, and that is three loans. So «loans per person» is computable and «borrowers
+        per person» is not, and the two must never appear under one word. There is no official APRC series
+        for non-bank lenders either.</span
+      >
+    </p>
+    <p>
+      <span class="l-bg"
+        >Това е неизчислено, не скрито. Където нещо липсва, страницата го казва, вместо да сложи на
+        мястото му число, което никой не е измерил.</span
+      >
+      <span class="l-en"
+        >That is uncomputed, not concealed. Where something is missing this page says so, rather
+        than putting a figure nobody measured in its place.</span
+      >
+    </p>
+  </section>
+</main>
+
+<SiteFooter />
+
+<style>
+  .credit {
+    padding-bottom: 64px;
+  }
+  /* The same lockup `/how/` and `/market/` give their titles — three content
+     pages that a reader arrives at from each other should not each announce
+     themselves in a different voice. */
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(1.5625rem, 4vw, 2rem);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 28px 0 10px;
+  }
+  .lede {
+    font-size: var(--fs-lead);
+    color: var(--ink-2);
+    max-width: 62ch;
+    margin: 0 0 8px;
+  }
+  section {
+    margin-top: 40px;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-size: var(--fs-h3);
+    line-height: 1.25;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  p {
+    max-width: 66ch;
+    margin: 0 0 12px;
+  }
+  .note {
+    font-size: var(--fs-small);
+    color: var(--muted);
+  }
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 14px;
+  }
+  .stat {
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .stat.wide {
+    flex-basis: 100%;
+  }
+  .stat strong {
+    font-size: var(--fs-h2, 1.375rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .lbl {
+    font-size: var(--fs-small);
+    color: var(--ink-2);
+  }
+  .stat .src {
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    color: var(--muted);
+  }
+</style>

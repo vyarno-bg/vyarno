@@ -123,11 +123,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     { loc: "/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/how/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/market/", lastmod: dataLastmod, changefreq: "monthly" },
+    { loc: "/credit/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/legal/", lastmod: LEGAL_LASTMOD, changefreq: "yearly" },
     { loc: "/support/", changefreq: "yearly" },
     { loc: "/en/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/en/how/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/en/market/", lastmod: dataLastmod, changefreq: "monthly" },
+    { loc: "/en/credit/", lastmod: dataLastmod, changefreq: "monthly" },
     { loc: "/en/legal/", lastmod: LEGAL_LASTMOD, changefreq: "yearly" },
     { loc: "/en/support/", changefreq: "yearly" },
   ];

@@ -3060,6 +3060,47 @@ export const COPY = {
     bg: "Картинка за споделяне: моята кошница {p}% срещу средната кошница за България {o}%.",
     en: "Share image: my basket {p}% against the average Bulgarian's basket {o}%.",
   },
+
+  // ---- /credit/ -----------------------------------------------------------
+  // Labels, not sentences: the page writes its own prose and these are the
+  // strings passed as values into snippets. Each names WHAT IS COUNTED — «нов
+  // бизнес», never «пазарът» — because a label that interprets is the cheapest
+  // place for a view to get onto a page that must not carry one. The page
+  // TITLE is not here: it lives in the two `index.html` entries, which is where
+  // a crawler and an unfurler read it from.
+  // One word in both languages, on a row that already carries three. «заеми»
+  // is the other candidate and is what a person says about borrowing from a
+  // friend; «кредити» is what the contract, the bank and БНБ all call it, and
+  // it is the word a reader arrives with. English takes "loans" over "credit"
+  // for the same reason: a mortgage is a loan, and "credit" is what a card has.
+  creditNavK: { bg: "кредити", en: "loans" },
+  creditTagline: { bg: "кредитите", en: "borrowing" },
+  // The headline. «плаваща» is the word a Bulgarian uses out loud; the bucket
+  // it names also holds one-year fixations, and the sentence under the figure
+  // says so rather than the label carrying the caveat into eight lines at
+  // 360px.
+  crdKFloating: {
+    bg: "толкова от новото жилищно кредитиране е с лихва, която банката може да промени до година",
+    en: "that much of new home lending carries a rate the bank can change within a year",
+  },
+  crdKReneg: {
+    bg: "толкова от «новия бизнес» е предоговорен стар кредит, а не купено ново жилище",
+    en: "that much of «new business» is an old loan repriced, not a home newly bought",
+  },
+  // The fixation table.
+  crdColFixation: { bg: "Лихвата е фиксирана за", en: "Rate fixed for" },
+  crdColShare: { bg: "Дял от новото кредитиране", en: "Share of new lending" },
+  crdColRate: { bg: "Средна лихва", en: "Average rate" },
+  crdFixUpTo1y: { bg: "до 1 година, включително плаващите", en: "up to 1 year, floating included" },
+  crdFix1to5: { bg: "над 1 до 5 години", en: "over 1 and up to 5 years" },
+  crdFix5to10: { bg: "над 5 до 10 години", en: "over 5 and up to 10 years" },
+  crdFixOver10: { bg: "над 10 години", en: "over 10 years" },
+  crdNoLending: { bg: "никой не е взел такъв", en: "nobody took one" },
+  // The limits table. Three are БНБ's and the fourth is ours, and the two
+  // captions have to differ — a reader who takes our line for the regulator's
+  // has been told the law says something it does not.
+  crdWhoseBnb: { bg: "БНБ", en: "BNB" },
+  crdWhoseEcb: { bg: "ЕЦБ", en: "ECB" },
 };
 
 /**
