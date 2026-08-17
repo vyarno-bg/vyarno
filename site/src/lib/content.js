@@ -2270,8 +2270,8 @@ export const COPY = {
   howKAar: { bg: "лихва по нови жилищни кредити", en: "rate on new home loans" },
   howKAprc: { bg: "ГПР по същите кредити", en: "APRC on the same loans" },
   howKStock: {
-    bg: "средна лихва по всички изплащани кредити",
-    en: "average rate across every loan being repaid",
+    bg: "средна лихва по изплащаните жилищни кредити",
+    en: "average rate across every housing loan being repaid",
   },
   howKLtv: { bg: "минимално самоучастие", en: "minimum down payment" },
   howKDsti: {
