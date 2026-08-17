@@ -38,8 +38,10 @@
   import {
     creditArrears,
     creditFixation,
+    creditFixationHistory,
     creditLimits,
     creditOutstanding,
+    creditProductHistory,
     creditProducts,
     creditRates,
     creditStockHistory,
@@ -70,9 +72,11 @@
   const rates = $derived(creditRates(mortgage));
   const stockHistory = $derived(creditStockHistory(mortgage));
   const fixation = $derived(creditFixation(mortgage));
+  const fixationHistory = $derived(creditFixationHistory(mortgage));
   const renegotiation = $derived(creditRenegotiation(mortgage));
   const limits = $derived(creditLimits(mortgage));
   const products = $derived(creditProducts(data.credit ?? null));
+  const productHistory = $derived(creditProductHistory(data.credit ?? null, mortgage));
   const owed = $derived(creditOutstanding(data.credit ?? null));
   const savings = $derived(creditSavings(data.credit ?? null));
   const arrears = $derived(creditArrears(data.credit ?? null));
@@ -86,6 +90,11 @@
     CH_TALL = 200;
   const yOf = (v, axis, h = CH_H) => plotY(v, axis, h);
   const xOf = (i, n) => plotX(i, n, CH_W);
+  // A year rule's x. `yearTicks` answers in a percentage so one value places
+  // both the HTML label in the gutter and the rule inside the box, and this is
+  // the inverse it goes back through — the same `plotX` and the same width, so
+  // the rule lands on the column it labels rather than a last bit away.
+  const yearX = (at) => (at / 100) * CH_W;
   const path = (series, axis, h = CH_H) => pathOf({ ...series, ...axis }, CH_W, h);
   const xTicks = (series) => yearTicks(series, CH_W);
   // Billions on the axis and in the headline, millions in the payload. €30,863 m
@@ -238,13 +247,7 @@
               <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
             {/each}
             {#each xTicks(line) as tick (tick.year)}
-              <line
-                class="plot-year"
-                x1={(tick.at / 100) * CH_W}
-                y1="0"
-                x2={(tick.at / 100) * CH_W}
-                y2={CH_H}
-              />
+              <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
             {/each}
             <path class="plot-line" d={path(line, axis)} />
             <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
@@ -310,6 +313,82 @@
         year, but that the bank may change it within a year.</span
       >
     </p>
+    {#if fixationHistory}
+      {@const line = fixationHistory.series}
+      {@const axis = niceTicks(0, line.max, 4)}
+      <p>
+        <span class="l-bg"
+          >Така е през целия период, който БНБ публикуват. Делът не е падал под {number(
+            fixationHistory.trough.value,
+            1,
+            $lang
+          )}% нито веднъж, а най-ниската му стойност е през {periodLong(
+            fixationHistory.trough.period,
+            $lang
+          )}, когато лихвите в Европа се вдигаха и част от хората избраха фиксирана лихва. После
+          делът се върна нагоре.</span
+        >
+        <span class="l-en"
+          >It has been that way across the whole period BNB publish. The share has never once fallen
+          below {number(fixationHistory.trough.value, 1, $lang)}%, and its lowest reading is {periodLong(
+            fixationHistory.trough.period,
+            $lang
+          )}, when rates across Europe were rising and some borrowers did fix. Then it went back up.</span
+        >
+      </p>
+      <figure class="chart">
+        <div class="plot">
+          {@render yAxis(
+            axis.values.map((v) => ({ at: tickAt(v, axis), label: `${number(v, 0, $lang)}%` }))
+          )}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.crdChartFixation, $lang, {
+              from: periodLong(line.from, $lang),
+              to: periodLong(line.to, $lang),
+              troughPct: number(fixationHistory.trough.value, 1, $lang),
+              troughAt: periodLong(fixationHistory.trough.period, $lang),
+              toPct: number(fixationHistory.latest.value, 1, $lang),
+            })}
+          >
+            {#each axis.values as v (v)}
+              <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
+            {/each}
+            {#each xTicks(line) as tick (tick.year)}
+              <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
+            {/each}
+            <path class="plot-line" d={path(line, axis)} />
+            <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
+            {#each line.points as p, i (p.period)}
+              <rect
+                class="plot-hit"
+                x={xOf(i, line.points.length) - 2}
+                y="0"
+                width="4"
+                height={CH_H}
+                ><title>{periodLong(p.period, $lang)}: {number(p.value, 2, $lang)}%</title></rect
+              >
+            {/each}
+          </svg>
+          {@render xYears(xTicks(line))}
+        </div>
+      </figure>
+      <p class="note">
+        <a href={fixationHistory.sourceUrl} rel="noopener">{t(COPY.crdWhoseBnb, $lang)}</a>
+        · {periodLong(line.from, $lang)} – {periodLong(line.to, $lang)} ·
+        <span class="l-bg"
+          >делът е от обема на новото кредитиране, а не от броя на договорите, а данните в евро
+          преди 2026 г. са възстановени от БНБ от отчетите в лева и в евро</span
+        >
+        <span class="l-en"
+          >the share is of the volume of new lending, not of the number of agreements, and the euro
+          figures before 2026 were reconstructed by BNB from the lev and euro reporting</span
+        >
+      </p>
+    {/if}
+
     <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.crdTblFixation, $lang)}>
       <table class="fig-table">
         <thead>
@@ -514,9 +593,9 @@
               {#each xTicks(stock.total) as tick (tick.year)}
                 <line
                   class="plot-year"
-                  x1={(tick.at / 100) * CH_W}
+                  x1={yearX(tick.at)}
                   y1="0"
-                  x2={(tick.at / 100) * CH_W}
+                  x2={yearX(tick.at)}
                   y2={CH_TALL}
                 />
               {/each}
@@ -709,13 +788,7 @@
                 <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
               {/each}
               {#each xTicks(held.deposits) as tick (tick.year)}
-                <line
-                  class="plot-year"
-                  x1={(tick.at / 100) * CH_W}
-                  y1="0"
-                  x2={(tick.at / 100) * CH_W}
-                  y2={CH_H}
-                />
+                <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
               {/each}
               <path class="plot-line" d={path(held.deposits, axis)} />
               <path class="plot-line second" d={path(held.loans, axis)} />
@@ -856,6 +929,125 @@
         is the ECB's and does not cover cards.</span
       >
     </p>
+
+    {#if productHistory}
+      {@const axis = niceTicks(0, productHistory.scaleMax, 5)}
+      {@const card = productHistory.series.card}
+      {@const consumer = productHistory.series.consumer}
+      {@const mortgageLine = productHistory.series.mortgage}
+      <h3>
+        <span class="l-bg">Кои от тези цени се промениха</span>
+        <span class="l-en">Which of these prices changed</span>
+      </h3>
+      <p>
+        <span class="l-bg"
+          >Трите не се движат заедно. Потребителският кредит поскъпна до {number(
+            consumer.peak.value,
+            2,
+            $lang
+          )}% през {periodLong(consumer.peak.period, $lang)} и оттогава слиза. Лихвата по картата почти
+          не се е променила за целия период. А новият жилищен кредит е по-евтин сега, отколкото беше в
+          началото на периода.</span
+        >
+        <span class="l-en"
+          >The three do not move together. The consumer loan grew dearer, to {number(
+            consumer.peak.value,
+            2,
+            $lang
+          )}% in {periodLong(consumer.peak.period, $lang)}, and has fallen since. The card rate has
+          barely moved across the whole period. A new home loan is cheaper now than it was at the
+          start of the period.</span
+        >
+      </p>
+      <figure class="chart">
+        <div class="plot">
+          {@render yAxis(
+            axis.values.map((v) => ({ at: tickAt(v, axis), label: `${number(v, 0, $lang)}%` }))
+          )}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_TALL}"
+            role="img"
+            aria-label={t(COPY.crdChartPrices, $lang, {
+              from: periodLong(productHistory.from, $lang),
+              to: periodLong(productHistory.to, $lang),
+              cardFrom: number(card.first.value, 2, $lang),
+              cardTo: number(card.latest.value, 2, $lang),
+              consFrom: number(consumer.first.value, 2, $lang),
+              consTo: number(consumer.latest.value, 2, $lang),
+              consPeak: number(consumer.peak.value, 2, $lang),
+              consPeakAt: periodLong(consumer.peak.period, $lang),
+              mortFrom: number(mortgageLine.first.value, 2, $lang),
+              mortTo: number(mortgageLine.latest.value, 2, $lang),
+            })}
+          >
+            {#each axis.values as v (v)}
+              <line
+                class="plot-grid"
+                x1="0"
+                y1={yOf(v, axis, CH_TALL)}
+                x2={CH_W}
+                y2={yOf(v, axis, CH_TALL)}
+              />
+            {/each}
+            {#each xTicks(card) as tick (tick.year)}
+              <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_TALL} />
+            {/each}
+            <!-- The mortgage is the floor the other two are read against, and it
+                 is drawn at full weight rather than faded the way §6's debt total
+                 is. That total is context behind its own components; this line is
+                 the section's opening claim, and at 390px a 55%-opacity hairline
+                 lying on the zero rule is a claim a phone cannot check. -->
+            <path class="plot-line floor" d={path(mortgageLine, axis, CH_TALL)} />
+            <path class="plot-line second" d={path(consumer, axis, CH_TALL)} />
+            <path class="plot-line" d={path(card, axis, CH_TALL)} />
+            <line
+              class="plot-axis"
+              x1="0"
+              y1={yOf(0, axis, CH_TALL)}
+              x2={CH_W}
+              y2={yOf(0, axis, CH_TALL)}
+            />
+            {#each card.points as p, i (p.period)}
+              <rect
+                class="plot-hit"
+                x={xOf(i, card.points.length) - 2}
+                y="0"
+                width="4"
+                height={CH_TALL}
+                ><title
+                  >{periodLong(p.period, $lang)}: {number(p.value, 2, $lang)}% ·
+                  {number(consumer.points[i]?.value, 2, $lang)}% ·
+                  {number(mortgageLine.points[i]?.value, 2, $lang)}%</title
+                ></rect
+              >
+            {/each}
+          </svg>
+          {@render xYears(xTicks(card))}
+        </div>
+        <figcaption>
+          <span class="key">{t(COPY.crdKeyCard, $lang)}</span>
+          <span class="key consumer">{t(COPY.crdKeyConsumerLoan, $lang)}</span>
+          <span class="key floor">{t(COPY.crdKeyMortgage, $lang)}</span>
+        </figcaption>
+      </figure>
+      <p class="note">
+        <a href={productHistory.sourceUrl} rel="noopener">{t(COPY.crdWhoseEcb, $lang)}</a>
+        · {periodLong(productHistory.from, $lang)} – {periodLong(productHistory.to, $lang)} ·
+        <span class="l-bg"
+          >това са лихвите по договорите, подписани през съответния месец, а не по това, което вече
+          изплащаш; до 2026 г. са по кредитите в лева, а оттогава по кредитите в евро. Овърдрафтът и
+          депозитите не са на графиката: овърдрафтът се движи като жилищния кредит, а депозитните
+          лихви се публикуват едва от януари 2026 г.</span
+        >
+        <span class="l-en"
+          >these are the rates on agreements signed in each month, not on what you are already
+          repaying; through 2025 they are the lev lending and from 2026 the euro lending. The
+          overdraft and the deposits are not on the chart: the overdraft moves with the home loan,
+          and the deposit rates are only published from January 2026</span
+        >
+      </p>
+    {/if}
   </section>
 
   <!-- 9 ------------------------------------------------------------------ -->
@@ -960,13 +1152,7 @@
                 <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
               {/each}
               {#each xTicks(arrears.series.households) as tick (tick.year)}
-                <line
-                  class="plot-year"
-                  x1={(tick.at / 100) * CH_W}
-                  y1="0"
-                  x2={(tick.at / 100) * CH_W}
-                  y2={CH_H}
-                />
+                <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
               {/each}
               <path class="plot-line second" d={path(arrears.series.corporations, axis)} />
               <path class="plot-line" d={path(arrears.series.households, axis)} />
@@ -1153,6 +1339,15 @@
     stroke-dasharray: none;
     opacity: 0.55;
   }
+  /* The third line on the price chart. The neutral ink at full strength and
+     undashed, so it is told from the dashed second line by pattern rather than
+     by weight — and `.total` may not serve, because it fades to 55% on the
+     argument that a sum behind two components is context. This line is one of
+     the three being compared. */
+  :global(.plot-line.floor) {
+    stroke: var(--ink-2);
+    stroke-width: 1.5;
+  }
   /* The legend. Each key carries the stroke of the line it names, drawn as a
      short rule before the word rather than a swatch, so the mark in the caption
      is the same mark as in the plot. */
@@ -1173,6 +1368,9 @@
     border-top-width: 1px;
     border-top-color: var(--ink-2);
     opacity: 0.55;
+  }
+  .chart figcaption .key.floor::before {
+    border-top-color: var(--ink-2);
   }
   /* The horizontal scroll box the tables sit in, and the focus ring that makes
      it reachable by keyboard. `fig-table.css` styles the table; the box around

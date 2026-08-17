@@ -23,8 +23,10 @@ import { fileURLToPath } from "node:url";
 import {
   creditArrears,
   creditFixation,
+  creditFixationHistory,
   creditLimits,
   creditOutstanding,
+  creditProductHistory,
   creditProducts,
   creditRates,
   creditStockHistory,
@@ -127,13 +129,72 @@ test("a bucket nobody lent into carries no rate, rather than a zero", () => {
 });
 
 test("the shares over time come out oldest first, whatever order the JSON held", () => {
-  const fixation = creditFixation({
+  const history = creditFixationHistory({
     fixation: { floating_share_by_period: { "2026-06": 99.6, "2007-01": 95.1, "2015-03": 96.7 } },
   });
   assert.deepEqual(
-    fixation.sharesByPeriod.map((p) => p.period),
+    history.series.points.map((p) => p.period),
     ["2007-01", "2015-03", "2026-06"]
   );
+});
+
+test("the fixation curve's axis reaches zero, so the dip is drawn as a dip", () => {
+  // The series has never been below 84%. Measured against its own range the
+  // 2022 dip is the whole height of the plot and reads as fixing collapsing;
+  // against zero it is what it is, a share that stayed near its ceiling. There
+  // is no argument here that would let a caller raise the floor.
+  const history = creditFixationHistory(PUBLISHED);
+  assert.equal(history.series.min, 0);
+  assert.ok(history.trough.value > 50, `the trough is ${history.trough.value}%`);
+  assert.ok(history.trough.value < history.peak.value);
+  // The month the page names comes off the points, never out of the prose.
+  const shares = PUBLISHED.fixation.floating_share_by_period;
+  assert.equal(history.trough.value, Math.min(...Object.values(shares)));
+  assert.equal(history.latest.value, shares[PUBLISHED.fixation.ref_period]);
+});
+
+test("a fixation series too short to be a line comes back as no chart at all", () => {
+  // One point renders a path with a single `M` command and no stroke — a
+  // figure with an axis, a caption and nothing drawn in it.
+  assert.equal(
+    creditFixationHistory({ fixation: { floating_share_by_period: { "2026-06": 99.6 } } }),
+    null
+  );
+  assert.equal(creditFixationHistory(null), null);
+});
+
+test("the three prices share one scale, and it is the dearest of them", () => {
+  // Three lines on one axis need ONE scale. A component reaching for the card's
+  // own max is right only while the card is the dearest thing on the page, and
+  // a consumer rate above it would be drawn off the top of the box.
+  const history = creditProductHistory(CREDIT, PUBLISHED);
+  const { card, consumer, mortgage } = history.series;
+  assert.equal(history.scaleMax, Math.max(card.max, consumer.max, mortgage.max));
+  for (const series of [card, consumer, mortgage]) {
+    assert.equal(series.min, 0, "a rate axis that does not reach zero draws a wobble as a cliff");
+    assert.ok(
+      series.points.length > 60,
+      `${series.points.length} points is not six years of months`
+    );
+  }
+  // The three come off three different published blocks, which is the wiring
+  // this exists to hold: the mortgage rate is `mortgage.json`'s new business
+  // and the other two are `credit.json`'s, and swapping any pair draws a
+  // correct line under the wrong key.
+  assert.equal(card.latest.value, CREDIT.card.value_pct);
+  assert.equal(consumer.latest.value, CREDIT.consumer.value_pct);
+  assert.equal(mortgage.latest.value, PUBLISHED.new_business.value_pct);
+  // The consumer loan is the one of the three that turned. Its peak is inside
+  // the window rather than at either end, which is what the section claims.
+  assert.notEqual(consumer.peak.period, consumer.from);
+  assert.notEqual(consumer.peak.period, consumer.to);
+});
+
+test("no chart is drawn where one of the three prices is missing", () => {
+  // Two lines under a legend naming three is worse than no chart: the reading
+  // is the gap between them, and a reader cannot see which one did not arrive.
+  assert.equal(creditProductHistory({ card: CREDIT.card, consumer: CREDIT.consumer }, null), null);
+  assert.equal(creditProductHistory(null, PUBLISHED), null);
 });
 
 test("renegotiation is reported as a share of new business, not of pure new lending", () => {

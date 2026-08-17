@@ -160,25 +160,79 @@ test(
   }
 );
 
-test("the rate curve's axis labels are the gridlines they sit on", { skip }, async () => {
+test("every axis label on the page is the gridline it sits on", { skip }, async () => {
   // Rounding a tick label to whole percent drew the 2,5% gridline as «3%», so
   // the axis read 0 · 3 · 5 · 8 · 10 over five evenly spaced lines. Equal steps
-  // is the property that catches a label rounded away from its own tick.
+  // is the property that catches a label rounded away from its own tick, and it
+  // is asserted over EVERY chart rather than the one it was found on: the ticks
+  // a `niceTicks` step lands on move with the data, so a chart truthful today
+  // because its steps happen to be whole is one nobody would be told about.
+  await withApp(async (page, errors) => {
+    const axes = await page
+      .locator("main.credit .chart .yaxis")
+      .evaluateAll((els) =>
+        els.map((el) =>
+          [...el.querySelectorAll(".plot-tick")].map((tick) => tick.textContent.trim())
+        )
+      );
+    assert.ok(axes.length >= 4, `/credit/ drew ${axes.length} charts with an axis`);
+    for (const labels of axes) {
+      assert.ok(labels.length >= 4, `a chart drew ${labels.length} axis ticks`);
+      const values = labels.map(figure);
+      const steps = values.slice(1).map((v, i) => v - values[i]);
+      for (const step of steps) {
+        assert.ok(
+          Math.abs(step - steps[0]) < 1e-9,
+          `the axis labels ${labels.join(" \u00b7 ")} are not evenly spaced`
+        );
+      }
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/credit/");
+});
+
+test("the fixation curve is drawn against the whole 0-100%", { skip }, async () => {
+  // The share has never been below 84%. An axis cropped to its own range draws
+  // the 2022 dip as the country giving up on floating rates, which is the one
+  // reading this section may not produce — and the caption has to keep saying
+  // the share is of VOLUME, since a reader takes it for a count of contracts.
   await withApp(async (page, errors) => {
     const labels = await page
-      .locator("main.credit #stock-history .yaxis .plot-tick")
+      .locator("main.credit #fixation .chart .yaxis .plot-tick")
       .evaluateAll((els) => els.map((el) => el.textContent.trim()));
-    assert.ok(labels.length >= 4, `the rate curve drew ${labels.length} axis ticks`);
-    const steps = labels
-      .map(figure)
-      .slice(1)
-      .map((v, i) => v - labels.map(figure)[i]);
-    for (const step of steps) {
-      assert.ok(
-        Math.abs(step - steps[0]) < 1e-9,
-        `the axis labels ${labels.join(" \u00b7 ")} are not evenly spaced`
-      );
-    }
+    assert.ok(labels.length >= 4, `the fixation curve drew ${labels.length} axis ticks`);
+    const values = labels.map(figure);
+    assert.equal(Math.min(...values), 0, `the fixation axis starts at ${Math.min(...values)}%`);
+    assert.equal(Math.max(...values), 100, `the fixation axis ends at ${Math.max(...values)}%`);
+    const caption = await page.locator("main.credit #fixation .note").innerText();
+    assert.match(caption, /обема|volume/);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/credit/");
+});
+
+test("the three prices are drawn as three lines under a legend of three", { skip }, async () => {
+  // The reading is the gap between them, so a legend naming a line the plot
+  // does not draw — or a line the legend does not name — is worse than no
+  // chart: a reader cannot tell which of the three they are looking at.
+  await withApp(async (page, errors) => {
+    const chart = page.locator("main.credit #other .chart");
+    assert.equal(await chart.locator(".plot-line").count(), 3, "the price chart drew three lines");
+    const keys = await chart
+      .locator("figcaption .key")
+      .evaluateAll((els) => els.map((el) => el.textContent.trim()));
+    assert.equal(keys.length, 3, `the legend names ${keys.length} lines`);
+    assert.ok(
+      keys.every((key) => key.length > 0),
+      "a legend key rendered blank, which is what a missing translation looks like"
+    );
+    // Three distinct strokes, so which line is which can be read off the plot
+    // rather than guessed from where it sits. The mortgage takes `.floor` and
+    // never `.total`: that class fades to 55% and the home-loan line lies on
+    // the zero rule, where a faded hairline is §8's opening claim rendered
+    // invisible on a phone.
+    assert.equal(await chart.locator(".plot-line.floor").count(), 1);
+    assert.equal(await chart.locator(".plot-line.second").count(), 1);
+    assert.equal(await chart.locator(".plot-line.total").count(), 0);
     assert.deepEqual(errors, [], errors.join(" | "));
   }, "/credit/");
 });

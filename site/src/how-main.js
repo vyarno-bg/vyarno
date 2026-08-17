@@ -15,6 +15,7 @@
  */
 import "./lib/tokens.css";
 import "./lib/fig-table.css";
+import "./lib/chart.css";
 import { mount } from "svelte";
 import How from "./How.svelte";
 import { startAnalytics } from "./lib/analytics.js";

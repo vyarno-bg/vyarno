@@ -29,6 +29,7 @@ import {
   QUARTERS,
   nationalQuarter,
   nationalRow,
+  unemploymentHistory,
 } from "../src/lib/view/country.js";
 import { sectorOptions, SECTOR_TOTAL_KEY, taxWedgePanel } from "../src/lib/view/payroll.js";
 import { regionQuarter, regionRow, cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
@@ -761,4 +762,43 @@ test("quarterGrid lays the same cells out a year to a row, and combines nothing"
       `${cell.period} was changed on the way into the grid`
     );
   }
+});
+
+test("the unemployment curve floors at zero, and its two ends come off the points", () => {
+  // 6,7% down to 2,9% cropped to its own band draws unemployment reaching
+  // nothing. Against zero it draws what happened: a little over half of what
+  // it was. There is no argument here that would let a caller raise the floor.
+  const payload = read("unemployment");
+  if (!payload) return; // no refresh in this checkout
+  const history = unemploymentHistory(payload);
+  assert.equal(history.min, 0);
+  const values = Object.values(payload.series_by_period);
+  assert.equal(history.max, Math.max(...values));
+  assert.equal(history.peak.value, Math.max(...values));
+  assert.equal(history.trough.value, Math.min(...values));
+  // The latest reading is the payload's own headline, so the figure above the
+  // chart and the right-hand end of the line cannot disagree.
+  assert.equal(history.latest.value, payload.value);
+  assert.equal(history.latest.period, payload.ref_period);
+  assert.equal(history.to, payload.ref_period);
+});
+
+test("the unemployment curve is published cells in order, and nothing else", () => {
+  const history = unemploymentHistory({
+    series_by_period: { "2020-04": 6.7, "2020-01": 5.2, "2026-06": 3.0 },
+    source_url: "https://ec.europa.eu/eurostat/",
+  });
+  assert.deepEqual(
+    history.points.map((p) => p.period),
+    ["2020-01", "2020-04", "2026-06"]
+  );
+  assert.equal(history.peak.period, "2020-04");
+  assert.equal(history.trough.period, "2026-06");
+  assert.equal(history.sourceUrl, "https://ec.europa.eu/eurostat/");
+});
+
+test("a series with no line in it draws no chart rather than an empty box", () => {
+  assert.equal(unemploymentHistory({ series_by_period: { "2026-06": 3.0 } }), null);
+  assert.equal(unemploymentHistory({}), null);
+  assert.equal(unemploymentHistory(null), null);
 });

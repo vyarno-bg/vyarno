@@ -39,9 +39,10 @@
   import DataLate from "./components/DataLate.svelte";
   import { Calculator } from "./lib/calculator.svelte.js";
   import { COPY, HOME, t } from "./lib/content.js";
-  import { QUARTERS } from "./lib/view/country.js";
+  import { QUARTERS, unemploymentHistory } from "./lib/view/country.js";
   import { monthsSplit as monthsAreSplit } from "./lib/view/results.js";
   import { number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
+  import { niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   /**
    * The published payloads, read off disk by `scripts/prerender.mjs`.
@@ -193,6 +194,20 @@
       }),
     };
   });
+  const unemployment = $derived(unemploymentHistory(calc.data.unemployment));
+  // The box the one chart on this page is drawn in, in its own units, and the
+  // same numbers `/credit/` uses so the two pages' plots read at one scale.
+  // `chart.css` holds the furniture around it.
+  const CH_W = 600,
+    CH_H = 150;
+  const yOf = (v, axis) => plotY(v, axis, CH_H);
+  const xOf = (i, n) => plotX(i, n, CH_W);
+  // A year rule's x. `yearTicks` answers in a percentage, so one value places
+  // both the HTML label in the gutter and the rule inside the box; this is the
+  // inverse, through the same width, so the two land on the same column.
+  const yearX = (at) => (at / 100) * CH_W;
+  const xTicks = (series) => yearTicks(series, CH_W);
+
   // The index of all twenty-seven city pages, and the fallback only. Each city
   // row carries its own page and `cityHome.sourceUrl` is what the cards use —
   // this is what a card links to when the payload has not loaded, which is the
@@ -1127,6 +1142,91 @@
       {/if}
     </div>
 
+    {#if unemployment}
+      {@const axis = niceTicks(0, unemployment.max, 4)}
+      <p>
+        <span class="l-bg"
+          >Върхът е {number(unemployment.peak.value, 1, $lang)}% през {periodLong(
+            unemployment.peak.period,
+            $lang
+          )}, по време на извънредното положение заради COVID. Оттам слиза без прекъсване до {number(
+            unemployment.trough.value,
+            1,
+            $lang
+          )}% през {periodLong(unemployment.trough.period, $lang)}, най-ниската стойност, която
+          Евростат са отчели за България в този период.</span
+        >
+        <span class="l-en"
+          >The peak is {number(unemployment.peak.value, 1, $lang)}% in {periodLong(
+            unemployment.peak.period,
+            $lang
+          )}, during the COVID state of emergency. From there it falls without interruption to {number(
+            unemployment.trough.value,
+            1,
+            $lang
+          )}% in {periodLong(unemployment.trough.period, $lang)}, the lowest Eurostat have recorded
+          for Bulgaria over this window.</span
+        >
+      </p>
+      <figure class="chart">
+        <div class="plot">
+          {@render yAxis(
+            axis.values.map((v) => ({ at: tickAt(v, axis), label: `${number(v, 0, $lang)}%` }))
+          )}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.howChartUnemp, $lang, {
+              from: periodLong(unemployment.from, $lang),
+              to: periodLong(unemployment.to, $lang),
+              fromPct: number(unemployment.points[0].value, 1, $lang),
+              toPct: number(unemployment.latest.value, 1, $lang),
+              peakPct: number(unemployment.peak.value, 1, $lang),
+              peakAt: periodLong(unemployment.peak.period, $lang),
+              troughPct: number(unemployment.trough.value, 1, $lang),
+              troughAt: periodLong(unemployment.trough.period, $lang),
+            })}
+          >
+            {#each axis.values as v (v)}
+              <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
+            {/each}
+            {#each xTicks(unemployment) as tick (tick.year)}
+              <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
+            {/each}
+            <path class="plot-line" d={pathOf({ ...unemployment, ...axis }, CH_W, CH_H)} />
+            <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
+            {#each unemployment.points as p, i (p.period)}
+              <rect
+                class="plot-hit"
+                x={xOf(i, unemployment.points.length) - 2}
+                y="0"
+                width="4"
+                height={CH_H}
+                ><title>{periodLong(p.period, $lang)}: {number(p.value, 1, $lang)}%</title></rect
+              >
+            {/each}
+          </svg>
+          {@render xYears(xTicks(unemployment))}
+        </div>
+      </figure>
+      <p class="cap">
+        <span class="l-bg"
+          >Това не са регистрираните в бюрата по труда, а хората, които изследването на работната
+          сила брои: без работа през наблюдаваната седмица, търсили активно през последния месец и
+          готови да започнат работа до две седмици. Който се е отказал да търси, не влиза нито в
+          безработните, нито в работната сила, а един платен час през седмицата се брои за работа.</span
+        >
+        <span class="l-en"
+          >These are not the people registered at the labour offices. They are the ones the labour
+          force survey counts: out of work in the reference week, actively looking over the past
+          four weeks, and available to start within two. Somebody who has given up looking counts as
+          neither unemployed nor in the labour force, and one paid hour in the week counts as
+          employed.</span
+        >
+      </p>
+    {/if}
+
     <!-- A year to a row and a quarter to a column, so the whole series is on
          screen at once. One row per quarter is twenty-five rows of a single
          number each, which is either a very long column or a scroll box — and
@@ -1239,6 +1339,35 @@
     </p>
   </nav>
 </main>
+
+<!-- The chart's two axes, drawn as HTML in a gutter beside the box rather than
+     as text inside it: an SVG scaled to the viewport scales its type too, and
+     an 11px label reaches a 360px phone at 6.2px. `chart.css` carries the grid
+     that lands a percentage `top` on its own gridline, and `plot.js` decides
+     the tick VALUES — a number a reader reads off an axis is not a component's
+     to compute. -->
+{#snippet yAxis(ticks)}
+  <div class="yaxis" aria-hidden="true">
+    {#each ticks as tick (tick.label)}
+      <span class="plot-tick" style="top:{tick.at.toFixed(2)}%">{tick.label}</span>
+    {/each}
+  </div>
+{/snippet}
+
+{#snippet xYears(ticks)}
+  <div class="xyears" aria-hidden="true">
+    {#each ticks as tick (tick.year)}
+      <span
+        class="plot-tick"
+        style="left:{tick.at.toFixed(2)}%; transform:translateX({tick.at < 5
+          ? '0'
+          : tick.at > 95
+            ? '-100%'
+            : '-50%'})">{tick.year}</span
+      >
+    {/each}
+  </div>
+{/snippet}
 
 <SiteFooter page="how" />
 
