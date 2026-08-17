@@ -177,6 +177,30 @@ and that link is what the reader clicks to verify a number.
 rate-limiting, wait and re-run. If the URL shape changed, fix `api_url` in
 `transform.py`.
 
+## Not a gate — `make citations`
+
+`citations.py`, run by hand, and it is here because Gate 6 is the reason it had
+to exist. **A gate checks the run that wrote a payload; nothing checked the
+payload afterwards.** Gate 6 is the closest and it is liveness on Eurostat
+alone, so a БНБ workbook URL now serving a Site Studio shell with HTTP 200, an
+ЕЦБ key resolving to a different series, or a figure the upstream has since
+restated all pass it.
+
+`make citations` walks all 220 citations in `data/published/`, fetches each and
+holds the payload's own numbers against what comes back. **A revision is not a
+fault and the split is the design**: `BROKEN` is a citation that does not
+resolve to what the payload says it does and exits 3; `REVISED` is an upstream
+that restated; `STALE` is a refresh falling due. Neither of the last two is
+fatal, because a check that failed identically for a restated month and a dead
+link is one somebody mutes.
+
+Outside `make check` for the reason `make headers` is: it needs a network and
+six upstreams. 138 citations are read for their values, 52 for liveness (a
+Eurostat databrowser page and a БНБ press release carry no value to compare),
+and 30 are `UNCHECKED` with a sentence each saying why —
+`tests/test_citations.py` fails if a citation is neither, so a new `source_url`
+cannot arrive unexamined.
+
 ## Gate 7 — flash marker
 
 `validate.py#validate_headline_flash`

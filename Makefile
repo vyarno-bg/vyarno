@@ -73,7 +73,7 @@ PYTEST := pipeline/.venv/bin/pytest
 RUFF := pipeline/.venv/bin/ruff
 
 .DEFAULT_GOAL := help
-.PHONY: help setup lock check fmt lint test build render headers coverage clean
+.PHONY: help setup lock check fmt lint test build render headers citations coverage clean
 
 help: ## Show this list
 	@echo "Вярно — make targets:"
@@ -133,6 +133,17 @@ headers: ## Ask the live origin whether it serves what site/public/_headers decl
 	@# not there serves 200 with the rule missing, which nothing offline sees.
 	@# ORIGIN=… to point it at a staging deploy.
 	@node site/scripts/check-live-headers.mjs $(ORIGIN)
+
+citations: ## Ask every upstream whether it still serves the figure we print beside it
+	@# Outside `check` for the same reason `headers` is: a network and six
+	@# upstreams. Different question from the gates — they check the shape of
+	@# what a connector returned during the run that wrote the payload, and this
+	@# checks the published file afterwards, which is what a reader clicking a
+	@# link does. Exits 3 on a citation that does not resolve to what the payload
+	@# says it does; a value the upstream restated is REVISED and never fatal.
+	@# ONLY=credit to check one stem.
+	@pipeline/.venv/bin/vyarno-pipeline verify-citations --published data/published \
+		$(if $(ONLY),--only $(ONLY),) --quiet
 
 lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@# pip-compile reaches into pip's internals, and the current release (7.6.0)

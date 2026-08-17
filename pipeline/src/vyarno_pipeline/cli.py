@@ -29,6 +29,15 @@ import click
 import httpx
 
 from vyarno_pipeline import clock
+from vyarno_pipeline.citations import (
+    BROKEN,
+    LIVENESS,
+    OK,
+    REVISED,
+    STALE,
+    UNCHECKED,
+    verify,
+)
 from vyarno_pipeline.credit import (
     STOCK_SERIES_START,
     blended_stock_rate,
@@ -189,6 +198,54 @@ from vyarno_pipeline.validate import (
 @click.group()
 def main() -> None:
     """vyarno.bg data pipeline."""
+
+
+@main.command("verify-citations")
+@click.option(
+    "--published",
+    default=Path("data/published"),
+    show_default=True,
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    help="Directory of published payloads to check",
+)
+@click.option("--only", default=None, help="Check payloads whose stem contains this")
+@click.option("--quiet", is_flag=True, help="Print only what is not OK")
+def verify_citations(published: Path, only: str | None, quiet: bool) -> None:
+    """Every source_url still serves the figure printed beside it.
+
+    Deliberately outside `make check` — it needs a network and six upstreams.
+    `citations.py` carries the argument, and the BROKEN/REVISED split that keeps
+    an upstream restating a month from reading like a broken link.
+
+    Exits 3 when a citation is BROKEN, 0 otherwise. A revision is not a fault.
+    """
+    findings = verify(published, only=only)
+    order = {BROKEN: 0, REVISED: 1, STALE: 2, UNCHECKED: 3, LIVENESS: 4, OK: 5}
+    tally: dict[str, int] = {}
+    for finding in sorted(findings, key=lambda f: (order[f.verdict], f.payload, f.where)):
+        tally[finding.verdict] = tally.get(finding.verdict, 0) + 1
+        if quiet and finding.verdict in (OK, LIVENESS):
+            continue
+        values = f"{finding.checked} value(s)" if finding.checked else "no value"
+        click.echo(f"{finding.verdict:9s} {finding.payload} {finding.where} — {values}")
+        if finding.detail:
+            click.echo(f"          {finding.detail}")
+        click.echo(f"          {finding.url}")
+    click.echo("")
+    click.echo(
+        "  ".join(f"{verdict} {tally.get(verdict, 0)}" for verdict in order if tally.get(verdict))
+    )
+    checked = sum(f.checked for f in findings)
+    click.echo(
+        f"{len(findings)} citations, {checked} published values held against their upstream."
+    )
+    if tally.get(BROKEN):
+        click.echo(
+            f"ERROR: {tally[BROKEN]} citation(s) do not resolve to what the payload says "
+            f"they do. A reader clicking one is told something untrue.",
+            err=True,
+        )
+        sys.exit(3)
 
 
 # How far back the per-city archive walk starts. имот.bg's deepest city is
@@ -1706,7 +1763,8 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             "what going past zero on a current account costs, and what a "
             "revolving credit line costs — the same item to the ЕЦБ",
             spliced["overdraft_aar"],
-            f"MIR {CONSUMER_KEYS['overdraft_aar_eur']}",
+            f"MIR {CONSUMER_KEYS['overdraft_aar_bgn']} spliced with "
+            f"{CONSUMER_KEYS['overdraft_aar_eur']}",
             series_url(CONSUMER_KEYS["overdraft_aar_eur"]),
             {
                 "stock_eur_m": overdraft_ex_cards_eur_m,
@@ -1735,7 +1793,7 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             "interest-free period — «extended credit card credit», which is "
             "the card debt that is not repaid in full each month",
             spliced["card_aar"],
-            f"MIR {CONSUMER_KEYS['card_aar_eur']}",
+            f"MIR {CONSUMER_KEYS['card_aar_bgn']} spliced with {CONSUMER_KEYS['card_aar_eur']}",
             series_url(CONSUMER_KEYS["card_aar_eur"]),
             {
                 "no_aprc": (
