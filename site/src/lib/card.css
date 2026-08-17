@@ -208,8 +208,20 @@
   position: relative;
   display: block;
 }
+/* **The digits sit against their own unit, not at the far end of the box.**
+   These fields run the card's full width, so a left-aligned «900» put 310px of
+   nothing between the number and the «€» that says what it is — two things a
+   reader reads as one, at opposite ends of a rectangle. Right-aligned they meet,
+   and a column of amounts down the card lines up on its last digit, which is
+   what `.fig-table .num` does for the same figures on the pages that publish
+   them.
+
+   Only the units-bearing fields, and only the ones a reader types a number into:
+   a right-aligned `<select>` reads as a mistake, and the app's text-entry
+   surfaces are all numeric by the invariant `verify_template_safety.mjs` holds. */
 .field .unit input {
   padding-right: 38px;
+  text-align: right;
 }
 .field .unit::after {
   content: attr(data-u);
@@ -255,6 +267,55 @@
 .vlink:hover {
   color: var(--real-ink);
   border-bottom-color: var(--real);
+}
+
+/**
+ * The segmented control, and it is here for the reason `.vlink` above is.
+ *
+ * Two cards draw one: `.m-pay` asks whether the figure you typed is net or
+ * gross, `.m-inputs` asks whether the basket is entered in per cent or in euro.
+ * The rules lived in `BasketEditor`'s scoped `<style>`, so Svelte gave them to
+ * that component's markup and to nothing else — and `PayField` writes the same
+ * class names and got the browser default: two 2px-outset Arial boxes,
+ * `rgb(239,239,239)` on black, identical whichever was pressed.
+ *
+ * **What that cost is the selected state on the most consequential control in
+ * the calculator.** Net and gross differ by about a third, every figure on the
+ * page is derived from that one number, and nothing on screen said which
+ * reading was in force. The fill also ignored the theme, so in the dark one it
+ * was a bright grey slab with black text.
+ *
+ * The pressed segment is `--ink` under `--paper` — a full inversion rather than
+ * a tint, because this is a two-state control where the unpressed half is the
+ * only thing to compare against, and the tint that identifies the current route
+ * in the masthead has a whole bar of unmarked words to stand out from.
+ */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+/* 34px rather than the 24px the type and padding came to. WCAG 2.5.8 asks 24x24
+   of a pointer target and the old box sat on that line; these two decide what
+   every number below them means, and a control that important is not one to
+   hold at the minimum. */
+.segbtn {
+  font-family: var(--mono);
+  font-size: var(--fs-small);
+  border: 0;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  padding: 7px 12px;
+  min-height: 34px;
+  cursor: pointer;
+}
+.segbtn + .segbtn {
+  border-left: 1px solid var(--control-line);
+}
+.segbtn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .homeTog {

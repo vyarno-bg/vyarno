@@ -1188,6 +1188,29 @@ chart at two widths.
 it to the reading measure wraps a reference period away from the publisher it
 belongs to. It takes the width of the figure it dates.
 
+### The segmented control lives in `card.css`, and why that matters
+
+Two cards draw one: `.m-pay` asks whether the figure you typed is net or gross,
+`.m-inputs` asks whether the basket is entered in per cent or in euro. The rules
+had lived in `BasketEditor`'s scoped `<style>`, so Svelte gave them to that
+component's markup and to nothing else — and `PayField`, which writes the same
+class names, rendered the **browser default**: two 2px-outset Arial boxes,
+`rgb(239,239,239)` on black, identical whichever was pressed, in a fill that
+ignored the theme.
+
+**What that cost is the selected state on the most consequential control in the
+calculator.** Net and gross are about a third apart and every figure on the page
+is derived from that one number, and nothing on screen said which reading was in
+force. It is the failure `.vlink` in the same file already records: a class name
+copied into a second component keeps the first copy correct, so nothing looks
+wrong in the file anybody opens.
+
+`every_segmented_control_on_the_calculator_shows_which_half_is_pressed` in
+`verify_render_layout.mjs` is the guard, and it is a rule over ALL of them rather
+than a case for this one. The font-family half is what generalises: two different
+backgrounds could be arranged by accident, but a control drawn in the UA's font
+is one no stylesheet reached at all.
+
 ### A figure is hung from a rule, not drawn in a box
 
 The `.stat` tile is the unit all three of `/market/`, `/credit/` and the

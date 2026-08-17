@@ -528,28 +528,6 @@
     gap: 10px;
     margin: 2px 0 8px;
   }
-  .seg {
-    display: inline-flex;
-    border: 1px solid var(--control-line);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .segbtn {
-    font-family: var(--mono);
-    font-size: var(--fs-small);
-    border: 0;
-    background: var(--paper-2);
-    color: var(--ink-2);
-    padding: 5px 11px;
-    cursor: pointer;
-  }
-  .segbtn + .segbtn {
-    border-left: 1px solid var(--control-line);
-  }
-  .segbtn[aria-pressed="true"] {
-    background: var(--ink);
-    color: var(--paper);
-  }
   .leg.tally {
     color: var(--ink-2);
     margin-top: 6px;
@@ -605,8 +583,15 @@
     padding: 8px 20px 10px;
     border-bottom: 1px solid var(--rule);
   }
+  /* The ledger band, and it is `--rule` rather than `--gain-band`. The stripe
+     says nothing about the row it falls on — it is there so the eye keeps its
+     place down thirteen near-identical lines — and `--gain-band` is the green
+     this app spends on «your number is the good one», so every second division
+     was tinted with a verdict nobody made. `--rule` is the neutral ledger tint
+     and `.cat.open` keeps `--paper-2`, so an opened row is still told from a
+     banded one. */
   .cat:nth-child(even) {
-    background: var(--gain-band);
+    background: var(--rule);
   }
   .cat.open {
     background: var(--paper-2);
@@ -805,7 +790,18 @@
   .cat .top .nm {
     color: var(--ink-2);
   }
+  /* **Two columns, so the thirteen rows read DOWN as well as across.** The
+     share and the euro amount were two inline runs right-aligned as one blob,
+     so «22% ≈ €201» over «6% ≈ €53» put the per-cent sign and the euro sign in
+     different places on every row — and a reader comparing what two divisions
+     cost them is reading a column, which is the whole reason the figures are in
+     the mono with tabular figures. Tracks in `ch` off the row's own face: 4 for
+     «100%», 8 for «≈ €1234». */
   .cat .top .pc {
+    display: inline-grid;
+    grid-template-columns: 4ch 8ch;
+    justify-items: end;
+    column-gap: 6px;
     font-family: var(--mono);
     font-size: var(--fs-meta);
     color: var(--ink);
