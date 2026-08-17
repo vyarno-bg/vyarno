@@ -28,7 +28,7 @@ test(
           href: el.querySelector(".src")?.getAttribute("href") ?? "",
         }))
       );
-      assert.ok(blocks.length >= 8, `/credit/ rendered ${blocks.length} figures`);
+      assert.ok(blocks.length >= 13, `/credit/ rendered ${blocks.length} figures`);
       for (const block of blocks) {
         assert.ok(block.label, "a figure on /credit/ carries no label saying what it is");
         assert.notEqual(block.value, "—", `«${block.label.slice(0, 40)}» rendered no value`);
@@ -74,12 +74,46 @@ test("the fixation table adds up to the whole of new lending", { skip }, async (
   }, "/credit/");
 });
 
+test(
+  "what money costs is drawn dearest first, with a deposit at the bottom",
+  { skip },
+  async () => {
+    // The section's whole argument is the ordering: a card rate means little
+    // until it is under one number and over another. A payload arriving in a
+    // different order, or a deposit rendered among the borrowing rows, loses it.
+    await withApp(async (page, errors) => {
+      const rows = await page.locator("main.credit #other .stat").evaluateAll((els) =>
+        els.map((el) => ({
+          pct: Number(
+            (el.querySelector("strong")?.textContent ?? "").replace(",", ".").replace("%", "")
+          ),
+          pays: el.classList.contains("pays"),
+        }))
+      );
+      assert.equal(rows.length, 5, `the section drew ${rows.length} products, expected 5`);
+      const lending = rows.filter((r) => !r.pays);
+      const deposits = rows.filter((r) => r.pays);
+      assert.equal(deposits.length, 2);
+      assert.deepEqual(
+        lending.map((r) => r.pct),
+        [...lending.map((r) => r.pct)].sort((a, b) => b - a),
+        "the borrowing rows are not in descending order"
+      );
+      assert.ok(
+        deposits.every((d) => d.pct < Math.min(...lending.map((r) => r.pct))),
+        "a deposit is paying more than the cheapest thing on the page costs"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, "/credit/");
+  }
+);
+
 test("the English page is in English and carries the same figures", { skip }, async () => {
   await withApp(async (page, errors) => {
     const heading = await page.locator("main.credit h1").innerText();
     assert.match(heading, /Borrowing in Bulgaria/);
     assert.ok(
-      (await page.locator("main.credit .stat").count()) >= 8,
+      (await page.locator("main.credit .stat").count()) >= 13,
       "the English page drew fewer figures than the Bulgarian one"
     );
     assert.deepEqual(errors, [], errors.join(" | "));

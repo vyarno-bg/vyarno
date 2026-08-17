@@ -146,6 +146,40 @@ def fixation_rate_key(bucket: str, currency: str) -> str:
     return f"M.BG.B.A2C.{FIXATION_KEYS[bucket]}.R.A.2250.{currency}.N"
 
 
+# Everything a household borrows on that is not a mortgage, plus what a deposit
+# pays — the comparator, because a rate is only ever high or low against
+# something. `BS_ITEM` is the whole difference between these keys:
+#
+#   A2B   loans for consumption, excluding revolving and card credit
+#   A2Z1  revolving loans and overdrafts
+#   A2Z3  extended credit card credit — the balance carried past the
+#         interest-free period, which is where a card stops being free
+#   L21   overnight deposits
+#   L22   deposits with an agreed maturity
+#
+# A2Z1 and A2Z3 carry a rate and no volume for BG, and no APRC: the ЕЦБ collect
+# `DATA_TYPE_MIR=C` on instalment credit only. So the card figure is a price
+# with no quantity beside it, and the payload says so rather than implying one.
+# fmt: off
+CONSUMER_KEYS: dict[str, str] = {
+    "consumer_aar_bgn":    "M.BG.B.A2B.A.R.A.2250.BGN.N",
+    "consumer_aar_eur":    "M.BG.B.A2B.A.R.A.2250.EUR.N",
+    "consumer_aprc_bgn":   "M.BG.B.A2B.A.C.A.2250.BGN.N",
+    "consumer_aprc_eur":   "M.BG.B.A2B.A.C.A.2250.EUR.N",
+    "consumer_volume_bgn": "M.BG.B.A2B.A.B.A.2250.BGN.N",
+    "consumer_volume_eur": "M.BG.B.A2B.A.B.A.2250.EUR.N",
+    "overdraft_aar_bgn":   "M.BG.B.A2Z1.A.R.A.2250.BGN.N",
+    "overdraft_aar_eur":   "M.BG.B.A2Z1.A.R.A.2250.EUR.N",
+    "card_aar_bgn":        "M.BG.B.A2Z3.A.R.A.2250.BGN.N",
+    "card_aar_eur":        "M.BG.B.A2Z3.A.R.A.2250.EUR.N",
+    "deposit_overnight_bgn": "M.BG.B.L21.A.R.A.2250.BGN.N",
+    "deposit_overnight_eur": "M.BG.B.L21.A.R.A.2250.EUR.N",
+    "deposit_term_bgn":      "M.BG.B.L22.A.R.A.2250.BGN.N",
+    "deposit_term_eur":      "M.BG.B.L22.A.R.A.2250.EUR.N",
+}
+# fmt: on
+
+
 # Human-readable provenance URL for a series key (what we cite in the JSON
 # so a reader can click through to the same numbers).
 def series_url(series_key: str, start_period: str = "2020-01") -> str:

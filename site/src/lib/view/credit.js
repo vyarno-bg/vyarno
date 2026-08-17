@@ -151,3 +151,38 @@ export function creditLimits(mortgage) {
     observedSourceUrl: l.observed_dsti_source_url ?? null,
   };
 }
+
+/**
+ * What the same household pays on everything that is not a home — and what it
+ * is paid on the money it did not borrow.
+ *
+ * They arrive together because separately none of them means anything. 21% on a
+ * carried card balance is a number; 21% against 2.4% on a mortgage and 1.6% on
+ * a deposit is a comparison, which is the strongest form this site is allowed
+ * (P6). The order is the order the page draws them: dearest first, because that
+ * is the one a reader is most likely not to know.
+ *
+ * @param {object|null} credit
+ */
+export function creditProducts(credit) {
+  const order = ["card", "consumer", "overdraft", "deposit_term", "deposit_overnight"];
+  return order
+    .map((key) => {
+      const block = credit?.[key] ?? null;
+      if (!block) return null;
+      return {
+        key,
+        isDeposit: key.startsWith("deposit"),
+        rate: sourced(block.value_pct, block),
+        aprcPct: Number.isFinite(block.aprc_pct) ? block.aprc_pct : null,
+        aprcSourceUrl: block.aprc_source_url ?? null,
+        monthlyVolumeEurM: Number.isFinite(block.monthly_volume_eur_m)
+          ? block.monthly_volume_eur_m
+          : null,
+        // Present on the card block alone, and the page prints it: a price with
+        // no quantity has to say it is one.
+        noVolume: block.no_volume ?? null,
+      };
+    })
+    .filter(Boolean);
+}

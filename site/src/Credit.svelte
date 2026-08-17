@@ -38,6 +38,7 @@
   import {
     creditFixation,
     creditLimits,
+    creditProducts,
     creditRates,
     creditRenegotiation,
   } from "./lib/view/credit.js";
@@ -65,6 +66,15 @@
   const fixation = $derived(creditFixation(mortgage));
   const renegotiation = $derived(creditRenegotiation(mortgage));
   const limits = $derived(creditLimits(mortgage));
+  const products = $derived(creditProducts(data.credit ?? null));
+
+  const PRODUCT_LABEL = {
+    card: COPY.crdPCard,
+    consumer: COPY.crdPConsumer,
+    overdraft: COPY.crdPOverdraft,
+    deposit_term: COPY.crdPDepositTerm,
+    deposit_overnight: COPY.crdPDepositOvernight,
+  };
 
   const BUCKET_LABEL = {
     up_to_1y: COPY.crdFixUpTo1y,
@@ -283,6 +293,39 @@
   {/if}
 
   <!-- 5 ------------------------------------------------------------------ -->
+  <section id="other">
+    <h2>
+      <span class="l-bg">Всичко останало, което един човек плаща за пари</span>
+      <span class="l-en">Everything else a person pays for money</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Жилищният кредит е най-евтиният начин да вземеш пари назаем в България, защото зад него
+        стои жилището. Ето какво струват другите — и накрая какво плаща банката на теб.</span
+      >
+      <span class="l-en"
+        >A home loan is the cheapest way to borrow in Bulgaria, because the home stands behind it.
+        Here is what the others cost — and, at the end, what the bank pays you.</span
+      >
+    </p>
+    <div class="stats">
+      {#each products as product (product.key)}
+        <div class="stat wide" class:pays={product.isDeposit}>
+          <strong>{number(product.rate.value, 2)}%</strong>
+          <span class="lbl">{t(PRODUCT_LABEL[product.key], $lang)}</span>
+          <a class="src" href={product.rate.sourceUrl} rel="noopener"
+            >{t(COPY.crdWhoseEcb, $lang)} · {periodLong(product.rate.refPeriod, $lang)}</a
+          >
+        </div>
+      {/each}
+    </div>
+    <p class="note">
+      <span class="l-bg">{COPY.crdNoVolume.bg}</span>
+      <span class="l-en">{COPY.crdNoVolume.en}</span>
+    </p>
+  </section>
+
+  <!-- 6 ------------------------------------------------------------------ -->
   <section id="uncomputed">
     <h2>
       <span class="l-bg">Какво никой не публикува</span>
@@ -385,6 +428,12 @@
   .stat .lbl {
     font-size: var(--fs-small);
     color: var(--ink-2);
+  }
+  /* What the bank pays you, drawn as the other direction. `--real` is this
+     app's «your number is the good one» colour and the deposit rows are the
+     only figures on this page that are money coming towards the reader. */
+  .stat.pays strong {
+    color: var(--real-ink);
   }
   .stat .src {
     font-family: var(--mono);

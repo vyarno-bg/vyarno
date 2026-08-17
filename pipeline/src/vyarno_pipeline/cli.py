@@ -29,6 +29,12 @@ import click
 import httpx
 
 from vyarno_pipeline import clock
+from vyarno_pipeline.credit import (
+    product_block,
+    validate_card_above_mortgage,
+    validate_credit_freshness,
+    validate_product_series,
+)
 from vyarno_pipeline.mortgage import (
     MortgageValidationError,
     cross_check_fixation_rates,
@@ -44,6 +50,7 @@ from vyarno_pipeline.mortgage import (
 from vyarno_pipeline.payroll import build_payroll_payload, in_force_entry
 from vyarno_pipeline.publish import (
     CITY_PRICE_FILE,
+    CREDIT_FILE,
     HICP_CATEGORIES_FILE,
     HICP_HEADLINE_FILE,
     HOUSE_MARKET_FILE,
@@ -55,6 +62,7 @@ from vyarno_pipeline.publish import (
     SALARY_DIST_FILE,
     SECTOR_SALARY_FILE,
     UNEMPLOYMENT_FILE,
+    write_credit_payload,
     write_hicp_categories,
     write_hicp_headline,
     write_mortgage_payload,
@@ -72,6 +80,7 @@ from vyarno_pipeline.sources.bnb import FIXATION_URL as BNB_FIXATION_URL
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_SOURCE_URL
 from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import (
+    CONSUMER_KEYS,
     EURO_SWITCH_PERIOD,
     SERIES_KEYS,
     fetch_mir_series,
@@ -213,6 +222,7 @@ def _month_before(period: str) -> str:
             "hicp",
             "unemployment",
             "mortgage",
+            "credit",
             "city-price",
             "region-salary",
             "sector-salary",
@@ -288,6 +298,8 @@ def refresh(
         _refresh_unemployment(out, geo, as_of)
     elif source == "mortgage":
         _refresh_mortgage(out, as_of)
+    elif source == "credit":
+        _refresh_credit(out, as_of)
     elif source == "city-price":
         _refresh_city_price(out, as_of)
     elif source == "region-salary":
@@ -326,6 +338,7 @@ def refresh(
             ("hicp", lambda: _refresh_hicp(out, geo, since_year, skip_link_check, as_of)),
             ("unemployment", lambda: _refresh_unemployment(out, geo, as_of)),
             ("mortgage", lambda: _refresh_mortgage(out, as_of)),
+            ("credit", lambda: _refresh_credit(out, as_of)),
             ("city-price", lambda: _refresh_city_price(out, as_of)),
             ("region-salary", lambda: _refresh_region_salary(out, as_of)),
             ("sector-salary", lambda: _refresh_sector_salary(out, as_of)),
@@ -1388,6 +1401,153 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def _refresh_credit(out: Path, as_of: date) -> None:
+    """Refresh `credit.json` — household borrowing other than a home loan.
+
+    Five ECB MIR series and the same splice `mortgage` uses, then one band per
+    product (`credit.py`). The card figure is the one worth the arm: 21% on a
+    balance carried past the interest-free period is the highest price a
+    Bulgarian household routinely pays for money, and nothing on this site said
+    it.
+
+    Exits: 4 on network, 2 on a changed upstream shape, 3 on a gate.
+    """
+    try:
+        click.echo("→ fetching ECB MIR consumer credit, overdrafts, cards and deposits...")
+        raw = {
+            name: fetch_mir_series(key)
+            for name, key in CONSUMER_KEYS.items()
+            if "term_bgn" not in name
+        }
+        # The mortgage rate for the gate below, fetched rather than read off the
+        # neighbouring payload: an arm that depends on a file another arm wrote
+        # succeeds or fails by the order they ran in, and `--source credit`
+        # alone would compare today's card rate against whatever was on disk.
+        mortgage_now = fetch_mir_series(SERIES_KEYS["new_business_aar_eur"])
+    except httpx.HTTPError as e:
+        click.echo(f"ERROR: ECB MIR fetch failed: {e}", err=True)
+        sys.exit(4)
+    except ValueError as e:
+        click.echo(f"ERROR: ECB MIR response shape/identity check failed: {e}", err=True)
+        sys.exit(2)
+
+    spliced = {
+        stem: splice_at_euro_changeover(raw[f"{stem}_bgn"], raw[f"{stem}_eur"])
+        for stem in (
+            "consumer_aar",
+            "consumer_aprc",
+            "consumer_volume",
+            "overdraft_aar",
+            "card_aar",
+        )
+    }
+    # Deposits over one window, and it is the source that decides which: the BGN
+    # leg of `L22` at this aggregation is a 404, so the term series begins at
+    # euro adoption. Drawing the overnight series further back than its pair
+    # would compare two products over two periods.
+    since = EURO_SWITCH_PERIOD
+    deposits = {
+        "deposit_overnight": {p: v for p, v in raw["deposit_overnight_eur"].items() if p >= since},
+        "deposit_term": {p: v for p, v in raw["deposit_term_eur"].items() if p >= since},
+    }
+    click.echo(
+        f"  consumer {len(spliced['consumer_aar'])} months, card {len(spliced['card_aar'])}, "
+        f"deposits {len(deposits['deposit_term'])} (from {since})"
+    )
+
+    try:
+        click.echo("→ gate: one plausibility band per product...")
+        for product, series in (
+            ("consumer", spliced["consumer_aar"]),
+            ("overdraft", spliced["overdraft_aar"]),
+            ("card", spliced["card_aar"]),
+            ("deposit_overnight", deposits["deposit_overnight"]),
+            ("deposit_term", deposits["deposit_term"]),
+        ):
+            validate_product_series(series, product)
+
+        click.echo("→ gate: APRC ≥ AAR on consumer credit...")
+        validate_aprc_above_aar(spliced["consumer_aar"], spliced["consumer_aprc"])
+
+        click.echo("→ gate: card credit costs more than a secured home loan...")
+        validate_card_above_mortgage(
+            spliced["card_aar"][max(spliced["card_aar"])],
+            mortgage_now[max(mortgage_now)],
+        )
+
+        click.echo("→ gate: freshness...")
+        validate_credit_freshness(max(spliced["consumer_aar"]), as_of)
+    except MortgageValidationError as e:
+        click.echo(f"GATE FAILED: {e}", err=True)
+        sys.exit(3)
+
+    consumer_aprc_ref = max(spliced["consumer_aprc"])
+    products = {
+        "consumer": product_block(
+            "what a loan for something other than a home costs — a car, a "
+            "renovation, anything paid back in instalments",
+            spliced["consumer_aar"],
+            f"MIR {CONSUMER_KEYS['consumer_aar_bgn']} spliced with {CONSUMER_KEYS['consumer_aar_eur']}",
+            series_url(CONSUMER_KEYS["consumer_aar_eur"]),
+            {
+                "aprc_pct": spliced["consumer_aprc"][consumer_aprc_ref],
+                "aprc_ref_period": consumer_aprc_ref,
+                "aprc_source_url": series_url(CONSUMER_KEYS["consumer_aprc_eur"]),
+                "monthly_volume_eur_m": spliced["consumer_volume"][max(spliced["consumer_volume"])],
+            },
+        ),
+        "overdraft": product_block(
+            "what going past zero on a current account costs, and what a "
+            "revolving credit line costs — the same item to the ЕЦБ",
+            spliced["overdraft_aar"],
+            f"MIR {CONSUMER_KEYS['overdraft_aar_eur']}",
+            series_url(CONSUMER_KEYS["overdraft_aar_eur"]),
+        ),
+        "card": product_block(
+            "what a credit-card balance costs once it is carried past the "
+            "interest-free period — «extended credit card credit», which is "
+            "the card debt that is not repaid in full each month",
+            spliced["card_aar"],
+            f"MIR {CONSUMER_KEYS['card_aar_eur']}",
+            series_url(CONSUMER_KEYS["card_aar_eur"]),
+            {
+                "no_volume": (
+                    "BG reports no business volume and no APRC for this item, so "
+                    "there is no figure here for how much card debt is carried"
+                )
+            },
+        ),
+        "deposit_overnight": product_block(
+            "what money in a current account earns",
+            deposits["deposit_overnight"],
+            f"MIR {CONSUMER_KEYS['deposit_overnight_eur']}",
+            series_url(CONSUMER_KEYS["deposit_overnight_eur"]),
+            {"series_starts": since},
+        ),
+        "deposit_term": product_block(
+            "what a term deposit earns — the comparator, because a borrowing "
+            "rate is only high or low against what the money would otherwise pay",
+            deposits["deposit_term"],
+            f"MIR {CONSUMER_KEYS['deposit_term_eur']}",
+            series_url(CONSUMER_KEYS["deposit_term_eur"]),
+            {
+                "series_starts": since,
+                "why_it_starts_there": (
+                    "the BGN leg of this key is a 404 — BG reported term deposits "
+                    "by maturity bucket and never at this total before the euro"
+                ),
+            },
+        ),
+    }
+
+    write_credit_payload(as_of=as_of, products=products, target_dir=out)
+    click.echo(
+        f"OK: wrote {CREDIT_FILE} — consumer {products['consumer']['value_pct']}%, "
+        f"card {products['card']['value_pct']}%, term deposit "
+        f"{products['deposit_term']['value_pct']}%"
+    )
 
 
 def _refresh_house_market(out: Path, geo: str, skip_link_check: bool, as_of: date) -> None:

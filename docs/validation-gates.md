@@ -390,6 +390,21 @@ intermediate certificate, so a client with no cached copy of it cannot complete
 the chain. The error message points at the fix; `data-sources.md` §БНБ has the
 detail.
 
+## Credit gates (`--source credit`)
+
+`credit.json` carries five products with five different price levels, so the
+plausibility gate is **one band per product and never one band for the payload**
+— a range admitting both a 0.01% overnight deposit and a 21% card rate admits
+everything, and the failure it exists for is a series landing under the wrong
+label, where the value is perfectly plausible for what it is.
+
+| Gate | What it catches | Exit |
+|---|---|---|
+| **Per-product bands** (`credit.py#PRODUCT_BANDS`) | A card rate arriving on the consumer key, or a deposit rate on a lending one. The bands overlap where the products do — an overdraft and a consumer loan are not far apart — because a band tighter than the market trips on a real move; what none of them admits is another's extremes | 3 |
+| **APRC ≥ AAR − 0.05 pp** | The same swap the mortgage arm checks, on consumer credit | 3 |
+| **Card above mortgage** | `BS_ITEM` swapped between `A2Z3` and `A2C`. Unsecured revolving credit is not cheaper than a secured home loan, anywhere, ever — so this is a claim about which series is which rather than about the market. The mortgage rate is FETCHED for the comparison rather than read off `mortgage.json`, so the arm does not succeed or fail by which order the arms ran in | 3 |
+| **Freshness** (150 days) | MIR quietly stopping, on the same window the mortgage arm uses | 3 |
+
 ## Which gates run for which `--source`
 
 | `--source` | Gates | Notes |

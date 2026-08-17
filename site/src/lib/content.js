@@ -3100,6 +3100,27 @@ export const COPY = {
   // captions have to differ — a reader who takes our line for the regulator's
   // has been told the law says something it does not.
   crdWhoseBnb: { bg: "БНБ", en: "BNB" },
+  // The five products, dearest first. Each names the MOMENT the rate starts
+  // applying rather than the product — «кредитна карта» is not what costs 21%,
+  // the balance carried past the interest-free period is.
+  crdPCard: {
+    bg: "кредитна карта, ако не изплатиш всичко до края на гратисния период",
+    en: "a credit card, if you do not clear it before the interest-free period ends",
+  },
+  crdPConsumer: { bg: "потребителски кредит", en: "a consumer loan" },
+  crdPOverdraft: { bg: "овърдрафт и револвиращ кредит", en: "an overdraft or a revolving line" },
+  crdPDepositTerm: {
+    bg: "срочен депозит — това пък плаща банката на теб",
+    en: "a term deposit — this is what the bank pays you",
+  },
+  crdPDepositOvernight: {
+    bg: "пари, останали по разплащателната сметка",
+    en: "money left in a current account",
+  },
+  crdNoVolume: {
+    bg: "БНБ не отчитат нито обем, нито ГПР по това перо, така че колко такъв дълг се носи не се публикува",
+    en: "BNB report neither a volume nor an APRC for this item, so how much such debt is carried is not published",
+  },
   crdWhoseEcb: { bg: "ЕЦБ", en: "ECB" },
 };
 

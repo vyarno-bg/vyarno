@@ -41,6 +41,7 @@ HOUSE_MARKET_FILE: str = "house_market.json"
 # green while the payload never publishes. One arm writes both these files.
 HOUSE_MARKET_STRUCTURE_FILE: str = "house_market_structure.json"
 NSI_HOUSING_FILE: str = "nsi_housing.json"
+CREDIT_FILE: str = "credit.json"
 
 
 def write_payload(payload: dict, target_dir: Path, filename: str) -> Path:
@@ -447,4 +448,42 @@ def write_mortgage_payload(
     payload["lending_limits"] = lending_limits
     payload["fixation"] = fixation
     payload["new_business_split"] = new_business_split
+    return write_payload(payload, target_dir, filename)
+
+
+def write_credit_payload(
+    as_of: date,
+    products: dict,
+    target_dir: Path,
+    filename: str = CREDIT_FILE,
+) -> Path:
+    """Write `credit.json` — borrowing that is not a home loan, and deposits.
+
+    Its own file rather than a fifth block in `mortgage.json`, because the two
+    are read by different pages for different questions and `payloads.js` gives
+    each file one cadence and one freshness row. Both are monthly, so the split
+    is about subject: `mortgage.json` is the figure the calculator starts from,
+    and this is what the same household pays on everything else.
+
+    `products` carries one block per BS_ITEM — consumer, overdraft, card — plus
+    the two deposit series. The deposit rates are here on purpose: a card rate
+    with nothing beside it is a number, and beside what saving pays it is a
+    comparison, which is the strongest honest form (P6).
+    """
+    payload = _envelope(
+        as_of=as_of,
+        source="ecb",
+        source_url=products["consumer"]["source_url"],
+        notes=(
+            "BG household credit other than housing, from ECB MIR: loans for "
+            "consumption (rate and APRC), overdrafts and revolving credit, and "
+            "extended credit card credit — the balance carried past the "
+            "interest-free period. The two deposit series are the comparator. "
+            "Card and overdraft rates carry no volume and no APRC: BG reports "
+            "neither for those items, so the payload states a price with no "
+            "quantity rather than implying one."
+        ),
+    )
+    payload["schema_version"] = "1.0"
+    payload.update(products)
     return write_payload(payload, target_dir, filename)

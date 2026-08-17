@@ -72,7 +72,7 @@ on a short-lived branch, merges into `main`, and is deleted.
 
 **CI runs on every push to every branch, and on every pull request**
 (`.github/workflows/ci.yml`): `pytest -q`, `npm run verify:math`,
-`npm run build`, plus a check that all twelve published payloads parse. So a
+`npm run build`, plus a check that all thirteen published payloads parse. So a
 working branch is proven before the merge, and `main` is re-checked after it.
 
 The pull-request trigger is not a second copy of the push run. It is the only
@@ -192,7 +192,7 @@ rather than tidy:
   which turns the UTF-8 Eurostat cubes into a `UnicodeDecodeError` on read and
   the Cyrillic labels into mojibake on write — and it translates `"\n"` to
   `os.linesep`, so `publish.write_payload` without `newline="\n"` rewrites all
-  twelve payloads CRLF. That last one hides: `.gitattributes` normalises them
+  thirteen payloads CRLF. That last one hides: `.gitattributes` normalises them
   back on commit, so the repository stays clean while the working tree does
   not, and what reads the working tree before git does — `copy-data.mjs`
   filling `dist/`, any byte comparison against the previous publish — sees a
@@ -367,7 +367,7 @@ vyarno-pipeline refresh --source <name> --out ../data/published
 
 **`--source` values:** `hicp`, `unemployment`, `mortgage`,
 `city-price`, `region-salary`, `sector-salary`, `salary-dist`, `payroll`,
-`house-market`, `nsi-housing`, `all`. Ten arms and twelve files — `hicp` and
+`credit`, `house-market`, `nsi-housing`, `all`. Eleven arms and thirteen files — `hicp` and
 `house-market` each write two. The list is `click.Choice` in `cli.py`, and that
 is the one to read it off: an arm missing from here is an arm nobody runs by
 hand and nobody thinks to gate.
@@ -452,7 +452,7 @@ jq '.categories[] | {cp_code, bg_name, weight_pct, annual_rate_pct}' \
   ../data/published/hicp_categories.json
 ```
 
-Two things to check by eye after a refresh: **`as_of` is today** (all twelve should
+Two things to check by eye after a refresh: **`as_of` is today** (all thirteen should
 match — one pipeline run), and **`latest_index` and `index_by_year` are on the
 same base**, because the SPA divides one by the other and a 12-month rate looks
 correct even when the base is wrong. Both carry Eurostat's own values, so the
@@ -567,7 +567,7 @@ Before pushing a change to `site/`:
       `make render` gates on the browser resolver and fails where none is
       found, which is the run to trust
 - [ ] `npm run build` exits 0
-- [ ] `dist/data/published/*.json` exists for all twelve files
+- [ ] `dist/data/published/*.json` exists for all thirteen files
 - [ ] `npm run dev` and `npm run preview` both serve `/data/published/*.json`
       with 200
 
