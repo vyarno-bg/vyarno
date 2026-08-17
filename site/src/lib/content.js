@@ -3156,7 +3156,7 @@ export const COPY = {
     en: "overdrafts, credit cards included",
   },
   crdColBlock: { bg: "За какво е взет", en: "What it was taken for" },
-  crdColOwed: { bg: "Дължи се", en: "Owed" },
+  crdColOwed: { bg: "Дължи се (млн. €)", en: "Owed (m EUR)" },
   crdColOwedShare: { bg: "Дял от дълга", en: "Share of the debt" },
   crdTblOwed: {
     bg: "какво дължат домакинствата по вид кредит",
@@ -3191,34 +3191,27 @@ export const COPY = {
   // Every rate on this page is a price, and a price says nothing about whether
   // the country can carry it. These are the two levels underneath, from one ECB
   // flow so the ratio between them divides one population by itself.
+  //
+  // The vocabulary is deliberately not the publishers'. «Депозитни пасиви на
+  // паричните финансови институции» is what the ЕЦБ call the first line and
+  // «пари в банката» is what it is; a reader who has to learn a term before
+  // reading a figure has been handed a worse figure.
   crdKHeld: {
-    bg: "толкова държат българските домакинства по сметки и депозити",
-    en: "that is what Bulgarian households hold in accounts and deposits",
+    bg: "толкова пари имат българските домакинства в банките",
+    en: "that is how much Bulgarian households have in the banks",
   },
   crdKHeldOwed: {
     bg: "толкова дължат на същите банки",
     en: "that is what they owe those same banks",
   },
-  // The ratio, and the label has to carry the direction: a bare «1,79» beside
-  // two euro amounts reads as a third amount. Saying what is divided by what,
-  // in the words of the thing rather than in the words of the arithmetic, is
-  // what makes it checkable against the two figures beside it.
-  crdKCushion: {
-    bg: "евро в банката на всяко евро дълг",
-    en: "euro in the bank for every euro owed",
-  },
-  crdSrcOurRatio: {
-    bg: "наша сметка от двете числа на ЕЦБ",
-    en: "our ratio between the ECB's two figures",
-  },
-  crdKeyHeld: { bg: "депозити", en: "deposits" },
-  crdKeyOwedBsi: { bg: "кредити", en: "loans" },
-  // What a screen reader gets instead of the two lines: where each began, where
-  // it is now, and the gap closing, which is the only thing the picture says
-  // that the figures above it do not.
+  crdKeyHeld: { bg: "пари в банката", en: "in the bank" },
+  crdKeyOwedBsi: { bg: "дълг", en: "owed" },
+  // What a screen reader gets instead of the two lines. Said as the sentence a
+  // person would say out loud, because the shape is the only thing the picture
+  // carries that the figures above it do not.
   crdChartSavings: {
-    bg: "Депозити срещу кредити на домакинствата от {from} до {to}: депозитите растат от {dFrom} до {dTo} млн. евро, кредитите от {lFrom} до {lTo} млн. евро, а на всяко евро дълг се падат {rTo} евро в банката вместо {rFrom}.",
-    en: "Household deposits against loans from {from} to {to}: deposits grow from {dFrom} to {dTo} million euro, loans from {lFrom} to {lTo} million euro, and every euro owed is matched by {rTo} euro in the bank instead of {rFrom}.",
+    bg: "Пари в банката срещу дълг на домакинствата, от {from} до {to}. Парите в банката растат от {dFrom} на {dTo} млн. евро, а дългът от {lFrom} на {lTo} млн. евро. На всеки 1 евро дълг вече се падат {rTo} евро в банката, а в началото са били {rFrom}.",
+    en: "Money in the bank against household debt, from {from} to {to}. The money in the bank grows from {dFrom} to {dTo} million euro and the debt from {lFrom} to {lTo} million euro. Every euro owed is now matched by {rTo} euro in the bank, against {rFrom} at the start.",
   },
   // The deposit contrast, and it may be the most useful pair on the page for an
   // ordinary saver: what a deposit opened this month is quoted, against what the

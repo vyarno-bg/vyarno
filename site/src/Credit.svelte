@@ -155,16 +155,17 @@
     </div>
     <p>
       <span class="l-bg"
-        >Първата е лихвата, от която се смята вноската. Втората е ГПР: същите кредити, но с таксите,
-        които банката изисква, за да отпусне заема, така че тя е по-висока и не е числото, с което
-        се амортизира кредит. Третата не е за нов кредитополучател, а е средното по вече изплащания
-        портфейл, в който има договори отпреди години.</span
+        >Първата е лихвата, от която се смята вноската. Втората е ГПР, тоест годишен процент на
+        разходите: същите кредити, но с таксите, които банката изисква, за да ти отпусне заема.
+        Затова е по-висока, и не с нея се смята вноската. Третата не е за нов кредит: тя е средното
+        по всички кредити, които хората в момента изплащат, включително договори отпреди години.</span
       >
       <span class="l-en"
-        >The first is the rate the monthly payment is computed from. The second is the APRC: the
-        same loans with the charges the bank requires in order to lend, so it is higher and it is
-        not the figure a loan is amortised with. The third is not for a new borrower at all, but the
-        average across the book already being repaid, which holds agreements signed years ago.</span
+        >The first is the rate the monthly payment is worked out from. The second is the APRC, the
+        annual percentage rate of charge: the same loans with the fees the bank requires in order to
+        lend, so it is higher, and it is not the one the payment is worked out from. The third is
+        not for a new loan at all. It is the average across every loan people are repaying right
+        now, agreements signed years ago included.</span
       >
     </p>
   </section>
@@ -360,8 +361,8 @@
         <span class="l-bg"
           >Сумата е на БНБ, а лихвата до нея е на ЕЦБ, и това не е разсеяност: ЕЦБ публикуват колко
           струва дългът, но не и колко е голям, а БНБ отчитат и двете в един ред. Затова всяко число
-          тук носи собствения си източник. Двете описват един и същи портфейл, което пък се
-          проверява при всяко обновяване.</span
+          тук носи собствения си източник. Двете описват едни и същи кредити, което пък се проверява
+          при всяко обновяване.</span
         >
         <span class="l-en"
           >The amount is BNB's and the rate beside it is the ECB's, and that is not carelessness:
@@ -488,15 +489,14 @@
       </div>
       <p class="cap">
         <span class="l-bg"
-          >Сумите са в милиони евро. Овърдрафтът включва и кредитните карти, защото БНБ ги отчитат
-          вътре в него, а не отделно, така че четирите реда се събират до общото отгоре без нищо да
-          се брои два пъти. Колко точно се дължи по карти е по-долу, при цената на картата.</span
+          >Овърдрафтът включва и кредитните карти, защото БНБ ги отчитат вътре в него, а не отделно,
+          така че четирите реда се събират до общото отгоре без нищо да се брои два пъти. Колко
+          точно се дължи по карти е по-долу, при цената на картата.</span
         >
         <span class="l-en"
-          >Amounts are in millions of euro. The overdraft row includes credit cards, because BNB
-          report them inside it rather than beside it, so the four rows add up to the total above
-          with nothing counted twice. How much is owed on cards specifically is below, beside what a
-          card costs.</span
+          >The overdraft row includes credit cards, because BNB report them inside it rather than
+          beside it, so the four rows add up to the total above with nothing counted twice. How much
+          is owed on cards specifically is below, beside what a card costs.</span
         >
       </p>
     </section>
@@ -512,14 +512,14 @@
       </h2>
       <p class="lede">
         <span class="l-bg"
-          >Всяка лихва по-горе е цена. Тук са двете количества под нея: колко държат домакинствата в
-          банките и колко дължат на тях. И двете растат, но дългът расте по-бързо, затова на всяко
-          евро дълг се падат все по-малко евро в банката.</span
+          >Досега на тази страница пишеше колко струват парите. Това е другото: колко пари имат
+          българските домакинства в банките и колко дължат на тях. И двете растат, но дългът расте
+          по-бързо.</span
         >
         <span class="l-en"
-          >Every rate above is a price. These are the two quantities underneath it: what households
-          hold in the banks, and what they owe them. Both are growing and the debt is growing
-          faster, so every euro owed is matched by less in the bank than it was.</span
+          >Everything above says what money costs. This says how much of it there is: what Bulgarian
+          households have in the banks, and what they owe them. Both are growing, and the debt is
+          growing faster.</span
         >
       </p>
       <div class="stats">
@@ -552,13 +552,28 @@
            directly under the two figures it divides, with both of them linked,
            which is the shape `/market/` gives its own derived figures. -->
       <p class="note ours">
-        <strong>{savings.ratio === null ? "—" : number(savings.ratio, 2, $lang)}</strong>
-        {t(COPY.crdKCushion, $lang)} · {t(COPY.crdSrcOurRatio, $lang)}:
-        <!-- The division sign rather than a comma between the two links. They
-             are the operands, and two link words side by side read as a list of
-             two things rather than as one divided by the other. -->
-        <a href={savings.depositsSourceUrl} rel="noopener">{t(COPY.crdKeyHeld, $lang)}</a> ÷
-        <a href={savings.loansSourceUrl} rel="noopener">{t(COPY.crdKeyOwedBsi, $lang)}</a>
+        <strong>{savings.ratio === null ? "—" : `${number(savings.ratio, 2, $lang)} €`}</strong>
+        <!-- Said as one euro against the other, because a bare «1,79» beside two
+             billion-euro figures reads as a third amount rather than as the
+             relation between them. The two operands carry the links. -->
+        <span class="l-bg"
+          >в банката на всяко евро дълг. През {periodLong(savings.from, $lang)} са били {number(
+            savings.ratioFirst,
+            2,
+            $lang
+          )} €. Наша сметка:
+          <a href={savings.depositsSourceUrl} rel="noopener">парите в банката</a>, разделени на
+          <a href={savings.loansSourceUrl} rel="noopener">дълга</a>, за един и същи месец.</span
+        >
+        <span class="l-en"
+          >in the bank for every €1 owed. In {periodLong(savings.from, $lang)} it was {number(
+            savings.ratioFirst,
+            2,
+            $lang
+          )} €. Ours: <a href={savings.depositsSourceUrl} rel="noopener">the money in the bank</a>
+          divided by <a href={savings.loansSourceUrl} rel="noopener">the debt</a>, for the same
+          month.</span
+        >
       </p>
 
       {#if held.deposits?.points.length > 1 && held.loans?.points.length > 1}
@@ -629,36 +644,33 @@
           <a href={savings.depositsSourceUrl} rel="noopener">{t(COPY.crdWhoseEcb, $lang)}</a>
           · {periodLong(savings.from, $lang)} – {periodLong(savings.to, $lang)} ·
           <span class="l-bg"
-            >по-назад няма: ЕЦБ публикуват тези два реда за България от {periodLong(
-              savings.startsAt,
-              $lang
-            )} нататък, а кредитите са отрязани до депозитите, защото две линии по различни периоди са
-            два въпроса на една картинка</span
+            >ЕЦБ имат тези две числа за България само от {periodLong(savings.startsAt, $lang)} насам.
+            Дългът го има и от по-рано, но графиката го спира тук: две линии, които тръгват от различни
+            години, не се сравняват</span
           >
           <span class="l-en"
-            >no further back: the ECB publish these two series for Bulgaria from {periodLong(
+            >the ECB only have these two figures for Bulgaria from {periodLong(
               savings.startsAt,
               $lang
-            )} onward, and the loan line is cut to match the deposits, because two lines over different
-            windows are two questions on one picture</span
+            )} onward. The debt goes back further, but the chart stops it here: two lines that start in
+            different years cannot be compared</span
           >
         </p>
       {/if}
 
       <p class="cap">
         <span class="l-bg"
-          >Кредитите тук са с {number(savings.crossCheckPct, 1, $lang)}% повече от общото в
-          таблицата по-горе и двете числа са верни. БНБ броят само сектор „Домакинства“ при
-          потребителските и жилищните кредити, а ЕЦБ броят с тях и нестопанските организации, които
-          обслужват домакинствата. Съотношението дели едно и също население само на себе си, затова
-          и двете суми тук са на ЕЦБ.</span
+          >Дългът тук е с {number(savings.crossCheckPct, 1, $lang)}% по-голям от общото в таблицата
+          по-горе и двете числа са верни. Просто БНБ и ЕЦБ броят малко различни неща: БНБ броят само
+          домакинствата, а ЕЦБ броят заедно с тях и сдруженията с нестопанска цел, тоест читалища,
+          църкви, синдикати. Затова и двете суми тук са на ЕЦБ. Така сравняваме едно и също.</span
         >
         <span class="l-en"
-          >The loans here run {number(savings.crossCheckPct, 1, $lang)}% above the total in the
-          table further up, and both figures are right. BNB count sector Households alone in the
-          consumer and housing blocks, while the ECB count the non-profit institutions serving
-          households along with them. The ratio divides one population by itself, which is why both
-          amounts here are the ECB's.</span
+          >The debt here is {number(savings.crossCheckPct, 1, $lang)}% larger than the total in the
+          table above, and both figures are right. BNB and the ECB simply count slightly different
+          things: BNB count households alone, while the ECB count the non-profits that serve them
+          too, meaning community centres, churches and trade unions. So both amounts here are the
+          ECB's. That way we are comparing like with like.</span
         >
       </p>
     </section>
@@ -726,7 +738,7 @@
     <p class="cap">
       <span class="l-bg"
         >Сумите под лихвите са на БНБ, защото ЕЦБ не публикуват колко се дължи по нито един от тези
-        продукти. При картите числото е точно това, което се плаща лихва по него: салдото, останало
+        продукти. При картите числото е точно това, което се плаща лихва по него: остатъкът, останал
         след гратисния период, а не всичко изтеглено с карта. При овърдрафта е блокът на БНБ без
         картите в него, защото ЕЦБ слагат границата там, а БНБ не.</span
       >
@@ -785,10 +797,10 @@
       <p>
         <span class="l-bg"
           >Когато в новините се появи едно число за необслужваните кредити, то обикновено е по целия
-          кредитен портфейл на банките. Това е третото тук, а не първото. Фирмите изостават по-често
-          от домакинствата във всяко тримесечие, което ЕЦБ публикуват, така че общото число се
-          изтегля нагоре от половината, която не е за хората. Затова тази страница показва и трите,
-          с отделна връзка за всяко.</span
+          по всички кредити на банките, взети заедно. Това е третото тук, а не първото. Фирмите
+          изостават по-често от домакинствата във всяко тримесечие, което ЕЦБ публикуват, така че
+          общото число се изтегля нагоре от половината, която не е за хората. Затова тази страница
+          показва и трите, с отделна връзка за всяко.</span
         >
         <span class="l-en"
           >When a single non-performing-loans figure turns up in the news it is usually the one over
@@ -801,15 +813,15 @@
       <p class="cap">
         <span class="l-bg"
           >Числата са на тримесечие и излизат около пет месеца след тримесечието, което описват,
-          затова са по-стари от всяка лихва на тази страница и носят своя период. Знаменателят е
-          всички кредити и аванси към същите клиенти. Това не е съотношението, което БНБ публикуват
-          в тримесечния си надзорен доклад: то е върху друг знаменател и двете не са едно и също
+          затова са по-стари от всяка лихва на тази страница и носят своя период. Процентът се смята
+          върху всички кредити към същите клиенти. Това не е съотношението, което БНБ публикуват в
+          тримесечния си надзорен доклад: то е върху друг знаменател и двете не са едно и също
           число.</span
         >
         <span class="l-en"
           >These are quarterly and land about five months after the quarter they describe, so they
-          are older than every rate on this page and carry their own period. The denominator is all
-          loans and advances to the same borrowers. This is not the ratio BNB publish in their
+          are older than every rate on this page and carry their own period. The percentage is taken
+          over every loan to those same borrowers. This is not the ratio BNB publish in their
           quarterly supervisory report: that one is built on a different denominator and the two are
           not the same number.</span
         >
