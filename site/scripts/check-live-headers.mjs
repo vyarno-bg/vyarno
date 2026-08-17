@@ -244,6 +244,11 @@ const ROUTES = [
  */
 async function checkCanonicalHost(origin) {
   const bad = [];
+  // Routes the origin does not serve at either address. Reported apart from the
+  // failures because they are not one: a route that has not shipped yet is the
+  // ordinary state of a branch, and calling it drift trains an operator to skip
+  // the whole check.
+  const undeployed = [];
   const url = new URL(origin);
   const apex = url.hostname.replace(/^www\./, "");
 
@@ -281,10 +286,31 @@ async function checkCanonicalHost(origin) {
       continue;
     }
     if (res.status < 300 || res.status > 399) {
+      // **Ask for the canonical form before blaming the redirect.** A route
+      // that is not deployed at all answers 404 at BOTH addresses, and a check
+      // that stops at the first one reports it in the words of a missing CDN
+      // rule — sending an operator to a dashboard to fix a branch that has not
+      // merged. The two states need opposite actions, so they get opposite
+      // sentences. This host adds the trailing-slash redirect by itself for
+      // routes it serves, which is why "not deployed" is the likelier reading
+      // of a 404 here and why it is not a failure of this check's own subject.
+      const canonical = await fetch(new URL(route, origin), {
+        method: "HEAD",
+        redirect: "manual",
+      }).catch(() => null);
+      if (res.status === 404 && canonical?.status === 404) {
+        undeployed.push(
+          `   ${route} — 404 at both ${slashless} and ${route}, so the route is not\n` +
+            "     deployed. Nothing to add at the CDN: merge and deploy, then re-run."
+        );
+        continue;
+      }
       bad.push(
-        `   ${slashless} — HTTP ${res.status}, expected a redirect to ${route}\n` +
-          "     A 404 means the host has not been told about this route; a 200\n" +
-          "     means two URLs serve one page and neither is canonical."
+        `   ${slashless} — HTTP ${res.status} while ${route} answers ` +
+          `${canonical?.status ?? "nothing"}\n` +
+          "     The page is served and its slash-less address is not a redirect to\n" +
+          "     it: a 404 needs the rule adding, a 200 means two URLs serve one\n" +
+          "     page and neither is canonical."
       );
       continue;
     }
@@ -307,6 +333,10 @@ async function checkCanonicalHost(origin) {
     }
     console.log(`ok ${slashless} → ${route} (${res.status}), and ${route} answers ${final.status}`);
   }
+  if (undeployed.length) {
+    console.log(`\n-- ${undeployed.length} route(s) not deployed at this origin`);
+    for (const line of undeployed) console.log(line);
+  }
   return bad;
 }
 
@@ -321,6 +351,10 @@ console.log(`Checking ${origin} against site/public/_headers\n`);
 
 let problems = 0;
 let unprobed = 0;
+// Paths `_headers` declares that this origin does not serve yet. Counted so the
+// summary can say so, never added to `problems`: a route that has not shipped
+// is the ordinary state of a branch and not drift between repo and CDN.
+let undeployedPaths = 0;
 
 // The canonical-host rules first, because a route that does not resolve to one
 // address makes every header result below ambiguous about which URL it describes.
@@ -358,6 +392,19 @@ for (const [path, patterns] of probes) {
   } catch (err) {
     console.log(`!  ${path} — ${err.message}`);
     problems += 1;
+    continue;
+  }
+
+  // **A 404's headers are not this path's headers, so they are not compared.**
+  // `_headers` describes the page; a not-found response is a different response
+  // with its own policy, and diffing the two reports `cache-control: no-store`
+  // as drift when what actually happened is that the route has not shipped. That
+  // is the same false alarm the canonical-host section above untangles, arriving
+  // through the other half of this file — four of them at once on the branch that
+  // added `/credit/` to `_headers` before the route was deployed.
+  if (res.status === 404) {
+    console.log(`-- ${path} — 404, so the route is not deployed here; headers not compared`);
+    undeployedPaths += 1;
     continue;
   }
 
@@ -402,8 +449,13 @@ for (const [path, patterns] of probes) {
 }
 
 console.log();
+const deployNote = undeployedPaths
+  ? ` (${undeployedPaths} declared path(s) not deployed at this origin yet)`
+  : "";
 if (problems === 0 && unprobed === 0) {
-  console.log("The origin serves one address per route, with every header _headers declares.");
+  console.log(
+    `The origin serves one address per route, with every header _headers declares.${deployNote}`
+  );
   process.exit(0);
 }
 if (problems === 0) {
