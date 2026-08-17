@@ -394,6 +394,41 @@ def test_pure_new_lending_and_renegotiation_partition_new_business():
         validate_new_business_split(total, pure, {**reneg, "2026-06": 53.23})
 
 
+def test_the_fixation_total_rate_is_held_to_the_headline_band():
+    # The buckets get a band of their own because a thin one holds a single
+    # loan; the TOTAL is a market average and gets the headline band. A whole
+    # block drifting into consumer credit moves this and no bucket sum.
+    rows = [_fixation_row(period=f"2025-{m:02d}") for m in range(1, 13)] * 3
+    rows[7] = _fixation_row(total_rate_pct=14.9)
+    with pytest.raises(MortgageValidationError, match="headline band"):
+        validate_fixation_rows(rows)
+
+
+def test_a_fixation_cell_that_stopped_parsing_is_not_summed_around():
+    # An unreadable cell arrives as None, and None in the volumes would sum as
+    # a missing bucket rather than announce itself.
+    rows = [_fixation_row(period=f"2025-{m:02d}") for m in range(1, 13)] * 3
+    rows[3] = _fixation_row(volume_eur_m=dict(zip(FIXATION_BUCKETS, [99.0, None, 0.0, 0.0])))
+    with pytest.raises(MortgageValidationError, match="unreadable cell"):
+        validate_fixation_rows(rows)
+    rows[3] = _fixation_row(total_eur_m=None)
+    with pytest.raises(MortgageValidationError, match="unreadable cell"):
+        validate_fixation_rows(rows)
+
+
+def test_a_truncated_fixation_workbook_is_not_published_as_a_short_history():
+    with pytest.raises(MortgageValidationError, match="expected at least"):
+        validate_fixation_rows([_fixation_row(period=f"2026-{m:02d}") for m in range(1, 7)])
+
+
+def test_the_split_legs_must_share_a_month_with_new_business():
+    # The pure/renegotiated legs splice from their own BGN keys. A splice that
+    # lands on different months leaves three well-formed series that describe
+    # no common period, and every per-month check below would simply not run.
+    with pytest.raises(MortgageValidationError, match="share no month"):
+        validate_new_business_split({"2026-06": 768.56}, {"2025-01": 615.33}, {"2025-01": 153.23})
+
+
 def test_the_two_publishers_must_agree_on_each_fixation_bucket():
     bnb = {"up_to_1y": 2.4051, "1y_to_5y": 2.9582, "5y_to_10y": 0.0, "over_10y": 2.5234}
     cross_check_fixation_rates(bnb, {"up_to_1y": 2.41, "1y_to_5y": 2.96, "over_10y": 2.52})
@@ -410,6 +445,34 @@ def test_the_bnb_fixation_workbook_reads_as_the_housing_block():
     # floats. If this ever reads below half, the column has moved.
     floating = latest["volume_eur_m"]["up_to_1y"] / latest["total_eur_m"]
     assert floating > 0.9, f"{FIXATION_SHEET}: floating share read {floating:.1%}"
+
+
+def test_a_reordered_housing_block_is_refused_rather_than_read():
+    # The guard the bucket band leans on. `BUCKET_RATE_MAX_PCT` is 16 because a
+    # thin bucket holds one loan and has reached 14.82% — which also admits the
+    # consumer block in this same workbook (4.96-15.95%), so no bound can tell
+    # the two apart. Only the labels can, and БНБ reordering the block would
+    # otherwise report a floating market as a fixed one.
+    import io
+
+    import openpyxl
+
+    wb = openpyxl.load_workbook(io.BytesIO(FIXATION_XLSX.read_bytes()))
+    ws = wb[FIXATION_SHEET]
+    moved = None
+    for row in ws.iter_rows():
+        for cell in row:
+            if isinstance(cell.value, str) and cell.value.strip() == "над 10 години":
+                cell.value = "над 10 години и повече"
+                moved = cell.coordinate
+                break
+        if moved:
+            break
+    assert moved, "the fixture no longer carries the label this test moves"
+    buf = io.BytesIO()
+    wb.save(buf)
+    with pytest.raises(ValueError, match="rate-fixation buckets"):
+        parse_housing_fixation_xlsx(buf.getvalue())
 
 
 def test_published_json_carries_the_split_and_names_its_one_publisher():
