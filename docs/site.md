@@ -163,7 +163,7 @@ site/
         │                 # and the only place a consumer figure could leave
         ├── stores.js     # lang · theme · област · the opt-in memory
         ├── build.js      # the build stamp (__BUILD_ID__, or "dev")
-        ├── SiteHeader.svelte  # wordmark + route out + theme + language
+        ├── SiteHeader.svelte  # wordmark + routes + theme + language
         ├── SiteFooter.svelte  # attribution + legal links + build stamp
         ├── WedgeChart.svelte  # the tax wedge as a curve — `/` marks the
         │                      # reader's contracts on it, `/how/` marks nobody
@@ -195,10 +195,18 @@ unchecked for both.
 `SiteHeader.svelte` is shared because it is a control bar, and a control that
 behaves differently per page is one a reader learns twice. It takes two props —
 `page` (the Bulgarian path: where the language link points, whether the wordmark
-jumps to `#main` or goes home, which route out shows; `null` on `/404.html`) and
-`tagline` (the `{bg, en}` under the wordmark). A masthead that needs a third
-prop is a page asking for a second header — `site/AGENTS.md` §"`components/` is
-the calculator's" is why.
+jumps to `#main` or goes home, which route the row leaves out; `null` on
+`/404.html`) and `tagline` (the `{bg, en}` under the wordmark). A masthead that
+needs a third prop is a page asking for a second header — `site/AGENTS.md`
+§"`components/` is the calculator's" is why. A new route is one entry in its
+`ROUTES` list.
+
+**Every target in that header is at least 44×44 CSS px**, and the floor is what
+puts the routes on a row of their own below 760px — the wordmark, the pills and
+the two toggles need 400px at it, and a 360px phone gives 328px.
+`verify_render_layout.mjs` holds it over every route in both languages at 320px
+and 360px, which is the check nothing in the repo was making when the theme
+button drifted to 23.8px wide.
 
 `WedgeChart.svelte` is shared by the two pages that draw the tax wedge: `/`
 marks each of the reader's contracts on the curve, `/how/` marks nobody. Drawn

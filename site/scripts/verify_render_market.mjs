@@ -1485,7 +1485,7 @@ test("the market page is reachable from the calculator, and links back", { skip 
   await withApp(
     async (page, errors) => {
       assert.equal(
-        await page.locator('header.site .controls a[href="/market/"]').count(),
+        await page.locator('header.site .routes a[href="/market/"]').count(),
         1,
         "the calculator's header carries no route to /market/"
       );
@@ -1494,7 +1494,7 @@ test("the market page is reachable from the calculator, and links back", { skip 
         "the calculator offers only one route to /market/ — the header pill, " +
           "the home row's link and the footer are three surfaces with three jobs"
       );
-      await page.locator('header.site .controls a[href="/market/"]').click();
+      await page.locator('header.site .routes a[href="/market/"]').click();
       await page.waitForURL(/\/market\/?$/);
       assert.ok(await page.locator("main.market").count(), "the header link did not land");
       assert.deepEqual(errors, [], errors.join(" | "));

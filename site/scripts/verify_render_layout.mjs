@@ -27,7 +27,7 @@ test("the country page is reachable without opening anything", { skip }, async (
   // калкулатора» in the same slot — so a reader who walked into one of those
   // has only the footer, and a reader who never scrolls has only the header.
   await withApp(async (page, errors) => {
-    const inHeader = page.locator('header.site .controls a[href="/how/"]');
+    const inHeader = page.locator('header.site .routes a[href="/how/"]');
     assert.equal(await inHeader.count(), 1, "the calculator's header carries no route to /how/");
     assert.ok((await inHeader.innerText()).trim(), "the header's route to /how/ has no label");
 
@@ -100,12 +100,24 @@ for (const path of BAR_ROUTES) {
             const boxes = [document.querySelector("header.site .brand"), ...controls].map((el) =>
               el.getBoundingClientRect()
             );
+            // WCAG 2.5.5, over every target the bar draws. The skip link is out
+            // by name: it sits off-screen until focused, so it has no box to
+            // hold. Counted rather than listed because one undersized control
+            // is the whole finding — the theme button measured 23.8x27 here,
+            // under even 2.5.8's 24x24, and nothing in the repo could see it.
+            const targets = [
+              ...document.querySelectorAll("header.site a:not(.skip), header.site button"),
+            ]
+              .filter((el) => el.offsetParent !== null)
+              .map((el) => el.getBoundingClientRect());
             return {
               vw,
               docWidth: Math.round(document.documentElement.scrollWidth),
-              rightmost: Math.round(
-                Math.max(...controls.map((el) => el.getBoundingClientRect().right))
+              undersized: targets.filter((b) => b.width < 44 || b.height < 44).length,
+              taglineShown: Boolean(
+                document.querySelector("header.site .brand small")?.offsetHeight
               ),
+              rightmost: Math.round(Math.max(...targets.map((b) => b.right))),
               // One row, measured as one row. Not by a shared top edge — the
               // wordmark and a button and four anchors are not the same height,
               // and `align-items: center` gives each its own top. What makes a
@@ -127,13 +139,17 @@ for (const path of BAR_ROUTES) {
             `on ${path} at ${width}px a header control reaches ${bar.rightmost}px ` +
               `past the ${bar.vw}px viewport`
           );
-          // ONE ROW at 360px, in both languages, and this is the assertion the
-          // wrap above would otherwise hide. Wrapping keeps the document from
-          // scrolling sideways, so a bar that no longer fits passes every check
-          // over the page's width while quietly costing every reader on that
-          // half of the site 40px of sticky header. Restore "the numbers" and
-          // "← to the calculator" and this goes red on the five English routes;
-          // nothing else does.
+          assert.equal(
+            bar.undersized,
+            0,
+            `on ${path} at ${width}px ${bar.undersized} header target(s) are under 44x44`
+          );
+          // THE CONTROL ROW stays one row, in both languages. The routes take a
+          // line of their own below 760px and that is the design; the wordmark
+          // and the two toggles sharing theirs is what a longer word in either
+          // language would break, and wrapping hides it — the document stops
+          // scrolling sideways and every width check passes while the sticky
+          // header quietly grows another 52px.
           //
           // 320px is left out on purpose: it is below the width this bar is
           // designed to hold, and the wrap is the answer there rather than a
@@ -141,9 +157,10 @@ for (const path of BAR_ROUTES) {
           if (width === 360) {
             assert.ok(
               bar.rowGap < 0,
-              `on ${path} at 360px the header has wrapped — ${bar.rowGap}px of clear ` +
-                "air between two controls"
+              `on ${path} at 360px the control row has wrapped — ${bar.rowGap}px of ` +
+                "clear air between two controls"
             );
+            assert.equal(bar.taglineShown, false, `${path} still draws the tagline at 360px`);
           }
           assert.deepEqual(errors, [], errors.join(" | "));
         },
@@ -153,48 +170,6 @@ for (const path of BAR_ROUTES) {
     });
   }
 }
-
-test("the calculator's bar keeps its four controls on one line at 360px", { skip }, async () => {
-  // The count and the row are what the tightening above is for, and they are
-  // asserted on the calculator because it is the page that carries four
-  // controls where every other carries three. The fourth is the one that makes
-  // the measurement matter rather than merely repeat itself: adding a nav pill
-  // to a bar that already fits is exactly the change that fits on a laptop and
-  // wraps on a phone, and the only place that shows is a real viewport.
-  //
-  // At 360px the brand's tagline wrapped to two lines inside the bar — the
-  // promise «икономиката, честно» rendered as a layout fault — so it is what
-  // gives first. Nothing about that is visible from the markup.
-  //
-  // **What still catches a wrapped bar is the 54px, and the BAR_ROUTES loop
-  // above.** The height is exact: `.bar` sets `min-height` rather than
-  // `height`, so anything that no longer fits on one line — the tagline coming
-  // back, a fifth control, a longer word in either language — grows the box and
-  // this goes red with the measurement in the message. The loop asserts the
-  // rows overlap on all eleven routes at 360px, over the brand AND the
-  // controls, which is a superset of what a `rowGap` taken over the controls
-  // alone could say here; and a brand taller than the bar containing it is not
-  // a state the box model has.
-  await withApp(
-    async (page, errors) => {
-      const bar = await page.evaluate(() => ({
-        barHeight: Math.round(
-          document.querySelector("header.site .bar").getBoundingClientRect().height
-        ),
-        taglineShown: Boolean(document.querySelector("header.site .brand small")?.offsetHeight),
-        controls: [...document.querySelectorAll("header.site .controls > *")].filter(
-          (el) => el.offsetParent !== null
-        ).length,
-      }));
-      assert.equal(bar.controls, 4, `the header carries ${bar.controls} controls, expected 4`);
-      assert.equal(bar.barHeight, 54, `the bar is ${bar.barHeight}px tall, expected 54`);
-      assert.equal(bar.taglineShown, false, "the tagline is still drawn on a 360px bar");
-      assert.deepEqual(errors, [], errors.join(" | "));
-    },
-    "/",
-    { viewport: { width: 360, height: 800 } }
-  );
-});
 
 test("every page carries a route to the country page, except itself", { skip }, async () => {
   // The footer is on every page, and it is what makes `/how/` reachable from the
