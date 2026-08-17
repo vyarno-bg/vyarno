@@ -241,9 +241,32 @@ Read 2026-07-30 at
 The most permissive of the five: an express grant to distribute and reproduce,
 no non-commercial carve-out. Both conditions are met —
 `outstanding_stock.value_pct` is the housing column of the workbook verbatim,
-with `source_url` and `as_of`. **Forward constraint:** the moment we derive from
-БНБ — a spread, a rebase, a real-terms conversion of the monthly history —
-«не променяте или изопачавате» engages, and the house rule above covers it.
+with `source_url` and `as_of`.
+
+**The forward constraint this section used to hold in reserve is now live, and
+two figures are inside it.** «не променяте или изопачавате» engages wherever a
+published number is arithmetic over БНБ's cells rather than one of them, and
+`credit.json` carries two:
+
+- `outstanding.total_eur_m` — the four purpose blocks added up. Addition of
+  amounts БНБ print in one row, and each addend ships beside the total in
+  `outstanding.blocks`, so a reader can take the sum apart.
+- `overdraft.stock_eur_m` and `overdraft.stock_rate_pct` — БНБ's «Овърдрафт»
+  block **less** its own «в т.ч. кредитни карти» sub-block, because ЕЦБ A2Z1
+  draws the boundary there and БНБ do not. A subtraction is the transformation
+  most capable of distorting, so `overdraft.stock_basis` states it in the payload
+  and the rate it leaves is gated against A2Z1 — БНБ's own figure, reported by
+  БНБ to the ЕЦБ, agreeing to 0.021 pp.
+
+The house rule above is what satisfies both: the transformation is stated in the
+payload and in [`math.md`](./math.md). What would NOT be covered is publishing
+the subtraction without saying it is one, or the total without its addends.
+
+**The two workbooks added on 2026-08-17** — `s_ir_loan_oa_hh_bg.xlsx`'s volume
+half and `s_ir_ovdr_cc_oa_hh_bg.xlsx` — are the same publisher under the same
+grant re-read that day at the URL above, so this is a wider read of a licence
+already verified rather than a new one. Their filenames come from БНБ's own
+navigation (`sitenavigation.js`), not from guessing at names.
 
 **This document used to say the page "is not machine-readable … so re-verifying
 it needs a human, not a curl". That was wrong.** `curl` returns HTTP 200 and

@@ -146,6 +146,87 @@ def fixation_rate_key(bucket: str, currency: str) -> str:
     return f"M.BG.B.A2C.{FIXATION_KEYS[bucket]}.R.A.2250.{currency}.N"
 
 
+# ---------------------------------------------------------------------------
+# CBD2 — Consolidated Banking Data, and the only household-scoped NPL ratio
+# ---------------------------------------------------------------------------
+# **The figure in the headlines is not a household figure.** «Необслужваните
+# заеми растат до 3,3%» is БНБ's supervisory ratio over the WHOLE credit
+# portfolio, which is dominated by corporate lending — and corporate lending
+# defaults at about twice the household rate, so the number a reader takes for
+# "how many of us are behind" is not one. CBD2 is where the ЕЦБ publish the
+# split, quarterly and machine-readable, which is the alternative to parsing a
+# 1.8 MB supervisory PDF for one cell.
+#
+# CBD2 IS NOT MIR: 16 key dimensions rather than 10, in this order, and a
+# wildcard key 404s until you have read the DSD. Same two structural rules
+# though — filter in the path, verify the response describes what was asked for.
+DATAFLOW_CBD2 = "CBD2"
+# fmt: off
+CBD2_KEY_DIMS: tuple[str, ...] = (
+    "FREQ",              # Q    quarterly
+    "REF_AREA",          # BG   Bulgaria
+    "COUNT_AREA",        # W0   world (the counterparty's residence, not restricted)
+    "CB_REP_SECTOR",     # 67   every bank operating in BG · 11 domestic groups only
+    "BS_COUNT_SECTOR",   # S1M  households and NPISH · S11 non-financial corporations
+    "BS_NFC_ACTIVITY",
+    "CB_SECTOR_SIZE",    # A    all sizes
+    "CB_REP_FRAMEWRK",   # F    FINREP (IFRS and GAAP)
+    "CB_ITEM",           # I3632 gross NPL over gross loans and advances
+    "CB_PORTFOLIO",
+    "CB_EXP_TYPE",
+    "CB_VAL_METHOD",
+    "MATURITY_RES",
+    "DATA_TYPE",
+    "CURRENCY_TRANS",
+    "UNIT_MEASURE",      # PC   per cent
+)
+# fmt: on
+
+# `CB_REP_SECTOR` is the choice that moves the number most, and 67 is the one
+# that describes Bulgaria. 11 is domestic banking groups and stand-alone banks
+# ALONE, and BG's banking system is majority foreign-owned — so 11 reports 3.97%
+# where 67 reports 2.37% at 2026-Q1, for the same households, because it is
+# looking at a minority of their loans. 67 adds the foreign-controlled
+# subsidiaries and branches, which is every bank a Bulgarian actually borrows
+# from.
+CBD2_REP_SECTOR = "67"
+
+# Three counterparty scopes of one ratio, and publishing all three is what makes
+# the denominator claim checkable rather than asserted: households sit well
+# below the whole-portfolio figure precisely because corporates sit well above
+# it. `_Z` is "not applicable", which in CBD2 means the ratio is not broken down
+# by counterparty at all — the whole book.
+# fmt: off
+CBD2_NPL_SCOPES: dict[str, str] = {
+    "households":   "S1M",
+    "corporations": "S11",
+    "all":          "_Z",
+}
+# fmt: on
+
+
+def cbd2_npl_key(scope: str) -> str:
+    """The gross-NPL-ratio series for one counterparty scope."""
+    return f"Q.BG.W0.{CBD2_REP_SECTOR}.{CBD2_NPL_SCOPES[scope]}._Z.A.F.I3632._Z._Z._Z._Z._Z._Z.PC"
+
+
+def cbd2_url(series_key: str, start_period: str = "2020-Q1") -> str:
+    """Provenance URL for one CBD2 series. Also the URL we actually fetch."""
+    return f"{BASE}/{DATAFLOW_CBD2}/{series_key}?format=jsondata&startPeriod={start_period}"
+
+
+def fetch_cbd2_series(
+    series_key: str,
+    start_period: str = "2020-Q1",
+    timeout: float = 60.0,
+) -> dict[str, float]:
+    """Fetch one fully-specified CBD2 series → {"YYYY-Qn": value}."""
+    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+        r = client.get(cbd2_url(series_key, start_period))
+        r.raise_for_status()
+        return _parse_sdmx_series(r.json(), CBD2_KEY_DIMS, series_key, DATAFLOW_CBD2)
+
+
 # Everything a household borrows on that is not a mortgage, plus what a deposit
 # pays — the comparator, because a rate is only ever high or low against
 # something. `BS_ITEM` is the whole difference between these keys:
@@ -176,8 +257,31 @@ CONSUMER_KEYS: dict[str, str] = {
     "deposit_overnight_eur": "M.BG.B.L21.A.R.A.2250.EUR.N",
     "deposit_term_bgn":      "M.BG.B.L22.A.R.A.2250.BGN.N",
     "deposit_term_eur":      "M.BG.B.L22.A.R.A.2250.EUR.N",
+    # How much went into a term deposit last month, and what the money already
+    # in one is earning. `.B.` is the volume and `.O` the outstanding stock, and
+    # the pair is the whole point: a household opening a deposit today is quoted
+    # the new-business rate, while what most people are actually earning is the
+    # stock rate, a third of it.
+    "deposit_term_volume_eur": "M.BG.B.L22.A.B.A.2250.EUR.N",
+    "deposit_term_stock_eur":  "M.BG.B.L22.A.R.A.2250.EUR.O",
+    # Every household loan on the books, at one rate. Nothing else on the page
+    # answers "what does the average household loan cost, across everything",
+    # and it is the rate `credit.py` gates БНБ's own blocks against.
+    "household_stock_eur":     "M.BG.B.A20.A.R.A.2250.EUR.O",
 }
 # fmt: on
+
+# The outstanding-stock leg carries a RATE and never a size: `…B.A20/A22/A2B/
+# L21/L22.A.B.A.2250.EUR.O` is a 404 at every date, probed 2026-08-17. So the
+# euro amounts under those rates come from БНБ's workbooks (`sources/bnb.py`)
+# and there is no key to add here instead.
+#
+# The three stock rates above START AT 2022-01 rather than 2020-01. Nothing
+# needs doing about that — they are the gate's input and a cross-check needs
+# only the month it is checking — but a caller expecting `MIN_SERIES_MONTHS` of
+# them from a 2020 start would find 54 months where the new-business keys give
+# 78.
+OUTSTANDING_SERIES_START = "2022-01"
 
 
 # Human-readable provenance URL for a series key (what we cite in the JSON
@@ -227,15 +331,31 @@ def parse_mir_series(
     mistake for real data — the failure mode that shipped Austrian
     corporate loan rates as Bulgaria's mortgage rate.
     """
+    return _parse_sdmx_series(payload, SERIES_KEY_DIMS, expect_key, DATAFLOW)
+
+
+def _parse_sdmx_series(
+    payload: dict[str, Any],
+    expect_dims: tuple[str, ...],
+    expect_key: str | None,
+    flow: str,
+) -> dict[str, float]:
+    """The body of the above, for any ECB flow whose dimension order we pin.
+
+    Shared rather than copied because the identity guard is the whole value of
+    it, and a second flow's parser written beside this one is a second place for
+    that guard to be quietly weaker. What differs between flows is the dimension
+    tuple and the period labels, and both arrive as arguments.
+    """
     structure = payload.get("structure")
     if not structure:
-        raise ValueError("ECB MIR response has no `structure` block")
+        raise ValueError(f"ECB {flow} response has no `structure` block")
 
     # --- observation (time) dimension ------------------------------------
     obs_dims = structure.get("dimensions", {}).get("observation", [])
     if not obs_dims or obs_dims[0].get("id") != "TIME_PERIOD":
         raise ValueError(
-            f"ECB MIR: expected TIME_PERIOD as the observation dimension, "
+            f"ECB {flow}: expected TIME_PERIOD as the observation dimension, "
             f"got {[d.get('id') for d in obs_dims]}. Upstream shape changed."
         )
     time_labels = [v["id"] for v in obs_dims[0]["values"]]
@@ -243,24 +363,24 @@ def parse_mir_series(
     # --- series dimensions: assert order, then decode identity -----------
     series_dims = structure.get("dimensions", {}).get("series", [])
     got_dims = tuple(d.get("id") for d in series_dims)
-    if got_dims != SERIES_KEY_DIMS:
+    if got_dims != expect_dims:
         raise ValueError(
-            f"ECB MIR: series dimension order changed.\n"
-            f"  expected {SERIES_KEY_DIMS}\n"
+            f"ECB {flow}: series dimension order changed.\n"
+            f"  expected {expect_dims}\n"
             f"  got      {got_dims}\n"
             f"Re-verify the key layout before trusting any value."
         )
 
     datasets = payload.get("dataSets") or []
     if not datasets:
-        raise ValueError("ECB MIR response has no dataSets")
+        raise ValueError(f"ECB {flow} response has no dataSets")
     series_map = datasets[0].get("series") or {}
 
     # A fully-specified key must select exactly one series. More than one
     # means the filter did not apply and we would be picking arbitrarily.
     if len(series_map) != 1:
         raise ValueError(
-            f"ECB MIR: expected exactly 1 series for a fully-specified key, "
+            f"ECB {flow}: expected exactly 1 series for a fully-specified key, "
             f"got {len(series_map)}. The dimension filter did not apply — "
             f"refusing to guess which series is Bulgaria's. "
             f"(Filter in the URL path, never the query string.)"
@@ -272,7 +392,7 @@ def parse_mir_series(
     )
     if expect_key is not None and decoded != expect_key:
         raise ValueError(
-            f"ECB MIR: response describes a different series than requested.\n"
+            f"ECB {flow}: response describes a different series than requested.\n"
             f"  requested {expect_key}\n"
             f"  returned  {decoded}\n"
             f"Refusing to publish a number for the wrong country/product."
@@ -284,7 +404,7 @@ def parse_mir_series(
         idx = int(time_idx_str)
         if idx >= len(time_labels):
             raise ValueError(
-                f"ECB MIR: time index {idx} out of range ({len(time_labels)} periods available)"
+                f"ECB {flow}: time index {idx} out of range ({len(time_labels)} periods available)"
             )
         raw = val_array[0] if val_array else None
         if raw is None:

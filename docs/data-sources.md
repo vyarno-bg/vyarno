@@ -35,6 +35,9 @@ Every entry carries a provenance tag:
 | **ЕЦБ MIR new-business APRC** — `M.BG.B.A2C.A.C.A.2250.{BGN,EUR}.N` | VERIFIED | `new_business.aprc.value_pct` — the same loans' all-in cost with fees (ГПР). |
 | **БНБ housing-loan rate** — `s_ir_loan_oa_hh_bg.xlsx` | VERIFIED | `outstanding_stock.value_pct`, with `book_volume_eur_m` beside it. Monthly back to 2007-01. |
 | **БНБ new business by rate fixation** — `s_ir_loan_nbf_hh_bg.xlsx` | VERIFIED | `mortgage.json → fixation`. Rates AND volumes for four initial-fixation buckets, monthly 2007-01 →, in euro. **The only source of the fixed/floating split after euro adoption** — ЕЦБ MIR's euro leg publishes no volume by fixation. Same 4-row header grammar as the workbook above, so one locator reads both. |
+| **БНБ outstanding balances by purpose** — `s_ir_loan_oa_hh_bg.xlsx`, volume half | VERIFIED | `credit.json → outstanding`. The same sheet's other two purposes plus the volume column for all three, monthly 2007-01 →. **The only published size of the household loan book** — every ЕЦБ MIR outstanding-amount volume key for BG is a 404. |
+| **БНБ overdraft and credit-card balances** — `s_ir_ovdr_cc_oa_hh_bg.xlsx` | VERIFIED | `credit.json → card.stock_*`, `overdraft.stock_*`. The card balance carried past the interest-free period, which is the quantity under the 21% the page already showed. ЕЦБ MIR publishes no volume for either item. |
+| **ЕЦБ CBD2 non-performing loans** — `I3632` | VERIFIED | `credit.json → non_performing`. Quarterly, split by counterparty, so the household ratio is separable from the portfolio-wide one that reaches the news. |
 | **ЕЦБ MIR rate by fixation** — `M.BG.B.A2C.{F,I,O,P}.R.A.2250.{BGN,EUR}.N` | VERIFIED | The cross-check on `fixation`'s rates. `MATURITY_NOT_IRATE` on new business is the INITIAL RATE-FIXATION PERIOD, not maturity — the ЕЦБ's own title for `F` says «with a variable rate and an interest rate fixation period of up to one year». |
 | **ЕЦБ MIR consumer credit** — `M.BG.B.A2B.A.{R,C,B}.A.2250.{BGN,EUR}.N` | VERIFIED | `credit.json → consumer`. Rate, ГПР and monthly volume, 2007-01 →. |
 | **ЕЦБ MIR overdrafts and card credit** — `A2Z1` / `A2Z3` | VERIFIED | `credit.json → overdraft, card`. `A2Z3` is «extended credit card credit» — the balance carried past the interest-free period, 21.15% at 2026-06. **Rate only**: BG reports no volume and no ГПР for either item. |
@@ -74,6 +77,10 @@ Every entry carries a provenance tag:
 | Per-decile HBS weights | WRONG | Eurostat publishes BG household budget structure by **quintile** (`hbs_str_t223`), not decile, in ECOICOP ver.1, latest vintage 2020. |
 | **ЕЦБ MIR new-business VOLUME by fixation, euro leg** — `…A2C.{F,I,O,P}.B.A.2250.EUR.N` | WRONG | Probed 2026-08-17: **404 at every bucket**, at every date. BG reported volume by fixation on the BGN leg alone, which stopped at euro adoption, so the share of new lending that floats comes from БНБ's workbook or from nobody. The RATES by fixation are published on both legs and do continue. |
 | **ЕЦБ MIR ГПР by fixation** | WRONG | Probed 2026-08-17. `DATA_TYPE_MIR=C` exists for BG on four series only, all at `MATURITY_NOT_IRATE=A`. БНБ's `s_ir_aprc_bg.xlsx` does carry the breakdown, so the answer is "not from the ЕЦБ" rather than "nobody". |
+| **ЕЦБ MIR outstanding-amount VOLUMES, any item** — `…{A20,A22,A2B,L21,L22}.…B.….O` | WRONG | Probed 2026-08-17: **404 at every item and every date.** MIR publishes what the outstanding stock COSTS and never how big it is, so every euro amount in `credit.json → outstanding` comes from БНБ's workbooks. The stock RATES do exist (`.R.….O`) and start at 2022-01 rather than 2020-01. |
+| **ЕЦБ MIR volumes for cards and overdrafts** — `A2Z3`/`A2Z1` with `.B.` | WRONG | Probed 2026-08-17, 404 on both, as is `DATA_TYPE_MIR=C` for them. БНБ's `s_ir_ovdr_cc_oa_hh_bg.xlsx` publishes both balances, so this is "not from the ЕЦБ" rather than "nobody" — and it is the only reason the card figure now carries a quantity. |
+| **ЕЦБ MIR total household lending** — `A2A` | WRONG | Probed 2026-08-17, 404. `A20` is the code that carries all household loans on the outstanding leg. |
+| **A БНБ deposits workbook under `s_ir_dep*`** | WRONG | Every guessed spelling 404s. The real files are `s_ir_time_*` (срочни депозити) and `s_ir_ddm_*` (депозити с договорен матуритет), found via `sitenavigation.js`. Neither is used: they do not resolve unambiguously to ЕЦБ `L22` — the term-deposit stock rate blended from `s_ir_time_oa` lands 0.005 pp from the ЕЦБ's own figure and from `s_ir_ddm_oa` 0.005 pp the other side — and the ЕЦБ publish both the term-deposit volume and the stock rate directly, so the deposit card stays single-publisher. |
 | A **borrower** count, for banks or non-banks | WRONG | БНБ publish the number of household LOANS quarterly by size bracket and by product (`loan_dyn_qcat_eur_bg.xlsx`, `2026_cred_type_eur_bg.xlsx` — 2,884,325 loans worth €31.5 bn at 2026-Q2). Nothing divides that by people: one household holds a card, an overdraft and a mortgage as three loans. So loans per capita is computable and borrowers per capita is not, and the two must never be printed under one word. |
 | `lex.bg` as a statute source | BLOCKED | Cloudflare managed challenge on every path including `/robots.txt`, from a hosted runner. Statute text comes from ДВ by `idMat` (`sources/dv.py`), which works. |
 | An offered-rate ("best offer") mortgage tier | WRONG | Rate-comparison sites and per-bank pages publish advertised promotional "from" rates: conditional on terms they do not state, editorially curated, with no methodology and no revision policy. Nothing in that class can carry the five properties in [`README.md`](./README.md) §"Who this is for", so the class is excluded rather than any particular site being judged. ЕЦБ MIR **APRC** answers the same question officially — and comes out higher. `test_mortgage.py` asserts the `indicative_offer` key is absent from the published JSON. |
@@ -768,6 +775,55 @@ figures **reconstructed** by БНБ from BGN+EUR aggregates — so EUR values be
 > lending and so runs far above the housing book, and the rate column beside it
 > reads a level no mortgage has carried.
 
+### The same sheet's other two purposes — `credit.json → outstanding`
+
+The header walk takes the purpose it is looking for, because the three blocks sit
+at three offsets and are not even the same width: the housing block of the
+new-business workbook carries four fixation buckets where consumer and «Други
+кредити» carry three. `«Кредити за потребление»` is at cols 1/25 and «Други
+кредити» at 17/41, on the grammar tabulated above.
+
+«Кредити за потребление» is a purpose and not a product. It includes a consumer
+loan secured on a home (quoted above) and excludes overdrafts and cards
+entirely — the workbook's own title is «КРЕДИТИ, **РАЗЛИЧНИ ОТ ОВЪРДРАФТ**». So
+it may never be captioned as card debt, which is the read the page has to keep
+apart in a sentence.
+
+### `s_ir_ovdr_cc_oa_hh_bg.xlsx` — the revolving balances
+
+Sheet `OVDR_CC_OA_HH`, monthly **2000-03 → present**, and a different grammar:
+no purpose row, because there is one purpose, and the blocks NEST.
+
+| Header row | Col | Label | Meaning |
+|---|---|---|---|
+| 3 | 1 / 7 | `Ефективен годишен процент` / `Обеми в млн. евро` | rates left, volumes right |
+| 4 | 1 / 7 | `Овърдрафт2` | the whole block, cards included |
+| 4 | 3 / 9 | `в т.ч. кредитни карти2` | **inside** the overdraft block |
+| 6 | 4 / 10 | `в т.ч. извън безлихвен гратисен период` | **inside** the card block |
+
+**€695 m ⊃ €490 m ⊃ €371 m, and every one of the three is a believable card
+balance.** Read flat they would be added up to roughly twice what is owed, so
+`credit.py#validate_card_nesting` holds the containment for every published
+month. The trailing digits are БНБ's footnote markers and part of the cell text.
+
+**Which cell answers which ЕЦБ key**, measured month by month over the euro era:
+
+| ЕЦБ MIR key | БНБ cell | Worst Δ |
+|---|---|---|
+| `A2Z3` extended card credit | «в т.ч. извън безлихвен гратисен период» | 0.014 pp |
+| `A2Z1` revolving loans and overdrafts | «Овърдрафт» **less** «в т.ч. кредитни карти» | 0.021 pp |
+| `A20` all household loans, outstanding | the four purpose blocks blended by volume | 0.049 pp |
+
+The A2Z1 row is a **subtraction**, because the ЕЦБ's item excludes card credit
+and БНБ's block includes it. Nothing about €205 m at 6.46% looks wrong on its own;
+what proves the subtraction happened is that the rate it leaves is the one the
+ЕЦБ publish. All three ride in the payload as `stock_cross_check`, and
+[`legal.md`](./legal.md) §БНБ is where the derivation is disclosed.
+
+**БНБ write «nc» in cells they did not compute**, right through the early 2000s.
+`bnb.py#_number` returns None for those rather than 0, because a zero-filled rate
+renders as a bank lending for nothing.
+
 ---
 
 ## ЕЦБ — `sources/ecb.py`
@@ -905,6 +961,38 @@ nothing else" reasons from.
   fully-specified key must return exactly one series, and the response's own
   dimension metadata must match the key we requested. Together they make a
   silently-ignored filter impossible to mistake for real data.
+
+### CBD2 — the household NPL ratio, and why the headline one is not it
+
+**CBD2 is not MIR.** 16 key dimensions rather than 10, so a wildcard 404s until
+the DSD has been read: `datastructure/ECB/ECB_CBD2` gives the order,
+`CBD2_KEY_DIMS` pins it, and `_parse_sdmx_series` runs the same two identity
+guards over it as over MIR.
+
+`CB_ITEM=I3632` is «Gross non-performing loans and advances [% of total gross
+loans and advances]», quarterly, and `BS_COUNT_SECTOR` is what makes it worth the
+connector: **`S1M` households and NPISH · `S11` non-financial corporations ·
+`_Z` every counterparty.** A portfolio-wide ratio is read as the household one
+and is not: corporates have run above households in all 25 published quarters
+(4.74% against 2.37% at 2026-Q1), so most of the portfolio-wide denominator is
+the half with the higher ratio.
+
+**`CB_REP_SECTOR=67` and not `11`, and the choice moves the number by 1.6 pp.**
+11 is domestic banking groups and stand-alone banks ALONE, and BG's banking system
+is majority foreign-owned, so 11 reports 3.97% for the same households at
+2026-Q1 because it is looking at a minority of their loans. 67 adds the
+foreign-controlled subsidiaries and branches — every bank a Bulgarian actually
+borrows from. `non_performing.reporting_population` says which is published.
+
+**What is NOT claimed: that households sit below the whole-portfolio figure.**
+They do at 2026-Q1 and did not before 2024 — the all-counterparty denominator
+carries central-bank balances that default on nothing — so the gate asserts only
+the corporates-above-households ordering and no copy may go further.
+
+**БНБ's own «Банките в България» ratio is a different measure**, on a different
+denominator, quarterly in a PDF. It is not reconciled here and must not be
+presented as the same figure. Publishing CBD2 is what made parsing a 1.8 MB
+supervisory PDF for one cell unnecessary.
 
 ### The BGN → EUR splice at eurozone entry
 

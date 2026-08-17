@@ -430,6 +430,45 @@ enumerate for Bulgaria from anything either publisher has written.
 ratio as well and the comparison against their ceiling is like for like. The gap
 is between the ratio and the reader's month, not inside the ratio.
 
+## What households owe — three pieces of arithmetic over БНБ's cells
+
+Every euro amount on `/credit/` is a cell БНБ published, with three exceptions.
+All three are stated in the payload, which is what
+[`legal.md`](./legal.md) §БНБ requires of a derivation from that publisher.
+
+```
+total_eur_m       = consumer + housing + other + overdraft
+overdraft_ex_cc   = overdraft − cards                                  (amount)
+                  = (overdraft×r_overdraft − cards×r_cards) / (overdraft − cards)
+blended_stock_pct = Σ(volume_i × rate_i) / Σ(volume_i)                 (gate only)
+```
+
+**The total adds the overdraft block WHOLE**, and that is the trap in this
+workbook: БНБ nest «в т.ч. кредитни карти» inside «Овърдрафт», so adding the card
+figure as a fifth term double-counts it. Every addend ships beside the total in
+`outstanding.blocks`, so a reader can take the sum apart.
+
+**The subtraction exists because the two publishers draw one boundary
+differently.** ЕЦБ `A2Z1` «revolving loans and overdrafts» excludes card credit;
+БНБ's «Овърдрафт» includes it. The page already showed the ЕЦБ's 6.45%, so the
+amount beside it has to be the block less its card sub-block, and the rate is a
+volume-weighted removal rather than a difference of rates. **What proves the
+subtraction happened is that the rate it leaves is the one the ЕЦБ publish** —
+€205 m at 6.46% looks no more right than €695 m at 13.2%, so the gate is the
+evidence and not the arithmetic.
+
+**The blend never reaches the page.** `outstanding.rate_pct` is the ЕЦБ's own
+`A20`, so the amount is БНБ's and the rate beside it is a publisher's. The blend
+is a gate's working: four amounts and four rates must reproduce a figure the ЕЦБ
+publish independently, which is the only check here that can catch a wrong euro
+amount — transposing two volumes leaves eight believable numbers and moves the
+blend by almost a full point.
+
+**A ratio is not a rate, and the NPL figures are ratios of two stocks the ЕЦБ
+publish already divided.** Nothing here computes them; `I3632` is
+`gross non-performing / total gross loans and advances` at the counterparty scope
+asked for, and the only decision is which scope — `docs/data-sources.md` §CBD2.
+
 ## Gross ↔ net (BG payroll)
 
 The salary field collects **net** take-home, because that is the number on the
