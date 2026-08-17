@@ -16,6 +16,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 
+/**
+ * A rendered figure back to a number, in either language. `format.js#number`
+ * goes through `toLocaleString`, so above 999 the marks differ AND both appear:
+ * «1 234,5» against "1,234.5". Reading the LAST separator as the decimal and
+ * everything before it as grouping is the only parse that takes both.
+ */
+const figure = (text) => {
+  const bare = String(text).replace(/[^\d.,-]/g, "");
+  const cut = Math.max(bare.lastIndexOf(","), bare.lastIndexOf("."));
+  if (cut === -1) return Number(bare);
+  return Number(`${bare.slice(0, cut).replace(/[.,]/g, "")}.${bare.slice(cut + 1)}`);
+};
+
 test(
   "the borrowing page draws its figures, each with a publisher and a period",
   { skip },
@@ -57,17 +70,16 @@ test("the fixation table adds up to the whole of new lending", { skip }, async (
   // one is being drawn twice, and either way the headline share above it is
   // being read against a total the rows do not make.
   await withApp(async (page, errors) => {
-    const shares = await page
+    const cells = await page
       .locator("main.credit #fixation table tbody tr td:first-of-type")
-      .evaluateAll((els) =>
-        els.map((el) => Number(el.textContent.replace(",", ".").replace("%", "")))
-      );
+      .evaluateAll((els) => els.map((el) => el.textContent));
+    const shares = cells.map(figure);
     assert.equal(shares.length, 4, `the fixation table drew ${shares.length} rows, expected 4`);
     const total = shares.reduce((sum, s) => sum + s, 0);
     assert.ok(Math.abs(total - 100) < 0.5, `the four bucket shares sum to ${total}%, not 100%`);
     const headline = await page.locator("main.credit #fixation .stat strong").first().innerText();
     assert.ok(
-      Math.abs(Number(headline.replace(",", ".").replace("%", "")) - shares[0]) < 0.1,
+      Math.abs(figure(headline) - shares[0]) < 0.1,
       `the headline share ${headline} is not the first row's ${shares[0]}%`
     );
     assert.deepEqual(errors, [], errors.join(" | "));
@@ -82,14 +94,15 @@ test(
     // until it is under one number and over another. A payload arriving in a
     // different order, or a deposit rendered among the borrowing rows, loses it.
     await withApp(async (page, errors) => {
-      const rows = await page.locator("main.credit #other .stat").evaluateAll((els) =>
+      // `figure` is a Node function and `evaluateAll` runs in the page, so the
+      // text crosses the boundary and the parse happens on this side.
+      const drawn = await page.locator("main.credit #other .stat").evaluateAll((els) =>
         els.map((el) => ({
-          pct: Number(
-            (el.querySelector("strong")?.textContent ?? "").replace(",", ".").replace("%", "")
-          ),
+          raw: el.querySelector("strong")?.textContent ?? "",
           pays: el.classList.contains("pays"),
         }))
       );
+      const rows = drawn.map((r) => ({ pct: figure(r.raw), pays: r.pays }));
       assert.equal(rows.length, 5, `the section drew ${rows.length} products, expected 5`);
       const lending = rows.filter((r) => !r.pays);
       const deposits = rows.filter((r) => r.pays);
