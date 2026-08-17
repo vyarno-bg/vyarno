@@ -1658,11 +1658,18 @@ def _refresh_credit(out: Path, as_of: date) -> None:
                     "the newest month; the two are one series reported by one "
                     "institution, not two measurements to average"
                 ),
-                "stock_eur_m": stock_blocks["consumer"]["volume_eur_m"],
-                "stock_rate_pct": stock_blocks["consumer"]["rate_pct"],
-                "stock_ref_period": stock_ref,
-                "stock_source": "bnb",
-                "stock_source_url": BNB_SOURCE_URL,
+                # **No `stock_eur_m` here, and the absence is the point.** The
+                # rate above is NEW BUSINESS — what a consumer loan signed last
+                # month costs — while what is owed on consumer credit is an
+                # €11.3 bn book at 6.91%. Printing the two together would read as
+                # «8.76% on €11.3 bn», which is a rate over a population it does
+                # not describe. The stock is published in `outstanding.blocks`
+                # beside its own rate instead.
+                #
+                # Card and overdraft carry both because for them the ЕЦБ's rate
+                # IS the rate on the stock: MIR reports revolving credit as new
+                # business equal to the outstanding amount, which is why БНБ's
+                # outstanding cells reproduce A2Z3 and A2Z1 to 0.02 pp.
             },
         ),
         "overdraft": product_block(

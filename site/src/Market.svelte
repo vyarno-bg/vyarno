@@ -3240,114 +3240,6 @@
     color: var(--muted);
   }
 
-  /* Inline SVG, no chart library and no third-party script: `site/package.json`
-     declares no runtime dependencies and the CSP the privacy notice rests on
-     forbids one. No `preserveAspectRatio="none"` either — the box scales
-     uniformly, so a stroke stays the width it was drawn at. */
-  .chart {
-    margin: 16px 0 0;
-  }
-  /* The frame: a gutter of labels, the plot, and the window's two ends under
-     it. The gutter is `auto`, so it takes the width the longest tick needs and
-     the plot takes the rest — a fixed gutter is either too narrow for «22 366»
-     or too wide for «0», and both are decided by data nobody controls. */
-  .plot {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 8px;
-    align-items: stretch;
-  }
-  /* The grid stretches this cell to the height the plot beside it resolved to,
-     which is what lets a tick position itself as a percentage and land on its
-     own gridline at every viewport.
-
-     THE TICKS STACK IN ONE CELL AND ARE MOVED WITH `position: relative`, never
-     taken out of flow with `position: absolute`. An out-of-flow child
-     contributes nothing to its parent's intrinsic width, so the gutter measured
-     zero, the plot took the whole measure and every label hung off the left
-     edge of the page. Stacked in a single grid area they all still size the
-     column — it is as wide as «22 366» needs and no wider — while a percentage
-     `top` resolves against this box's stretched height, which is the plot's. */
-  .yaxis {
-    grid-column: 1;
-    display: grid;
-    /* ONE ROW, AND IT TAKES THE WHOLE BOX. A relatively positioned grid item
-       resolves a percentage `top` against its GRID AREA rather than against the
-       container, so a row sized to its own content makes `top: 100%` mean 11px
-       — and every tick lands within one line-height of the top of the plot,
-       looking like a rendering glitch rather than like a wrong axis. */
-    grid-template-rows: 1fr;
-    justify-items: end;
-    /* …and the items sit at the top of that area rather than stretching to it,
-       or `translateY(-50%)` moves each one by half the plot. */
-    align-items: start;
-  }
-  .yaxis .plot-tick {
-    grid-area: 1 / 1;
-    position: relative;
-    transform: translateY(-50%);
-    white-space: nowrap;
-  }
-  /* The year ticks, stacked in ONE grid cell and moved with `position:
-     relative` — the device the y axis uses, and for the same two reasons. Out
-     of flow with `position: absolute` they would contribute nothing to the
-     row's height and the labels would sit on top of the plot; laid out in flow
-     they would space themselves evenly and stop pointing at their own columns.
-
-     A percentage `left` resolves against this box's width, which the grid has
-     already stretched to the plot's — so a tick lands on its own year at every
-     viewport. */
-  .xyears {
-    grid-column: 2;
-    display: grid;
-    grid-template-columns: 1fr;
-    /* …and each tick is sized to its own text rather than stretched to the
-       cell. A stacked grid item defaults to filling its area, and then
-       `translateX(-50%)` moves it by half the PLOT rather than by half the
-       label: the first year lands 157px left of the box at 360px, which is off
-       the page. The y axis needs the same declaration and states it as
-       `justify-items: end`. */
-    justify-items: start;
-    margin-top: 4px;
-    min-height: 1em;
-  }
-  /* The horizontal shift is written on the element rather than here: which of
-     the three it takes depends on where the tick lands, and only the template
-     knows that. */
-  .xyears .plot-tick {
-    grid-area: 1 / 1;
-    position: relative;
-    white-space: nowrap;
-  }
-  /* The labels are HTML and set in the page's own type, so they are the same
-     size at 360px as at 1440. Inside the SVG they were 11px in a box that
-     renders at 0.56 of its declared width on a phone — 6.2px, on the captions
-     that make every figure above them checkable. */
-  .plot-tick {
-    font-family: var(--mono);
-    font-size: var(--fs-micro);
-    line-height: 1;
-    color: var(--ink-2);
-  }
-  /* The box holds marks and no text at all. `overflow: visible` because the
-     first and last point of a line sit ON the left and right edges and the
-     zero rule on the bottom one, so half of each stroke falls outside. */
-  .chart svg.pane {
-    grid-column: 2;
-    width: 100%;
-    height: auto;
-    display: block;
-    overflow: visible;
-  }
-  .chart figcaption {
-    margin-top: 6px;
-    font-family: var(--mono);
-    font-size: var(--fs-micro);
-    color: var(--muted);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 14px;
-  }
   /* A series key is a painted swatch with real area, for the reason the tax
      wedge's is: a zero-height box carrying a border names a series a reader
      cannot match to the plot. */
@@ -3500,39 +3392,6 @@
     fill: var(--real);
     opacity: 0.42;
   }
-  .plot-line {
-    fill: none;
-    stroke: var(--real);
-    stroke-width: 2;
-    stroke-linejoin: round;
-  }
-  /* The second series on a shared scale. Dashed and in the neutral ink, never
-     the erode accent: `--erode` means "this one costs you something" elsewhere
-     on the site and `--real` means the opposite, so drawing one of two
-     measurements in either says which one is the bad news. Whose fall is bad
-     here depends on whether a reader owns or is buying, and the page does not
-     get to decide that. The accent stays on the data line and the erode accent
-     stays on a REFERENCE rule, which is a different kind of mark. */
-  .plot-line.second {
-    stroke: var(--ink-2);
-    stroke-dasharray: 5 3;
-  }
-  /* The hit target over each point of a line. It carries the `<title>` a
-     pointer needs and paints nothing — a line has no mark to hang one on, and a
-     reader hunting for one quarter out of decades needs a box to aim at rather
-     than a two-pixel stroke. */
-  .plot-hit {
-    fill: transparent;
-  }
-  /* The two kinds of furniture: a year boundary down the plot and a value
-     gridline across it. The quietest marks on the page — the emphatic rules are
-     zero and a reference the publisher defines — and both are drawn BEFORE the
-     data, so a column sits on top of its gridline rather than behind it. */
-  .plot-year,
-  .plot-grid {
-    stroke: var(--rule);
-    stroke-width: 1;
-  }
   /* A break the publisher declared, drawn as a rule through the plot. Quiet on
      purpose: it qualifies the line, it is not a second series. */
   .plot-break {
@@ -3674,17 +3533,5 @@
     text-transform: none;
     letter-spacing: 0;
     white-space: nowrap;
-  }
-  .plot-axis {
-    stroke: var(--muted);
-    stroke-width: 1;
-  }
-  /* The reference is a threshold rather than a gridline, so it is the one
-     dashed rule on the plot — the same distinction the tax wedge draws
-     between its baseline and the contribution ceiling. */
-  .plot-ref {
-    stroke: var(--erode);
-    stroke-width: 1.5;
-    stroke-dasharray: 4 3;
   }
 </style>

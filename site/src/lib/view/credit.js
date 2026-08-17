@@ -154,6 +154,129 @@ export function creditLimits(mortgage) {
 }
 
 /**
+ * What Bulgarian households owe, block by block, and the nineteen-year picture.
+ *
+ * **The amounts are БНБ's and the headline rate beside them is the ЕЦБ's**, so
+ * the two arrive with separate provenance rather than sharing a caption. That is
+ * not fussiness: MIR publishes no outstanding-amount volume for BG at all, so
+ * mixing publishers is the only way this figure exists, and a single source line
+ * over the pair would credit one of them with the other's number.
+ *
+ * The blocks come out in the payload's order, which the pipeline sorts largest
+ * first. A list here would re-sort them in the browser and re-sort them
+ * differently the month two blocks cross.
+ *
+ * @param {object|null} credit
+ */
+export function creditOutstanding(credit) {
+  const block = credit?.outstanding ?? null;
+  if (!block) return null;
+  const byPeriod = block.volume_by_period ?? {};
+  return {
+    totalEurM: Number.isFinite(block.total_eur_m) ? block.total_eur_m : null,
+    refPeriod: block.ref_period ?? null,
+    sourceUrl: block.source_url ?? null,
+    overdraftSourceUrl: block.overdraft_source_url ?? null,
+    rate: sourced(block.rate_pct, block, {
+      refPeriod: block.rate_ref_period,
+      sourceUrl: block.rate_source_url,
+    }),
+    blocks: (Array.isArray(block.blocks) ? block.blocks : []).map((b) => ({
+      block: b.block,
+      volumeEurM: Number.isFinite(b.volume_eur_m) ? b.volume_eur_m : null,
+      ratePct: Number.isFinite(b.rate_pct) ? b.rate_pct : null,
+      // Each block's share of what is owed, which is the only thing on this
+      // page a reader cannot read straight off a published cell — and the
+      // reason the total ships beside its addends.
+      sharePct:
+        Number.isFinite(b.volume_eur_m) && block.total_eur_m
+          ? (100 * b.volume_eur_m) / block.total_eur_m
+          : null,
+    })),
+    // One series per block plus the total, oldest first. `stockSeries` is what
+    // the chart draws and the keys are the payload's own, so a block appearing
+    // upstream arrives here rather than being dropped by a list.
+    series: Object.fromEntries(
+      Object.keys(byPeriod).map((key) => [key, plotLevels(byPeriod[key])])
+    ),
+    startsAt: block.series_starts ?? null,
+    methodologyChange: block.methodology_change ?? null,
+  };
+}
+
+/**
+ * A published `{period: value}` map, ordered and measured for a plot.
+ *
+ * **`min` is clamped at or below zero and there is no way to raise it**, the
+ * same contract `view/market.js#plotSeries` holds and for the same reason: an
+ * axis cropped to a debt series' own range turns nineteen years of ordinary
+ * growth into a cliff. These are euro amounts, so zero is the floor that means
+ * something — «nobody owes anything» — and a chart of what a country owes that
+ * does not start there is drawing a slope rather than a level.
+ *
+ * A second copy rather than an import from `view/market.js`, deliberately: that
+ * module's version takes a `reference` an index needs and this page has no
+ * index, and tying `/credit/`'s axis to a change made for `/market/`'s is the
+ * coupling the two-copies rule in this file's header is about.
+ *
+ * @param {Record<string, number>|null|undefined} entries
+ */
+function plotLevels(entries) {
+  const points = Object.keys(entries ?? {})
+    .sort()
+    .map((period) => ({ period, value: entries[period] }))
+    .filter((p) => Number.isFinite(p.value));
+  const values = points.map((p) => p.value);
+  return {
+    points,
+    min: Math.min(0, ...values),
+    max: Math.max(0, ...values),
+    peak: points.reduce((best, p) => (best && best.value >= p.value ? best : p), null),
+    first: points[0] ?? null,
+    latest: points[points.length - 1] ?? null,
+    from: points[0]?.period ?? null,
+    to: points[points.length - 1]?.period ?? null,
+  };
+}
+
+/**
+ * How much household lending is not being repaid, and whose.
+ *
+ * **The two scopes come back together because separately the first one misleads.**
+ * A portfolio-wide arrears ratio is read as the household one, and the reason it
+ * is not is that corporate lending sits above it — so the page prints both or it
+ * prints a number a reader will take for something else. `_role` and
+ * `denominator` in the payload say whose loans over what portfolio, and this
+ * carries them through rather than leaving the component to reword them.
+ *
+ * @param {object|null} credit
+ */
+export function creditArrears(credit) {
+  const block = credit?.non_performing ?? null;
+  if (!block) return null;
+  return {
+    households: Number.isFinite(block.households_pct) ? block.households_pct : null,
+    corporations: Number.isFinite(block.corporations_pct) ? block.corporations_pct : null,
+    allCounterparties: Number.isFinite(block.all_counterparties_pct)
+      ? block.all_counterparties_pct
+      : null,
+    refPeriod: block.ref_period ?? null,
+    sourceUrl: block.source_url ?? null,
+    scopeSourceUrls: block.scope_source_urls ?? {},
+    denominator: block.denominator ?? null,
+    reportingPopulation: block.reporting_population ?? null,
+    // Households against companies over time, oldest first. Two series and not
+    // three: the whole-portfolio ratio is on the page as this quarter's contrast
+    // and drawing it as a third line would invite the reading the gate refuses
+    // to assert — households have run both above and below it.
+    series: {
+      households: plotLevels(block.households_by_period),
+      corporations: plotLevels(block.corporations_by_period),
+    },
+  };
+}
+
+/**
  * What the same household pays on everything that is not a home — and what it
  * is paid on the money it did not borrow.
  *
@@ -180,9 +303,26 @@ export function creditProducts(credit) {
         monthlyVolumeEurM: Number.isFinite(block.monthly_volume_eur_m)
           ? block.monthly_volume_eur_m
           : null,
-        // Present on the card block alone, and the page prints it: a price with
-        // no quantity has to say it is one.
-        noVolume: block.no_volume ?? null,
+        monthlyVolumeSourceUrl: block.monthly_volume_source_url ?? null,
+        // **How much is owed at that price, and it is a SECOND publisher's
+        // figure wherever it exists.** MIR carries no outstanding volume for BG,
+        // so every amount here is БНБ's while the rate above it is the ЕЦБ's —
+        // which is why the quantity brings its own URL instead of borrowing
+        // `rate.sourceUrl`. A page that credited one publisher with the other's
+        // number would be wrong in the one way this page cannot afford.
+        stockEurM: Number.isFinite(block.stock_eur_m) ? block.stock_eur_m : null,
+        stockRatePct: Number.isFinite(block.stock_rate_pct) ? block.stock_rate_pct : null,
+        stockRefPeriod: block.stock_ref_period ?? null,
+        stockSourceUrl: block.stock_source_url ?? null,
+        stockSource: block.stock_source ?? null,
+        // On the overdraft block alone: its amount is БНБ's block LESS the card
+        // sub-block, because the ЕЦБ's item draws that boundary and БНБ's does
+        // not. A derived figure has to say so on the face of it.
+        stockBasis: block.stock_basis ?? null,
+        // Present on the card block alone. BG reports no APRC for card credit,
+        // so the rate has no fees-included companion — which is a different
+        // absence from the volume, and the volume is no longer one.
+        noAprc: block.no_aprc ?? null,
       };
     })
     .filter(Boolean);

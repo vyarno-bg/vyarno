@@ -173,18 +173,38 @@ for (const path of BAR_ROUTES) {
   }
 }
 
-test("every page carries a route to the country page, except itself", { skip }, async () => {
-  // The footer is on every page, and it is what makes `/how/` reachable from the
-  // two whose header points back to the calculator instead. `/how/` is the
-  // exception: a page that links to itself is noise, and the four document
-  // links in the same row already follow that rule.
-  for (const path of ["/legal/", "/support/"]) {
+// Every page of published figures, and the footer is what makes each reachable
+// from the pages whose header points back to the calculator instead.
+//
+// **A loop over all of them rather than a case for `/how/`, and that is the
+// whole lesson of this test.** It checked one route while the footer was written
+// as one `{#if}` per route, so when `/credit/` shipped as the sixth route and
+// reached the masthead and not the footer, nothing here went red: the assertion
+// named `/how/` and `/how/` was still fine. The rule is "every content route,
+// from every page, except its own", and stated that way a seventh route is
+// covered the moment it is added to the list below.
+const CONTENT_ROUTES = ["/how/", "/market/", "/credit/"];
+
+test("every page carries a route to every other page of figures", { skip }, async () => {
+  for (const path of [...CONTENT_ROUTES, "/legal/", "/support/", "/"]) {
     await withApp(
       async (page, errors) => {
+        for (const route of CONTENT_ROUTES) {
+          const count = await page.locator(`footer.site a[href="${route}"]`).count();
+          if (route === path) {
+            // A page that links to itself is noise, and the four document links
+            // in the same row already follow that rule.
+            assert.equal(count, 0, `${path} links to itself in its own footer`);
+          } else {
+            assert.equal(count, 1, `${path} offers no route to ${route}`);
+          }
+        }
+        // The routes are their own landmark: that nav is labelled "legal" and
+        // holds what discharges ЗЕТ чл. 4, and a page of figures is not that.
         assert.equal(
-          await page.locator('footer.site a[href="/how/"]').count(),
-          1,
-          `${path} offers no route to /how/`
+          await page.locator('footer.site nav.legal-links a[href="/market/"]').count(),
+          0,
+          `${path} files a page of figures under the legal landmark`
         );
         assert.deepEqual(errors, [], errors.join(" | "));
       },
@@ -192,18 +212,6 @@ test("every page carries a route to the country page, except itself", { skip }, 
       {}
     );
   }
-  await withApp(
-    async (page, errors) => {
-      assert.equal(
-        await page.locator('footer.site a[href="/how/"]').count(),
-        0,
-        "/how/ links to itself in its own footer"
-      );
-      assert.deepEqual(errors, [], errors.join(" | "));
-    },
-    "/how/",
-    {}
-  );
 });
 
 test("the method drawer fits a phone, and its table scrolls inside it", { skip }, async () => {

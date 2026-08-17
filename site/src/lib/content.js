@@ -2232,8 +2232,19 @@ export const COPY = {
   // the everyday word for the same topic, which is exactly what «имоти» is to a
   // Bulgarian reader — the register is the match, not the dictionary.
   marketNavK: { bg: "имоти", en: "homes" },
+  // The footer's route labels, one per page of published figures. Longer than
+  // the masthead's chips — «кредити» works in a row of four words and not in a
+  // row of links — and NO ARROW on any of them: one of the three carried a «→»
+  // and the others did not, which read as the odd one out rather than as
+  // emphasis, and a list rendered from one loop cannot carry a decoration only
+  // some members have.
   howFooterK: { bg: "Числата за България", en: "Bulgaria's numbers" },
-  marketFooterK: { bg: "Пазарът на жилища →", en: "The property market →" },
+  marketFooterK: { bg: "Пазарът на жилища", en: "The property market" },
+  creditFooterK: { bg: "Кредитите в България", en: "Borrowing in Bulgaria" },
+  // Names the group for a reader arriving by keyboard or screen reader. The
+  // legal nav beside it is labelled "legal"; this one holds the pages of
+  // figures, which is a different landmark and needs a different name.
+  footerRoutesK: { bg: "страници с числа", en: "pages of figures" },
 
   // Stat labels. Each one says what the number IS, so the figure above it can
   // be a bare number and the caption under it can be a source and a date.
@@ -3123,6 +3134,93 @@ export const COPY = {
     en: "money left in a current account",
   },
   crdWhoseEcb: { bg: "ЕЦБ", en: "ECB" },
+
+  // ---- /credit/ · what is owed --------------------------------------------
+  // The page had five prices and no quantity. These are the labels for the
+  // amounts, and every one of them names WHOSE loans over WHAT period, because
+  // the euro amounts are БНБ's while the rates beside them are the ЕЦБ's and a
+  // shared caption would credit one publisher with the other's number.
+  crdKOwed: {
+    bg: "толкова дължат българските домакинства по всички кредити",
+    en: "that is what Bulgarian households owe across every kind of loan",
+  },
+  crdKOwedRate: {
+    bg: "средна лихва по целия този дълг",
+    en: "average rate across all of that debt",
+  },
+  crdBlockConsumer: { bg: "потребителски кредити", en: "consumer loans" },
+  crdBlockHousing: { bg: "жилищни кредити", en: "home loans" },
+  crdBlockOther: { bg: "други кредити", en: "other loans" },
+  crdBlockOverdraft: {
+    bg: "овърдрафт, в това число кредитни карти",
+    en: "overdrafts, credit cards included",
+  },
+  crdColBlock: { bg: "За какво е взет", en: "What it was taken for" },
+  crdColOwed: { bg: "Дължи се", en: "Owed" },
+  crdColOwedShare: { bg: "Дял от дълга", en: "Share of the debt" },
+  crdTblOwed: {
+    bg: "какво дължат домакинствата по вид кредит",
+    en: "what households owe by kind of loan",
+  },
+  // The chart. The label a screen reader gets INSTEAD of the lines, so it says
+  // the shape rather than repeating the heading: where it started, where it is,
+  // and which of the two lines ended up on top.
+  crdChartStock: {
+    bg: "Дългът на домакинствата от {from} до {to}: жилищните кредити растат от {hFrom} до {hTo} млн. евро, потребителските от {cFrom} до {cTo} млн. евро.",
+    en: "Household debt from {from} to {to}: home loans grow from {hFrom} to {hTo} million euro, consumer loans from {cFrom} to {cTo} million euro.",
+  },
+  crdKeyHousing: { bg: "жилищни", en: "home loans" },
+  crdKeyConsumer: { bg: "потребителски", en: "consumer" },
+  crdKeyTotal: { bg: "общо", en: "all of it" },
+  crdStockUnit: { bg: "млн. евро", en: "million euro" },
+  // The card and the overdraft each carry an amount from a different publisher
+  // than their rate, so the amount gets its own line rather than sharing one.
+  //
+  // «при тази лихва» is load-bearing rather than padding. It is what makes the
+  // pair a claim a reader can check: for these two the ЕЦБ's rate IS the rate on
+  // the balance, so the amount is what that percentage is being charged on.
+  // Consumer credit carries no amount here for the same reason inverted — its
+  // rate is what a NEW loan costs, and the €11 bn already owed is at 6.91%.
+  crdStockOf: { bg: "толкова се дължи при тази лихва", en: "that much is owed at this rate" },
+  // Billions, in each language's own abbreviation. It had been «млрд.» in the
+  // template, so the English page printed a Bulgarian word beside its own
+  // numerals — the failure a missing string is supposed to make visible, arriving
+  // as a rendered abbreviation instead of a blank.
+  crdBn: { bg: "млрд. €", en: "bn EUR" },
+  // The deposit contrast, and it may be the most useful pair on the page for an
+  // ordinary saver: what a deposit opened this month is quoted, against what the
+  // money already in one is actually earning. Most of it was locked in when
+  // deposits paid nothing, which is why the second is a third of the first.
+  crdDepositNew: {
+    bg: "нови депозити този месец",
+    en: "newly deposited this month",
+  },
+  crdDepositStock: {
+    bg: "а по вече вложените пари банката плаща",
+    en: "while on money already deposited the bank pays",
+  },
+  // ---- /credit/ · what is not repaid --------------------------------------
+  // P11 and the denominator, in the label itself. «необслужвани кредити» is the
+  // term БНБ and the banks use; the label says whose loans, because the figure
+  // in the news is over a whole credit portfolio and is read as this one.
+  crdKArrears: {
+    bg: "толкова от кредитите на домакинствата не се обслужват редовно",
+    en: "that much of household lending is not being repaid on time",
+  },
+  crdKArrearsFirms: {
+    bg: "същото при кредитите на фирмите",
+    en: "the same figure for lending to companies",
+  },
+  crdKArrearsAll: {
+    bg: "и по целия кредитен портфейл, всички клиенти заедно",
+    en: "and across the whole credit portfolio, every borrower together",
+  },
+  crdChartArrears: {
+    bg: "Необслужвани кредити от {from} до {to}: при домакинствата спадат от {hFrom}% до {hTo}%, при фирмите от {cFrom}% до {cTo}%.",
+    en: "Non-performing loans from {from} to {to}: households fall from {hFrom}% to {hTo}%, companies from {cFrom}% to {cTo}%.",
+  },
+  crdKeyFirms: { bg: "фирми", en: "companies" },
+  crdKeyHouseholds: { bg: "домакинства", en: "households" },
 };
 
 /**
