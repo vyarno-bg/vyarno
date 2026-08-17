@@ -20,7 +20,7 @@ import { join } from "node:path";
 import { SITE, attribution } from "./render-dist.mjs";
 import { READY, shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
-import { bgNetSalary, payrollParams } from "../src/lib/mirror.js";
+import { bgNetSalary, payrollParams, wageGap } from "../src/lib/mirror.js";
 
 test("the built page mounts over the shell rather than beside it", { skip }, async () => {
   await withApp(async (page, errors) => {
@@ -963,36 +963,47 @@ test(
         /средната за „[^„“]*далекосъобщения/,
         "the sector claim does not name the section in НСИ's own words"
       );
-      assert.match(card, /18%/, "the sector gap against €2,100 net is not the published 18%");
+      // Every figure below comes out of the payload through the page's own
+      // payroll function, so a quarterly refresh moves the expectation with the
+      // cell. Frozen here, each is an assertion that fails on the data being
+      // current rather than on the card being wrong.
+      const sectorGross = published("sector_salary").sectors.find(
+        (s) => s.en_name === "Information and communication"
+      ).value_eur;
+      const sectorNet = Math.round(
+        bgNetSalary(sectorGross, payrollParams(published("payroll"))).net
+      );
+      const spaced = (n) => new RegExp(String(n).replace(/^(\d)(\d{3})$/, "$1\\s?$2"));
+
+      // The lookbehind is load-bearing: the card carries the reader's own
+      // deduction rate a few rows up, so a bare `8%` matches inside `20,8%` and
+      // the assertion passes on a card showing no gap at all.
+      const gapPct = wageGap(2100, sectorNet).magnitudePct;
+      assert.match(
+        card,
+        new RegExp(`(?<![\\d,])${gapPct}%`),
+        `€2,100 net against a sector net of ${sectorNet} is ${gapPct}%, ` +
+          `and the card shows something else`
+      );
       // **НСИ's own figure, on screen, beside the one we derived from it.** The
-      // 3176 is the cell in their workbook; the net is our payroll conversion.
+      // gross is the cell in their workbook; the net is our payroll conversion.
       // Showing only the net under an «НСИ ·» credit puts their name over our
       // arithmetic and leaves a reader who opens the file with nothing to match
       // the row against.
       assert.match(
         credit,
-        /3\s?176/,
+        spaced(sectorGross),
         "НСИ's published gross for the section is not on the card — only our net conversion is"
       );
       // **The net slot, by value.** The gross above and the attribution below
-      // are both satisfied by a template that renders 3176 into both slots, and
-      // the card then claims НСИ's section average takes home every lev of
-      // itself — a reference net 23% too high, which is a reader on €2,100
-      // being told they are 34% behind their industry rather than 18%. Read out
-      // of the payload through the page's own payroll function, so a quarterly
-      // refresh moves the expectation with the figure.
-      const sectorNet = Math.round(
-        bgNetSalary(
-          published("sector_salary").sectors.find(
-            (s) => s.en_name === "Information and communication"
-          ).value_eur,
-          payrollParams(published("payroll"))
-        ).net
-      );
+      // are both satisfied by a template that renders the gross into both
+      // slots, and the card then claims НСИ's section average takes home every
+      // lev of itself — a reference net a fifth too high, which tells a reader
+      // they are twice as far behind their industry as they are.
       assert.match(
         credit,
-        new RegExp(String(sectorNet).replace(/^(\d)(\d{3})$/, "$1\\s?$2")),
-        `our conversion of НСИ's 3176 gross is ${sectorNet} net and the credit line ` +
+        spaced(sectorNet),
+        `our conversion of НСИ's ${sectorGross} gross is ${sectorNet} net and the credit line ` +
           `shows neither — its net slot is carrying something else: ${credit}`
       );
       assert.match(
