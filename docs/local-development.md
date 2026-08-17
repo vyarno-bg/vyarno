@@ -379,7 +379,7 @@ payloads an arm owns by matching stems against the `--source` name with hyphens
 swapped for underscores, so a payload no arm owns never publishes while the run
 reports success.
 
-**Nine of the ten run on a schedule without you.** `.github/workflows/
+**Ten of the eleven run on a schedule without you.** `.github/workflows/
 refresh-*.yml` fires each one on its own upstream's cadence and opens a pull
 request with the diff; running an arm here is for developing it, for re-reading
 a payload the review questioned, and for `city-price`, which cannot run on a
