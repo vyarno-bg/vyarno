@@ -27,6 +27,7 @@ import {
   creditOutstanding,
   creditProducts,
   creditRates,
+  creditStockHistory,
   creditRenegotiation,
   creditSavings,
 } from "../src/lib/view/credit.js";
@@ -65,6 +66,31 @@ test("the third rate is the housing book, which is what its label claims", () =>
   assert.equal(rates.outstanding.value, housing.rate_pct);
   assert.equal(rates.bookVolumeEurM, housing.volume_eur_m);
   assert.notEqual(rates.outstanding.value, CREDIT.outstanding.rate_pct);
+});
+
+test("the rate curve is the card above it, drawn from zero", () => {
+  // The section opens «Това е третата лихва отгоре», so the last point has to
+  // BE that card. A floor above zero would draw a fall from 9% to under 3% as a
+  // cliff, which is the one way a correct series still misleads.
+  const history = creditStockHistory(PUBLISHED);
+  const rates = creditRates(PUBLISHED);
+  assert.equal(history.latest.value, rates.outstanding.value);
+  assert.equal(history.series.min, 0);
+  assert.equal(
+    history.series.points.length,
+    Object.keys(PUBLISHED.outstanding_stock.series_by_period).length
+  );
+  assert.equal(history.peak.value, Math.max(...history.series.points.map((p) => p.value)));
+  assert.ok(history.peak.value > history.latest.value);
+});
+
+test("a mortgage payload with no rate history drops the curve rather than throwing", () => {
+  assert.equal(creditStockHistory(null), null);
+  assert.equal(creditStockHistory({ outstanding_stock: {} }), null);
+  assert.equal(
+    creditStockHistory({ outstanding_stock: { series_by_period: { "2026-06": 2.7 } } }),
+    null
+  );
 });
 
 test("the fixation buckets keep the payload's own order and shares", () => {

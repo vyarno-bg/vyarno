@@ -160,4 +160,27 @@ test(
   }
 );
 
+test("the rate curve's axis labels are the gridlines they sit on", { skip }, async () => {
+  // Rounding a tick label to whole percent drew the 2,5% gridline as «3%», so
+  // the axis read 0 · 3 · 5 · 8 · 10 over five evenly spaced lines. Equal steps
+  // is the property that catches a label rounded away from its own tick.
+  await withApp(async (page, errors) => {
+    const labels = await page
+      .locator("main.credit #stock-history .yaxis .plot-tick")
+      .evaluateAll((els) => els.map((el) => el.textContent.trim()));
+    assert.ok(labels.length >= 4, `the rate curve drew ${labels.length} axis ticks`);
+    const steps = labels
+      .map(figure)
+      .slice(1)
+      .map((v, i) => v - labels.map(figure)[i]);
+    for (const step of steps) {
+      assert.ok(
+        Math.abs(step - steps[0]) < 1e-9,
+        `the axis labels ${labels.join(" \u00b7 ")} are not evenly spaced`
+      );
+    }
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/credit/");
+});
+
 test.after(shutdown);

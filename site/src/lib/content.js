@@ -3245,6 +3245,10 @@ export const COPY = {
     bg: "Необслужвани кредити от {from} до {to}: при домакинствата спадат от {hFrom}% до {hTo}%, при фирмите от {cFrom}% до {cTo}%.",
     en: "Non-performing loans from {from} to {to}: households fall from {hFrom}% to {hTo}%, companies from {cFrom}% to {cTo}%.",
   },
+  crdChartStockRate: {
+    bg: "Средна лихва по изплащаните жилищни кредити от {from} до {to}: пада от {fromPct}% до {toPct}%, с връх {peakPct}% през {peakAt}.",
+    en: "Average rate on housing loans being repaid from {from} to {to}: falls from {fromPct}% to {toPct}%, peaking at {peakPct}% in {peakAt}.",
+  },
   crdKeyFirms: { bg: "фирми", en: "companies" },
   crdKeyHouseholds: { bg: "домакинства", en: "households" },
 };

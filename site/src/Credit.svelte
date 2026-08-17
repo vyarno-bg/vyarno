@@ -42,6 +42,7 @@
     creditOutstanding,
     creditProducts,
     creditRates,
+    creditStockHistory,
     creditRenegotiation,
     creditSavings,
   } from "./lib/view/credit.js";
@@ -67,6 +68,7 @@
 
   const mortgage = $derived(data.mortgage ?? null);
   const rates = $derived(creditRates(mortgage));
+  const stockHistory = $derived(creditStockHistory(mortgage));
   const fixation = $derived(creditFixation(mortgage));
   const renegotiation = $derived(creditRenegotiation(mortgage));
   const limits = $derived(creditLimits(mortgage));
@@ -175,6 +177,107 @@
   </section>
 
   <!-- 2 ------------------------------------------------------------------ -->
+  {#if stockHistory}
+    {@const line = stockHistory.series}
+    {@const axis = niceTicks(0, line.max, 5)}
+    <section id="stock-history">
+      <h2>
+        <span class="l-bg">Как се е движила тази лихва</span>
+        <span class="l-en">How that rate has moved</span>
+      </h2>
+      <p>
+        <span class="l-bg"
+          >Това е третата лихва отгоре, месец по месец. Мени се бавно, защото е средно по целия
+          остатък от стари и нови договори: спадне ли пазарът, тук се вижда чак когато старите
+          кредити се изплатят или се предоговорят. Върхът е {number(
+            stockHistory.peak.value,
+            2,
+            $lang
+          )}% през {periodLong(stockHistory.peak.period, $lang)}, а последното измерване е {number(
+            stockHistory.latest.value,
+            2,
+            $lang
+          )}%.</span
+        >
+        <span class="l-en"
+          >This is the third rate above, month by month. It moves slowly because it averages the
+          whole outstanding book of old and new agreements: when the market falls, it shows here
+          only as the older loans are repaid or repriced. The peak is {number(
+            stockHistory.peak.value,
+            2,
+            $lang
+          )}% in {periodLong(stockHistory.peak.period, $lang)}, and the latest reading is {number(
+            stockHistory.latest.value,
+            2,
+            $lang
+          )}%.</span
+        >
+      </p>
+      <figure class="chart">
+        <div class="plot">
+          {@render yAxis(
+            axis.values.map((v) => ({
+              at: tickAt(v, axis),
+              label: v === 0 ? "0" : `${number(v, Number.isInteger(v) ? 0 : 1, $lang)}%`,
+            }))
+          )}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.crdChartStockRate, $lang, {
+              from: periodLong(line.from, $lang),
+              to: periodLong(line.to, $lang),
+              fromPct: number(line.first?.value, 2, $lang),
+              toPct: number(line.latest?.value, 2, $lang),
+              peakPct: number(stockHistory.peak.value, 2, $lang),
+              peakAt: periodLong(stockHistory.peak.period, $lang),
+            })}
+          >
+            {#each axis.values as v (v)}
+              <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
+            {/each}
+            {#each xTicks(line) as tick (tick.year)}
+              <line
+                class="plot-year"
+                x1={(tick.at / 100) * CH_W}
+                y1="0"
+                x2={(tick.at / 100) * CH_W}
+                y2={CH_H}
+              />
+            {/each}
+            <path class="plot-line" d={path(line, axis)} />
+            <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
+            {#each line.points as p, i (p.period)}
+              <rect
+                class="plot-hit"
+                x={xOf(i, line.points.length) - 2}
+                y="0"
+                width="4"
+                height={CH_H}
+                ><title>{periodLong(p.period, $lang)}: {number(p.value, 2, $lang)}%</title></rect
+              >
+            {/each}
+          </svg>
+          {@render xYears(xTicks(line))}
+        </div>
+      </figure>
+      <p class="note">
+        <a href={stockHistory.sourceUrl} rel="noopener">{t(COPY.crdWhoseBnb, $lang)}</a>
+        · {periodLong(line.from, $lang)} – {periodLong(line.to, $lang)} ·
+        <span class="l-bg"
+          >лихвите в евро преди 2026 г. са възстановени от БНБ от отчетите в лева и в евро, а не
+          наблюдавани по онова време</span
+        >
+        <span class="l-en"
+          >euro rates before 2026 were reconstructed by BNB from the lev and euro reporting, not
+          observed at the time</span
+        >
+      </p>
+    </section>
+  {/if}
+
+  <!-- 3 ------------------------------------------------------------------ -->
   <section id="fixation">
     <h2>
       <span class="l-bg">Колко дълго е фиксирана лихвата</span>
@@ -235,7 +338,7 @@
     </div>
   </section>
 
-  <!-- 3 ------------------------------------------------------------------ -->
+  <!-- 4 ------------------------------------------------------------------ -->
   <section id="renegotiation">
     <h2>
       <span class="l-bg">Колко от новото кредитиране е стар кредит</span>
@@ -270,7 +373,7 @@
     </p>
   </section>
 
-  <!-- 4 ------------------------------------------------------------------ -->
+  <!-- 5 ------------------------------------------------------------------ -->
   {#if limits}
     <section id="limits">
       <h2>
@@ -337,7 +440,7 @@
     </section>
   {/if}
 
-  <!-- 5 ------------------------------------------------------------------ -->
+  <!-- 6 ------------------------------------------------------------------ -->
   {#if owed}
     {@const stock = owed.series}
     <section id="owed">
@@ -509,7 +612,7 @@
     </section>
   {/if}
 
-  <!-- 6 ------------------------------------------------------------------ -->
+  <!-- 7 ------------------------------------------------------------------ -->
   {#if savings}
     {@const held = savings.series}
     <section id="savings">
@@ -680,7 +783,7 @@
     </section>
   {/if}
 
-  <!-- 7 ------------------------------------------------------------------ -->
+  <!-- 8 ------------------------------------------------------------------ -->
   <section id="other">
     <h2>
       <span class="l-bg">Какво плащаш за пари, и какво ти плащат</span>
@@ -755,7 +858,7 @@
     </p>
   </section>
 
-  <!-- 8 ------------------------------------------------------------------ -->
+  <!-- 9 ------------------------------------------------------------------ -->
   {#if arrears}
     <section id="arrears">
       <h2>
