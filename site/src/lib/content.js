@@ -3181,7 +3181,7 @@ export const COPY = {
   // the balance, so the amount is what that percentage is being charged on.
   // Consumer credit carries no amount here for the same reason inverted — its
   // rate is what a NEW loan costs, and the €11 bn already owed is at 6.91%.
-  crdStockOf: { bg: "толкова се дължи при тази лихва", en: "that much is owed at this rate" },
+  crdStockOf: { bg: "се дължат точно по тази лихва", en: "is owed at exactly this rate" },
   // Billions, in each language's own abbreviation. It had been «млрд.» in the
   // template, so the English page printed a Bulgarian word beside its own
   // numerals — the failure a missing string is supposed to make visible, arriving
@@ -3218,8 +3218,8 @@ export const COPY = {
   // money already in one is actually earning. Most of it was locked in when
   // deposits paid nothing, which is why the second is a third of the first.
   crdDepositNew: {
-    bg: "нови депозити този месец",
-    en: "newly deposited this month",
+    bg: "са вложени този месец",
+    en: "was paid into a new deposit this month",
   },
   crdDepositStock: {
     bg: "а по вече вложените пари банката плаща",
@@ -3238,8 +3238,8 @@ export const COPY = {
     en: "the same figure for lending to companies",
   },
   crdKArrearsAll: {
-    bg: "и по целия кредитен портфейл, всички клиенти заедно",
-    en: "and across the whole credit portfolio, every borrower together",
+    bg: "и по всички кредити на банките, взети заедно",
+    en: "and across all the banks' lending, taken together",
   },
   crdChartArrears: {
     bg: "Необслужвани кредити от {from} до {to}: при домакинствата спадат от {hFrom}% до {hTo}%, при фирмите от {cFrom}% до {cTo}%.",
