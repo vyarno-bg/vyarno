@@ -18,11 +18,12 @@ point somebody would edit it. Everything else is here.
 | Canonical, OG, Twitter card, JSON-LD | each `.html` entry | one canonical URL per entry, a static 1200×630 preview carrying no figure — one per content route per language, so `/market/` unfurls as itself and an English title never sits over Cyrillic artwork (`site.md` §"Share previews") — and a `WebApplication` / `WebPage` node that describes the code rather than the data — **`license` sits on the `WebApplication` and nowhere else**, because on a `WebPage` full of Eurostat's, БНБ's and НСИ's figures it states that those are Apache-2.0 (`verify_legal.mjs`, `docs/legal.md`) |
 | `noindex` on the error page | `site/404.html` | an indexed 404 is a search result that wastes a reader's click |
 | `X-Robots-Tag` on the payloads | `site/public/_headers` | the `robots.txt` rule again, in a header, for anything that reaches a JSON directly |
-| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all ten, the published figures on the six that read payloads, in the one language the entry declares — below |
+| The prerendered pages | `site/scripts/prerender.mjs` | every indexable entry in the served HTML — the prose on all twelve, the published figures on the eight that read payloads, in the one language the entry declares — below |
 | A second content page | `site/how/index.html` → `src/How.svelte` | the informational queries the calculator cannot rank for — below |
 | A third content page | `site/market/index.html` → `src/Market.svelte` | the property-market queries, which are asked far more often than the calculator's own and which almost nothing answers with a source attached |
-| The English tree | `site/en/*/index.html` | each of the five routes at a second address, declaring `en`, so a document exists for an English query to rank — below |
-| `hreflang`, reciprocal | each `.html` entry | `bg`, `en` and `x-default` on all ten, each set naming itself; `x-default` is the Bulgarian page. `verify_static_assets.mjs` checks the whole collection, because a one-sided set is discarded silently |
+| A fourth content page | `site/credit/index.html` → `src/Credit.svelte` | the borrowing cluster. `/how/` §`#loan` was where it lived, and one page ranks for one cluster — see below |
+| The English tree | `site/en/*/index.html` | each of the six routes at a second address, declaring `en`, so a document exists for an English query to rank — below |
+| `hreflang`, reciprocal | each `.html` entry | `bg`, `en` and `x-default` on all twelve, each set naming itself; `x-default` is the Bulgarian page. `verify_static_assets.mjs` checks the whole collection, because a one-sided set is discarded silently |
 
 Core Web Vitals need nothing: a static bundle, one third-party request that is
 `async` and blocks no paint (the CSP in `_headers` is what keeps the list at
@@ -33,6 +34,22 @@ Measurement is Search Console, Bing Webmaster Tools and the visit counter in
 A verification `<script>` is a second third-party script, which the CSP blocks
 and which `principles.md` §"What is closed" refuses as a class — the counter was
 admitted on its properties, and a verification tag has none of them to offer.
+
+## One cluster, one page — and what `/how/#loan` cost
+
+`/credit/` exists because the borrowing queries were being answered from a
+section of a tour. `/how/` is «the country's figures with nobody in them» and its
+sections are stops on one; §`#loan` had grown into 227 words on three rates plus
+the four БНБ limits, which is a page's worth of one subject sitting inside a page
+about seven of them. Held there it competed with nothing — and it would have
+competed with `/credit/`, which is the actual cost: two pages of ours ranking for
+«лихва жилищен кредит» split the signal between them and neither wins.
+
+**What stayed behind is a stop, not a stub.** §`#loan` keeps its heading, its
+`id` and the one rate a tour needs — the new-business AAR — and links on. The
+anchor is deep-linkable and has inbound links; they keep landing on a section
+about loans, which is the obligation. What they stop landing on is eight hundred
+words of it.
 
 ## The prerendered pages
 

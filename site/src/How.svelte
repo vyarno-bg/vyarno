@@ -31,7 +31,7 @@
    * on a page that renders no inputs is where an input eventually gets added.
    */
   import { onMount } from "svelte";
-  import { lang } from "./lib/stores.js";
+  import { lang, langHref } from "./lib/stores.js";
   import SiteFooter from "./lib/SiteFooter.svelte";
   import SiteHeader from "./lib/SiteHeader.svelte";
   import WedgeChart from "./lib/WedgeChart.svelte";
@@ -116,7 +116,6 @@
       Both НСИ payloads carry the same quarter under the same marker, and the
       by-activity one is where every wage on this page comes from. */
   const wagesArePreliminary = $derived(Boolean(calc.data.sectorSalary?.is_preliminary));
-  const onDay = (d) => ({ bg: dateShort(d, "bg"), en: dateShort(d, "en") });
   /**
    * WHICH date is on the имот.bg figures, said out loud.
    *
@@ -978,18 +977,19 @@
   </section>
 
   <!-- 5 ------------------------------------------------------------------ -->
+  <!-- The section keeps its heading and its `id`, and its depth moved to
+       `/credit/`. `docs/seo.md`'s rule is one page per query cluster, and a
+       full three-rate explainer here plus a deeper one there splits the
+       borrowing cluster between two pages of ours. This page is a TOUR of the
+       country's figures, and a tour may point at a room without walking you
+       through it — so what stays is the one rate a tour needs and the way on.
+       `#loan` is a deep-linkable anchor with inbound links; they keep landing
+       on a section about loans, which is the obligation. -->
   <section id="loan">
     <h2>
-      <span class="l-bg">Жилищният кредит: коя лихва на какъв въпрос отговаря</span>
-      <span class="l-en">The home loan: which rate answers which question</span>
+      <span class="l-bg">Жилищният кредит</span>
+      <span class="l-en">The home loan</span>
     </h2>
-    <!-- **The three rates before the paragraph that tells them apart.** This
-         is the longest block on the page — 227 words, 933px at 360px — and it
-         stood between the heading and the figures it is about, so the rates a
-         reader came for sat 1,029px down. It is a caveat rather than method,
-         which is why it stays on the page and directly under the cards: a
-         reader who takes the 2,41% for what a loan costs, or amortises the
-         ГПР, draws a wrong conclusion from a number they can see. -->
     <div class="stats">
       {#if calc.data.mortgage}
         {@render stat(
@@ -999,128 +999,22 @@
           calc.data.mortgage.new_business?.source_url,
           when(calc.mortgageRateData.refPeriod)
         )}
-        {#if calc.mortgageAprcData}
-          {@render stat(
-            `${fmt(calc.mortgageAprcData.pct, 2)}%`,
-            COPY.howKAprc,
-            COPY.srcEcbMir,
-            calc.mortgageAprcData.url,
-            when(calc.mortgageAprcData.refPeriod)
-          )}
-        {/if}
-        {#if calc.data.mortgage.outstanding_stock}
-          {@render stat(
-            `${fmt(calc.data.mortgage.outstanding_stock.value_pct, 2)}%`,
-            COPY.howKStock,
-            COPY.srcBnb,
-            calc.data.mortgage.outstanding_stock.source_url,
-            when(calc.data.mortgage.outstanding_stock.ref_period)
-          )}
-        {/if}
       {/if}
     </div>
-
     <p>
       <span class="l-bg"
-        >Три числа се наричат „лихвата по жилищен кредит“ и отговарят на три различни въпроса. <b
-          >Лихвата по нови кредити</b
-        >
-        е средното по споразуменията, подписани миналия месец — това е числото, с което се смята вноската.
-        „Ново“ тук е по-широко, отколкото звучи: БНБ брои като ново споразумение и предоговарянето на
-        вече съществуващ кредит, така че вътре влизат и хора, които не са купували нищо.
-        <b>ГПР</b> е за същите споразумения, но с прибавените такси, които банката иска, за да
-        отпусне кредита: той служи за сравняване на оферти. С него не се смята вноска — месечната
-        вноска се смята само върху лихвата, така че сметка с ГПР дава вноска, каквато никоя банка не
-        събира. Това не значи, че таксите не се плащат: част от тях са еднократни в началото, а
-        друга част върви всеки месец покрай вноската — застраховка на имота, често и застраховка
-        живот, и такса по сметката, от която се събира вноската. А нотариусът и таксата за вписване
-        на прехвърлянето на собствеността изобщо не влизат в ГПР — директивите, които го определят,
-        ги изключват изрично. Затова това, което реално излиза от джоба ти, е повече от вноската и
-        повече от ГПР.
-        <b>Лихвата по изплащаните кредити</b> е средното по кредитите, които се изплащат в момента, включително
-        подписани преди години; необслужваните и преструктурираните под пазарна лихва са извън него. То
-        описва какво плащат хората сега, не какво би подписал новият кредитополучател.</span
+        >Това е средното по споразуменията, подписани миналия месец, и от него се смята вноската.
+        Три различни числа обаче се наричат „лихвата по жилищен кредит“, ГПР-то е второто от тях, а
+        БНБ поставя и три граници на всеки нов кредит. Всичко това — заедно с това за колко време е
+        фиксирана лихвата и колко от „новите“ кредити всъщност са предоговорени стари — е на
+        <a href={langHref("/credit/", $lang)}>страницата за кредитите</a>.</span
       >
       <span class="l-en"
-        >Three numbers all go by "the mortgage rate" and they answer three different questions. The
-        <b>rate on new loans</b> is the average across the agreements signed last month — the one
-        the monthly payment is computed from. "New" is wider than it sounds: БНБ count renegotiating
-        an existing loan as a new agreement too, so people who bought nothing are inside the
-        average. The <b>APRC</b> is those same agreements with the charges the bank requires in
-        order to lend added in: it is for comparing offers. It is not what a payment is computed
-        from — the monthly instalment is computed from the interest alone, so working it out from
-        the APRC gives an instalment no bank collects. That does not mean the charges go away: some
-        are one-off at the start, and some run every month alongside the instalment — insurance on
-        the property, often life cover too, and a fee on the account the instalment is collected
-        from. And the notary and the fee for registering the transfer of ownership are not in the
-        APRC at all — the directives that define it exclude them by name. So what actually leaves
-        your pocket is more than the instalment and more than the APRC.
-        <b>The rate on loans being repaid</b> averages the loans currently being paid off, including ones
-        signed years ago; those that are non-performing or restructured below market rates are outside
-        it. It describes what people are paying now, not what a new borrower would sign.</span
-      >
-    </p>
-
-    <p>
-      <span class="l-bg"
-        >БНБ поставя три граници на всеки нов жилищен кредит в България, в сила от края на 2024 г.
-        Вярно ги чете от публикуваните лимити, а не ги пише в кода, за да е промяната в наредбата
-        промяна в данните.</span
-      >
-      <span class="l-en"
-        >The BNB places three limits on every new Bulgarian home loan, in force since late 2024.
-        Vyarno reads them from the published limits rather than writing them into the code, so a
-        change in the rules is a change in the data.</span
-      >
-    </p>
-
-    <div class="stats">
-      {#if calc.data.mortgage?.lending_limits}
-        {@render stat(
-          `${fmt(calc.limits.minDownPaymentPct, 0)}%`,
-          COPY.howKLtv,
-          COPY.srcBnb,
-          calc.limits.sourceUrl,
-          onDay(calc.data.mortgage.lending_limits.effective_from)
-        )}
-        {@render stat(
-          `${fmt(calc.limits.dstiMaxPct, 0)}%`,
-          COPY.howKDsti,
-          COPY.srcBnb,
-          calc.limits.sourceUrl,
-          onDay(calc.data.mortgage.lending_limits.effective_from)
-        )}
-        {@render stat(
-          `${fmt(calc.limits.maturityMaxYears, 0)}`,
-          COPY.howKMaturity,
-          COPY.srcBnb,
-          calc.limits.sourceUrl,
-          onDay(calc.data.mortgage.lending_limits.effective_from)
-        )}
-        {#if calc.limits.observedDstiPct !== null}
-          {@render stat(
-            `${fmt(calc.limits.observedDstiPct)}%`,
-            COPY.howKObserved,
-            COPY.srcBnb,
-            calc.data.mortgage.lending_limits.observed_dsti_source_url,
-            onDay(calc.data.mortgage.lending_limits.effective_from)
-          )}
-        {/if}
-      {/if}
-    </div>
-
-    <p>
-      <span class="l-bg"
-        >Калкулаторът чертае своята линия на достъпност при 30% от нетния доход — по-строго от
-        тавана, който БНБ допуска, и по-строго от това, което новите кредитополучатели в България
-        реално носят. Линията стои там нарочно и не се мести: едно жилище не става достъпно, защото
-        калкулаторът е казал, че е.</span
-      >
-      <span class="l-en"
-        >The calculator draws its affordability line at 30% of net income — stricter than the
-        ceiling the BNB permits, and stricter than what new Bulgarian borrowers actually carry. It
-        sits there deliberately and does not move: a home does not become affordable because a
-        calculator said so.</span
+        >This is the average across the agreements signed last month, and it is what the monthly
+        payment is computed from. Three different numbers go by "the mortgage rate" though, the APRC
+        is the second of them, and БНБ place three limits on every new loan besides. All of that —
+        with how long the rate is fixed for and how much of «new» lending is an old loan repriced —
+        is on <a href={langHref("/credit/", $lang)}>the borrowing page</a>.</span
       >
     </p>
   </section>

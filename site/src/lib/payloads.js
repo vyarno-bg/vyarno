@@ -291,7 +291,7 @@ export const PAYLOADS = Object.freeze(
     {
       key: "mortgage",
       file: "mortgage",
-      pages: ["home"],
+      pages: ["home", "credit"],
       // ECB MIR and БНБ both publish monthly.
       cadenceDays: 31,
       name: { bg: "Лихва по жилищни кредити", en: "Home loan rate" },

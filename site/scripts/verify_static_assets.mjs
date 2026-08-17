@@ -381,11 +381,13 @@ test("the generated sitemap carries every indexable page, /how/ included", () =>
       "/",
       "/how/",
       "/market/",
+      "/credit/",
       "/legal/",
       "/support/",
       "/en/",
       "/en/how/",
       "/en/market/",
+      "/en/credit/",
       "/en/legal/",
       "/en/support/",
     ],
@@ -422,11 +424,13 @@ const ENTRIES = [
   { file: ["index.html"], url: "/index.html" },
   { file: ["how", "index.html"], url: "/how/index.html" },
   { file: ["market", "index.html"], url: "/market/index.html" },
+  { file: ["credit", "index.html"], url: "/credit/index.html" },
   { file: ["legal", "index.html"], url: "/legal/index.html" },
   { file: ["support", "index.html"], url: "/support/index.html" },
   { file: ["en", "index.html"], url: "/en/index.html" },
   { file: ["en", "how", "index.html"], url: "/en/how/index.html" },
   { file: ["en", "market", "index.html"], url: "/en/market/index.html" },
+  { file: ["en", "credit", "index.html"], url: "/en/credit/index.html" },
   { file: ["en", "legal", "index.html"], url: "/en/legal/index.html" },
   { file: ["en", "support", "index.html"], url: "/en/support/index.html" },
   { file: ["404.html"], url: "/404.html" },
@@ -528,7 +532,12 @@ test("every page a stranger is sent unfurls as a card, and the card is a file", 
   //
   // One loop over `ENTRIES`, so a page added to the build is covered by the
   // block it copies from its neighbour.
-  const CARD_ROUTES = ["/index.html", "/how/index.html", "/market/index.html"];
+  const CARD_ROUTES = [
+    "/index.html",
+    "/how/index.html",
+    "/market/index.html",
+    "/credit/index.html",
+  ];
   const withCard = [];
   for (const { file, url } of ENTRIES) {
     const meta = metaTags(read(...file));
@@ -705,6 +714,7 @@ test("every prerendered page has a mount point, and one place that empties it", 
     legal: "legal-main.js",
     support: "support-main.js",
     market: "market-main.js",
+    credit: "credit-main.js",
   };
   for (const { name, pages } of PRERENDERED) {
     // Both addresses a component answers at. A row whose English entry lost its

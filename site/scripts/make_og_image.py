@@ -307,6 +307,21 @@ CARDS = (
         "THE PROPERTY MARKET",
         "EUROSTAT, NSI AND IMOT.BG LISTINGS",
     ),
+    # «Кредитите» rather than «жилищните кредити»: the card is a title, the
+    # glyph grid gives it one line, and the page covers what a home loan costs
+    # AND who is actually taking one out.
+    (
+        "og-credit.png",
+        STRAPLINE,
+        "КРЕДИТИТЕ В БЪЛГАРИЯ",
+        "БНБ И ЕЦБ",
+    ),
+    (
+        "og-credit.en.png",
+        STRAPLINE_EN,
+        "BORROWING IN BULGARIA",
+        "BNB AND THE ECB",
+    ),
 )
 
 MARGIN = 96

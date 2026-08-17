@@ -1456,6 +1456,10 @@ test("the share note states the boundary rather than advertising it", () => {
  * the test rather than read it.
  */
 const HOW = blankComments(readFileSync(join(SRC, "How.svelte"), "utf-8")).replace(/\s+/g, " ");
+const CREDIT = blankComments(readFileSync(join(SRC, "Credit.svelte"), "utf-8")).replace(
+  /\s+/g,
+  " "
+);
 
 /** The `{bg, en}` COPY keys the page owns. */
 const HOW_KEYS = Object.keys(COPY).filter((k) => k.startsWith("how"));
@@ -1766,16 +1770,17 @@ test("the country page frames the wedge curve as uncomputed, never as concealed"
   );
 });
 
-test("the country page keeps the 30% line where P7 put it", () => {
+test("the borrowing page keeps the 30% line where P7 put it", () => {
   // The affordability line is deliberately stricter than the 50% БНБ permits
-  // and than the ~38.5% BG borrowers carry. A reference page explaining both
-  // ceilings is where somebody reasonably concludes ours should match one of
-  // them, so the paragraph states that it does not move.
-  for (const claim of ["по-строго от", "stricter than"]) {
-    assert.ok(HOW.includes(claim), `the 30% line no longer says it is ${claim} the regulator's`);
+  // and than the ~38.5% BG borrowers carry. A page explaining both ceilings is
+  // where somebody reasonably concludes ours should match one of them, so the
+  // paragraph states that it does not move — and that page is now `/credit/`,
+  // which is where the three БНБ limits are rendered.
+  for (const claim of ["по-строго", "stricter"]) {
+    assert.ok(CREDIT.includes(claim), `the 30% line no longer says it is ${claim} the regulator's`);
   }
   assert.ok(
-    HOW.includes("не се мести") && HOW.includes("does not move"),
+    CREDIT.includes("не се мести") && CREDIT.includes("does not move"),
     "the paragraph no longer says the affordability line stays where it is"
   );
 });
