@@ -56,6 +56,17 @@ test("the three rates come off three different blocks", () => {
   }
 });
 
+test("the third rate is the housing book, which is what its label claims", () => {
+  // §5 renders the whole household book at 4,5% on this same page, so a reader
+  // meets the two together. The same БНБ workbook carries an all-loans column:
+  // picking it leaves every figure correct and «жилищни» in the label false.
+  const rates = creditRates(PUBLISHED);
+  const housing = CREDIT.outstanding.blocks.find((b) => b.block === "housing");
+  assert.equal(rates.outstanding.value, housing.rate_pct);
+  assert.equal(rates.bookVolumeEurM, housing.volume_eur_m);
+  assert.notEqual(rates.outstanding.value, CREDIT.outstanding.rate_pct);
+});
+
 test("the fixation buckets keep the payload's own order and shares", () => {
   const fixation = creditFixation(PUBLISHED);
   assert.deepEqual(

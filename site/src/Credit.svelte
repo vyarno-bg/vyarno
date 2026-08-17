@@ -161,14 +161,15 @@
         >Първата е лихвата, от която се смята вноската. Втората е ГПР, тоест годишен процент на
         разходите: същите кредити, но с таксите, които банката изисква, за да ти отпусне заема.
         Затова е по-висока, и не с нея се смята вноската. Третата не е за нов кредит: тя е средното
-        по всички кредити, които хората в момента изплащат, включително договори отпреди години.</span
+        по всички жилищни кредити, които хората в момента изплащат, включително договори отпреди
+        години.</span
       >
       <span class="l-en"
         >The first is the rate the monthly payment is worked out from. The second is the APRC, the
         annual percentage rate of charge: the same loans with the fees the bank requires in order to
         lend, so it is higher, and it is not the one the payment is worked out from. The third is
-        not for a new loan at all. It is the average across every loan people are repaying right
-        now, agreements signed years ago included.</span
+        not for a new loan at all. It is the average across every housing loan people are repaying
+        right now, agreements signed years ago included.</span
       >
     </p>
   </section>
