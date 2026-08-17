@@ -44,6 +44,15 @@ def test_a_truncated_response_is_not_published_as_a_short_series():
         validate_product_series(_series(8.76, months=2), "consumer")
 
 
+def test_a_series_that_arrived_out_of_order_is_not_published():
+    # Every reader of these series takes the last key as the latest reading, so
+    # an unsorted response publishes a mid-history month as today's rate.
+    series = _series(8.76, months=8)
+    scrambled = dict(reversed(list(series.items())))
+    with pytest.raises(MortgageValidationError, match="not sorted"):
+        validate_product_series(scrambled, "consumer")
+
+
 def test_card_credit_cannot_read_below_a_mortgage():
     validate_card_above_mortgage(21.15, 2.41)
     # Unsecured revolving credit priced under a secured home loan means the two
