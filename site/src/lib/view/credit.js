@@ -67,6 +67,28 @@ export function creditRates(mortgage) {
 }
 
 /**
+ * The outstanding-stock rate as a series, for the curve under the three cards.
+ *
+ * `plotLevels` floors the axis at zero, which a rate wants: this series has run
+ * from 9% to under 3% and a chart cropped to that band would draw the fall as a
+ * cliff. The peak is carried because the page names it, and naming it from the
+ * series rather than from prose is what keeps it true next month.
+ *
+ * @param {object|null} mortgage
+ */
+export function creditStockHistory(mortgage) {
+  const stock = mortgage?.outstanding_stock ?? null;
+  const series = plotLevels(stock?.series_by_period);
+  if (series.points.length < 2) return null;
+  return {
+    series,
+    peak: series.peak,
+    latest: series.latest,
+    sourceUrl: stock.source_url ?? null,
+  };
+}
+
+/**
  * How long the rate on new lending is fixed for.
  *
  * The bucket order is the payload's, not ours: БНБ print them shortest-first
