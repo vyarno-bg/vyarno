@@ -31,11 +31,14 @@ import httpx
 from vyarno_pipeline import clock
 from vyarno_pipeline.mortgage import (
     MortgageValidationError,
+    cross_check_fixation_rates,
     cross_check_outstanding,
     latest_period,
     lending_limits_at,
     validate_aprc_above_aar,
+    validate_fixation_rows,
     validate_freshness,
+    validate_new_business_split,
     validate_rate_series,
 )
 from vyarno_pipeline.payroll import build_payroll_payload, in_force_entry
@@ -60,13 +63,19 @@ from vyarno_pipeline.publish import (
     write_time_series,
 )
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS
+from vyarno_pipeline.sources.bnb import (
+    FIXATION_BUCKETS,
+    fetch_housing_fixation_bg,
+    fetch_housing_stock_rate_bg,
+)
+from vyarno_pipeline.sources.bnb import FIXATION_URL as BNB_FIXATION_URL
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_SOURCE_URL
-from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import (
     EURO_SWITCH_PERIOD,
     SERIES_KEYS,
     fetch_mir_series,
+    fixation_rate_key,
     series_url,
     splice_at_euro_changeover,
 )
@@ -1033,6 +1042,22 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         vol_eur = fetch_mir_series(SERIES_KEYS["new_business_volume_eur"])
         click.echo("→ fetching ECB MIR outstanding stock (for the cross-check gate)...")
         ecb_out = fetch_mir_series(SERIES_KEYS["outstanding_aar_eur"])
+        click.echo("→ fetching ECB MIR new business split (pure new loans vs renegotiation)...")
+        split = {
+            leg: splice_at_euro_changeover(
+                fetch_mir_series(SERIES_KEYS[f"new_business_{leg}_bgn"]),
+                fetch_mir_series(SERIES_KEYS[f"new_business_{leg}_eur"]),
+            )
+            for leg in ("aar_pure", "aar_reneg", "vol_pure", "vol_reneg")
+        }
+        click.echo("→ fetching ECB MIR rates by initial rate fixation...")
+        fixation_rates = {
+            bucket: splice_at_euro_changeover(
+                fetch_mir_series(fixation_rate_key(bucket, "BGN")),
+                fetch_mir_series(fixation_rate_key(bucket, "EUR")),
+            )
+            for bucket in FIXATION_BUCKETS
+        }
     except httpx.HTTPError as e:
         click.echo(f"ERROR: ECB MIR fetch failed: {e}", err=True)
         sys.exit(4)
@@ -1057,6 +1082,9 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         click.echo("→ fetching BNB housing-loan XLSX (outstanding stock, EUR)...")
         bnb_rows = fetch_housing_stock_rate_bg()
         click.echo(f"  got {len(bnb_rows)} monthly rows")
+        click.echo("→ fetching BNB new-business XLSX (volumes by initial rate fixation)...")
+        fixation_rows = fetch_housing_fixation_bg()
+        click.echo(f"  got {len(fixation_rows)} monthly rows")
     except httpx.HTTPError as e:
         click.echo(
             f"ERROR: BNB fetch failed: {e}\n"
@@ -1088,6 +1116,15 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         click.echo("→ gate: freshness (both tiers within the publication lag)...")
         validate_freshness(aar_ref, as_of, "ECB MIR new business")
         validate_freshness(bnb_ref, as_of, "BNB outstanding stock")
+
+        click.echo("→ gate: the four fixation buckets are all of new housing lending...")
+        validate_fixation_rows(fixation_rows)
+        cross_check_fixation_rates(
+            fixation_rows[-1]["rate_pct"],
+            {b: s[max(s)] for b, s in fixation_rates.items() if s},
+        )
+        click.echo("→ gate: pure new lending + renegotiation = new business...")
+        validate_new_business_split(volume, split["vol_pure"], split["vol_reneg"])
 
         click.echo("→ gate: BNB vs ECB MIR agree on the outstanding book...")
         ecb_out_ref = latest_period(ecb_out)
@@ -1244,18 +1281,108 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         "methodology_change": BNB_METHODOLOGY_CHANGE_NOTE,
     }
 
+    fix_ref = fixation_rows[-1]
+    fixation = {
+        # The one figure on this page a reader can act on without knowing any
+        # economics: almost every Bulgarian mortgage repriceS with the ЕЦБ, so
+        # the payment on the calculator is a payment for now rather than for the
+        # term. Describing that is P6's «comparison plus a number»; what to do
+        # about it is not ours to say.
+        "_role": (
+            "the same new lending, split by how long its interest rate is "
+            "fixed for at signing. The first bucket is variable-rate loans "
+            "together with one-year fixations — БНБ count them as one and say "
+            "so — so it may never be read as «fixed for a year»"
+        ),
+        "source": "bnb",
+        "dataset": (
+            "s_ir_loan_nbf_hh_bg.xlsx, sheet LOAN_NBF_HH, Жилищни кредити × "
+            "в евро × период на първоначално фиксиране на лихвения процент"
+        ),
+        "source_url": BNB_FIXATION_URL,
+        "ref_period": fix_ref["period"],
+        "total_eur_m": fix_ref["total_eur_m"],
+        "buckets": [
+            {
+                "bucket": bucket,
+                "volume_eur_m": fix_ref["volume_eur_m"][bucket],
+                "share_pct": round(100.0 * fix_ref["volume_eur_m"][bucket] / total, 2),
+                "rate_pct": fix_ref["rate_pct"][bucket] or None,
+                "cross_check_url": series_url(fixation_rate_key(bucket, "EUR")),
+            }
+            for bucket in FIXATION_BUCKETS
+            for total in [fix_ref["total_eur_m"]]
+        ],
+        # One number a month rather than four series: the share is what the page
+        # draws, the per-bucket rates are a snapshot beside it, and a payload
+        # already carrying two 230-month series does not need four more.
+        "floating_share_by_period": {
+            row["period"]: round(100.0 * row["volume_eur_m"]["up_to_1y"] / row["total_eur_m"], 2)
+            for row in fixation_rows
+            if row["total_eur_m"]
+        },
+        "cross_check": (
+            "the per-bucket rates are gated against ЕЦБ MIR's own four series "
+            "(MATURITY_NOT_IRATE F/I/O/P). The VOLUMES have no second publisher: "
+            "the euro leg of MIR carries no volume by fixation, so this workbook "
+            "is the only source of the split after 2026-01"
+        ),
+    }
+
+    # The newest month all three legs carry. They are three requests to one API
+    # and the ЕЦБ publish them together, but a share is a ratio and a ratio
+    # taken across a month only its numerator has is a division by nothing.
+    split_ref = max(set(split["vol_reneg"]) & set(split["vol_pure"]) & set(volume))
+    new_business_split = {
+        # «Нов бизнес» counts a household repricing the loan it already has, so
+        # a record month of «new lending» is not necessarily a record month of
+        # houses being bought. The ЕЦБ publish the seam; nothing else does.
+        "_role": (
+            "how much of the new business above is a household repricing a "
+            "loan it already had, rather than borrowing for a home it is "
+            "buying now — the two are one figure in every headline"
+        ),
+        "source": "ecb",
+        "dataset": (
+            f"MIR {SERIES_KEYS['new_business_vol_pure_eur']} and "
+            f"{SERIES_KEYS['new_business_vol_reneg_eur']}, spliced from their BGN legs"
+        ),
+        "source_url": series_url(SERIES_KEYS["new_business_vol_reneg_eur"]),
+        "ref_period": split_ref,
+        "pure_new_eur_m": split["vol_pure"][split_ref],
+        "renegotiated_eur_m": split["vol_reneg"][split_ref],
+        "renegotiated_share_pct": round(
+            100.0 * split["vol_reneg"][split_ref] / volume[split_ref], 2
+        ),
+        "pure_new_rate_pct": split["aar_pure"].get(split_ref),
+        "renegotiated_rate_pct": split["aar_reneg"].get(split_ref),
+        "renegotiated_share_by_period": {
+            period: round(100.0 * split["vol_reneg"][period] / volume[period], 2)
+            for period in sorted(set(split["vol_reneg"]) & set(volume))
+            if volume[period]
+        },
+        "basis": (
+            "IR_BUS_COV — P «pure new loans» and R «renegotiation» partition N "
+            "«new business», and the gate checks they still add up"
+        ),
+    }
+
     write_mortgage_payload(
         as_of=as_of,
         new_business=new_business,
         outstanding_stock=outstanding_stock,
         cross_check=cross,
         lending_limits=lending_limits_at(as_of),
+        fixation=fixation,
+        new_business_split=new_business_split,
         target_dir=out,
     )
     click.echo(
         f"OK: wrote {MORTGAGE_FILE} — "
         f"new_business AAR={aar[aar_ref]}% / APRC={aprc[aprc_ref]}% ({aar_ref}), "
-        f"outstanding_stock={bnb_series[bnb_ref]}% ({bnb_ref})"
+        f"outstanding_stock={bnb_series[bnb_ref]}% ({bnb_ref}), "
+        f"floating={fixation['buckets'][0]['share_pct']}%, "
+        f"renegotiated={new_business_split['renegotiated_share_pct']}%"
     )
 
 

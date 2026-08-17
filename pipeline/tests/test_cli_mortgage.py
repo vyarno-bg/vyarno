@@ -23,9 +23,11 @@ import respx
 from click.testing import CliRunner
 
 from vyarno_pipeline.cli import main
+from vyarno_pipeline.sources.bnb import FIXATION_BUCKETS
+from vyarno_pipeline.sources.bnb import FIXATION_URL as BNB_FIXATION_URL
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_URL
 from vyarno_pipeline.sources.ecb import BASE as ECB_BASE
-from vyarno_pipeline.sources.ecb import SERIES_KEYS
+from vyarno_pipeline.sources.ecb import SERIES_KEYS, fixation_rate_key
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -38,6 +40,16 @@ FIXTURE_FOR_KEY = {
     SERIES_KEYS["new_business_volume_bgn"]: "ecb_mir_bg_new_business_volume_bgn.json",
     SERIES_KEYS["new_business_volume_eur"]: "ecb_mir_bg_new_business_volume_eur.json",
     SERIES_KEYS["outstanding_aar_eur"]: "ecb_mir_bg_outstanding_aar_eur.json",
+    **{
+        SERIES_KEYS[f"new_business_{leg}_{ccy}"]: f"ecb_mir_bg_new_business_{leg}_{ccy}.json"
+        for leg in ("aar_pure", "aar_reneg", "vol_pure", "vol_reneg")
+        for ccy in ("bgn", "eur")
+    },
+    **{
+        fixation_rate_key(bucket, ccy): f"ecb_mir_bg_fixation_{bucket}_{ccy.lower()}.json"
+        for bucket in FIXATION_BUCKETS
+        for ccy in ("BGN", "EUR")
+    },
 }
 
 
@@ -59,6 +71,12 @@ def _mock_all(ecb_overrides: dict[str, dict] | None = None) -> None:
             content=(FIXTURES / "bnb_housing_loans_oa_hh_bg.xlsx").read_bytes(),
         )
     )
+    respx.get(BNB_FIXATION_URL).mock(
+        return_value=httpx.Response(
+            200,
+            content=(FIXTURES / "bnb_housing_new_business_fixation_bg.xlsx").read_bytes(),
+        )
+    )
 
 
 def _run(tmp_path: Path):
@@ -77,7 +95,7 @@ def test_publishes_both_tiers_and_exits_zero(tmp_path):
     assert result.exit_code == 0, result.output
 
     payload = json.loads((tmp_path / "mortgage.json").read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "2.0"
+    assert payload["schema_version"] == "3.0"
     assert payload["headline"] == "new_business"
     assert payload["new_business"]["value_pct"] == 2.43
     assert payload["new_business"]["aprc"]["value_pct"] == 2.77

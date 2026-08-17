@@ -392,10 +392,12 @@ def write_mortgage_payload(
     outstanding_stock: dict,
     cross_check: dict,
     lending_limits: dict,
+    fixation: dict,
+    new_business_split: dict,
     target_dir: Path,
     filename: str = MORTGAGE_FILE,
 ) -> Path:
-    """Write `mortgage.json` (schema 2.0).
+    """Write `mortgage.json` (schema 3.0).
 
     Two rate tiers answering two different questions, plus the regulatory
     limits every BG mortgage is bound by. The sections are assembled and
@@ -412,6 +414,10 @@ def write_mortgage_payload(
       the same data and must agree (gate, not decoration).
     - `lending_limits` — BNB borrower-based measures (LTV-O 85% ⇒ 15% down,
       DSTI-O 50%, maturity 30y) so the SPA's caps are data-driven.
+    - `fixation` — the same new lending split by how long its rate is fixed
+      for, volumes from BNB and rates from both publishers. 3.0 added it.
+    - `new_business_split` — how much of that lending is a household
+      repricing a loan it already had. 3.0 added it.
 
     Schema 2.0 replaced 1.0's three sections
     (`sector_average` / `aggregate_outstanding` / `indicative_offer`). The
@@ -431,7 +437,7 @@ def write_mortgage_payload(
             "official and monthly. No scraped offered-rate tier by design."
         ),
     )
-    payload["schema_version"] = "2.0"
+    payload["schema_version"] = "3.0"
     # Names the tier the calculator defaults to, so the contract is explicit
     # in the data rather than implied by key order in the SPA.
     payload["headline"] = "new_business"
@@ -439,4 +445,6 @@ def write_mortgage_payload(
     payload["outstanding_stock"] = outstanding_stock
     payload["cross_check"] = cross_check
     payload["lending_limits"] = lending_limits
+    payload["fixation"] = fixation
+    payload["new_business_split"] = new_business_split
     return write_payload(payload, target_dir, filename)

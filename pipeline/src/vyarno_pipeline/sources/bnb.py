@@ -64,6 +64,26 @@ SOURCE_URL = (
 )
 SHEET_NAME = "LOAN_OA_HH"
 
+# The second workbook, and the only place the fixed/floating split survives the
+# euro changeover: ЕЦБ MIR publishes the four buckets' RATES but no volumes on
+# the euro leg (`sources/ecb.py` §FIXATION_KEYS), so the share of new lending
+# that floats is БНБ's to give or nobody's.
+#
+# Its header grammar is the one above — section / purpose / currency / bucket on
+# the same four rows — so `_locate_housing_eur_columns` finds the housing EUR
+# block here unchanged, and the four buckets are the columns to its right.
+FIXATION_URL = (
+    "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_nbf_hh_bg.xlsx"
+)
+FIXATION_SHEET = "LOAN_NBF_HH"
+# The trailing digit is БНБ's own footnote marker, and the footnote is what the
+# first bucket's label needs: «Включват се кредитите с променлив лихвен
+# процент». It is variable-rate loans plus one-year fixations, so no surface may
+# call it «fixed for a year» — and no surface may call the rest «fixed» without
+# saying for how long, which is the whole point of publishing four buckets.
+FIXATION_LABELS = ("до 1 година2", "над 1 до 5 години", "над 5 до 10 години", "над 10 години")
+FIXATION_BUCKETS = ("up_to_1y", "1y_to_5y", "5y_to_10y", "over_10y")
+
 # Header labels we require. If БНБ renames any of these we raise, rather than
 # read a neighbouring cell.
 LABEL_VOLUMES = "Обеми в млн. евро"  # marks where the volume half starts
@@ -92,6 +112,24 @@ def fetch_housing_stock_rate_bg() -> list[dict[str, Any]]:
         r.raise_for_status()
         body = r.content
     return parse_housing_stock_xlsx(body)
+
+
+def fetch_housing_fixation_bg() -> list[dict[str, Any]]:
+    """New housing lending split by initial rate-fixation period (EUR).
+
+    One dict per month, oldest first, with a value per bucket in
+    `FIXATION_BUCKETS`:
+        {"period": "2026-06", "total_eur_m": 767.075, "total_rate_pct": 2.4066,
+         "volume_eur_m": {"up_to_1y": 763.908, ...},
+         "rate_pct": {"up_to_1y": 2.4053, ...}}
+
+    Raises the same two as `fetch_housing_stock_rate_bg`.
+    """
+    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
+        r = client.get(FIXATION_URL)
+        r.raise_for_status()
+        body = r.content
+    return parse_housing_fixation_xlsx(body)
 
 
 def _locate_housing_eur_columns(rows: list[tuple]) -> tuple[int, int]:
@@ -158,12 +196,9 @@ def _locate_housing_eur_columns(rows: list[tuple]) -> tuple[int, int]:
     return rate_col, volume_col
 
 
-def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
-    """Parse the BNB workbook → the housing-loan EUR outstanding-rate series.
-
-    Pure function: tests pass the committed fixture, no network.
-    """
-    # БНБ's workbook carries a print header openpyxl cannot parse. It is
+def _sheet_rows(body: bytes, sheet_name: str) -> list[tuple]:
+    """One БНБ sheet as rows of values. Shared by both workbooks."""
+    # БНБ's workbooks carry a print header openpyxl cannot parse. It is
     # cosmetic and unrelated to the cells we read, so mute just that warning
     # rather than letting it clutter every pipeline run.
     with warnings.catch_warnings():
@@ -186,11 +221,19 @@ def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
                 f"have served an error page with HTTP 200, or changed the "
                 f"download URL."
             ) from e
-    if SHEET_NAME not in wb.sheetnames:
+    if sheet_name not in wb.sheetnames:
         raise ValueError(
-            f"Sheet {SHEET_NAME!r} not found in BNB XLSX; available sheets: {wb.sheetnames}"
+            f"Sheet {sheet_name!r} not found in BNB XLSX; available sheets: {wb.sheetnames}"
         )
-    rows = list(wb[SHEET_NAME].iter_rows(values_only=True))
+    return list(wb[sheet_name].iter_rows(values_only=True))
+
+
+def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
+    """Parse the BNB workbook → the housing-loan EUR outstanding-rate series.
+
+    Pure function: tests pass the committed fixture, no network.
+    """
+    rows = _sheet_rows(body, SHEET_NAME)
     rate_col, volume_col = _locate_housing_eur_columns(rows)
 
     out: list[dict[str, Any]] = []
@@ -217,6 +260,57 @@ def parse_housing_stock_xlsx(body: bytes) -> list[dict[str, Any]]:
     if not out:
         raise ValueError(
             f"BNB: no dated data rows found in {SHEET_NAME!r}. The workbook layout changed."
+        )
+    out.sort(key=lambda r: r["period"])
+    return out
+
+
+def parse_housing_fixation_xlsx(body: bytes) -> list[dict[str, Any]]:
+    """Parse `s_ir_loan_nbf_hh_bg.xlsx` → new housing lending by fixation.
+
+    Pure function: tests pass the committed fixture, no network.
+    """
+    rows = _sheet_rows(body, FIXATION_SHEET)
+    rate_col, volume_col = _locate_housing_eur_columns(rows)
+    labels = [(c.strip() if isinstance(c, str) else "") for c in rows[ROW_MATURITY]]
+    # The buckets are the four columns right of each block's total, and their
+    # labels are asserted rather than counted on: БНБ ordering the housing block
+    # differently would otherwise put «над 10 години» money under «до 1 година»
+    # and report a floating market as a fixed one, which is the single claim
+    # this workbook exists on the site to make.
+    for col in (rate_col, volume_col):
+        got = tuple(labels[col + 1 : col + 1 + len(FIXATION_LABELS)])
+        if got != FIXATION_LABELS:
+            raise ValueError(
+                f"BNB: the rate-fixation buckets right of col {col} read {got!r}, "
+                f"expected {FIXATION_LABELS!r}. Re-verify the housing block in "
+                f"{FIXATION_SHEET!r} before trusting the fixed/floating split."
+            )
+
+    def number(row: tuple, col: int) -> float | None:
+        cell = row[col] if col < len(row) else None
+        return float(cell) if isinstance(cell, (int, float)) else None
+
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row[0], datetime):
+            continue
+        out.append(
+            {
+                "period": row[0].strftime("%Y-%m"),
+                "total_eur_m": number(row, volume_col),
+                "total_rate_pct": number(row, rate_col),
+                "volume_eur_m": {
+                    b: number(row, volume_col + 1 + i) for i, b in enumerate(FIXATION_BUCKETS)
+                },
+                "rate_pct": {
+                    b: number(row, rate_col + 1 + i) for i, b in enumerate(FIXATION_BUCKETS)
+                },
+            }
+        )
+    if not out:
+        raise ValueError(
+            f"BNB: no dated data rows found in {FIXATION_SHEET!r}. The workbook layout changed."
         )
     out.sort(key=lambda r: r["period"])
     return out

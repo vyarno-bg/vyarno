@@ -345,7 +345,7 @@ directory — a checkout that has never run `--source house-market`.
 
 ## Mortgage gates (`--source mortgage`)
 
-All five are hard-required; none degrades. The arm writes a complete
+All eight are hard-required; none degrades. The arm writes a complete
 `mortgage.json` or exits non-zero having written nothing.
 
 | Gate | What it catches | Exit |
@@ -355,6 +355,10 @@ All five are hard-required; none degrades. The arm writes a complete
 | **Plausibility bounds** [0.25%, 12%] | Reading the wrong cell entirely — calibrated to reject the 14.83% consumer-credit column in the same workbook while admitting the 2008-era outstanding peak | 3 |
 | **APRC ≥ AAR − 0.05 pp** | The two ЕЦБ series being swapped (`DATA_TYPE_MIR` `R` vs `C`). Fees cannot be negative. The 0.05 pp (`APRC_BELOW_AAR_TOLERANCE_PP`) absorbs the two series rounding independently of each other, and nothing else — a genuine swap puts the pair 0.3 pp the wrong way round | 3 |
 | **БНБ vs ЕЦБ cross-check** (≤0.30 pp) | Either side's outstanding-stock read drifting. They are the same data — БНБ reports MIR to the ЕЦБ — so disagreement means one read is broken | 3 |
+| **Fixation buckets sum** (≤0.05 m) | A bucket dropping out of `s_ir_loan_nbf_hh_bg.xlsx`, or a column drifting out of the housing block. It cannot see a REORDERED block — every total stays intact — which is why `bnb.py` asserts the four bucket labels as well | 3 |
+| **Bucket rate bounds** [0.25%, 16%] | A decimal point, and not a column: the consumer block in the same workbook reads 8.7–13.4%, inside this range. Wider than the headline band because a bucket is one month's slice and can be a single loan — measured, buckets run 1.76% to 14.82% while the month's own total never passes 9.45% | 3 |
+| **Fixation cross-check** (≤0.30 pp) | The workbook column and the ЕЦБ series key ceasing to describe the same bucket. The only part of the block a second publisher can confirm — MIR's euro leg carries no volume by fixation, so the SPLIT itself has one source | 3 |
+| **New-business split** (≤0.05 m) | `IR_BUS_COV` `P` + `R` ceasing to equal `N`. They partition new business by the ЕЦБ's own definition and BG reports them to the cent | 3 |
 
 Plus **freshness**: both tiers' reference month must be within 150 days, so a
 source that quietly stops publishing fails instead of serving a stale rate.
@@ -364,15 +368,21 @@ A good mortgage run:
 ```
 → fetching ECB MIR new business (BG households, house purchase)...
 → fetching ECB MIR outstanding stock (for the cross-check gate)...
-  AAR 77 months (BGN→EUR spliced at 2026-01), APRC 77, volume 77
+→ fetching ECB MIR new business split (pure new loans vs renegotiation)...
+→ fetching ECB MIR rates by initial rate fixation...
+  AAR 78 months (BGN→EUR spliced at 2026-01), APRC 78, volume 78
 → fetching BNB housing-loan XLSX (outstanding stock, EUR)...
-  got 233 monthly rows
+  got 234 monthly rows
+→ fetching BNB new-business XLSX (volumes by initial rate fixation)...
+  got 234 monthly rows
 → gate: rate plausibility bounds + series completeness...
 → gate: APRC ≥ AAR (fees cannot be negative)...
 → gate: freshness (both tiers within the publication lag)...
+→ gate: the four fixation buckets are all of new housing lending...
+→ gate: pure new lending + renegotiation = new business...
 → gate: BNB vs ECB MIR agree on the outstanding book...
-  BNB 2.6717% vs ECB 2.67% → Δ 0.0017 pp (tolerance 0.3 pp)
-OK: wrote mortgage.json — new_business AAR=2.43% / APRC=2.77% (2026-05), outstanding_stock=2.6717% (2026-05)
+  BNB 2.6609% vs ECB 2.66% → Δ 0.0009 pp (tolerance 0.3 pp)
+OK: wrote mortgage.json — new_business AAR=2.41% / APRC=2.75% (2026-06), outstanding_stock=2.6609% (2026-06), floating=99.59%, renegotiated=19.94%
 ```
 
 An exit **4** here is usually the БНБ TLS quirk — their server omits an
