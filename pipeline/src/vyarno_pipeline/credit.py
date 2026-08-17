@@ -22,6 +22,7 @@ independently, and a volume in the wrong slot moves that blend.
 
 from __future__ import annotations
 
+import itertools
 from datetime import date
 from typing import Any
 
@@ -277,6 +278,120 @@ def validate_npl_freshness(ref_period: str, as_of: date) -> None:
             f"(limit {NPL_MAX_STALENESS_DAYS}). Two release cycles have passed "
             f"without one landing — do not ship a stale arrears figure."
         )
+
+
+# What households have and what they owe, both from ECB BSI, both in millions
+# of euro. One band over the pair rather than one each: these two grow into each
+# other's range by construction — the whole subject is the gap closing — so a
+# band tight enough to tell them apart would be a band that trips the month it
+# gets interesting. What this catches is a unit change or a column from another
+# balance-sheet item, which is three orders of magnitude away, not five percent.
+#
+# A swap of the two needs no band at all: `_parse_sdmx_series` refuses any
+# response whose decoded key is not the one requested, so neither series can
+# arrive under the other's name.
+SAVINGS_BAND_EUR_M = (1_000.0, 500_000.0)
+
+# Both BSI series start here and neither publishes a month before it.
+SAVINGS_MIN_MONTHS = 36
+
+
+def validate_savings_series(series: dict[str, float], name: str) -> None:
+    """Bounds, length and an unbroken run of months for one BSI level series.
+
+    **The contiguity check is the one that matters, and it is not tidiness.**
+    The chart places its points at even intervals across the box
+    (`plot.js#plotX`), so a month missing from the middle does not leave a gap —
+    it silently shortens the axis and slides every later reading a step to the
+    left, against a time axis that goes on labelling the years it thinks it has.
+    Nothing about the picture looks wrong afterwards.
+    """
+    low, high = SAVINGS_BAND_EUR_M
+    if len(series) < SAVINGS_MIN_MONTHS:
+        raise MortgageValidationError(
+            f"{name}: only {len(series)} months, expected at least {SAVINGS_MIN_MONTHS}."
+        )
+    for period, value in series.items():
+        if not isinstance(value, (int, float)) or not (low <= value <= high):
+            raise MortgageValidationError(
+                f"{name}: {period} = {value!r} m EUR, outside [{low}, {high}] m. "
+                f"That is a unit change or a different balance-sheet item, not a "
+                f"move in the market."
+            )
+    periods = list(series)
+    if periods != sorted(periods):
+        raise MortgageValidationError(f"{name}: periods are not sorted")
+    for earlier, later in itertools.pairwise(periods):
+        year, month = int(earlier[:4]), int(earlier[5:7])
+        expected = f"{year + month // 12}-{month % 12 + 1:02d}"
+        if later != expected:
+            raise MortgageValidationError(
+                f"{name}: {earlier} is followed by {later}, expected {expected}. "
+                f"A month missing from the middle shortens the chart's axis "
+                f"instead of leaving a hole in its line."
+            )
+
+
+def validate_savings_window(deposits: dict[str, float], loans: dict[str, float]) -> None:
+    """The two lines cover exactly the same months, or they are not comparable.
+
+    A chart whose lines run over different windows is two questions on one
+    picture, and the ratio drawn from them is a figure for no date at all. The
+    loan series reaches back to 2007 on БНБ's workbooks and the deposit series
+    does not exist before 2022 anywhere, so the temptation this refuses is to
+    draw the longer one further back than the shorter.
+    """
+    if set(deposits) != set(loans):
+        only_deposits = sorted(set(deposits) - set(loans))
+        only_loans = sorted(set(loans) - set(deposits))
+        raise MortgageValidationError(
+            f"Savings against debt: the two series cover different months — "
+            f"{len(only_deposits)} only in deposits ({only_deposits[:3]}), "
+            f"{len(only_loans)} only in loans ({only_loans[:3]}). Cut both to "
+            f"the overlap or publish neither."
+        )
+
+
+# BSI counts S.14+S.15 and БНБ's consumer and housing blocks count S.14 alone,
+# so BSI sits above БНБ by the NPISH lending in between: 2.2% at 2026-06, 6.1%
+# at 2022-01, above it in all 54 months. The ceiling is a wide multiple of that
+# rather than a fit to it, because the gap is a real quantity that moves and
+# only its SIGN is structural.
+STOCK_AGREEMENT_MAX_PCT = 12.0
+
+
+def cross_check_household_stock(bsi_eur_m: float, bnb_eur_m: float, period: str) -> dict[str, Any]:
+    """ECB BSI's household loan stock against БНБ's own total for the same month.
+
+    Two publishers over one country's banks, so they have to describe the same
+    book to within the sector difference — and that difference has a direction.
+    BSI below БНБ would mean the S.14+S.15 series had come in under an S.14 one,
+    which is arithmetically impossible and therefore a read error somewhere.
+    """
+    if bnb_eur_m <= 0:
+        raise MortgageValidationError(
+            f"Household stock cross-check at {period}: БНБ total is {bnb_eur_m!r} m EUR."
+        )
+    delta_pct = round(100 * (bsi_eur_m / bnb_eur_m - 1), 3)
+    if not (0 < delta_pct <= STOCK_AGREEMENT_MAX_PCT):
+        raise MortgageValidationError(
+            f"Household stock cross-check at {period}: ЕЦБ BSI €{bsi_eur_m} m vs "
+            f"БНБ €{bnb_eur_m} m is {delta_pct:+}%, outside (0, "
+            f"{STOCK_AGREEMENT_MAX_PCT}]%. BSI counts S.14+S.15 and БНБ's "
+            f"consumer and housing blocks count S.14, so BSI is above БНБ by the "
+            f"NPISH lending and by nothing else. Below it, or far above it, means "
+            f"one of the two reads is wrong."
+        )
+    return {"ecb_bsi_eur_m": bsi_eur_m, "bnb_eur_m": bnb_eur_m, "delta_pct": delta_pct}
+
+
+def savings_ratio(deposits_eur_m: float, loans_eur_m: float) -> float:
+    """Euro held per euro owed. Ours, from two published levels (P3)."""
+    if loans_eur_m <= 0:
+        raise MortgageValidationError(
+            f"Savings ratio: loans are {loans_eur_m!r} m EUR, nothing to divide by."
+        )
+    return deposits_eur_m / loans_eur_m
 
 
 def product_block(

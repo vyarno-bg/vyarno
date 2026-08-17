@@ -43,6 +43,7 @@
     creditProducts,
     creditRates,
     creditRenegotiation,
+    creditSavings,
   } from "./lib/view/credit.js";
   import { integer, number, periodLong } from "./lib/format.js";
   import { niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
@@ -71,6 +72,7 @@
   const limits = $derived(creditLimits(mortgage));
   const products = $derived(creditProducts(data.credit ?? null));
   const owed = $derived(creditOutstanding(data.credit ?? null));
+  const savings = $derived(creditSavings(data.credit ?? null));
   const arrears = $derived(creditArrears(data.credit ?? null));
 
   // The box every chart on this page is drawn in, in its own units. Two sizes,
@@ -501,6 +503,168 @@
   {/if}
 
   <!-- 6 ------------------------------------------------------------------ -->
+  {#if savings}
+    {@const held = savings.series}
+    <section id="savings">
+      <h2>
+        <span class="l-bg">Какво имат домакинствата и какво дължат</span>
+        <span class="l-en">What households have and what they owe</span>
+      </h2>
+      <p class="lede">
+        <span class="l-bg"
+          >Всяка лихва по-горе е цена. Тук са двете количества под нея: колко държат домакинствата в
+          банките и колко дължат на тях. И двете растат, но дългът расте по-бързо, затова на всяко
+          евро дълг се падат все по-малко евро в банката.</span
+        >
+        <span class="l-en"
+          >Every rate above is a price. These are the two quantities underneath it: what households
+          hold in the banks, and what they owe them. Both are growing and the debt is growing
+          faster, so every euro owed is matched by less in the bank than it was.</span
+        >
+      </p>
+      <div class="stats">
+        <div class="stat">
+          <strong
+            >{savings.depositsEurM === null
+              ? "—"
+              : `${bn(savings.depositsEurM)} ${t(COPY.crdBn, $lang)}`}</strong
+          >
+          <span class="lbl">{t(COPY.crdKHeld, $lang)}</span>
+          <a class="src" href={savings.depositsSourceUrl} rel="noopener"
+            >{t(COPY.crdWhoseEcb, $lang)} · {periodLong(savings.refPeriod, $lang)}</a
+          >
+        </div>
+        <div class="stat">
+          <strong
+            >{savings.loansEurM === null
+              ? "—"
+              : `${bn(savings.loansEurM)} ${t(COPY.crdBn, $lang)}`}</strong
+          >
+          <span class="lbl">{t(COPY.crdKHeldOwed, $lang)}</span>
+          <a class="src" href={savings.loansSourceUrl} rel="noopener"
+            >{t(COPY.crdWhoseEcb, $lang)} · {periodLong(savings.refPeriod, $lang)}</a
+          >
+        </div>
+      </div>
+      <!-- The ratio is ours, so it is not a card: every `.stat` on this page is
+           a publisher's figure with a link out to it, and a derived number in
+           that row would be the one card a reader could not check. Disclosed
+           directly under the two figures it divides, with both of them linked,
+           which is the shape `/market/` gives its own derived figures. -->
+      <p class="note ours">
+        <strong>{savings.ratio === null ? "—" : number(savings.ratio, 2, $lang)}</strong>
+        {t(COPY.crdKCushion, $lang)} · {t(COPY.crdSrcOurRatio, $lang)}:
+        <!-- The division sign rather than a comma between the two links. They
+             are the operands, and two link words side by side read as a list of
+             two things rather than as one divided by the other. -->
+        <a href={savings.depositsSourceUrl} rel="noopener">{t(COPY.crdKeyHeld, $lang)}</a> ÷
+        <a href={savings.loansSourceUrl} rel="noopener">{t(COPY.crdKeyOwedBsi, $lang)}</a>
+      </p>
+
+      {#if held.deposits?.points.length > 1 && held.loans?.points.length > 1}
+        {@const axis = niceTicks(0, savings.scaleMax, 4)}
+        <figure class="chart">
+          <div class="plot">
+            {@render yAxis(
+              axis.values.map((v) => ({ at: tickAt(v, axis), label: v === 0 ? "0" : bn(v, 0) }))
+            )}
+            <svg
+              class="pane"
+              viewBox="0 0 {CH_W} {CH_H}"
+              role="img"
+              aria-label={t(COPY.crdChartSavings, $lang, {
+                from: periodLong(savings.from, $lang),
+                to: periodLong(savings.to, $lang),
+                dFrom: integer(held.deposits.first?.value, $lang),
+                dTo: integer(held.deposits.latest?.value, $lang),
+                lFrom: integer(held.loans.first?.value, $lang),
+                lTo: integer(held.loans.latest?.value, $lang),
+                rFrom: number(savings.ratioFirst, 2, $lang),
+                rTo: number(savings.ratioLatest, 2, $lang),
+              })}
+            >
+              {#each axis.values as v (v)}
+                <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
+              {/each}
+              {#each xTicks(held.deposits) as tick (tick.year)}
+                <line
+                  class="plot-year"
+                  x1={(tick.at / 100) * CH_W}
+                  y1="0"
+                  x2={(tick.at / 100) * CH_W}
+                  y2={CH_H}
+                />
+              {/each}
+              <path class="plot-line" d={path(held.deposits, axis)} />
+              <path class="plot-line second" d={path(held.loans, axis)} />
+              <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
+              <!-- One hit box per month carrying both readings, because the
+                   question a reader has at a given month is the gap rather than
+                   either line, and two overlapping targets answer half of it. -->
+              {#each held.deposits.points as p, i (p.period)}
+                <rect
+                  class="plot-hit"
+                  x={xOf(i, held.deposits.points.length) - 2}
+                  y="0"
+                  width="4"
+                  height={CH_H}
+                  ><title
+                    >{periodLong(p.period, $lang)}: {integer(p.value, $lang)} / {integer(
+                      held.loans.points[i]?.value,
+                      $lang
+                    )}
+                    {t(COPY.crdStockUnit, $lang)}</title
+                  ></rect
+                >
+              {/each}
+            </svg>
+            {@render xYears(xTicks(held.deposits))}
+          </div>
+          <figcaption>
+            <span class="key">{t(COPY.crdKeyHeld, $lang)}</span>
+            <span class="key consumer">{t(COPY.crdKeyOwedBsi, $lang)}</span>
+          </figcaption>
+        </figure>
+        <p class="note">
+          <a href={savings.depositsSourceUrl} rel="noopener">{t(COPY.crdWhoseEcb, $lang)}</a>
+          · {periodLong(savings.from, $lang)} – {periodLong(savings.to, $lang)} ·
+          <span class="l-bg"
+            >по-назад няма: ЕЦБ публикуват тези два реда за България от {periodLong(
+              savings.startsAt,
+              $lang
+            )} нататък, а кредитите са отрязани до депозитите, защото две линии по различни периоди са
+            два въпроса на една картинка</span
+          >
+          <span class="l-en"
+            >no further back: the ECB publish these two series for Bulgaria from {periodLong(
+              savings.startsAt,
+              $lang
+            )} onward, and the loan line is cut to match the deposits, because two lines over different
+            windows are two questions on one picture</span
+          >
+        </p>
+      {/if}
+
+      <p class="cap">
+        <span class="l-bg"
+          >Кредитите тук са с {number(savings.crossCheckPct, 1, $lang)}% повече от общото в
+          таблицата по-горе и двете числа са верни. БНБ броят само сектор „Домакинства“ при
+          потребителските и жилищните кредити, а ЕЦБ броят с тях и нестопанските организации, които
+          обслужват домакинствата. Съотношението дели едно и също население само на себе си, затова
+          и двете суми тук са на ЕЦБ.</span
+        >
+        <span class="l-en"
+          >The loans here run {number(savings.crossCheckPct, 1, $lang)}% above the total in the
+          table further up, and both figures are right. BNB count sector Households alone in the
+          consumer and housing blocks, while the ECB count the non-profit institutions serving
+          households along with them. The ratio divides one population by itself, which is why both
+          amounts here are the ECB's.</span
+        >
+      </p>
+    </section>
+  {/if}
+
+  <!-- 7 ------------------------------------------------------------------ -->
   <section id="other">
     <h2>
       <span class="l-bg">Всичко останало, което един човек плаща за пари</span>
@@ -576,7 +740,7 @@
     </p>
   </section>
 
-  <!-- 7 ------------------------------------------------------------------ -->
+  <!-- 8 ------------------------------------------------------------------ -->
   {#if arrears}
     <section id="arrears">
       <h2>
@@ -789,6 +953,17 @@
   .note {
     font-size: var(--fs-small);
     color: var(--muted);
+  }
+  /* The one figure on this page nobody published. It sits under the two levels
+     it divides rather than beside them, and it leads with the number so the
+     disclosure reads as a caption on a figure rather than as a footnote. */
+  .ours strong {
+    font-size: var(--fs-h3);
+    color: var(--ink);
+    margin-right: 4px;
+  }
+  .ours a {
+    white-space: nowrap;
   }
   .stats {
     display: flex;

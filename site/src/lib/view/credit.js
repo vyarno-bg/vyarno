@@ -240,6 +240,60 @@ function plotLevels(entries) {
 }
 
 /**
+ * What households have put in the bank, against what they owe it.
+ *
+ * **Both levels come out of one payload block, and that is the wiring this
+ * function exists to hold.** `outstanding` above carries a household loan total
+ * too, from БНБ, and it is the better figure for the table it feeds — but
+ * БНБ's consumer and housing blocks are sector Домакинства alone where the
+ * deposit series counts the non-profit institutions with them. Dividing one by
+ * the other would put two populations either side of the ratio, and the ratio
+ * is the whole point of drawing the two together. So there is no signature here
+ * a caller could feed `outstanding.total_eur_m` into.
+ *
+ * `scaleMax` is returned rather than left to the component for the same class
+ * of reason: two lines on one axis need ONE scale, and a component reaching for
+ * `deposits.max` would be right only while deposits are the larger of the two.
+ *
+ * @param {object|null} credit
+ */
+export function creditSavings(credit) {
+  const block = credit?.savings ?? null;
+  if (!block) return null;
+  const deposits = plotLevels(block.deposits_by_period);
+  const loans = plotLevels(block.loans_by_period);
+  // Euro held per euro owed at each end of the window. Ours, from two published
+  // levels of the same month (P3) — arithmetic over measurements, nothing
+  // carried forward, so it is not a projection (P5).
+  const ratioAt = (point, other) =>
+    point && other && other.value ? point.value / other.value : null;
+  return {
+    refPeriod: block.ref_period ?? null,
+    depositsEurM: Number.isFinite(block.deposits_eur_m) ? block.deposits_eur_m : null,
+    loansEurM: Number.isFinite(block.loans_eur_m) ? block.loans_eur_m : null,
+    ratio: Number.isFinite(block.ratio) ? block.ratio : null,
+    depositsSourceUrl: block.deposits_source_url ?? null,
+    loansSourceUrl: block.loans_source_url ?? null,
+    dataset: block.dataset ?? null,
+    scope: block.scope ?? null,
+    ratioBasis: block.ratio_basis ?? null,
+    series: { deposits, loans },
+    scaleMax: Math.max(deposits.max, loans.max),
+    // How far this loan level sits above БНБ's total in the table above. The
+    // page has to account for the two figures differing, and a percentage typed
+    // into the sentence would be a number nothing recomputes.
+    crossCheckPct: Number.isFinite(block.cross_check?.delta_pct)
+      ? block.cross_check.delta_pct
+      : null,
+    ratioFirst: ratioAt(deposits.first, loans.first),
+    ratioLatest: ratioAt(deposits.latest, loans.latest),
+    from: deposits.from,
+    to: deposits.to,
+    startsAt: block.series_starts ?? null,
+  };
+}
+
+/**
  * How much household lending is not being repaid, and whose.
  *
  * **The two scopes come back together because separately the first one misleads.**

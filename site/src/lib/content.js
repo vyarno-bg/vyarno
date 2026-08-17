@@ -3187,6 +3187,39 @@ export const COPY = {
   // numerals — the failure a missing string is supposed to make visible, arriving
   // as a rendered abbreviation instead of a blank.
   crdBn: { bg: "млрд. €", en: "bn EUR" },
+  // ---- /credit/ · what households have, against what they owe -------------
+  // Every rate on this page is a price, and a price says nothing about whether
+  // the country can carry it. These are the two levels underneath, from one ECB
+  // flow so the ratio between them divides one population by itself.
+  crdKHeld: {
+    bg: "толкова държат българските домакинства по сметки и депозити",
+    en: "that is what Bulgarian households hold in accounts and deposits",
+  },
+  crdKHeldOwed: {
+    bg: "толкова дължат на същите банки",
+    en: "that is what they owe those same banks",
+  },
+  // The ratio, and the label has to carry the direction: a bare «1,79» beside
+  // two euro amounts reads as a third amount. Saying what is divided by what,
+  // in the words of the thing rather than in the words of the arithmetic, is
+  // what makes it checkable against the two figures beside it.
+  crdKCushion: {
+    bg: "евро в банката на всяко евро дълг",
+    en: "euro in the bank for every euro owed",
+  },
+  crdSrcOurRatio: {
+    bg: "наша сметка от двете числа на ЕЦБ",
+    en: "our ratio between the ECB's two figures",
+  },
+  crdKeyHeld: { bg: "депозити", en: "deposits" },
+  crdKeyOwedBsi: { bg: "кредити", en: "loans" },
+  // What a screen reader gets instead of the two lines: where each began, where
+  // it is now, and the gap closing, which is the only thing the picture says
+  // that the figures above it do not.
+  crdChartSavings: {
+    bg: "Депозити срещу кредити на домакинствата от {from} до {to}: депозитите растат от {dFrom} до {dTo} млн. евро, кредитите от {lFrom} до {lTo} млн. евро, а на всяко евро дълг се падат {rTo} евро в банката вместо {rFrom}.",
+    en: "Household deposits against loans from {from} to {to}: deposits grow from {dFrom} to {dTo} million euro, loans from {lFrom} to {lTo} million euro, and every euro owed is matched by {rTo} euro in the bank instead of {rFrom}.",
+  },
   // The deposit contrast, and it may be the most useful pair on the page for an
   // ordinary saver: what a deposit opened this month is quoted, against what the
   // money already in one is actually earning. Most of it was locked in when

@@ -32,14 +32,18 @@ from vyarno_pipeline import clock
 from vyarno_pipeline.credit import (
     STOCK_SERIES_START,
     blended_stock_rate,
+    cross_check_household_stock,
     cross_check_stock_rate,
     product_block,
+    savings_ratio,
     validate_card_above_mortgage,
     validate_card_nesting,
     validate_credit_freshness,
     validate_npl_freshness,
     validate_npl_scopes,
     validate_product_series,
+    validate_savings_series,
+    validate_savings_window,
     validate_stock_series,
 )
 from vyarno_pipeline.mortgage import (
@@ -93,13 +97,17 @@ from vyarno_pipeline.sources.bnb import OVERDRAFT_URL as BNB_OVERDRAFT_URL
 from vyarno_pipeline.sources.bnb import SOURCE_URL as BNB_SOURCE_URL
 from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import (
+    BSI_KEYS,
+    BSI_SERIES_START,
     CBD2_NPL_SCOPES,
     CONSUMER_KEYS,
     EURO_SWITCH_PERIOD,
     OUTSTANDING_SERIES_START,
     SERIES_KEYS,
+    bsi_url,
     cbd2_npl_key,
     cbd2_url,
+    fetch_bsi_series,
     fetch_cbd2_series,
     fetch_mir_series,
     fixation_rate_key,
@@ -1456,6 +1464,8 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         mortgage_now = fetch_mir_series(SERIES_KEYS["new_business_aar_eur"])
         click.echo("→ fetching ECB CBD2 non-performing loans (households vs companies)...")
         npl = {scope: fetch_cbd2_series(cbd2_npl_key(scope)) for scope in CBD2_NPL_SCOPES}
+        click.echo("→ fetching ECB BSI household deposits and loans (the levels)...")
+        bsi = {name: fetch_bsi_series(key) for name, key in BSI_KEYS.items()}
     except httpx.HTTPError as e:
         click.echo(f"ERROR: ECB fetch failed: {e}", err=True)
         sys.exit(4)
@@ -1620,6 +1630,21 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             f"→ Δ {stock_cross['delta_pp']} pp"
         )
 
+        click.echo("→ gate: what households have and what they owe, over one window...")
+        validate_savings_series(bsi["household_deposits"], "BSI household deposits")
+        validate_savings_series(bsi["household_loans"], "BSI household loans")
+        validate_savings_window(bsi["household_deposits"], bsi["household_loans"])
+        savings_ref = max(bsi["household_deposits"])
+        savings_cross = cross_check_household_stock(
+            bsi["household_loans"][savings_ref],
+            volume_by_period["total"][savings_ref],
+            savings_ref,
+        )
+        click.echo(
+            f"  ЕЦБ BSI €{savings_cross['ecb_bsi_eur_m']:.0f} m vs БНБ "
+            f"€{savings_cross['bnb_eur_m']:.0f} m → {savings_cross['delta_pct']:+}%"
+        )
+
         click.echo("→ gate: companies fall behind more often than households...")
         validate_npl_scopes(npl)
         npl_ref = max(npl["households"])
@@ -1628,6 +1653,11 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         click.echo("→ gate: freshness...")
         validate_credit_freshness(max(spliced["consumer_aar"]), as_of)
         validate_freshness(stock_ref, as_of, "BNB household outstanding balances")
+        # BSI is its own ECB release rather than a second table in the MIR one,
+        # so it can fall behind the rates on this page without anything else
+        # here noticing. The window is MIR's because the lag is: 2026-06 landed
+        # 47 days after the month it describes, against a 150-day limit.
+        validate_freshness(savings_ref, as_of, "ECB BSI household deposits and loans")
     except MortgageValidationError as e:
         click.echo(f"GATE FAILED: {e}", err=True)
         sys.exit(3)
@@ -1872,11 +1902,73 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         ),
     }
 
+    savings = {
+        "_role": (
+            "what Bulgarian households have put in the bank, against what they "
+            "owe it, over the one window both are published on. The two levels "
+            "are the ЕЦБ's and the euro-per-euro ratio between them is ours"
+        ),
+        "source": "ecb",
+        "dataset": (
+            f"BSI {BSI_KEYS['household_deposits']} (deposit liabilities) and "
+            f"{BSI_KEYS['household_loans']} (loans), both domestic counterparty "
+            f"(U6), households and NPISH (S.14+S.15), all currencies, stocks"
+        ),
+        "ref_period": savings_ref,
+        "deposits_eur_m": bsi["household_deposits"][savings_ref],
+        "deposits_source_url": bsi_url(BSI_KEYS["household_deposits"]),
+        "loans_eur_m": bsi["household_loans"][savings_ref],
+        "loans_source_url": bsi_url(BSI_KEYS["household_loans"]),
+        "ratio": round(
+            savings_ratio(
+                bsi["household_deposits"][savings_ref], bsi["household_loans"][savings_ref]
+            ),
+            4,
+        ),
+        # Ours, so it says so and names its two inputs (P3). Both are published
+        # levels in the same flow, so this is arithmetic over measurements and
+        # not a projection — nothing here is assumed forward (P5).
+        "ratio_basis": (
+            "ours: the deposit level divided by the loan level, both ЕЦБ BSI, "
+            "same month, same counterparty sector and same counterpart area"
+        ),
+        "deposits_by_period": bsi["household_deposits"],
+        "loans_by_period": bsi["household_loans"],
+        "series_starts": BSI_SERIES_START,
+        # The whole of the window's justification, because the obvious edit to
+        # this block is to draw the loan line further back — БНБ publish it from
+        # 2007 and `outstanding` above carries it.
+        "why_it_starts_there": (
+            "every BG household series in ЕЦБ BSI begins at 2022-01 and none "
+            "reaches further back, so the deposit line cannot be drawn before "
+            "it. The loan line is cut to match rather than run on alone: two "
+            "lines over two windows are two questions on one picture, and the "
+            "ratio between them would have no date"
+        ),
+        "scope": (
+            "households resident in Bulgaria (COUNT_AREA U6), together with the "
+            "non-profit institutions serving them (S.14+S.15). The ЕЦБ publish "
+            "the deposit breakdown by type on the whole-euro-area counterparty "
+            "alone, so this block carries the two totals and no split"
+        ),
+        # БНБ's own total is in `outstanding` above and differs, so the payload
+        # holds the two against each other rather than leaving a reader to find
+        # the gap and read it as one of them being wrong.
+        "cross_check": savings_cross,
+        "cross_check_basis": (
+            "БНБ's household total for the same month, from the workbooks in "
+            "`outstanding`. ЕЦБ BSI runs above it because БНБ's consumer and "
+            "housing blocks are sector Домакинства alone while BSI adds the "
+            "non-profit institutions serving households"
+        ),
+    }
+
     write_credit_payload(
         as_of=as_of,
         products=products,
         outstanding=outstanding,
         non_performing=non_performing,
+        savings=savings,
         target_dir=out,
     )
     click.echo(
