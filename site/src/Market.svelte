@@ -1560,6 +1560,19 @@
             ><span class="l-en">{t(COPY.mktRefIndexBase, "en", { year: reading.baseYear })}</span
             ></span
           >
+          <!-- Named only where one is drawn. The rules come out of the
+               payload's own flags, so a quarter Eurostat stops flagging takes
+               its key with it rather than leaving a legend entry for a mark
+               that is no longer on the picture. A mark with no key is a mark a
+               reader cannot account for, and these two are the only ones on the
+               plot with nothing in the caption to look them up in. -->
+          {#if Object.values(indexSeries.flags).some((f) => f.includes("b"))}
+            <span class="key brk"
+              ><span class="l-bg">{COPY.mktKeyBreak.bg}</span><span class="l-en"
+                >{COPY.mktKeyBreak.en}</span
+              ></span
+            >
+          {/if}
         </figcaption>
       </figure>
       <p class="ss tsrc">
@@ -3343,6 +3356,15 @@
   /* The marked quarters' swatch, drawn at the tint the columns are drawn at, or
      the key names a colour that is nowhere on the plot. Taller than a line
      swatch because what it stands for is a bar. */
+  /* The break's own swatch: a vertical dotted rule, because that is what the
+     mark is. A 14x3 block like the line keys above would name a horizontal
+     stroke nowhere on this plot. */
+  .key.brk::before {
+    width: 0;
+    height: 11px;
+    border-left: 1px dashed var(--muted);
+    vertical-align: -2px;
+  }
   .key.season::before {
     background: var(--real);
     opacity: 0.42;

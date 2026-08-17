@@ -2736,6 +2736,14 @@ export const COPY = {
   // break and it tells a reader nothing about what to do with the figure;
   // «оттук нататък се мери по друг начин» tells them the two halves of the line
   // are not one measurement, which is the only reason the mark is drawn.
+  // The key for the dotted rules the index chart draws where Eurostat flagged a
+  // break in their own series. `mktFlagB` next to it is the same fact for a
+  // TABLE cell, where the letter is what a reader is looking at; on the picture
+  // there is no letter, only a rule, so the key names the rule instead.
+  mktKeyBreak: {
+    bg: "оттук се мери по друг начин",
+    en: "measured a different way from here",
+  },
   mktFlagB: {
     bg: "b — оттук нататък се мери по друг начин",
     en: "b — measured a different way from here on",

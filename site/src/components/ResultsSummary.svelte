@@ -497,7 +497,7 @@
 
   /* Results */
   .r-big {
-    font-size: clamp(2.5rem, 6.5vw, 3.5rem);
+    font-size: var(--fs-hero);
     font-weight: 600;
     letter-spacing: -0.03em;
     line-height: 1;
@@ -575,7 +575,10 @@
   .m-verdict {
     font-family: var(--serif);
     font-weight: 500;
-    font-size: clamp(var(--fs-strong), 2.2vw, 1.375rem);
+    /* A rem term in the middle, and the ceiling is a scale step rather than the
+       literal `1.375rem` it had been — which was `--fs-h2`'s old value frozen
+       into a second file, so the two would have parted the moment either moved. */
+    font-size: clamp(var(--fs-strong), 0.95rem + 0.55vw, var(--fs-h3));
     line-height: 1.3;
     letter-spacing: -0.01em;
     margin: 12px 0 0;

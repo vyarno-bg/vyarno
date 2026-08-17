@@ -233,7 +233,7 @@
   --mono: "IBM Plex Mono", ui-monospace, monospace;
 
   /* ---------- The type scale ----------
-     Eleven steps, and every font-size in the app is one of them. Three rules
+     Twelve steps, and every font-size in the app is one of them. Three rules
      about it are load-bearing rather than cosmetic.
 
      1. **Every step is in `rem`, and a step that tracks the viewport keeps a
@@ -280,6 +280,10 @@
      section holding twenty of them, so the two sizes move in opposite
      directions the moment either is tuned. */
   --fs-figure: clamp(1.75rem, 1.5rem + 1.25vw, 2.25rem); /* 28→36px */
+  /* The one number the calculator exists to produce. A step above `--fs-figure`
+     rather than the same one: a stat tile is a figure among five, and this is
+     the answer with a whole card built round it. */
+  --fs-hero: clamp(2.5rem, 2rem + 2.5vw, 3.5rem); /* 40→56px */
 
   /* Layout */
   --maxw: 1120px;

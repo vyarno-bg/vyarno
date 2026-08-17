@@ -78,7 +78,7 @@
   }
   h1 {
     font-family: var(--serif);
-    font-size: clamp(1.875rem, 6vw, 2.75rem);
+    font-size: var(--fs-title);
     line-height: 1.1;
     letter-spacing: -0.02em;
     margin: 0;
