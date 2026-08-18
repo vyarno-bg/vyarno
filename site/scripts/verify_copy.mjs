@@ -348,11 +348,14 @@ function entryShells() {
  * copy. Nothing is lost by it, because `site/AGENTS.md` §Copy already puts
  * every string JavaScript selects in `content.js`, where the walk above reaches
  * it; what is left in a component's script is code and imports.
+ *
+ * **Case-insensitive, and `\b` so `<scripted>` is not a `<script>`.** HTML tag
+ * names are, whatever this tree happens to spell them today: a `<SCRIPT>` this
+ * missed would leave a block of code in the text being scanned, which is a
+ * rule reporting offences nobody wrote.
  */
 function readerFacing(src) {
-  return blankComments(src)
-    .replace(/<script[\s\S]*?<\/script>/g, " ")
-    .replace(/<style[\s\S]*?<\/style>/g, " ");
+  return blankComments(src).replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, " ");
 }
 
 /**
