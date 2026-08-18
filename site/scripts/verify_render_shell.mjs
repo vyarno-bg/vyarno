@@ -230,6 +230,136 @@ test("the page that could not load says so and states no date", { skip }, async 
   );
 });
 
+/**
+ * Age every payload on the wire, so the reader's own clock makes them overdue.
+ *
+ * The verdict is a function of `as_of` against `Date.now()`
+ * (`view/freshness.js`), so this is the only way to reach the late states from
+ * outside — and until it existed no screenshot or test in the repository had
+ * ever contained one, on the components built for the day the figures stop
+ * refreshing.
+ */
+const aged =
+  (days, only = null) =>
+  (page) =>
+    page.route("**/data/published/*.json", async (route) => {
+      const res = await route.fetch();
+      const stem = route
+        .request()
+        .url()
+        .split("/")
+        .pop()
+        .replace(/\.json.*/, "");
+      let body;
+      try {
+        body = JSON.parse(await res.text());
+      } catch {
+        return route.fulfill({ response: res });
+      }
+      if (only && !only.includes(stem)) return route.fulfill({ response: res });
+      body.as_of = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+      return route.fulfill({ response: res, body: JSON.stringify(body) });
+    });
+
+test("the overdue warning comes before the panel that answers it", { skip }, async () => {
+  // The banner counts the late payloads and the panel names them, so the panel
+  // is the answer to the banner — and it was drawn above it. A reader met «7 от
+  // числата са закъснели» with the control that says which seven already behind
+  // them, and opening it put a thousand pixels of table between the warning and
+  // the rows it is about.
+  //
+  // Asserted on the rendered order rather than on a selector: the two are
+  // siblings in one component, and the failure is which of them comes first.
+  await withApp(
+    async (page, errors) => {
+      const order = await page.evaluate(() => {
+        const banner = document.querySelector(".stale-banner");
+        const panel = document.querySelector("details.datapanel");
+        if (!banner || !panel) return null;
+        return banner.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING
+          ? "banner first"
+          : "panel first";
+      });
+      assert.equal(
+        order,
+        "banner first",
+        "the overdue warning is drawn after the panel, or one of the two never rendered"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    },
+    "/",
+    {},
+    aged(400)
+  );
+});
+
+test("a headline nobody refreshed is marked, not stamped", { skip }, async () => {
+  // The strip's tick is an "on the record" mark, and a rate can be Eurostat's
+  // own AND 400 days unfetched at the same time — so it sat above a band saying
+  // seven figures were late, reassuring a reader about one of the seven. P4 is
+  // "never silently stale", and this line is the one place the figure is read
+  // without opening anything.
+  //
+  // Both directions, because a mark that is always the warning is the same
+  // defect pointing the other way.
+  await withApp(
+    async (page) => {
+      const marked = await page.evaluate(() => !!document.querySelector(".off-fig.off-late"));
+      assert.ok(marked, "the headline is stamped as verified while it is itself overdue");
+    },
+    "/",
+    {},
+    aged(400, ["hicp_headline"])
+  );
+  await withApp(async (page) => {
+    const stamped = await page.evaluate(
+      () => !!document.querySelector(".off-fig") && !document.querySelector(".off-fig.off-late")
+    );
+    assert.ok(stamped, "a headline inside its own cadence lost its stamp");
+  });
+});
+
+test("the pages that name their late payloads say which, not how many", { skip }, async () => {
+  // `/how/` and `/market/` carry the overdue line with no panel to open, so a
+  // count there is a warning a reader can do nothing with. `DataLate` names
+  // them; this is the assertion that it still does, on the one day it renders.
+  for (const route of ["/how/", "/market/"]) {
+    await withApp(
+      async (page) => {
+        const band = page.locator(".late");
+        assert.ok(
+          await band.count(),
+          `${route} drew no overdue warning with every payload 400 days old`
+        );
+        const text = (await band.innerText()).replace(/\s+/g, " ");
+        assert.match(text, /преди 400 дни/, `${route}'s warning states no age: ${text}`);
+        // The mark keeps its own size rather than the band's, and sits on the
+        // first line: `⚠` comes from the system stack whatever else is loaded
+        // (no IBM Plex build carries it), so at the band's 13px it is a speck,
+        // and centred across a flex row it landed beside neither line of the
+        // commonest wording.
+        const mark = await page.evaluate(() => {
+          const m = document.querySelector(".late .mark");
+          if (!m) return null;
+          const said = m.parentElement.querySelector(".said");
+          return {
+            size: parseFloat(getComputedStyle(m).fontSize),
+            band: parseFloat(getComputedStyle(m.closest(".late")).fontSize),
+            onFirstLine:
+              Math.abs(m.getBoundingClientRect().top - said.getBoundingClientRect().top) < 8,
+          };
+        });
+        assert.ok(mark, `${route}'s warning has no mark`);
+        assert.ok(mark.size > mark.band, `the mark is set at the band's own size (${mark.size}px)`);
+        assert.ok(mark.onFirstLine, "the mark does not sit on the first line of what it marks");
+      },
+      route,
+      {},
+      aged(400)
+    );
+  }
+});
+
 test("the footer's route to donating is a link, on every page", { skip }, async () => {
   // The footer is shared, so this is the ask as a reader meets it on the
   // calculator — not on `/legal/`, where they already went looking for it.

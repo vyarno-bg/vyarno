@@ -64,11 +64,22 @@
 <style>
   /* The skip link's target, offset by the height of the sticky header plus a
      little: a bare `#main` jump parks the first heading underneath it, and a
-     reader who is told they arrived somewhere has to arrive there. */
+     reader who is told they arrived somewhere has to arrive there.
+     `max-width` on `.wrap` centres, which put this page's whole content 400px
+     right of the wordmark above it and the footer below it — three left edges
+     on a page with one column. The measure stays; the block sits where every
+     other page's first line does. */
   .nf {
     scroll-margin-top: 64px;
-    padding: 12vh 0 8vh;
-    max-width: 620px;
+    /* `padding-block`, not the shorthand: `.wrap` sets `padding-inline` to the
+       gutter every page's first line is set against, and `padding: 8vh 0`
+       silently zeroes it — which put this page's content at the window edge
+       while the wordmark above it kept the gutter. */
+    padding-block: 8vh;
+    max-width: var(--maxw);
+  }
+  .nf > * {
+    max-width: 38rem;
   }
   .code {
     font-size: var(--fs-small);

@@ -576,6 +576,16 @@ export class Calculator {
   dataOverdue = $derived(this.dataRows.filter((r) => r.status === "overdue"));
   /** How many payloads are overdue against their own cadence — what the banner counts. */
   dataOverdueCount = $derived(this.dataOverdue.length);
+  /**
+   * Whether the headline rate printed in the as-of strip is itself one of the late ones.
+   *
+   * P4 asks for "never silently stale", and the strip is the one place a figure
+   * is read without opening anything: the panel knows which payloads are
+   * overdue, and a reader who never opens it took an "on the record" tick at
+   * face value beside a rate nobody had refreshed. The strip marks that figure
+   * instead of stamping it.
+   */
+  headlineOverdue = $derived(this.dataOverdue.some((r) => r.key === "hicpHeadline"));
 
   // Eurostat's all-items figure, verbatim. `headlineRate` takes only the
   // headline payload so it cannot be handed `categories` and quietly become

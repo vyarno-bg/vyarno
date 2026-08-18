@@ -66,8 +66,8 @@
 {#if rows.length}
   <div class="late" class:inset>
     <div class="wrap mono">
-      ⚠
-      <span>
+      <span class="mark" aria-hidden="true">⚠</span>
+      <span class="said">
         <span class="l-bg"
           >{t(copy, "bg", { n: rows.length, names: named("bg") })}
           {t(COPY.dataLateHint, "bg")}</span
@@ -99,8 +99,25 @@
   .late .wrap {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 9px;
     line-height: 1.5;
+  }
+  /* `DataBanner`'s mark, and the same two reasons: `⚠` comes from the system
+     stack whatever else is loaded (no IBM Plex build carries it, `tokens.css`),
+     so at the band's own 13px it is a speck; and `flex: none` keeps it from
+     being the thing that shrinks when the names run long. */
+  .mark {
+    flex: none;
+    font-size: var(--fs-strong);
+    line-height: 1;
+    color: var(--erode);
+  }
+  /* Capped for the full-bleed placement, where `.wrap` is 1120px and this
+     sentence names every late payload: seven of them is four lines of
+     200-character measure above a page whose own prose sets 66. The inset
+     placement is already inside a 760px column and unaffected. */
+  .said {
+    max-width: var(--col);
   }
   /* Inside a page that has already opened its own column. `.wrap` centres to
      `--maxw`, which is wider than `/market/`'s 760px measure, so the band would

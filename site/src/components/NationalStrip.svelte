@@ -138,6 +138,20 @@
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&coicop18=TOTAL&unit=RCH_A&lastTimePeriod=12";
   const estatUnempUrl =
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_m?geo=BG&s_adj=SA&sex=T&age=TOTAL&unit=PC_ACT&sinceTimePeriod=2020-01";
+
+  // The route to the picker, by id across the boundary the way
+  // `ResultsSummary.svelte#focusSalary` reaches the pay field: the two cards
+  // that ask for an област sit ~3,000px below the control that sets one, and
+  // P7 leaves it unset, so this is the state every reader meets first. Telling
+  // somebody to choose and giving them nothing to choose with is the whole of
+  // the defect. Focus rather than scroll alone, for `focusSalary`'s reason — it
+  // opens the list, so one tap leaves the reader able to answer.
+  function focusRegion() {
+    const field = document.getElementById("region-select");
+    if (!field) return;
+    field.focus({ preventScroll: true });
+    field.scrollIntoView({ block: "center" });
+  }
 </script>
 
 <section class="strip">
@@ -279,7 +293,7 @@
          nothing with no way to fix it. -->
     {#if !regionChosen}
       <div class="stat">
-        <div class="sv mono"><span>—</span></div>
+        <div class="sv mono none"><span>—</span></div>
         <div class="sl">
           <span class="l-bg">{COPY.statRegionUnset.bg}</span>
           <span class="l-en">{COPY.statRegionUnset.en}</span>
@@ -287,6 +301,10 @@
         <div class="ss">
           <span class="l-bg">{COPY.statRegionUnsetHint.bg}</span>
           <span class="l-en">{COPY.statRegionUnsetHint.en}</span>
+          <button type="button" class="pick" onclick={focusRegion}>
+            <span class="l-bg">{COPY.statPickRegion.bg}</span>
+            <span class="l-en">{COPY.statPickRegion.en}</span>
+          </button>
         </div>
       </div>
     {:else if regionNet > 0}
@@ -378,15 +396,21 @@
          true. -->
     {#if categories.length > 0 && !regionChosen}
       <div class="stat">
-        <div class="sv mono"><span>—</span></div>
+        <div class="sv mono none"><span>—</span></div>
         <div class="sl">
           <span class="l-bg">{COPY.statHomeUnset.bg}</span>
           <span class="l-en">{COPY.statHomeUnset.en}</span>
         </div>
+        <div class="ss">
+          <button type="button" class="pick" onclick={focusRegion}>
+            <span class="l-bg">{COPY.statPickRegion.bg}</span>
+            <span class="l-en">{COPY.statPickRegion.en}</span>
+          </button>
+        </div>
       </div>
     {:else if categories.length > 0 && cityCoverage === CITY_NO_PAGE}
       <div class="stat">
-        <div class="sv mono"><span>—</span></div>
+        <div class="sv mono none"><span>—</span></div>
         <div class="sl">
           <span class="l-bg">{COPY.statHomeNoCity.bg}</span>
           <span class="l-en">{COPY.statHomeNoCity.en}</span>
@@ -394,7 +418,7 @@
       </div>
     {:else if categories.length > 0 && cityCoverage === CITY_UNREAD}
       <div class="stat">
-        <div class="sv mono"><span>—</span></div>
+        <div class="sv mono none"><span>—</span></div>
         <div class="sl">
           <span class="l-bg">{t(COPY.statHomeAwaited, "bg", { city: regionName("bg") })}</span>
           <span class="l-en">{t(COPY.statHomeAwaited, "en", { city: regionName("en") })}</span>
@@ -670,6 +694,52 @@
     align-items: baseline;
     gap: 8px;
     flex-wrap: wrap;
+  }
+  /**
+   * The cell that holds no figure, and it may not be drawn like one that does.
+   *
+   * `—` at `--fs-figure` in `--ink` is 36px of the weight this strip reserves
+   * for «4,1%» — so a card that has nothing to say was the loudest thing in the
+   * row, and the two cards a reader meets before choosing an област are both of
+   * them. Demoted to `--fs-h3` and `--muted` it reads as an empty cell rather
+   * than as a figure that broke, and the label under it becomes the thing the
+   * eye lands on — which is where the sentence a reader can act on is.
+   *
+   * The SPAN shrinks and the box does not. The cards are top-aligned, so a
+   * shorter figure lifts everything under it and the row's five labels stop
+   * sitting on one line; `1em` here is `--fs-figure`, the box a figure occupies
+   * at `line-height: 1`.
+   */
+  .stat .sv {
+    min-height: 1em;
+  }
+  .stat .sv.none {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .stat .sv.none span {
+    font-size: var(--fs-h3);
+  }
+  /* The route to the picker. `ResultsSummary`'s inline underlined control, at
+     this strip's own footnote size: it sits in the `.ss` slot beside source
+     captions, and a filled button there would out-rank the figures in the
+     cards either side of it. */
+  .stat .ss .pick {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: var(--real-ink);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--real);
+    cursor: pointer;
+  }
+  .stat .ss .pick:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
   }
   .stat .sd {
     font-size: var(--fs-fine);
