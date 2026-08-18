@@ -235,11 +235,22 @@ export const COPY = {
   // `brandSmall` above covers the calculator and `/404.html`: the first is the
   // page the promise is about, and the second is served for a path that matched
   // nothing, so naming a subject it does not have would be a subtitle that
-  // lies. `/how/` and `/market/` share one key rather than holding two copies of
-  // «числата» — they are the two pages of published figures, and a header that
-  // called them different things would be claiming a distinction the tables do
-  // not make.
+  // lies.
+  //
+  // EVERY OTHER ENTRY NAMES ITS OWN SUBJECT, and on a phone the tagline is the
+  // only thing on screen that does: below 760px the route chips sit on a line
+  // of their own under the fold of the bar, so a reader who lands on `/market/`
+  // from a search result has the wordmark and this word and nothing else. A key
+  // shared with `/how/` left two pages of different figures — the country's
+  // statistics and what housing costs — subtitled the same, which is a header
+  // that does not answer the question it is there for.
   taglineFigures: { bg: "числата", en: "the numbers" },
+  // Two words where the route chip is one: the chip shares a 360px bar with
+  // three other routes and two toggles, and this line has the wordmark's own
+  // column to itself. «имоти» is the topic a reader would name out loud;
+  // «имотен пазар» is what the page actually measures, which is prices, rents
+  // and years of pay rather than homes.
+  taglineMarket: { bg: "имотен пазар", en: "the property market" },
   taglineLegal: { bg: "правна информация", en: "legal information" },
   taglineSupport: { bg: "подкрепа", en: "support" },
 

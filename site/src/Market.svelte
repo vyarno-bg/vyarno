@@ -433,7 +433,7 @@
   <title>{t(COPY.marketTitle, $lang)}</title>
 </svelte:head>
 
-<SiteHeader page="/market/" tagline={COPY.taglineFigures} />
+<SiteHeader page="/market/" tagline={COPY.taglineMarket} />
 
 <!--
   One figure, with everything that has to travel under it.

@@ -356,8 +356,9 @@
      both languages.
 
      It had been hidden below 560px, which is the width where it matters most:
-     the tagline is the page's own name on five of the six entries («ЧИСЛАТА»,
-     «ИМОТИ», «КРЕДИТИТЕ», «ПОДКРЕПА»), so a phone reader had nothing on screen
+     the tagline is the page's own subject on five of the six entries («ЧИСЛАТА»,
+     «ИМОТЕН ПАЗАР», «КРЕДИТИТЕ», «ПРАВНА ИНФОРМАЦИЯ», «ПОДКРЕПА»), so a phone
+     reader had nothing on screen
      saying which of them they were reading, and on `/` they never saw the one
      sentence the project leads with. Both languages fit on one line at 320px:
      «икономиката, честно» is the longest and it is 137px of an available 216. */
