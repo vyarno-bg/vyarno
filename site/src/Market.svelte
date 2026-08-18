@@ -3328,10 +3328,15 @@
   .fig-table thead .now-col {
     border-left: 1px solid var(--line);
   }
+  /* The indent is the ONLY thing saying these four rows are parts of the row
+     above them, and «от тях» in the label is not enough on its own: a reader
+     scanning the column meets four percentages that do not sum to 100 and has
+     to work out why. Weight and colour separate a child from a parent; the
+     step is what makes it a child of THAT parent. */
   .fig-table tbody th.sub {
     font-weight: 400;
     color: var(--muted);
-    padding-left: 10px;
+    padding-left: 20px;
   }
   /* A COLUMN HEAD MAY WRAP; A FIGURE MAY NOT. «Спрямо година по-рано» held on
      one line pushed the three-column volume table 19px past a 360px screen, so

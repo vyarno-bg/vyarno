@@ -833,11 +833,11 @@ test("every published section has a hint decision recorded, empty or not", () =>
   for (const [key, hint] of Object.entries(SECTOR_HINTS)) {
     for (const text of [hint.bg, hint.en]) {
       assert.ok(!/[\d€%]/.test(text), `SECTOR_HINTS[${key}] carries a figure: ${text}`);
-      // The option joins hint and name with an em dash, so a hint containing
-      // one draws a second boundary and the reader cannot tell which side is
-      // НСИ's. «фабрики — храни, облекло … — Преработваща промишленост» read
-      // as three things rather than two.
-      assert.ok(!text.includes("—"), `SECTOR_HINTS[${key}] contains the separator: ${text}`);
+      // The option joins hint and name with a middot, so a hint containing one
+      // draws a second boundary and the reader cannot tell which side is НСИ's.
+      // «фабрики · храни, облекло … · Преработваща промишленост» reads as three
+      // things rather than two.
+      assert.ok(!text.includes("·"), `SECTOR_HINTS[${key}] contains the separator: ${text}`);
     }
     assert.equal(
       hint.bg === "",

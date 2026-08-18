@@ -473,7 +473,7 @@ export function sectorComparison({ sectorSalary, key, nets, payroll }) {
  */
 export function sectorOptions(sectorSalary, hints = SECTOR_HINTS) {
   const rows = Array.isArray(sectorSalary?.sectors) ? sectorSalary.sectors : [];
-  const lead = (hint, name) => (hint ? `${hint} — ${name}` : name);
+  const lead = (hint, name) => (hint ? `${hint} · ${name}` : name);
   return rows
     .filter((s) => s?.en_name && s?.bg_name && String(s.en_name) !== SECTOR_TOTAL_KEY)
     .map((s) => {
