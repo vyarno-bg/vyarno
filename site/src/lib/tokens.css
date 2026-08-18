@@ -439,50 +439,61 @@
   --radius: 3px;
 }
 
-html[data-theme="dark"] {
-  /* "Ledger at night": deep green-black ground, warm-white ink, the same
-       two-hue system brightened to hold contrast on a dark field. */
-  --paper: #10140f;
-  --paper-2: #161b14;
-  --surface: #1b211a;
-  --ink: #e7ece1;
-  --ink-2: #a6af9f;
-  /* Same rule as the light theme's --muted, and the same headroom above the
-     floor rather than on it: 6.36 on --paper, 5.98 on --paper-2, 5.61 on
-     --surface, enforced by verify_contrast.mjs. */
-  --muted: #909a8b;
-  --line: #2a322a;
-  --line-2: #212821;
-  /* Same split as the light theme, and the dark one was the worse of the two:
-     a control edge sat at 1.24:1. 3.81 / 3.58 / 3.36 against --paper /
-     --paper-2 / --surface. */
-  --control-line: #637663;
-  --real: #4fb08f;
-  --real-soft: rgba(79, 176, 143, 0.17);
-  --real-ink: #7ecaab;
-  --erode: #db6a57;
-  --erode-soft: rgba(219, 106, 87, 0.17);
-  /* Same role as the light theme's --erode-ink, and the dark band costs more:
-     --erode over it is 3.90:1 on --surface and 4.18:1 on --paper-2. */
-  --erode-ink: #e58873;
-  --gain-band: rgba(79, 176, 143, 0.11);
-  /* Same role and the same measurement as the light theme's, stepped for this
-     ground rather than inverted from it: ΔE 16.1 normal / 14.6 CVD-worst
-     against `--real`, and picked from the passing candidates as the one closest
-     to the green in lightness, so the supporting series does not out-weigh the
-     one it supports the way a warm white did here. */
-  --series-2: #62a2ee;
-  --rule: rgba(231, 236, 225, 0.055);
-  /* 0.13 rather than the light theme's 0.11: a light rule on a dark ground
-     carries less apparent weight than the mirror-image dark one, so the same
-     alpha reads fainter here. */
-  --grid: rgba(231, 236, 225, 0.13);
-  --stamp: #db6a57;
-  /* Same legibility floor as the light theme's, and it needs more of it: a
-     bright glyph shows through a dark veil at an alpha where a dark glyph has
-     stopped showing through a light one. */
-  --hdr: rgba(16, 20, 15, 0.97);
-  --track: #e7ece111;
+/**
+ * **`@media screen`, so paper never gets this.** A dark theme printed is a
+ * full-bleed black rectangle per page: unreadable on a monochrome laser and
+ * most of a cartridge on anything else, and the reader who chose it did so for
+ * a screen. Gating the SELECTOR rather than restating the light values in
+ * `print.css` is what stops the palette existing twice — the light block above
+ * is simply what remains in effect, `verify_contrast.mjs` still measures the
+ * one copy, and a retune cannot drift between the two.
+ */
+@media screen {
+  html[data-theme="dark"] {
+    /* "Ledger at night": deep green-black ground, warm-white ink, the same
+         two-hue system brightened to hold contrast on a dark field. */
+    --paper: #10140f;
+    --paper-2: #161b14;
+    --surface: #1b211a;
+    --ink: #e7ece1;
+    --ink-2: #a6af9f;
+    /* Same rule as the light theme's --muted, and the same headroom above the
+       floor rather than on it: 6.36 on --paper, 5.98 on --paper-2, 5.61 on
+       --surface, enforced by verify_contrast.mjs. */
+    --muted: #909a8b;
+    --line: #2a322a;
+    --line-2: #212821;
+    /* Same split as the light theme, and the dark one was the worse of the two:
+       a control edge sat at 1.24:1. 3.81 / 3.58 / 3.36 against --paper /
+       --paper-2 / --surface. */
+    --control-line: #637663;
+    --real: #4fb08f;
+    --real-soft: rgba(79, 176, 143, 0.17);
+    --real-ink: #7ecaab;
+    --erode: #db6a57;
+    --erode-soft: rgba(219, 106, 87, 0.17);
+    /* Same role as the light theme's --erode-ink, and the dark band costs more:
+       --erode over it is 3.90:1 on --surface and 4.18:1 on --paper-2. */
+    --erode-ink: #e58873;
+    --gain-band: rgba(79, 176, 143, 0.11);
+    /* Same role and the same measurement as the light theme's, stepped for this
+       ground rather than inverted from it: ΔE 16.1 normal / 14.6 CVD-worst
+       against `--real`, and picked from the passing candidates as the one closest
+       to the green in lightness, so the supporting series does not out-weigh the
+       one it supports the way a warm white did here. */
+    --series-2: #62a2ee;
+    --rule: rgba(231, 236, 225, 0.055);
+    /* 0.13 rather than the light theme's 0.11: a light rule on a dark ground
+       carries less apparent weight than the mirror-image dark one, so the same
+       alpha reads fainter here. */
+    --grid: rgba(231, 236, 225, 0.13);
+    --stamp: #db6a57;
+    /* Same legibility floor as the light theme's, and it needs more of it: a
+       bright glyph shows through a dark veil at an alpha where a dark glyph has
+       stopped showing through a light one. */
+    --hdr: rgba(16, 20, 15, 0.97);
+    --track: #e7ece111;
+  }
 }
 
 * {

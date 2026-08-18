@@ -5,6 +5,7 @@ import "./lib/tokens.css";
 import "./lib/disclosure.css";
 import "./lib/card.css";
 import "./lib/result-row.css";
+import "./lib/print.css";
 import { mount } from "svelte";
 import App from "./App.svelte";
 import { startAnalytics } from "./lib/analytics.js";

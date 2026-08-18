@@ -151,6 +151,7 @@ documentation actually has.
 | A UI string, or a rule about what a string may claim | `verify_copy.mjs` |
 | Which value the template passes to a function | `verify_wiring.mjs` |
 | Anything that has to be visible, positioned or coloured on the page | the `verify_render_*.mjs` suite for that region |
+| Anything a reader gets on paper | `verify_render_print.mjs` — the one medium no other suite looks at |
 | A legal document, the identity, or the licence claim | `verify_legal.mjs` |
 | Anything persisted to `localStorage` | `verify_stores.mjs` |
 

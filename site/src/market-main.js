@@ -19,6 +19,7 @@
 import "./lib/tokens.css";
 import "./lib/fig-table.css";
 import "./lib/chart.css";
+import "./lib/print.css";
 import { mount } from "svelte";
 import Market from "./Market.svelte";
 import { startAnalytics } from "./lib/analytics.js";

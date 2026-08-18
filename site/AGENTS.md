@@ -103,6 +103,9 @@ happened.
   component's `<style>` to it, so a shared LOOK cannot be a shared component;
   reach for a component only when the MARKUP is the same thing. `docs/site.md`
   carries the cost of the global selectors and how it is bounded.
+  **`print.css` is the one every entry loads, and it loads LAST** — it overrides
+  a component's own rules, so it wins on cascade order rather than on selector
+  weight, which is what keeps it from naming markup it does not own.
 
 ## Copy
 

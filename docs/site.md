@@ -123,7 +123,8 @@ site/
 │   ├── verify_render_strip.mjs    # the national strip and the charts
 │   ├── verify_render_basket.mjs   # the thirteen rows, presets, chips
 │   ├── verify_render_results.mjs  # headline · verdict · ladder · working
-│   ├── verify_render_layout.mjs   # phone · tablet · wide, and the routes
+│   ├── verify_render_layout.mjs   # phone · tablet · wide, the routes, the keyboard journey
+│   ├── verify_render_print.mjs    # what a printer receives: light ground, every address on it
 │   ├── verify_render_payroll.mjs  # payroll and more than one income
 │   ├── verify_render_share.mjs    # the share card and the share text
 │   ├── verify_render_contrast.mjs # painted text ratios · control boundaries
@@ -175,8 +176,8 @@ site/
         ├── LabourCostChart.svelte  # the same wedge over TOTAL LABOUR COST,
         │                      # stacked. A second component and never a mode
         │                      # on the one above: different denominator
-        └── tokens.css · card.css · result-row.css · disclosure.css ·
-            fig-table.css · chart.css
+        └── tokens.css · print.css · card.css · result-row.css ·
+            disclosure.css · fig-table.css · chart.css
 ```
 
 **The components under `lib/` are the ones more than one entry mounts**, and
@@ -1067,6 +1068,12 @@ The palette is defined twice — `:root` for light, `html[data-theme="dark"]` fo
 dark — and `stores.js` flips `data-theme` on `<html>`. Same token names in both
 blocks; nothing outside this file hardcodes a colour.
 
+**The dark block is wrapped in `@media screen`, and that is how paper gets a
+light ground with no second copy of the palette.** A dark theme printed is a
+full-bleed black rectangle per sheet. Gating the selector leaves `:root`'s light
+values in effect for print, so `verify_contrast.mjs` still measures one palette
+and a retune cannot drift between two.
+
 **Every ink token must clear WCAG AA (4.5:1) against every surface it is painted
 on, in both themes.** `verify_contrast.mjs` parses `tokens.css`, computes the
 relative luminance of each `--ink*` / `--muted` / `--real*` / `--erode` against
@@ -1273,6 +1280,36 @@ that order, the caption keeps its rule and stays the last element, and nothing
 moves behind an interaction — `verify_render_strip.mjs` holds the caption to
 within 16px of the content it dates and holds each row flush to the widest, and
 both still pass because neither is a claim about the border.
+
+## `src/lib/print.css` — the format P9 already anticipated
+
+A page of sourced official statistics is what somebody prints or saves to PDF
+for a meeting, and **the links are the product**: on paper every verify link was
+underlined text with its address gone, so the printed sheet carried no way to
+check a single figure. P9 says verifiability scales down and never away, and its
+fallback — the source name, the date and the domain — is written for a format
+that *physically cannot* carry a link. Paper can. So every external link prints
+its full address, in mono at the caption size, on its own line under the link
+text; `break-all`, because a 104-character Eurostat dissemination query has no
+break opportunity in it and one that leaves the page box loses the end a reader
+has to type.
+
+Loaded last by all six entries, after `tokens.css` and any shared sheet, so its
+`@media print` block wins on cascade order rather than on selector weight.
+
+| On paper | Why |
+|---|---|
+| The dark theme comes out light | Gated in `tokens.css` with `@media screen`; the three grounds go white here, because browsers drop backgrounds by default and half of readers would otherwise get a green-grey wash and half would not |
+| The masthead keeps its wordmark, loses its nav and switches | Sticky prints over the first page break; six words that do nothing are the top of the sheet a reader looks at most |
+| Disclosures print open, except `.numbers` | The `.method` ones hold the derivations, which is the method this project publishes. A `.numbers` one holds the upstream's own series — 355 rows across `/market/` — which is what the printed URL beside it fetches |
+| `white-space`, `overflow` and `max-height` are released together | An element past the page box is LOST, not scrolled. Releasing the overflow of `/market/`'s 22rem scroll box without its height prints 60 rows **on top of** the prose under it |
+| `break-inside: avoid` only on things that fit a sheet | On a block taller than the page box the browser cannot satisfy it: it ejects the block, overflows it anyway, and leaves the previous sheet blank. The calculator's cards run to three sheets each |
+
+`verify_render_print.mjs` drives all of it under
+`emulateMedia({media: "print"})`, which measures what a printer receives rather
+than what the stylesheet declares. It is not a second design and must not become
+one: no running heads, no rearranged layout, nothing that needs maintaining
+against a medium nobody looks at.
 
 ## Hosting: `public/_headers`
 

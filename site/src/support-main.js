@@ -14,6 +14,7 @@
  * frozen at build time and once live.
  */
 import "./lib/tokens.css";
+import "./lib/print.css";
 import { mount } from "svelte";
 import Support from "./Support.svelte";
 import { startAnalytics } from "./lib/analytics.js";

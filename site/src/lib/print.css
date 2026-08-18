@@ -1,0 +1,246 @@
+/**
+ * What the site becomes on paper.
+ *
+ * A page of sourced official statistics is the thing somebody prints or saves
+ * to PDF for a meeting, and until this file the result was: the calculator's
+ * controls rendered as dead widgets, every disclosure closed so the derivations
+ * were absent, the dark theme printed as a full-bleed black rectangle, and
+ * every verify link reduced to underlined text with its address gone.
+ *
+ * **The last one is the only one that is a broken promise rather than a mess.**
+ * P9 says verifiability scales down and never away, and its fallback — the
+ * source name, the date and the domain — is written for a format that
+ * *physically cannot* carry a link. Paper can: it carries the whole URL, and a
+ * reader can type it. So on paper every external link prints its address. That
+ * is what makes «точно това число» still true once the page has left the
+ * browser, and it is why this stylesheet exists at all.
+ *
+ * ## What it deliberately does not do
+ *
+ * It is not a second design. It has no page headers or footers of its own, no
+ * running titles, no rearranged layout: the document is the document, minus the
+ * things that only work under a cursor. A print stylesheet that tries to be its
+ * own design is one nobody maintains, and its failure mode — silently wrong on
+ * a medium nobody looks at — is the worst one available.
+ *
+ * The dark palette is gated in `tokens.css` with `@media screen` rather than
+ * overridden here, so the light values are simply what remains in effect. That
+ * is the whole of the theme handling and there is no second copy of the palette
+ * to drift.
+ *
+ * Loaded by all six entries beside `tokens.css`. `verify_render_print.mjs`
+ * drives it under `emulateMedia({media: "print"})`.
+ */
+
+@media print {
+  /**
+   * Paper is white, and the screen's ground is not.
+   *
+   * `--paper` is #eceee8 — a green-grey the ledger look rests on and a
+   * full-bleed wash of toner across every sheet. Browsers drop backgrounds by
+   * default when printing, so half of readers would get white and half the
+   * wash depending on one checkbox in their print dialog; whitening the three
+   * grounds makes the two outcomes the same page. Every border, rule and ink
+   * token keeps its screen value, which is what still separates a card from
+   * the page around it once the fill is gone.
+   */
+  :root {
+    --paper: #fff;
+    --paper-2: #fff;
+    --surface: #fff;
+    --hdr: #fff;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* The measure is the sheet. `--maxw` is a viewport measure for a two-column
+     calculator and `--gutter` a `4vw` that a print context resolves against a
+     page box, which put a second margin inside the one the printer already
+     leaves. */
+  .wrap {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  /**
+   * The masthead keeps its name and loses its controls.
+   *
+   * Sticky positioning prints the bar over whatever the first page break put
+   * under it, and the four routes and two switches are affordances for a
+   * cursor: on paper they are six words that do nothing, at the top of the one
+   * page a reader is most likely to look at. The wordmark stays because it is
+   * what says whose figures these are.
+   */
+  header.site {
+    position: static !important;
+    backdrop-filter: none !important;
+  }
+  header.site nav.routes,
+  header.site .controls,
+  a.skip {
+    display: none !important;
+  }
+
+  /**
+   * Everything a reader can only operate is gone, and the list is short by
+   * design.
+   *
+   * The share block is four buttons and a canvas repeating the headline figure
+   * that is already on the sheet; the remember switch is a setting for this
+   * device. Nothing here is a figure, a source caption, an `as_of` date or a
+   * word of the explainer — those are the four things that may not be degraded
+   * (docs/principles.md §"Publish the method"), and they all print.
+   */
+  .share,
+  .remember {
+    display: none !important;
+  }
+
+  /**
+   * **Every disclosure is open on paper.** `/market/` alone hides thirteen of
+   * them, and what is inside is the derivations — the method the project exists
+   * to publish. Printed closed, the sheet carries the figures and none of the
+   * working, which is the one degradation this file is here to prevent.
+   *
+   * The marker goes with it: a triangle that opens nothing is a control that
+   * lies on a medium where nothing opens.
+   *
+   * **`.numbers` is the exception, and the markup already draws the line.** A
+   * `.method` disclosure holds the derivation — the argument, a paragraph — and
+   * a `.numbers` one holds the upstream's own series: 85 quarters, then 81,
+   * then 37, 355 rows across `/market/` alone, which is seven sheets of index
+   * values. Those are what the verify link beside them fetches, and that
+   * address is now printed in full, so the route survives (P9). The working is
+   * what paper is for; the dump is what the URL is for.
+   */
+  details:not(.numbers)::details-content {
+    content-visibility: visible !important;
+    block-size: auto !important;
+  }
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker,
+  summary::marker {
+    content: "";
+  }
+
+  /**
+   * The address, printed after the link that carries it.
+   *
+   * Set in mono at the caption size so a reader can tell a URL from the
+   * sentence around it, and on its OWN LINE rather than trailing the link
+   * text: an Evrostat dissemination query is 104 characters with no break
+   * opportunity in it, and inline in one column of a four-column answer row it
+   * runs straight across the caption beside it and overprints both. `break-all`
+   * for the same reason — a run this long with nothing to break on is a run
+   * that leaves the page box, and the end of a truncated address is exactly the
+   * part a reader needs to type.
+   *
+   * Only `http` links. A fragment link is a jump within the sheet the reader is
+   * already holding, and printing `#basket` after it is noise; it loses its
+   * underline for the same reason.
+   */
+  a[href^="http"]::after {
+    content: attr(href);
+    display: block;
+    font-family: var(--mono);
+    font-size: var(--fs-micro);
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+    word-break: break-all;
+  }
+  a[href^="#"] {
+    text-decoration: none;
+    border-bottom: 0;
+  }
+
+  /**
+   * **On paper, anything wider than the sheet is LOST, not scrolled.**
+   *
+   * Both of these are right on a screen and data loss here. A cell held on one
+   * line so a reference period cannot be separated from its publisher takes the
+   * printed address with it past the page box, so the URL a reader is meant to
+   * type ends at «…default/table?lang». A horizontal scroll box built so a
+   * phone never scrolls the document sideways has no scrollbar on a sheet: it
+   * clips its own table at the box edge and the columns beyond it never print.
+   *
+   * `!important` throughout this file, and it is the same reason every time: the
+   * rules being overridden are a component's own, and Svelte's scoping class
+   * puts every one of them above anything a global stylesheet can spell —
+   * `header.site` at (0,1,1) loses to `header.site.svelte-xxx` at (0,2,1), so
+   * the masthead stayed sticky on paper under a rule that read as though it
+   * did not. Chasing that with selector weight would tie this file to markup it
+   * does not own; the medium query is already the narrowing.
+   *
+   * **Releasing the overflow without releasing the height is worse than doing
+   * neither.** `/market/`'s 85-quarter table sits in a 22rem box with
+   * `overflow-y: auto`; drop only the clipping and 60 rows spill out of a box
+   * still 22rem tall and print ON TOP of the prose under it. Height and
+   * overflow are one decision here, not two.
+   */
+  th,
+  td,
+  .cap,
+  .ss,
+  .scroll,
+  .r-row,
+  .r-row *,
+  a[href^="http"] {
+    white-space: normal !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* A column sized for the word «eurostat» cannot hold the address behind it.
+     The name column claims the slack on screen so the three date and source
+     columns sit at their content width, which is right until the source column
+     is where a 104-character URL now goes — at eight characters wide it sets
+     one as a ten-line ribbon. Released, the table distributes and the same URL
+     is three lines. */
+  .col-name {
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  /**
+   * Where a page may break.
+   *
+   * A figure severed from its source caption is a number on paper with no
+   * provenance, which is the same failure as dropping the caption — so the
+   * tile and the table row are atomic, and a heading never prints as the last
+   * line of a sheet.
+   *
+   * **Only things that FIT a sheet.** `break-inside: avoid` on a block taller
+   * than the page box is a constraint the browser cannot satisfy: it ejects the
+   * block to a fresh sheet, overflows it anyway, and leaves most of the
+   * previous one blank. The calculator's two cards run to about three sheets
+   * each, so they are not on this list.
+   */
+  .stat,
+  .r-row,
+  figure,
+  tr {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  summary {
+    break-after: avoid;
+  }
+
+  /* A chart is drawn to the box it is given, and the box is now a sheet.
+     `plot.js` maps marks into a viewBox that scales uniformly, so this is the
+     whole of what a chart needs. */
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+}

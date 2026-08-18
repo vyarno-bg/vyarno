@@ -15,6 +15,7 @@
  * live.
  */
 import "./lib/tokens.css";
+import "./lib/print.css";
 import { mount } from "svelte";
 import Legal from "./Legal.svelte";
 import { startAnalytics } from "./lib/analytics.js";
