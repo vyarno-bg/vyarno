@@ -374,19 +374,19 @@
     <p>
       <span class="l-bg"
         >Официалната инфлация е едно число за цялата страна: с колко са по-скъпи нещата днес спрямо
-        преди година. Не всичко тежи еднакво — храната тежи повече от учебниците, защото за нея
+        преди година. Не всичко тежи еднакво: храната тежи повече от учебниците, защото за нея
         отиват повече пари. Цените ги събира НСИ всеки месец и НСИ изчислява от тях българския
         индекс; единните европейски правила и проверката дали са спазени са на Евростат, който
-        публикува резултата. Вярно го взима дословно — не го пресмята наново, за да не се разминава
+        публикува резултата. Вярно го взима дословно и не го пресмята наново, за да не се разминава
         с публикуваното.</span
       >
       <span class="l-en"
         >Official inflation is one number for the whole country: how much dearer things are today
-        than a year ago. Not everything counts the same — food moves the figure more than textbooks
+        than a year ago. Not everything counts the same: food moves the figure more than textbooks
         do, because more money goes to it. NSI collects the prices every month and builds Bulgaria's
         index from them; the one common European method, and the check that it was followed, are
-        Eurostat's, and Eurostat publishes the result. Vyarno takes it verbatim — never recomputed,
-        so it cannot drift from what is published.</span
+        Eurostat's, and Eurostat publishes the result. Vyarno takes it verbatim and never recomputes
+        it, so it cannot drift from what is published.</span
       >
     </p>
 
@@ -448,7 +448,7 @@
       <span class="l-bg"
         >Двете числа горе идват от Евростат и са еднакво официални. Не са едно и също нещо: горното
         е инфлацията за цялата страна, точно както Евростат я публикува, а долното е нашият сбор от
-        13-те групи — всяка умножена по това каква част от парите отива за нея. {monthsSplit
+        13-те групи, всяка умножена по това каква част от парите отива за нея. {monthsSplit
           ? t(COPY.explainSplitMonth, "bg", {
               headline: periodLong(calc.headlineRefPeriod, "bg"),
               basket: periodLong(calc.basketRefPeriod, "bg"),
@@ -456,13 +456,13 @@
           : COPY.explainSameMonth.bg} Остава още една разлика, и тя е от смятането.
         <b>Всеки януари Евростат обновява кошницата</b>, защото хората харчат малко по-различно от
         предната година. Числото за последните дванадесет месеца минава през тази смяна и хваща и
-        двете кошници — старата и новата; нашият сбор ползва само днешната. Затова двете се
+        двете кошници, старата и новата; нашият сбор ползва само днешната. Затова двете се
         разминават съвсем малко. Показваме и двете, вместо да представим едното за другото.</span
       >
       <span class="l-en"
         >Both figures above come from Eurostat and both are equally official. They are not the same
         thing: the first is inflation for the whole country exactly as Eurostat publishes it, and
-        the second is our own sum of the 13 groups — each multiplied by the share of the money that
+        the second is our own sum of the 13 groups, each multiplied by the share of the money that
         goes to it. {monthsSplit
           ? t(COPY.explainSplitMonth, "en", {
               headline: periodLong(calc.headlineRefPeriod, "en"),
@@ -500,7 +500,7 @@
       <span class="l-bg"
         >Цените се групират по европейска класификация (ECOICOP), която за България дава тринадесет
         групи. Делът на всяка група е каква част от всички пари, които домакинствата в страната
-        харчат, отива за нея — Евростат го публикува веднъж годишно. По-старите български таблици
+        харчат, отива за нея, и Евростат го публикува веднъж годишно. По-старите български таблици
         имат дванадесет групи, защото последната беше сборна: сега CP12 е застраховки и банкови
         услуги, а новата CP13 покрива лична хигиена и социални услуги. Затова двете подредби не се
         припокриват.</span
@@ -648,14 +648,14 @@
       <span class="l-bg"
         >Данъкът е един за всички, но осигуровки се плащат само до определена заплата. Под тази
         граница от всяко увеличение се удържа едно и също. Над нея осигуровките спират, така че от
-        увеличението остава само данъкът — и колкото по-висока е заплатата, толкова по-малка част от
+        увеличението остава само данъкът, и колкото по-висока е заплатата, толкова по-малка част от
         нея взима държавата. И кривата, и таблицата под нея са сметнати от ставките и границата
         горе. Никоя институция не ги публикува: никой не е длъжен да ги състави.</span
       >
       <span class="l-en"
         >The tax is the same for everyone, but contributions are only paid up to a certain salary.
         Below that line the same share comes out of any raise. Above it contributions stop, so only
-        the tax comes out of a raise — and the higher the pay, the smaller the share of it the state
+        the tax comes out of a raise, and the higher the pay, the smaller the share of it the state
         takes. Both the curve below and the table under it are worked out from the rates and the
         line above. No agency publishes them: nobody is obliged to put them together.</span
       >
@@ -756,25 +756,25 @@
       </h3>
       <p>
         <span class="l-bg"
-          >Освен брутото работодателят внася и своя част от същите пет фонда — <b
+          >Освен брутото работодателят внася и своя част от същите пет фонда, <b
             >{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b
           >
-          върху същия осигурителен доход и до същата граница — плюс вноска за трудова злополука между
+          върху същия осигурителен доход и до същата граница, плюс вноска за трудова злополука между
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
           и <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> според дейността. Под
           границата
           <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> от целия разход за труд не стига до работника,
-          а над нея делът пада — осигуровките спират, заплатата не.</span
+          а над нея делът пада: осигуровките спират, заплатата не.</span
         >
         <span class="l-en"
-          >On top of the gross, the employer pays its own share of the same five funds — <b
+          >On top of the gross, the employer pays its own share of the same five funds, <b
             >{fmt(calc.systemLabourCost.employerRatePct, 2)}%</b
           >
-          on the same insurable income, under the same ceiling — plus a work-accident contribution of
+          on the same insurable income, under the same ceiling, plus a work-accident contribution of
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
           to <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> depending on the activity.
           Under the ceiling <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> of the whole cost of employment
-          never reaches the worker, and above it the share falls — contributions stop, the salary does
+          never reaches the worker, and above it the share falls: contributions stop, the salary does
           not.</span
         >
       </p>
@@ -924,9 +924,9 @@
       <p>
         <span class="l-bg"
           >Изследването дава три числа за България: колко изкарват най-ниско платените 10%, колко
-          изкарва човекът точно по средата и колко — най-високо платените 10%. Всички стъпала между
-          тях са пресметнати, а не преброени, и таблицата казва кое кое е. Затова числото показва
-          приблизително къде се нарежда една заплата, а не точно: никой не е обиколил всички
+          изкарва човекът точно по средата и колко изкарват най-високо платените 10%. Всички стъпала
+          между тях са пресметнати, а не преброени, и таблицата казва кое кое е. Затова числото
+          показва приблизително къде се нарежда една заплата, а не точно: никой не е обиколил всички
           работещи в страната този месец.</span
         >
         <span class="l-en"
@@ -946,16 +946,16 @@
           <span class="l-bg"
             >Изследването е от {calc.payLadderRows.shapeYear} г., а минималната заплата оттогава се е
             вдигнала по-бързо от средната. Затова долните стъпала, преизчислени към днешната средна, излизат
-            под минималната — а под нея не е законно да се плаща на човек на пълен работен ден. Тези стъпала
+            под минималната, а под нея не е законно да се плаща на човек на пълен работен ден. Тези стъпала
             показват самата минимална заплата и таблицата ги отбелязва така: тя не е нито измерена от
             Евростат, нито пресметната между техните числа.</span
           >
           <span class="l-en"
             >The survey is from {calc.payLadderRows.shapeYear}, and the minimum wage has risen
             faster than the average since. So the bottom rungs, set against today's average, come
-            out below the minimum — and below it is not a lawful wage for a full-time employee.
-            Those rungs show the minimum wage itself, and the table marks them as that: it is
-            neither measured by Eurostat nor worked out between two of their figures.</span
+            out below the minimum, and below it is not a lawful wage for a full-time employee. Those
+            rungs show the minimum wage itself, and the table marks them as that: it is neither
+            measured by Eurostat nor worked out between two of their figures.</span
           >
         </p>
       {/if}
@@ -964,9 +964,9 @@
     <p>
       <span class="l-bg"
         >За това трябват две официални числа, защото нито едното не стига само. Първото казва
-        <b>колко са разпънати заплатите</b> — с колко човек в горния край изкарва повече от човек в
-        долния. То е от изследването на Евростат за заплатите, мери един човек с една заплата, но
-        излиза веднъж на четири години, тоест сумите в него са остарели. Второто е
+        <b>колко са разпънати заплатите</b>, тоест с колко човек в горния край изкарва повече от
+        човек в долния. То е от изследването на Евростат за заплатите, мери един човек с една
+        заплата, но излиза веднъж на четири години, тоест сумите в него са остарели. Второто е
         <b>днешната средна заплата за страната</b>, която НСИ публикува всяко тримесечие. Взимаме
         разпъването от първото и го прилагаме върху днешната средна от второто, за да носят
         стъпалата днешни суми. После всяко стъпало се превръща от бруто в нето. И двете числа са за
@@ -975,13 +975,13 @@
       >
       <span class="l-en"
         >This needs two official numbers, because neither is enough on its own. The first says
-        <b>how far apart wages are</b> — how much more someone near the top earns than someone near
+        <b>how far apart wages are</b>: how much more someone near the top earns than someone near
         the bottom. It comes from Eurostat's earnings survey, counts one person and one wage at a
         time, but is published once every four years, so its amounts are out of date. The second is
         <b>today's average wage for the country</b>, which NSI publishes every quarter. We take the
         spread from the first and set it against today's average from the second, so the rungs carry
         today's amounts. Each rung is then converted from gross to net. Both figures are the whole
-        country's — nobody publishes how wages are spread inside one oblast, so this ladder does not
+        country's: nobody publishes how wages are spread inside one oblast, so this ladder does not
         change with the oblast.</span
       >
     </p>
@@ -1037,7 +1037,7 @@
     <p>
       <span class="l-bg"
         >Никоя институция не публикува цената на квадратен метър в България. Евростат казва само с
-        колко се е променила — не и колко струва. Затова самата цена идва от обявите: имот.bg
+        колко се е променила, не и колко струва. Затова самата цена идва от обявите: имот.bg
         публикува средна цена на квадратен метър по квартали, за всеки от градовете, които покрива.
         Тук показваме София, защото тази страница е за страната и не пита читателя къде живее;
         калкулаторът показва града, който той е избрал. Това са <b>искани</b> цени, не цени по сключени
@@ -1045,7 +1045,7 @@
       >
       <span class="l-en"
         >No institution publishes the price of a square metre in Bulgaria. Eurostat says only how
-        much it has changed — not what it costs. So the price itself comes from listings: imot.bg
+        much it has changed, not what it costs. So the price itself comes from listings: imot.bg
         publishes an average €/m² per district, for each city it covers. Sofia is the one shown
         here, because this page is the country's and asks the reader nothing; the calculator shows
         whichever city they picked. These are <b>asking</b> prices rather than prices from closed sales,
@@ -1091,15 +1091,15 @@
         <span class="l-bg"
           >имот.bg публикува по едно число на квартал и нито едно за София като цяло. Медианата на
           {fmt0(calc.cityHome.nDistricts)} квартала и сравнението с {calc.cityHome.baselineYear} г. са
-          наши сметки върху техните числа — затова стоят тук, а не се приписват на тях. Колко заплати
-          струва жилище стои в калкулатора, до самата цена. Числата по сключени сделки са на
+          наши сметки върху техните числа, затова стоят тук, а не се приписват на тях. Колко заплати струва
+          жилище стои в калкулатора, до самата цена. Числата по сключени сделки са на
           <a href="/market/">страницата за пазара</a>, защото идват от Евростат и НСИ и мерят друго.</span
         >
         <span class="l-en"
           >imot.bg publishes one figure per district and none for Sofia as a whole. The median
           across
           {fmt0(calc.cityHome.nDistricts)} districts, and the comparison with {calc.cityHome
-            .baselineYear}, are our arithmetic over their figures — which is why they are named here
+            .baselineYear}, are our arithmetic over their figures, which is why they are named here
           rather than attributed to them. How many salaries a home is sits in the calculator, next
           to the price itself. The figures from closed sales are on
           <a href="/market/">the market page</a>, because they come from Eurostat and НСИ and
@@ -1117,13 +1117,13 @@
     </h2>
     <p>
       <span class="l-bg"
-        >Безработицата е сезонно изгладена — месечните ѝ колебания от селското стопанство, туризма и
+        >Безработицата е сезонно изгладена: месечните ѝ колебания от селското стопанство, туризма и
         строителството са извадени, за да се вижда посоката, а не сезонът. Заплатите под нея са
         тримесечните числа на НСИ за страната, така както са публикувани: избираме клетка, не
         смятаме средни от техните числа.</span
       >
       <span class="l-en"
-        >Unemployment is seasonally adjusted — the month-to-month swings from farming, tourism and
+        >Unemployment is seasonally adjusted: the month-to-month swings from farming, tourism and
         construction are taken out so the direction shows rather than the season. The wages below
         are NSI's own quarterly figures for the country, exactly as published: a cell is selected,
         never averaged.</span

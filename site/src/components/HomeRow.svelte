@@ -257,8 +257,8 @@
         {#if mortCapGap > 0}
           Вноската е с <b style="color:var(--erode)">{fmt0(mortCapGap)} €/мес над</b> границата.
         {:else}
-          Вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата — побира
-          се в бюджета.
+          Вноската е с <b style="color:var(--real)">{fmt0(-mortCapGap)} €/мес под</b> границата и се побира
+          в бюджета.
         {/if}
       </span>
       <span class="l-en"
@@ -266,7 +266,7 @@
         {#if mortCapGap > 0}
           The payment is <b style="color:var(--erode)">{fmt0(mortCapGap)}/mo over</b> the line.
         {:else}
-          The payment is <b style="color:var(--real)">{fmt0(-mortCapGap)}/mo under</b> the line - within
+          The payment is <b style="color:var(--real)">{fmt0(-mortCapGap)}/mo under</b> the line and within
           budget.
         {/if}
       </span>
@@ -307,13 +307,11 @@
           <div class="mort-reverse">
             <span class="l-bg"
               >можеш да си позволиш дом до <b>{fmt0(maxAffordPrice)} €</b> ·
-              <b>{fmt(maxAffordM2, 0)} м²</b>
-              — избраният ({fmt0(homePrice)} €) е под границата.</span
+              <b>{fmt(maxAffordM2, 0)} м²</b>. Избраният ({fmt0(homePrice)} €) е под границата.</span
             >
             <span class="l-en"
               >you can afford up to <b>{fmt0(maxAffordPrice)} €</b> ·
-              <b>{fmt(maxAffordM2, 0)} m²</b>
-              - your pick ({fmt0(homePrice)} €) is under the ceiling.</span
+              <b>{fmt(maxAffordM2, 0)} m²</b>. Your pick ({fmt0(homePrice)} €) is under the ceiling.</span
             >
           </div>
         {/if}

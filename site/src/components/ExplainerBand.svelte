@@ -72,22 +72,22 @@
         </h4>
         <p>
           <span class="l-bg"
-            >Евростат е официалната статистическа служба на Европейския съюз. Цените в България —
-            хляб, ток, наеми, гориво, лекарства — ги събира всеки месец НСИ, българската статистика,
+            >Евростат е официалната статистическа служба на Европейския съюз. Цените в България
+            (хляб, ток, наеми, гориво, лекарства) ги събира всеки месец НСИ, българската статистика,
             и НСИ сглобява от тях българския индекс. Единните европейски правила и проверката дали
             са спазени са на Евростат, който публикува резултата безплатно за всички. Това
             приложение не измисля цени: то копира официалните числа на Евростат и ти ги показва.
-            Затова до всяко число има връзка (иконата ↗) към точната таблица на Евростат — за да
+            Затова до всяко число има връзка (иконата ↗) към точната таблица на Евростат, за да
             провериш сам.</span
           >
           <span class="l-en"
             >Eurostat is the official statistics office of the European Union. The prices in
-            Bulgaria - bread, electricity, rent, fuel, medicine - are collected every month by NSI,
+            Bulgaria (bread, electricity, rent, fuel, medicine) are collected every month by NSI,
             the Bulgarian statistics office, which builds Bulgaria's index from them. The one common
             European method, and the check that it was followed, are Eurostat's, and Eurostat
             publishes the result free for everyone. This app invents no prices: it copies Eurostat's
             official numbers and shows them to you. That's why every figure carries a link (the ↗
-            icon) to the exact Eurostat table - so you can check it yourself.</span
+            icon) to the exact Eurostat table, so you can check it yourself.</span
           >
         </p>
 
@@ -110,14 +110,14 @@
         <p>
           <span class="l-bg"
             >Три неща: <b>(1)</b> готовия процент на инфлацията („транспортът е с 11% по-скъп
-            отпреди година“); <b>(2)</b> ценовия индекс — число, което показва докъде са стигнали
-            цените на всяка група; и <b>(3)</b> теглата на кошницата — каква част от всички пари, които
+            отпреди година“); <b>(2)</b> ценовия индекс, число, което показва докъде са стигнали
+            цените на всяка група; и <b>(3)</b> теглата на кошницата, каква част от всички пари, които
             домакинствата в страната харчат, отива за всяка група (храна ≈ 22%, транспорт ≈ 14%).</span
           >
           <span class="l-en"
             >Three things: <b>(1)</b> the ready-made inflation percentage ("transport is 11% more
-            expensive than a year ago"); <b>(2)</b> the price index - a number showing how far each
-            group's prices have got; and <b>(3)</b> the basket weights - how much of everything the country's
+            expensive than a year ago"); <b>(2)</b> the price index, a number showing how far each
+            group's prices have got; and <b>(3)</b> the basket weights, how much of everything the country's
             households spend goes to each group (food ≈ 22%, transport ≈ 14%).</span
           >
         </p>
@@ -136,21 +136,21 @@
         </h4>
         <p>
           <span class="l-bg"
-            >Индексът е число, което следи цените на една група. Само по себе си то не значи нищо —
+            >Индексът е число, което следи цените на една група. Само по себе си то не значи нищо:
             значение има отношението между две негови стойности. Ако индексът на храната в края на
             2020 г. е <b>115</b>, а днес е <b>185</b>, храната е с <b>60% по-скъпа</b> (185 ÷ 115 = 1,6).
             Ако днес беше 150, поскъпването щеше да е 30%. Приложението прави точно това сравнение за
             периода, който си избрал: днешното число срещу числото за твоята година. Откъде тръгва всеки
-            индекс няма значение — при делението изходната точка се съкращава, затова оставяме числата
+            индекс няма значение: при делението изходната точка се съкращава, затова оставяме числата
             такива, каквито ги публикува Евростат, и връзката ↗ до реда връща същите цифри.</span
           >
           <span class="l-en"
-            >An index is a number that tracks one group's prices. On its own it means nothing - what
+            >An index is a number that tracks one group's prices. On its own it means nothing: what
             means something is the ratio between two of its readings. If food's index at the end of
             2020 was <b>115</b> and today it is <b>185</b>, food is <b>60% more expensive</b> (185 ÷ 115
             = 1.6). Had today's been 150, the rise would be 30%. The app makes exactly that comparison
             for the period you pick: today's number against the number for your year. Where each index
-            starts does not matter - the starting point cancels in the division, so we leave the numbers
+            starts does not matter: the starting point cancels in the division, so we leave the numbers
             exactly as Eurostat publishes them and the ↗ link on the row returns the same digits.</span
           >
         </p>
@@ -162,16 +162,16 @@
         </h4>
         <p>
           <span class="l-bg"
-            >Официалният процент го взимаме <b>дословно</b> от Евростат — не го пресмятаме сами, за
+            >Официалният процент го взимаме <b>дословно</b> от Евростат. Не го пресмятаме сами, за
             да не се разминава с публикуваното. Частите се събират: сборът на групите по твоите
-            тегла дава общата инфлация. И винаги показваме <b>датата</b> на данните — ако остареят, ще
+            тегла дава общата инфлация. И винаги показваме <b>датата</b> на данните: ако остареят, ще
             видиш кога са обновени за последно, а не „днешни“ числа, които всъщност са стари.</span
           >
           <span class="l-en"
-            >We take the official percentage <b>verbatim</b> from Eurostat - we don't recompute it
+            >We take the official percentage <b>verbatim</b> from Eurostat. We don't recompute it
             ourselves, so it never drifts from what's published. The parts add up: the groups,
             weighted by your basket, sum to overall inflation. And we always show the <b>date</b> of the
-            data - if it ages, you see when it last refreshed, not "today's" numbers that are secretly
+            data: if it ages, you see when it last refreshed, not "today's" numbers that are secretly
             old.</span
           >
         </p>
@@ -183,10 +183,10 @@
         </h4>
         <p>
           <span class="l-bg"
-            >Числото в лентата най-горе е официалната инфлация на Евростат за <b>цялата</b> кошница
-            — всички българи, събрани заедно. Твоето число ползва <b>твоите</b> дялове по групи,
-            затова се различава: ако харчиш повече за групи, които поскъпват по-бързо, твоята
-            инфлация е по-висока — и обратно. {monthsSplit
+            >Числото в лентата най-горе е официалната инфлация на Евростат за <b>цялата</b>
+            кошница, всички българи, събрани заедно. Твоето число ползва <b>твоите</b> дялове по
+            групи, затова се различава: ако харчиш повече за групи, които поскъпват по-бързо, твоята
+            инфлация е по-висока, и обратно. {monthsSplit
               ? t(COPY.explainSplitMonth, "bg", {
                   headline: periodLong(headlineMonth, "bg"),
                   basket: periodLong(basketMonth, "bg"),
@@ -195,8 +195,8 @@
           >
           <span class="l-en"
             >The number in the strip up top is Eurostat's official inflation for the <b>whole</b>
-            basket - every Bulgarian pooled together. Your number uses <b>your</b> group shares, so
-            it differs: if you spend more on faster-rising groups, your inflation is higher - and
+            basket, every Bulgarian pooled together. Your number uses <b>your</b> group shares, so
+            it differs: if you spend more on faster-rising groups, your inflation is higher, and
             vice-versa.
             {monthsSplit
               ? t(COPY.explainSplitMonth, "en", {
@@ -229,23 +229,23 @@
         <p>
           <span class="l-bg"
             >Числото в лентата най-горе и „средностатистическата кошница“ в сметката се разминават с
-            една-две десети от процента. И двете са верни и двете идват от Евростат — просто са
+            една-две десети от процента. И двете са верни и двете идват от Евростат, просто са
             сглобени различно. „Средностатистическата кошница“ е сборът на 13-те групи с официалните
             им тегла. Числото в лентата не е такъв сбор: <b>всеки януари Евростат сменя теглата</b>,
             защото хората харчат малко по-различно от миналата година, и свързва новата кошница със
-            старата в края на декември. А последните 12 месеца минават <b>през</b> тази смяна — оттам
+            старата в края на декември. А последните 12 месеца минават <b>през</b> тази смяна, и оттам
             идва разликата. Тя е от начина на смятане, не е грешка; затова показваме и двете числа, вместо
             да се правим, че са едно.</span
           >
           <span class="l-en"
             >The number in the strip up top and "the average basket" in the calculation sit a tenth
-            or two of a percentage point apart. Both are correct and both come from Eurostat - they
+            or two of a percentage point apart. Both are correct and both come from Eurostat, they
             are simply assembled differently. "The average basket" is the sum of the 13 groups at
             their official weights. The strip's number is not such a sum: <b
               >every January Eurostat changes the weights</b
             >, because people spend a little differently than last year, and links the new basket to
-            the old one at the end of December. The last 12 months run <b>through</b> that changeover
-            - and that is where the gap comes from. It is the method, not a mistake; which is why we show
+            the old one at the end of December. The last 12 months run <b>through</b> that changeover,
+            and that is where the gap comes from. It is the method, not a mistake; which is why we show
             both numbers rather than pretending they are one.</span
           >
         </p>
@@ -258,21 +258,21 @@
         <p>
           <span class="l-bg"
             >Защото инфлацията в България се мери по два официални начина и те се разминават съвсем
-            малко. Вярно показва <b>хармонизирания</b> индекс на Евростат (ХИПЦ) — мярката, еднаква
+            малко. Вярно показва <b>хармонизирания</b> индекс на Евростат (ХИПЦ), мярката, еднаква
             за целия ЕС, по която България влезе в еврозоната. НСИ смята и <b>национален</b> индекс (ИПЦ):
             малко по-различна кошница и различно отчитане на жилищата. Затова двете числа могат да се
-            разминат с една-две десети от процента. Никое от тях не е грешно — все едно мериш едно и също
+            разминат с една-две десети от процента. Никое от тях не е грешно: все едно мериш едно и също
             нещо с две линийки, чиито деления са мъничко различни. Ние показваме само едното (ХИПЦ), за
             да няма две числа, които спорят кое е вярното.</span
           >
           <span class="l-en"
             >Because inflation in Bulgaria is measured in two official ways, and they differ a
-            little. Vyarno shows Eurostat's <b>harmonised</b> index (HICP) - the measure that is the
+            little. Vyarno shows Eurostat's <b>harmonised</b> index (HICP), the measure that is the
             same across the EU and the one Bulgaria adopted the euro under. NSI also computes a
             <b>national</b> index (CPI): a slightly different basket and a different treatment of housing.
-            So the two can sit a tenth or two apart. Neither is wrong - it is like measuring the same
-            thing with two rulers whose markings differ slightly. We show only one of them (HICP) so there
-            aren't two numbers competing to be right.</span
+            So the two can sit a tenth or two apart. Neither is wrong: it is like measuring the same thing
+            with two rulers whose markings differ slightly. We show only one of them (HICP) so there aren't
+            two numbers competing to be right.</span
           >
         </p>
 
@@ -283,24 +283,25 @@
         </h4>
         <p>
           <span class="l-bg"
-            >Пак от официални данни, и пак две числа. Първото е <b>кой колко изкарва</b> — от
+            >Пак от официални данни, и пак две числа. Първото е <b>кой колко изкарва</b>, от
             изследване на <b>Евростат</b> за заплатите; то показва как са подредени хората: колко
-            изкарват малко, колко средно, колко много. Второто е <b>средната заплата в София</b> от
-            <b>НСИ</b>
-            — най-новата. По нея преизчисляваме сумите в цялата подредба, за да отговарят на днешните
-            заплати — изследването на Евростат е отпреди няколко години. После сравняваме
+            изкарват малко, колко средно, колко много. Второто е най-новата
+            <b>средна заплата в София</b>
+            от <b>НСИ</b>. По нея преизчисляваме сумите в цялата подредба, за да отговарят на
+            днешните заплати, защото изследването на Евростат е отпреди няколко години. После
+            сравняваме
             <b>твоята чиста</b> заплата с получената картина. Затова числото показва приблизително къде
-            си, а не точно — никой не е обиколил всички работещи в София този месец. До числото има връзки
+            си, а не точно: никой не е обиколил всички работещи в София този месец. До числото има връзки
             (↗) към Евростат и НСИ.</span
           >
           <span class="l-en"
-            >Official data again, and again two numbers. The first is <b>who earns what</b> - from a
+            >Official data again, and again two numbers. The first is <b>who earns what</b>, from a
             <b>Eurostat</b>
             survey of pay; it shows how people line up: how many earn little, how many in the middle,
             how many a lot. The second is the latest <b>average wage in Sofia</b> from
             <b>NSI</b>. We use it to set the amounts across that line-up to today's pay, because the
             Eurostat survey is a few years old. Then we compare <b>your take-home</b> pay with the resulting
-            picture. So the figure shows roughly where you stand, not exactly - nobody polled every worker
+            picture. So the figure shows roughly where you stand, not exactly: nobody polled every worker
             in Sofia this month. Each figure links (↗) to Eurostat and NSI.</span
           >
         </p>
@@ -309,11 +310,11 @@
         <p>
           <span class="l-bg"
             >Заплатата и разходите ти <b>никога</b> не напускат устройството ти. Сметката се прави изцяло
-            в браузъра ти — ние не виждаме и не съхраняваме нищо лично.</span
+            в браузъра ти. Ние не виждаме и не съхраняваме нищо лично.</span
           >
           <span class="l-en"
             >Your salary and spending <b>never</b> leave your device. The whole calculation runs in your
-            browser - we never see or store anything personal.</span
+            browser. We never see or store anything personal.</span
           >
         </p>
 
@@ -389,9 +390,9 @@
               ><b>Твоята инфлация.</b> Всяка от 13-те групи си има свое официално поскъпване.
               Умножаваме поскъпването на всяка група по това каква част от парите си даваш за нея и
               събираме тринайсетте резултата.
-              <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code> — w<sub>i</sub>
+              <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code>. Тук w<sub>i</sub>
               е твоят дял за група i (плъзгачите; делението на Σw ги свежда до 100%). r<sub>i</sub>
-              е официалното поскъпване на групата —
+              е официалното поскъпване на групата:
               {#if anchor === "y1"}
                 годишният темп (Eurostat, prc_hicp_minr, RCH_A).
               {:else}
@@ -400,11 +401,11 @@
                 > е ценовият индекс на групата така, както го публикува Евростат (prc_hicp_minr). Базата
                 на индекса се съкращава при делението, затова не я пипаме.
               {/if}
-              <br /><b>В джоба.</b> Увеличението не се вади от инфлацията, а се дели на нея — новите
-              пари също се харчат по новите цени.
+              <br /><b>В джоба.</b> Увеличението не се вади от инфлацията, а се дели на нея, защото
+              новите пари също се харчат по новите цени.
               <code>реално = (1 + увеличение) ÷ (1 + π) − 1</code>
               <br /><b>Спестеното.</b> Сумата, която стои настрана от 2020 г., се дели на
-              поскъпването оттогава — остава стойността ѝ по днешни цени.
+              поскъпването оттогава, така че остава стойността ѝ по днешни цени.
               <code>стойност днес = сума ÷ (1 + поскъпване от 2020)</code>, където поскъпването е {#if cashEroded.basis === "all_items"}<code
                   >I(сега) ÷ I(2020) − 1</code
                 > по общия индекс на Евростат (prc_hicp_minr, TOTAL), както е публикуван{:else}сборът
@@ -413,7 +414,7 @@
               „години“ е тази цена, разделена на цялата ти годишна заплата.
               <code>цена = €/м² × квадратура</code> ·
               <code>години = цена ÷ (12 × заплата)</code>. Вноската е една и съща всеки месец до
-              края на срока — обичайният банков анюитет.
+              края на срока, обичайният банков анюитет.
               <code>P = L × m ÷ (1 − (1 + m)<sup>−n</sup>)</code>, където L = {fmt0(
                 100 - downPayPct
               )}% от цената ({fmt0(downPayPct)}% самоучастие), m = годишната лихва ÷ 12, n = срокът
@@ -423,11 +424,11 @@
               ><b>Your inflation.</b> Each of the 13 groups has its own official price rise. We
               multiply each group's rise by the share of your money that goes to it, and add the
               thirteen results up.
-              <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code> - w<sub>i</sub>
+              <code>π = Σ (w<sub>i</sub> ÷ Σw) × r<sub>i</sub></code>. Here w<sub>i</sub>
               is your share for group i (the sliders; dividing by Σw normalises them to 100%). r<sub
                 >i</sub
               >
-              is the group's official price rise -
+              is the group's official price rise:
               {#if anchor === "y1"}
                 the annual rate (Eurostat, prc_hicp_minr, RCH_A).
               {:else}
@@ -436,7 +437,7 @@
                 The index base cancels in the division, so we leave it alone.
               {/if}
               <br /><b>In your pocket.</b> The raise is not subtracted from inflation, it is divided
-              by it - the new money is spent at the new prices too.
+              by it, because the new money is spent at the new prices too.
               <code>real = (1 + raise) ÷ (1 + π) − 1</code>
               <br /><b>Your savings.</b> Money set aside since 2020 is divided by the rise since
               then, which leaves its value in today's prices.
@@ -448,7 +449,7 @@
               "years" is that price divided by a whole year of your pay.
               <code>price = €/m² × size</code> ·
               <code>years = price ÷ (12 × pay)</code>. The payment is the same every month to the
-              end of the term - the ordinary bank annuity.
+              end of the term, the ordinary bank annuity.
               <code>P = L × m ÷ (1 − (1 + m)<sup>−n</sup>)</code>, where L = {fmt0(
                 100 - downPayPct
               )}% of the price ({fmt0(downPayPct)}% down), m = annual rate ÷ 12, n = term × 12.</span

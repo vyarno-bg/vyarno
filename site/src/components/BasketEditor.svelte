@@ -258,8 +258,8 @@
               aria-expanded={open}
               onclick={() => calc.toggleDivision(i)}
               title={$lang === "bg"
-                ? `${open ? COPY.detailClose.bg : COPY.detailOpen.bg} — ${c.groups.length} подгрупи`
-                : `${open ? COPY.detailClose.en : COPY.detailOpen.en} - ${c.groups.length} sub-groups`}
+                ? `${open ? COPY.detailClose.bg : COPY.detailOpen.bg} · ${c.groups.length} подгрупи`
+                : `${open ? COPY.detailClose.en : COPY.detailOpen.en} · ${c.groups.length} sub-groups`}
               >{open ? "−" : "+"}</button
             >
           {/if}
@@ -275,8 +275,8 @@
               target="_blank"
               rel="noopener"
               title={$lang === "bg"
-                ? `${c.cp_code} ${c.eurostat_label ? "· " + c.eurostat_label : ""} — официалните данни на Евростат за точно това число`
-                : `${c.cp_code} ${c.eurostat_label ? "· " + c.eurostat_label : ""} - Eurostat's own data for exactly this figure`}
+                ? `${c.cp_code} ${c.eurostat_label ? "· " + c.eurostat_label : ""}: официалните данни на Евростат за точно това число`
+                : `${c.cp_code} ${c.eurostat_label ? "· " + c.eurostat_label : ""}: Eurostat's own data for exactly this figure`}
               >{c.cp_code} ↗</a
             >
             <span class="yo mono">· {signedPct(calc.rateForDivision(i))}</span>
@@ -321,8 +321,8 @@
             value={calc.weights[i]}
             oninput={(e) => calc.onSliderInput(i, e.currentTarget.value)}
             aria-label={$lang === "bg"
-              ? `${c.bg_name} — евро на месец`
-              : `${c.en_name} - euros per month`}
+              ? `${c.bg_name}, евро на месец`
+              : `${c.en_name}, euros per month`}
           />
         </span>
       {:else}
