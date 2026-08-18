@@ -27,11 +27,11 @@
   </h1>
   <p class="lead">
     <span class="l-bg"
-      >Адресът е грешен или страницата е премахната. Числата са си на мястото — калкулаторът е на
+      >Адресът е грешен или страницата е премахната. Числата са си на мястото и калкулаторът е на
       един клик оттук.</span
     >
     <span class="l-en"
-      >The address is wrong, or the page was removed. The numbers are all still there — the
+      >The address is wrong, or the page was removed. The numbers are all still there, and the
       calculator is one click away.</span
     >
   </p>
@@ -49,7 +49,7 @@
     <span class="l-bg"
       >Стигнал си дотук по връзка от наша страница? Пиши на <a href="mailto:{CONTACT.general}"
         >{CONTACT.general}</a
-      > — ще я оправим.</span
+      > и ще я оправим.</span
     >
     <span class="l-en"
       >Did a link on our own site bring you here? Write to <a href="mailto:{CONTACT.general}"

@@ -99,10 +99,10 @@
         <span class="l-en">{missingSentence("en")}</span>
       {:else}
         <span class="l-bg"
-          >Въведи колко ти вдигнаха заплатата — без число тук не знаем дали изпреварваш цените си.</span
+          >Въведи колко ти вдигнаха заплатата. Без число тук не знаем дали изпреварваш цените си.</span
         >
         <span class="l-en"
-          >Enter your pay raise - without it we can't tell if you're outrunning your prices.</span
+          >Enter your pay raise. Without it we can't tell if you're outrunning your prices.</span
         >
       {/if}
     {:else}

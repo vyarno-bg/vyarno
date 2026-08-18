@@ -68,17 +68,17 @@
         ><b>Твоята инфлация.</b> Всяка от 13-те групи си има поскъпване и то идва наготово от
         Евростат. Ние само го претегляме според това колко от парите си даваш за групата.
         <i>Пример:</i>
-        храната е поскъпнала с 8% и ти яде една четвърт от парите — значи в твоето число храната слага
+        храната е поскъпнала с 8% и ти яде една четвърт от парите, значи в твоето число храната слага
         <b>2%</b> (една четвърт от 8). Същото за другите 12 групи; сборът е твоята инфлация. Плъзгачите
-        променят само дяловете — поскъпванията са на Евростат и не ги пипаме.</span
+        променят само дяловете: поскъпванията са на Евростат и не ги пипаме.</span
       >
       <span class="l-en"
         ><b>Your inflation.</b> Each of the 13 groups has its own price rise, taken as published
         from Eurostat. All we do is weigh it by how much of your money goes to that group.
         <i>Example:</i>
-        food is up 8% and takes a quarter of your money - so food puts <b>2%</b> into your number (a quarter
+        food is up 8% and takes a quarter of your money, so food puts <b>2%</b> into your number (a quarter
         of 8). Same for the other 12 groups; the total is your inflation. The sliders change only the
-        shares - the price rises are Eurostat's and we never touch them.</span
+        shares: the price rises are Eurostat's and we never touch them.</span
       >
     </li>
     <li>
@@ -92,17 +92,17 @@
            is `pocketReal` (mirror.js) — division, never subtraction —
            and the numbers below are that function's own example. -->
       <span class="l-bg"
-        ><b>В джоба.</b> Заплатата ти расте, но цените растат заедно с нея — а новите пари ги харчиш
+        ><b>В джоба.</b> Заплатата ти расте, но цените растат заедно с нея, а новите пари ги харчиш
         по новите цени. <i>Пример:</i> вместо 1000 € получаваш 1127 €. Само че същата количка с
-        покупки, която е струвала 1000 €, вече струва 1052 €. Отгоре ти остават 75 € — но и те
-        отиват по новите, скъпи цени, така че вършат работа колкото 71 € преди. Затова реално си
-        напред със <b>7,1%</b>, а не със 7,5%: увеличението също поскъпва.</span
+        покупки, която е струвала 1000 €, вече струва 1052 €. Отгоре ти остават 75 €, но и те отиват
+        по новите, скъпи цени, така че вършат работа колкото 71 € преди. Затова реално си напред със
+        <b>7,1%</b>, а не със 7,5%: увеличението също поскъпва.</span
       >
       <span class="l-en"
-        ><b>In your pocket.</b> Your pay grows, but prices grow right along with it - and the new
+        ><b>In your pocket.</b> Your pay grows, but prices grow right along with it, and the new
         money is spent at the new prices. <i>Example:</i> instead of €1,000 you take home €1,127.
         But the same trolley of shopping that used to cost €1,000 now costs €1,052. That leaves €75
-        over - and it too is spent at the new, higher prices, so it does the work €71 used to do.
+        over, and it too is spent at the new, higher prices, so it does the work €71 used to do.
         Which is why you are really
         <b>7.1%</b> ahead, not 7.5%: the raise gets more expensive too.</span
       >
@@ -125,8 +125,8 @@
         стока. <i>Пример:</i> ако цените са се вдигнали общо с 30%, <b>1000 €</b>
         днес купуват толкова, колкото <b>769 €</b> тогава. {#if cashEroded.basis === "all_items"}Тук
           нарочно ползваме общия ценови индекс на Евростат за цялата страна, а не твоята кошница.{:else}Общият
-          индекс на Евростат не се зареди, затова смятаме със средностатистическата кошница —
-          всичките 13 групи с официалните тегла — а не с твоята.{/if}</span
+          индекс на Евростат не се зареди, затова смятаме със средностатистическата кошница
+          (всичките 13 групи с официалните тегла), а не с твоята.{/if}</span
       >
       <span class="l-en"
         ><b>Your savings.</b> Money you have kept aside since 2020 buys less today.
@@ -134,7 +134,7 @@
         if prices are up 30% overall, <b>€1,000</b> today buys what <b>€769</b> bought back then. {#if cashEroded.basis === "all_items"}Here
           we deliberately use Eurostat's all-items price index for the whole country, not your
           basket.{:else}Eurostat's all-items index didn't load, so we use the average basket instead
-          - all 13 groups at the official weights - rather than your own.{/if}</span
+          (all 13 groups at the official weights) rather than your own.{/if}</span
       >
     </li>
     <li>
@@ -157,19 +157,19 @@
       <span class="l-bg"
         ><b>Домът.</b> имот.bg публикува по една средна <b>оферта</b> на квадратен метър за всеки
         квартал в града (искана цена, не цена по сделка). Подреждаме кварталите от евтин към скъп и
-        взимаме средния — това е медианата — по избраната квадратура, или по твоята цена, ако си
-        въвел такава. „<b>Години</b>“ значи: толкова години цялата ти заплата, до последното евро,
-        би отишла за жилището. Вноската е обичайната за банките равна месечна вноска по кредит за {fmt0(
+        взимаме средния (това е медианата) по избраната квадратура, или по твоята цена, ако си въвел
+        такава. „<b>Години</b>“ значи: толкова години цялата ти заплата, до последното евро, би
+        отишла за жилището. Вноската е обичайната за банките равна месечна вноска по кредит за {fmt0(
           100 - downPayPct
         )}% от цената (останалите {fmt0(downPayPct)}% са самоучастие), с твоята лихва и твоя срок.</span
       >
       <span class="l-en"
         ><b>A home.</b> imot.bg publishes one average <b>asking</b> price per square metre for each
         district of a city (what sellers ask, not what buyers paid). We line the districts up
-        cheapest to dearest and take the middle one - that is the median - times the size you
-        picked, or your own price if you entered one. "<b>Years</b>" means: that many years of your
-        entire pay, down to the last euro, would go to the home. The payment is the ordinary equal
-        monthly bank instalment on a loan of {fmt0(100 - downPayPct)}% of the price (the other {fmt0(
+        cheapest to dearest and take the middle one (that is the median) times the size you picked,
+        or your own price if you entered one. "<b>Years</b>" means: that many years of your entire
+        pay, down to the last euro, would go to the home. The payment is the ordinary equal monthly
+        bank instalment on a loan of {fmt0(100 - downPayPct)}% of the price (the other {fmt0(
           downPayPct
         )}% being your own money), at your rate and your term.</span
       >
@@ -249,8 +249,8 @@
                 target="_blank"
                 rel="noopener"
                 title={$lang === "bg"
-                  ? `${c.cp_code} · ${c.eurostat_label} — официалните данни на Евростат за точно това число`
-                  : `${c.cp_code} · ${c.eurostat_label} - Eurostat's own data for exactly this figure`}
+                  ? `${c.cp_code} · ${c.eurostat_label}: официалните данни на Евростат за точно това число`
+                  : `${c.cp_code} · ${c.eurostat_label}: Eurostat's own data for exactly this figure`}
                 >{c.cp_code} ↗</a
               ></td
             >
