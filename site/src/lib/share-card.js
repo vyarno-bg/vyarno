@@ -263,13 +263,12 @@ function wrap(ctx, text, maxWidth, maxLines) {
  * The headline figure, set the way the results card sets it.
  *
  * Two details are carried over deliberately rather than left to the default.
- * The tightening matches `.r-big`'s `letter-spacing: -0.03em`: the Cyrillic
- * woff2 files carry no Latin digits by design (`tokens.css` — they are the
- * publishers' unmodified builds), so the numerals come from the system
- * monospace at a full monospace advance, and «6,5» draws with a cell of air
- * either side of the comma. And the percent sign is set small and raised,
- * because at the same height as a 116px numeral it reads as part of the
- * number rather than as its unit.
+ * The tightening matches `.r-big`'s `letter-spacing: -0.03em`, and a monospace
+ * advance is what it is paying for: every cell is the width of the widest
+ * digit, so «6,5» draws with air either side of a comma that needs none, at a
+ * size where the gap is a third of a numeral. And the percent sign is set
+ * small and raised, because at the same height as a 116px numeral it reads as
+ * part of the number rather than as its unit.
  *
  * `ctx.letterSpacing` is a no-op in a browser that does not implement it,
  * which is the right failure: slightly loose, never wrong.
