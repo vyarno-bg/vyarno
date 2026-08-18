@@ -7,6 +7,7 @@
  * what lets this site be served by anything that can serve a directory.
  */
 import "./lib/tokens.css";
+import "./lib/print.css";
 import { mount } from "svelte";
 import NotFound from "./NotFound.svelte";
 import { startAnalytics } from "./lib/analytics.js";
