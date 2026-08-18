@@ -644,4 +644,57 @@ test(
   }
 );
 
+test("every keyboard stop draws the site's own focus ring, in both themes", { skip }, async () => {
+  // A rule over ALL of them, which is the point: the ring had been a list of
+  // four selectors — `button`, `.pill`, `a`, `.chip` — and a list has to be kept
+  // level with the markup. It was not. Every disclosure summary and every range
+  // slider fell to Chrome's own `1px auto rgb(16, 16, 16)`: a near-black
+  // hairline in BOTH themes, so on the dark ground a keyboard reader had no
+  // visible focus at all, across thirteen disclosures on `/market/` and the
+  // whole basket.
+  //
+  // `/credit/` had a third answer — a copy of the rule naming `--accent`, a
+  // token `tokens.css` has never defined, so it fell through to `currentColor`
+  // and drew the scroll boxes' ring in the ink colour.
+  //
+  // Driven with the real Tab key so the browser's own order is walked, and
+  // asserted on the computed outline rather than on a stylesheet: what a reader
+  // receives is the effect.
+  const REAL = /rgb\(28, 107, 84\)|rgb\(79, 176, 143\)/;
+  for (const route of ["/", "/market/", "/credit/", "/how/"]) {
+    for (const theme of ["light", "dark"]) {
+      await withApp(
+        async (page) => {
+          await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
+          const bare = [];
+          let stops = 0;
+          for (let i = 0; i < 140; i++) {
+            await page.keyboard.press("Tab");
+            const s = await page.evaluate(() => {
+              const el = document.activeElement;
+              if (!el || el === document.body || el === document.documentElement) return null;
+              const cs = getComputedStyle(el);
+              return {
+                what: `${el.tagName.toLowerCase()}${el.getAttribute("tabindex") ? `[tabindex]` : ""}`,
+                ring: cs.outlineStyle === "none" ? "none" : `${cs.outlineWidth} ${cs.outlineColor}`,
+              };
+            });
+            if (!s) break;
+            stops++;
+            if (!REAL.test(s.ring)) bare.push(`${s.what} → ${s.ring}`);
+          }
+          assert.ok(stops > 5, `${route} offered ${stops} keyboard stops`);
+          assert.deepEqual(
+            [...new Set(bare)],
+            [],
+            `${route} ${theme}: stops with no focus ring of ours — ${[...new Set(bare)].join(" | ")}`
+          );
+        },
+        route,
+        { viewport: { width: 1280, height: 900 } }
+      );
+    }
+  }
+});
+
 test.after(shutdown);

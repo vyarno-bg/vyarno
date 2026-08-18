@@ -1074,6 +1074,15 @@ full-bleed black rectangle per sheet. Gating the selector leaves `:root`'s light
 values in effect for print, so `verify_contrast.mjs` still measures one palette
 and a retune cannot drift between two.
 
+**The focus ring is a bare `:focus-visible`, deliberately not a list.** It had
+named `button`, `.pill`, `a` and `.chip`, which left every disclosure summary
+and every range slider on Chrome's own `1px auto rgb(16, 16, 16)` — a near-black
+hairline in *both* themes, so on the dark ground a keyboard reader had no
+visible focus across thirteen disclosures on `/market/` and the whole basket.
+A list has to be kept level with the markup and this one was not.
+`verify_render_layout.mjs` walks every stop with the real Tab key, on four
+routes in both themes.
+
 **Every ink token must clear WCAG AA (4.5:1) against every surface it is painted
 on, in both themes.** `verify_contrast.mjs` parses `tokens.css`, computes the
 relative luminance of each `--ink*` / `--muted` / `--real*` / `--erode` against
