@@ -66,12 +66,9 @@
   overflow-x: auto;
   margin-top: 16px;
 }
-/* The focus ring is the keyboard half of the same affordance: the box a reader
-   has just landed on is the one the arrow keys will scroll. */
-.scroll:focus-visible {
-  outline: 2px solid var(--real);
-  outline-offset: 2px;
-}
+/* The ring a reader lands on is `tokens.css`'s bare `:focus-visible`, which
+   reaches this box because it reaches everything focusable — the keyboard half
+   of the same affordance, with no selector here to fall behind the markup. */
 
 .fig-table {
   width: 100%;

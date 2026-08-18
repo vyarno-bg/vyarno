@@ -1486,8 +1486,4 @@
     overflow-x: auto;
     margin: 0 0 10px;
   }
-  .scroll:focus-visible {
-    outline: 2px solid var(--accent, currentColor);
-    outline-offset: 2px;
-  }
 </style>

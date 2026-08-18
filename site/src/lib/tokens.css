@@ -565,11 +565,18 @@ a {
   padding-inline: var(--gutter);
 }
 
-/* Focus-visible */
-button:focus-visible,
-.pill:focus-visible,
-a:focus-visible,
-.chip:focus-visible {
+/**
+ * Focus-visible, and it is deliberately NOT a list of selectors.
+ *
+ * A list has to be kept level with the markup, and it was not: naming
+ * `button`, `.pill`, `a` and `.chip` left every disclosure summary and every
+ * range slider on the browser's own ring, which Chrome draws as `1px auto
+ * rgb(16, 16, 16)` — a near-black hairline, in BOTH themes. On the dark ground
+ * that is a keyboard reader with no visible focus at all, across thirteen
+ * disclosures on `/market/` and the whole basket. A bare `:focus-visible` cannot
+ * miss the next control anybody adds, which is the failure mode the list had.
+ */
+:focus-visible {
   outline: 2px solid var(--real);
   outline-offset: 2px;
 }
