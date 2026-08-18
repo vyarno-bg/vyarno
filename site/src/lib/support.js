@@ -209,8 +209,8 @@ export const SUPPORT_COPY = Object.freeze({
    * link is already reading. Says where money goes and what it does not buy.
    */
   body: {
-    bg: "Вярно се поддържа от дарения. Те покриват домейна и нищо друго — хостингът е безплатен, няма заплати, няма дружество, няма инвеститор. Дарението не купува нищо: няма платена версия, няма допълнителни функции за дарители и никое число на сайта не зависи от това кой е дарил. Ако предпочиташ да не даряваш, нищо не се променя за теб — целият сайт остава напълно достъпен.",
-    en: "Vyarno runs on donations. They cover the domain and nothing else — the hosting costs nothing, there are no salaries, no company and no investor. A donation buys nothing: there is no paid version, no donor-only features, and no figure on the site depends on who gave. If you would rather not donate, nothing changes for you — the whole site stays fully available.",
+    bg: "Вярно се поддържа от дарения. Те покриват домейна и нищо друго: хостингът е безплатен, няма заплати, няма дружество, няма инвеститор. Дарението не купува нищо: няма платена версия, няма допълнителни функции за дарители и никое число на сайта не зависи от това кой е дарил. Ако предпочиташ да не даряваш, нищо не се променя за теб. Целият сайт остава напълно достъпен.",
+    en: "Vyarno runs on donations. They cover the domain and nothing else: the hosting costs nothing, there are no salaries, no company and no investor. A donation buys nothing: there is no paid version, no donor-only features, and no figure on the site depends on who gave. If you would rather not donate, nothing changes for you. The whole site stays fully available.",
   },
 
   /**
@@ -239,8 +239,8 @@ export const SUPPORT_COPY = Object.freeze({
     en: "The payment does not go through this site",
   },
   offsite: {
-    bg: "Вярно не приема плащания и няма форма за дарение — даряваш през платформата, не тук, и данните на картата ти не стигат до нас по никакъв начин. Какво получаваме оттам — име или псевдоним, електронна поща, съобщение, сума и дата — е описано в Поверителност.",
-    en: "Vyarno takes no payments and has no donation form — you give on the platform rather than here, and your card details reach us in no form at all. What we do receive from there — a name or alias, an e-mail address, a message, the amount and the date — is set out in the privacy notice.",
+    bg: "Вярно не приема плащания и няма форма за дарение. Даряваш през платформата, не тук, и данните на картата ти не стигат до нас по никакъв начин. Какво получаваме оттам (име или псевдоним, електронна поща, съобщение, сума и дата) е описано в Поверителност.",
+    en: "Vyarno takes no payments and has no donation form. You give on the platform rather than here, and your card details reach us in no form at all. What we do receive from there (a name or alias, an e-mail address, a message, the amount and the date) is set out in the privacy notice.",
   },
   privacyK: { bg: "Поверителност", en: "The privacy notice" },
 
