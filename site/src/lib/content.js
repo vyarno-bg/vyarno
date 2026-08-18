@@ -1614,6 +1614,12 @@ export const COPY = {
     bg: "кажи по-горе къде живееш, за да сравним заплатата ти със средната там",
     en: "say above where you live, to compare your pay with the average there",
   },
+  // The control that answers the two prompts above, and it says «отвори», not
+  // «избери»: the sentence beside it has already asked for the choice, and a
+  // second imperative reads as a second request rather than as the way to
+  // answer the first. The picker is ~3,000px up the page, which is what makes
+  // this a route and not a repetition (NationalStrip.svelte#focusRegion).
+  statPickRegion: { bg: "отвори списъка", en: "open the list" },
   // One coherent clause rather than spliced fragments: the {delta}
   // placeholder carries the whole "+28% над" / "-28% под" / "≈ на" phrase,
   // built in the template, which is what keeps the Bulgarian grammatical.

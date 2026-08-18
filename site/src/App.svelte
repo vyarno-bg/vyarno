@@ -190,6 +190,7 @@
   headline={calc.headline}
   headlineRefPeriod={calc.headlineRefPeriod}
   headlineIsFlash={calc.headlineIsFlash}
+  headlineOverdue={calc.headlineOverdue}
   showStaleBanner={calc.showStaleBanner}
   dataOverdueCount={calc.dataOverdueCount}
   dataOldestAsOf={calc.dataOldestAsOf}
@@ -328,17 +329,33 @@
   #main {
     scroll-margin-top: 64px;
   }
+  /**
+   * The wait, and it RESERVES the room the calculator is going to take.
+   *
+   * A single centred line left the page looking finished and empty: chrome at
+   * the top, footer pulled up under it, one sentence in the middle. Then the
+   * payloads land and roughly 1200px of cards appear at once, shifting the
+   * explainer and the footer a whole screen down — on precisely the connection
+   * slow enough for a reader to have started reading. `min-height` is the
+   * calculator's own measured height at this width, so what arrives arrives in
+   * place; `40vh` keeps it from reserving more than a screen on a phone, where
+   * the two cards stack and the estimate would be far too tall.
+   */
   .loading {
-    text-align: center;
-    padding: 40px 0;
+    display: flex;
+    align-items: flex-start;
+    min-height: min(40vh, 420px);
+    padding: 48px 0;
     color: var(--muted);
     font-size: var(--fs-body);
   }
-  /* The data-failed state. Sized and styled like a card rather than a
-     one-line error, because it is the whole page for as long as it is up. */
+  /* The data-failed state. Sized and styled like a card rather than a one-line
+     error, because it is the whole page for as long as it is up — and set on
+     the page's own left edge rather than centred in the window, which put the
+     one thing a reader had left 400px right of the heading above it. */
   .load-fail {
     max-width: 46ch;
-    margin: 44px auto;
+    margin: 44px 0;
     padding: 20px 22px;
     background: var(--surface);
     border: 1px solid var(--line);

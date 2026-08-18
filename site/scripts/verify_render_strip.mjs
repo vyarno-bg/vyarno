@@ -619,4 +619,59 @@ test("the wedge's right-edge labels belong to the series they sit on", { skip },
   });
 });
 
+test(
+  "a card with no figure is quieter than one with, and offers the way to fill it",
+  { skip },
+  async () => {
+    // The state every reader meets FIRST, because P7 leaves the област unset:
+    // two of the strip's cards have no figure until somebody chooses. Both drew
+    // `—` at `--fs-figure` in `--ink` — 36px of the weight reserved for «4,1%» —
+    // so the two cards with nothing to say were the loudest things in the row,
+    // and the sentence telling the reader to choose pointed at a control 3,000px
+    // up the page with no way to reach it.
+    //
+    // Both halves asserted: the dash is set below the figures beside it, and the
+    // route both raises the picker and lands the reader on it.
+    await withApp(async (page, errors) => {
+      const sizes = await page.evaluate(() => {
+        const dash = document.querySelector(".strip .stat .sv.none span");
+        const figure = [...document.querySelectorAll(".strip .stat .sv")].find(
+          (v) => !v.classList.contains("none")
+        );
+        return dash && figure
+          ? {
+              dash: parseFloat(getComputedStyle(dash).fontSize),
+              figure: parseFloat(getComputedStyle(figure).fontSize),
+              // The BOX, not the label under it. The cards are top-aligned, so a
+              // box that shrinks lifts everything beneath it out of line with
+              // the row — and it is a FLOOR rather than an equality, because a
+              // figure and its unit are allowed to wrap onto a second line.
+              empty: Math.round(
+                document.querySelector(".strip .stat > .sv.none").getBoundingClientRect().height
+              ),
+              drawn: [...document.querySelectorAll(".strip .stat > .sv:not(.none)")].map((v) =>
+                Math.round(v.getBoundingClientRect().height)
+              ),
+            }
+          : null;
+      });
+      assert.ok(sizes, "the strip drew no empty card before an област was chosen");
+      assert.ok(
+        sizes.dash < sizes.figure,
+        `the empty cell is set at ${sizes.dash}px against a figure's ${sizes.figure}px`
+      );
+      assert.ok(
+        sizes.empty >= Math.min(...sizes.drawn),
+        `the empty card reserves ${sizes.empty}px where a one-line figure takes ` +
+          `${Math.min(...sizes.drawn)}px, so its label rides up out of the row`
+      );
+
+      await page.locator(".strip .stat .pick").first().click();
+      const landed = await page.evaluate(() => document.activeElement?.id ?? "");
+      assert.equal(landed, "region-select", `the route left focus on "${landed}"`);
+      assert.deepEqual(errors, [], errors.join(" | "));
+    });
+  }
+);
+
 test.after(shutdown);

@@ -39,6 +39,12 @@
      * and nothing else on this line would tell a reader that.
      */
     headlineIsFlash = false,
+    /**
+     * True when the headline payload is itself one of the late ones, which
+     * decides whether its figure is stamped or marked. See
+     * calculator.svelte.js#headlineOverdue.
+     */
+    headlineOverdue = false,
     /** True when some payload is overdue against its own cadence. */
     showStaleBanner = false,
     /** How many payloads are overdue — the banner counts them, not days. */
@@ -101,7 +107,7 @@
              has to make obvious, and a reader had to convert an ISO period
              before they could even see that they were not the same month.
              `/how/` prints the same pair as «юли 2026 г.» and «юни 2026 г.». -->
-        <span class="off-fig">
+        <span class="off-fig" class:off-late={headlineOverdue}>
           <span class="l-bg"
             >{t(COPY.headlineRate, "bg", {
               rate: number(headline, 1, "bg"),
@@ -119,6 +125,29 @@
         </span>
       {/if}
     </div>
+    <!-- **Above the disclosure, because the disclosure is the answer to it.**
+         Drawn after the panel, the reader met "7 of the figures are late" with
+         the control that says WHICH seven already behind them, and opening it
+         pushed the warning off a phone screen entirely — a thousand pixels of
+         table between the alarm and the rows it is about. -->
+    {#if showStaleBanner}
+      <div class="stale-banner">
+        <div class="wrap mono">
+          <span class="mark" aria-hidden="true">⚠</span>
+          <span class="said">
+            <span class="l-bg"
+              >{t(staleCopy, "bg", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
+              {t(COPY.dataStaleHint, "bg")}</span
+            >
+            <span class="l-en"
+              >{t(staleCopy, "en", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
+              {t(COPY.dataStaleHint, "en")}</span
+            >
+          </span>
+        </div>
+      </div>
+    {/if}
+
     <!-- The panel lives inside the strip because the strip is where the doubt
          starts: a reader who wonders how current one date is wants the other
          seven, not a different page.
@@ -134,22 +163,6 @@
         <DataPanel rows={dataRows} bind:open={panelOpen} />
       </div>
     {/if}
-  </div>
-{/if}
-
-{#if showStaleBanner}
-  <div class="stale-banner">
-    <div class="wrap mono">
-      ⚠
-      <span class="l-bg"
-        >{t(staleCopy, "bg", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
-        {t(COPY.dataStaleHint, "bg")}</span
-      >
-      <span class="l-en"
-        >{t(staleCopy, "en", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
-        {t(COPY.dataStaleHint, "en")}</span
-      >
-    </div>
   </div>
 {/if}
 
@@ -178,21 +191,61 @@
     color: var(--stamp);
     font-weight: 700;
   }
+  /* **A figure nobody has refreshed does not get the stamp.** The tick answers
+     "is this the official number", and the rate here can be Eurostat's own AND
+     400 days unfetched at once — so the stamp read as reassurance directly
+     above a band saying the opposite. The warning below carries the words; this
+     is the mark that stops the figure being taken at face value by a reader who
+     never opens the panel (P4). */
+  .off-fig.off-late::before {
+    content: "\26A0\00a0";
+    color: var(--erode);
+  }
+  .off-fig.off-late {
+    color: var(--erode-ink);
+  }
   /* The text is `--erode-ink` rather than `--erode` because it sits on the
      translucent band: `--erode` on that composite is 4.22:1 light and 4.45:1
      dark, under AA, and this is the sentence a reader gets on the day a
-     payload stopped refreshing. The 1px rule below it is a border, which 1.4.11
-     asks 3:1 of and `--erode` clears. */
+     payload stopped refreshing. The 1px rule is a border, which 1.4.11 asks
+     3:1 of and `--erode` clears. Ruled on both edges because it now sits
+     between the strip's own two rows rather than under all of them. */
   .stale-banner {
     background: var(--erode-soft);
+    border-top: 1px solid var(--erode);
     border-bottom: 1px solid var(--erode);
-    padding: 7px 0;
+    margin-top: 6px;
+    padding: 8px 0;
     color: var(--erode-ink);
     font-size: var(--fs-small);
+    /* The strip around it is uppercase, letter-spaced small caps, which is a
+       register for one line of chrome and not for two sentences — the same
+       reset `.datapanel` makes, and for the same reason. */
+    text-transform: none;
+    letter-spacing: 0;
   }
   .stale-banner .wrap {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: baseline;
+    gap: 9px;
+  }
+  /* **The mark sits on the first line and keeps its size.** Centred across a
+     flex row it landed between the two lines of the commonest wording, beside
+     neither, and at the band's own 13px the glyph is a speck — it comes from
+     the system stack whatever else is loaded, because `⚠` is in no IBM Plex
+     build (`tokens.css`). `flex: none` so it is never the thing that shrinks. */
+  .mark {
+    flex: none;
+    font-size: var(--fs-strong);
+    line-height: 1;
+    color: var(--erode);
+  }
+  /* Capped, because the band spans the window and the strip's own `--maxw` is a
+     measure for a two-column calculator. With seven payloads late the sentence
+     names all seven, and at 1120px that is one 200-character line a reader
+     loses their place in. */
+  .said {
+    max-width: var(--col);
+    line-height: 1.5;
   }
 </style>
