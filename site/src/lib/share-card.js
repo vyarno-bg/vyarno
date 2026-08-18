@@ -335,13 +335,25 @@ export function drawShareCard(canvas, { share, copy, lang = "bg", palette }) {
   ctx.fillRect(0, 0, SHARE_CARD.width, SHARE_CARD.height);
   ctx.textBaseline = "alphabetic";
 
-  // The wordmark's two bars, at the proportions of the 22×22 mark in
-  // `ResultsWordmark.svelte` — the short muted one, the tall accented one.
+  // The wordmark at the proportions of the 22×22 mark in
+  // `ResultsWordmark.svelte` — the short muted bar, the tall accented one, and
+  // the rule joining their feet. **The rule is part of the mark**: `favicon.svg`,
+  // `SiteHeader.svelte` and the bitmaps `scripts/make_og_image.py` draws all
+  // carry it, and this is the copy that travels furthest from the site, into
+  // chats where nothing else identifies it. Two loose bars are a different mark.
   const s = 34 / 22;
+  const top = Y.headerBaseline - 34;
+  const markX = (x) => PAD + (x - 2) * s;
   ctx.fillStyle = palette.muted;
-  ctx.fillRect(PAD, Y.headerBaseline - 34 + 6 * s, 4 * s, 14 * s);
+  ctx.fillRect(markX(2), top + 6 * s, 4 * s, 14 * s);
   ctx.fillStyle = palette.real;
-  ctx.fillRect(PAD + 14 * s, Y.headerBaseline - 34 + 2 * s, 4 * s, 18 * s);
+  ctx.fillRect(markX(16), top + 2 * s, 4 * s, 18 * s);
+  ctx.strokeStyle = palette.real;
+  ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();
+  ctx.moveTo(markX(6), top + 19.25 * s);
+  ctx.lineTo(markX(16), top + 19.25 * s);
+  ctx.stroke();
 
   ctx.textAlign = "left";
   ctx.fillStyle = palette.ink;
@@ -379,12 +391,20 @@ export function drawShareCard(canvas, { share, copy, lang = "bg", palette }) {
       fill: accent,
     });
   }
+  // **A single bar takes the upper pair of baselines, not the lower.** The
+  // fixed plan is tuned for two, so dropping the reader's own row left 126px of
+  // nothing between the figure and the average — a hole under the biggest
+  // object on the card, which reads as a row that failed to draw rather than as
+  // one that was never owed. Moved up, the bar stays attached to the figure it
+  // quantifies and the slack falls at the paragraph break above the verdict.
+  // The footer does not move either way, which is what the fixed plan is for.
+  const soloBar = !text.mineLabel;
   drawBar(ctx, palette, {
     label: text.averageLabel,
     value: text.averageValue,
     fraction: bars.average,
-    labelY: Y.averageLabel,
-    trackY: Y.averageTrack,
+    labelY: soloBar ? Y.mineLabel : Y.averageLabel,
+    trackY: soloBar ? Y.mineTrack : Y.averageTrack,
     fill: palette.muted,
   });
 
