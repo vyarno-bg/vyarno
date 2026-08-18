@@ -911,6 +911,51 @@ test(
   }
 );
 
+test("the figures are drawn in the face the page chose, in both languages", { skip }, async () => {
+  // A digit is Latin, so shipping only IBM's Cyrillic splits put `0-9`, `€` and
+  // `%` on the system stack in BOTH languages — the ledger's own numerals in
+  // Consolas, Menlo or DejaVu depending on the reader's operating system, three
+  // designs of the headline figure and none of them chosen. The `/en/` tree had
+  // the same failure over its whole body copy.
+  //
+  // **Measured, not declared.** A `font-family` line naming a face the browser
+  // never loaded reports exactly the same string as one it did, so this compares
+  // a rendered width against the same text set in the fallback alone: equal
+  // widths mean the fallback drew it. A monospace advance differs by fractions
+  // of a pixel per glyph, hence the long run.
+  for (const route of ["/", "/en/"]) {
+    await withApp(async (page) => {
+      const drew = await page.evaluate(async () => {
+        await document.fonts.ready;
+        const el = document.createElement("span");
+        el.style.cssText = "position:absolute;left:-9999px;font-size:64px;white-space:pre";
+        document.body.append(el);
+        const width = (text, family) => {
+          el.style.fontFamily = family;
+          el.textContent = text;
+          return el.getBoundingClientRect().width;
+        };
+        const out = {};
+        for (const [name, text, declared, fallback] of [
+          ["mono digits", "0123456789 0123456789", "var(--mono)", "ui-monospace, monospace"],
+          ["sans digits", "0123456789 0123456789", "var(--sans)", "system-ui, sans-serif"],
+          ["sans latin", "the quick brown fox", "var(--sans)", "system-ui, sans-serif"],
+        ]) {
+          out[name] = Math.abs(width(text, declared) - width(text, fallback)) > 0.5;
+        }
+        el.remove();
+        return out;
+      });
+      for (const [what, ours] of Object.entries(drew)) {
+        assert.ok(
+          ours,
+          `${route}: ${what} render identically to the system stack, so no Plex face covers them`
+        );
+      }
+    }, route);
+  }
+});
+
 test.after(shutdown);
 
 test(

@@ -1168,9 +1168,9 @@ A new size is a new token or an existing one — never a fresh `px` value.
 
 ### Only one of the two families declares a `unicode-range`
 
-IBM's files are its own **split** builds — 16–21 kB each, Cyrillic and nothing
-else — so the range on them states what the file actually contains, and Latin
-body copy falls through to the system stack. Adobe ships Source Serif 4 as one
+IBM's files are its own **split** builds, so each weight is declared twice — its
+Cyrillic file and its Latin1 file, 16–22 kB each, over IBM's own range for that
+split copied out of `css/ibm-plex-*-all.css`. Adobe ships Source Serif 4 as one
 face per weight covering Latin, Greek and Cyrillic together, which is why those
 files are 60–82 kB. A Cyrillic range over them threw away glyphs that were
 already in the file: **every heading in the `/en/` tree rendered in Georgia while
@@ -1179,11 +1179,29 @@ at the size a reader notices first. The range is gone from the serif faces and
 the font's own cmap decides, which is what a font that was never subsetted is
 entitled to.
 
-The cost is paid by English readers only. With the range, a page whose serif
-carried no Cyrillic never fetched the file; now it does — two weights across the
-site, behind `font-display: swap`. The alternative was a second typeface for half
-the audience. **This is not a licence question and must not become one**: the
-files are byte-for-byte Adobe's, and widening a `unicode-range` modifies a
+**A digit is Latin, so Latin1 is not an English-only concern.** Without those
+eight faces `0-9`, `€`, `%` and every ASCII fragment fall to the system stack in
+both languages, which put the ledger's own numerals in Consolas, Menlo or DejaVu
+depending on the reader's operating system — three designs of the headline
+figure, none of them chosen, beside Cyrillic set in Plex. The four weights mirror
+the Cyrillic set exactly, because «≈ €46 повече» is one line with both scripts in
+it and a weight present on one side only renders that line in two fonts.
+
+| Page | webfont before | after |
+|---|---|---|
+| `/` | 191 kB | 344 kB |
+| `/en/` | 119 kB | 272 kB |
+| `/support/` | 151 kB | 209 kB |
+
+Worst case is +153 kB against a page that already transfers ~930 kB, behind
+`font-display: swap` and cached after the first visit. `✓`, `≈` and `№` live in
+IBM's `Pi` split and stay on the system stack: another ~73 kB across eight faces
+for three glyphs, where `⚠` is in no Plex build at all. A symbol drawn by the
+system is still that symbol; a letterform drawn by the system is a different
+typeface.
+
+**This is not a licence question and must not become one**: every file is
+byte-for-byte its publisher's, and writing a `unicode-range` modifies a
 stylesheet rather than a font. Re-subsetting is still the thing that would
 breach OFL condition 3 (`tokens.css` header).
 

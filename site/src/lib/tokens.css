@@ -7,9 +7,9 @@
  * (docs/principles.md §"Identity").
  *
  * **The two families are shipped differently, and only one of them declares a
- * `unicode-range`.** IBM's are its own SPLIT builds — 16-21 kB each, Cyrillic
- * and nothing else — so the range is what the file actually contains and Latin
- * body copy falls through to the system stack. Adobe ships Source Serif 4 as one
+ * `unicode-range`.** IBM's are its own SPLIT builds, so each face is declared
+ * over the range its file actually holds — Cyrillic and Latin1 as two
+ * @font-face rules per weight, 16-22 kB each. Adobe ships Source Serif 4 as one
  * face per weight covering Latin, Greek and Cyrillic together, which is why
  * those files are 60-82 kB; a Cyrillic range over them threw away glyphs that
  * were in the file, so every heading in the `/en/` tree rendered in Georgia
@@ -17,18 +17,38 @@
  * page. The range is gone from the serif faces and the font's own cmap decides,
  * which is what a font that was never subsetted is entitled to.
  *
- * What that costs is paid by English readers only: with the range the file was
- * never fetched on a page with no Cyrillic in the serif, and now it is. Two
- * weights, `font-display: swap`, and the alternative was a second typeface for
- * half the audience.
+ * **A DIGIT IS LATIN, WHICH IS WHY LATIN1 IS NOT AN ENGLISH-ONLY CONCERN.**
+ * Ship the Cyrillic splits alone and `0-9`, `€`, `%` and every ASCII fragment
+ * fall through to the system stack in BOTH languages — so the ledger's own
+ * numerals, the one thing this site exists to show, were Consolas on Windows,
+ * Menlo on macOS and DejaVu on Linux, beside Cyrillic set in Plex. Three
+ * designs of the headline figure and none of them chosen. The `/en/` tree had
+ * the same failure over its whole body copy while still fetching 41 kB of
+ * Cyrillic it never drew.
+ *
+ * The four weights mirror the Cyrillic set exactly, and the symmetry is the
+ * point: «≈ €46 повече» is one line with Latin and Cyrillic in it, so a weight
+ * present on one side and absent on the other renders that line in two fonts.
+ * Worst case (`/`, everything opened) this is +153 kB against a page that
+ * already transfers ~930 kB, behind `font-display: swap`, and cached after the
+ * first visit.
+ *
+ * `✓`, `≈`, `№` and `⚠` stay on the system stack deliberately. The first three
+ * are in IBM's `Pi` split, which is another ~73 kB across the eight faces for
+ * three glyphs, and `⚠` is in no Plex build at all. A symbol drawn by the
+ * system is still that symbol; a letterform drawn by the system is a different
+ * typeface, and that is the distinction the bytes are spent on.
  *
  * EVERY FONT FILE HERE IS ITS PUBLISHER'S OWN BUILD, BYTE FOR BYTE, AND THAT
  * IS WHAT KEEPS THE NAMES USABLE
  *
- * The eight Cyrillic files are IBM's own split woff2 — verified identical to
+ * The sixteen IBM files are IBM's own split woff2 — verified identical to
  * `@ibm/plex-sans@1.1.0` and `@ibm/plex-mono@1.0.0` — and the Source Serif
  * files are Adobe's own WOFF2 release. Nothing here was subsetted, converted
- * or re-compressed by this project.
+ * or re-compressed by this project. The `unicode-range` on each is IBM's own
+ * for that split, copied out of `css/ibm-plex-*-all.css` in the same package:
+ * a range that claims more than the file holds renders tofu rather than
+ * falling through to the stack behind it.
  *
  * That matters because both families are OFL 1.1 with a Reserved Font Name —
  * "Plex" and "Source". OFL condition 3 forbids a MODIFIED Version from using
@@ -54,7 +74,20 @@
   font-weight: 400;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-Regular-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "IBM Plex Sans";
@@ -62,7 +95,20 @@
   font-weight: 500;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexSans-Medium-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-Medium-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "IBM Plex Sans";
@@ -70,7 +116,20 @@
   font-weight: 600;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexSans-SemiBold-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-SemiBold-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "IBM Plex Sans";
@@ -78,7 +137,20 @@
   font-weight: 700;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexSans-Bold-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexSans-Bold-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "IBM Plex Mono";
@@ -86,7 +158,20 @@
   font-weight: 400;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexMono-Regular-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-Regular-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "IBM Plex Mono";
@@ -94,7 +179,20 @@
   font-weight: 500;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexMono-Medium-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-Medium-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "IBM Plex Mono";
@@ -102,7 +200,20 @@
   font-weight: 600;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexMono-SemiBold-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-SemiBold-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "IBM Plex Mono";
@@ -110,7 +221,20 @@
   font-weight: 700;
   font-display: swap;
   src: url("/fonts/ibm-plex/IBMPlexMono-Bold-Cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-04FF, U+0500-052F, U+2DE0-2DFF, U+A640-A69F;
+  unicode-range:
+    U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
+    U+04C0-04C2, U+04CF-04D9, U+04DC-04DF, U+04E2-04E9, U+04EE-04F5, U+04F8-04F9;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/ibm-plex/IBMPlexMono-Bold-Latin1.woff2") format("woff2");
+  unicode-range:
+    U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,
+    U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044,
+    U+2074, U+20AC, U+2122, U+2212, U+FB01-FB02;
 }
 @font-face {
   font-family: "Source Serif 4";
@@ -317,7 +441,7 @@
 
 html[data-theme="dark"] {
   /* "Ledger at night": deep green-black ground, warm-white ink, the same
-     two-hue system brightened to hold contrast on a dark field. */
+       two-hue system brightened to hold contrast on a dark field. */
   --paper: #10140f;
   --paper-2: #161b14;
   --surface: #1b211a;
