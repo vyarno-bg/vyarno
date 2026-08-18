@@ -23,12 +23,15 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 import { blankComments, readSources } from "./live-copy.mjs";
 
+import * as contentModule from "../src/lib/content.js";
+import * as legalModule from "../src/lib/legal.js";
+import * as supportModule from "../src/lib/support.js";
 import { COPY } from "../src/lib/content.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
 import { regionRow, cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
@@ -47,9 +50,10 @@ const SRC = join(HERE, "..", "src");
  * **This surface is `src/` and nothing else**, which is a boundary rather than
  * an oversight but is also narrower than a reader of these tests expects. The
  * static entry shells under `site/` and `site/en/` carry `og:description` and
- * `twitter:description` — reader-facing sentences no component renders — and no
- * rule in this file can see one. `verify_payload_prose.mjs` is the suite whose
- * subject spans them.
+ * `twitter:description` — reader-facing sentences no component renders — and
+ * every rule reading THIS constant is blind to them. §"No em-dash in anything a
+ * reader sees" opens the shells itself for that reason, and
+ * `verify_payload_prose.mjs` is the other suite whose subject spans them.
  */
 const LIVE_SOURCES = readSources(SRC);
 
@@ -287,6 +291,145 @@ test("every placeholder in a COPY string is substituted somewhere", () => {
     }
   }
   assert.deepEqual(offenders, [], `placeholders never substituted: ${offenders.join(", ")}`);
+});
+
+// ---------------------------------------------------------------------------
+// No em-dash in anything a reader sees
+// ---------------------------------------------------------------------------
+
+/** The site's root, one level above `src/`: the entry shells live here. */
+const SITE = join(HERE, "..");
+
+/**
+ * Every string reachable from a module's exports, with the path that reached it.
+ *
+ * `legal.js#copyStrings` walks the same shape and JOINS the result, which is
+ * what `commercialSignals` wants and the opposite of what this rule needs: the
+ * failure has to hand back the offending sentence and where it lives, or the
+ * next person fixing one goes hunting through four thousand lines of copy.
+ */
+function* reachableStrings(root, path) {
+  if (typeof root === "string") {
+    yield [path, root];
+    return;
+  }
+  if (root === null || typeof root !== "object") return;
+  for (const [key, value] of Object.entries(root)) yield* reachableStrings(value, `${path}.${key}`);
+}
+
+/** Every `.svelte` file under `src/`, as [repo-relative path, contents]. */
+function svelteFiles(dir = SRC) {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...svelteFiles(path));
+    else if (entry.name.endsWith(".svelte"))
+      out.push([relative(SITE, path), readFileSync(path, "utf8")]);
+  }
+  return out;
+}
+
+/** Every static entry shell, as [repo-relative path, contents]. */
+function entryShells() {
+  const shells = ["404.html", "index.html", "en/index.html"];
+  for (const route of ["how", "market", "credit", "legal", "support"])
+    shells.push(`${route}/index.html`, `en/${route}/index.html`);
+  return shells.map((path) => [path, readFileSync(join(SITE, path), "utf8")]);
+}
+
+/**
+ * `src` with everything that is not shipped to a reader taken out.
+ *
+ * Comments first (`blankComments` does markup, block and whole-line `//`), then
+ * `<script>` and `<style>`. Dropping the script block is what makes the rule
+ * safe to run over a file rather than over a value: a trailing `//` comment
+ * survives `blankComments` by design — `live-copy.mjs` says why — and a
+ * `// 92 days — the old anchor` inside a component would fail a rule about
+ * copy. Nothing is lost by it, because `site/AGENTS.md` §Copy already puts
+ * every string JavaScript selects in `content.js`, where the walk above reaches
+ * it; what is left in a component's script is code and imports.
+ */
+function readerFacing(src) {
+  return blankComments(src)
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ");
+}
+
+/**
+ * The lone `—` is a NULL SENTINEL and not prose, so it survives this rule.
+ *
+ * `format.js` returns the bare string from eleven places when there is no
+ * number to show, and it renders as a whole cell: `<span class="mono">—</span>`
+ * in a table, `placeholder="—"` on an empty field. Six reach the page in each
+ * language today. `verify_render_market.mjs` matches on `—` to recognise
+ * one, so replacing it with a word is a change to that suite and not a
+ * punctuation edit.
+ *
+ * The shape is what tells the two apart rather than a list of the places it
+ * appears: a sentinel is the WHOLE of its text node or the WHOLE of its
+ * attribute, and prose never is.
+ */
+const NULL_SENTINEL = /(>\s*—\s*<)|(["'`]\s*—\s*["'`])/g;
+
+/** The offending sentence, whitespace collapsed, with room either side. */
+function quote(text, at) {
+  return text
+    .slice(Math.max(0, at - 60), at + 60)
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+test("no em-dash reaches a reader, in either language", () => {
+  // `AGENTS.md` §Writing: a dash attaching a reason to a claim reads as
+  // machine-written, and the fix is the punctuation the sentence actually
+  // wants. The rule had no test and 293 shipped lines had drifted past it.
+  //
+  // Three surfaces, because the copy is in three places and a rule over one of
+  // them is a rule a new string walks around:
+  //
+  // 1. **The copy modules, walked as VALUES.** Everything JavaScript selects,
+  //    interpolates or passes as an attribute (`site/AGENTS.md` §Copy), which
+  //    is `COPY`, `SECTOR_HINTS`, the legal documents, the identity rows, the
+  //    upstream licence reads and the funding sentences. A key added next month
+  //    is covered without anyone touching this file, and a comment cannot
+  //    satisfy it because a comment is not a value.
+  // 2. **Every `.svelte` template under `src/`.** Long bilingual prose is
+  //    inlined in its component as `.l-bg`/`.l-en` spans and is in no module's
+  //    exports. A component added next month is walked because the directory
+  //    is, rather than because somebody listed it.
+  // 3. **The static entry shells.** `<title>`, the meta description and the
+  //    Open Graph and Twitter copy are sentences no component renders and no
+  //    `COPY` rule reaches — which is exactly how they kept an em-dash through
+  //    a sweep of `src/`. This rule's subject is what a reader sees, and an
+  //    unfurled link is a reader seeing it.
+  const offenders = [];
+  const check = (label, text) => {
+    const live = text.replace(NULL_SENTINEL, " ");
+    for (const m of live.matchAll(/—/g)) offenders.push(`${label}: …${quote(live, m.index)}…`);
+  };
+
+  for (const [name, module] of [
+    ["content.js", contentModule],
+    ["legal.js", legalModule],
+    ["support.js", supportModule],
+    ["payloads.js", { PAYLOADS }],
+  ]) {
+    for (const [path, value] of reachableStrings(module, name)) {
+      if (value.trim() === "—") continue;
+      if (value.includes("—")) offenders.push(`${path}: ${value}`);
+    }
+  }
+  for (const [path, src] of svelteFiles()) check(path, readerFacing(src));
+  for (const [path, src] of entryShells()) check(path, readerFacing(src));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "an em-dash reached shipped copy. Use the full stop, colon or comma the " +
+      "sentence wants; where none fits it is two sentences (AGENTS.md §Writing). " +
+      "The lone «—» null sentinel is allowed and is not what these are:\n  " +
+      offenders.join("\n  ")
+  );
 });
 
 // ---------------------------------------------------------------------------
