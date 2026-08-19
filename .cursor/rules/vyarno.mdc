@@ -29,10 +29,12 @@ essentials, because they apply to every message you write:
 - Comments explain the reasoning, never the mechanics. Long why-comments are
   house style here.
 - A comment states the constraint, never the diff. No comment may describe an
-  earlier version of the code — "it used to be X", "this previously read Y" —
-  and a test fails the build on that phrasing. You will reach for it while
-  editing, because the delta is what is freshest in your head. Ask what the old
-  version got wrong and write that as a rule the code has to keep.
+  earlier version of the code — "it used to be X", "this previously read Y".
+  **Nothing enforces this; it is on you and on review**, because a regex over
+  prose cannot tell that phrasing from a legitimate description of an upstream
+  that changed. You will reach for it while editing, because the delta is what
+  is freshest in your head. Ask what the old version got wrong and write that as
+  a rule the code has to keep.
 - No emoji anywhere. No "successfully implemented", no self-attribution.
 - None of the tells: binary contrast ("it's not X, it's Y"), throat-clearing,
   colon reveals, negative listing, a closing paragraph restating the one above,

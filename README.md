@@ -134,8 +134,8 @@ flowchart LR
     I["имот.bg<br/>€/m²"]
   end
 
-  subgraph pipe["pipeline/ · Python, run by hand"]
-    C["connectors"] --> T["transform"] --> G{"7 validation<br/>gates"}
+  subgraph pipe["pipeline/ · Python, started by the release watcher"]
+    C["connectors"] --> T["transform"] --> G{"validation<br/>gates"}
   end
 
   J["data/published/*.json<br/>13 payloads, committed"]
@@ -160,18 +160,10 @@ checks, and what to do when one trips, is in
 
 ## Technology
 
-The project's credibility rests on being inspectable, so the stack is small and
-its versions are the ones in the manifests, not aspirations.
-
-| Layer | Technology | Version |
-|---|---|---|
-| **Pipeline** | Python | 3.11 (CI pins `3.11`) |
-| | httpx · pydantic · click · openpyxl | ≥0.27 · ≥2.6 · ≥8.1 · ≥3.1 |
-| | pytest · pytest-cov · hypothesis · respx · ruff | ≥8.0 · ≥4.1 · ≥6.95 · ≥0.21 · ≥0.16 |
-| **Site** | Node | 22 (CI pins `22`) |
-| | Svelte · Vite · `@sveltejs/vite-plugin-svelte` | ^5.56.8 · ^8.1.5 · ^7.2.0 |
-| | ESLint · Prettier · svelte-check · TypeScript | ^10.8.0 · ^3.9.6 · ^4.7.4 · ^6.0.3 |
-| | Playwright | ^1.62.0 |
+The project's credibility rests on being inspectable, so the stack is small.
+`pipeline/pyproject.toml` and `site/package.json` are the versions; a table here
+would be a second copy that only ever drifts from them. Python 3.11 and Node 22,
+both pinned in CI.
 
 The interesting entries are the ones that are not there:
 
@@ -196,7 +188,7 @@ What is verified, and by what:
 
 | Suite | Runs | What it protects |
 |---|---|---|
-| `pytest` in `pipeline/` | offline | Connectors, transforms, the seven validation gates, the published payloads |
+| `pytest` in `pipeline/` | offline | Connectors, transforms, the validation gates, the published payloads |
 | `node:test` in `site/` | no browser | Every formula, every derived value, the copy invariants, the legal claims, WCAG contrast, the response headers |
 | `node:test` + Playwright | in a browser | The built page, loaded in a real browser — the only suite that runs the app |
 
@@ -216,7 +208,7 @@ threshold, on purpose.
 | `docs/` | **[Start here](./docs/README.md)** — the engineer entry point: architecture, data sources, math, validation gates, local dev, site structure, and which suite a test belongs in |
 | `pipeline/` | Python 3.11 ingest from Eurostat / БНБ / ЕЦБ / имот.bg / НСИ, plus dated payroll-law and mortgage-limit tables, behind validation gates. CLI: `vyarno-pipeline refresh --source <name>`. Writes thirteen JSONs to `data/published/` |
 | `data/published/` | Versioned JSONs produced by the pipeline. Committed. The site reads these at runtime and never hits an upstream API. **These figures are not ours to license — see [Licence](#licence)** |
-| `site/` | Vite 8 + Svelte 5. Three pages — the calculator, `/legal/` and a 404. Builds to a static directory |
+| `site/` | Vite 8 + Svelte 5. Six routes in both languages — the calculator, `/how/`, `/market/`, `/credit/`, `/legal/`, `/support/` — plus a 404. Builds to a static directory |
 | `.github/workflows/ci.yml` | Both test suites and the production build, on every push to every branch and on every pull request. Does not refresh data |
 
 For the plain-language version — what Eurostat is and why the numbers are
@@ -224,11 +216,11 @@ trustworthy — see [`docs/how-it-works.md`](./docs/how-it-works.md).
 
 ## Running it, and hosting it
 
-Вярно is two things: a static build, and a pipeline you run on a schedule of
-your choosing. `npm run build` produces `site/dist/`, a directory of files with
-no server-side component — any static host will serve it. `site/public/_headers`
-is the security and cache policy that deployment should apply, whether the host
-reads that format natively or you translate it into your server's own syntax.
+Вярно is two things: a static build, and a pipeline. `npm run build` produces
+`site/dist/`, a directory with no server-side component that any static host
+will serve. `site/public/_headers` is the security and cache policy that
+deployment should apply, whether the host reads that format natively or you
+translate it into your server's own syntax.
 
 **How you host and automate it is yours to decide.** This repository describes
 the code, not one operator's machine.
@@ -238,28 +230,31 @@ cd pipeline && source .venv/bin/activate
 vyarno-pipeline refresh --source all --out ../data/published
 ```
 
-That writes the thirteen JSONs and commits nothing — the diff is the review, and a
-payload nobody looked at is a number nobody checked. Each `--source` can be run
-alone; `vyarno-pipeline refresh --help` lists them.
+That writes the thirteen JSONs and commits nothing — the diff is the review, and
+a payload nobody looked at is a number nobody checked. Each `--source` runs
+alone; `vyarno-pipeline refresh --help` lists them. In this repository they are
+started by a release watcher rather than by a person: `.github/workflows/
+watch.yml` polls each upstream inside the window
+[`release_calendar.py`](./pipeline/src/vyarno_pipeline/release_calendar.py)
+records for it and opens a pull request within about ten minutes of a
+publication. **Nothing merges that pull request automatically**, which is the
+only way a figure reaches a reader.
 
 **How to know a refresh is overdue.** Every payload declares the cadence of the
-upstream it comes from — monthly for HICP and the ECB rate, quarterly for the
-НСИ wage series, annual for the payroll table, four-yearly for the Eurostat
-earnings survey ([`site/src/lib/payloads.js`](./site/src/lib/payloads.js)) — and
-each is judged against its own. Past its cadence a payload is *due*; past 1.5×
-it is *overdue* and the site raises a banner naming how many are late. There is
-no single site-wide threshold, because one number cannot serve four release
-rhythms: 45 days is late for a monthly series, perfectly normal for a quarterly
-one, and meaningless against a survey that runs every four years.
+upstream it comes from and is judged against its own — monthly for HICP,
+quarterly for the НСИ wage series, four-yearly for the Eurostat earnings survey
+([`site/src/lib/payloads.js`](./site/src/lib/payloads.js)). Past its cadence a
+payload is *due*; past 1.5× it is *overdue* and the site raises a banner. One
+site-wide threshold cannot serve those rhythms: 45 days is late for a monthly
+series, normal for a quarterly one, and meaningless against a four-yearly
+survey.
 
-The strip header opens a panel listing all nine, each with the period its
-figures describe, the day we fetched it, and a link to the publisher. Those two
-dates are different — June's HICP figures fetched on 27 July — and the panel is
-where that stops being collapsed into one.
-
-`/version.json` on a deployed site carries the same per-payload dates plus both
-aggregates beside the commit it was built from, so one HTTPS request answers
-"which code is live" and "how old is each figure":
+The strip header opens a panel listing every payload with the period its figures
+describe, the day we fetched it, and a link to the publisher. Those two dates are
+different — June's HICP figures fetched on 27 July — and the panel is where that
+stops being collapsed into one. `/version.json` on a deployed site carries the
+same per-payload dates beside the commit it was built from, so one HTTPS request
+answers "which code is live" and "how old is each figure":
 
 ```json
 {"commit":"a1b2c3d","built_at":"2026-08-01T09:12:33Z",
@@ -275,39 +270,23 @@ the one gate that catches a dead link in the published JSON — see
 
 There are none, deliberately. Вярно is a website plus a data pipeline, not a
 library: nothing installs it, nothing depends on a version of it, and the only
-copy that matters is the one running at vyarno.bg. A tag would be a number
-nobody reads describing a state nobody can be on.
-
-What the deployed site *does* carry is `/version.json`, written at build time
-with the commit it came from and the `as_of` date of the data baked into it.
-That answers the only two questions anyone actually asks — which code, and how
-old are the figures — and it cannot go stale, because the build writes it.
-
-If that changes (a published package, a documented API, anyone depending on a
-particular state of this repository), the answer changes with it.
+copy that matters is the one running at vyarno.bg. What the deployed site
+carries instead is `/version.json` above — written by the build, so it cannot go
+stale. If anything ever depends on a particular state of this repository, the
+answer changes with it.
 
 ## Contributing
 
-Contributions are welcome, and corrections to the numbers most of all. If a
+Contributions are welcome, and **corrections to the numbers most of all**. If a
 figure looks wrong, that is the highest-value issue you can open — a civic tool
-that is wrong is worse than no tool. In order of usefulness:
+that is wrong is worse than no tool, and you do not need to be a programmer to
+report one, to report a `source_url` that has died, or to fix clumsy Bulgarian.
 
-1. **Report a wrong number**, with the source and the date if you have them.
-2. **Report a source that has moved or died.** Publishers restructure their
-   sites; a dead `source_url` is a real defect.
-3. **Fix the Bulgarian.** The site is bilingual, but Bulgarian is the primary
-   language and clumsy phrasing counts as a bug, not a nitpick. You do not need
-   to be a programmer for this, or for the two above.
-4. **Accessibility and readability** — contrast, keyboard navigation, screen
-   reader labels.
-5. **Code and documentation.**
-
-Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first; it covers the local setup,
-the validation gates a change has to pass, and the one hard rule about upstream
-data sources — a new source arrives together with its terms of use, quoted
-verbatim, in the original language, with the date they were read.
-[`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) applies to every space the project
-uses.
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) has the setup, the ways to help in order
+of usefulness, and the one hard rule about upstream data: a new source arrives
+together with its terms of use, quoted verbatim, in the original language, with
+the date they were read. [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) applies to
+every space the project uses.
 
 ## Licence
 
@@ -336,15 +315,11 @@ generated from `site/src/lib/legal.js`. Nothing in this repo is legal advice.
 
 ## Support this project
 
-Вярно is a public good. Every feature is free to everyone, there is no account,
-no paid version, no locked functionality and nothing held back for later. What
-the site does is what it does, for everybody. It is sustained by donations —
-there are no salaries, no company and no investor. A donation buys nothing: no
-features, no priority, no influence over any figure the site publishes. If you
-would rather not give, nothing changes for you.
-
-The site says all of this itself, at [vyarno.bg/support/](https://vyarno.bg/support/) —
-its own URL rather than a fragment of the legal page, so it can be linked to.
+Вярно is a public good: every feature is free to everyone, there is no account,
+no paid version and nothing held back for later. It is sustained by donations,
+and **a donation buys nothing** — no features, no priority, no influence over
+any figure the site publishes. The site makes the same statement itself, at
+[vyarno.bg/support/](https://vyarno.bg/support/).
 
 **[Ko-fi](https://ko-fi.com/vyarno)** — one-off, no account needed.
 **[GitHub Sponsors](https://github.com/sponsors/vyarno-bg)** — one-off or

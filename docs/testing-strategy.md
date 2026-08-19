@@ -63,50 +63,24 @@ to do to count is §"The standard a test has to meet".
 ## No suite may get smaller
 
 **Do not write a test count into a doc.** `site/scripts/check-test-floors.mjs`
-holds the only counts in the repository, and they are **floors** rather than
-exact totals: adding tests needs no bookkeeping, and a suite that shrank fails
-the run.
-
-That split keeps the half of the guard worth having. The failure worth catching
+holds the only counts in the repository, as **floors**: adding tests needs no
+bookkeeping, and a suite that shrank fails the run. The failure worth catching
 is an assertion deleted to make something pass, a file dropped from the runner's
-argument list, or a suite that silently stopped running — the same rule
-`AGENTS.md` states and nothing enforced. A count going up is somebody doing
-their job.
+argument list, or a suite that silently stopped running.
 
-The counts come from the reports the suites already write — a TAP reporter
-beside the live one, and pytest's junit-xml — so nothing runs twice and the
-number is the runner's own. **A missing report fails too**, and that is not the
-same as a count of zero: `npm run test:render` exits 0 having asserted nothing
-when it finds no browser, which is exactly the run that must not pass.
+Its header carries the mechanics and the argument for each — where the counts
+come from, why a missing report is a different failure from a count of zero, why
+a skip may not hold a floor up, and why the drift band is a fifth. Two rules
+reach a contributor rather than the script:
 
-**A skip does not count towards a floor**, in any of the three. Turning a test
-into a skip deletes the assertion exactly as removing the test does, and it is
-the version of that deletion nothing notices — so what each floor is checked
-against is what the suite asserted, never how many tests it started. TAP's
-`# pass` line is already that; junit-xml's `tests` attribute is the size of the
-run, and `check-test-floors.mjs` takes the skips back off it.
+- **Lower a floor only in the same commit as the deletion that made it
+  necessary**, and say in the commit message which tests went and why.
+- **Raise one to the reported count in the commit that grew the suite**, once
+  the run says the floor has fallen a fifth behind. A floor far enough below the
+  suite will pass a deletion of half of it.
 
-`make check` reports the counts at the end; CI runs the same script directly,
-per job, because its two jobs are separate runners with separate disks.
-
-Lower a floor only in the same commit as the deletion that made it necessary,
-and say in the commit message which tests went and why.
-
-**A floor that has fallen more than a fifth behind the run fails as well**, and
-is raised to the reported count in the commit that grew the suite. A rule for
-lowering with no rule for raising moves in one direction only: every commit that
-adds a test widens the gap, nothing narrows it, and a floor far enough below the
-suite will pass a deletion of half of it. The band is the price of keeping
-"adding tests needs no bookkeeping" true for the other four fifths of the time —
-`check-test-floors.mjs` §"Floors, not exact counts" argues it against the two
-alternatives.
-
-`make check` runs all of it in CI's order and reports the three totals. **They
-live in `check-test-floors.mjs` as floors and nowhere else as numbers** — a
-per-file count in this table is one that goes stale the next time somebody adds
-a test to that file, and twelve of them go stale twelve different ways. Read the
-totals from the run you just did. A count that moved without you moving it is
-still a finding.
+Read the totals from the run you just did. A count that moved without you moving
+it is still a finding.
 
 **Every suite above tests behaviour, and that is the line.** A test here fails
 because a number is wrong, a contract is broken, a template passes the wrong
@@ -157,8 +131,8 @@ documentation actually has.
 
 ### Which `view/` module a test belongs to
 
-The wiring layer is eleven modules and eleven suites, because the questions it answers
-are not one question. Each row below is one subject, and the sentence beside it
+The wiring layer is one module per subject and one suite per module, because the
+questions it answers are not one question. Each row below is one subject, and the sentence beside it
 is the whole of its remit — **on both sides of the pair**, so a function that
 moves between modules moves its test with it.
 
@@ -654,15 +628,16 @@ complete: `src/lib/view/`, `mirror.js`, `legal.js` and `support.js` are at or ne
 | `data.js` | `fetchJson`'s success return and its warn-and-return-null catch arm, which is the whole of what the coverage run reports uncovered. `verify_data_contracts.mjs` covers the fallback chains — the part that can pick a wrong number — with `fetch` stubbed. Covering the two remaining arms means a stub asserting that `fetch` was called, which tests the mock. The real coverage of them is the render suites, which load the page and make it fetch |
 
 **Python.** Everything below the CLI is high and none of it is the gap: gates,
-transforms, connectors, models. What is left is `cli.py`'s ten `_refresh_*` arms — fetch, transform,
+transforms, connectors, models. What is left is `cli.py`'s `_refresh_*` arms — fetch, transform,
 validate, write, print — of which two are driven end to end through `respx`
-against real trimmed cubes and eight are not. Eleven arms write thirteen payloads —
+against real trimmed cubes (`test_cli.py` for HICP, `test_cli_mortgage.py` for
+the mortgage panel) and the rest are not. Eleven arms write thirteen payloads —
 `_refresh_hicp` publishes the headline and the categories, `_refresh_house_market`
-the market and its structure — so the twelve in `data/published/` counts files
-and never arms.
+the market and its structure — so the file count in `data/published/` counts
+files and never arms.
 
-That is the honest gap, and it is deliberate. Covering the other eight means eight
-more fixture sets built from live upstream responses, each of which then has to
+That is the honest gap, and it is deliberate. Covering the rest means a fixture
+set per arm built from live upstream responses, each of which then has to
 be *maintained* against a publisher that restructures its output without
 warning. The failure they would catch — a connector that breaks — is the failure
 the pipeline is designed to make loud: the gates abort the run, nothing is

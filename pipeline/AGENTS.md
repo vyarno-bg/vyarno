@@ -23,8 +23,10 @@ pin the parser, live probes pin the premise.
 
 ## Layers, and they do not overlap
 
-`sources/{eurostat,bnb,ecb,imot,nsi}.py` call one upstream each and prove the
-response is the one asked for — **no math**. `imot.py` is the exception and says
+`sources/{eurostat,bnb,ecb,imot,nsi,dv}.py` call one upstream each and prove the
+response is the one asked for — **no math**. `dv.py` is the odd one: it reads
+Приложение № 2 to the ЗБДОО out of Държавен вестник for the payroll arm, which
+is law rather than statistics. `imot.py` is the exception and says
 so: имот.bg publishes per-district prices and no city figure at all, so the
 median across districts has to be taken where the districts are read. `transform.py` reshapes rows into
 published shapes — **no network, no validation**. `validate.py` and

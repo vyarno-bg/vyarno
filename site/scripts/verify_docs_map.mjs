@@ -205,6 +205,23 @@ const NUMERALS = new Map([
 const WORD = [...NUMERALS.keys()].join("|");
 
 /**
+ * Word boundaries that hold on both alphabets.
+ *
+ * **`\b` is defined against `[A-Za-z0-9_]` and nothing else**, so between a
+ * space and «д» there is no boundary at all — both sides are non-word to it.
+ * A pattern anchored with `\b` therefore matches every English and digit form
+ * in these files and **not one Bulgarian one**, which is the worst shape a
+ * guard can take: it reports green over the half it never looked at.
+ * `README.bg.md` carried «дванадесет JSON файла» against thirteen published
+ * payloads while the English sentence three lines away was correct and checked.
+ *
+ * Lookarounds on letters-or-digits do what `\b` was meant to do here, in both
+ * scripts, and keep the adjacency rule the whole scan rests on.
+ */
+const OPEN = "(?<![\\p{L}\\p{N}])";
+const CLOSE = "(?![\\p{L}\\p{N}])";
+
+/**
  * A numeral naming what it counts, with NOTHING between the two.
  *
  * Adjacency is what keeps this off ordinary prose. "Eight arms write nine
@@ -223,8 +240,8 @@ const WORD = [...NUMERALS.keys()].join("|");
  * by the word `payloads`.
  */
 const PAYLOAD_COUNT = new RegExp(
-  `\\b(${WORD})\\s+(?:small\\s+|published\\s+|committed\\s+)?` +
-    `(?:JSONs?|payloads?|envelopes?|JSON\\s+файла)\\b`,
+  `${OPEN}(${WORD})\\s+(?:small\\s+|published\\s+|committed\\s+)?` +
+    `(?:JSONs?|payloads?|envelopes?|JSON\\s+файла)${CLOSE}`,
   "giu"
 );
 
@@ -238,8 +255,11 @@ const PAYLOAD_COUNT = new RegExp(
  * business judging — a guard that fires on a true sentence is one somebody
  * turns off, and then the stale totals come back with it.
  */
-const NAMES_A_SUBSET =
-  /\b(?:eighth|ninth|tenth|eleventh|twelfth|of the|осмият|деветият|от деветте)\b/iu;
+const NAMES_A_SUBSET = new RegExp(
+  `${OPEN}(?:eighth|ninth|tenth|eleventh|twelfth|thirteenth|of the|` +
+    `осмият|деветият|десетият|от деветте|от тринадесетте)${CLOSE}`,
+  "iu"
+);
 
 /**
  * `docs/writing-style.md` quotes example sentences to argue about how they are
@@ -247,8 +267,13 @@ const NAMES_A_SUBSET =
  * prose is not a claim about today's repository, and rewriting somebody's
  * example to keep a counter happy would be editing the illustration rather
  * than the thing illustrated.
+ *
+ * This file is the second case and for the same reason: the comments below
+ * quote "nine JSONs" and "Eight arms write nine payloads" as specimens of the
+ * sentences the scan has to catch and the sentences it has to leave alone.
+ * Correcting a specimen to today's count would delete the example.
  */
-const NOT_A_CLAIM = new Set(["writing-style.md"]);
+const NOT_A_CLAIM = new Set(["writing-style.md", "verify_docs_map.mjs"]);
 
 /** Every markdown file in the repository, outside build output and vendor dirs. */
 function markdownFiles(dir, out = []) {
@@ -261,12 +286,36 @@ function markdownFiles(dir, out = []) {
   return out;
 }
 
-test("no doc counts the published payloads wrong", () => {
-  const files = markdownFiles(REPO);
-  assert.ok(
-    files.length > 10,
-    `only ${files.length} markdown files found — the scan lost its root`
-  );
+/**
+ * Source files, because a count in a comment goes stale the same way.
+ *
+ * The docs were not where the worst of these were hiding. `payloads.js` argued
+ * against publishing `cadenceDays` because it would put "a second copy in nine
+ * JSON files"; `content.js` explained the staleness banner by "the nine
+ * payloads"; `legal.js` justified the per-payload panel because "one date
+ * across nine payloads" can only describe one of them. Each is the sentence
+ * the markdown scan was written to catch, in a file it never opened — and each
+ * sits directly above the code somebody edits when they add a payload, which
+ * is when it is read and believed.
+ *
+ * The adjacency rule is what makes this safe to point at code: the numeral has
+ * to be followed immediately by the thing it counts, so `PAYLOADS.length`, a
+ * version, an index and a byte size all go past untouched.
+ */
+function sourceFiles(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    if (SKIP.has(entry) || entry === ".git" || entry === ".venv" || entry === "__pycache__")
+      continue;
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) sourceFiles(path, out);
+    else if (/[.](?:js|mjs|py)$/.test(entry) && !NOT_A_CLAIM.has(entry)) out.push(path);
+  }
+  return out;
+}
+
+test("no doc or comment counts the published payloads wrong", () => {
+  const files = [...markdownFiles(REPO), ...sourceFiles(REPO)];
+  assert.ok(files.length > 10, `only ${files.length} files found — the scan lost its root`);
   const actual = PAYLOADS.length;
   assert.ok(actual > 0, "the payload manifest is empty, so there is nothing to count against");
 
@@ -298,10 +347,112 @@ test("no doc counts the published payloads wrong", () => {
   assert.deepEqual(
     wrong,
     [],
-    `a doc counts the published payloads wrong:\n  ${wrong.join("\n  ")}\n\n` +
+    `something counts the published payloads wrong:\n  ${wrong.join("\n  ")}\n\n` +
       "Fix the sentence, not this test. `AGENTS.md` bars writing a test count " +
       "into a doc for this reason and the reason is not about tests: a number " +
       "nothing reads only ever goes stale, and it goes stale silently."
+  );
+});
+
+// ---------------------------------------------------------------------------
+// THE ROUTE TABLE
+// ---------------------------------------------------------------------------
+
+/**
+ * `docs/site.md`'s Layout table names every entry the build actually produces.
+ *
+ * That table is the first thing a reader meets in the SPA doc and it is the
+ * only place the routes are listed with what each one is FOR, so a route
+ * missing from it is a page nobody knows exists. It fails the way the file
+ * tree above fails — silently, by omission — and it had: `/credit/` was in the
+ * Bulgarian half and the English row beside it still read "those five again"
+ * over five paths, so the one page a reader would have had to go looking for
+ * was the one the table did not have.
+ *
+ * The comparison is against `vite.config.js#rollupOptions.input`, which is what
+ * decides the answer: an entry there is a file the build emits and a URL a
+ * static host resolves, and an entry not there is neither, whatever any table
+ * says.
+ *
+ * **A route is looked for by its DIRECTORY, not by its full path**, because the
+ * table legitimately abbreviates the English half to `en/how/…` rather than
+ * writing six more `index.html`s that say nothing. `en/how/` is in that string
+ * either way, and it is the part that identifies the route.
+ */
+test("the docs/site.md route table names every entry the build emits", () => {
+  const config = readFileSync(join(SITE, "vite.config.js"), "utf8");
+  const inputs = [...config.matchAll(/resolve\(__dirname,\s*"([^"]+)"\)/g)].map((m) => m[1]);
+  assert.ok(inputs.length > 5, `only ${inputs.length} build entries parsed — the scan lost them`);
+
+  const layout = readFileSync(SITE_MD, "utf8");
+  const missing = inputs
+    .filter((entry) => {
+      // `how/index.html` is identified by `how/`; a root or bare entry
+      // (`index.html`, `404.html`) has no directory and is looked for whole.
+      const dir = entry.includes("/") ? `${entry.slice(0, entry.lastIndexOf("/"))}/` : entry;
+      return !layout.includes(dir);
+    })
+    .sort();
+
+  assert.deepEqual(
+    missing,
+    [],
+    `vite.config.js builds ${missing.join(", ")}, which docs/site.md's Layout table ` +
+      "does not name — a route absent from that table is a page a reader has no route to"
+  );
+});
+
+// ---------------------------------------------------------------------------
+// THE WIRING LAYER'S PAIRING
+// ---------------------------------------------------------------------------
+
+/**
+ * Every `view/` module has the suite of the same stem, and every suite a module.
+ *
+ * This pairing is what four docs describe the wiring layer BY — one module per
+ * subject, one suite per module — and until now the only thing holding it was
+ * that somebody had written a matching count into each of them. Counts are the
+ * wrong instrument: they were all reading eleven against twelve modules, none
+ * of them could go red, and the number was never the claim anybody relied on.
+ * The claim is that a subject cannot be added without the suite that covers it,
+ * and that is checkable exactly.
+ *
+ * Both directions, because they fail differently. A module with no suite is a
+ * subject nothing tests while the docs say every subject is tested. A suite
+ * with no module tests a file that has been deleted or renamed, and passes.
+ *
+ * `verify_suites.mjs` is the neighbouring check and a different one: it holds
+ * the suite to being RUN by a runner in `package.json`. A suite can be run and
+ * still cover nothing.
+ */
+test("every view/ module is paired with the suite of the same stem", () => {
+  const modules = readdirSync(join(SITE, "src", "lib", "view"))
+    .filter((f) => f.endsWith(".js"))
+    .map((f) => f.replace(/[.]js$/, ""));
+  const suites = readdirSync(join(SITE, "scripts"))
+    .filter((f) => /^verify_view_.+[.]mjs$/.test(f))
+    .map((f) => f.replace(/^verify_view_|[.]mjs$/g, ""));
+
+  assert.ok(
+    modules.length > 5,
+    `only ${modules.length} view modules found — the scan lost its root`
+  );
+
+  const unsuited = modules.filter((m) => !suites.includes(m)).sort();
+  assert.deepEqual(
+    unsuited,
+    [],
+    `src/lib/view/${unsuited.join(", ")} has no verify_view_*.mjs of the same stem — ` +
+      "the wiring layer is described everywhere as one suite per subject, and this " +
+      "subject is the exception nothing would report"
+  );
+
+  const orphans = suites.filter((s) => !modules.includes(s)).sort();
+  assert.deepEqual(
+    orphans,
+    [],
+    `verify_view_${orphans.join(", verify_view_")} names no module in src/lib/view/ — ` +
+      "a suite whose subject was renamed still runs and still passes"
   );
 });
 

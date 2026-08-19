@@ -1892,7 +1892,7 @@ need to touch it unless a dimension is added or removed.
 
 **Everything below is how, not whether.** Whether a source is worth adding is a
 product question; this section is the method for the ones that are, learned from
-the five connectors that ship.
+the connectors that ship.
 
 ### How to probe
 
@@ -1959,32 +1959,51 @@ like the others in its class rather than inventing a shape.
 
 ### Checklist for adding a connector
 
-In one commit, or it does not ship:
+**In one commit, or it does not ship.** Traced end to end against `nsi-housing`;
+every row is a place that arm appears. The right column is what goes red if you
+skip it — **"nobody"** means the step is on you and on review, and those are the
+rows a connector-shaped change actually forgets.
 
-1. `pipeline/sources/<name>.py` following the shape of its fetch plan
-2. Gates in `validate.py` — a new payload with no gate is a number nobody checks
-3. The payload written by `publish.py`, with `source_url`, `as_of` and `notes`
-4. Tests beside the code ([`testing-strategy.md`](./testing-strategy.md)),
-   fixtures not live calls
-5. **The licence quoted verbatim and dated in [`legal.md`](./legal.md), plus an
-   `UPSTREAMS` entry in `site/src/lib/legal.js`** — `principles.md` §"Hard rules" rule 1
-6. A row in this file's tables
-7. The footer attribution, if the publisher is new — `verify_legal.mjs`
-   §"the footer credits every upstream the pipeline pulls from" holds the list
-   in both languages, and several of those publishers require the credit as a
-   licence condition
-8. **A row in `site/src/lib/payloads.js`** — the manifest is what the site
-   fetches and what the freshness panel judges each payload's age against. Items
-   1–7 leave a file that is committed, gated and attributed, and that no page
-   reads; `verify_data_contracts.mjs` fails on exactly that gap rather than
-   letting it ship quietly
-9. The `view/` module that reads it, and its copy in **both** languages — a
-   missing string renders as a blank line, not a fallback
-   ([`site.md`](./site.md) §"The five-layer split")
+| # | Step | Caught by |
+|---|---|---|
+| 1 | `pipeline/src/vyarno_pipeline/sources/<name>.py`, following its fetch plan above | nobody |
+| 2 | A builder in `transform.py` — reshape only, no network and no gates | nobody |
+| 3 | A gate in `validate.py`. **A payload with no gate is a number nobody checks** | nobody |
+| 4 | `<NAME>_FILE` and its writer in `publish.py`, with `source_url`, `as_of` and `notes` | `test_published_contracts.py` on the envelope |
+| 5 | `_refresh_<name>` in `cli.py`, the `click.Choice` entry, **and the `--source all` branch** | `test_cli_dispatch.py#test_source_all_runs_every_one_of_them` |
+| 6 | A line in `ARMS` and one in `ARM_PAYLOADS` (`pipeline/tests/test_cli_dispatch.py`) | nobody, and an unlisted arm is worse than untested: the fixture patches what it names, so the arm RUNS against its live upstream inside an offline suite |
+| 7 | `release_calendar.py` — a `Release` per upstream cube or file in `WATCHED`, or an entry in `NOT_WATCHED` saying why polling it says nothing | `test_release_calendar.py#test_every_arm_is_watched_or_says_why_it_cannot_be` |
+| 8 | A `BACKSTOP` cron, firing **after** that arm's window has closed | `test_every_arm_has_a_backstop`, `test_a_backstop_fires_after_its_arm_s_window_has_closed` |
+| 9 | `.github/workflows/refresh-<source>.yml`, its `schedule` equal to `BACKSTOP[source]` | `test_each_arm_carries_the_backstop_the_calendar_gives_it`, and the workflow↔`click.Choice` reconciliation in `test_cli_dispatch.py` |
+| 10 | Run the arm; commit the payload in `data/published/` | the `data` job in `ci.yml` |
+| 11 | A row in `site/src/lib/payloads.js` — `key`, `file`, `pages`, `cadenceDays`, `name`, `feeds`, `refPeriod` | `verify_data_contracts.mjs` §"every payload the SPA loads exists in data/published" and §"every payload's refresh fires at least as often as the cadence it is judged by" |
+| 12 | A fallback chain in `data.js` — **only if** the payload needs one. `loadAll` derives from the manifest, so an ordinary payload needs no edit here | nobody |
+| 13 | The `view/` module that reads it, plus `site/scripts/verify_view_<stem>.mjs` named in `package.json` | `verify_suites.mjs` |
+| 14 | The component that renders a figure from it | `verify_data_contracts.mjs` §"every manifest payload feeds a figure, not just a row in the freshness panel" |
+| 15 | Copy in **both** languages — `content.js`, or the inline `.l-bg` / `.l-en` spans on `/market/` and `/credit/`. A missing string renders as a blank line, not a fallback | `verify_copy.mjs` |
+| 16 | The licence quoted **verbatim, in the original language, and dated** in [`legal.md`](./legal.md), plus an entry in `site/src/lib/legal.js#UPSTREAMS` | `verify_legal.mjs`, which fails when the sources page and the footer disagree |
+| 17 | The footer attribution, if the publisher is new — a licence condition of several of them, not decoration | `verify_legal.mjs` §"the footer credits every upstream the pipeline pulls from" |
+| 18 | A row in this file's tables, and a section for the endpoint | nobody |
+| 19 | Raise a floor in `site/scripts/check-test-floors.mjs` if a suite grew past a fifth | `check-test-floors.mjs` itself |
 
-Items 8 and 9 are where this list crosses out of `pipeline/`, and they are the
-ones a connector-shaped change forgets: everything up to 7 can be done, run and
-reviewed without the site being opened once.
+Steps 11 onward are where this crosses out of `pipeline/`, and they are the ones
+that get forgotten: everything up to 10 can be run and reviewed without the site
+being opened once, and it leaves a payload that is committed, gated, attributed
+and read by nothing.
+
+### The other recurring moves
+
+Each is the same shape — the owner first, then its suite. The long form is the
+doc named in the middle column.
+
+| The move | Touch, in order | Never |
+|---|---|---|
+| Change a formula | [`math.md`](./math.md) → `site/src/lib/mirror.js` → `verify_mirror_math.mjs` | put arithmetic in a component or a `$derived` |
+| Change the gross↔net payroll math | [`math.md`](./math.md) §"Gross ↔ net (BG payroll)" → `mirror.js` → `verify_net_salary.mjs` | land it in `verify_mirror_math.mjs`: only the round-trip property there catches the piecewise inverse |
+| Change which number feeds a formula | [`site.md`](./site.md) §"The five-layer split" → the `view/` module for that subject → `verify_view_<stem>.mjs` | wire it inside a `$derived`, or in `calculator.svelte.js` |
+| Change the chrome every page carries | `site/src/lib/SiteHeader.svelte` or `SiteFooter.svelte` → their route lists → `verify_render_layout.mjs` / `verify_render_shell.mjs` | let a page write its own masthead or footer |
+| Retarget an existing upstream | the connector → its gate → this file's section for it → [`legal.md`](./legal.md) if the terms differ → `release_calendar.py` if the release moves | leave the old dataset id in a citation: a dataset that sounds right puts no figure on the page |
+| Change a release window | `release_calendar.py` — widen `days`/`bands`, restate `observed` as the instant somebody watched | trim a window to the one release that was seen; a probe costs one request and a closed window costs a period |
 
 ## Cross-references
 

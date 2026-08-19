@@ -125,6 +125,9 @@ export default [
       "scripts/verify_render*.mjs",
       "scripts/render-harness.mjs",
       "scripts/make_screenshot.mjs",
+      // Holds the `page.evaluate()` callbacks the screenshot and its guard
+      // share, so it is a browser file that never launches one itself.
+      "scripts/screenshot-frame.mjs",
     ],
     languageOptions: { globals: { ...globals.browser } },
   },

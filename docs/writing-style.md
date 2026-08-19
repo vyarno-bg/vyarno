@@ -135,6 +135,21 @@ case for keeping them.
 
 ## Docs and user-facing copy
 
+**A doc is a map, not the territory.** Its job is to point at the code and say
+why the code is shaped that way, not to restate what the code already says. If a
+paragraph takes longer to absorb than the file it describes, it has failed. When
+you add to a doc, add the fewest lines that let the next reader find the thing
+and grasp the one constraint that is not obvious from the source; the reasoning
+lives beside the code, and the doc names it in a clause. Prefer a table row to a
+paragraph, a sentence to a table row, and nothing to a sentence a reader already
+knows.
+
+**The smallest change that holds the constraint is the change.** A branch a
+reader already has, a selector already in `card.css`, a state predicate already
+on the calculator — reach for those before adding a parallel one. Read
+`git diff --stat` before you call something done: if a behaviour you can state in
+a sentence arrived as three hundred lines, most of them are a draft.
+
 - Headings are sentence case, in both languages.
 - Open with the thing itself. No "In this section we will…", no "Let's dive
   into…".

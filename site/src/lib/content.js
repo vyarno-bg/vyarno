@@ -2023,7 +2023,8 @@ export const COPY = {
   // What is still true while the banner is up: nothing is invented and nothing
   // is guessed, these remain the last officially published figures. No promise
   // of a next update date — Eurostat's HICP release is mid-month but not fixed
-  // to a date, and the nine payloads run on three different cadences.
+  // to a date, and the payloads run on cadences that differ by an order of
+  // magnitude — a month for HICP, four years for the SES ladder.
   dataStaleHint: {
     bg: "Показаните числа са последните официално публикувани, които имаме. Нищо тук не е предположение.",
     en: "The figures shown are the last officially published ones we hold. Nothing here is estimated.",
