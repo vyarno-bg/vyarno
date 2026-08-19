@@ -23,7 +23,7 @@
  *
  * The same rule the prerender follows — **what a published payload decides may
  * be filled in, what the CLOCK decides may not**. `newestAsOf()` is the newest
- * `as_of` across the eight committed payloads, which is genuinely when what a
+ * `as_of` across the committed payloads, which is genuinely when what a
  * visitor sees last changed; it is imported from `gen-sitemap.mjs` rather than
  * reimplemented, so `<lastmod>` and `dateModified` cannot answer the same
  * question differently. `new Date()` never appears here: a page stamped with

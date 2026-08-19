@@ -74,7 +74,7 @@ test("payloadStatus reports due before overdue, and absent for a payload that di
 
 test("dataAge measures the aggregate from the OLDEST payload, never the newest", () => {
   // The maximum would let one freshly-republished file stand in for the site's
-  // freshness while seven payloads stayed where they were. `payroll.json` is
+  // freshness while every other payload stayed where it was. `payroll.json` is
   // hand-maintained and the one most likely to be refreshed alone, so this is
   // the realistic failure rather than a corner case.
   const age = dataAge(

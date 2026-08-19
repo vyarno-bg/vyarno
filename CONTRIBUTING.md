@@ -25,57 +25,19 @@ the project honest.
 
 ## Local setup
 
-A fresh clone builds with only public dependencies. There is no private
-registry, no licence key and no hidden step.
-
-```bash
-git clone https://github.com/vyarno-bg/vyarno.git
-cd vyarno
-
-# Pipeline (Python 3.11+)
-cd pipeline
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt && pip install -e . --no-deps
-pytest -q
-
-# Site (Node 22)
-cd ../site
-npm install
-npm run dev            # http://localhost:5173
-```
-
-On Windows: `python -m venv .venv` and `.\.venv\Scripts\Activate.ps1`, and
-`cd site && npm run check:all` where this page says `make check` — same
-sequence, no `make` needed. CI runs the whole thing on `windows-latest` so it
-stays that way —
-[`docs/local-development.md`](./docs/local-development.md) §"On Windows".
+A fresh clone builds with only public dependencies: no private registry, no
+licence key, no hidden step. [`README.md`](./README.md) §"Quick start" has the
+clone-and-run block; `docs/local-development.md` has the long form, including
+how to work without network access and what changes on Windows.
 
 Before opening a pull request, run what CI runs:
 
 ```bash
-make check      # all of the below, in CI's order
+make check      # lint, both suites, the production build, the built page
 ```
 
-Or by hand, if you would rather see the steps:
-
-```bash
-# Python: lint, layout, and the pipeline suite.
-# Activate FIRST — ruff is installed into pipeline/.venv by the setup above and
-# is not on PATH until then.
-cd pipeline && source .venv/bin/activate
-ruff check .. && ruff format --check ..
-pytest -q
-
-# Site: lint, types, the module suites, the build, and the built page
-cd ../site
-npm run lint && npm run check
-npm run verify:math
-npm run build && npm run test:render
-```
-
-`ruff`, `eslint`, `prettier` and `svelte-check` are configured — please do not
-reformat around them or disable a rule without saying why in the same commit.
-`npm run lint:fix` applies what is auto-fixable.
+`cd site && npm run check:all` is the same sequence for a machine with no
+`make`. Either one prints what it ran and what each suite counted.
 
 `npm run test:render` needs a Chromium. `make check` finds one for you —
 Playwright's own, a system install, or whatever `VYARNO_CHROMIUM` names — and
@@ -84,9 +46,9 @@ file of skips looks exactly like a file of passes. Where nothing resolves,
 `cd site && npx playwright install chromium`. It is the only suite that runs
 the app, so it is the one worth having.
 
-`docs/local-development.md` has the longer version, including how to work
-without network access, and `docs/testing-strategy.md` explains which suite a
-new test belongs in.
+`ruff`, `eslint`, `prettier` and `svelte-check` are configured — please do not
+reformat around them or disable a rule without saying why in the same commit.
+`npm run lint:fix` applies what is auto-fixable.
 
 ## The one hard rule about data: never assert a licence you have not read
 
@@ -229,16 +191,15 @@ and it is worth nothing made in somebody else's name.
 This file covers how to get set up and open a change. **What makes a change
 *right* is [`docs/`](./docs/README.md)** — the provenance rules every published
 number has to satisfy, the five-layer split in the SPA, the testing rule, and
-what the code owes the people reading it. Each doc is long because most of it
-is the reasoning behind a rule, and a rule without its failure attached is one
+what the code owes the people reading it. Each doc is long because most of it is
+the reasoning behind a rule, and a rule without its failure attached is one
 somebody will reasonably decide to relax.
 
-[`AGENTS.md`](./AGENTS.md) at the root is the short operative version of the
-same ground — the commands, the boundaries, and a pointer per topic. It has
-that filename because coding agents load a root `AGENTS.md` automatically, and
-it is deliberately kept small because they load it on *every* task; `pipeline/`
-and `site/` carry their own for the same reason. It is worth reading first, by
-a person too.
+[`AGENTS.md`](./AGENTS.md) is the short operative version of the same ground.
+It has that filename because coding agents load a root `AGENTS.md`
+automatically, and it is kept small because they load it on *every* task;
+`pipeline/` and `site/` carry their own. It is worth reading first, by a person
+too.
 
 ## Commit and PR hygiene
 

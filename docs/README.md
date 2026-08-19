@@ -75,27 +75,28 @@ exception, and it is a cost rather than a pattern to extend. A rule changes in
 
 ## Start here depending on what you are doing
 
+The recurring moves have one home each, and it is
+[`data-sources.md`](./data-sources.md) §"Checklist for adding a connector" and
+§"The other recurring moves" — the ordered steps, and which of them a test
+catches. What is below is everything that is not one of those.
+
 | You want to… | Read |
 |---|---|
-| Refresh the published figures after a number changed in Bulgaria | [`local-development.md`](./local-development.md) §"Running the pipeline against live upstreams" |
-| Check whether an idea was already ruled out, or which principle a feature has to satisfy | [`principles.md`](./principles.md) — P1–P11 and the closed list |
-| Touch anything with a licence or a legal edge | [`legal.md`](./legal.md) → `site/src/lib/legal.js` |
 | Understand the system end to end | [`architecture.md`](./architecture.md) → [`math.md`](./math.md) → [`data-sources.md`](./data-sources.md) |
-| Add a new data source **to the pipeline** | [`data-sources.md`](./data-sources.md) → [`math.md`](./math.md) → the pattern in `sources/eurostat.py` |
-| Get a published payload **onto a page** | [`site.md`](./site.md) §"`src/lib/payloads.js` — the manifest" → the `view/` module for that subject → `site/AGENTS.md`. The pipeline half above stops at the repo boundary this crosses: a payload with no manifest row publishes and renders nowhere. Nothing in the SPA suites catches that — they iterate the manifest, so a row with no file goes red and a file with no row is silent. `freshness-check.yml` is what reports it, weekly |
-| Add a **new upstream** | [`data-sources.md`](./data-sources.md) §"Working with a new upstream" — how to probe, the seven fetch plans, and the connector checklist. Then [`legal.md`](./legal.md) **in the same commit** |
-| Change how a number is computed | [`math.md`](./math.md) → `transform.py` → `test_transform.py` |
-| Change a **formula** the SPA computes | [`math.md`](./math.md) → `site/src/lib/mirror.js` → `verify_mirror_math.mjs` |
-| Change the **gross↔net payroll** math | [`math.md`](./math.md) §"Gross ↔ net (BG payroll)" → `site/src/lib/mirror.js` → `verify_net_salary.mjs`, **not** `verify_mirror_math.mjs`. It is a formula in `mirror.js` like any other and it has a suite of its own, because the inverse is piecewise and only a round-trip property catches the branch that reads as obviously correct |
-| Change **which number feeds a formula** | [`site.md`](./site.md) §"The five-layer split" → the `view/` module for that subject → the `verify_view_*.mjs` suite of the same stem. **Not** in a `$derived(...)`, and not in `calculator.svelte.js` either — moving the reactive graph into a rune module did not relax that rule |
-| Change UI copy that makes a claim about our own numbers | `site/src/lib/content.js` → `site/scripts/verify_copy.mjs`. A sentence can be false while the arithmetic is right |
-| Change the annuity | [`math.md`](./math.md) §"Which rate goes into the annuity" → `site/src/lib/mirror.js` → `verify_mirror_math.mjs` |
-| Change the affordability line or the regulatory caps | `site/src/lib/view/home.js#mortgagePanel` → `verify_view_home.mjs`. It reads the caps out of the published limits rather than accepting them, which is the point. Who set them and when is [`data-sources.md`](./data-sources.md) §"БНБ lending limits" |
+| Refresh the published figures | [`local-development.md`](./local-development.md) §"Running the pipeline against live upstreams" |
+| Check whether an idea is already ruled out | [`principles.md`](./principles.md) — P1–P11 and the closed list |
+| Touch anything with a licence or a legal edge | [`legal.md`](./legal.md) → `site/src/lib/legal.js` |
+| Add a **new upstream** | [`data-sources.md`](./data-sources.md) §"Working with a new upstream" — how to probe, the seven fetch plans, then the checklist. [`legal.md`](./legal.md) **in the same commit** |
+| Change how the pipeline computes a number | [`math.md`](./math.md) → `transform.py` → `test_transform.py` |
+| Get a published payload **onto a page** | [`site.md`](./site.md) §"`src/lib/payloads.js` — the manifest". A payload with no manifest row publishes and renders nowhere, and no SPA suite catches it: they iterate the manifest, so a row with no file goes red and a file with no row is silent. `freshness-check.yml` reports it, weekly |
+| Change UI copy that makes a claim about our own numbers | `site/src/lib/content.js` → `verify_copy.mjs`. A sentence can be false while the arithmetic is right |
+| Change the annuity | [`math.md`](./math.md) §"Which rate goes into the annuity" → `mirror.js` → `verify_mirror_math.mjs` |
+| Change the affordability line or the regulatory caps | `site/src/lib/view/home.js#mortgagePanel` → `verify_view_home.mjs`. It reads the caps out of the published limits rather than accepting them, which is the point |
 | Add a package, a font, or a chart library | [`AGENTS.md`](../AGENTS.md) §Boundaries "Ask first". For charts the answer is already no — [`site.md`](./site.md) §"The two charts" |
-| Change a colour | `site/src/lib/tokens.css` → `verify_contrast.mjs` (WCAG AA is enforced, both themes) |
-| Change a response header | `site/public/_headers` → `verify_static_assets.mjs`. That file is the declaration; applying it is the deployment's job, and this repository does not describe one. After the deploy, `make headers` asks the live origin whether it agrees |
+| Change a colour | `site/src/lib/tokens.css` → `verify_contrast.mjs` (WCAG AA, both themes) |
+| Change a response header | `site/public/_headers` → `verify_static_assets.mjs`. That file is the declaration; applying it is the deployment's job. After the deploy, `make headers` asks the live origin whether it agrees |
 | Touch a HICP connector | [`data-sources.md`](./data-sources.md) §"Cross-cutting rules" → gates 1–2 |
-| Ship a change | `make check` from the repo root, all green — or the long form in [`local-development.md`](./local-development.md). Tests move with the code in the same commit |
+| Ship a change | `make check` from the repo root, all green. Tests move with the code in the same commit |
 
 ## Risk flags
 

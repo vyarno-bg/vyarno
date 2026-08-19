@@ -5,106 +5,52 @@ gates it, and writes versioned JSON to `data/published/`. A static Svelte SPA
 reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БНБ or
 имот.bg, and nothing the user types leaves their device.
 
+```mermaid
+flowchart TB
+    ES["Eurostat<br/>prices · wages · jobs · property"]
+    NSI["НСИ<br/>wages · housing"]
+    ECB["ЕЦБ<br/>MIR"]
+    BNB["БНБ<br/>mortgage stock"]
+    IMOT["имот.bg<br/>city €/m²"]
+
+    WATCH{{"watch.yml<br/>polls a timestamp, never a value"}}
+    ARM["one refresh arm<br/>sources → transform → validate → publish"]
+    PR["pull request against main"]
+    JSON[("data/published/*.json<br/>committed")]
+    SPA["site/ — Vite + Svelte, static"]
+    READER["the reader's tab"]
+
+    ES & NSI & ECB & BNB --> WATCH
+    WATCH -->|"publisher moved"| ARM
+    IMOT -.->|"403s a datacenter IP:<br/>refreshed by hand"| ARM
+    ARM -->|"a gate raises: nothing published"| PR
+    PR -->|"a person merges"| JSON
+    JSON --> SPA --> READER
+    READER -->|"salary, rent, savings —<br/>computed here, posted nowhere"| READER
 ```
-┌─ Refresh time (a pipeline run — by hand, or on whatever schedule you set) ─┐
-│                                                                       │
-│   Eurostat        БНБ           ЕЦБ           имот.bg      НСИ        │
-│   prices · wages  XLSX          MIR (SDMX)    /sredni-     XLSX       │
-│   jobs · property (mortgage     (mortgage      ceni        (wages ·    │
-│                    stock)        new business)              housing)  │
-│        └──────────┴──────────────┴──────────────┴───────────┘         │
-│                              │                                        │
-│              pipeline/ (Python 3.11)                                  │
-│              sources/*.py → transform.py → validate.py → publish.py   │
-│                              │             (driven by cli.py)         │
-│                              ▼                                        │
-│                    data/published/*.json   ← 13 payloads, committed   │
-└──────────────────────────────┼────────────────────────────────────────┘
-                               │  dev middleware, or copied into dist/
-                               ▼
-┌─ Runtime (the user's browser) ────────────────────────────────────────┐
-│   site/ — Vite 8 + Svelte 5, static                                   │
-│   data.js → view/*.js → mirror.js → calculator.svelte.js → components │
-│   personal figures are computed in the tab and sent nowhere           │
-└───────────────────────────────────────────────────────────────────────┘
-```
+
+The reader's browser calls no upstream, and nothing they type leaves the device.
+**A published figure reaches them through a merge and no other way** — §"What
+happens to a data pull request" is why nothing here merges one.
 
 ## Repo map
 
-```
-├── AGENTS.md · LICENSE (Apache-2.0) · NOTICE (the data carve-out) · README.md
-├── CONTRIBUTING.md · CODE_OF_CONDUCT.md · SECURITY.md
-├── ruff.toml · .editorconfig      lint + layout for every language here
-├── .github/         workflows/ci.yml · watch.yml · refresh*.yml ·
-│                    dependabot.yml · FUNDING.yml ·
-│                    ISSUE_TEMPLATE/ · pull_request_template.md ·
-│                    copilot-instructions.md (points at AGENTS.md)
-├── docs/            README (engineer entry) · architecture · data-sources ·
-│                    math · validation-gates · local-development · site ·
-│                    seo · how-it-works · legal · principles ·
-│                    testing-strategy · writing-style · img/
-├── pipeline/        Python 3.11 + httpx + pydantic + click · AGENTS.md
-│   ├── requirements.txt · requirements-dev.txt   pip-compile locks, hashed
-│   ├── src/vyarno_pipeline/
-│   │   ├── models · transform · validate · publish · cli · regions
-│   │   ├── mortgage.py   # gates + БНБ lending limits
-│   │   ├── payroll.py    # dated BG payroll-law table (no network)
-│   │   ├── release_calendar.py · watch.py   # when upstreams publish, and
-│   │   │                 # the poll that catches one (stdlib only)
-│   │   └── sources/      # eurostat · bnb · ecb · imot · nsi
-│   └── tests/       `pytest -q` offline; `-m live` hits real upstreams
-├── data/published/  13 payloads, committed — these ARE served to the site
-└── site/            Vite 8 + Svelte 5, eleven build entries · AGENTS.md
-    ├── index.html · how/index.html · market/index.html ·
-    │                legal/index.html · support/index.html · 404.html
-    ├── en/           the same six routes, declaring `en`
-    ├── public/      _headers (CSP + cache) · robots.txt · llms.txt ·
-    │                .well-known/security.txt · favicon · og cards · fonts
-    ├── eslint.config.js · .prettierrc.json · svelte.config.js
-    ├── scripts/     verify_*.mjs (`npm run verify:math`) · verify_render_*.mjs
-    │                (`npm run test:render`, the built page in a browser) ·
-    │                prerender · copy-data · gen-sitemap · gen-jsonld ·
-    │                gen-version · strip-sourcemaps · check-identity
-    └── src/         App.svelte · How.svelte · Market.svelte ·
-                     Legal.svelte · Support.svelte · NotFound.svelte
-        ├── components/  the calculator's parts — one per receipt row, plus
-        │                the inputs card, the pay field, the basket editor and
-        │                the share card. `DataLate` is the exception the name
-        │                does not fit: /how/ and /market/ mount it too, because
-        │                they carry the overdue line with no panel to open ·
-        │                ResultsCard · ResultsAnswer · ResultsSummary ·
-        │                RankedContributions ·
-        │                PocketRow · PercentileRow · TaxWedgeRow · RentRow ·
-        │                HomeRow · LeftoverRow · SavingsRow · MethodDrawer ·
-        │                ShareCard · ResultsWordmark · NationalStrip ·
-        │                ExplainerBand
-        └── lib/     payloads.js   WHICH payloads exist at all (the manifest)
-                     data.js       WHICH published number (fallback chains)
-                     view/         WHICH input feeds which formula (the wiring),
-                                   eleven modules, one per subject
-                     mirror.js     THE ARITHMETIC (the only domain math)
-                     plot.js       PLOT GEOMETRY — a figure to a coordinate
-                     calculator.svelte.js  the STATE everything reads
-                     format.js     how a number or a date is written
-                     content.js    BG/EN copy + presets + offline sentinels
-                     share-card.js the PNG a reader sends, drawn on a canvas
-                     legal.js      the legal documents + ЗЕТ чл. 4 identity
-                     legal-nav.js  contact addresses + document names
-                     support.js    the donation rules — what may be offered
-                     stores.js     lang · theme · област · the reader's figures
-                     build.js      the build stamp (__BUILD_ID__, or "dev")
-                     *.css         the shared looks: palette and type, the
-                                   cards, the disclosure, the receipt row,
-                                   and the table two pages draw
-                     WedgeChart.svelte  the tax wedge, drawn by / and /how/
-                     SiteHeader.svelte  wordmark + route out + theme + language
-                     SiteFooter.svelte  attribution + legal links + build stamp
-```
+| Directory | What is in it | Its own map |
+|---|---|---|
+| `pipeline/` | Python 3.11 ingest: `sources/*.py` → `transform.py` → `validate.py` → `publish.py`, driven by `cli.py`. Plus the dated legislative tables and the release calendar | [`pipeline/AGENTS.md`](../pipeline/AGENTS.md) |
+| `data/published/` | The payloads, committed. These ARE what the site serves | §"What `data/published/` carries" below |
+| `site/` | The Vite + Svelte SPA, five layers | [`site.md`](./site.md) §Layout, whose file tree `verify_docs_map.mjs` holds to the directory in both directions |
+| `docs/` | Everything else | [`README.md`](./README.md) |
+| `.github/` | `ci.yml`, `watch.yml`, one `refresh-*.yml` per arm, `freshness-check.yml`, the issue and PR templates | §CI below |
 
-The two toolchains carry their own `AGENTS.md`, because an agent reads the
-nearest one in the tree: [`pipeline/AGENTS.md`](../pipeline/AGENTS.md) for the
-Python side, [`site/AGENTS.md`](../site/AGENTS.md) for the SPA. Neither costs
-anything to a session that does not enter that directory.
+Root carries the licence pair that the rest of this repository keeps true:
+`LICENSE` is Apache-2.0 over the code, `NOTICE` is the carve-out saying the
+figures are not ours ([`legal.md`](./legal.md)).
+
+**Only `site.md`'s tree lists files, and only because something checks it.** A
+hand-kept list of filenames goes stale in the direction of omission, silently,
+and a map naming something deleted reads as authoritative — so the one that
+exists is guarded and there is not a second.
 
 ## Why bake at build time
 
@@ -125,7 +71,7 @@ Every layer has one job, and they do not overlap.
 
 | Layer | Files | Job |
 |---|---|---|
-| Source | `sources/{eurostat,bnb,ecb,imot,nsi}.py` | Call one upstream, prove the response is what was asked for, return flat rows. **No math.** |
+| Source | `sources/{eurostat,bnb,ecb,imot,nsi,dv}.py` | Call one upstream, prove the response is what was asked for, return flat rows. **No math.** |
 | Transform | `transform.py` | Reshape rows into published shapes: year-end selection, the salary ladder. **No network, no validation.** |
 | Validate | `validate.py`, `mortgage.py` | Gates that block the publish. A gate raises; it never repairs. Which gates run depends on the `--source` — [`validation-gates.md`](./validation-gates.md) §"Which gates run for which `--source`" is the table. |
 | Publish | `publish.py` | Write the envelopes, including the provenance frame every payload carries. |
@@ -228,7 +174,7 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 | `cli.py` | One arm per `--source`; exit codes **2** transform, **3** gate, **4** network |
 | `site/src/lib/payloads.js` | Which payloads the page depends on, and which routes need each — the one list `loadAll`, the freshness verdict, `/version.json` and the sitemap all derive from |
 | `site/src/lib/data.js` | Which published number, including every fallback chain |
-| `site/src/lib/view/` | Which input feeds which formula — eleven modules, one per subject, each paired with the suite of the same stem |
+| `site/src/lib/view/` | Which input feeds which formula — one module per subject, each paired with the suite of the same stem |
 | `site/src/lib/mirror.js` | The arithmetic — the only domain math in the front end |
 
 ## Hosting and headers
