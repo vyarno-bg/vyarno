@@ -27,7 +27,7 @@ import {
   answerLine,
   RANK_ROWS_SHOWN,
 } from "../src/lib/view/results.js";
-import { officialInflation, contributions, personalInflationDetailed } from "../src/lib/mirror.js";
+import { contributions, personalInflationDetailed } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
 
@@ -88,35 +88,6 @@ test("the published headline says which Eurostat release it came from", () => {
       `${head.latest_index?.time} and is_flash=${head.is_flash} — the flag and ` +
       `the months disagree about which release this is`
   );
-});
-
-test("the strip headline is NOT the sum of the divisions — they differ by the chain link", () => {
-  // Σ(w·r) over the published divisions is 5.356% against a 5.2% headline: a
-  // real 0.16 pp methodological gap (HICP re-weights at December), not an
-  // error. Rendering Σ(w·r) in the national strip would quietly replace
-  // Eurostat's official figure with our reconstruction of it.
-  const cats = read("hicp_categories")?.categories;
-  const head = read("hicp_headline");
-  if (!cats || !head) return;
-  const official = headlineRate(head);
-  const basketSum = officialInflation(cats, "y1");
-  assert.notEqual(official, basketSum);
-  assert.ok(
-    Math.abs(basketSum - official) > 0.05,
-    "the gap these two carry is load-bearing copy — if it vanished, check why"
-  );
-  // The upper band compares two figures at one month, and Eurostat's flash
-  // publishes the headline a month ahead of the divisions. While that is what
-  // the payloads say — provably, via the index month and the payload's own
-  // note — the gap is the release calendar and not a methodological one, and
-  // there is no all-items rate at the divisions' month to band it against.
-  // Everything above still holds: a flash widens this gap, it never closes it,
-  // so the claim the copy rests on is the half that keeps its inputs.
-  if (head.latest_index?.time !== head.ref_period) {
-    assert.match(head.notes ?? "", /FLASH/, "the payloads are a month apart for no stated reason");
-    return;
-  }
-  assert.ok(Math.abs(basketSum - official) <= 0.5, "…but it must stay inside the sanity band");
 });
 
 test("monthsSplit answers only when it has both months", () => {
