@@ -178,11 +178,15 @@ test("fastestRisingDivision picks the HIGHEST rate", () => {
   assert.equal(fastestRisingDivision(null), null);
 });
 
-test("fastestRisingDivision on the shipped basket is transport", () => {
+test("fastestRisingDivision names the top of the shipped basket, whichever it is", () => {
   const cats = read("hicp_categories")?.categories;
   if (!cats) return;
   const f = fastestRisingDivision(cats);
-  assert.equal(f.cp_code, "CP07");
+  // No division is named here. Which one leads is upstream's to set and it
+  // changes by tenths - CP13 at 9.5% over transport at 9.4% - so a code pinned
+  // here turns a refresh that is only a refresh red, and teaches the next
+  // reader that the fix is to edit the expectation until it matches.
+  assert.ok(cats.includes(f), "the card must name a division out of the payload");
   assert.ok(
     cats.every((c) => c.annual_rate_pct <= f.annual_rate_pct),
     "no division may out-rise the one we call fastest"
