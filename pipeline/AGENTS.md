@@ -58,7 +58,7 @@ production refresh.** It skips gate 6, the only check that the URLs we publish
 still resolve — and those URLs are the "↗" the reader clicks.
 
 `--source mortgage` needs the БНБ TLS intermediate present; their server omits
-it (`docs/data-sources.md` §"TLS setup"). Never disable verification.
+it (`docs/sources/bnb.md` §"TLS setup"). Never disable verification.
 `city-price` needs an ordinary Bulgarian connection rather than a cloud one:
 `www.imot.bg` answers datacenter IPs with a 403 on every path, so that arm
 exits 4 from CI and from any cloud runner. A full refresh is 27 city pages plus

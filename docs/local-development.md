@@ -392,7 +392,7 @@ calls). Use it only where outbound HTTP is genuinely blocked, and **never for
 still resolve, and those links are the "↗" the reader clicks.
 
 **`--source mortgage` needs the БНБ TLS fix on a fresh machine** — see
-[`data-sources.md`](./data-sources.md) §"TLS setup". Never disable verification.
+[`data-sources.md`](./sources/bnb.md) §"TLS setup". Never disable verification.
 
 ### `--source city-price` — the one that has to be run by hand
 

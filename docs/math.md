@@ -724,7 +724,7 @@ upstreams.** Probed 2026-08-06: `earn_ses_monthly` carries BG at no NACE section
 at all; `nace_r2=J` returns an empty `value` map over a `nace_r2` dimension of
 size 0, and the categories the cube does carry for BG are broad groupings, of
 which only the whole-economy one is populated
-([`data-sources.md`](./data-sources.md) §"gross wage by economic activity" has
+([`data-sources.md`](./sources/nsi.md) §"gross wage by economic activity" has
 the probes). So the site can report a distance from an average and cannot report
 a position in a distribution.
 

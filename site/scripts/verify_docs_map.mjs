@@ -355,6 +355,62 @@ test("no doc or comment counts the published payloads wrong", () => {
 });
 
 // ---------------------------------------------------------------------------
+// ONE DOC PER CONNECTOR
+// ---------------------------------------------------------------------------
+
+/**
+ * Every connector is written up, and every write-up is reachable.
+ *
+ * `docs/data-sources.md` was one 2,000-line file, which is the shape a
+ * per-upstream reference reaches on its own: nobody reads it end to end, so a
+ * new connector's section gets added wherever the writer happened to be and an
+ * old one's endpoints rot in the middle where nothing points at them. Split per
+ * publisher, the failure moves rather than going away — a connector lands with
+ * no doc at all, or a doc is written and the index never learns about it, and
+ * both are silent.
+ *
+ * Checked in both directions for the reason the file tree above is: a connector
+ * nobody documented is invisible, and a doc nothing links to is worse, because
+ * it reads as authoritative to whoever finds it and stale to nobody.
+ *
+ * The mapping is deliberately "named somewhere under `docs/sources/`" rather
+ * than stem-for-stem. `dv.py` is written up in `legislative.md` beside the
+ * dated tables it feeds, because a reader looking for the ТЗПБ appendix is
+ * looking for payroll law and not for a gazette scraper.
+ */
+test("every connector has a doc under docs/sources, and every doc is indexed", () => {
+  const connectors = readdirSync(
+    join(REPO, "pipeline", "src", "vyarno_pipeline", "sources")
+  ).filter((f) => f.endsWith(".py") && f !== "__init__.py");
+  assert.ok(
+    connectors.length > 3,
+    `only ${connectors.length} connectors found — the scan lost its root`
+  );
+
+  const docsDir = join(REPO, "docs", "sources");
+  const docs = readdirSync(docsDir).filter((f) => f.endsWith(".md"));
+  const allDocs = docs.map((f) => readFileSync(join(docsDir, f), "utf8")).join("\n");
+
+  const undocumented = connectors.filter((f) => !allDocs.includes(f)).sort();
+  assert.deepEqual(
+    undocumented,
+    [],
+    `sources/${undocumented.join(", sources/")} is fetched by the pipeline and named in no ` +
+      "doc under docs/sources/ — its endpoints, its dimension traps and its scope reads " +
+      "exist only in the connector, where nobody looking for an upstream will find them"
+  );
+
+  const index = readFileSync(join(REPO, "docs", "data-sources.md"), "utf8");
+  const unlinked = docs.filter((f) => !index.includes(`sources/${f}`)).sort();
+  assert.deepEqual(
+    unlinked,
+    [],
+    `docs/sources/${unlinked.join(", docs/sources/")} is not linked from data-sources.md — ` +
+      "the index is the only route to these, so one missing from it is a file nobody opens"
+  );
+});
+
+// ---------------------------------------------------------------------------
 // THE ROUTE TABLE
 // ---------------------------------------------------------------------------
 

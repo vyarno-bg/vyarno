@@ -180,18 +180,10 @@ of accepting them as arguments. Details in [`site.md`](./site.md).
 ## Hosting and headers
 
 The build output is a static directory, so everything the edge needs lives in
-`site/public/_headers`: a CSP matching what the app actually does (`script-src
-'self'`, `connect-src 'self'`, `frame-ancestors 'none'`), cache lifetimes that
-are immutable for hashed assets and five minutes for `/data/published/*`, and a
-`Permissions-Policy` denying camera, mic, geolocation and payment.
-
-**`_headers` is the declaration, and applying it is the deployment's job.** A
-host that reads the format natively applies it as written; anything else needs
-the same policy in its own syntax, made from this file and kept in step with it.
-`verify_static_assets.mjs` pins every directive exactly, so the declaration
-cannot widen without a red test — but nothing in a build can see a *server*
-whose config has drifted from it. That one is checked by requesting a page from
-the live origin and reading the headers back.
+`site/public/_headers` — the CSP, the cache lifetimes and the
+`Permissions-Policy`. **It is the declaration, and applying it is the
+deployment's job.** [`site.md`](./site.md) §"Hosting: `public/_headers`" carries
+what each directive is holding and why `make headers` sits outside `make check`.
 
 **Credentials the deployment needs are the deployment's business, not this
 repository's.** Whatever publishes the built site, and whatever runs the refresh
@@ -229,7 +221,7 @@ runner has an ordinary Bulgarian connection to offer it, and it is refreshed by
 hand for that reason and no other. A refresh that runs
 anywhere still has to be given what the network there lacks: the БНБ arm needs
 the missing TLS intermediate supplied before it can fetch at all
-(`data-sources.md` §"TLS setup"). The `live` probes stay excluded from CI for
+(`sources/bnb.md` §"TLS setup"). The `live` probes stay excluded from CI for
 the same reason they always were: run them from an ordinary network with
 `pytest -m live`.
 

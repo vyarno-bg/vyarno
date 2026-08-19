@@ -59,8 +59,8 @@ commit that grew the suite.
 
 - run `make check` before calling a change done, and read the render count;
 - move a test in the same commit as the code it protects;
-- update `docs/data-sources.md` in the same commit as any change to
-  `pipeline/src/vyarno_pipeline/sources/*`;
+- update that connector's doc under `docs/sources/` in the same commit as any
+  change to `pipeline/src/vyarno_pipeline/sources/*`;
 - write new user-facing copy in **both** languages — a missing string renders
   as a blank line, not a fallback;
 - write down the *why*, in the comment or the commit message. This codebase
@@ -185,6 +185,7 @@ what an anti-slop pass must not strip. The short form:
 | Touch a formula or a published number | `docs/math.md` |
 | Work out why a gate tripped | `docs/validation-gates.md` |
 | Touch the SPA | `site/AGENTS.md`, then `docs/site.md` |
+| Change a colour, a type step or a shared stylesheet | `docs/design.md` |
 | Touch what a crawler reads | `docs/seo.md` |
 | Touch the pipeline | `pipeline/AGENTS.md` |
 | Write or move a test | `docs/testing-strategy.md` |
