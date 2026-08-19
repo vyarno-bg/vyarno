@@ -26,9 +26,9 @@ import {
  *
  * This function takes the headline payload and nothing else, on purpose: it
  * physically cannot be handed the category list and quietly become Σ(w·r).
- * The two differ by ~0.16 pp on BG data (December chain link — see
- * docs/math.md §"Two reconciliations"), and the national strip must carry the
- * official figure, not our reconstruction of it.
+ * The two differ by the December chain link (docs/math.md §"Two
+ * reconciliations") — 0.16 pp apart in one month and 0.02 pp in another — so
+ * the strip carries the official figure whichever way that gap happens to fall.
  *
  * @param {{headline_rate_pct?: number} | null | undefined} payload
  * @returns {number}
