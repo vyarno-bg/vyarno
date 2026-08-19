@@ -21,6 +21,7 @@ offline, and indifferent to how any one of them works.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -386,3 +387,41 @@ def test_the_payload_table_names_every_arm() -> None:
         "ARM_PAYLOADS and ARMS disagree about which arms exist, so one of the "
         "two tests above is silently skipping an arm."
     )
+
+
+def test_the_refresh_workflow_ignores_every_field_stamped_with_the_run_date() -> None:
+    """A payload that differs only by when it was fetched is not a data refresh.
+
+    `refresh.yml` decides whether to open a pull request by comparing the fresh
+    payload against the committed one with the run-date fields removed. Miss one
+    and the arm carrying it reports a real change on any run that lands on a new
+    calendar day: a branch pushed, a pull request opened, CI dispatched, and a
+    diff of two dates. This project spends exactly one human look on a published
+    figure and that look is the review — a pull request that moves no number
+    spends it on nothing, and teaches the reviewer to skim the next one.
+
+    `transform.py` writes `published_at=as_of`, so the two are equal by
+    construction in every payload that carries both. The check is therefore the
+    payloads themselves: any top-level field holding the payload's own `as_of`
+    is a run stamp, and the workflow has to be dropping it.
+    """
+    root = Path(__file__).resolve().parents[2]
+    workflow = (root / ".github" / "workflows" / "refresh.yml").read_text("utf-8")
+
+    declared = re.search(r"RUN_STAMPED = \{([^}]*)\}", workflow)
+    assert declared, (
+        "refresh.yml no longer names a RUN_STAMPED set, so nothing says which "
+        "fields are the run date rather than the data."
+    )
+    ignored = set(re.findall(r'"([^"]+)"', declared.group(1)))
+
+    for path in sorted((root / "data" / "published").glob("*.json")):
+        payload = json.loads(path.read_text("utf-8"))
+        as_of = payload.get("as_of")
+        stamped = {key for key, value in payload.items() if key != "as_of" and value == as_of}
+        missed = sorted(stamped - ignored)
+        assert not missed, (
+            f"{path.name} carries {missed}, which hold its own as_of and are "
+            f"therefore the run date. refresh.yml compares them, so this arm "
+            f"opens a pull request on every run that lands on a new day."
+        )
