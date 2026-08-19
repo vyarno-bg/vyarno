@@ -25,7 +25,7 @@ robust to layout changes in the surrounding HTML.
 
 **Where it is fetched from.** `www.imot.bg` answers datacenter IPs with a 403,
 so this is the one connector that needs an ordinary Bulgarian connection. That
-is why `city-price` is refreshed by hand while the other eight arms run
+is why `city-price` is refreshed by hand while every other arm runs
 anywhere, and why a 403 here is an environment result rather than a parser
 regression. A full refresh is 27 cities plus one request per historical year
 each — around 650 requests, roughly two and a half minutes at polite spacing.

@@ -1,6 +1,6 @@
 """`refresh --source <name>` reaches the right arm, and `--source all` reaches every one.
 
-The eight `_refresh_*` functions are network-driven orchestration and are
+The `_refresh_*` functions are network-driven orchestration and are
 exercised end to end elsewhere (`test_cli.py` drives the HICP arm through respx
 against real trimmed Eurostat cubes; `test_cli_mortgage.py` does the same for
 the mortgage arm). What no test covered was the dispatcher above them — forty
@@ -11,7 +11,8 @@ That bug class is specific: **a connector added without being wired into
 `all`.** The pipeline is refreshed in practice with `--source all`, so a source
 that works perfectly when named explicitly and is missing from the `all` branch
 produces exactly the failure this project is built to prevent — a published
-panel where eight payloads are current, one is months old, and nothing says so.
+panel where every payload but one is current, that one is months old, and
+nothing says so.
 The staleness banner would catch it eventually, off the oldest payload, but
 "eventually" is after it has shipped.
 

@@ -5,7 +5,7 @@ calculator. The user's browser never calls an upstream API.
 
 ## Layout
 
-**Eleven build entries, eleven real URLs**, so each resolves on a static host
+**One build entry per real URL**, so each resolves on a static host
 with no router and no rewrite rules (`vite.config.js#rollupOptions.input`, which
 is the list to read this off — a count written here is a count nothing checks):
 
@@ -17,10 +17,10 @@ is the list to read this off — a count written here is a count nothing checks)
 | `credit/index.html` → `src/credit-main.js` → `Credit.svelte` | `/credit/` | what borrowing costs, and how long a mortgage's rate is fixed for |
 | `legal/index.html` → `src/legal-main.js` → `Legal.svelte` | `/legal/` | terms, privacy, ЗЕТ чл. 4 identity, sources |
 | `support/index.html` → `src/support-main.js` → `Support.svelte` | `/support/` | how the project is paid for |
-| `en/index.html`, `en/how/…`, `en/market/…`, `en/legal/…`, `en/support/…` | `/en/…` | those five again, declaring `en` |
+| `en/index.html`, `en/how/…`, `en/market/…`, `en/credit/…`, `en/legal/…`, `en/support/…` | `/en/…` | those six again, declaring `en` |
 | `404.html` → `src/notfound-main.js` → `NotFound.svelte` | `/404.html` | served for any unmatched path by name |
 
-**The `en/` five name the same bootstraps and the same components as their
+**The `en/` entries name the same bootstraps and the same components as their
 Bulgarian counterparts.** What separates a pair is the `data-lang` on `<html>`,
 the head tags, and which half of every `.l-bg` / `.l-en` string survives
 `prerender.mjs` — so an English entry is four kilobytes of head and no second
@@ -128,9 +128,11 @@ site/
 │   ├── verify_render_payroll.mjs  # payroll and more than one income
 │   ├── verify_render_share.mjs    # the share card and the share text
 │   ├── verify_render_contrast.mjs # painted text ratios · control boundaries
+│   ├── verify_render_screenshot.mjs # the README shot still shows today's words
+│   ├── screenshot-frame.mjs       # the frame both the shot and its guard use
 │   ├── make_og_image.py           # regenerates the six OG cards, the icons
 │   │                              # and the two README banners (stdlib only)
-│   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png
+│   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png + .txt
 ├── public/             # copied verbatim into dist/ — no build step
 │   ├── _headers · robots.txt · llms.txt · .well-known/security.txt
 │   ├── favicon.svg · og-*.png · fonts/ (self-hosted, vendored unmodified)
@@ -207,85 +209,20 @@ needs a third prop is a page asking for a second header — `site/AGENTS.md`
 §"`components/` is the calculator's" is why. A new route is one entry in its
 `ROUTES` list.
 
-**A route is a word and a toggle is a box, and the shapes carry the
-difference.** Four navigating lozenges beside two switching ones meant the first
-thing a reader met was six identical outlined boxes to sort out, and it is also
-what made the bar a compromise: three bordered pills needed 400px against a
-360px phone's 328px budget. Without the borders and side padding all FOUR routes
-fit one row at 360px in both languages, measured, with no target under 44×44 and
-the document not widening — so the current page is marked rather than dropped.
-
-**Marked rather than dropped, and that is the part that was costing a reader.**
-Removing the current route left the bar a different shape on every page — «имоти»
-third from the left on `/` and second on `/credit/` — so nobody could learn where
-a route lives; and the tagline that names the page was hidden below 560px, so a
-phone reader had nothing on screen saying which of the four they were reading.
-The mark is `--real-soft` under `--real-ink`, the chip the national strip already
-uses for "this is the one", on a `span` rather than an `a`: a 44px tap that
-reloads the page you are on is a control that lies, so the state travels as a
-visually-hidden word instead of `aria-current` on something with no link role.
-The tagline is drawn at every width now and costs nothing — `.brand` already
-carries a 44px floor and the wordmark plus tagline stack to 33px.
-
-**Every target in that header is at least 44×44 CSS px**, and the floor is what
-puts the routes on a row of their own below 760px. `verify_render_layout.mjs`
-holds it over every route in both languages at 320px and 360px, which is the
-check nothing in the repo was making when the theme button drifted to 23.8px
-wide. 320px is the one width where the four routes wrap to two lines, and the
-test exempts it by name: it is below what this bar is designed to hold.
-
-**The sticky bar's ground is a legibility floor, not a taste.** `--hdr` was 0.88
-with a 10px blur, at which body copy scrolling under the masthead is still
-readable through it — two overlapping texts at the top of every page, and the one
-the reader wants is the one behind. 0.96 light and 0.97 dark stop it while the
-ground still reads as the page's rather than as a slab; the dark theme needs more
-because a bright glyph shows through a dark veil at an alpha where a dark glyph
-has stopped showing through a light one. Its bottom edge is `--control-line` and
-not `--line`, which is the one page rule doing a control's job: the boundary
-between two surfaces one of which slides under the other, and `--line` on
-`--paper` is 1.40:1.
+**A route is a word and a toggle is a box**, the current page is marked rather
+than dropped, and every target in the bar is at least 44×44 CSS px.
+`SiteHeader.svelte` carries the measurements behind all three — the 360px budget
+that decided the shape, why a 44px tap reloading the page you are on is a
+control that lies, and the one width `verify_render_layout.mjs` exempts by name.
 
 ### The footer is a table of labelled groups, then an imprint
 
 Eleven links in one undifferentiated row is a list of eleven things to read. A
-page of this site, a legal document and an address on somebody else's service are
-three kinds of destination, so each gets a labelled row: the label column is the
-register `Legal.svelte` gives an identity row's `dt` — 11px uppercase mono,
-`--muted` — because that is already how this site says "what follows is of this
-kind". Below 560px the grid turns and the label sits above its own group. The
-three `nav` landmarks are unchanged; the `aria-label` and the visible heading are
-separate strings, because «страници с числа» reads wrong as a column head.
-
-Under a `--line-2` rule sits the imprint: the attribution, the funding sentence
-and the build stamp. **The stamp had a line of its own between the navigation and
-the attribution** — the footer's most prominent position given to its least
-useful item — and now ends the last line, which is the value it has.
-
-**`CONTENT_ROUTES` includes `/`, and its absence was a real hole.** Five of the
-six entries offered no way back to the calculator at all: the masthead carries
-it, but `/legal/` runs 12,000px and the header is above the fold, which is
-precisely the case the footer exists for. `verify_render_layout.mjs`'s own route
-list had the same gap — it named the three pages ABOUT figures and not the page
-that computes them, so the loop reported green over all five. Both lists carry
-`/` now.
-
-`WedgeChart.svelte` is shared by the two pages that draw the tax wedge: `/`
-marks each of the reader's contracts on the curve, `/how/` marks nobody. Drawn
-twice it would be two pictures of one statute, correctable in one place and
-stale in the other — and the correctness that matters is not in the drawing.
-**`markers` is the whole difference between the callers and it defaults to
-none**, because the component draws whatever it is handed and cannot tell whose
-gross a marker is. What keeps a personal effective rate — which inverts to the
-salary above the ceiling (P2) — off a page with no input is therefore the
-wiring: `view/country.js#wedgeCurve` has no `pay` parameter, where
-`view/payroll.js#taxWedgePanel` returns `earners` beside the identical curve.
-Its geometry is inline rather than in `plot.js`, which is the one deviation
-this file has to name: it labels five points inside a 320-unit box instead of
-carrying an axis, and the box is small enough that the 6.2px failure
-[`plot.js`](../site/src/lib/plot.js) argues against does not arise. Putting it
-on that module means moving those labels into an HTML gutter, which is what
-`verify_render_strip.mjs` §"the wedge's right-edge labels belong to the series
-they sit on" measures.
+page of this site, a legal document and an address on somebody else's service
+are three kinds of destination, so each gets a labelled row.
+`SiteFooter.svelte` carries why the label column takes the register it does, why
+the three `nav` landmarks are unchanged, and what happens to the grid below
+560px.
 
 ## The five-layer split
 
@@ -440,33 +377,14 @@ Each row carries what the payload cannot say about itself:
 Everything else the panel shows — `as_of`, `source`, `source_url` — is read from
 the envelope, because the payload already states it and a second copy could drift.
 
-**`refPeriodSecondary` is for a payload built from two vintages, and it fires
-only when the two differ.** A ladder whose *shape* is a Eurostat SES wave and
-whose *level* is a recent НСИ quarter carries vintages four years apart, and
-dating the row by the quarter alone presents a 2022 dispersion as this
-quarter's — so the panel names both. `salary_dist` as published carries one
-vintage, Eurostat's shape at Eurostat's own level, one publisher per file
-([`legal.md`](./legal.md) §НСИ), so the accessor returns `null`: a row printing
-"2022" above "shape: Eurostat SES 2022" reads as a defect rather than as
-provenance. The equality guard is what makes the label mean something when it
-does appear.
-
-**Its `cadenceDays` is the SES cycle, 1462 days**, because nothing in the file
-is quarterly. SES is legislated 4-yearly by Regulation (EU) 2025/941, whose
-Annex names 2026 as the first reference period under it with a T+16-month
-transmission deadline, so the 2022 wave stands until 2028
-([`data-sources.md`](./data-sources.md) §`earn_ses_monthly`). A quarterly
-cadence here marks the row *due* three months after a refresh and raises the
-site-wide banner six weeks later, over a figure no refresh can change. **A
-banner that fires when nothing is wrong is worse than no banner**, because the
-next one is read as noise too. The level the reader sees is dated separately,
-on `region_salary`'s own quarterly row.
-
-**`cadenceDays` is here rather than in the envelope**, and that is a deliberate
-trade. It is a property of the upstream, so the connector is the natural owner;
-but nothing in the pipeline consumes it, and publishing it would put a second
-copy in every published JSON that only a full refresh can correct. One table that
-cannot drift from itself beats nine that can drift from each other.
+**`refPeriodSecondary` fires only when a payload's two vintages differ**, and
+**`salary_dist`'s `cadenceDays` is the SES cycle rather than a quarter** —
+`payloads.js` carries both arguments on the rows they belong to, including why a
+banner that fires when nothing is wrong is worse than no banner. What the doc
+adds is where the second vintage comes from: a ladder whose *shape* is a
+Eurostat SES wave and whose *level* is a recent НСИ quarter is composed in the
+browser, so the two are dated on the two clocks they actually follow
+([`legal.md`](./legal.md) §НСИ is why neither file may carry the other's figure).
 
 **A row is not a consumer.** The panel renders every payload, so "is it used?"
 is trivially true for anything in the manifest. `verify_data_contracts.mjs`
@@ -648,9 +566,11 @@ are shaped to make a wrong wiring *unexpressible*:
 
 ### `src/lib/view/` — one module per subject
 
-**Eleven modules, eleven suites, same stem.** `view/home.js` is what
-`verify_view_home.mjs` tests, `view/market.js` is what `verify_view_market.mjs`
-tests, and so on for all ten.
+**One module per subject, one suite per module, same stem.** `view/home.js` is
+what `verify_view_home.mjs` tests, `view/market.js` is what
+`verify_view_market.mjs` tests, and so on for every one of them.
+`verify_docs_map.mjs` §"every view/ module is paired with the suite of the same stem"
+holds the pairing in both directions, so neither half can be added alone.
 
 | Module | What it answers | Its suite |
 |---|---|---|
@@ -690,22 +610,20 @@ as its owner, never to break the cycle with a third module.
 
 ### No re-export barrel, and the reason is measured
 
-Keeping `src/lib/view.js` as a barrel over the ten would have cost nothing
-visible: every import site would read the same, and every `view.js#symbol`
-reference in the docs would stay literally true. It is not there for two
-reasons.
+A barrel at `src/lib/view.js` re-exporting every subject would have cost nothing
+visible: every import site would read the same. It is not there for two reasons.
 
 **A barrel makes the reach invisible.** With one specifier for every export, a
 component reaching across four subjects looks exactly like one reaching into
-one — which is the property that let this layer grow to 3,106 lines before
-anybody counted. `import { mortgagePanel } from "$lib/view/home.js"` says which
+one — which is the property that let this layer grow past three thousand lines
+before anybody counted. `import { mortgagePanel } from "$lib/view/home.js"` says which
 subject the file is in, and an import block with five of them says the component
 is doing five things.
 
 **And a barrel hands back the whole bundle saving.** Measured on this tree, both
 ways, from `npm run build:release`:
 
-| Entry | One `view.js` | Barrel over ten | Ten modules, no barrel |
+| Entry | One `view.js` | Barrel over the modules | Split, no barrel |
 |---|---|---|---|
 | `main` (`/`) | 360,620 B | 360,588 B | **352,224 B** |
 | `how-main` (`/how/`) | 244,062 B | 244,032 B | **235,673 B** |
@@ -1142,7 +1060,7 @@ call reaches, and what identifies them is the thumb's `2px solid var(--real)`.
 
 ### The type scale
 
-Eleven steps, `--fs-micro` (11px) through `--fs-figure` (28→36px), and **every
+Twelve steps, `--fs-micro` (11px) through `--fs-hero` (40→56px), and **every
 `font-size` in the app is one of them** — component styles, inline styles, both
 other pages. Three properties of it are load-bearing rather than cosmetic:
 
@@ -1436,20 +1354,22 @@ rendered file before committing it** — nothing downstream checks the pixels.
 
 ## The README screenshot
 
-`docs/img/screenshot.png` is generated too, by `scripts/make_screenshot.mjs` —
+`docs/img/screenshot.png` is generated, by `scripts/make_screenshot.mjs` —
 `npm run build`, then `node scripts/make_screenshot.mjs` from `site/`. It drives
 the built page with the Playwright already installed for the render suite, types
 a salary, a raise and a savings figure, and photographs the result at 1280 CSS
 px in two columns.
 
-A hand-taken screenshot of a live UI is stale from the first copy edit and
-nothing anywhere says so. The one this replaced was four rewrites behind — it
-still showed «най-голямата хапка», a salary hint two versions old, and an as-of
-banner reading `Данни към 27.07.2026 г.`, which is the day we downloaded rather
-than the month the prices are from. Every one of those was a wrong claim in the
-first image a stranger sees, and no test in this repository could see any of
-them. Regenerate it in the same commit as a copy change that reaches the frame,
-and **look at it before committing** — nothing checks these pixels either.
+A photograph of a live UI goes stale from the first copy edit, and it is the
+first thing a stranger sees in both READMEs. So the same run writes
+`docs/img/screenshot.txt` — the words that were inside the frame — and
+`verify_render_screenshot.mjs` holds the built page to it. A copy change that
+reaches the frame fails the render suite and names the line that moved.
+
+**The words are checked and the pixels are not**, so a layout that broke without
+changing a word is still something only a person sees. Regenerate in the same
+commit as a copy change that reaches the frame, and **look at the image before
+committing it.**
 
 `favicon.svg` is the same mark as the in-app wordmark — a short bar, a tall bar,
 one solid rule joining their feet — and is text-free. The Facebook profile

@@ -951,7 +951,7 @@ const DOC_BODIES = [
           },
           {
             // The last sentence points at the per-payload panel, not at a
-            // single date: one date across nine payloads can only describe one
+            // single date: one date across every payload can only describe one
             // of them.
             bg: "Данните не се дърпат от браузъра ти в момента, в който смяташ. Изтеглят се, преминават през проверки и се публикуват като файлове заедно със сайта, така че страницата да е бърза и числата да са едни и същи за всички. Горе на страницата има списък с всяко число, периода, за който се отнася, и деня, в който сме го изтеглили.",
             en: "The data is not pulled from your browser at the moment of calculation. It is fetched, put through validation checks, and published as files alongside the site, so the page is fast and everyone sees the same figures. At the top of the page is a list of every figure, the period it refers to, and the day we fetched it.",

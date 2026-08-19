@@ -10,9 +10,9 @@
  *
  * `cadenceDays` lives here rather than in the published envelope. It describes
  * the upstream, so the connector is arguably its owner, but nothing in the
- * pipeline reads it and publishing it would put a second copy in nine JSON
- * files that only a full refresh can correct. One table that cannot drift from
- * itself beats nine that can drift from each other. `docs/data-sources.md` is
+ * pipeline reads it and publishing it would put a second copy in every JSON
+ * file that only a full refresh can correct. One table that cannot drift from
+ * itself beats one copy per payload that can drift from each other. `docs/data-sources.md` is
  * the authority on each upstream's rhythm; every row below names the one it
  * follows.
  *
