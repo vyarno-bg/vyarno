@@ -477,7 +477,7 @@ it meant.
   is a market price, the two cover one population — is nowhere in the response,
   and a guard over it would pass through exactly the failure it was written for
   while printing a green check beside "definitions verified".
-  [`data-sources.md`](./data-sources.md) §"Why there is no gate on any of this"
+  [`data-sources.md`](./sources/eurostat.md) §"Why there is no gate on any of this"
   is the argument in full, including the three cubes that *do* carry their meaning
   in a label and why gating that third is worse than gating none. What replaces
   it is the dated read: the publisher's own sentence, quoted with its URL and the

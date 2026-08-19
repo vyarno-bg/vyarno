@@ -42,10 +42,11 @@ the code looks. [`math.md`](./math.md) and
 |---|---|
 | [`how-it-works.md`](./how-it-works.md) | You want the plain-language story: what Eurostat is, the "price sticker" idea, why the numbers are trustworthy. Start here if you are not an engineer |
 | [`architecture.md`](./architecture.md) | You want the system map: how the pipeline, the published JSON and the site fit together |
-| [`data-sources.md`](./data-sources.md) | You want the exact endpoints, what each contributes, and the upstream quirks to work around |
+| [`data-sources.md`](./data-sources.md) | The index over the upstreams: the cross-cutting rules, the release windows, and the checklist for adding a connector. One file per publisher under [`sources/`](./sources/), each beside the connector that fetches it |
 | [`math.md`](./math.md) | You want the provenance contract: where every published number comes from, and the invariants no change may break |
 | [`validation-gates.md`](./validation-gates.md) | You want to know what the gates check and what to do when one trips |
 | [`site.md`](./site.md) | You want the SPA: the five-layer split, what each `src/lib/` module and `src/components/` file owns, the basket interface, hosting headers |
+| [`design.md`](./design.md) | You are changing a colour, a type step or one of the stylesheets more than one page draws. The palette, the contrast floor and the shared treatments |
 | [`seo.md`](./seo.md) | You are touching what a crawler reads: the prerendered shell, `robots.txt`, the sitemap, the head tags — or you are about to add a page to make the site findable |
 | [`local-development.md`](./local-development.md) | You are setting up, running the suites, running the pipeline live, or debugging a failed run |
 | [`testing-strategy.md`](./testing-strategy.md) | You are writing a test and want to know which suite it belongs in, and why the answer is what it is |
@@ -93,7 +94,7 @@ catches. What is below is everything that is not one of those.
 | Change the annuity | [`math.md`](./math.md) §"Which rate goes into the annuity" → `mirror.js` → `verify_mirror_math.mjs` |
 | Change the affordability line or the regulatory caps | `site/src/lib/view/home.js#mortgagePanel` → `verify_view_home.mjs`. It reads the caps out of the published limits rather than accepting them, which is the point |
 | Add a package, a font, or a chart library | [`AGENTS.md`](../AGENTS.md) §Boundaries "Ask first". For charts the answer is already no — [`site.md`](./site.md) §"The two charts" |
-| Change a colour | `site/src/lib/tokens.css` → `verify_contrast.mjs` (WCAG AA, both themes) |
+| Change a colour | [`design.md`](./design.md) → `site/src/lib/tokens.css` → `verify_contrast.mjs` (WCAG AA, both themes) |
 | Change a response header | `site/public/_headers` → `verify_static_assets.mjs`. That file is the declaration; applying it is the deployment's job. After the deploy, `make headers` asks the live origin whether it agrees |
 | Touch a HICP connector | [`data-sources.md`](./data-sources.md) §"Cross-cutting rules" → gates 1–2 |
 | Ship a change | `make check` from the repo root, all green. Tests move with the code in the same commit |
