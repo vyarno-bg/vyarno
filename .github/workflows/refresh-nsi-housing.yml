@@ -11,30 +11,28 @@
 # **This arm also runs the cross-publisher reconciliation.** НСИ compile the
 # house price index and Eurostat disseminate it, so `nsi_housing.json` and
 # `house_market.json` carry the same statistic by two routes and must agree to
-# the decimal. That gate reads Eurostat's payload off disk, which is why the
-# order below is worth knowing: it compares at the newest quarter BOTH carry, so
-# a run landing between the two publishers' releases reconciles on the previous
-# quarter rather than failing on one nobody has yet.
+# the decimal. That gate reads Eurostat's payload off disk, and НСИ are about a
+# week ahead — 23.06.2026 against Eurostat's 02.07 for 2026-Q1 — so a run
+# between the two publishers reconciles at the newest quarter BOTH carry rather
+# than failing on one nobody has yet.
 #
-# THE DAY
-#
-# НСИ publish the quarter about three months after it closes and roughly a week
-# ahead of Eurostat's dissemination of the same figures — 2026-Q1 was on their
-# site before Eurostat's 02.07 release. Their calendar puts the release on the
-# 23rd of the month after the quarter, so this fires on the 25th: two days of
-# slack against a calendar we do not control, on a series that moves four times
-# a year.
+# `watch.yml` reads the three workbooks' Last-Modified headers inside the
+# window `release_calendar.py` records and dispatches this arm the hour НСИ
+# upload. The cron is the backstop for that watcher being broken: the 29th,
+# once the window has closed.
 
 name: refresh-nsi-housing
 
 on:
   schedule:
-    # Quarterly, 25th, 05:30 UTC. 3,6,9,12 is March, June, September, December —
-    # the month НСИ publish the quarter that closed three months earlier. Half
-    # an hour off the hour so no two upstream fetches open on the same minute,
-    # the reason refresh-sector-salary sits behind refresh-region-salary.
-    - cron: "30 5 25 3,6,9,12 *"
+    - cron: "20 12 29 3,6,9,12 *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -45,3 +43,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: nsi-housing
+      detected: ${{ inputs.detected || '' }}

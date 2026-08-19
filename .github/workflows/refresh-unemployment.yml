@@ -1,14 +1,27 @@
 # Monthly unemployment refresh (Eurostat une_rt_m).
 #
-# Cadence must match the series. A monthly schedule firing monthly is
-# the only shape that keeps the file from being a month stale.
+# **The day inside the month moves.** Eurostat loaded the July rate on
+# 2026-08-12, in the 23:00 batch rather than at a news release, and nothing
+# fixes that date a month ahead — so the window `release_calendar.py` records
+# runs to the 20th and `watch.yml` dispatches this arm the moment the cube's
+# `updated` stamp passes the last run's.
+#
+# The cron is the backstop for that watcher being broken, and it fires after
+# the window closes. A monthly series carried a month stale is the failure
+# worth spending a wide window on: the next release is thirty days away.
 
 name: refresh-unemployment
 
 on:
   schedule:
-    - cron: "0 4 8 * *"
+    - cron: "30 12 21 * *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -19,3 +32,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: unemployment
+      detected: ${{ inputs.detected || '' }}

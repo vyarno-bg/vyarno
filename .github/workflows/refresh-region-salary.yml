@@ -1,18 +1,30 @@
-# Quarterly region-level salary refresh (NSI "Наети лица и средна работна
+# Quarterly region-level salary refresh (НСИ "Наети лица и средна работна
 # заплата" — all 28 regions, not just Sofia).
 #
-# NSI publishes roughly six weeks after quarter close. The 17th (not
-# the 15th) gives headroom — the 15th has been the historical release
-# day, so firing at 04:00 on the 15th would miss it.
+# **НСИ's day inside the month moves.** The 2026-Q2 workbooks went up on
+# 2026-08-11 at 10:54 Sofia; the 15th has been the release day historically.
+# So the window `release_calendar.py` records spans the 5th to the 20th and
+# `watch.yml` dispatches this arm off the file's own Last-Modified header, the
+# hour it changes.
+#
+# Both editions are read and they are uploaded about 45 minutes apart, so both
+# are watched: whichever moves first starts the run, and the connector
+# reconciles the pair as it always does.
+#
+# The cron is the backstop for that watcher being broken, on the 21st.
 
 name: refresh-region-salary
 
 on:
   schedule:
-    # Quarterly, 17th, 04:00 UTC. cron doesn't accept a list of months
-    # inline cleanly; 2,5,8,11 is February, May, August, November.
-    - cron: "0 4 17 2,5,8,11 *"
+    - cron: "40 12 21 2,5,8,11 *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -23,3 +35,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: region-salary
+      detected: ${{ inputs.detected || '' }}

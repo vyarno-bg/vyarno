@@ -1,14 +1,27 @@
-# Monthly mortgage refresh (ECB MFI + BNB housing stock rate).
+# Monthly mortgage refresh (ЕЦБ MIR + БНБ housing stock rate).
 #
-# ECB MFI interest-rate stats for month M land between the last day of
-# M+1 and the 5th of M+2. The 6th catches every observed release.
+# Two publishers on two calendars. ЕЦБ MIR for month M lands between the last
+# day of M+1 and the 5th of M+2, stamped 10:00 Frankfurt to the second; БНБ
+# re-upload their rate workbook in the same span, around 11:40 Sofia.
+# `watch.yml` reads a header from each inside its own window and dispatches
+# this arm as soon as either moves, so a run does not wait on the slower of the
+# two — the gates decide whether the pair is publishable, not the schedule.
+#
+# The cron is the backstop for that watcher being broken. It fires on the 9th,
+# once both windows have closed.
 
 name: refresh-mortgage
 
 on:
   schedule:
-    - cron: "0 4 6 * *"
+    - cron: "20 12 9 * *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -19,3 +32,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: mortgage
+      detected: ${{ inputs.detected || '' }}

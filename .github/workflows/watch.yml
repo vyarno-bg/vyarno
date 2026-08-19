@@ -1,0 +1,141 @@
+# The release watcher — what puts a figure up the hour its publisher releases it.
+#
+# **A single scheduled shot cannot be both safe and early.** None of these five
+# publishers fixes its day a month ahead: Eurostat loaded the July unemployment
+# rate on 2026-08-12, НСИ uploaded the 2026-Q2 wage workbooks on 2026-08-11 and
+# the housing three on 2026-06-23, and the ЕЦБ's MIR release lands anywhere
+# between the last day of M+1 and the 5th of M+2. A cron set late enough to be
+# safe is days behind figures that lead the Bulgarian news the morning they
+# land; a cron set on the release reads an unmoved upstream and then publishes
+# nothing for a whole period. HICP is the sharpest case — the flash estimate the
+# papers run lands on the reference month's own last working day, so a mid-month
+# shot reaches it only after the full release has replaced it.
+#
+# So this job asks rather than guesses. It probes each upstream inside the
+# window `release_calendar.py` records for it — one HTTP request per cube or
+# file, a timestamp rather than data — and dispatches the arms whose publisher
+# has moved since that arm last ran. A tick costs about fifteen seconds because
+# nothing is installed: `watch.py` is stdlib-only and runs on the runner's own
+# Python.
+#
+# **Nothing here decides anything about a number.** The refresh it dispatches
+# fetches from scratch and every gate runs as it always did; the worst a wrong
+# probe can do is start a run that finds nothing changed and opens no pull
+# request. The cron in each `refresh-<source>.yml` is the backstop for this
+# workflow being broken, and `freshness-check.yml` notices if both fail.
+
+name: watch
+
+on:
+  schedule:
+    # The release watch: every ten minutes across the UTC hours any window in
+    # the calendar can occupy. Offset off the hour because a run scheduled at
+    # :00 is the one GitHub delays under load, and the delay is the whole
+    # quantity this workflow exists to shrink.
+    - cron: "5-55/10 6-10,20-22 * * *"
+    # The wide sweep: every upstream, window or not, four-hourly. A correction
+    # to a published figure lands on no calendar and is still a figure to be
+    # first with, and this is the only thing that would ever see one.
+    - cron: "40 1,5,9,13,17,21 * * *"
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # Read the arms' run history, and start the ones whose upstream moved.
+      # It never writes to the repository: a refresh does that, under its own
+      # permissions, after its own gates.
+      actions: write
+    concurrency:
+      # A tick that overran must not race the next one into a double dispatch.
+      group: watch
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: When did each arm last read its upstream
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        # **The clock is the arm's last run, not the payload's commit date** —
+        # `unemployment.json` was touched on 2026-08-17 by a run that had
+        # already read the cube Eurostat updated on 2026-08-12, so a commit
+        # date makes a release we are missing look like one we have. Conclusion
+        # is ignored: a run that started IS a read, and counting only the
+        # successful ones re-dispatches a broken arm every ten minutes.
+        with:
+          script: |
+            const fs = require('fs');
+            const { data } = await github.rest.actions.listRepoWorkflows({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            const arms = data.workflows.filter((w) =>
+              /\/refresh-[a-z-]+\.yml$/.test(w.path)
+            );
+            const lastRun = {};
+            for (const arm of arms) {
+              const source = arm.path.replace(/.*\/refresh-/, '').replace(/\.yml$/, '');
+              const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: arm.path.replace(/.*\//, ''),
+                per_page: 1,
+              });
+              if (runs.workflow_runs.length > 0) {
+                lastRun[source] = runs.workflow_runs[0].created_at;
+              }
+            }
+            fs.writeFileSync('/tmp/last-run.json', JSON.stringify(lastRun));
+            core.info(`last run: ${JSON.stringify(lastRun)}`);
+
+      - name: Probe the upstreams
+        id: probe
+        # `PYTHONPATH` rather than an install: both modules this reaches are
+        # stdlib-only, so a tick needs no venv, no pip and no cache, which is
+        # what makes a ten-minute poll affordable. The sweep flag reads the
+        # cron line rather than living in its own workflow, so both schedules
+        # stay beside the table that produced them.
+        env:
+          SWEEP: ${{ github.event.schedule == '40 1,5,9,13,17,21 * * *' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -euo pipefail
+          ARGS=(--repo . --last-run /tmp/last-run.json)
+          if [[ "${SWEEP}" == "true" ]]; then ARGS+=(--all); fi
+          PYTHONPATH=pipeline/src python3 -m vyarno_pipeline.watch "${ARGS[@]}" > /tmp/watch.json
+          cat /tmp/watch.json
+
+      - name: Dispatch the arms whose upstream moved
+        # Always: a probe that failed exits non-zero above, and the arms that
+        # DID answer still have a release to publish. A failed probe with a red
+        # run beside it is the alert; it is not a reason to sit on the four
+        # upstreams that answered.
+        if: always()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('/tmp/watch.json')) {
+              core.warning('the probe wrote nothing — no arm can be dispatched from this tick');
+              return;
+            }
+            const { refresh = [] } = JSON.parse(fs.readFileSync('/tmp/watch.json', 'utf8'));
+            for (const { source, detected } of refresh) {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: `refresh-${source}.yml`,
+                ref: context.ref.replace('refs/heads/', ''),
+                inputs: { detected },
+              });
+              core.notice(`dispatched refresh-${source}: ${detected}`);
+            }
+            if (refresh.length === 0) {
+              core.info('no upstream has published since its arm last ran');
+            }

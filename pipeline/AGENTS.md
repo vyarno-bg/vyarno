@@ -30,7 +30,11 @@ median across districts has to be taken where the districts are read. `transform
 published shapes — **no network, no validation**. `validate.py` and
 `mortgage.py` hold the gates; a gate raises, it never repairs. `publish.py`
 writes the envelopes and the provenance frame. `cli.py` is one arm per
-`--source` and the exit codes — **no domain logic**.
+`--source` and the exit codes — **no domain logic**. `release_calendar.py` and
+`watch.py` are beside all of it rather than in it: when each upstream
+publishes, and the ten-minute poll that catches a release. They read a
+timestamp and never a value, and they import **nothing outside the standard
+library** — the poll runs before the pipeline is installed.
 
 `docs/architecture.md` §"Pipeline layers" is the long form.
 

@@ -1,4 +1,4 @@
-# Quarterly salary distribution refresh (Eurostat SES).
+# Salary distribution refresh (Eurostat SES).
 #
 # **This arm has one upstream and no dependency on any НСИ arm.** What it
 # publishes is a SHAPE — the P1…P99 gross-earnings ladder as Eurostat's SES
@@ -9,22 +9,30 @@
 #
 # So there is no ordering to respect here and no run to wait for: publishing
 # this while an НСИ payload is mid-refresh cannot produce a ladder at the wrong
-# level, because this file carries no level. Chaining it behind another
-# workflow would buy nothing and would make a quarterly publish depend on
-# another workflow's conclusion — one failure upstream and this one silently
-# never fires at all.
+# level, because this file carries no level.
+#
+# **SES is disseminated every four years**, and it has only ever moved in
+# Eurostat's 23:00 batch — so `release_calendar.py` gives it one band a night
+# through the spring months rather than a ten-minute watch, and `watch.yml`
+# spends one request a day on it. The next wave is 2026's, transmitted April
+# 2028 (`docs/data-sources.md` §"Update watch-list").
+#
+# The cron is the backstop for that watcher being broken. Annual, because the
+# series is: a quarterly backstop on a four-yearly cube buys nothing but
+# sixteen cached reads between vintages.
 
 name: refresh-salary-dist
 
 on:
   schedule:
-    # Quarterly, 17th, 05:00 UTC — the same quarterly cluster as the two НСИ
-    # arms, which is a convenience for reviewing them together rather than a
-    # dependency. SES itself republishes about once a year; the quarterly
-    # cadence costs one cached-read no-op per quarter, and the workflow skips
-    # the commit and the PR when it detects one.
-    - cron: "0 5 17 2,5,8,11 *"
+    - cron: "50 12 1 6 *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -35,3 +43,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: salary-dist
+      detected: ${{ inputs.detected || '' }}

@@ -1753,6 +1753,40 @@ quoted sentence, and the site renders it in the "as of" panel.
 
 ---
 
+## When each upstream publishes
+
+**A schedule cannot guess these days, so nothing does.** None of the five
+publishers fixes a release date a month ahead, and the spread is wide: Eurostat
+loaded the July unemployment rate on the 12th of August, НСИ uploaded the
+2026-Q2 wage workbooks on the 11th, the ЕЦБ's MIR release lands anywhere from
+the last day of M+1 to the 5th of M+2. A cron set late enough to be safe is
+days behind a figure the newsrooms already have; set on the release it reads an
+upstream that has not moved and publishes nothing until the next period.
+
+So `watch.yml` polls a cheap marker — one HTTP request per cube or file, a
+timestamp rather than data — inside a window recorded per upstream in
+`pipeline/src/vyarno_pipeline/release_calendar.py`, and dispatches the arm when
+that marker passes the arm's last run. **That table is the schedule**; the
+crons in `refresh-<source>.yml` are backstops for the watcher being broken, and
+`test_release_calendar.py` holds every workflow to it.
+
+| Publisher | Marker the probe reads | Release instants observed |
+|---|---|---|
+| Eurostat | `updated` in the ND-cube response | 11:00 Brussels for a news release, 23:00 for the nightly batch, 09:0x for the morning one. Of 1,225 updates in `statistics-update.rss` on 2026-08-19: 758 at 11:00, 288 at 23:00 |
+| ЕЦБ | `Last-Modified` on the SDMX series | 10:00 Frankfurt, to the second — MIR, BSI and CBD2 alike |
+| НСИ | `Last-Modified` on the workbook | 10:08 and 10:54 Sofia (wage, 2026-08-11), 12:05 (housing, 2026-06-23) — the file appears before the announcement |
+| БНБ | `Last-Modified` on the workbook | 11:36–11:41 Sofia (2026-07-27) |
+| имот.bg | none | Not watched and not schedulable: a datacenter IP gets a 403 on every path |
+
+Two things follow that are worth knowing before touching either file:
+
+- **The window is a publisher's local time, not UTC.** A band written in UTC
+  drifts an hour against the release twice a year. `utc_hours()` computes what
+  the poll cron has to cover; the test fails if a window falls outside it.
+- **A widened window costs one request; a narrowed one costs a period.**
+  `observed` in that table is evidence somebody gathered on a date, not a
+  commitment the publisher made.
+
 ## Update watch-list
 
 Dated or conditional changes we already know are coming.
