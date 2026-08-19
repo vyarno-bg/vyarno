@@ -1,16 +1,35 @@
 # Monthly payroll refresh (BG statutory payroll constants).
 #
-# BG statutory dates are month boundaries — min wage 1 Jan,
-# max-insurable ceiling when scheduled. Fires on the 1st so the
-# ceiling/payment updates land in payroll.json at the start of the
-# affected month.
+# **The one arm with nothing to watch, and the cron is the whole schedule.**
+# Most BG payroll parameters are legislative constants with no machine-readable
+# feed, held as a dated table in `payroll.py`; the single fetch is the ТЗПБ
+# appendix from ДВ, which changes when a new ЗБДОО is promulgated and not on any
+# day a probe could read off a header. What decides this arm is a statutory
+# boundary — the minimum wage on 1 January, the max-insurable ceiling when
+# Parliament schedules one — so the schedule is that boundary.
+#
+# **22:05 UTC on the last days of a month is 00:05 in Sofia on the 1st**, and
+# `clock.py` stamps `as_of` in Sofia. So the run picks up the entry that came
+# into force five minutes earlier. Firing on the 1st in UTC would publish the
+# same thing two hours later; firing before 22:00 UTC would publish the table
+# the new law had just replaced, because `in_force_entry` reads the same clock.
+#
+# Four days rather than one because months end on four different numbers. The
+# three that are not the month's last day publish the table already live, which
+# `refresh.yml` detects as a cached read and drops before any pull request.
 
 name: refresh-payroll
 
 on:
   schedule:
-    - cron: "0 3 1 * *"
+    - cron: "5 22 28,29,30,31 * *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -21,3 +40,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: payroll
+      detected: ${{ inputs.detected || '' }}

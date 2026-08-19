@@ -12,34 +12,34 @@
 # changed, skip the commit and the PR, and report the run GREEN while the
 # payload never published.
 #
-# THE DAY, AND WHY IT IS NOT THE 8TH
+# **The three price cubes do not release together.** Eurostat published the
+# count and index cubes for 2026-Q1 on 02.07.2026 and the value cube — half of
+# the average deal — on 09.07.2026, a week behind. The transform pairs count
+# and value on the quarters they share, so a run between the two publishes the
+# previous quarter again and opens no pull request; the run after the second
+# cube lands publishes the new one. `watch.yml` probes each cube separately, so
+# that costs one no-op run instead of a week of waiting.
 #
-# Eurostat release the quarter about three months after it closes: 2026-Q1
-# landed on 02.07.2026 for the count and index cubes. The obvious cron is
-# therefore the first week of January, April, July and October.
+# The six structure cubes move with the annual EU-SILC round in May–July
+# instead, which is a window of its own in `release_calendar.py` and the reason
+# the watch is per cube rather than per arm.
 #
-# It is wrong, and the way it fails is silent. `prc_hpi_hsvq` — the value cube,
-# and half of the average deal — updated its data on **09.07.2026**, a week
-# behind the other two, while its structure timestamp still read 02.07. A run
-# on the 8th would have fetched a count cube carrying 2026-Q1 and a value cube
-# that did not, and the transform pairs the two on the quarters they share: the
-# published payload's newest complete quarter would have been 2025-Q4, correct
-# in every figure, gated green, and one quarter stale until October.
-#
-# So the 15th, six days clear of the slowest of the three observed releases. A
-# refresh that runs late costs a few days of an already-quarterly figure; one
-# that runs early costs a whole quarter and says nothing.
+# The cron is the backstop for that watcher being broken: the 15th of the month
+# after a quarter, clear of the slowest price cube observed and past the end of
+# the EU-SILC round in the one quarter where the two windows meet.
 
 name: refresh-house-market
 
 on:
   schedule:
-    # Quarterly, 15th, 05:00 UTC. 1,4,7,10 is January, April, July, October —
-    # the month after Eurostat publish the quarter that closed three months
-    # earlier. On the hour rather than :30, and an hour after the НСИ arms, so
-    # no two upstream fetches open on the same minute.
-    - cron: "0 5 15 1,4,7,10 *"
+    - cron: "40 12 15 1,4,7,10 *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -50,3 +50,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: house-market
+      detected: ${{ inputs.detected || '' }}

@@ -1,26 +1,36 @@
-# Monthly HICP refresh.
+# Monthly HICP refresh — the headline rate, the index and the whole basket.
 #
-# Eurostat publishes the final HICP with full country and COICOP
-# breakdowns around the middle of the month for the previous month, at
-# 11:00 CET. The 18th gives one day of headroom over the historical
-# release window. A missed run costs a month — the headline figure
-# a month stale on a page whose entire promise is that it is not.
+# This source writes both hicp_headline.json and hicp_categories.json: every
+# inflation figure on the page, including the reader's personal basket.
 #
-# This source writes both hicp_headline.json and hicp_categories.json —
-# every inflation figure on the page, including the whole personal basket.
+# **Two releases a month reach one cube, and only one of them is news.** The
+# flash estimate carries BG's all-items rate on the reference month's own last
+# working day, ahead of the index and every CPnn — that is the figure the
+# papers run, and `cli.py#_refresh_hicp` publishes it alone under `is_flash`.
+# The full release fills in the rest around the middle of the following month.
+# A schedule that catches only the second never publishes a flash headline at
+# all: by the time it fires, the full release has replaced what it would have
+# caught. `watch.yml` watches both spans and dispatches this arm within ten
+# minutes of either.
+#
+# The crons below are the backstop for that watcher being broken. Each fires
+# once its own window has closed, which is the last hour at which running
+# unconditionally is still the right thing to do.
 
 name: refresh-hicp
 
 on:
   schedule:
-    # Cron schedules here are UTC and do not observe DST, so the local hour
-    # moves twice a year: 04:00 UTC is 06:00 EET in winter and 07:00 EEST in
-    # summer. Both sit after Eurostat's 11:00 CET release window for the
-    # previous day's publish, which is what the hour is chosen against —
-    # nothing here depends on it being a particular local time.
-    # Runs can start 5–30 minutes late under load; acceptable here.
-    - cron: "0 4 18 * *"
+    # The 4th backs up the flash window, the 21st the full release.
+    - cron: "20 12 4 * *"
+    - cron: "20 12 21 * *"
   workflow_dispatch:
+    inputs:
+      detected:
+        description: "The upstream publication a watcher saw. Reaches the PR body."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
@@ -35,3 +45,4 @@ jobs:
     uses: ./.github/workflows/refresh.yml
     with:
       source: hicp
+      detected: ${{ inputs.detected || '' }}

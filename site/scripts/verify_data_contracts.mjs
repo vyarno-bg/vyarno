@@ -689,22 +689,27 @@ test("every payload's refresh fires at least as often as the cadence it is judge
   for (const file of readdirSync(workflows).filter((f) => /^refresh-.+\.yml$/.test(f))) {
     const text = readFileSync(join(workflows, file), "utf-8");
     const source = /^\s+source:\s*(\S+)\s*$/m.exec(text)?.[1];
-    const cron = /^\s*-\s*cron:\s*"([^"]+)"\s*$/m.exec(text)?.[1];
-    if (!source || !cron) continue;
-
-    const [, , dom, months] = cron.split(/\s+/);
-    const day = Number(dom);
-    if (!Number.isFinite(day)) continue; // not a day-of-month schedule
-    const monthList =
-      months === "*" ? [...Array(12).keys()].map((i) => i + 1) : months.split(",").map(Number);
+    // Every cron the file carries, not the first: an arm whose upstream has two
+    // release windows carries one backstop per window, and judging it by
+    // whichever happens to be written first reports a gap it does not have.
+    const crons = [...text.matchAll(/^\s*-\s*cron:\s*"([^"]+)"\s*$/gm)].map((m) => m[1]);
+    if (!source || crons.length === 0) continue;
 
     const fires = [];
-    for (const year of [2026, 2027, 2028]) {
-      for (const month of monthList) {
-        const d = new Date(Date.UTC(year, month - 1, day));
-        if (d.getUTCDate() === day) fires.push(d.getTime());
+    for (const cron of crons) {
+      const [, , dom, months] = cron.split(/\s+/);
+      const day = Number(dom);
+      if (!Number.isFinite(day)) continue; // not a day-of-month schedule
+      const monthList =
+        months === "*" ? [...Array(12).keys()].map((i) => i + 1) : months.split(",").map(Number);
+      for (const year of [2026, 2027, 2028]) {
+        for (const month of monthList) {
+          const d = new Date(Date.UTC(year, month - 1, day));
+          if (d.getUTCDate() === day) fires.push(d.getTime());
+        }
       }
     }
+    if (fires.length < 2) continue;
     fires.sort((a, b) => a - b);
     const worst = Math.max(...fires.slice(1).map((t, i) => (t - fires[i]) / DAY));
 

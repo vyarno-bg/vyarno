@@ -27,7 +27,7 @@ endpoint moved.
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import UTC, date, datetime
 
 import httpx
 import pytest
@@ -35,6 +35,7 @@ import pytest
 from vyarno_pipeline import clock
 from vyarno_pipeline.payroll import BG_PAYROLL_TABLE, NSI_SECTION_DIVISIONS
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS, REGIONS_BY_CODE, SOFIA_CITY_CODE
+from vyarno_pipeline.release_calendar import WATCHED
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import SERIES_KEYS, fetch_mir_series
@@ -47,6 +48,7 @@ from vyarno_pipeline.sources.eurostat import (
 )
 from vyarno_pipeline.sources.imot import _min_districts_for, fetch_city_prices
 from vyarno_pipeline.sources.nsi import fetch_region_salaries_eu, fetch_sector_salary_eu
+from vyarno_pipeline.watch import ProbeError, marker_of
 
 pytestmark = pytest.mark.live
 
@@ -616,3 +618,35 @@ def test_dv_still_serves_the_zbdoo_material_the_payroll_table_addresses():
                 f"{missing}, which NSI_SECTION_DIVISIONS maps to «{section}». "
                 f"КИД has been renumbered — re-derive the join."
             )
+
+
+# ---------------------------------------------------------------------------
+# The release watcher's probes — one request each, against every upstream
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("source", sorted(WATCHED))
+def test_every_watched_upstream_still_answers_with_a_publication_marker(source: str):
+    """A probe that stops answering stops the watcher, and nothing else notices.
+
+    The watcher reports a failed probe as a red tick, which is the signal — but
+    only for as long as somebody reads it, and a tick fires 54 times a day. So
+    this is where a moved endpoint is found deliberately: it runs the real
+    `marker_of` against every row of the calendar and asserts each returns an
+    instant in the past rather than a 404 or a response with no stamp on it.
+
+    Shape and plausibility, never a particular date: these move by design.
+    """
+    for release in WATCHED[source]:
+        try:
+            marker = marker_of(release)
+        except ProbeError as e:
+            _skip_if_blocked_here(e, release.label, "Probe failed from here, not upstream.")
+        assert marker < datetime.now(UTC), (
+            f"{release.label} reports a publication instant in the future "
+            f"({marker.isoformat()}). Nothing this site publishes would beat it."
+        )
+        assert marker.year >= 2020, (
+            f"{release.label} answered {marker.isoformat()}, which is older than "
+            f"any series here. That is a default timestamp, not a release."
+        )

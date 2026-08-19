@@ -35,7 +35,8 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 ├── AGENTS.md · LICENSE (Apache-2.0) · NOTICE (the data carve-out) · README.md
 ├── CONTRIBUTING.md · CODE_OF_CONDUCT.md · SECURITY.md
 ├── ruff.toml · .editorconfig      lint + layout for every language here
-├── .github/         workflows/ci.yml · dependabot.yml · FUNDING.yml ·
+├── .github/         workflows/ci.yml · watch.yml · refresh*.yml ·
+│                    dependabot.yml · FUNDING.yml ·
 │                    ISSUE_TEMPLATE/ · pull_request_template.md ·
 │                    copilot-instructions.md (points at AGENTS.md)
 ├── docs/            README (engineer entry) · architecture · data-sources ·
@@ -48,6 +49,8 @@ reads those files. The user's browser never calls Eurostat, НСИ, ЕЦБ, БН
 │   │   ├── models · transform · validate · publish · cli · regions
 │   │   ├── mortgage.py   # gates + БНБ lending limits
 │   │   ├── payroll.py    # dated BG payroll-law table (no network)
+│   │   ├── release_calendar.py · watch.py   # when upstreams publish, and
+│   │   │                 # the poll that catches one (stdlib only)
 │   │   └── sources/      # eurostat · bnb · ecb · imot · nsi
 │   └── tests/       `pytest -q` offline; `-m live` hits real upstreams
 ├── data/published/  13 payloads, committed — these ARE served to the site
@@ -127,6 +130,7 @@ Every layer has one job, and they do not overlap.
 | Validate | `validate.py`, `mortgage.py` | Gates that block the publish. A gate raises; it never repairs. Which gates run depends on the `--source` — [`validation-gates.md`](./validation-gates.md) §"Which gates run for which `--source`" is the table. |
 | Publish | `publish.py` | Write the envelopes, including the provenance frame every payload carries. |
 | CLI | `cli.py` | One arm per `--source`, and the exit codes. **No domain logic.** |
+| Watch | `release_calendar.py`, `watch.py` | When each upstream publishes, and the poll that catches one. Reads a timestamp, never a value, and **imports nothing outside the standard library** — it runs before the pipeline is installed. |
 
 Legislative constants have no machine-readable feed, so they live as dated
 tables: `payroll.py#BG_PAYROLL_TABLE` (BG payroll law) and
@@ -272,8 +276,8 @@ first.
 
 It does **not** refresh data — the refresh workflows are separate files with
 separate triggers, and this one holds no upstream credential and no schedule.
-Every arm but one refreshes on a cron in `.github/workflows/refresh-*.yml`,
-each opening a pull request against `main` so the diff stays the review. The
+Every arm but one lives in `.github/workflows/refresh-*.yml` and opens a pull
+request against `main` so the diff stays the review. The
 exception is `city-price`: `имот.bg` answers a datacenter IP with a 403, no
 runner has an ordinary Bulgarian connection to offer it, and it is refreshed by
 hand for that reason and no other. A refresh that runs
@@ -283,9 +287,26 @@ the missing TLS intermediate supplied before it can fetch at all
 the same reason they always were: run them from an ordinary network with
 `pytest -m live`.
 
+### What starts a refresh
+
+**`watch.yml`, within about ten minutes of the upstream publishing.** A cron
+cannot be both safe and early on publishers who do not fix their day a month
+ahead, so the watcher polls a cheap marker per cube or file — a timestamp, never
+data — inside the window `release_calendar.py` records for it, and dispatches
+the arm whose publisher has moved since that arm last ran. A tick costs about
+fifteen seconds: `watch.py` is stdlib-only and runs before anything is
+installed. `docs/data-sources.md` §"When each upstream publishes" is the table
+and the evidence behind it.
+
+The cron each arm still carries is the backstop for the watcher being broken.
+It fires once that arm's window has closed, which is the last hour at which
+running unconditionally is right, and `payroll` is the one arm where the cron
+is the whole schedule — its trigger is a statutory boundary in Sofia rather
+than an upstream anybody can poll.
+
 ### What happens to a data pull request
 
-Every refresh arm but `city-price` fires on a cron, pushes `data/<source>` and
+Every refresh arm but `city-price` pushes `data/<source>` and
 opens a pull request against `main`. **A published figure reaches a reader
 through a merge and no other way**, and nothing in this repository merges one.
 That is deliberate, and the failure it leaves is the one worth naming: left

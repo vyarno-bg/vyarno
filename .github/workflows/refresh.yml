@@ -1,6 +1,9 @@
 # Reusable workflow: refresh one published payload and open a PR.
 #
-# Inputs: `source` — the name passed to `vyarno-pipeline refresh --source`.
+# Inputs: `source` — the name passed to `vyarno-pipeline refresh --source`;
+# `detected` — what `watch.yml` saw the upstream publish, empty when a backstop
+# cron started the run instead. It reaches the pull-request body and nothing
+# else: a run decides what to publish by fetching, never by what it was told.
 #
 # Steps: checkout, install the pipeline, run it against live upstreams,
 # stage and capture changes, compute the source's as_of plus any payloads
@@ -24,11 +27,23 @@ on:
         description: "vyarno-pipeline --source name (e.g. hicp, mortgage)"
         required: true
         type: string
+      detected:
+        description: "The upstream publication the watcher saw, if a watcher started this"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    concurrency:
+      # **One run per arm at a time.** A watch tick and a backstop cron can
+      # both reach this arm, and both push `data/<source>`: the second meets a
+      # branch its history does not contain and either fails at the last step
+      # or supersedes a payload the first is still opening a pull request for.
+      group: refresh-${{ inputs.source }}
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write
@@ -308,12 +323,22 @@ jobs:
             const source = process.env.SOURCE;
             const as_of = process.env.AS_OF;
             const staleList = process.env.STALE_LIST;
+            const detected = (process.env.DETECTED || '').trim();
             const changed = (process.env.CHANGED || '').trim();
 
             const lines = [];
             lines.push(`## data refresh — ${source}`);
             lines.push('');
             lines.push(`**as_of:** ${as_of}`);
+            // What the watcher saw, against when this pull request went up. The
+            // gap between the two is the only measure of whether this site is
+            // first with a figure or repeating one the newspapers ran
+            // yesterday, and it exists nowhere else once the run's logs expire.
+            if (detected) {
+              lines.push('');
+              lines.push(`**Upstream:** ${detected}`);
+              lines.push(`**Caught:** this pull request opened ${new Date().toISOString()}`);
+            }
             lines.push('');
             lines.push('### Changed files');
             lines.push('');
@@ -369,6 +394,7 @@ jobs:
           SOURCE: ${{ inputs.source }}
           AS_OF: ${{ steps.meta.outputs.as_of }}
           STALE_LIST: ${{ steps.meta.outputs.stale_list }}
+          DETECTED: ${{ inputs.detected }}
           CHANGED: ${{ steps.diff.outputs.changed }}
 
       - name: Dispatch CI
