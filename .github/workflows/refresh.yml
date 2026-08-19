@@ -236,11 +236,20 @@ jobs:
                   # commit for this source. Counts as a real change.
                   payload_files.append(path)
                   continue
-              # Drop `as_of` and any other run-date metadata before
-              # comparing. A data refresh is real if any other field
-              # differs.
-              new_norm = {k: v for k, v in new_payload.items() if k != "as_of"}
-              committed_norm = {k: v for k, v in committed_payload.items() if k != "as_of"}
+              # **Every field stamped with the RUN date has to go, not just
+              # `as_of`.** `transform.py` writes `published_at=as_of` into
+              # region_salary, sector_salary and unemployment, so a comparison
+              # that drops one of the two finds those three changed on any run
+              # that lands on a new calendar day — and opens a pull request
+              # whose whole diff is two dates. That is the review this project
+              # spends its one human look on, spent on nothing.
+              # `test_cli_dispatch.py` holds this set to what the payloads
+              # actually carry.
+              RUN_STAMPED = {"as_of", "published_at"}
+              new_norm = {k: v for k, v in new_payload.items() if k not in RUN_STAMPED}
+              committed_norm = {
+                  k: v for k, v in committed_payload.items() if k not in RUN_STAMPED
+              }
               if new_norm != committed_norm:
                   payload_files.append(path)
 
