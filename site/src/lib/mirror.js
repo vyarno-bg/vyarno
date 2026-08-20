@@ -176,25 +176,6 @@ export function pocketReal(raisePct, piPct) {
   return 100 * ((1 + raisePct / 100) / (1 + piPct / 100) - 1);
 }
 
-/**
- * Inverse of pocketReal: given inflation and a desired real pocket,
- * what nominal raise is required?
- *
- *   (1 + r/100) / (1 + pi/100) − 1 = pocket/100
- *   1 + r/100 = (1 + pocket/100) × (1 + pi/100)
- *   r = 100 × [(1 + pocket/100) × (1 + pi/100) − 1]
- *
- * For pocket=0 (just stand still) → r = π exactly.
- * For pocket=+5% (gain 5% real purchasing power) → r = (1+π) × 1.05 − 1.
- *
- * @param {number} piPct        e.g. 3.5
- * @param {number} pocketPct    e.g. 0 for "stand still", 5 for "gain 5% real"
- * @returns {number} percent
- */
-export function targetRaise(piPct, pocketPct) {
-  return 100 * ((1 + pocketPct / 100) * (1 + piPct / 100) - 1);
-}
-
 // ---------------------------------------------------------------------------
 // MONEY + BITE
 // ---------------------------------------------------------------------------
@@ -230,6 +211,24 @@ export function extraPerMonth(salary, piPct) {
 export function pocketPerMonth(salary, pocketPct) {
   if (!(salary > 0) || !Number.isFinite(pocketPct) || pocketPct === 0) return 0;
   return salary * (pocketPct / (100 + pocketPct));
+}
+
+/**
+ * The take-home that would have stood still: today's pay, less the real change
+ * in it, so the same shopping takes the same share of it as before the raise.
+ *
+ * **Written as the subtraction rather than as `salary / (1 + pocket/100)`**,
+ * which is the identical figure. Both the euro verdict and this target then
+ * come out of one expression, so the row cannot state that a reader is €56
+ * behind and then ask for a raise worth €54: two derivations of one quantity
+ * disagree at the cent, and no screen carrying both says which is which.
+ *
+ * @param {number} salary     NET monthly pay, today
+ * @param {number} pocketPct  the real change from `pocketReal`
+ * @returns {number} EUR/month
+ */
+export function standStillNet(salary, pocketPct) {
+  return Math.max(0, salary - pocketPerMonth(salary, pocketPct));
 }
 
 // ---------------------------------------------------------------------------

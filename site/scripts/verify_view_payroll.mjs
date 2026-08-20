@@ -27,6 +27,7 @@ import {
   sectorOptions,
   SECTOR_TOTAL_KEY,
   regionGap,
+  standStillPay,
   netsOf,
   convertPay,
   householdRaise,
@@ -466,6 +467,92 @@ test("payslipPanel adds the households's columns AFTER taxing each contract", ()
     assert.ok(near(e.maxInsurable, PAYROLL.max_insurable_income_eur, 1e-9));
     assert.equal(e.effectiveYear, PAYROLL.effective_year);
   }
+});
+
+test("the stand-still ask is priced on the contract, not on the take-home", () => {
+  if (!PAYROLL) return;
+  const params = payrollParams(PAYROLL);
+  // Below the ceiling both contributions and tax are levied on the raise; above
+  // it only the tax is. The whole reason this row exists is that the two are
+  // different numbers, so a gross grossed up by one rate is wrong for half the
+  // readers and nothing on the page would say which half.
+  const under = bgNetSalary(1500, params).net;
+  const over = bgNetSalary(params.maxInsurable + 900, params).net;
+
+  for (const [net, label] of [
+    [under, "below the ceiling"],
+    [over, "above the ceiling"],
+  ]) {
+    const ask = standStillPay({
+      payroll: PAYROLL,
+      pay: { basis: "net", amounts: [net] },
+      pocketPct: -2.5,
+    });
+    assert.ok(ask.netGap > 0, `${label}: a reader who lost ground is asked for nothing`);
+    assert.ok(
+      ask.grossGap > ask.netGap,
+      `${label}: €${ask.netGap.toFixed(2)} in hand is priced at €${ask.grossGap.toFixed(2)} gross, ` +
+        "which is at most what it is worth — the deductions on a raise have gone missing"
+    );
+    assert.ok(near(ask.grossNeeded - ask.grossNow, ask.grossGap, 1e-9));
+  }
+
+  const cheap = standStillPay({
+    payroll: PAYROLL,
+    pay: { basis: "net", amounts: [over] },
+    pocketPct: -2.5,
+  });
+  const dear = standStillPay({
+    payroll: PAYROLL,
+    pay: { basis: "net", amounts: [under] },
+    pocketPct: -2.5,
+  });
+  assert.ok(
+    cheap.grossGap / cheap.netGap < dear.grossGap / dear.netGap,
+    "a euro in hand costs the same gross either side of the insurance ceiling, " +
+      "so the ask is being grossed up by one rate rather than through the payroll"
+  );
+});
+
+test("standStillPay quotes today's gross as the pay card already printed it", () => {
+  if (!PAYROLL) return;
+  // «€2 738 бруто вместо €2 706» sits a few hundred pixels under the pay card's
+  // own «2 706 € бруто», and a second inversion of the same net lands a cent
+  // away from the first. Both come out of `bgHouseholdPayroll`, so the sentence
+  // and the card cannot quote different contracts.
+  const pay = { basis: "net", amounts: [1200, 900] };
+  const panel = payslipPanel({ payroll: PAYROLL, pay });
+  const ask = standStillPay({ payroll: PAYROLL, pay, pocketPct: -3 });
+  assert.equal(ask.grossNow, panel.gross);
+  assert.equal(ask.netNow, panel.net);
+
+  // Each contract is scaled and re-inverted on its own, so the pair does not
+  // share one ceiling — the failure `bgHouseholdPayroll` exists to prevent,
+  // reached here by a different route.
+  const asOne = standStillPay({
+    payroll: PAYROLL,
+    pay: { basis: "net", amounts: [2100] },
+    pocketPct: -3,
+  });
+  assert.ok(
+    ask.grossGap !== asOne.grossGap,
+    "two contracts were priced as one salary on the way to the ask"
+  );
+});
+
+test("standStillPay refuses the states it cannot answer for", () => {
+  if (!PAYROLL) return;
+  const pay = { basis: "net", amounts: [1500] };
+  assert.equal(standStillPay({ payroll: PAYROLL, pay, pocketPct: NaN }), null);
+  assert.equal(standStillPay({ payroll: PAYROLL, pay, pocketPct: -100 }), null);
+  assert.equal(
+    standStillPay({ payroll: PAYROLL, pay: { basis: "net", amounts: [] }, pocketPct: -2 }),
+    null
+  );
+  // Level is not a refusal: the answer is that nothing more is needed, and the
+  // row that renders it drops out on the euro figure rather than on a null.
+  const level = standStillPay({ payroll: PAYROLL, pay, pocketPct: 0 });
+  assert.equal(level.grossGap, 0);
 });
 
 test("taxWedgePanel marks every earner, and states the household's own rate", () => {

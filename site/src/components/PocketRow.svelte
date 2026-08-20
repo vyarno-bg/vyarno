@@ -5,14 +5,13 @@
    * is in".
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, percentSigned } from "../lib/format.js";
+  import { integer, percentSigned } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import { pocketVerdictState } from "../lib/view/results.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
 
-  const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
   const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
@@ -68,6 +67,22 @@
     unsaid: null,
   };
   const pocketVerdict = $derived(VERDICT[pocketVerdictState(calc.raise, calc.pocket)]);
+
+  // The ask speaks only when all three hold: the reader replaced the €900
+  // placeholder, they said what they were given, and the shortfall rounds to at
+  // least a euro on the contract. The first is P7 — «€2 738 бруто вместо
+  // €2 706» is a claim about somebody's own contract, and about our
+  // placeholder's until they type. The third is `hasLeftover`'s rule: a row
+  // announcing a €0 ask is noise on every pay packet that happens to keep up.
+  const standStillAsk = $derived(
+    calc.earnersDirty && calc.raiseDirty && (calc.standStill?.grossGap ?? 0) >= 1
+  );
+  const standStillArgs = $derived({
+    n: fmt0(calc.standStill?.netGap ?? 0),
+    g: fmt0(calc.standStill?.grossNeeded ?? 0),
+    now: fmt0(calc.standStill?.grossNow ?? 0),
+    d: fmt0(calc.standStill?.grossGap ?? 0),
+  });
 </script>
 
 <!-- POCKET -->
@@ -139,17 +154,18 @@
       <span class="l-en">{parts("en")}</span>
     </div>
   {/if}
-  {#if calc.raiseDirty && Number.isFinite(calc.standStillRaise) && Number.isFinite(calc.fivePctRaise)}
-    <!-- The target raise is a second finding rather than the working behind
-         the first: it answers "what would it have taken", which is a question
-         the reader has to ask before it is worth an answer. Folded, the row
-         states the verdict the reader came for and stops; the summary carries
-         the finding's own name, so the tap is not a leap.
+  {#if standStillAsk}
+    <!-- What it would have taken, and it is a second finding rather than the
+         working behind the first: the row above says the reader is €56 short,
+         this says what closing that costs on the contract. Folded, because
+         "what would it have taken" is a question a reader asks after the
+         verdict rather than instead of it.
 
-         π ≤ 0 gets its own sentence. The stand-still target IS π, so a falling
-         basket would otherwise print «трябва да е +−1,2% - точно колкото се
-         вдигнаха твоите цени»: a doubled sign under a claim of a rise that
-         did not happen. -->
+         It appears only where there is an ask to state — the reader replaced
+         the placeholder, gave a raise, and is behind by at least a euro. Ahead
+         or level, «за да не изоставаш» is answered by the row above, and a
+         chip promising an answer that turns out to be «нищо» is a tap spent on
+         nothing. -->
     <details class="rr-more">
       <summary class="disclose">
         <span class="dc-caret" aria-hidden="true">›</span>
@@ -158,23 +174,23 @@
       </summary>
       <div class="rr-more-body">
         <div class="rr-t">
+          <!-- The ternary sits INSIDE `t(...)`: `verify_template_safety.mjs`
+               needs a rooted `COPY.<key>.<lang>` leaf per rendered sentence,
+               and a key held in a variable reads to it as markup from nowhere.
+               BasketEditor spells its housing variants the same way. -->
           <span class="l-bg"
-            >{@html calc.pi > 0
-              ? t(COPY.standStillTxt, "bg", {
-                  r: fmt(calc.standStillRaise),
-                  pct: 5,
-                  rr: fmt(calc.fivePctRaise),
-                })
-              : t(COPY.standStillFlat, "bg", { pct: 5, rr: signedPct(calc.fivePctRaise) })}</span
+            >{@html t(
+              calc.hasHousehold ? COPY.standStillTxtHousehold : COPY.standStillTxt,
+              "bg",
+              standStillArgs
+            )}</span
           >
           <span class="l-en"
-            >{@html calc.pi > 0
-              ? t(COPY.standStillTxt, "en", {
-                  r: fmt(calc.standStillRaise),
-                  pct: 5,
-                  rr: fmt(calc.fivePctRaise),
-                })
-              : t(COPY.standStillFlat, "en", { pct: 5, rr: signedPct(calc.fivePctRaise) })}</span
+            >{@html t(
+              calc.hasHousehold ? COPY.standStillTxtHousehold : COPY.standStillTxt,
+              "en",
+              standStillArgs
+            )}</span
           >
         </div>
       </div>
