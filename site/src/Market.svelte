@@ -987,16 +987,16 @@
   <!--
     The four answers, before anything else on the page.
 
-    A reader arriving here wants to know four things and the page made them
-    earn all four: is it dearer than it used to be, by how much, really; what
-    does one cost in something I can picture; and are people buying. Each was
-    reachable — in section two, in section three, in section one — and reaching
-    it meant reading a chart. Six sections in, the page then ended on three
-    cards whose labels were definitions rather than statements.
+    A reader arriving here wants to know four things: is it dearer than it used
+    to be, by how much really, what does one cost in something I can picture,
+    and are people buying. Every one of them is answered by a chart in a section
+    below, and a summary that made a reader read the working to reach it is a
+    summary that arrives after the reader has left.
 
     So the summary is at the top and the working is below it, and every card
     still carries its publisher, the period it describes and the query that
-    returns it. Nothing here is a figure the page does not go on to show whole.
+    returns it. Nothing here is a figure the page does not go on to show whole,
+    and a card's LABEL is a statement rather than the name of a measure.
   -->
   <div class="stats answers">
     {#if reading.times != null}
@@ -1107,21 +1107,22 @@
     Where today sits inside each series' own record — the whole page, on one
     screen, without a verdict in it.
 
-    THE ANSWER TO "why not one market-health score". Six sections and six charts
-    give a reader no way to see everything at once, which is the real complaint,
-    and a single composite would answer it by deciding on their behalf which of
-    these is the bad news: whose fall counts as good news depends on whether
-    they own or are buying, and any weighting of prices, volume, rates and cost
-    burden makes that call using credibility that belongs to Eurostat. It would
-    also be the one figure on this site nobody can check against anything. So
-    every row is one publisher's one series, placed against its own extremes and
-    against nothing else, and each links the section that shows the working.
+    THE ANSWER TO "why not one market-health score". A section and a chart per
+    measure give a reader no way to see everything at once, which is the real
+    complaint, and a single composite would answer it by deciding on their
+    behalf which of these is the bad news: whose fall counts as good news
+    depends on whether they own or are buying, and any weighting of prices,
+    volume, rates and cost burden makes that call using credibility that
+    belongs to Eurostat. It would also be the one figure on this site nobody can
+    check against anything. So every row is one publisher's one series, placed
+    against its own extremes and against nothing else, and each links the
+    section that shows the working.
 
     ONE HUE, and it is `--real` — the accent every data mark on this page is
     already drawn in. Not red-to-green and not a two-ended scale: `--erode`
     means "money leaving you" and `--real` its opposite everywhere else on the
     site, so painting a position in either says which end is the bad end. Drawn
-    identically on all six rows, the accent says "this is the reading" and
+    identically on every row, the accent says "this is the reading" and
     nothing more.
 
     BELOW the answer cards rather than above them. At 360px the four cards
@@ -1217,11 +1218,10 @@
     </div>
     <!-- One sentence, and it is the one the picture cannot make: a rising
          series sits at its right end whatever it is doing this quarter, and a
-         reader who takes the position for news reads five of these six rows
-         wrong. Why prices take two rows is on the two rows — the labels are
-         «цените на сделките» and the same with the rise in everything else
-         taken out — and what the base year IS belongs to §prices, where the ×1
-         rule is drawn. -->
+         reader who takes the position for news reads a record as a quarter.
+         Why prices take two rows is on the two rows — the labels are «цените на
+         сделките» and the same with the rise in everything else taken out — and
+         what the base year IS belongs to §prices, where the ×1 rule is drawn. -->
     <p class="cap">
       <span class="l-bg"
         >Число, което само расте, винаги стои в десния си край, и това е свойство на самата редица,
@@ -1277,7 +1277,7 @@
       ><span class="l-bg">кой купува с кредит</span><span class="l-en">who borrows</span></a
     >
     <a href="#borrowed"
-      ><span class="l-bg">колко от парите са заем</span><span class="l-en"
+      ><span class="l-bg">колко от парите са кредит</span><span class="l-en"
         >how much is borrowed</span
       ></a
     >
@@ -1302,7 +1302,7 @@
     <p>
       <span class="l-bg"
         >Първо най-простото: с колко са се променили цените на сделките за една година. Числото е на
-        Евростат, а не сметка от наша страна.</span
+        Евростат, а не наша сметка.</span
       >
       <span class="l-en"
         >The simplest figure first: how much transaction prices moved in a year. It is Eurostat's
@@ -2705,8 +2705,8 @@
       <p>
         <span class="l-bg"
           >Този ред изглежда невъзможно малък, а не е сгрешен. Той брои хора, а не сделки: колко от
-          живеещите в страната имат заем по жилището си, децата и пенсионерите включително. Почти
-          всички живеят в собствено жилище без заем, защото жилищата минаха у живеещите в тях при
+          живеещите в страната имат кредит по жилището си, децата и пенсионерите включително. Почти
+          всички живеят в собствено жилище без кредит, защото жилищата минаха у живеещите в тях при
           приватизацията и оттогава се наследяват. Новите кредити са друго нещо, поток от това колко
           договора се подписват през годината, и двете могат да вървят в различни посоки с години.</span
         >
@@ -2761,8 +2761,8 @@
 
     <p class="cap">
       <span class="l-bg"
-        >Лихвата по нови жилищни кредити, размерът на банковия портфейл и лимитите на БНБ са в
-        калкулатора, до ипотечната сметка.</span
+        >Лихвата по нови жилищни кредити, размерът на жилищните кредити в банките и лимитите на БНБ
+        са в калкулатора, до ипотечната сметка.</span
       >
       <span class="l-en"
         >The rate on new home loans, the size of the banks' book and the BNB limits are in the
@@ -2796,13 +2796,11 @@
     <p>
       <span class="l-bg"
         >Жилищата в България се купуваха предимно със собствени средства: спестявания, продажба на
-        друго жилище, пари от чужбина. Отдолу е каква част от платеното за жилища идва от банков
-        кредит, година по година.</span
+        друго жилище, пари от чужбина.</span
       >
       <span class="l-en"
         >Homes in Bulgaria were bought mostly with the buyer's own money: savings, the sale of
-        another home, money from abroad. Below is what part of the money paid for dwellings comes
-        from a bank loan, year by year.</span
+        another home, money from abroad.</span
       >
     </p>
     <!-- The two lines, explained ABOVE the plot. A reader who meets two lines
@@ -2811,15 +2809,14 @@
          the section is honest about. -->
     <p>
       <span class="l-bg"
-        >Това се мери по два начина и те не дават едно число. Едната линия е ръстът на жилищните
-        кредити в банките: отпуснатото минус погасеното. Другата е само отпуснатото по нови жилищни
-        кредити, без предоговарянията на съществуващи. Действителният дял е между двете.</span
+        >Мери се по два начина и те не дават едно число. Едната линия е ръстът на жилищните кредити
+        в банките: отпуснатото минус погасеното. Другата е само отпуснатото по нови жилищни кредити,
+        без предоговорените стари. Истинското число е между двете.</span
       >
       <span class="l-en"
         >It is measured two ways and the two do not give one figure. One line is the growth in the
         banks' housing loans: what was lent less what was repaid. The other is only what was lent on
-        new home loans, with repricings of existing ones taken out. The actual share is between the
-        two.</span
+        new home loans, with the repriced old ones taken out. The true figure is between the two.</span
       >
     </p>
     {@render howMade({
@@ -2828,19 +2825,17 @@
         `платеното от домакинствата за жилища през четирите тримесечия на годината. Линията за ` +
         `ръста дели разликата между жилищните кредити в банките в края на годината и в края на ` +
         `предишната; линията за отпуснатото дели сумата по нови жилищни кредити през годината. ` +
-        `Незавършена ` +
-        `година не се показва, защото три тримесечия плащания срещу дванадесет месеца кредити ` +
-        `дава дял, сгрешен точно с липсващото тримесечие. Затова текущата година я няма, докато и ` +
-        `трите институции не я публикуват докрай.`,
+        `Незапълнена година не се показва: плащания за три тримесечия срещу кредити за дванадесет ` +
+        `месеца дават число, сгрешено точно с липсващото тримесечие. Текущата година влиза, ` +
+        `когато и трите институции я публикуват докрай.`,
       en:
         `Every figure is for a whole year and the whole country. Both lines are divided by the ` +
         `same thing: what households paid for dwellings over the four quarters of that year. The ` +
         `growth line divides the difference between the banks' housing loans at the end of the ` +
         `year and at the end of the one before; the lending line divides what was lent on new ` +
-        `home loans ` +
-        `during the year. An unfinished year is not shown, because three quarters of payments ` +
-        `against twelve months of lending gives a share wrong by exactly the missing quarter. So ` +
-        `the current year stays off until all three institutions have published it in full.`,
+        `home loans during the year. A year that is not full yet is not shown: payments for three ` +
+        `quarters against lending for twelve months give a figure wrong by exactly the missing ` +
+        `quarter. The current year goes in once all three institutions have published it in full.`,
     })}
 
     {#if borrowed.net.points.length > 4}
@@ -2851,12 +2846,12 @@
       {#if borrowed.net.min < 0}
         <p>
           <span class="l-bg"
-            >През годината под нулата жилищните кредити в банките са намалели: погасеното по
-            съществуващите кредити е повече от отпуснатото по новите.</span
+            >Под нулата жилищните кредити в банките са намалели за годината: погасено е повече,
+            отколкото е отпуснато.</span
           >
           <span class="l-en"
-            >In the year below zero the banks' housing loan book shrank: more was repaid on existing
-            loans than was lent on new ones.</span
+            >Below zero the banks' housing loans shrank over the year: more was repaid than was
+            lent.</span
           >
         </p>
       {/if}
@@ -2870,6 +2865,7 @@
       }}
       {@const borrowedAxis = niceTicks(borrowedScale.min, borrowedScale.max)}
       {@const grid = { n: borrowed.net.span, offset: borrowed.gross.offset }}
+      {@const grossFrom = borrowed.gross.points[0]}
       <p class="panel">
         <span class="l-bg">{COPY.mktPanelBorrowed.bg}</span>
         <span class="l-en">{COPY.mktPanelBorrowed.en}</span>
@@ -2903,6 +2899,19 @@
               d={path({ ...borrowed.gross, ...borrowedAxis }, CH_H, grid)}
             />
             <path class="plot-line" d={path({ ...borrowed.net, ...borrowedAxis })} />
+            <!-- Where the second line's record BEGINS, in the mark `lastPoint`
+                 uses for where one ends. A stroke that simply appears in the
+                 middle of the box reads as a line the picture cut off; a point
+                 says the publisher's own split starts there, which the source
+                 line under the plot then dates. -->
+            {#if grossFrom}
+              <circle
+                class="plot-last second"
+                cx={lineX(grid.offset, grid.n)}
+                cy={yOf(grossFrom.value, borrowedAxis)}
+                aria-hidden="true"
+              />
+            {/if}
             {@render lastPoint({ ...borrowed.gross, ...borrowedAxis }, borrowedAxis, CH_H, true)}
             {@render lastPoint({ ...borrowed.net, ...borrowedAxis }, borrowedAxis, CH_H)}
             {@render dots({ ...borrowed.net, ...borrowedAxis }, share)}
@@ -2965,41 +2974,35 @@
       {@render ourSum(
         {
           bg:
-            `Двете линии са наша сметка по данни на три институции. Ръстът на кредитите: с колко ` +
-            `са нараснали жилищните кредити на домакинствата за годината (БНБ). Отпуснатото по ` +
-            `нови кредити: сумата по нови жилищни кредити (ЕЦБ), без предоговарянията на ` +
-            `съществуващи. И ` +
-            `двете са разделени на платеното от домакинствата за жилища през същата година ` +
-            `(Евростат). Сумите на ЕЦБ преди ` +
+            `Двете линии са наша сметка: кредитите са на БНБ и на ЕЦБ, а платеното за жилища, на ` +
+            `което ги делим, е на Евростат. Сумите на ЕЦБ преди ` +
             `${periodLong(borrowed.convertedBefore, "bg")} са в лева и се превалутират по ` +
-            `официалния курс, преди делението. Евростат не отговарят за делението, нито за ` +
+            `официалния курс, преди делението. Евростат не отговаря за делението, нито за ` +
             `изводите от него.`,
           en:
-            `Both lines are our arithmetic over three institutions' figures. Growth in lending: ` +
-            `how much households' housing loans grew over the year (BNB). Lent on new loans: what ` +
-            `was lent on new home loans (ECB), with repricings of existing ones taken out. Both ` +
-            `are divided ` +
-            `by what households paid for dwellings in the same year (Eurostat). The ECB amounts ` +
-            `before ${periodLong(borrowed.convertedBefore, "en")} are in leva and are converted at ` +
-            `the official rate before the division. Eurostat are not responsible for the division ` +
-            `or for conclusions drawn from it.`,
+            `Both lines are our arithmetic: the lending is the BNB's and the ECB's, and what was ` +
+            `paid for dwellings, which we divide it by, is Eurostat's. The ECB amounts before ` +
+            `${periodLong(borrowed.convertedBefore, "en")} are in leva and are converted at the ` +
+            `official rate before the division. Eurostat are not responsible for the division or ` +
+            `for conclusions drawn from it.`,
         },
         borrowed.derivedFrom
       )}
       <!-- The caveat, beside the figure it changes the reading of: the two sides
            of the division are not two cuts of one population. A reader who takes
            this for a part of a whole has a share that cannot pass 100 and a
-           residual that is all savings, and neither is what the digits say. -->
+           residual that is all savings, and neither is what the digits say. Said
+           in what a loan pays for rather than in «двете страни на делението»,
+           because the reader who draws that conclusion is the one who has not
+           been thinking about the division at all. -->
       <p class="cap">
         <span class="l-bg"
-          >Двете страни на делението мерят различни неща. Евростат броят жилищата, купени от
-          домакинства на пазарна цена; жилищен кредит може да финансира и неща извън този брой:
-          ремонт, покупка на парцел, строеж на собствено жилище.</span
+          >Жилищен кредит се тегли и за ремонт, за парцел или за строеж на собствена къща, а
+          Евростат брои само купените жилища.</span
         >
         <span class="l-en"
-          >The two sides of the division measure different things. Eurostat count the dwellings
-          households bought at a market price; a housing loan can also finance things outside that
-          count: a renovation, buying a plot, building a home for oneself.</span
+          >A housing loan is also taken out for a renovation, for a plot or to build a house of
+          one's own, and Eurostat count only the dwellings that were bought.</span
         >
       </p>
     {/if}
@@ -3269,8 +3272,8 @@
           над чертата, от хората в частни домакинства{#if overburdenSeries.value != null}, а за
             {periodLong(overburdenSeries.refPeriod, "bg")} те са {fmt(
               overburdenSeries.value
-            )}%{/if}. Огромната част от хората живеят в собствено жилище без заем, така че този ред
-          се движи от тези сметки, а не от цените на сделките.</span
+            )}%{/if}. Огромната част от хората живеят в собствено жилище без кредит, така че този
+          ред се движи от тези сметки, а не от цените на сделките.</span
         >
         <span class="l-en"
           >"Housing costs" here is everything around the home: electricity, heating, water,

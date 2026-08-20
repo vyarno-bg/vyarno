@@ -1078,8 +1078,8 @@ net[y]       = book[y-12] − book[(y−1)-12]
 borrowed[y]  = Σ lending[m] × (1 − renegotiated[m] / 100)   over the twelve months of y
 ```
 
-Two shares of `paid[y]`: `net[y] / paid[y]` and `1 − borrowed[y] / paid[y]`, the
-second being what was paid with something other than a new home loan.
+Two shares of `paid[y]`, drawn on one axis: `net[y] / paid[y]` and
+`borrowed[y] / paid[y]`.
 
 **Nobody publishes this and both sides of it are published**, which is P11's
 case rather than a gap: Eurostat carry what households paid for dwellings,
@@ -1172,9 +1172,10 @@ or feed the staleness banner, and are not listed per block below.
 Not drawn, and why. **`value`'s forty-five quarters of total turnover, as a
 line of its own**: it is the count times the average and both of those are
 already plotted, so a third chart would restate two the page has. Its annual
-sums are the denominator §borrowed divides into. **The index and the rate split by purchase
-type as SERIES**: `tipsho30` has no purchase dimension, so a split nominal line
-would have no deflated twin beside it and the pair is the point of that chart;
+sums are the denominator §borrowed divides into. **The index and the rate split
+by purchase type as SERIES**: `tipsho30` has no purchase dimension, so a split
+nominal line would have no deflated twin beside it and the pair is the point of
+that chart;
 the split is on the page as the tables' three rows. **`avg_deal_eur` as a total
 LINE**: a mean over whatever sold that quarter moves with the mix, and a line
 invites the reading the mix will not support. **`avg_deal_eur.latest`**: the
