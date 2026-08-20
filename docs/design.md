@@ -332,7 +332,7 @@ Loaded last by all six entries, after `tokens.css` and any shared sheet, so its
 |---|---|
 | The dark theme comes out light | Gated in `tokens.css` with `@media screen`; the three grounds go white here, because browsers drop backgrounds by default and half of readers would otherwise get a green-grey wash and half would not |
 | The masthead keeps its wordmark, loses its nav and switches | Sticky prints over the first page break; six words that do nothing are the top of the sheet a reader looks at most |
-| Disclosures print open, except `.numbers` | The `.method` ones hold the derivations, which is the method this project publishes. A `.numbers` one holds the upstream's own series — 355 rows across `/market/` — which is what the printed URL beside it fetches |
+| Disclosures print open, except `.numbers` | The `.method` ones hold the derivations, which is the method this project publishes. A `.numbers` one holds the upstream's own series — 372 rows across `/market/` — which is what the printed URL beside it fetches |
 | `white-space`, `overflow` and `max-height` are released together | An element past the page box is LOST, not scrolled. Releasing the overflow of `/market/`'s 22rem scroll box without its height prints 60 rows **on top of** the prose under it |
 | `break-inside: avoid` only on things that fit a sheet | On a block taller than the page box the browser cannot satisfy it: it ejects the block, overflows it anyway, and leaves the previous sheet blank. The calculator's cards run to three sheets each |
 

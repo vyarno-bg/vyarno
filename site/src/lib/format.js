@@ -127,6 +127,25 @@ export function percentSigned(x, digits = 1, lang = "bg") {
 }
 
 /**
+ * A percentage that is a SHARE of something rather than a change.
+ *
+ * Neither of the two above fits one. `percentSigned` writes «+55,7%» over a
+ * share of the money paid for homes and invents a movement nobody measured —
+ * the objection `view/market.js`'s range strip already makes to signing the
+ * housing-cost share. `number` writes the negative half with `toLocaleString`'s
+ * U+002D, the narrow hyphen that reads as a dash beside a figure and is the
+ * character `signed` exists to keep off the page.
+ *
+ * A share CAN be negative: net new mortgage debt over a year's purchases is
+ * below zero in a year households repaid more than they borrowed, and that
+ * reading needs a minus a reader can see.
+ */
+export function percentShare(x, digits = 1, lang = "bg") {
+  const magnitude = number(x, digits, lang);
+  return magnitude === "—" ? magnitude : magnitude.replace("-", "−") + "%";
+}
+
+/**
  * A day of the month as an ordinal: 23 → «23-то» in BG, "23rd" in EN.
  *
  * Both languages take the ending from the last digit and both make an exception

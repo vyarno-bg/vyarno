@@ -55,9 +55,17 @@
     marketIndexReading,
     marketRangeStrip,
     marketRent,
+    marketBorrowedShare,
     statusLettersUsed,
   } from "./lib/view/market.js";
-  import { number, integer, percentSigned, periodLong, httpUrl } from "./lib/format.js";
+  import {
+    number,
+    integer,
+    percentShare,
+    percentSigned,
+    periodLong,
+    httpUrl,
+  } from "./lib/format.js";
   import {
     plotY,
     plotX,
@@ -178,6 +186,18 @@
    * number from the one the query returns.
    */
   const pctAxis = (x) => percentSigned(x, 0, $lang);
+  /**
+   * A SHARE, which takes no plus and still needs a real minus.
+   *
+   * `pct` would write «+55,7%» over the part of the money that was borrowed and
+   * invent a movement; `number` would write the one year households repaid more
+   * than they took out with `toLocaleString`'s hyphen, which reads as a dash.
+   * `format.js#percentShare` is the pair's third rule and the only place it is
+   * written.
+   */
+  const share = (x) => percentShare(x, 1, $lang);
+  /** The same on an axis, whose steps this file chose to be round. */
+  const shareAxis = (x) => percentShare(x, 0, $lang);
 
   const volume = $derived(marketVolume(data.houseMarket));
   const deal = $derived(marketAverageDeal(data.houseMarket));
@@ -267,7 +287,7 @@
     SP_H = 26;
   const spY = (value, scale) => sparkY(value, scale, SP_H);
 
-  const path = (s, h = CH_H) => pathOf(s, CH_W, h);
+  const path = (s, h = CH_H, grid = undefined) => pathOf(s, CH_W, h, grid);
 
   /**
    * Every series the page draws, and the ones it draws a table of.
@@ -350,6 +370,17 @@
   /** The rent line the calculator already publishes, read here rather than refetched. */
   const rent = $derived(marketRent(data.hicpCategories));
   /**
+   * How much of what households paid for homes was borrowed, counted two ways.
+   *
+   * Four payloads meet in this one call and the joining is `view/market.js`'s,
+   * not a `$derived`'s: three of them are in millions of euro and the fourth in
+   * euro, one leg of the lending is in leva, and each of those is a wrong number
+   * rather than a wrong picture. `payroll` is here for `bgn_per_eur` alone.
+   */
+  const borrowed = $derived(
+    marketBorrowedShare(data.houseMarket, data.credit, data.mortgage, data.payroll)
+  );
+  /**
    * The scale the six city rows are drawn against, rounded out to round numbers.
    *
    * One scale across the six is what makes the rows comparable at all, and the
@@ -412,13 +443,22 @@
     overburden: COPY.mktRangeOverburden,
   };
 
-  /** The rows of a numbers table: one period, one value per column. */
-  const rowsOf = (series, extra = []) =>
-    series.points.map((p, i) => ({
+  /**
+   * The rows of a numbers table: one period, one value per column.
+   *
+   * **Matched on the PERIOD, never on position.** Two series drawn together need
+   * not be of one length: §borrowed's second line starts five years into the
+   * first, and read by index its earliest reading would be filed against the
+   * first line's earliest year — every digit published and every row wrong.
+   */
+  const rowsOf = (series, extra = []) => {
+    const byPeriod = extra.map((e) => new Map(e.points.map((p) => [p.period, p.value])));
+    return series.points.map((p) => ({
       period: p.period,
-      values: [p.value, ...extra.map((e) => e.points[i]?.value ?? null)],
+      values: [p.value, ...byPeriod.map((m) => m.get(p.period) ?? null)],
       flag: series.flags?.[p.period] ?? null,
     }));
+  };
 
   /** Eurostat's own key, for the letters this page's series actually carry. */
   const FLAG_COPY = {
@@ -1235,6 +1275,11 @@
     <a href="#cities"><span class="l-bg">по градове</span><span class="l-en">by city</span></a>
     <a href="#credit"
       ><span class="l-bg">кой купува с кредит</span><span class="l-en">who borrows</span></a
+    >
+    <a href="#borrowed"
+      ><span class="l-bg">колко от парите са заем</span><span class="l-en"
+        >how much is borrowed</span
+      ></a
     >
     <a href="#stock"
       ><span class="l-bg">колко жилища преброиха</span><span class="l-en"
@@ -2726,7 +2771,252 @@
     </p>
   </section>
 
-  <!-- 6 ------------------------------------------------------------------ -->
+  <!-- 6 -----------------------------------------------------------------
+       ITS OWN SECTION, for the reason §cities has one: a different subject and
+       different publishers. Everything in §credit is one survey's shares of the
+       population; this is a flow of money, from БНБ's loan book and ЕЦБ's
+       monthly lending against Eurostat's transaction value.
+
+       AFTER §credit rather than inside it. That section counts PEOPLE living
+       with a loan and says so out loud, ending on «новите кредити са друго
+       нещо, поток» — and that sentence has somewhere to lead now. Under one
+       heading the two would read as one measurement, which is the failure the
+       paragraph there exists to prevent.
+
+       NOTHING HERE SAYS ONE MOVED THE OTHER. The share is drawn and the
+       fixation split is linked at the foot; what the pair of them means is the
+       reader's (docs/principles.md P6), which is the same refusal the paired
+       panels at the end of §volume make.
+  -->
+  <section id="borrowed">
+    <h2>
+      <span class="l-bg">Колко от парите са кредит</span>
+      <span class="l-en">How much of the money is borrowed</span>
+    </h2>
+    <p>
+      <span class="l-bg"
+        >Жилищата в България се купуваха предимно със собствени средства: спестявания, продажба на
+        друго жилище, пари от чужбина. Отдолу е каква част от платеното за жилища идва от банков
+        кредит, година по година.</span
+      >
+      <span class="l-en"
+        >Homes in Bulgaria were bought mostly with the buyer's own money: savings, the sale of
+        another home, money from abroad. Below is what part of the money paid for dwellings comes
+        from a bank loan, year by year.</span
+      >
+    </p>
+    <!-- The two lines, explained ABOVE the plot. A reader who meets two lines
+         with no idea why there are two reads the gap between them as a finding;
+         it is the width of the answer, which is a different thing and the one
+         the section is honest about. -->
+    <p>
+      <span class="l-bg"
+        >Това се мери по два начина и те не дават едно число. Едната линия е ръстът на жилищните
+        кредити в банките: отпуснатото минус погасеното. Другата е само отпуснатото по нови жилищни
+        кредити, без предоговарянията на съществуващи. Действителният дял е между двете.</span
+      >
+      <span class="l-en"
+        >It is measured two ways and the two do not give one figure. One line is the growth in the
+        banks' housing loans: what was lent less what was repaid. The other is only what was lent on
+        new home loans, with repricings of existing ones taken out. The actual share is between the
+        two.</span
+      >
+    </p>
+    {@render howMade({
+      bg:
+        `Всяко число е за цяла година и за цялата страна. И двете линии се делят на едно и също: ` +
+        `платеното от домакинствата за жилища през четирите тримесечия на годината. Линията за ` +
+        `ръста дели разликата между жилищните кредити в банките в края на годината и в края на ` +
+        `предишната; линията за отпуснатото дели сумата по нови жилищни кредити през годината. ` +
+        `Незавършена ` +
+        `година не се показва, защото три тримесечия плащания срещу дванадесет месеца кредити ` +
+        `дава дял, сгрешен точно с липсващото тримесечие. Затова текущата година я няма, докато и ` +
+        `трите институции не я публикуват докрай.`,
+      en:
+        `Every figure is for a whole year and the whole country. Both lines are divided by the ` +
+        `same thing: what households paid for dwellings over the four quarters of that year. The ` +
+        `growth line divides the difference between the banks' housing loans at the end of the ` +
+        `year and at the end of the one before; the lending line divides what was lent on new ` +
+        `home loans ` +
+        `during the year. An unfinished year is not shown, because three quarters of payments ` +
+        `against twelve months of lending gives a share wrong by exactly the missing quarter. So ` +
+        `the current year stays off until all three institutions have published it in full.`,
+    })}
+
+    {#if borrowed.net.points.length > 4}
+      <!-- ABOVE the plot, the way §volume's tint key is: a mark a reader takes
+           wrongly is not repaired by a paragraph they meet after they have taken
+           it. Drawn from the data rather than written down, so a record with no
+           year below zero carries no sentence about a mark nobody can see. -->
+      {#if borrowed.net.min < 0}
+        <p>
+          <span class="l-bg"
+            >През годината под нулата жилищните кредити в банките са намалели: погасеното по
+            съществуващите кредити е повече от отпуснатото по новите.</span
+          >
+          <span class="l-en"
+            >In the year below zero the banks' housing loan book shrank: more was repaid on existing
+            loans than was lent on new ones.</span
+          >
+        </p>
+      {/if}
+      <!-- ONE scale for the two lines, because they are one quantity counted
+           two ways and the gap between them is the reading. Drawn against their
+           own maxima the strict count and the broad one would occupy the same
+           box and the picture would say they agree. -->
+      {@const borrowedScale = {
+        min: Math.min(borrowed.net.min, borrowed.gross.min),
+        max: Math.max(borrowed.net.max, borrowed.gross.max),
+      }}
+      {@const borrowedAxis = niceTicks(borrowedScale.min, borrowedScale.max)}
+      {@const grid = { n: borrowed.net.span, offset: borrowed.gross.offset }}
+      <p class="panel">
+        <span class="l-bg">{COPY.mktPanelBorrowed.bg}</span>
+        <span class="l-en">{COPY.mktPanelBorrowed.en}</span>
+      </p>
+      <figure class="chart">
+        <div class="plot labelled">
+          {@render yAxis(
+            borrowedAxis.values.map((v) => ({
+              at: tickAt(v, borrowedAxis),
+              label: v === 0 ? "0" : shareAxis(v),
+            }))
+          )}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.mktChartBorrowed, $lang, {
+              from: at(borrowed.net.from),
+              to: at(borrowed.net.to),
+              low: share(borrowed.net.trough?.value),
+              lowAt: at(borrowed.net.trough?.period),
+              last: share(borrowed.net.latest?.value),
+              grossFrom: at(borrowed.gross.from),
+              grossLast: share(borrowed.gross.latest?.value),
+            })}
+          >
+            {@render gridlines(borrowedAxis)}
+            {@render yearRules(xTicks(borrowed.net))}
+            <path
+              class="plot-line second"
+              d={path({ ...borrowed.gross, ...borrowedAxis }, CH_H, grid)}
+            />
+            <path class="plot-line" d={path({ ...borrowed.net, ...borrowedAxis })} />
+            {@render lastPoint({ ...borrowed.gross, ...borrowedAxis }, borrowedAxis, CH_H, true)}
+            {@render lastPoint({ ...borrowed.net, ...borrowedAxis }, borrowedAxis, CH_H)}
+            {@render dots({ ...borrowed.net, ...borrowedAxis }, share)}
+            <line
+              class="plot-axis"
+              x1="0"
+              y1={yOf(0, borrowedAxis)}
+              x2={CH_W}
+              y2={yOf(0, borrowedAxis)}
+            />
+          </svg>
+          {@render sLabels(
+            [borrowed.net, borrowed.gross]
+              .map((s) => s.points.at(-1))
+              .filter(Boolean)
+              .map((p) => ({ at: tickAt(p.value, borrowedAxis), label: share(p.value) }))
+          )}
+          {@render xYears(xTicks(borrowed.net))}
+        </div>
+        <figcaption>
+          <span class="key one"
+            ><span class="l-bg">{COPY.mktKeyBorrowedNet.bg}</span><span class="l-en"
+              >{COPY.mktKeyBorrowedNet.en}</span
+            ></span
+          >
+          <span class="key two"
+            ><span class="l-bg">{COPY.mktKeyBorrowedGross.bg}</span><span class="l-en"
+              >{COPY.mktKeyBorrowedGross.en}</span
+            ></span
+          >
+          <span
+            ><span class="l-bg">{COPY.mktRefBorrowedZero.bg}</span><span class="l-en"
+              >{COPY.mktRefBorrowedZero.en}</span
+            ></span
+          >
+        </figcaption>
+      </figure>
+      <!-- Three publishers, three source lines, each with its own link. One
+           line reading «Евростат, БНБ и ЕЦБ» would offer a reader one URL for a
+           figure none of them published. -->
+      <p class="ss tsrc">
+        {@render srcLine(
+          COPY.srcEurostat,
+          borrowed.net.sourceUrl,
+          spanned(borrowed.net),
+          borrowed.net.apiUrl
+        )}
+        <span class="sep">·</span>
+        {@render srcLine(COPY.srcBnb, borrowed.lenderUrls.net, spanned(borrowed.net))}
+        <span class="sep">·</span>
+        {@render srcLine(COPY.srcEcbMir, borrowed.lenderUrls.gross, spanned(borrowed.gross))}
+      </p>
+      {@render numbersTable(
+        countLabel(COPY.mktOpenYears, borrowed.net.points.length),
+        COPY.mktTblBorrowedNumbers,
+        [COPY.mktColBorrowed, COPY.mktColBorrowedGross],
+        rowsOf(borrowed.net, [borrowed.gross]),
+        share
+      )}
+      {@render ourSum(
+        {
+          bg:
+            `Двете линии са наша сметка по данни на три институции. Ръстът на кредитите: с колко ` +
+            `са нараснали жилищните кредити на домакинствата за годината (БНБ). Отпуснатото по ` +
+            `нови кредити: сумата по нови жилищни кредити (ЕЦБ), без предоговарянията на ` +
+            `съществуващи. И ` +
+            `двете са разделени на платеното от домакинствата за жилища през същата година ` +
+            `(Евростат). Сумите на ЕЦБ преди ` +
+            `${periodLong(borrowed.convertedBefore, "bg")} са в лева и се превалутират по ` +
+            `официалния курс, преди делението. Евростат не отговарят за делението, нито за ` +
+            `изводите от него.`,
+          en:
+            `Both lines are our arithmetic over three institutions' figures. Growth in lending: ` +
+            `how much households' housing loans grew over the year (BNB). Lent on new loans: what ` +
+            `was lent on new home loans (ECB), with repricings of existing ones taken out. Both ` +
+            `are divided ` +
+            `by what households paid for dwellings in the same year (Eurostat). The ECB amounts ` +
+            `before ${periodLong(borrowed.convertedBefore, "en")} are in leva and are converted at ` +
+            `the official rate before the division. Eurostat are not responsible for the division ` +
+            `or for conclusions drawn from it.`,
+        },
+        borrowed.derivedFrom
+      )}
+      <!-- The caveat, beside the figure it changes the reading of: the two sides
+           of the division are not two cuts of one population. A reader who takes
+           this for a part of a whole has a share that cannot pass 100 and a
+           residual that is all savings, and neither is what the digits say. -->
+      <p class="cap">
+        <span class="l-bg"
+          >Двете страни на делението мерят различни неща. Евростат броят жилищата, купени от
+          домакинства на пазарна цена; жилищен кредит може да финансира и неща извън този брой:
+          ремонт, покупка на парцел, строеж на собствено жилище.</span
+        >
+        <span class="l-en"
+          >The two sides of the division measure different things. Eurostat count the dwellings
+          households bought at a market price; a housing loan can also finance things outside that
+          count: a renovation, buying a plot, building a home for oneself.</span
+        >
+      </p>
+    {/if}
+
+    <p class="cap">
+      <span class="l-bg"
+        >Каква част от тези кредити са с плаваща лихва пише на
+        <a href="/credit/#fixation">страницата за кредитите</a>.</span
+      >
+      <span class="l-en"
+        >What part of those loans carry a floating rate is on
+        <a href="/credit/#fixation">the borrowing page</a>.</span
+      >
+    </p>
+  </section>
+
+  <!-- 7 ------------------------------------------------------------------ -->
   <section id="stock">
     <h2>
       <span class="l-bg">Колко жилища преброи преброяването</span>
@@ -2912,7 +3202,7 @@
     {/if}
   </section>
 
-  <!-- 7 ------------------------------------------------------------------ -->
+  <!-- 8 ------------------------------------------------------------------ -->
   <section id="ratio">
     <h2>
       <span class="l-bg">Скъпо ли е спрямо доходите</span>

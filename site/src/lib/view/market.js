@@ -20,12 +20,17 @@
  */
 
 import {
+  completeYearTotals,
   dealInYearsOfPay,
   dealsAtQuarter,
+  eurosFromMixedCurrency,
   indexTimesBase,
+  lessSharePct,
   rangePosition,
+  sharePctByKey,
   shortfallPct,
   unoccupiedSharePct,
+  yearEndGrowth,
   yearOnYearChanges,
 } from "../mirror.js";
 
@@ -474,6 +479,18 @@ function sourcedSeries(entries, block, opts = {}) {
   };
 }
 
+/**
+ * A euro series in millions of euro, which is the unit both lenders publish in.
+ *
+ * Eurostat's value cube is `unit: "eur"` and carries whole euro, ten digits to
+ * the quarter, while `credit.json` and `mortgage.json` are both in millions of
+ * them. A ratio taken across that seam is out by a factor of a million and
+ * lands as a share of 0.0%, which reads as a payload that failed to fetch
+ * rather than as a units error and would sit on the page unquestioned.
+ */
+const inMillions = (entries) =>
+  Object.fromEntries(Object.entries(entries ?? {}).map(([key, value]) => [key, value / 1e6]));
+
 /** One field lifted out of a `{period: {total, new, existing}}` map. */
 function field(series, name) {
   return Object.fromEntries(
@@ -773,6 +790,107 @@ export function marketAverageDealSeries(houseMarket, purchase = "existing") {
 }
 
 /**
+ * The month ЕЦБ's lending volumes stop being leva.
+ *
+ * `new_business.monthly_volume` is published «in the currency of the period»
+ * and Bulgaria adopted the euro on 2026-01-01, so one national market reads
+ * 1 389 in December and 447 in January. The payload states that in prose
+ * (`currency_history`) and nowhere a program can read, so the month is named in
+ * the layer whose suite can hold it rather than inside the arithmetic.
+ */
+const LENDING_EURO_FROM = "2026-01";
+
+/**
+ * How much of what households paid for homes came from a bank loan — counted
+ * two ways, neither of them captioned as the true one.
+ *
+ * **Nobody publishes this and every half of it is published** (P11): Eurostat
+ * carry what households paid for dwellings, БНБ the housing loan book and ЕЦБ
+ * the monthly new business. The division happens in the reader's own tab
+ * because no file here may hold a second publisher's number (`docs/legal.md`).
+ *
+ * `net` is БНБ's book at one December against the December before it, so
+ * everything repaid is already out of it; it reaches back to the first year
+ * Eurostat's value cube covers whole and goes below zero in a year the book
+ * shrank. `gross` is every euro ЕЦБ record as lent on a new home loan, less the
+ * part they mark as a household repricing one it already had; it starts where
+ * that split series starts. The two bracket the answer, which is why both are
+ * drawn and neither is drawn alone.
+ *
+ * **`axis`, `offset` and `span` are what let them share one x-axis.** The two
+ * records are of different lengths, and a shorter line placed at its own
+ * indices is stretched across the whole box with every reading under a year it
+ * does not describe — the failure `marketVolumeAgainstPrices` avoids by cutting
+ * both series to one window, which here would throw away the reach-back that is
+ * the longer line's whole point. So the window is the union and each line
+ * carries where it starts inside it.
+ *
+ * **Whole calendar years only.** Three quarters of spending under twelve months
+ * of lending is a share wrong by the missing quarter, with every digit published
+ * and nothing on the picture to say the two windows differ.
+ *
+ * @param {object|null} houseMarket
+ * @param {object|null} credit
+ * @param {object|null} mortgage
+ * @param {object|null} payroll  read for `bgn_per_eur` and nothing else
+ */
+export function marketBorrowedShare(houseMarket, credit, mortgage, payroll) {
+  const value = houseMarket?.value ?? null;
+  const paid = inMillions(completeYearTotals(field(value?.series_by_period, "total"), 4));
+
+  const book = credit?.outstanding ?? null;
+  const net = sharePctByKey(yearEndGrowth(book?.volume_by_period?.housing), paid);
+
+  const volume = mortgage?.new_business?.monthly_volume ?? null;
+  const split = mortgage?.new_business_split ?? null;
+  // The conversion returns null without a rate, so a payload that failed to
+  // fetch takes the second line off the chart rather than drawing its pre-euro
+  // half 1.96 times too high.
+  const lent = completeYearTotals(
+    lessSharePct(
+      eurosFromMixedCurrency(volume?.series_by_period, {
+        bgnPerEur: payroll?.bgn_per_eur,
+        euroFrom: LENDING_EURO_FROM,
+      }),
+      split?.renegotiated_share_by_period
+    ),
+    12
+  );
+  const gross = sharePctByKey(lent, paid);
+
+  const axis = [...new Set([...Object.keys(net), ...Object.keys(gross)])].sort();
+  const placed = (entries, opts) => {
+    const series = sourcedSeries(entries, value, opts);
+    return { ...series, span: axis.length, offset: axis.indexOf(series.from ?? "") };
+  };
+
+  return {
+    axis,
+    // Attributed to the VALUE cube, which is the denominator of both lines and
+    // the only block among the four carrying a page a reader can browse. Each
+    // lender's own file is cited beside it rather than folded in: the claim is
+    // that three publishers were joined here and not by any of them.
+    net: placed(net, {
+      // Zero is a reading on this line: below it, the banks' book shrank over
+      // the year, which is a different statement from lending a little.
+      reference: 0,
+      unit: "percent_of_value_paid",
+    }),
+    gross: placed(gross, { unit: "percent_of_value_paid" }),
+    // ONE disclosure for one chart, so the queries travel together. Split per
+    // line it would be two `p.ours` blocks three paragraphs apart, each
+    // discharging half of a licence condition on one picture.
+    derivedFrom: [value?.api_url, book?.source_url, volume?.source_url, split?.source_url].filter(
+      Boolean
+    ),
+    lenderUrls: { net: book?.source_url ?? null, gross: volume?.source_url ?? null },
+    // The changeover the copy names, so the sentence disclosing the conversion
+    // takes the month from the same constant the arithmetic did.
+    convertedBefore: LENDING_EURO_FROM,
+  };
+}
+
+/**
  * The share of people whose housing costs pass 40% of their household income,
  * every year EU-SILC has published one.
  *
@@ -879,6 +997,11 @@ const RANGE_ROWS = Object.freeze(
     // Unsigned, because it is a share of the population and not a change. The
     // signed formatter would print «+6,9%» and invent a movement.
     { key: "overburden", format: "pct", href: "#ratio" },
+    // **§borrowed's two shares are NOT here, and the reason is the rule above
+    // rather than room.** Each is one publisher's lending over another's
+    // turnover, so a row would place a reading of ours inside a record of ours
+    // on a strip whose whole claim is that every line is one publisher's one
+    // series. The two charts carry their own extremes.
   ].map(Object.freeze)
 );
 

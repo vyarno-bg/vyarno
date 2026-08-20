@@ -310,7 +310,7 @@ loader per payload to forget.
 **The route argument is required.** More than one page here reads data, and a
 loader with no route fetches the whole manifest for all of them: the calculator
 downloads the property market's quarterly series and `/market/` downloads the
-payroll table, neither rendering a figure from it. Defaulting the argument to
+percentile ladder, neither rendering a figure from it. Defaulting the argument to
 "everything" would hide a misspelled route as a slow page rather than an error,
 so `payloadsFor` throws on a route no row names.
 
