@@ -274,26 +274,28 @@
        payslip is a document one person receives. The household line
        above them adds the columns up. -->
     {#if calc.earnersDirty && calc.payslip}
-      <div class="hint" style="margin-top:4px; color:var(--ink-2)">
-        <span class="l-bg">{t(summaryKey, "bg", summaryArgs)}</span>
-        <span class="l-en">{t(summaryKey, "en", summaryArgs)}</span>
-      </div>
-      <!-- Both readings side by side, always. The toggle changes which one the
-           reader edits, and showing only the other half leaves them working out
-           which basis the page is in from the wording of a sentence. -->
-      <div class="hint pair mono" style="margin-top:2px">
-        <span class="l-bg"
-          >{t(COPY.payBothNet, "bg", {
-            n: fmt0(calc.payslip.net),
-            g: fmt0(calc.payslip.gross),
-          })}</span
-        >
-        <span class="l-en"
-          >{t(COPY.payBothNet, "en", {
-            n: fmt0(calc.payslip.net),
-            g: fmt0(calc.payslip.gross),
-          })}</span
-        >
+      <div class="answer">
+        <!-- Both readings side by side, always. The toggle changes which one the
+             reader edits, and showing only the other half leaves them working out
+             which basis the page is in from the wording of a sentence. -->
+        <div class="pair mono">
+          <span class="l-bg"
+            >{t(COPY.payBothNet, "bg", {
+              n: fmt0(calc.payslip.net),
+              g: fmt0(calc.payslip.gross),
+            })}</span
+          >
+          <span class="l-en"
+            >{t(COPY.payBothNet, "en", {
+              n: fmt0(calc.payslip.net),
+              g: fmt0(calc.payslip.gross),
+            })}</span
+          >
+        </div>
+        <div class="hint deduct">
+          <span class="l-bg">{t(summaryKey, "bg", summaryArgs)}</span>
+          <span class="l-en">{t(summaryKey, "en", summaryArgs)}</span>
+        </div>
       </div>
       {#if calc.payslip.earners.length > 1}
         <div class="hint" style="margin-top:4px">
@@ -649,8 +651,28 @@
   .basis {
     margin-bottom: 8px;
   }
-  .hint.pair {
-    color: var(--muted);
+  /* **The ledger rule between what the reader typed and what this card worked
+     out.** Four hints in `--muted` 13px stand between the field and this
+     answer, so painted the same the reader's own gross is the fifth
+     interchangeable grey line and nothing says which of them the card produced
+     rather than asked for. The pair leads and the deductions follow it: the
+     answer, then how it was reached.
+
+     **Prominence, never a hue** — `--real` and `--erode` say a figure beat or
+     lost to a reference, and a gross is not a verdict. That is the rule at the
+     top of this component and `.gap`'s below, on the card's other claim. */
+  .answer {
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid var(--line);
+  }
+  .pair {
+    font-size: var(--fs-lead);
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .deduct {
+    margin-top: 3px;
   }
   .hint.total {
     color: var(--ink-2);
