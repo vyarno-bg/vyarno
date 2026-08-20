@@ -326,6 +326,25 @@ export class Calculator {
    * user's number. Only editing a group does. See mirror.js#divisionRate.
    */
   splits = $state(PRESETS.official.map(() => null));
+  /**
+   * The basket as it stood in the OTHER mode, or `null` once the reader has
+   * edited the one they are in — the same contract `earners[].stashed` keeps
+   * for the net/gross toggle, and here it protects thirteen figures instead of
+   * one.
+   *
+   * **The conversion is lossy in a way the reader can read off the screen.** %
+   * shares are whole numbers, so a €95 division comes back €88 and a €25 one
+   * comes back €29: every amount they typed moves, worst at the small end,
+   * where somebody who says «€25 за спорт» is most certain of the figure. Both
+   * modes normalise by Σ so π never moved — what moved was the reader's own
+   * answer, silently, on a card whose whole promise is that it holds their
+   * numbers rather than ours.
+   *
+   * **Every handler that moves an amount clears it**, because after an edit
+   * the stash describes a basket the reader has left, and putting it back on
+   * the next flip would discard the edit rather than the rounding.
+   */
+  basketStash = $state(null);
 
   /**
    * Whether a payload has already seeded the basket.
@@ -420,6 +439,7 @@ export class Calculator {
       this.openDivisions = new Set();
       this.activePreset = "official";
       this.spendMode = "pct";
+      this.basketStash = null;
       this.basketSeeded = true;
     }
     if (this.dataReady && this.data.mortgage) {
@@ -447,9 +467,9 @@ export class Calculator {
    * string keeps the field and the model saying the same thing — and NaN, which
    * is what an unsaid raise IS, does not survive JSON in the first place.
    *
-   * `stashed` stays behind for the opposite reason: it is the amount the reader
-   * last typed in the OTHER basis, which is a draft of an edit in progress
-   * rather than an answer they gave.
+   * `stashed` and `basketStash` stay behind for the opposite reason: each is
+   * what the reader last typed in the OTHER mode, which is a draft of an edit
+   * in progress rather than an answer they gave.
    */
   snapshot = () => ({
     earners: this.earners.map((e) => ({ amount: e.amount, raiseText: e.raiseText })),
@@ -531,6 +551,7 @@ export class Calculator {
     this.activePreset = saved.activePreset;
     this.spendMode = saved.spendMode;
     this.spendSharePct = saved.spendSharePct;
+    this.basketStash = null;
     this.sectorKey = saved.sectorKey;
     return true;
   };
@@ -1534,11 +1555,13 @@ export class Calculator {
       this.spendMode === "eur" ? pct.map((p) => Math.round((this.spendable * p) / 100)) : [...pct];
     this.splits = pct.map(() => null);
     this.activePreset = name;
+    this.basketStash = null;
   };
 
   onSliderInput = (i, val) => {
     this.weights[i] = +val;
     this.activePreset = null;
+    this.basketStash = null;
   };
 
   /**
@@ -1551,12 +1574,18 @@ export class Calculator {
    */
   onSpendShareInput = (val) => {
     this.spendSharePct = clampSpendShare(+val);
+    this.basketStash = null;
   };
 
   /**
    * Switch between percentage shares and euros per month.
    *
-   * The conversion preserves the basket exactly, and "exactly" means the
+   * **A basket the reader has already seen in this mode comes back verbatim**,
+   * out of `basketStash`, because the conversion is not its own inverse: whole
+   * percents out and euros back turns €95 into €88. Converting is what the
+   * FIRST flip in a direction does, and what any flip after an edit does.
+   *
+   * That conversion preserves the basket exactly, and "exactly" means the
    * thirteen € figures on screen do not move either — not merely that π holds,
    * which it would anyway because both modes normalise by Σ. So each direction
    * converts against the base the € column is actually drawn from
@@ -1574,27 +1603,43 @@ export class Calculator {
    */
   setSpendMode = (mode) => {
     if (mode === this.spendMode) return;
-    const total = this.weights.reduce((s, x) => s + (x > 0 ? x : 0), 0);
-    if (total > 0) {
-      const next =
-        mode === "eur"
-          ? this.weights.map((w) => Math.round((this.budget.spendBase * Math.max(0, w)) / total))
-          : this.weights.map((w) => Math.round((100 * Math.max(0, w)) / total));
-      if (mode === "pct") {
-        this.spendSharePct = clampSpendShare(
-          this.spendable > 0 ? (100 * this.budget.spendBase) / this.spendable : 100
-        );
+    const outgoing = {
+      weights: [...this.weights],
+      splits: this.splits.map((sp) => (sp ? [...sp] : null)),
+      spendSharePct: this.spendSharePct,
+    };
+    const back = this.basketStash;
+    if (back && back.weights.length === this.weights.length) {
+      // Verbatim, never the conversion run backwards: the round trip rounds
+      // through whole percents, so converting home hands the reader thirteen
+      // amounts near the ones they typed and equal to none of them.
+      this.weights = back.weights;
+      this.splits = back.splits;
+      this.spendSharePct = back.spendSharePct;
+    } else {
+      const total = this.weights.reduce((s, x) => s + (x > 0 ? x : 0), 0);
+      if (total > 0) {
+        const next =
+          mode === "eur"
+            ? this.weights.map((w) => Math.round((this.budget.spendBase * Math.max(0, w)) / total))
+            : this.weights.map((w) => Math.round((100 * Math.max(0, w)) / total));
+        if (mode === "pct") {
+          this.spendSharePct = clampSpendShare(
+            this.spendable > 0 ? (100 * this.budget.spendBase) / this.spendable : 100
+          );
+        }
+        // Carry each division's group split across in the same proportion, so a
+        // user who has already drilled in doesn't lose their work.
+        this.splits = this.splits.map((sp, i) => {
+          if (!sp) return null;
+          const spTotal = sp.reduce((s, x) => s + (x > 0 ? x : 0), 0);
+          if (spTotal <= 0) return null;
+          return sp.map((x) => (Math.max(0, x) * next[i]) / spTotal);
+        });
+        this.weights = next;
       }
-      // Carry each division's group split across in the same proportion, so a
-      // user who has already drilled in doesn't lose their work.
-      this.splits = this.splits.map((sp, i) => {
-        if (!sp) return null;
-        const spTotal = sp.reduce((s, x) => s + (x > 0 ? x : 0), 0);
-        if (spTotal <= 0) return null;
-        return sp.map((x) => (Math.max(0, x) * next[i]) / spTotal);
-      });
-      this.weights = next;
     }
+    this.basketStash = outgoing;
     this.spendMode = mode;
   };
 
@@ -1627,6 +1672,7 @@ export class Calculator {
     copy[divIndex] = next;
     this.splits = copy;
     this.activePreset = null;
+    this.basketStash = null;
   };
 
   /** Drop a hand-made split and go back to Eurostat's own division rate. */
@@ -1634,6 +1680,7 @@ export class Calculator {
     const copy = [...this.splits];
     copy[divIndex] = null;
     this.splits = copy;
+    this.basketStash = null;
   };
 
   /** Switch the home block to a hand-typed asking price, seeding it once.

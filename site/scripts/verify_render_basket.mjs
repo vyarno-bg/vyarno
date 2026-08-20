@@ -492,6 +492,58 @@ test("the euro mode's measured remainder is the only one on screen there", { ski
   });
 });
 
+test("a typed euro basket survives a trip through the % mode", { skip }, async () => {
+  // The conversion rounds through whole percents, so the way back is not the
+  // way out: €95 returned as €88 and €25 as €29 — every one of the thirteen
+  // amounts moved, worst at the small end, where a reader who says «€25 за
+  // спорт» is most certain of the figure. π held throughout (both modes
+  // normalise by Σ), which is exactly why nothing else on the page could
+  // report it.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2150");
+    await page.waitForTimeout(300);
+    const [pct, eur] = [0, 1].map((i) => page.locator(".basketbar .seg .segbtn").nth(i));
+    await eur.click();
+    await page.waitForTimeout(300);
+
+    const boxes = page.locator("#sliders .eurin input");
+    const mine = [420, 95, 60, 310, 45, 40, 150, 35, 70, 25, 130, 30, 55];
+    const n = await boxes.count();
+    for (let i = 0; i < n; i += 1) await boxes.nth(i).fill(String(mine[i] ?? 0));
+    await page.waitForTimeout(300);
+    const typed = await boxes.evaluateAll((els) => els.map((e) => e.value));
+
+    await pct.click();
+    await page.waitForTimeout(300);
+    await eur.click();
+    await page.waitForTimeout(300);
+
+    const back = await page
+      .locator("#sliders .eurin input")
+      .evaluateAll((els) => els.map((e) => e.value));
+    assert.deepEqual(back, typed, "the reader's own euro amounts came back changed");
+
+    // An edit in the other mode is the reader's newer answer, so it wins over
+    // what they typed here — the stash is a copy of an abandoned basket, not a
+    // second source of truth the flip keeps reinstating.
+    await pct.click();
+    await page.waitForTimeout(300);
+    const rail = page.locator("#sliders input[type=range]").first();
+    await rail.fill("40");
+    await page.waitForTimeout(300);
+    await eur.click();
+    await page.waitForTimeout(300);
+    const edited = await page
+      .locator("#sliders .eurin input")
+      .evaluateAll((els) => els.map((e) => Number(e.value)));
+    assert.ok(
+      edited[0] > Number(typed[0]),
+      `the % edit was discarded on the way back: CP01 is €${edited[0]}, was €${typed[0]}`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the basket fits a 360px column, chips and all", { skip }, async () => {
   // 360px is the phone the reader in the report was holding. The chip row
   // wraps to four lines there, and a chip that overhangs the column is the
