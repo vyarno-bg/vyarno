@@ -1949,6 +1949,40 @@ test("the borrowing page keeps the 30% line where P7 put it", () => {
   );
 });
 
+test("the mortgage figure says the bank's own monthly number is the bigger one", () => {
+  // A Bulgarian buyer's comparison is with what a bank quoted them across a
+  // desk, and that quote is the whole monthly outlay: the annuity, the
+  // property insurance a mortgaged home must carry, usually life cover, and
+  // the fee on the account it is collected from. The €662 on this row is the
+  // annuity alone, and the 30% affordability line is drawn against it — so the
+  // caveat has to say which way the difference runs, on the row where somebody
+  // is deciding whether they can carry a house.
+  //
+  // **And it may carry no figure of its own.** Nobody publishes what the
+  // extras add for a Bulgarian mortgage, so any number here is one this
+  // project invented (docs/principles.md P7). A digit in this string is that
+  // failure, whatever the sentence around it says.
+  for (const [text, lang] of [
+    [pair("homeMortExcludes")[0], "bg"],
+    [pair("homeMortExcludes")[1], "en"],
+  ]) {
+    assert.ok(
+      /(банк|bank)/i.test(text),
+      `COPY.homeMortExcludes.${lang} does not name the bank's own monthly figure, ` +
+        `which is the number the reader is comparing this one against: ${text}`
+    );
+    assert.ok(
+      /(най-малкото|по-голяма|the least|bigger)/i.test(text),
+      `COPY.homeMortExcludes.${lang} does not say which way the difference runs, ` +
+        `so the share above reads as the whole cost: ${text}`
+    );
+    assert.ok(
+      !/\d/.test(text),
+      `COPY.homeMortExcludes.${lang} states a figure for charges nobody publishes: ${text}`
+    );
+  }
+});
+
 // ---------------------------------------------------------------------------
 // The sector card — a comparison to an average, said out loud
 // ---------------------------------------------------------------------------
