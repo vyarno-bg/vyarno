@@ -2470,8 +2470,8 @@ export const COPY = {
   mktColHowLive: { bg: "Как живеят", en: "How people live" },
   mktColShareOfPeople: { bg: "Дял от хората", en: "Share of people" },
   mktRowOwn: { bg: "В собствено жилище", en: "In a home they own" },
-  mktRowOwnLoan: { bg: "от тях със заем по жилището", en: "of them with a loan on it" },
-  mktRowOwnNoLoan: { bg: "от тях без заем", en: "of them with no loan" },
+  mktRowOwnLoan: { bg: "от тях с кредит по жилището", en: "of them with a loan on it" },
+  mktRowOwnNoLoan: { bg: "от тях без кредит", en: "of them with no loan" },
   mktRowRent: { bg: "Под наем", en: "Renting" },
   mktRowRentMarket: { bg: "от тях по пазарна цена", en: "of them at the market price" },
   // «на намален наем или без наем» rather than Eurostat's «reduced price or
