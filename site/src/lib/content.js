@@ -2790,6 +2790,41 @@ export const COPY = {
     bg: "надолу = по-малко хора над тази черта, а не по-малки сметки",
     en: "down = fewer people over that line, not smaller bills",
   },
+  // §borrowed's panel. It names the WHOLE both lines are a share of, because
+  // the two are one quantity counted two ways and each line's own name is in
+  // the key under the plot.
+  mktPanelBorrowed: {
+    bg: "каква част от платеното за жилища идва от банков кредит",
+    en: "what part of the money paid for dwellings comes from a bank loan",
+  },
+  // The two lines, named where each of them ends. `.second` is the gross count
+  // and it is the upper line on the published record, which is not a fact the
+  // key may rest on: each name says what its own line measures.
+  mktKeyBorrowedNet: {
+    bg: "ръст на кредитите в банките",
+    en: "growth in the banks' lending",
+  },
+  mktKeyBorrowedGross: {
+    bg: "отпуснато по нови кредити",
+    en: "lent on new loans",
+  },
+  // What zero is on a line that crosses it. Below the rule the loan book
+  // shrank over the year, so the rule is not the floor of the picture and a
+  // reader has to be told which.
+  mktRefBorrowedZero: {
+    bg: "0 = жилищните кредити в банките не са се променили през годината",
+    en: "0 = the banks' housing loan book did not change that year",
+  },
+  mktColBorrowed: { bg: "Ръст на кредитите", en: "Growth in lending" },
+  mktColBorrowedGross: { bg: "Отпуснато по нови", en: "Lent on new loans" },
+  mktTblBorrowedNumbers: {
+    bg: "Каква част от платеното за жилища идва от кредит, по години",
+    en: "What part of the money paid for dwellings comes from lending, by year",
+  },
+  mktChartBorrowed: {
+    bg: "Каква част от платеното за жилища идва от банков кредит, по години от {from} до {to}. По ръста на кредитите в банките: най-ниско {low} през {lowAt}, а за {to} е {last}. По отпуснатото за нови кредити, което започва от {grossFrom}: за {to} е {grossLast}.",
+    en: "What part of the money paid for dwellings comes from a bank loan, by year {from} to {to}. By the growth in the banks' lending: the lowest is {low} in {lowAt}, and for {to} it is {last}. By what was lent on new loans, which starts in {grossFrom}: for {to} it is {grossLast}.",
+  },
   mktKeyNew: { bg: "ново строителство", en: "new builds" },
   mktKeyExisting: { bg: "съществуващи", en: "existing" },
   // A slot, never a written year: НСИ's city series starts where their workbook

@@ -1827,3 +1827,127 @@ export function dealInYearsOfPay(dealEur, monthlyGrossEur) {
   }
   return dealEur / (monthlyGrossEur * 12);
 }
+
+/**
+ * A series quoted in the currency of its own period, in one currency.
+ *
+ * **A euro denominator does not convert the numerator for you.** ЕЦБ publish
+ * lending volumes «in the currency of the period», and Bulgaria adopted the euro
+ * on 2026-01-01: the same national market reads 1 389 in December and 447 in
+ * January. Divided unconverted into what was paid for the homes, the years
+ * before the changeover come out 1.96 times too large — a mortgage-funded share
+ * of 153% of the money, on a chart that draws perfectly well.
+ *
+ * **Null rather than the entries back where either half is missing**, so a
+ * caller that lost the rate renders nothing instead of the unconverted series.
+ *
+ * @param {Record<string, number>|null|undefined} entries  keyed `YYYY-MM`
+ * @param {{bgnPerEur?: number|null, euroFrom?: string|null}} opts
+ * @returns {Record<string, number>|null} the same periods, all in euro
+ */
+export function eurosFromMixedCurrency(entries, { bgnPerEur, euroFrom } = {}) {
+  if (!Number.isFinite(bgnPerEur) || bgnPerEur <= 0 || !euroFrom) return null;
+  const out = {};
+  for (const [period, value] of Object.entries(entries ?? {})) {
+    if (!Number.isFinite(value)) continue;
+    // Lexicographic, which is what an ISO period label is for: `2025-12` sorts
+    // before `2026-01` without parsing either of them into a date.
+    out[period] = period < euroFrom ? value / bgnPerEur : value;
+  }
+  return out;
+}
+
+/**
+ * A monthly or quarterly series added into calendar years — whole years only.
+ *
+ * **A part year under a full one is a share wrong by the months it is missing,
+ * and nothing on the picture says so.** Eurostat disseminate the property cubes
+ * a quarter at a time and ЕЦБ publish monthly, so the newest year is short in
+ * one of them almost always and in both of them never at the same moment.
+ *
+ * @param {Record<string, number>|null|undefined} entries  keyed `YYYY-Qn` or `YYYY-MM`
+ * @param {number} periodsPerYear  4 for quarters, 12 for months
+ * @returns {Record<string, number>} keyed by year, the years that are whole
+ */
+export function completeYearTotals(entries, periodsPerYear) {
+  const years = new Map();
+  for (const [period, value] of Object.entries(entries ?? {})) {
+    const year = String(period).slice(0, 4);
+    if (!/^\d{4}$/.test(year) || !Number.isFinite(value)) continue;
+    const before = years.get(year) ?? { total: 0, seen: 0 };
+    years.set(year, { total: before.total + value, seen: before.seen + 1 });
+  }
+  const out = {};
+  for (const [year, y] of years) if (y.seen === periodsPerYear) out[year] = y.total;
+  return out;
+}
+
+/**
+ * What a stock grew by over each calendar year, from its December readings.
+ *
+ * One December against the one before it is the year's net flow: everything lent
+ * less everything repaid and written off. It can be negative, and a year where it
+ * is says households paid down more than they took out.
+ *
+ * **Paired off the LABELS, never off position in the series**, for the reason
+ * `quarterYearAgo` exists: one month missing from a workbook and the arithmetic
+ * silently reaches two Decembers apart, returning a plausible figure with no
+ * question behind it.
+ *
+ * @param {Record<string, number>|null|undefined} entries  keyed `YYYY-MM`
+ * @returns {Record<string, number>} keyed by year, the years carrying both ends
+ */
+export function yearEndGrowth(entries) {
+  const out = {};
+  for (const [period, value] of Object.entries(entries ?? {})) {
+    const december = /^(\d{4})-12$/.exec(period);
+    if (!december || !Number.isFinite(value)) continue;
+    const before = entries[`${Number(december[1]) - 1}-12`];
+    if (Number.isFinite(before)) out[december[1]] = value - before;
+  }
+  return out;
+}
+
+/**
+ * One series over another, key by key, as a percentage.
+ *
+ * **Sparse out.** A key only one side carries gets no entry rather than a null
+ * one, so a year the second publisher has not reached yet is absent from the
+ * picture instead of drawn at zero — which on a share is a measurement nobody
+ * made, at the end of the record a reader looks at first.
+ *
+ * @param {Record<string, number>|null|undefined} numerators
+ * @param {Record<string, number>|null|undefined} denominators
+ * @returns {Record<string, number>} percent, at the keys both carry
+ */
+export function sharePctByKey(numerators, denominators) {
+  const out = {};
+  for (const [key, value] of Object.entries(numerators ?? {})) {
+    const base = denominators?.[key];
+    if (!Number.isFinite(value) || !Number.isFinite(base) || base <= 0) continue;
+    out[key] = (value / base) * 100;
+  }
+  return out;
+}
+
+/**
+ * Each reading less the share of itself a second series says is something else.
+ *
+ * ЕЦБ publish new mortgage business as one figure with renegotiations inside it,
+ * and a household repricing a loan it already has is not somebody buying a home.
+ * The share is a share of that same month's volume, so it comes off in whatever
+ * currency the volume is already in.
+ *
+ * @param {Record<string, number>|null|undefined} entries
+ * @param {Record<string, number>|null|undefined} sharesPct
+ * @returns {Record<string, number>} the periods both carry
+ */
+export function lessSharePct(entries, sharesPct) {
+  const out = {};
+  for (const [period, value] of Object.entries(entries ?? {})) {
+    const share = sharesPct?.[period];
+    if (!Number.isFinite(value) || !Number.isFinite(share)) continue;
+    out[period] = value * (1 - share / 100);
+  }
+  return out;
+}

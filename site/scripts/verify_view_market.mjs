@@ -37,6 +37,7 @@ import {
   marketAverageDealSeries,
   marketOverburdenSeries,
   marketRangeStrip,
+  marketBorrowedShare,
   RANGE_MIN_POINTS,
   statusLettersUsed,
 } from "../src/lib/view/market.js";
@@ -562,6 +563,7 @@ test("each drawn series carries the level its own units are defined against", ()
   const structure = read("house_market_structure");
   if (!market || !structure) return; // no refresh in this checkout
 
+  const borrowed = marketBorrowedShare(market, read("credit"), read("mortgage"), read("payroll"));
   const expected = [
     // An index: 100 is the base year, which is what the multiples are read from.
     [100, "index", marketPriceIndexSeries(market)],
@@ -572,8 +574,14 @@ test("each drawn series carries the level its own units are defined against", ()
     [0, "volumeChange", marketVolumeChangeSeries(market)],
     [0, "pairVolume", marketVolumeAgainstPrices(market).volume],
     [0, "pairPrice", marketVolumeAgainstPrices(market).price],
+    // A share that CROSSES zero: a year below the rule is one the loan book
+    // shrank, so the axis has to contain it by definition rather than by
+    // whatever the three publishers happened to do that decade.
+    [0, "borrowedNet", borrowed.net],
     // A count, a euro figure and a share of the population are defined against
-    // nothing, and a rule drawn at an invented level would be ours.
+    // nothing, and a rule drawn at an invented level would be ours. The gross
+    // count is one of those: a share of a whole rather than a change.
+    [null, "borrowedGross", borrowed.gross],
     [null, "volume", marketVolumeSeries(market)],
     [null, "dealNew", marketAverageDealSeries(market, "new")],
     [null, "dealExisting", marketAverageDealSeries(market, "existing")],
@@ -722,7 +730,10 @@ test("every market series a chart is drawn from contains zero in its scale", () 
   const structure = read("house_market_structure");
   if (!market || !structure) return; // no refresh in this checkout
 
+  const borrowed = marketBorrowedShare(market, read("credit"), read("mortgage"), read("payroll"));
   const all = {
+    borrowedNet: borrowed.net,
+    borrowedGross: borrowed.gross,
     volume: marketVolumeSeries(market),
     volumeChange: marketVolumeChangeSeries(market),
     pairVolume: marketVolumeAgainstPrices(market).volume,
@@ -1124,4 +1135,83 @@ test("the range strip places every row against its own published extremes", () =
     }).rows,
     []
   );
+});
+
+test("the borrowed share joins two publishers in one currency, over whole years", () => {
+  // The one figure on the page built from four payloads, and every seam in it
+  // is a wrong NUMBER rather than a wrong picture: Eurostat's value cube is in
+  // euro and both lenders are in millions of them, ЕЦБ's lending is «in the
+  // currency of the period» so its leg before the euro is leva, and a year
+  // either publisher has not finished is a share short by the months it lacks.
+  //
+  // Recomputed here from the raw cubes rather than through the same helpers, so
+  // a wrong argument in the wiring cannot agree with itself.
+  const market = read("house_market");
+  const credit = read("credit");
+  const mortgage = read("mortgage");
+  const payroll = read("payroll");
+  if (!market || !credit || !mortgage || !payroll) return; // no refresh in this checkout
+
+  const borrowed = marketBorrowedShare(market, credit, mortgage, payroll);
+  const paidEurM = (year) =>
+    ["Q1", "Q2", "Q3", "Q4"].reduce(
+      (sum, q) => sum + market.value.series_by_period[`${year}-${q}`].total,
+      0
+    ) / 1e6;
+
+  const housing = credit.outstanding.volume_by_period.housing;
+  for (const point of borrowed.net.points) {
+    const grew = housing[`${point.period}-12`] - housing[`${Number(point.period) - 1}-12`];
+    assert.ok(
+      near(point.value, (grew / paidEurM(point.period)) * 100, 1e-9),
+      `${point.period}: ${point.value} is not БНБ's year over Eurostat's`
+    );
+  }
+
+  const volume = mortgage.new_business.monthly_volume.series_by_period;
+  const split = mortgage.new_business_split.renegotiated_share_by_period;
+  const months = (year) =>
+    Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+  // The changeover, spelled out here rather than imported: a test that took the
+  // month from the module under test would pass whatever month that module had.
+  const lent = (year, convert) =>
+    months(year).reduce((sum, period) => {
+      const eur =
+        convert && period < "2026-01" ? volume[period] / payroll.bgn_per_eur : volume[period];
+      return sum + eur * (1 - split[period] / 100);
+    }, 0);
+
+  for (const point of borrowed.gross.points) {
+    const year = point.period;
+    assert.ok(
+      near(point.value, (lent(year, true) / paidEurM(year)) * 100, 1e-9),
+      `${year}: ${point.value} is not what ЕЦБ lent, in euro, against Eurostat's turnover`
+    );
+    // …and not the figure the same sum reaches with the leva leg left alone,
+    // which is what a conversion quietly dropped would put on the page. Asserted
+    // only over the years that HAVE a leva leg: once the whole record is euro
+    // the two sums are the same and there is nothing left to get wrong.
+    if (months(year).some((period) => period < "2026-01")) {
+      assert.ok(
+        Math.abs(point.value - (lent(year, false) / paidEurM(year)) * 100) > 1,
+        `${year} is drawn at the figure the pre-euro leg reaches unconverted`
+      );
+    }
+  }
+
+  // **The two lines share one x-axis, so where the shorter one starts inside it
+  // has to be a fact rather than a guess.** Placed at its own indices it is
+  // stretched across the whole box and every reading lands under a year it does
+  // not describe — a picture that is wrong while every digit in it is published.
+  for (const [name, series] of [
+    ["net", borrowed.net],
+    ["gross", borrowed.gross],
+  ]) {
+    assert.equal(series.span, borrowed.axis.length, `${name} is placed on a different axis`);
+    assert.deepEqual(
+      series.points.map((p) => p.period),
+      borrowed.axis.slice(series.offset, series.offset + series.points.length),
+      `${name}'s readings do not sit on the years its offset claims`
+    );
+  }
 });

@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import {
   number,
   integer,
+  percentShare,
   percentSigned,
   dateShort,
   periodLong,
@@ -125,6 +126,20 @@ test("a percentage that rounds to zero is printed without a direction", () => {
 test("the minus is U+2212, matching the tables it sits beside", () => {
   // The locale's own hyphen is narrower and reads as a dash mid-sentence.
   assert.ok(percentSigned(-1, 1, "bg").startsWith("−"));
+});
+
+test("a share takes no plus, and its minus is the site's own", () => {
+  // A share of something is not a change in it, so the signed formatter is
+  // wrong here in both directions: «+55,7%» over the part of the money that was
+  // borrowed invents a movement nobody measured, and `number` would hand the
+  // one year households repaid more than they took out `toLocaleString`'s
+  // U+002D, the narrow hyphen the rule above exists to keep off the page.
+  assert.equal(percentShare(55.712, 1, "bg"), "55,7%");
+  assert.equal(percentShare(55.712, 0, "en"), "56%");
+  assert.equal(percentShare(-20.272, 1, "bg"), "−20,3%");
+  assert.ok(!percentShare(8.8, 1, "en").includes("+"), "a share came back with a direction on it");
+  assert.ok(!percentShare(-1, 1, "en").includes("-"), "a share took the locale's hyphen");
+  assert.equal(percentShare(null), "—");
 });
 
 test("dateShort renders a readable day-month-year in both languages", () => {

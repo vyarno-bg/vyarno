@@ -27,6 +27,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { withApp, shutdown, skip } from "./render-harness.mjs";
+import { marketBorrowedShare } from "../src/lib/view/market.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, "..", "..", "data", "published");
@@ -277,6 +278,13 @@ test(
     );
     const pairPrice = shared.map((p) => market.price_index.annual_rate_pct[p].total);
 
+    const borrowed = marketBorrowedShare(
+      market,
+      payload("credit"),
+      payload("mortgage"),
+      payload("payroll")
+    );
+
     // **In the order the page draws them**, which is the order a reader meets
     // them in: what a home costs, then what one changed hands for, then how
     // many did, then the two of those on one row of quarters, then the burden.
@@ -303,6 +311,22 @@ test(
         ),
       ],
       ["prices over the same quarters", ratioOf(pairPrice, 0)],
+      // The one chart here whose drawn values are in no payload: each line is
+      // one publisher's lending over another's turnover, and recomputing the
+      // join a third time would duplicate what `verify_view_market.mjs` pins
+      // figure by figure. What is asked here is the other half — that the plot
+      // is drawn to the series it was handed, uncropped.
+      //
+      // Its extremes rather than its readings, and the gross line's ceiling as
+      // the reference: the marks measured in the browser are the NET line's
+      // path box, whose ends are that line's own highest and lowest values, on
+      // a scale both lines share. `ratioOf` over its readings would answer with
+      // its smallest reading instead, which on a line that crosses zero is a
+      // different number.
+      [
+        "the share that came from lending",
+        ratioOf([borrowed.net.min, borrowed.net.max], borrowed.gross.max),
+      ],
       ["housing cost overburden", ratioOf(col(structure.housing_cost_overburden.series_by_period))],
     ];
 

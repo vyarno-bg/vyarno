@@ -295,16 +295,25 @@ export const sparkY = (value, scale, h) =>
  * unit is six thousandths of a pixel. An unrounded coordinate serialises up to
  * seventeen digits per point instead, into markup the build prerenders twice.
  *
+ * **`n` and `offset` are what let a shorter series share a longer one's axis.**
+ * A second line whose record starts later has fewer points, and placed at its
+ * own indices it is stretched across the whole box: every reading lands under a
+ * year it does not describe, on a picture whose two lines are drawn together
+ * precisely so a reader can read one against the other. Given the LONGER
+ * series' length and its own start inside it, each point sits on the year it
+ * belongs to. The defaults are the single-series case, unchanged.
+ *
  * @param {{points: Array<{value: number}>, min: number, max: number}} series
  * @param {number} w
  * @param {number} h
+ * @param {{n?: number, offset?: number}} [grid]  the axis this line is placed on
  * @returns {string}
  */
-export const pathOf = (series, w, h) =>
+export const pathOf = (series, w, h, { n = series.points.length, offset = 0 } = {}) =>
   series.points
     .map(
       (p, i) =>
-        `${i ? "L" : "M"}${plotX(i, series.points.length, w).toFixed(2)} ` +
+        `${i ? "L" : "M"}${plotX(offset + i, n, w).toFixed(2)} ` +
         `${plotY(p.value, series, h).toFixed(2)}`
     )
     .join(" ");

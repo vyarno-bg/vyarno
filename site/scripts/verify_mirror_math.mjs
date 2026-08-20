@@ -66,6 +66,11 @@ import {
   indexTimesBase,
   rangePosition,
   shortfallPct,
+  eurosFromMixedCurrency,
+  completeYearTotals,
+  yearEndGrowth,
+  sharePctByKey,
+  lessSharePct,
 } from "../src/lib/mirror.js";
 import { near } from "./near.mjs";
 
@@ -1567,4 +1572,93 @@ test("dealInYearsOfPay divides by a YEAR of the monthly wage, not by the month",
   ]) {
     assert.equal(dealInYearsOfPay(deal, wage), null, `dealInYearsOfPay(${deal}, ${wage})`);
   }
+});
+
+test("the leva leg is converted before it can meet a euro denominator", () => {
+  // ЕЦБ publish lending volumes «in the currency of the period» and Bulgaria
+  // adopted the euro on 2026-01-01, so December's 1 389 and January's 447 are
+  // the same market. Unconverted, every year before the changeover is 1.96×
+  // too large against a euro denominator — a mortgage-funded share of 153% of
+  // what was paid for the homes, on a chart that draws perfectly well.
+  const rate = 1.95583;
+  const converted = eurosFromMixedCurrency(
+    { "2025-11": 1111, "2025-12": 1389, "2026-01": 447.35 },
+    { bgnPerEur: rate, euroFrom: "2026-01" }
+  );
+  assert.ok(near(converted["2025-12"], 1389 / rate, 1e-9));
+  assert.ok(near(converted["2025-11"], 1111 / rate, 1e-9));
+  // The euro leg is untouched, which is what makes the two halves comparable.
+  assert.equal(converted["2026-01"], 447.35);
+  // …and the December reading is genuinely NOT the published figure, so a
+  // conversion quietly removed cannot leave this test green.
+  assert.ok(converted["2025-12"] < 1389 * 0.75, "the pre-euro leg came back unconverted");
+
+  // Null rather than the entries back: a caller that lost the rate renders no
+  // chart instead of the unconverted series.
+  for (const opts of [
+    {},
+    { euroFrom: "2026-01" },
+    { bgnPerEur: rate },
+    { bgnPerEur: 0, euroFrom: "2026-01" },
+  ]) {
+    assert.equal(eurosFromMixedCurrency({ "2025-12": 1389 }, opts), null);
+  }
+});
+
+test("completeYearTotals refuses a year the publisher has not finished", () => {
+  // Three quarters of spending under twelve months of lending is a share wrong
+  // by exactly the missing quarter, and every digit in it is published.
+  const quarters = {
+    "2024-Q1": 1,
+    "2024-Q2": 2,
+    "2024-Q3": 3,
+    "2024-Q4": 4,
+    "2025-Q1": 10,
+    "2025-Q2": 20,
+  };
+  assert.deepEqual(completeYearTotals(quarters, 4), { 2024: 10 });
+  const months = Object.fromEntries(
+    Array.from({ length: 12 }, (_, i) => [`2024-${String(i + 1).padStart(2, "0")}`, i + 1])
+  );
+  assert.deepEqual(completeYearTotals({ ...months, "2025-01": 99 }, 12), { 2024: 78 });
+  assert.deepEqual(completeYearTotals(null, 4), {});
+});
+
+test("yearEndGrowth pairs Decembers by label, and reports a year of repayment", () => {
+  // A stock's year is one December against the one before it, found by name.
+  // Four steps back in a workbook with a month missing reaches a different
+  // month and answers with a plausible figure nobody asked for.
+  const stock = { "2014-12": 3497.679, "2015-12": 3155.165, "2016-12": 3323.161, "2016-06": 3200 };
+  const growth = yearEndGrowth(stock);
+  assert.deepEqual(Object.keys(growth).sort(), ["2015", "2016"]);
+  assert.ok(near(growth["2015"], -342.514, 1e-9));
+  assert.ok(growth["2015"] < 0, "a year the book shrank came back positive");
+  // The first December has no year behind it, so it gets no entry rather than
+  // its own level presented as a year's growth.
+  assert.equal(growth["2014"], undefined);
+});
+
+test("sharePctByKey answers only where both publishers reached the same year", () => {
+  const share = sharePctByKey({ 2024: 25, 2025: 60 }, { 2024: 100, 2025: 120, 2026: 50 });
+  assert.deepEqual(share, { 2024: 25, 2025: 50 });
+  // Sparse out: a year one side is missing, or a denominator of zero, is absent
+  // rather than drawn at zero, which on a share is a measurement nobody made.
+  assert.deepEqual(sharePctByKey({ 2024: 25, 2027: 1 }, { 2024: 0, 2027: undefined }), {});
+});
+
+test("lessSharePct takes the renegotiations out in the volume's own currency", () => {
+  // ЕЦБ publish new mortgage business as one figure with repricings inside it,
+  // and a household repricing a loan it already has is not somebody buying.
+  //
+  // The figures are one published month, and the check is against ЕЦБ's own
+  // `pure_new_eur_m` for it: 768.56 less 19.94% of itself has to land on the
+  // 615.33 they publish separately. The band is 0.05 because the share is
+  // published to two decimals, and half of its last digit is 0.038 of that
+  // volume — so the tolerance IS the rounding of the input rather than room
+  // for the arithmetic to be wrong in.
+  const left = lessSharePct({ "2026-06": 768.56 }, { "2026-06": 19.94 });
+  assert.ok(near(left["2026-06"], 615.33, 0.05), `${left["2026-06"]}`);
+  // A month only one of the two cubes carries drops out: a volume with no split
+  // beside it would otherwise be counted whole, as if none of it were a repricing.
+  assert.deepEqual(lessSharePct({ "2026-07": 500 }, { "2026-06": 19.94 }), {});
 });

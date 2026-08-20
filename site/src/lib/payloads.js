@@ -112,7 +112,10 @@ export const PAYLOADS = Object.freeze(
     {
       key: "payroll",
       file: "payroll",
-      pages: ["home"],
+      // `/market/` reads `bgn_per_eur` and nothing else. ЕЦБ publish lending
+      // volumes «in the currency of the period», so the leg before the euro
+      // changeover has to be converted before it meets a euro denominator.
+      pages: ["home", "market"],
       // Legislative, not statistical: the table changes on 1 January and when
       // parliament amends it. A year plus a day, so a January refresh landing
       // late is not reported as a skipped one.
@@ -291,7 +294,10 @@ export const PAYLOADS = Object.freeze(
     {
       key: "mortgage",
       file: "mortgage",
-      pages: ["home", "credit"],
+      // `/market/` reads the lending VOLUMES rather than the rate: how much was
+      // handed over on new home loans, less the part that is a household
+      // repricing a loan it already had, against what was paid for dwellings.
+      pages: ["home", "credit", "market"],
       // ECB MIR and БНБ both publish monthly.
       cadenceDays: 31,
       name: { bg: "Лихва по жилищни кредити", en: "Home loan rate" },
@@ -306,7 +312,9 @@ export const PAYLOADS = Object.freeze(
     {
       key: "credit",
       file: "credit",
-      pages: ["credit"],
+      // `/market/` reads one block of it — the housing loan book, December
+      // against December, which is the net money the banks put into buying.
+      pages: ["credit", "market"],
       // ECB MIR, the same monthly release `mortgage` reads.
       cadenceDays: 31,
       name: { bg: "Лихви по потребителски кредити", en: "Consumer credit rates" },

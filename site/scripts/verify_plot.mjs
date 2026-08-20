@@ -467,3 +467,21 @@ test("a path is written to two decimals, not to seventeen", () => {
     assert.equal(decimals, 2, `${n[0]} is not written to two decimals`);
   }
 });
+
+test("a shorter line placed on a longer one's axis lands on its own years", () => {
+  // Two lines drawn together are drawn so a reader can carry one onto the
+  // other, and the second record here starts five years into the first. At its
+  // own indices it is stretched across the whole box: its first reading sits
+  // above the first line's first year and every point after it is under a year
+  // it does not describe, on a picture whose every digit is published.
+  const late = { points: [{ value: 0 }, { value: 60 }, { value: 120 }], min: 0, max: 120 };
+  // Three points of an eleven-point axis, starting at index 8: the last lands
+  // on the right edge, the first eight tenths of the way along it.
+  assert.equal(
+    pathOf(late, 600, 240, { n: 11, offset: 8 }),
+    "M480.00 240.00 L540.00 120.00 L600.00 0.00"
+  );
+  // Left alone it is the single-series case, which is what every other chart
+  // on the site calls and must not have moved.
+  assert.equal(pathOf(late, 600, 240), "M0.00 240.00 L300.00 120.00 L600.00 0.00");
+});

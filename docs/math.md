@@ -1070,6 +1070,53 @@ households, self-employed ones included. The ratio is still one both publishers
 support; the disclosure under the card names the population rather than letting
 «средна заплата» stand for everyone earning.
 
+### How much of a purchase is borrowed
+
+```
+paid[y]      = Σ value[q].total          over the four quarters of y
+net[y]       = book[y-12] − book[(y−1)-12]
+borrowed[y]  = Σ lending[m] × (1 − renegotiated[m] / 100)   over the twelve months of y
+```
+
+Two shares of `paid[y]`: `net[y] / paid[y]` and `1 − borrowed[y] / paid[y]`, the
+second being what was paid with something other than a new home loan.
+
+**Nobody publishes this and both sides of it are published**, which is P11's
+case rather than a gap: Eurostat carry what households paid for dwellings,
+БНБ carry the housing loan book and ЕЦБ the monthly new business. The division
+happens in the reader's tab for the reason the years-of-pay figure does, and
+`docs/legal.md` §БНБ is the half of it that governs a derivation from theirs.
+
+**Two ways of counting, and the page captions neither as the true one.** The net
+share is a difference of stocks, so everything repaid and written off during the
+year is already out of it and it reaches back to the first year the value cube
+covers whole. The gross share counts every euro handed over, less the part ЕЦБ
+mark as a household repricing a loan it already had, and starts where the split
+series starts. The two bracket the answer and both are drawn.
+
+**The numerator can fund what the denominator does not count.** Eurostat count
+dwellings bought by households at market prices; a housing loan can also pay for
+a renovation, a plot, a self-build or a purchase from a company. So this is a
+ratio between two measurements rather than a share of one whole, and the page
+says so beside the figure rather than in the disclosure.
+
+Three seams, each of them a wrong number rather than a wrong picture:
+
+- **Units.** `prc_hpi_hsvq` is whole euro and both lenders publish millions of
+  them. Divided across that seam the share is 0.0%, which reads as a payload
+  that failed to fetch rather than as arithmetic.
+- **Currency.** `new_business.monthly_volume` is «millions, currency of the
+  period»: leva to the euro changeover, euro after it. Unconverted, every year
+  before it comes out 1.95583× too large and the newest lands at 153% of what
+  was paid for the homes. `mirror.js#eurosFromMixedCurrency` returns **null**
+  without a rate, so a `payroll.json` that failed to fetch takes the cross-check
+  off the page instead of putting the leva leg on it.
+- **Part years.** Eurostat publish a quarter at a time and ЕЦБ a month at a
+  time, so the newest year is short in one of them almost always.
+  `completeYearTotals` refuses a year that is not whole: three quarters of
+  spending under twelve months of lending is a share wrong by exactly the
+  missing quarter, with every digit in it published.
+
 ### The six cities: change against change
 
 Nothing is computed. Both columns are НСИ's own published percentages — the
@@ -1109,7 +1156,8 @@ or feed the staleness banner, and are not listed per block below.
 |---|---|
 | `deals.series_by_period.total` | the volume chart and its numbers table |
 | `deals.series_by_period.{new,existing}` | the volume table's two rows, at `ref_period` |
-| `value.series_by_period.{total,new,existing}` | the average-deal table's «Платено общо», at `ref_period` |
+| `value.series_by_period.total` | the average-deal table's «Платено общо» at `ref_period`, and the denominator of both borrowed shares, summed over each whole year |
+| `value.series_by_period.{new,existing}` | the average-deal table's other two «Платено общо» cells, at `ref_period` |
 | `price_index.series_by_period.total` | the index chart as a multiple, and the numbers table as the published level |
 | `price_index.annual_rate_pct.{total,new,existing}` | the rate table, all three at `rate_ref_period`; the total also as the rate chart |
 | `price_index.status_by_period` | the break rules on the chart, the flag column, and the key |
@@ -1121,9 +1169,10 @@ or feed the staleness banner, and are not listed per block below.
 | `avg_deal_eur.derived_from_api_urls` | the two disclosure links, twice |
 | `ref_period`, `rate_ref_period` | every period caption in the section |
 
-Not drawn, and why. **`value`'s forty-five quarters of total turnover**: it is
-the count times the average and both of those are already plotted, so a third
-chart would restate two the page has. **The index and the rate split by purchase
+Not drawn, and why. **`value`'s forty-five quarters of total turnover, as a
+line of its own**: it is the count times the average and both of those are
+already plotted, so a third chart would restate two the page has. Its annual
+sums are the denominator §borrowed divides into. **The index and the rate split by purchase
 type as SERIES**: `tipsho30` has no purchase dimension, so a split nominal line
 would have no deflated twin beside it and the pair is the point of that chart;
 the split is on the page as the tables' three rows. **`avg_deal_eur` as a total
@@ -1164,6 +1213,19 @@ decision rather than an omission: a fifth column puts the six-city table past a
 phone's width, and `HSI_2.4.5` starts years after the price workbook, so two
 sparklines per row would invite a comparison across two different windows. The
 numbers table has room to state where each one begins.
+
+**`credit.json`** — `outstanding.volume_by_period.housing`, at its December
+readings, for the net borrowed share, and `outstanding.source_url` to cite it.
+Everything else in that file belongs to `/credit/`.
+
+**`mortgage.json`** — `new_business.monthly_volume.series_by_period` and
+`new_business_split.renegotiated_share_by_period`, with the `source_url` of each,
+for the gross cross-check. Everything else belongs to `/credit/` and to the
+calculator's mortgage panel.
+
+**`payroll.json`** — `bgn_per_eur`, and nothing else. ЕЦБ publish lending volumes
+in the currency of the period, so the leg before the euro changeover has to be
+converted before it meets a euro denominator.
 
 **`sector_salary.json`** — the `Total` row's `value_eur` and the payload's
 `ref_period` and `source_url`, for the years-of-pay card. Everything else in
@@ -1211,6 +1273,7 @@ basket.
 | the earnings ladder ranks people, not households | `view/payroll.js#earnerRanks` returns one row per earner; there is no total to pass it |
 | the wage comparator measures a wage against a wage | `view/payroll.js#regionGap` compares earner by earner |
 | both wage comparators round and dead-band alike | `mirror.js#wageGap` is the only place either computes a distance; `verify_wiring.mjs` asserts no `view/` module computes one |
+| the borrowed share never divides leva by a euro figure | `mirror.js#eurosFromMixedCurrency` answers null without a rate, so `view/market.js` has no way to build the series unconverted |
 | the market strip positions and never scores | `mirror.js#rangePosition` takes one reading and one range, so there is no second series to weigh it against and no total to draw |
 | the sector card can never become a sector rank | `mirror.js#meanRungPosition` takes no anchor, so there is no parameter to hand it a sector average through |
 
