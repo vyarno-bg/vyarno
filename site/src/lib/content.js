@@ -989,6 +989,7 @@ export const COPY = {
   discloseRankWhyHide: { bg: "скрий защо", en: "hide why" },
   discloseLeftYear: { bg: "за година, и в брой", en: "over a year, and as cash" },
   discloseAfford: { bg: "какво можеш да си позволиш", en: "what you could afford" },
+  disclosePctHow: { bg: "върху кои заплати е мерено", en: "which wages this is measured on" },
 
   // Rows
   pocket: { bg: "в джоба", en: "in your pocket" },
@@ -1085,72 +1086,34 @@ export const COPY = {
     bg: "Класираме всяка заплата поотделно: подредбата показва какво изкарват отделните хора, а не домакинствата. Две заплати по €900 не са един човек с €1800.",
     en: "Each wage is ranked on its own: the ladder is what individual people earn, not what households do. Two wages of €900 are not one person on €1,800.",
   },
-  // The comparison is net-vs-net (individual), so it's a direct rank, not a
-  // cross-unit approximation. The remaining caveat: the distribution SHAPE is
-  // from the 4-yearly Eurostat earnings survey, re-levelled onto НСИ's newest
-  // national average — the level is live, the spread is modelled.
-  // "Ориентир, не присъда" was a word-for-word calque of "a guide, not a
-  // verdict". «Присъда» in Bulgarian is what a court hands down; nobody says it
-  // about a number, and the sentence read as translated English. The same goes
-  // for «формата на разпределението, изравнена към…» — correct statistics,
-  // unreadable to the person the page is for. Say what the number is worth in
-  // the words someone would use out loud.
+  // **The rank is the country's, and this is the only sentence on screen that
+  // says so.** The picker two cards up moves other figures by област; in
+  // Благоевград, whose average is half София's, reading this one as local is
+  // out by tens of percentile points. It may not be MADE local either, because
+  // nobody publishes a pay distribution below the national level for Bulgaria
+  // at any vintage — P11, named rather than hidden
+  // (`docs/data-sources.md` §"Salary distribution").
   //
-  // **«нагласяваме» is out of bounds anywhere near a figure.** In everyday
-  // Bulgarian «нагласен» is what a rigged match or a fixed election is, so a
-  // sentence saying we «нагласяваме» the amounts hands a suspicious reader the
-  // exact word they are looking for — on the card whose job is to admit how
-  // the number is built. «преизчисляваме» states the same operation and
-  // carries no such reading. It binds every place that describes the
-  // re-levelling: the explainer band, `legal.js` and the two READMEs.
-  // **Both halves are the country's, and the sentence has to say so**, because
-  // the picker two cards up moves other figures by область and this one it
-  // does not. A reader who has just told the page where they live will read
-  // any rank on it as local unless told otherwise — and in Благоевград, whose
-  // average is half София's, that reading is out by tens of percentile points
-  // in the direction that flatters nobody.
-  //
-  // **What may not be said is that the ladder is their област's**, and no
-  // wording gets around it: nobody publishes a pay distribution below the
-  // national level for Bulgaria, at any vintage, from any publisher
-  // (`docs/data-sources.md` §"Salary distribution"). So the limit is named
-  // instead of hidden — P11, a figure nobody publishes is uncomputed rather
-  // than concealed.
-  //
-  // **Where the LEVEL comes from is `pctSrc`'s to say, not this sentence's.**
-  // «нивото е от НСИ · средна заплата {anchorPeriod}» is the line directly
-  // under this one, it carries the link that evidences the claim and the
-  // quarter the claim is dated by, and a prose copy of it here is the same
-  // admission twice on one card — two strings to keep in step, and 14 words
-  // of a caveat a reader has to finish for any of it to protect them.
-  // Said in the words for a gap between wages, not in the words for a
-  // statistical dispersion, for the same reason «нагласяваме» is out of bounds
-  // below: this is the one card whose job is admitting how the number is made,
-  // and it fails if the admission needs a statistician to parse.
-  //
-  // **The survey year is a slot, not a literal.** SES runs every four years, and
-  // the sentence beside it — `pctSrc`, two lines down the same card — reads the
-  // year out of `salary_dist.json`. A year typed into the prose is a year that
-  // keeps saying the old round after the payload has moved to the next one, on
-  // the card whose whole claim is that it tells you what the figure is built
-  // from. Nothing on this page may state a date the data does not.
-  // **The two halves do not cover the same people, and the card has to say so.**
-  // The shape is SES: full-time employees, firms of ten or more, NACE B–S
-  // excluding O. The level it is scaled onto is НСИ's all-activities average —
-  // every firm size, public administration and agriculture included. A scalar
-  // re-level fixes the MEAN of the two by construction, so the level mismatch
-  // costs nothing; what is left is whether the wider group's pay is spread the
-  // same way, and no publisher measures that. SES carries no firm-size
-  // dimension for BG at any vintage, and neither section A nor section O is a
-  // category in the cube at any vintage, so the gap cannot be closed and cannot
-  // be signed: including firms under ten would widen the bottom, including
-  // section O would probably narrow it — at the 2018 vintage, the one where BG
-  // still carries activity groupings, D9/D1 runs 2.71 for education-health-arts
-  // against 5.18 for business services. That is P11 — uncomputed and said out
-  // loud, never quietly corrected by a factor nobody publishes.
+  // **Never «нагласяваме» near a figure**: in everyday Bulgarian that is what a
+  // rigged match is, handed to a suspicious reader on the card whose job is
+  // admitting how the number is built. «преизчисляваме» is the same operation
+  // and carries no such reading; it binds the explainer band, `legal.js` and
+  // both READMEs.
   pctCaveat: {
-    bg: "Сравняваме всяка чиста заплата с това, което изкарват работещите в цялата страна. Кой колко изкарва знаем от изследване на Евростат от {shapeYear} г. (само хора на пълен работен ден, само във фирми с поне 10 души, без държавната администрация), а нивото е днешната средна заплата за страната, която е за всички наети, включително в малките фирми, в администрацията и в земеделието. Двете не са едни и същи хора, а как са разпределени заплатите в по-широката група никой не мери, така че колко мести това подредбата не може да се пресметне. Затова числото показва приблизително къде си, а не точно. Подредбата не се мести и с това къде живееш (никой не публикува как са разпределени заплатите вътре в една област), така че там, където заплатите са по-ниски, същата заплата те нарежда по-нагоре, отколкото пише тук.",
-    en: "We compare each take-home pay with what people earn across the whole country. Who earns what comes from a {shapeYear} Eurostat survey (full-time employees only, in firms with 10 or more staff, public administration excluded), and the level is today's average wage for the country, which covers every employee, small firms, public administration and agriculture included. The two are not the same people, and nobody measures how pay is spread across the wider group, so how far that moves the ranking cannot be worked out. So the figure shows roughly where you stand, not exactly. The ranking does not move with where you live either (nobody publishes how pay is spread inside one oblast), so where wages are lower the same pay places you higher than it says here.",
+    bg: "Числото показва приблизително къде си, а не точно. И е за цялата страна, не за твоята област: там, където заплатите са по-ниски, същата заплата те нарежда по-нагоре, отколкото пише тук.",
+    en: "The figure shows roughly where you stand, not exactly. And it is for the whole country rather than your oblast: where wages are lower, the same pay places you higher than it says here.",
+  },
+  // The method, folded, and the split is `docs/writing-style.md`'s: a CAVEAT
+  // changes how the figure should be read and stays beside it, METHOD is how it
+  // was made. **Nothing that changes the reading may move in here** — that the
+  // rank is approximate, and that it is the country's rather than the reader's
+  // област. **The year is a slot** (SES runs every four years and
+  // `salary_dist.json` carries the round), and **whose the level is, and from
+  // which quarter, is `pctSrc`'s to say** one line down, on the link that
+  // evidences it.
+  pctMethod: {
+    bg: "Подредбата идва от изследване на Евростат за заплатите от {shapeYear} г. (само хора на пълен работен ден, само във фирми с поне 10 души, без държавната администрация). Нивото ѝ е днешната средна заплата за страната, а тя е за всички наети, включително в малките фирми, в администрацията и в земеделието. Значи подредбата и нивото са мерени върху различни хора, а как са разпределени заплатите в по-широката група никой не мери, така че колко мести това числото не може да се пресметне. Разпределение вътре в една област също не се публикува.",
+    en: "The ranking comes from a {shapeYear} Eurostat earnings survey (full-time employees only, in firms of ten or more, public administration excluded). Its level is today's average wage for the country, which covers every employee, small firms, public administration and agriculture included. So the ranking and the level are measured over different people, and nobody measures how pay is spread across the wider group, which is why how far that moves the figure cannot be worked out. No distribution is published inside a single oblast either.",
   },
   // Per-card source citation — same "every figure carries a link (↗)" contract
   // as the Eurostat basket / imot.bg / NSI cards. Two sources: the SHAPE

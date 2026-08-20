@@ -108,7 +108,9 @@ activities defined by **NACE Rev. 2 sections B to S excluding O**». So three cu
 sit between this ladder and the country: full-time only (ours — part-time dilutes
 a monthly figure), firms of ten or more, and no public administration, defence or
 compulsory social security, plus agriculture which is section A and outside B–S.
-`COPY.pctCaveat` names the three that are the survey's.
+`COPY.pctMethod` names the three that are the survey's, one tap down from the
+rank; what stays beside the figure is `COPY.pctCaveat`, which is the part a
+reader misreads the number without.
 
 **The cadence is legislated, and the legal basis changed on 2026-01-01.**
 Regulation (EU) 2025/941 repealed Council Reg (EC) 530/1999 from that date and
@@ -398,9 +400,11 @@ dimension** for BG at any vintage, and neither section A nor section O is a
 `nace_r2` category at any vintage. The distribution of the population the level
 is drawn from is not measured by anyone.
 
-That makes it P11: **uncomputed, not concealed.** `COPY.pctCaveat` names the
-mismatch in both languages and says its size cannot be worked out, including that
-the rank does not follow the reader's област; `verify_copy.mjs` requires it.
+That makes it P11: **uncomputed, not concealed.** `COPY.pctMethod` names the
+mismatch in both languages and says its size cannot be worked out; `COPY.pctCaveat`
+carries the half that changes the reading, that the rank is approximate and does
+not follow the reader's област. `verify_copy.mjs` requires the second and
+`verify_render_results.mjs` requires it to stay unfolded.
 Multiplying the ladder by a dispersion factor nobody publishes would replace a
 disclosed unknown with an invented number.
 
@@ -423,10 +427,10 @@ every rung rather than to P1.
 tab. The salary input is net, so `mirror.js#buildLadder` converts each rung
 through `bgNetSalary` and the comparison is net against net.
 
-**Caveats**, carried in the payload's `disclaimer` and the SPA's `pctCaveat`: the
-level is live and the shape is a 2022 survey re-levelled to today; the middle
-deciles and the tails are modelled, not surveyed; the rank does not follow the
-reader's област.
+**Caveats**, carried in the payload's `disclaimer` and split across the SPA's
+`pctCaveat` and `pctMethod`: the level is live and the shape is a 2022 survey
+re-levelled to today; the middle deciles and the tails are modelled, not surveyed;
+the rank does not follow the reader's област.
 
 ## Response shape (ND-cube — every Eurostat dataset)
 
