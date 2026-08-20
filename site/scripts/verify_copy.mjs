@@ -819,23 +819,41 @@ test("only the exactly-cancelling pocket verdict claims to be exact", () => {
   }
 });
 
-test("the stand-still target does not claim a rise that did not happen", () => {
-  // π ≤ 0 needs its own sentence. Reusing the one that names the rise —
-  // «колкото се вдигнаха твоите цени» — tells a reader prices rose in exactly
-  // the case where they did not. The aorist «вдигнаха» is what tells the two
-  // apart: the π ≤ 0 line reaches for the same verb to DENY the rise («не са се
-  // вдигнали»), so the participle has to stay outside the needle.
-  const [riseBg] = pair("standStillTxt");
-  const [flatBg] = pair("standStillFlat");
-  assert.ok(riseBg.includes("вдигнаха"), "the π > 0 line no longer names the rise");
-  assert.ok(
-    !flatBg.includes("вдигнаха"),
-    "the π ≤ 0 line says prices rose. That is the case where they did not."
-  );
-  assert.ok(
-    flatBg.includes("не са се вдигнали"),
-    "the π ≤ 0 line no longer says the prices did not rise — that denial IS the branch"
-  );
+test("the stand-still ask answers in euro, and repeats no figure above it", () => {
+  // The row already prints «На фиш: +3,0% · твоите цени: +5,6%» two lines up.
+  // A target of «+5,6%, точно колкото се вдигнаха твоите цени» under it is π
+  // written out again: nothing a reader learns, and nothing they can act on,
+  // because a raise is asked for in bruto and nobody negotiates a percentage
+  // of their own basket. So this sentence carries euro slots and no rate slot.
+  //
+  // It also names no rise, which is what lets ONE sentence serve a falling
+  // basket: several published groups have negative annual rates, and a reader
+  // whose pay was cut by more than their prices fell is behind with π ≤ 0.
+  for (const key of ["standStillTxt", "standStillTxtHousehold"]) {
+    const [bg, en] = pair(key);
+    for (const [text, lang] of [
+      [bg, "bg"],
+      [en, "en"],
+    ]) {
+      assert.ok(
+        !/\{(r|rr|pct|pi)\}/.test(text),
+        `COPY.${key}.${lang} carries a percentage slot: the row above it already ` +
+          "prints both rates, and a target restating one is not a second finding"
+      );
+      assert.ok(
+        /€\{n\}/.test(text) && /€\{g\}/.test(text) && /€\{d\}/.test(text),
+        `COPY.${key}.${lang} no longer states the ask in euro, in hand and on the contract`
+      );
+      assert.ok(
+        !text.includes("%"),
+        `COPY.${key}.${lang} states a percentage, which is what this row stopped doing`
+      );
+    }
+    assert.ok(
+      !bg.includes("вдигнаха"),
+      `COPY.${key}.bg says prices rose, and the row renders for a falling basket too`
+    );
+  }
 });
 
 // --- claims about our own numbers ------------------------------------------

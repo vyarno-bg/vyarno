@@ -24,6 +24,7 @@ import {
   householdNetRaisePct,
   payrollParams,
   percentile,
+  standStillNet,
   wageGap,
 } from "../mirror.js";
 import { SECTOR_HINTS } from "../content.js";
@@ -110,6 +111,52 @@ export function payslipPanel({ payroll, pay }) {
     ...household,
     earners: household.earners.map((e) => ({ ...e, ordinal: e.index + 1, ...carried })),
     ...carried,
+  };
+}
+
+/**
+ * What standing still costs on the CONTRACT, which is where a raise is agreed.
+ *
+ * The pocket row states the shortfall in take-home, and take-home is not what
+ * anybody asks their employer for. Contributions and tax are levied on the
+ * raise like on the rest of the pay, so the gross that delivers €56 more in
+ * hand is around €72 — and above the insurance ceiling it is nearer €62,
+ * because contributions stop there while the pay does not. That spread is the
+ * finding, and it is why this inverts through `bgHouseholdPayroll` per earner
+ * rather than grossing the shortfall up by a rate.
+ *
+ * **It takes `pay` and the real change, never a gross and never π.** Handed a
+ * gross it could not tell which basis it held; handed π it would answer for a
+ * reader whose raise it never saw, which is the whole question. Today's figures
+ * come from the same call `payslipPanel` makes, so the «€2,706 today» in this
+ * sentence is the €2,706 the pay card prints rather than a second inversion of
+ * it.
+ *
+ * @param {object} args
+ * @param {object|null} args.payroll   data.payroll (payroll.json), unmodified
+ * @param {{basis:'net'|'gross', amounts:Array<number|null|undefined>}} args.pay
+ * @param {number} args.pocketPct      the real change from `mirror.js#pocketReal`
+ * @returns {null | {grossNow:number, grossNeeded:number, grossGap:number,
+ *                   netNow:number, netNeeded:number, netGap:number}}
+ */
+export function standStillPay({ payroll, pay, pocketPct }) {
+  if (!Number.isFinite(pocketPct) || pocketPct <= -100) return null;
+  const params = payrollParams(payroll);
+  const now = bgHouseholdPayroll(pay?.amounts, params, pay?.basis);
+  if (!now.earners.length) return null;
+
+  // Each earner's own net is scaled and re-inverted separately, because the
+  // ceiling is a property of one contract: a household needing €120 more takes
+  // a different gross depending on which of the two contracts carries it.
+  const needed = now.earners.map((e) => standStillNet(e.net, pocketPct));
+  const target = bgHouseholdPayroll(needed, params, "net");
+  return {
+    grossNow: now.gross,
+    grossNeeded: target.gross,
+    grossGap: target.gross - now.gross,
+    netNow: now.net,
+    netNeeded: target.net,
+    netGap: target.net - now.net,
   };
 }
 

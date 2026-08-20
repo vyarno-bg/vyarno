@@ -29,7 +29,7 @@ import {
   officialCumulativeSince2020,
   pocketReal,
   pocketPerMonth,
-  targetRaise,
+  standStillNet,
   extraPerMonth,
   percentile,
   divisionRate,
@@ -239,23 +239,35 @@ test("pocketPerMonth is signed, and zero when there is nothing to show", () => {
   assert.equal(pocketPerMonth(1500, NaN), 0);
 });
 
-test("targetRaise(π, 0) = π exactly (the stand-still raise)", () => {
-  assert.ok(near(targetRaise(5.2, 0), 5.2, 1e-12));
+test("standStillNet undoes exactly what pocketPerMonth measured", () => {
+  // The row states both: «€56 по-малко всеки месец» and then what it takes to
+  // get those €56 back. Derived apart they disagree at the cent, and no screen
+  // carrying the pair says which of the two is the other's error.
+  for (const [pay, raise, pi] of [
+    [1500, 3, 5.2],
+    [2150, 9, 4.4],
+    [800, 0, 12.0],
+    [3000, 6, -1.5],
+  ]) {
+    const pocket = pocketReal(raise, pi);
+    assert.ok(
+      near(standStillNet(pay, pocket), pay / (1 + pocket / 100), 1e-9),
+      `pay=${pay} raise=${raise} π=${pi}`
+    );
+    // And it lands back where the reader started: deflated by their own
+    // prices, the stand-still pay buys what the pre-raise pay bought.
+    assert.ok(near(standStillNet(pay, pocket) * (1 + pocket / 100), pay, 1e-9));
+  }
 });
 
-test("targetRaise is the exact inverse of pocketReal", () => {
-  for (const [pi, pocket] of [
-    [3.5, 0],
-    [5.2, 5],
-    [12.0, -2],
-    [0, 4],
-  ]) {
-    const r = targetRaise(pi, pocket);
-    assert.ok(
-      near(pocketReal(r, pi), pocket, 1e-9),
-      `round-trip failed for π=${pi} pocket=${pocket}: raise=${r}`
-    );
-  }
+test("standStillNet asks for more when the raise lost, and less when it won", () => {
+  assert.ok(standStillNet(1500, -2) > 1500);
+  assert.ok(standStillNet(1500, 2) < 1500);
+  assert.equal(standStillNet(1500, 0), 1500);
+  // Nothing usable in, nothing invented out: the pay is returned untouched
+  // rather than scaled by a NaN, which would empty the sentence rendering it.
+  assert.equal(standStillNet(1500, NaN), 1500);
+  assert.equal(standStillNet(0, -5), 0);
 });
 
 // ---------------------------------------------------------------------------

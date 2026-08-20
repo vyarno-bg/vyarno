@@ -60,7 +60,6 @@ import {
   rentBurden,
   rentDays,
   homeYears,
-  targetRaise,
   bgNetSalary,
   meanRungPosition,
   payrollParams,
@@ -95,6 +94,7 @@ import {
   sectorComparison,
   sectorOptions as publishedSectorOptions,
   regionGap,
+  standStillPay,
   taxWedgePanel,
   payslipPanel,
 } from "./view/payroll.js";
@@ -1167,9 +1167,14 @@ export class Calculator {
       : null
   );
 
-  // Prescription (B#5): target raise to stand still, and to gain +5% real.
-  standStillRaise = $derived(Number.isFinite(this.pi) ? targetRaise(this.pi, 0) : NaN);
-  fivePctRaise = $derived(Number.isFinite(this.pi) ? targetRaise(this.pi, 5) : NaN);
+  // What standing still would take, in the currency a raise is agreed in. It
+  // is handed `pocket` rather than π: what the reader is short is the gap
+  // between their own raise and their own prices, and a target computed from
+  // the prices alone answers for somebody who was given nothing.
+  // See view/payroll.js#standStillPay.
+  standStill = $derived(
+    standStillPay({ payroll: this.data.payroll, pay: this.pay, pocketPct: this.pocket })
+  );
 
   // Savings erosion. Takes the PAYLOADS, not a rate: the card's copy says «от
   // 2020 г.» / "since 2020" in fixed words, so there is deliberately no

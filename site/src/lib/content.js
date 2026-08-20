@@ -1350,33 +1350,32 @@ export const COPY = {
   },
 
   standStillK: { bg: "за да не изоставаш", en: "to stand still" },
-  // Two tiers, both from targetRaise(pi, pocket): stand-still = pi exactly,
-  // +5% real = 100*((1+0.05)*(1+pi/100)-1). See mirror.js#targetRaise.
-  // "Номинално увеличение" / "real purchasing power" are the textbook terms for
-  // the two tiers. The page already has a plainer word for nominal — «на фиш»,
-  // used in the pocket row — and the real tier is easier to picture as what the
-  // money can buy than as an abstraction called purchasing power.
-  // «твоите цени», never «твоите разходи»: the row above already names this
-  // quantity «твоите цени», and one thing under two names makes the reader
-  // stop and ask whether they are the same number. They are.
-  // A PRICE rises, it does not itself get dearer — «цената се вдигна», while
-  // «поскъпна» takes the thing bought as its subject («храната поскъпна»),
-  // which is how every other sentence here uses it: the ranked row, the basket
-  // legend and the results headline all put a group of goods in front of it.
-  // «повече НЕЩА» because "5% more" on its own reads as 5% more money, which
-  // is the exact confusion this whole row exists to undo.
+  // **The answer here is in euro on the CONTRACT, and no percentage in it may
+  // be one the row above already printed.** A target reading «трябва да е
+  // +5,6%, точно колкото се вдигнаха твоите цени» is π written out a second
+  // time, one line under «твоите цени: +5,6%»: nothing a reader learns, and
+  // nothing they can act on. A raise is asked for in bruto, and the gross that
+  // delivers €56 in hand is not €56 — view/payroll.js#standStillPay inverts it
+  // through each contract's own insurance ceiling, which is the one number on
+  // this row nobody else computes for a Bulgarian.
+  //
+  // The last sentence carries WHY the two differ, because a reader shown €56
+  // and €72 in one breath will otherwise take one of them for a mistake.
+  //
+  // It says nothing about prices rising, which is what lets one sentence cover
+  // a falling basket too — several published groups have negative annual rates,
+  // so π ≤ 0 with a smaller raise beside it is a state a reader reaches.
   standStillTxt: {
-    bg: "увеличението ти на фиш трябва да е <b>+{r}%</b>, точно колкото се вдигнаха твоите цени.<br>За да си купуваш с <b>{pct}%</b> повече неща, трябва <b>+{rr}%</b>.",
-    en: "your raise on paper has to be <b>+{r}%</b>, exactly as much as your own prices rose.<br>To afford <b>{pct}%</b> more stuff, <b>+{rr}%</b>.",
+    bg: "За да си купуваш същото като преди, на ръка ти трябват <b>€{n}</b> повече на месец. По договор това са <b>€{g}</b> бруто вместо <b>€{now}</b>, или <b>€{d}</b> повече. Разликата е, че и върху увеличението се плащат осигуровки и данък.",
+    en: "To buy what you bought before, you need <b>€{n}</b> more in hand each month. On the contract that is <b>€{g}</b> gross instead of <b>€{now}</b>, or <b>€{d}</b> more. Contributions and tax are paid on a raise as well.",
   },
-  // π ≤ 0 is reachable today: several published groups have negative annual
-  // rates (телефони −5,2%, техника за свободното време −7,0%), so a basket
-  // weighted onto them falls. The line above would then read «трябва да е
-  // +−1,2% - точно колкото СЕ ВДИГНАХА твоите цени» — a doubled sign under a
-  // sentence claiming a rise that did not happen.
-  standStillFlat: {
-    bg: "твоите цени не са се вдигнали, така че всяко увеличение ти е чиста печалба.<br>За да си купуваш с <b>{pct}%</b> повече неща, стига <b>{rr}</b>.",
-    en: "your prices have not risen, so any raise at all is a real gain.<br>To afford <b>{pct}%</b> more stuff, <b>{rr}</b> is enough.",
+  // The household variant, and it says «договорите» because the gross is two
+  // contracts inverted against their own ceilings and summed. Singular there
+  // invites a reader to check one document against a figure no document
+  // carries.
+  standStillTxtHousehold: {
+    bg: "За да си купувате същото като преди, на ръка ви трябват <b>€{n}</b> повече на месец. По договорите това са <b>€{g}</b> бруто вместо <b>€{now}</b>, или <b>€{d}</b> повече. Разликата е, че и върху увеличението се плащат осигуровки и данък.",
+    en: "To buy what you bought before, the household needs <b>€{n}</b> more in hand each month. On the contracts that is <b>€{g}</b> gross instead of <b>€{now}</b>, or <b>€{d}</b> more. Contributions and tax are paid on a raise as well.",
   },
   rentK: { bg: "наемът", en: "the rent" },
   // The rent row's "what you entered" reminder, mirroring the mortgage row.

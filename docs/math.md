@@ -595,7 +595,7 @@ than by review:
 
 | Per person — the function takes a LIST | Per household — the function takes the total |
 |---|---|
-| the payslip and the gross (`payslipPanel`) | the basket and what it costs (`housingCarveOut`, `exposedSpend`) |
+| the payslip, the gross, and the gross a stand-still raise takes (`payslipPanel`, `standStillPay`) | the basket and what it costs (`housingCarveOut`, `exposedSpend`) |
 | the position on the net ladder (`earnerRanks`) | rent as a share of take-home (`rentBurden`) |
 | the comparison with НСИ's област average (`regionGap`) | the mortgage payment, the 30% line, years-to-a-home (`mortgagePanel`, `homeYears`) |
 | each point on the tax-wedge curve (`taxWedgePanel`) | the real-pay verdict in euro (`pocketPerMonth`) |
@@ -1204,7 +1204,8 @@ basket.
 | a shared ranking must not reconstruct a private one either | the ladder position is kept off every share surface: `mirror.js#percentile` inverts through the published rungs, so "ahead of 34%" IS the salary |
 | the payslip itemises a gross, never the typed net as if it were one | `view/payroll.js#payslipPanel` takes `pay.basis` and hands it to `bgHouseholdPayroll`, so a typed gross is itemised as a gross and a typed net is inverted first — the basis travels with the amounts and cannot be assumed |
 | the breakdown's rates are the published ones | `payslipPanel` takes `payroll.json`, not a params object |
-| the insurance ceiling is per contract, never per household | `payslipPanel` and `taxWedgePanel` take a list and have no scalar parameter |
+| the insurance ceiling is per contract, never per household | `payslipPanel`, `taxWedgePanel` and `standStillPay` take a list and have no scalar parameter |
+| the stand-still ask is priced through the payroll, never grossed up by a rate | `view/payroll.js#standStillPay` re-inverts each scaled net through `bgHouseholdPayroll`, so a euro in hand costs more gross below the ceiling than above it |
 | an amount never travels without its basis | both take `pay = { basis, amounts }`; `view/payroll.js#netsOf` is the only net↔gross conversion |
 | a household's raise is weighted by the earlier pay | `mirror.js#householdNetRaisePct`; a blank raise returns NaN rather than reading as 0% |
 | the earnings ladder ranks people, not households | `view/payroll.js#earnerRanks` returns one row per earner; there is no total to pass it |
