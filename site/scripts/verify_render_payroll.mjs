@@ -139,6 +139,53 @@ test("neither pay comparison is painted as a verdict", { skip }, async () => {
   });
 });
 
+test("the card's own answer outranks the sentences around it", { skip }, async () => {
+  // «2150 € нето · 2706 € бруто» is what this card was asked for — a gross
+  // recovered through the reader's own insurance ceiling — and it sat at
+  // `--muted` 13px under four hints in the same grey, so a reader scanning for
+  // their number met five interchangeable lines and could not tell which one
+  // the card produced rather than asked for. Same lever `.gap` pulls, and the
+  // same restraint after it: prominence, never a hue.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2150");
+    await page.waitForTimeout(400);
+
+    const seen = await page.evaluate(() => {
+      const px = (el) => parseFloat(getComputedStyle(el).fontSize);
+      const probe = (token) => {
+        const el = document.createElement("div");
+        el.style.color = `var(${token})`;
+        document.body.append(el);
+        const value = getComputedStyle(el).color;
+        el.remove();
+        return value;
+      };
+      const pair = document.querySelector(".m-pay .pair");
+      const hints = [...document.querySelectorAll(".m-pay .field > .hint")];
+      return {
+        pairSize: px(pair),
+        pairColor: getComputedStyle(pair).color,
+        pairWeight: Number(getComputedStyle(pair).fontWeight),
+        hintSize: Math.max(...hints.map(px)),
+        ink: probe("--ink"),
+        verdicts: ["--real", "--real-ink", "--erode", "--erode-ink"].map(probe),
+      };
+    });
+
+    assert.ok(
+      seen.pairSize > seen.hintSize,
+      `the net/gross pair is set at ${seen.pairSize}px, the hints around it at ${seen.hintSize}px`
+    );
+    assert.equal(seen.pairColor, seen.ink, "the answer is painted at a hint's colour");
+    assert.ok(seen.pairWeight >= 600, `the answer carries weight ${seen.pairWeight}`);
+    assert.ok(
+      !seen.verdicts.includes(seen.pairColor),
+      `the answer is painted ${seen.pairColor}, which is a verdict colour — a gross is not one`
+    );
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("adding an income changes nothing until it is answered", { skip }, async () => {
   // A second field seeded with the €900 placeholder would add €900 to the rent
   // burden, the mortgage cap and the basket the moment it appeared — a figure
