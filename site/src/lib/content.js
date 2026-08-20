@@ -2076,27 +2076,33 @@ export const COPY = {
     en: "payment at {r}% over {t} yrs ({d}% down): <b>€{pm}/mo</b> = <b>{s}%</b> of your pay",
   },
   // **What that share is a share OF, said where the share is.** The figure
-  // above is the annuity — principal and interest — because that is what an
+  // above is the annuity, principal and interest, because that is what an
   // annuity formula computes and what a bank's amortisation schedule collects.
   // It is not everything a mortgage costs per month: property insurance is
   // mandatory on a mortgaged home, life cover is often required or required for
   // the advertised rate, and the account the instalment is collected from
-  // usually carries a fee. Those are inside the ГПР quoted under the rate field
-  // and outside this line.
+  // usually carries a fee.
   //
-  // **No number in it, and that is not squeamishness.** Nobody publishes what
-  // those add for a Bulgarian mortgage, so any figure here would be one this
-  // project invented — and it would land on the row where a reader is deciding
-  // whether they can carry a house. What can be said honestly is the direction,
-  // and the direction is the one that matters: the share on screen is a floor.
+  // **The comparison the reader is actually making is with the number a bank
+  // quoted them across a desk**, and that number is the whole monthly outlay.
+  // A line explaining which of these charges the APRC takes in answers a
+  // question nobody at that desk asked — «влизат в ГПР, когато банката ги
+  // иска» — and the ГПР is `rateAprc`'s subject, under the rate field. What
+  // belongs here is that the bank's figure will be the bigger one.
+  //
+  // **No number for the extras, and that is not squeamishness.** Nobody
+  // publishes what they add for a Bulgarian mortgage, so any figure here would
+  // be one this project invented, on the row where a reader is deciding whether
+  // they can carry a house. The direction is sayable and is what matters: the
+  // share on screen is a floor.
   //
   // It sits on the mortgage row rather than only on `/how/` because the 30%
   // line is drawn against this figure, and the whole argument for that line is
   // that it is deliberately unflattering (docs/principles.md P7). A caveat that
   // lives one page away from the verdict it qualifies protects nobody.
   homeMortExcludes: {
-    bg: "Това е само вноската по кредита. Застраховките и таксата по сметката вървят отгоре, всеки месец. Влизат в ГПР, когато банката ги иска, за да отпусне кредита, но в тази сума ги няма.",
-    en: "That is the loan instalment alone. Insurance and the account fee run on top of it every month. They count towards the APRC where the bank requires them in order to lend, but they are not in this figure.",
+    bg: "Това е само вноската по кредита. В банката ще ти кажат по-голяма месечна сума: отгоре вървят застраховката на имота, обикновено и застраховка живот, и таксата по сметката. Никой не публикува колко са, затова тук ги няма, а делът отгоре е най-малкото, което ще плащаш.",
+    en: "That is the loan instalment alone. The bank will quote you a bigger monthly figure: property insurance on top of it, usually life cover as well, and the account fee. Nobody publishes what those add, so they are not in this figure and the share above is the least you will pay.",
   },
   // The total cost of the same credit (APRC / ГПР): interest plus the charges
   // the bank requires in order to lend. Shown under the rate input so the
