@@ -2701,22 +2701,23 @@
         11px mono for the method — it is the one who read the row, believed
         their own knowledge over it, and is about to leave. What the sentences
         say is what the figure MEANS, which is what body copy is for.
+
+        WHAT THE ROW MEASURES, and never why the level is what it is. How the
+        housing stock came to be owned is a claim no series on this page
+        carries and a reader cannot check against anything on it.
       -->
       <p>
         <span class="l-bg"
           >Този ред изглежда невъзможно малък, а не е сгрешен. Той брои хора, а не сделки: колко от
-          живеещите в страната имат кредит по жилището си, децата и пенсионерите включително. Почти
-          всички живеят в собствено жилище без кредит, защото жилищата минаха у живеещите в тях при
-          приватизацията и оттогава се наследяват. Новите кредити са друго нещо, поток от това колко
-          договора се подписват през годината, и двете могат да вървят в различни посоки с години.</span
+          живеещите в страната имат кредит по жилището си, децата и пенсионерите включително. Новите
+          кредити са друго нещо, поток от това колко договора се подписват през годината, и двете
+          могат да вървят в различни посоки с години.</span
         >
         <span class="l-en"
           >That row looks impossibly small and it is not wrong. It counts people rather than
           purchases: how many of those living in the country have a loan on their home, children and
-          pensioners included. Almost everybody lives in a home they own with no loan on it, because
-          the homes passed to the people living in them at privatisation and have been inherited
-          since. New lending is a different thing, a flow of how many contracts are signed in a
-          year, and the two can move in opposite directions for years.</span
+          pensioners included. New lending is a different thing, a flow of how many contracts are
+          signed in a year, and the two can move in opposite directions for years.</span
         >
       </p>
 
@@ -2793,25 +2794,19 @@
       <span class="l-bg">Колко от парите са кредит</span>
       <span class="l-en">How much of the money is borrowed</span>
     </h2>
-    <p>
-      <span class="l-bg"
-        >Жилищата в България се купуваха предимно със собствени средства: спестявания, продажба на
-        друго жилище, пари от чужбина.</span
-      >
-      <span class="l-en"
-        >Homes in Bulgaria were bought mostly with the buyer's own money: savings, the sale of
-        another home, money from abroad.</span
-      >
-    </p>
     <!-- The two lines, explained ABOVE the plot. A reader who meets two lines
          with no idea why there are two reads the gap between them as a finding;
          it is the width of the answer, which is a different thing and the one
-         the section is honest about. -->
+         the section is honest about.
+
+         IT OPENS ON THE MEASUREMENT, and the heading is what «това» points at.
+         A sentence characterising the market before the chart is a claim of
+         ours standing where a reader expects one of the publishers'. -->
     <p>
       <span class="l-bg"
-        >Мери се по два начина и те не дават едно число. Едната линия е ръстът на жилищните кредити
-        в банките: отпуснатото минус погасеното. Другата е само отпуснатото по нови жилищни кредити,
-        без предоговорените стари. Истинското число е между двете.</span
+        >Това се мери по два начина и те не дават едно число. Едната линия е ръстът на жилищните
+        кредити в банките: отпуснатото минус погасеното. Другата е само отпуснатото по нови жилищни
+        кредити, без предоговорените стари. Истинското число е между двете.</span
       >
       <span class="l-en"
         >It is measured two ways and the two do not give one figure. One line is the growth in the
