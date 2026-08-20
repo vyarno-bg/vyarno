@@ -682,6 +682,34 @@ test("the ladder's caveat never travels without the rank it qualifies", { skip }
       `the rank is on screen and its caveat is not: ${shown.replace(/\s+/g, " ").slice(0, 300)}`
     );
 
+    // The other half, and the one the picker three cards up makes necessary: a
+    // reader who has just named their област reads the rank as local, and in
+    // Благоевград that is out by tens of percentile points.
+    assert.match(
+      shown,
+      /не за твоята област/i,
+      `the rank does not say it is the country's: ${shown.replace(/\s+/g, " ").slice(0, 300)}`
+    );
+
+    // And the split runs the other way too. METHOD — which survey, which
+    // exclusions, whose average the ladder is levelled onto — is what a reader
+    // can skip without misreading the figure, so it is folded. Left beside the
+    // caveat the two are one paragraph, and the caveat is the half a reader
+    // gives up on, because it is the second sentence in.
+    assert.doesNotMatch(
+      shown,
+      /изследване на Евростат за заплатите/i,
+      "the method is unfolded beside the caveat, which is the paragraph nobody finishes"
+    );
+    await row.locator("details.rr-more summary").first().click();
+    await page.waitForTimeout(250);
+    assert.match(
+      await row.innerText(),
+      /само хора на пълен работен ден/i,
+      "the survey's exclusions are not behind the disclosure either, so nothing on " +
+        "the card says which wages the rank is measured on"
+    );
+
     // The answer block restates the same rank a screen higher, so it carries
     // the short form of the same admission rather than the bare figure.
     const answer = await page.locator(".ans").innerText();

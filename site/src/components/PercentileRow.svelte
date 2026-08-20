@@ -124,19 +124,37 @@
         >
       </div>
     {/if}
-    <!-- The standing caveat, and it is about the DATA rather than the units:
-         both sides are one person's monthly net, so the comparison is
-         like-for-like. What stays approximate is that the spread comes from a
-         national survey re-levelled onto Sofia's average, which the copy says
-         in as many words. -->
+    <!-- The two things a reader has to know to read the figure at all: it is
+         approximate, and it is the country's rather than their област. Both
+         change what the number MEANS, so neither folds — a caveat behind a tap
+         protects only the readers who take it, and the ones who do not are the
+         ones drawing the wrong conclusion. -->
     <div class="rr-note">
-      <span class="l-bg"
-        >{t(COPY.pctCaveat, "bg", { shapeYear: period(calc.salaryShapeYear) })}</span
-      >
-      <span class="l-en"
-        >{t(COPY.pctCaveat, "en", { shapeYear: period(calc.salaryShapeYear) })}</span
-      >
+      <span class="l-bg">{COPY.pctCaveat.bg}</span>
+      <span class="l-en">{COPY.pctCaveat.en}</span>
     </div>
+    <!-- How the figure was made, one tap down. A reader who never opens it
+         draws no wrong conclusion from the number, which is what tells method
+         apart from a caveat (`docs/writing-style.md`). Merged into the sentence
+         above, the pair is one paragraph nobody finishes and the caveat is the
+         half that gets lost — it is the second sentence in. -->
+    <details class="rr-more">
+      <summary class="disclose">
+        <span class="dc-caret" aria-hidden="true">›</span>
+        <span class="l-bg">{COPY.disclosePctHow.bg}</span>
+        <span class="l-en">{COPY.disclosePctHow.en}</span>
+      </summary>
+      <div class="rr-more-body">
+        <div class="rr-note">
+          <span class="l-bg"
+            >{t(COPY.pctMethod, "bg", { shapeYear: period(calc.salaryShapeYear) })}</span
+          >
+          <span class="l-en"
+            >{t(COPY.pctMethod, "en", { shapeYear: period(calc.salaryShapeYear) })}</span
+          >
+        </div>
+      </div>
+    </details>
     <!-- Source citation (↗) — Eurostat SES shape + NSI level, the
          same every-figure-carries-a-link contract as the baskets. -->
     <div class="rr-note ss">
