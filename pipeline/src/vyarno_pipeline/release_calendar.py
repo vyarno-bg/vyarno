@@ -294,7 +294,7 @@ WATCHED: dict[str, tuple[Release, ...]] = {
     ),
     "credit": (
         Release(
-            label="ЕЦБ MIR — consumer, overdraft and card rates",
+            label="ЕЦБ MIR — consumer, overdraft, card and corporate rates",
             url=_ecb("MIR", "M.BG.B.A2B.A.R.A.2250.EUR.N"),
             marker=HTTP_LAST_MODIFIED,
             tz=CET,

@@ -2311,8 +2311,8 @@ export const COPY = {
   },
   howKUnemp: { bg: "безработица, сезонно изгладена", en: "unemployment, seasonally adjusted" },
   howChartUnemp: {
-    bg: "Безработица от {from} до {to}: тръгва от {fromPct}%, стига {peakPct}% през {peakAt}, слиза до {troughPct}% през {troughAt}, а последното измерване е {toPct}%.",
-    en: "Unemployment from {from} to {to}: starts at {fromPct}%, reaches {peakPct}% in {peakAt}, falls to {troughPct}% in {troughAt}, and the latest reading is {toPct}%.",
+    bg: "Безработица от {from} до {to}: тръгва от {fromPct}%, най-високо {peakPct}% през {peakAt}, най-ниско {troughPct}% през {troughAt}, а последното измерване е {toPct}%.",
+    en: "Unemployment from {from} to {to}: starts at {fromPct}%, highest {peakPct}% in {peakAt}, lowest {troughPct}% in {troughAt}, and the latest reading is {toPct}%.",
   },
 
   // Table column headings.
@@ -2615,8 +2615,8 @@ export const COPY = {
     en: "How many times dearer homes are than in {base}, by quarter from {from} to {to}. More money: the lowest is ×{low} in {lowAt}, the highest ×{peak} in {peakAt}, and for {to} it is ×{last}. Dearer than everything else: the highest is ×{realPeak} in {realPeakAt}, and for {to} it is ×{realLast}.",
   },
   mktChartRate: {
-    bg: "Годишна промяна на цените на жилищата по тримесечия, от {from} до {to}. Най-силен спад {low} през {lowAt}, най-силно поскъпване {peak} през {peakAt}; за {to} е {last}.",
-    en: "Annual change in house prices by quarter, {from} to {to}. The steepest fall is {low} in {lowAt} and the steepest rise {peak} in {peakAt}; for {to} it is {last}.",
+    bg: "Годишна промяна на цените на жилищата по тримесечия, от {from} до {to}. Най-ниска стойност {low} през {lowAt}, най-висока {peak} през {peakAt}; за {to} е {last}.",
+    en: "Annual change in house prices by quarter, {from} to {to}. The lowest is {low} in {lowAt} and the highest {peak} in {peakAt}; for {to} it is {last}.",
   },
   mktChartDeal: {
     bg: "Средно платено за жилище по тримесечия, от {from} до {to}, отделно за ново строителство и за съществуващи жилища. За {to} са {new} евро за ново и {existing} евро за съществуващо.",
@@ -2631,8 +2631,8 @@ export const COPY = {
   // the count's movement, in percent — and a reader hearing the price chart's
   // description under it would be told the same thing twice.
   mktChartVolumeChange: {
-    bg: "Годишна промяна на броя продадени жилища по тримесечия, от {from} до {to}. Най-силен спад {low} през {lowAt}, най-силен ръст {peak} през {peakAt}; за {to} е {last}.",
-    en: "Annual change in the number of dwellings sold, by quarter from {from} to {to}. The steepest fall is {low} in {lowAt} and the steepest rise {peak} in {peakAt}; for {to} it is {last}.",
+    bg: "Годишна промяна на броя продадени жилища по тримесечия, от {from} до {to}. Най-ниска стойност {low} през {lowAt}, най-висока {peak} през {peakAt}; за {to} е {last}.",
+    en: "Annual change in the number of dwellings sold, by quarter from {from} to {to}. The lowest is {low} in {lowAt} and the highest {peak} in {peakAt}; for {to} it is {last}.",
   },
   // Above each panel rather than beside it. Two plots stacked on one row of
   // quarters have one x-axis between them, so the label is what says which
@@ -3339,8 +3339,8 @@ export const COPY = {
   // person would say out loud, because the shape is the only thing the picture
   // carries that the figures above it do not.
   crdChartSavings: {
-    bg: "Пари в банката срещу дълг на домакинствата, от {from} до {to}. Парите в банката растат от {dFrom} на {dTo} млн. евро, а дългът от {lFrom} на {lTo} млн. евро. На всеки 1 евро дълг вече се падат {rTo} евро в банката, а в началото са били {rFrom}.",
-    en: "Money in the bank against household debt, from {from} to {to}. The money in the bank grows from {dFrom} to {dTo} million euro and the debt from {lFrom} to {lTo} million euro. Every euro owed is now matched by {rTo} euro in the bank, against {rFrom} at the start.",
+    bg: "Пари в банката срещу дълг на домакинствата, от {from} до {to}. Парите в банката са от {dFrom} до {dTo} млн. евро, а дългът от {lFrom} до {lTo} млн. евро. На всеки 1 евро дълг вече се падат {rTo} евро в банката, а в началото са били {rFrom}.",
+    en: "Money in the bank against household debt, from {from} to {to}. The money in the bank runs from {dFrom} to {dTo} million euro and the debt from {lFrom} to {lTo} million euro. Every euro owed is now matched by {rTo} euro in the bank, against {rFrom} at the start.",
   },
   // The deposit contrast, and it may be the most useful pair on the page for an
   // ordinary saver: what a deposit opened this month is quoted, against what the
@@ -3371,12 +3371,12 @@ export const COPY = {
     en: "and across all the banks' lending, taken together",
   },
   crdChartArrears: {
-    bg: "Необслужвани кредити от {from} до {to}: при домакинствата спадат от {hFrom}% до {hTo}%, при фирмите от {cFrom}% до {cTo}%.",
-    en: "Non-performing loans from {from} to {to}: households fall from {hFrom}% to {hTo}%, companies from {cFrom}% to {cTo}%.",
+    bg: "Необслужвани кредити от {from} до {to}: при домакинствата от {hFrom}% до {hTo}%, при фирмите от {cFrom}% до {cTo}%.",
+    en: "Non-performing loans from {from} to {to}: households from {hFrom}% to {hTo}%, companies from {cFrom}% to {cTo}%.",
   },
   crdChartStockRate: {
-    bg: "Средна лихва по изплащаните жилищни кредити от {from} до {to}: пада от {fromPct}% до {toPct}%, с връх {peakPct}% през {peakAt}.",
-    en: "Average rate on housing loans being repaid from {from} to {to}: falls from {fromPct}% to {toPct}%, peaking at {peakPct}% in {peakAt}.",
+    bg: "Средна лихва по изплащаните жилищни кредити от {from} до {to}: от {fromPct}% до {toPct}%, с връх {peakPct}% през {peakAt}.",
+    en: "Average rate on housing loans being repaid from {from} to {to}: from {fromPct}% to {toPct}%, peaking at {peakPct}% in {peakAt}.",
   },
   crdKeyFirms: { bg: "фирми", en: "companies" },
   crdKeyHouseholds: { bg: "домакинства", en: "households" },
@@ -3394,6 +3394,17 @@ export const COPY = {
   crdKeyCard: { bg: "карта", en: "card" },
   crdKeyConsumerLoan: { bg: "потребителски", en: "consumer loan" },
   crdKeyMortgage: { bg: "нов жилищен", en: "new home loan" },
+  // Every slot here is a figure, including the direction: which of the two
+  // rates is the higher one is a fact about this month's payload, so the
+  // label says «{from}% срещу {to}%» and leaves the reading to the numbers.
+  crdChartSpread: {
+    bg: "Две лихви по нови кредити от {from} до {to}: за фирма от {bFrom}% до {bTo}%, за жилище от {hFrom}% до {hTo}%. Разликата между тях се движи от {min} пункта през {minAt} до {max} пункта през {maxAt}.",
+    en: "Two rates on new lending from {from} to {to}: to a company from {bFrom}% to {bTo}%, for a home from {hFrom}% to {hTo}%. The difference between them runs from {min} points in {minAt} to {max} points in {maxAt}.",
+  },
+  crdKBusiness: { bg: "нов кредит за фирма", en: "new loan to a company" },
+  crdKHomeBuyer: { bg: "нов кредит за жилище", en: "new loan for a home" },
+  crdKeyBusiness: { bg: "фирма", en: "company" },
+  crdKeyHomeBuyer: { bg: "жилище", en: "home" },
 };
 
 /**

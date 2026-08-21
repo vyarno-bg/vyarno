@@ -47,6 +47,11 @@ PRODUCT_BANDS: dict[str, tuple[float, float]] = {
     "card": (8.0, 40.0),
     "deposit_overnight": (0.0, 8.0),
     "deposit_term": (0.0, 10.0),
+    # New lending to companies, 2.27-4.56% over its full spliced history. The
+    # band admits neither a card series nor a deposit one; what it does NOT
+    # catch is this key's euro leg read whole, whose pre-2026 values sit inside
+    # it — `validate_business_splice` is the gate for that.
+    "business_lending": (1.0, 15.0),
 }
 
 # Deposits are published from euro adoption and no earlier, and it is a gap in
@@ -74,6 +79,43 @@ def validate_product_series(series: dict[str, float], product: str) -> None:
             )
     if list(series) != sorted(series):
         raise MortgageValidationError(f"{product}: periods are not sorted")
+
+
+def validate_business_splice(
+    spliced: dict[str, float],
+    bgn_leg: dict[str, float],
+    switch_period: str,
+) -> None:
+    """The published corporate series is the splice, never the euro leg whole.
+
+    Both legs of `A2A/2240` are plausible rates over their whole length, so no
+    band can tell them apart — and the euro leg publishes back to 2007, where
+    `EUR` still meant «denominated in euro» rather than «the currency». Over
+    the months both legs cover they run as far as 2.08 pp apart, so reading the
+    euro one whole would report a slice of the market as the market, for
+    nineteen years, at values nothing else here would question.
+
+    What separates them is where they START and which leg each month came from,
+    which is what this reads.
+    """
+    if not spliced or not bgn_leg:
+        raise MortgageValidationError("business rate: nothing to splice.")
+    if min(spliced) != min(bgn_leg):
+        raise MortgageValidationError(
+            f"business rate: the published series starts {min(spliced)} and the BGN leg "
+            f"starts {min(bgn_leg)}. A series reaching further back than the lev leg is "
+            f"the euro leg read whole — before {switch_period} EUR meant loans "
+            f"DENOMINATED in euro, which is a subset priced differently."
+        )
+    for period, value in spliced.items():
+        if period >= switch_period:
+            continue
+        if bgn_leg.get(period) != value:
+            raise MortgageValidationError(
+                f"business rate: {period} reads {value!r}% where the BGN leg publishes "
+                f"{bgn_leg.get(period)!r}%. Every month before {switch_period} is the "
+                f"lev leg's."
+            )
 
 
 def validate_card_above_mortgage(card_pct: float, mortgage_pct: float) -> None:

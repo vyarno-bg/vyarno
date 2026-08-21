@@ -37,6 +37,7 @@
   import { dataAge } from "./lib/view/freshness.js";
   import {
     creditArrears,
+    creditBusinessSpread,
     creditFixation,
     creditFixationHistory,
     creditLimits,
@@ -48,7 +49,7 @@
     creditRenegotiation,
     creditSavings,
   } from "./lib/view/credit.js";
-  import { dateShort, integer, number, periodLong } from "./lib/format.js";
+  import { dateShort, integer, number, periodLong, signed } from "./lib/format.js";
   import { niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   const { payloads = null, servedLang = null } = $props();
@@ -80,6 +81,12 @@
   const owed = $derived(creditOutstanding(data.credit ?? null));
   const savings = $derived(creditSavings(data.credit ?? null));
   const arrears = $derived(creditArrears(data.credit ?? null));
+  const spread = $derived(creditBusinessSpread(data.credit ?? null, mortgage));
+  // A lookup rather than arithmetic: §9's explanation names what a current
+  // account pays, and the figure is the one §8 already prints.
+  const overnight = $derived(
+    products.find((product) => product.key === "deposit_overnight")?.rate.value ?? null
+  );
 
   /**
    * The box every chart on this page is drawn in, in its own units. Two sizes,
@@ -738,13 +745,15 @@
         <span class="l-bg">Какво имат домакинствата и какво дължат</span>
         <span class="l-en">What households have and what they owe</span>
       </h2>
+      <!-- Which of the two grows faster is what the ratio under the cards
+           already says, in figures that move with the payload. Said again up
+           here as prose it is the same claim with nothing recomputing it. -->
       <p class="lede">
         <span class="l-bg"
-          >Парите в банките и дългът към тях растат заедно, но дългът расте по-бързо.</span
+          >Колко пари държат домакинствата в банките, и колко дължат на същите банки.</span
         >
         <span class="l-en"
-          >The money in the banks and the debt to them are growing together, but the debt is growing
-          faster.</span
+          >How much households hold in the banks, and how much they owe the same banks.</span
         >
       </p>
       <div class="stats">
@@ -903,13 +912,18 @@
       <span class="l-bg">Какво плащаш за пари, и какво ти плащат</span>
       <span class="l-en">What you pay for money, and what you are paid</span>
     </h2>
+    <!-- The REASON, never the ordering. Which of these is dearest is a fact
+         about this month's payload; that a secured loan is priced below an
+         unsecured one is not, and only the second survives a month the four
+         cards below change places. -->
     <p>
       <span class="l-bg"
-        >Жилищният кредит е най-евтиният начин да вземеш пари назаем в България, защото зад него
-        стои жилището.</span
+        >Зад жилищния кредит стои самото жилище, затова той обикновено е най-евтиният начин да
+        вземеш пари назаем.</span
       >
       <span class="l-en"
-        >A home loan is the cheapest way to borrow in Bulgaria, because the home stands behind it.</span
+        >The home itself stands behind a home loan, which is why it is usually the cheapest way to
+        borrow.</span
       >
     </p>
     <div class="stats">
@@ -980,24 +994,45 @@
         <span class="l-bg">Кои от тези цени се промениха</span>
         <span class="l-en">Which of these prices changed</span>
       </h3>
+      <!-- Each price is given as its two ends and its peak, and the movement
+           between them is left to the plot. «has fallen since» and «barely
+           moved» were readings of the series rather than figures out of it,
+           and a reading outlives the month it stops being true. -->
       <p>
         <span class="l-bg"
-          >Трите не се движат заедно. Потребителският кредит поскъпна до {number(
+          >Трите цени имат различни причини да се движат. Потребителският кредит стигна {number(
             consumer.peak.value,
             2,
             $lang
-          )}% през {periodLong(consumer.peak.period, $lang)} и оттогава слиза. Лихвата по картата почти
-          не се е променила за целия период. А новият жилищен кредит е по-евтин сега, отколкото беше в
-          началото на периода.</span
+          )}% през {periodLong(consumer.peak.period, $lang)}, а сега е {number(
+            consumer.latest.value,
+            2,
+            $lang
+          )}%. Лихвата по картата тръгва от {number(card.first.value, 2, $lang)}% и стига {number(
+            card.latest.value,
+            2,
+            $lang
+          )}%. Новият жилищен кредит тръгва от {number(mortgageLine.first.value, 2, $lang)}% и стига {number(
+            mortgageLine.latest.value,
+            2,
+            $lang
+          )}%.</span
         >
         <span class="l-en"
-          >The three do not move together. The consumer loan grew dearer, to {number(
+          >The three prices have different reasons to move. The consumer loan reached {number(
             consumer.peak.value,
             2,
             $lang
-          )}% in {periodLong(consumer.peak.period, $lang)}, and has fallen since. The card rate has
-          barely moved across the whole period. A new home loan is cheaper now than it was at the
-          start of the period.</span
+          )}% in {periodLong(consumer.peak.period, $lang)} and is {number(
+            consumer.latest.value,
+            2,
+            $lang
+          )}% now. The card rate starts the period at {number(card.first.value, 2, $lang)}% and ends
+          at {number(card.latest.value, 2, $lang)}%. A new home loan starts at {number(
+            mortgageLine.first.value,
+            2,
+            $lang
+          )}% and ends at {number(mortgageLine.latest.value, 2, $lang)}%.</span
         >
       </p>
       <figure class="chart">
@@ -1095,6 +1130,193 @@
   </section>
 
   <!-- 9 ------------------------------------------------------------------ -->
+  {#if spread}
+    {@const axis = niceTicks(0, spread.scaleMax, 5)}
+    {@const business = spread.series.business}
+    {@const home = spread.series.home}
+    <section id="business">
+      <h2>
+        <span class="l-bg">Какво плаща фирмата, и какво плаща купувачът на жилище</span>
+        <span class="l-en">What a company pays, and what a homebuyer pays</span>
+      </h2>
+      <p class="lede">
+        <span class="l-bg"
+          >Двете лихви се определят по различен начин и не са длъжни да се движат заедно.</span
+        >
+        <span class="l-en"
+          >The two rates are set in different ways, and are under no obligation to move together.</span
+        >
+      </p>
+      <div class="stats">
+        {#each [[spread.business, COPY.crdKBusiness], [spread.home, COPY.crdKHomeBuyer]] as [figure, label] (label.bg)}
+          <div class="stat">
+            <strong>{figure.value === null ? "—" : `${number(figure.value, 2, $lang)}%`}</strong>
+            <span class="lbl">{t(label, $lang)}</span>
+            {#if figure.sourceUrl}
+              <a class="src" href={figure.sourceUrl} rel="noopener"
+                >{t(COPY.crdWhoseEcb, $lang)} · {periodLong(figure.refPeriod, $lang)}</a
+              >
+            {/if}
+          </div>
+        {/each}
+      </div>
+      <!-- The difference is ours, so it is not a `.stat`: the two cards above
+           are publishers' figures with links out, and a subtraction sitting in
+           that row would be the one a reader could not check. Same shape §7
+           gives its own derived ratio. -->
+      <p class="note ours">
+        <strong>{signed(spread.gap.latest.value, 2, $lang)}</strong>
+        <span class="l-bg"
+          >пункта разлика през {periodLong(spread.gap.latest.period, $lang)} Наша сметка:
+          <a href={spread.business.sourceUrl} rel="noopener">лихвата за фирма</a>
+          минус <a href={spread.home.sourceUrl} rel="noopener">лихвата за жилище</a>, за един и същи
+          месец. {#if spread.gap.latestIsWidest}Това е най-голямата разлика в целия период, а
+            най-малката е {signed(spread.gap.narrowest.value, 2, $lang)} пункта ({periodLong(
+              spread.gap.narrowest.period,
+              $lang
+            )}).{:else}В целия период разликата се движи между {signed(
+              spread.gap.narrowest.value,
+              2,
+              $lang
+            )} пункта ({periodLong(spread.gap.narrowest.period, $lang)}) и {signed(
+              spread.gap.widest.value,
+              2,
+              $lang
+            )} пункта ({periodLong(spread.gap.widest.period, $lang)}).{/if}</span
+        >
+        <span class="l-en"
+          >points apart in {periodLong(spread.gap.latest.period, $lang)}. Ours:
+          <a href={spread.business.sourceUrl} rel="noopener">the company rate</a>
+          minus <a href={spread.home.sourceUrl} rel="noopener">the home loan rate</a>, for the same
+          month. {#if spread.gap.latestIsWidest}That is the widest the gap has been over the whole
+            period, and the narrowest was {signed(spread.gap.narrowest.value, 2, $lang)} points in {periodLong(
+              spread.gap.narrowest.period,
+              $lang
+            )}.{:else}Across the whole period it runs between {signed(
+              spread.gap.narrowest.value,
+              2,
+              $lang
+            )} points in {periodLong(spread.gap.narrowest.period, $lang)} and {signed(
+              spread.gap.widest.value,
+              2,
+              $lang
+            )} points in {periodLong(spread.gap.widest.period, $lang)}.{/if}</span
+        >
+      </p>
+      <!-- WHY they can come apart, never which is dearer today: the ordering is
+           this month's payload and would outlive the month it inverts, while
+           the funding is structural. The deposit claim is §7's own, household
+           against household — the payload carries no figure for what the banks
+           lend companies, so a sentence about every loan they make would be
+           one this page cannot show. -->
+      <p>
+        <span class="l-bg"
+          >Разделят се заради това откъде идват парите. ЕЦБ определя цената на парите в еврозоната.
+          Но българските банки нямат нужда да заемат скъпо: домакинствата държат в тях повече,
+          отколкото им дължат, а по разплащателна сметка получават {overnight === null
+            ? "—"
+            : number(overnight, 2, $lang)}%. Затова промяна в лихвата на ЕЦБ стига по-бързо до
+          кредита за фирма, отколкото до жилищния.</span
+        >
+        <span class="l-en"
+          >They come apart because of where the money comes from. The ECB sets the price of money in
+          the euro area. But Bulgarian banks have no need to borrow dear: households hold more in
+          them than they owe them, and a current account pays {overnight === null
+            ? "—"
+            : number(overnight, 2, $lang)}%. So a change in the ECB's rate reaches a loan to a
+          company sooner than it reaches a home loan.</span
+        >
+      </p>
+      <p class="cap">
+        <span class="l-bg"
+          >Двата кредита не са едно и също и разлика между тях е нормална: фирмите изостават с
+          плащанията по-често от домакинствата. Въпросът е колко голяма е тя.</span
+        >
+        <span class="l-en"
+          >The two loans are not the same thing, and a gap between them is normal: companies fall
+          behind on their payments more often than households do. The question is how big it is.</span
+        >
+      </p>
+      <figure class="chart">
+        <div class="plot">
+          {@render yAxis(
+            axis.values.map((v) => ({
+              at: tickAt(v, axis),
+              label: v === 0 ? "0" : `${number(v, Number.isInteger(v) ? 0 : 1, $lang)}%`,
+            }))
+          )}
+          <svg
+            class="pane"
+            viewBox="0 0 {CH_W} {CH_H}"
+            role="img"
+            aria-label={t(COPY.crdChartSpread, $lang, {
+              from: periodLong(spread.from, $lang),
+              to: periodLong(spread.to, $lang),
+              bFrom: number(business.first?.value, 2, $lang),
+              bTo: number(business.latest?.value, 2, $lang),
+              hFrom: number(home.first?.value, 2, $lang),
+              hTo: number(home.latest?.value, 2, $lang),
+              min: signed(spread.gap.narrowest.value, 2, $lang),
+              minAt: periodLong(spread.gap.narrowest.period, $lang),
+              max: signed(spread.gap.widest.value, 2, $lang),
+              maxAt: periodLong(spread.gap.widest.period, $lang),
+            })}
+          >
+            {#each axis.values as v (v)}
+              <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
+            {/each}
+            {#each xTicks(home) as tick (tick.year)}
+              <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
+            {/each}
+            <path class="plot-line second" d={path(business, axis)} />
+            <path class="plot-line" d={path(home, axis)} />
+            {@render lastPoint(business, axis, CH_H, "second")}
+            {@render lastPoint(home, axis)}
+            <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
+            {#each spread.gap.points as p, i (p.period)}
+              <rect
+                class="plot-hit"
+                x={xOf(i, spread.gap.points.length) - 2}
+                y="0"
+                width="4"
+                height={CH_H}
+                ><title
+                  >{periodLong(p.period, $lang)}: {number(business.points[i]?.value, 2, $lang)}% ·
+                  {number(home.points[i]?.value, 2, $lang)}% ·
+                  {signed(p.value, 2, $lang)}</title
+                ></rect
+              >
+            {/each}
+          </svg>
+          {@render xYears(xTicks(home))}
+        </div>
+        <figcaption>
+          <span class="key">{t(COPY.crdKeyHomeBuyer, $lang)}</span>
+          <span class="key consumer">{t(COPY.crdKeyBusiness, $lang)}</span>
+        </figcaption>
+      </figure>
+      <p class="note">
+        <a href={spread.business.sourceUrl} rel="noopener">{t(COPY.crdWhoseEcb, $lang)}</a>
+        · {periodLong(spread.from, $lang)} – {periodLong(spread.to, $lang)} ·
+        <span class="l-bg"
+          >лихвите по договорите, подписани през съответния месец. И двете следват валутата на деня:
+          в лева преди приемането на еврото и в евро след него. Кредитът за фирма е за всякаква цел,
+          докато жилищният е само за покупка на жилище, защото ЕЦБ не разделя фирмените кредити по
+          цел. Графиката започва от {periodLong(spread.from, $lang)}, защото това е първият месец,
+          за който тук има и двете лихви.</span
+        >
+        <span class="l-en"
+          >the rates on agreements signed in each month. Both follow the currency of the day: the
+          lev before the euro was adopted and the euro after it. A loan to a company is for any
+          purpose where a home loan is only for buying a home, because the ECB publish no purpose
+          split for company lending. The chart starts at {periodLong(spread.from, $lang)} because that
+          is the first month both rates are here for.</span
+        >
+      </p>
+    </section>
+  {/if}
+
+  <!-- 10 ----------------------------------------------------------------- -->
   {#if arrears}
     <section id="arrears">
       <h2>

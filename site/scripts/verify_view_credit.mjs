@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   creditArrears,
+  creditBusinessSpread,
   creditFixation,
   creditFixationHistory,
   creditLimits,
@@ -226,6 +227,7 @@ test("every reader of a missing payload gets nulls rather than a thrown page", (
     assert.deepEqual(creditFixation(payload).buckets, []);
     assert.equal(creditRenegotiation(payload).share.value, null);
     assert.equal(creditLimits(payload), null);
+    assert.equal(creditBusinessSpread(payload, payload), null);
   }
 });
 
@@ -445,6 +447,73 @@ test("the cushion is read at both ends of the window, from that end's two levels
   // The latest end is the figure the pipeline gated and the card prints, so the
   // two arithmetics have to agree or one of them is being read off a stale key.
   assert.ok(Math.abs(savings.ratioLatest - savings.ratio) < 1e-4);
+});
+
+test("the company line is cut to the months the mortgage line is published on", () => {
+  const spread = creditBusinessSpread(CREDIT, PUBLISHED);
+  const { business, home } = spread.series;
+  assert.deepEqual(
+    business.points.map((p) => p.period),
+    home.points.map((p) => p.period)
+  );
+  // The published corporate series really is the longer one, so the cut is
+  // doing work rather than being a no-op over two equal windows. Without this
+  // the test above passes on a function that returns both series whole.
+  assert.ok(
+    Object.keys(CREDIT.business_lending.series_by_period).length > business.points.length,
+    "the corporate series is no longer than the mortgage one, so nothing was cut"
+  );
+  assert.equal(spread.from, home.from);
+  // The window is the intersection and not the mortgage series' own: a
+  // corporate payload that stopped early has to shorten the chart, not leave a
+  // line running past its last reading.
+  const short = creditBusinessSpread(
+    { business_lending: { series_by_period: { "2020-01": 3, "2020-02": 3.1 } } },
+    { new_business: { series_by_period: { "2020-01": 2, "2020-02": 2.1, "2020-03": 2.2 } } }
+  );
+  assert.deepEqual(
+    short.series.home.points.map((p) => p.period),
+    ["2020-01", "2020-02"]
+  );
+  // Levels drawn from zero, so the gap is drawn as a gap and not as a cliff.
+  assert.equal(business.min, 0);
+  assert.equal(home.min, 0);
+  // One scale for the pair, read off a payload where the HOME rate is the
+  // taller. Against today's it is the corporate one, so `scaleMax: business.max`
+  // and the max of the pair are the same number and the claim goes untested.
+  const homeDearer = creditBusinessSpread(
+    { business_lending: { series_by_period: { "2020-01": 2, "2020-02": 2.5 } } },
+    { new_business: { series_by_period: { "2020-01": 9, "2020-02": 8 } } }
+  );
+  assert.equal(homeDearer.scaleMax, 9);
+});
+
+test("the difference is the company rate minus the home one, of the same month", () => {
+  const spread = creditBusinessSpread(CREDIT, PUBLISHED);
+  const { business, home } = spread.series;
+  // The direction is the whole sentence: reversed, every «+» on the page reads
+  // «−» and the section says the opposite of what the payload holds.
+  for (const [i, point] of spread.gap.points.entries()) {
+    assert.equal(point.period, business.points[i].period);
+    assert.ok(Math.abs(point.value - (business.points[i].value - home.points[i].value)) < 1e-9);
+  }
+  assert.equal(spread.gap.latest.period, spread.to);
+  // `latestIsWidest` picks which of the section's two sentences renders, so it
+  // is read off a payload whose widest month is NOT the last one — against
+  // today's, where they coincide, a function returning `true` unconditionally
+  // would pass.
+  const past = creditBusinessSpread(
+    { business_lending: { series_by_period: { "2020-01": 5, "2020-02": 3, "2020-03": 4 } } },
+    { new_business: { series_by_period: { "2020-01": 2, "2020-02": 2, "2020-03": 2 } } }
+  );
+  assert.equal(past.gap.widest.period, "2020-01");
+  assert.equal(past.gap.narrowest.period, "2020-02");
+  assert.equal(past.gap.latestIsWidest, false);
+  const nowWidest = creditBusinessSpread(
+    { business_lending: { series_by_period: { "2020-01": 3, "2020-02": 5 } } },
+    { new_business: { series_by_period: { "2020-01": 2, "2020-02": 2 } } }
+  );
+  assert.equal(nowWidest.gap.latestIsWidest, true);
 });
 
 test("a missing savings block drops its section rather than throwing", () => {
