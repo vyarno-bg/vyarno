@@ -54,9 +54,8 @@
  * and Googlebot and nothing else. An agent that fetches the HTML and strips the
  * tags gets both halves run together: «Твоите числа. Твоята реалност. Your
  * numbers. Your reality.» is one `<h1>`, and every heading and sentence under
- * it reads the same way. The six agents `robots.txt` allows by name are exactly
- * that kind of consumer, and doubled prose is the worst input they could be
- * handed.
+ * it reads the same way. An agent that quotes a page is exactly that kind of
+ * consumer, and doubled prose is the worst input it could be handed.
  *
  * So the written page keeps the language its entry declares in `data-lang` and
  * drops the other. **This is the crawler's copy and no reader's**, in either

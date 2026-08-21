@@ -436,9 +436,9 @@ test("the served pages carry one language, not two", { skip: needsBuild }, async
   // The class, counted over the raw file, on all eight entries. A crawler that
   // strips tags reads a `.l-bg` / `.l-en` pair as one run of text — «Твоите
   // числа. Твоята реалност. Your numbers. Your reality.» is the `<h1>` of `/`
-  // and every heading under it doubles the same way. The six agents
-  // `robots.txt` allows by name execute nothing and apply no stylesheet, so
-  // they are precisely the consumer that reads it that way.
+  // and every heading under it doubles the same way. An agent that quotes a
+  // page executes nothing and applies no stylesheet, so it is precisely the
+  // consumer that reads it that way.
   //
   // Counted on the class rather than on `<span class="l-en">`, which is the
   // check that would pass while `/` served an English link:
