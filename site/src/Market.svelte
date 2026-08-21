@@ -57,6 +57,8 @@
     marketRent,
     marketBorrowedShare,
     statusLettersUsed,
+    marketCityAffordability,
+    CITY_SHORT_ARCHIVE,
   } from "./lib/view/market.js";
   import {
     number,
@@ -65,6 +67,7 @@
     percentSigned,
     periodLong,
     httpUrl,
+    bgIn,
   } from "./lib/format.js";
   import {
     plotY,
@@ -205,6 +208,60 @@
   const structure = $derived(marketStructure(data.houseMarketStructure));
   const yearsOfPay = $derived(marketDealInYearsOfPay(data.houseMarket, data.sectorSalary));
   const cities = $derived(marketCities(data.nsiHousing));
+  /**
+   * The cross-city years-of-pay table, joined in the reader's own tab.
+   *
+   * Three payloads meet here and the joining is `view/market.js`'s: имот.bg's
+   * median, НСИ's published quarter and the payroll table the gross is
+   * converted with. НСИ's licence forbids distributing a figure computed over
+   * their cells, so the division may not exist in any file we publish
+   * (docs/legal.md §НСИ) — it exists here, on screen, and nowhere else.
+   */
+  const afford = $derived(marketCityAffordability(data.cityPrice, data.regionSalary, data.payroll));
+  /** The three cities that moved most, which is where the finding is. */
+  const affordMoved = $derived(
+    [...afford.rows].sort((a, b) => b.changePct - a.changePct).slice(0, 3)
+  );
+  /**
+   * The cities the paragraphs above the table name, so the table can mark them.
+   *
+   * Built from the same values the sentences are built from rather than listed
+   * again: a second list is a second place for a row to stop being the row the
+   * prose quotes, and it would stop silently on the refresh that reorders them.
+   */
+  const affordQuoted = $derived(
+    new Set([afford.rows[0], afford.capital, ...affordMoved].filter(Boolean).map((row) => row.code))
+  );
+  /**
+   * The cities имот.bg measure over a visibly different set of districts now.
+   *
+   * **A sentence rather than a mark on the row.** The row's job is which city
+   * and how many years; a footnote about how WE measured, printed under eight
+   * of the names, reads as a fact about those places. It is the same kind of
+   * caveat as «обявена цена, не платена» — a limit on the comparison — and that
+   * one is a sentence too, naming what it applies to.
+   */
+  const affordShifted = $derived(afford.rows.filter((row) => row.coverageShifted));
+  /** The two reasons an област has no row, kept apart: they are two claims. */
+  const affordNoPage = $derived(afford.omitted.filter((o) => o.reason !== CITY_SHORT_ARCHIVE));
+  const affordShort = $derived(afford.omitted.filter((o) => o.reason === CITY_SHORT_ARCHIVE));
+  /** A year as a column head, from the one key the track's key already fills. */
+  const yearCol = (year) => ({
+    bg: t(COPY.mktAffordKeyYear, "bg", { year }),
+    en: t(COPY.mktAffordKeyYear, "en", { year }),
+  });
+  /**
+   * Names in a list, joined the way the reader's own language joins them.
+   *
+   * `Intl.ListFormat` rather than a comma and a hardcoded conjunction: «и» and
+   * "and" go in different places against a serial comma, and a conjunction
+   * written into a COPY string is grammar the string cannot carry — the rule
+   * `format.js#ordinalDay` exists for. Built in, so it adds no dependency.
+   */
+  const affordNames = (rows, lang) =>
+    new Intl.ListFormat(lang, { style: "long", type: "conjunction" }).format(
+      rows.map((row) => (lang === "bg" ? row.bgName : row.enName))
+    );
   const nsiNational = $derived(marketNsiNationalRate(data.nsiHousing));
   const volumeSeries = $derived(marketVolumeSeries(data.houseMarket));
   /**
@@ -451,6 +508,31 @@
    * first, and read by index its earliest reading would be filed against the
    * first line's earliest year — every digit published and every row wrong.
    */
+  /**
+   * The affordability rows in the shape `numbersTable` takes: a city per row,
+   * a year per column.
+   *
+   * **The one table on this page whose rows are places rather than periods**,
+   * and the sheet decides it rather than the screen. 25 cities across the top
+   * is 26 columns: a scroll box holds them and paper does not, because
+   * `print.css` releases the clipping instead of widening the page, so every
+   * column past the eighth would be missing from a printed copy. Seven years
+   * across the top is eight, and it matches the table above, where a reader has
+   * already found their own city as a row.
+   *
+   * `pick` is which figure of each year, so the years and the district counts
+   * come out of one transpose rather than two.
+   */
+  const affordRows = (years, rows, pick) =>
+    rows.map((row) => ({
+      period: row.code,
+      label: { bg: row.bgName, en: row.enName },
+      values: years.map((year) => {
+        const point = row.points.find((p) => p.year === year);
+        return point ? pick(point) : null;
+      }),
+    }));
+
   const rowsOf = (series, extra = []) => {
     const byPeriod = extra.map((e) => new Map(e.points.map((p) => [p.period, p.value])));
     return series.points.map((p) => ({
@@ -851,6 +933,14 @@
   at the same values the head labels, so the bars sit against a scale rather than
   against nothing.
 -->
+<!-- The three biggest movers, named with their own figures. A snippet because
+     the same list appears in both languages, and a second copy of the loop is a
+     second place for the order to stop matching the sort. -->
+{#snippet affordMovers(lang)}{#each affordMoved as row, i (row.code)}{i ? ", " : ""}{lang === "bg"
+      ? row.bgName
+      : row.enName}
+    {pct(row.changePct)}{/each}{/snippet}
+
 {#snippet cityNow(city, axis)}
   {@const span = axis.max - axis.min || 1}
   {@const xOf = (v) => ((v - axis.min) / span) * NOW_W}
@@ -905,7 +995,16 @@
   screen to serve the ones who opened it; inside, it is on screen exactly when
   the column it explains is.
 -->
-{#snippet numbersTable(open, caption, cols, rows, format, flagged = false, note = null)}
+{#snippet numbersTable(
+  open,
+  caption,
+  cols,
+  rows,
+  format,
+  flagged = false,
+  note = null,
+  rowHead = null
+)}
   <details class="numbers">
     <summary>
       <span class="l-bg">{open.bg}</span>
@@ -915,9 +1014,14 @@
       <table class="fig-table">
         <thead>
           <tr>
+            <!-- A period down the left is what every series here has, and the
+                 cross-city table is the one whose rows are PLACES: 25 cities
+                 across the top is 26 columns, which a scroll box holds and a
+                 sheet loses at the edge, since print releases the clipping
+                 rather than widening the page. -->
             <th scope="col">
-              <span class="l-bg">{COPY.mktColPeriod.bg}</span>
-              <span class="l-en">{COPY.mktColPeriod.en}</span>
+              <span class="l-bg">{(rowHead ?? COPY.mktColPeriod).bg}</span>
+              <span class="l-en">{(rowHead ?? COPY.mktColPeriod).en}</span>
             </th>
             {#each cols as c (c.bg)}
               <th scope="col" class="num">
@@ -936,7 +1040,14 @@
         <tbody>
           {#each rows as r (r.period)}
             <tr>
-              <th scope="row" class="mono">{periodLong(r.period, $lang)}</th>
+              {#if r.label}
+                <th scope="row">
+                  <span class="l-bg">{r.label.bg}</span>
+                  <span class="l-en">{r.label.en}</span>
+                </th>
+              {:else}
+                <th scope="row" class="mono">{periodLong(r.period, $lang)}</th>
+              {/if}
               {#each r.values as v, i (i)}
                 <td class="num mono">{format(v)}</td>
               {/each}
@@ -2590,21 +2701,301 @@
 
     <p class="cap">
       <span class="l-bg"
-        >Обявената цена и платената цена са различни неща. Обявените цени на кв. м по градове са в
-        калкулатора и идват от имот.bg; числата тук са за сделки и идват от Евростат. Цена на
-        квадратен метър по сделки за отделен български град не публикува никой, затова тук няма
-        такава таблица.</span
+        >Обявената цена и платената цена са различни неща. Обявените цени на кв. м по градове идват
+        от имот.bg и са в калкулатора и в следващия раздел; числата тук са за сделки и идват от
+        Евростат. Цена на квадратен метър по сделки за отделен български град не публикува никой,
+        затова тук няма такава таблица.</span
       >
       <span class="l-en"
-        >An asking price and a paid price are different things. Asking prices per m² by city are in
-        the calculator and come from imot.bg; the figures here are transaction figures and come from
-        Eurostat. Nobody publishes a transaction price per square metre for an individual Bulgarian
-        city, which is why there is no such table here.</span
+        >An asking price and a paid price are different things. Asking prices per m² by city come
+        from imot.bg and are in the calculator and in the section below; the figures here are
+        transaction figures and come from Eurostat. Nobody publishes a transaction price per square
+        metre for an individual Bulgarian city, which is why there is no such table here.</span
       >
     </p>
   </section>
 
   <!-- 5 ------------------------------------------------------------------ -->
+  <section id="afford">
+    <h2>
+      <span class="l-bg">Колко години заплата струва едно жилище, по градове</span>
+      <span class="l-en">How many years of pay a home costs, city by city</span>
+    </h2>
+
+    {#if afford.rows.length > 4 && afford.capital}
+      <!-- The answer first, then what the figure means, then what qualifies it:
+           the page's own order. This is the only place on the site with every
+           city on screen at once. The calculator shows a reader theirs, and the
+           six-city table above is a different publisher measuring a different
+           thing.
+
+           **Every claim here is computed or conditional.** A sentence saying
+           the capital is not at the top, or that the gap narrowed, is a claim
+           the next имот.bg read can falsify, and nothing recomputes prose. -->
+      <p class="lead">
+        <span class="l-bg"
+          >Колко трябва да работиш за едно жилище зависи от това къде живееш. {#if afford.rows[0].code !== afford.capital.code}Най-дълго
+            се работи не в София, а {bgIn(afford.rows[0].bgName)}
+            {afford.rows[0].bgName}: {fmt(afford.rows[0].latest.value)} години заплата срещу {fmt(
+              afford.capital.latest.value
+            )} в столицата.
+          {:else}Най-дълго се работи в София: {fmt(afford.capital.latest.value)} години заплата.{/if}
+          {#if afford.aboveCapital.length > 1}Още в {fmt0(afford.aboveCapital.length - 1)} града се работи
+            по-дълго, отколкото в София.{/if}</span
+        >
+        <span class="l-en"
+          >How long you have to work for a home depends on where you live. {#if afford.rows[0].code !== afford.capital.code}The
+            longest is not Sofia but {afford.rows[0].enName}: {fmt(afford.rows[0].latest.value)} years
+            of pay against {fmt(afford.capital.latest.value)} in the capital.
+          {:else}The longest is Sofia: {fmt(afford.capital.latest.value)} years of pay.{/if}
+          {#if afford.aboveCapital.length > 1}Another
+            {fmt0(afford.aboveCapital.length - 1)} cities take longer than Sofia does.{/if}</span
+        >
+      </p>
+
+      <!-- What «години заплата» is, before the table uses it. A reader has to be
+           handed this one rather than shown it: it is a whole wage for a whole
+           year with nothing kept back, which is how the calculator's own home
+           row says it too. -->
+      <p>
+        <span class="l-bg"
+          >„{fmt(afford.rows[0].latest.value)} години“ значи: толкова години цялата заплата, до последното
+          евро, отива за жилището. Смятаме колко струва жилище от {fmt0(afford.m2)} кв. м по средната
+          обявена цена в града и делим на средната заплата за областта, след осигуровки и данък. Никой
+          не купува така. Числото не е бюджет, а мярка за сравнение между градовете.</span
+        >
+        <span class="l-en"
+          >"{fmt(afford.rows[0].latest.value)} years" means: that many years of the whole wage, down to
+          the last euro, going to the home. We take what a {fmt0(afford.m2)} m² home costs at the city's
+          average asking price and divide by the average wage for the oblast, after contributions and
+          tax. Nobody buys a home that way. The figure is not a budget, it is a yardstick for comparing
+          cities.</span
+        >
+      </p>
+
+      <p>
+        <span class="l-bg"
+          >От {afford.baseYear} г. насам в {fmt0(afford.worse)} от {fmt0(afford.rows.length)} града жилището
+          поскъпва по-бързо от заплатата. Най-много: {@render affordMovers("bg")}. В София промяната
+          е {pct(afford.capital.changePct)}, а в половината градове тя е над {pct(
+            afford.medianChangePct
+          )}.</span
+        >
+        <span class="l-en"
+          >Since {afford.baseYear} a home has grown dearer against pay in {fmt0(afford.worse)} of {fmt0(
+            afford.rows.length
+          )} cities. Most of all: {@render affordMovers("en")}. In Sofia the change is {pct(
+            afford.capital.changePct
+          )}, and in half of them it is above {pct(afford.medianChangePct)}.</span
+        >
+      </p>
+
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <!-- The same scroll box the six-city table sits in, and for the same
+           reason: a table wider than a phone has to move without taking the
+           page with it, and a scrolling region is a tab stop that has to
+           announce itself. -->
+      <div class="scroll" role="region" tabindex="0" aria-label={t(COPY.mktAffordTbl, $lang)}>
+        <table class="fig-table afford">
+          <!--
+            **One head row, and the reason is a measurement rather than taste.**
+            A two-row head with `rowspan` grouped the two year columns under one
+            «Години заплата» and read well, and it is invisible to
+            `verify_render_market.mjs` §"no figure in a table touches the text of
+            the row or column beside it": that walk models a table as a grid of
+            `tr`s, so a cell spanning both header rows sits level with the row
+            below it and reports a negative gap. The guard is right about every
+            other table on the page and this head is not worth blinding it.
+
+            The unit is therefore in both year heads. Said twice it costs a few
+            characters; said once in a group head it costs the check.
+          -->
+          <thead>
+            <tr>
+              <th scope="col">{@render colHead(COPY.mktAffordCol, null)}</th>
+              <th scope="col" class="num">
+                <span class="l-bg"
+                  >{t(COPY.mktAffordColYears, "bg", { year: afford.baseYear })}</span
+                >
+                <span class="l-en"
+                  >{t(COPY.mktAffordColYears, "en", { year: afford.baseYear })}</span
+                >
+              </th>
+              <th scope="col" class="num">
+                <span class="l-bg"
+                  >{t(COPY.mktAffordColYears, "bg", { year: afford.latestYear })}</span
+                >
+                <span class="l-en"
+                  >{t(COPY.mktAffordColYears, "en", { year: afford.latestYear })}</span
+                >
+              </th>
+              <th scope="col" class="num">{@render colHead(COPY.mktAffordColChange, null)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each afford.rows as row (row.code)}
+              <!-- `tr.mark` says WHICH published row a figure quoted above was
+                   read off, which is what it says on the four tables before
+                   this one. Here that is every city the paragraphs name: the
+                   longest, the capital and the three that moved most. Marked on
+                   any other ground it would be a highlight, and a reader who
+                   learned the class upstairs would read it as provenance. -->
+              <tr class={affordQuoted.has(row.code) ? "mark" : ""}>
+                <th scope="row">
+                  <span class="l-bg">{row.bgName}</span>
+                  <span class="l-en">{row.enName}</span>
+                </th>
+                <td class="num mono">{fmt(row.base.value)}</td>
+                <td class="num mono">{fmt(row.latest.value)}</td>
+                <td class="num mono">{pct(row.changePct)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- The citation, and it names both halves of the division. One publisher
+           under a figure built from two is the caption error that needs no
+           wrong number to mislead — and it is the half a reader is least likely
+           to check that goes unnamed. «Наша сметка» is here rather than in a
+           disclosure, because the division is the figure: there is no published
+           number in this column that is anybody's but ours. -->
+      <p class="cap">
+        <span class="l-bg"
+          >Наша сметка от две публикувани числа. Цените са средните обявени цени на кв. м по
+          квартали от
+          <a href={httpUrl(afford.priceUrl)} target="_blank" rel="noopener">имот.bg</a>, а заплатите
+          са средната брутна заплата по области, както
+          <a href={httpUrl(afford.wageUrlBg)} target="_blank" rel="noopener"
+            >{COPY.srcNsi.bg} я публикува</a
+          >
+          за {periodLong(afford.refPeriod, "bg")} и за същото тримесечие на всяка предходна година. Умножаваме
+          цената по {fmt0(afford.m2)} кв. м, превръщаме брутното в нето и делим на дванадесет месеца.
+          Никое от двете публикувани числа не е променяно.</span
+        >
+        <span class="l-en"
+          >Our arithmetic over two published figures. The prices are the average asking prices per
+          m² by district from
+          <a href={httpUrl(afford.priceUrl)} target="_blank" rel="noopener">imot.bg</a>, and the
+          wages are the average gross wage by oblast
+          <a href={httpUrl(afford.wageUrl)} target="_blank" rel="noopener"
+            >as {COPY.srcNsi.en} publish it</a
+          >
+          for {periodLong(afford.refPeriod, "en")} and for the same quarter of every earlier year. We
+          multiply the price by {fmt0(afford.m2)} m², convert the gross to net and divide by twelve months.
+          Neither of the two published figures is altered.</span
+        >
+      </p>
+
+      {@render numbersTable(
+        countLabel(COPY.mktAffordOpenYears, afford.years.length),
+        COPY.mktAffordTblYears,
+        afford.years.map((year) => yearCol(year)),
+        affordRows(afford.years, afford.rows, (p) => p.value),
+        (v) => fmt(v),
+        false,
+        null,
+        COPY.mktAffordCol
+      )}
+      <!-- имот.bg's coverage, year by year, which the payload has carried all
+           along and nothing drew. It is what the caveat below rests on: a reader
+           who wants to know whether their own city's move is price or coverage
+           can read the set each year was measured across rather than take the
+           sentence's word for which cities it names. -->
+      {@render numbersTable(
+        countLabel(COPY.mktAffordOpenDistricts, afford.years.length),
+        COPY.mktAffordTblDistricts,
+        afford.years.map((year) => yearCol(year)),
+        affordRows(afford.years, afford.rows, (p) => p.nDistricts),
+        (v) => (Number.isFinite(v) ? fmt0(v) : "—"),
+        false,
+        null,
+        COPY.mktAffordCol
+      )}
+
+      {@render howMade({
+        bg:
+          `НСИ публикуват средна заплата по области, не по градове. За всяка година вземаме ` +
+          `едно и също тримесечие: ` +
+          `${periodLong(afford.refPeriod, "bg")} и същото тримесечие назад. Заплатите растат ` +
+          `в течение на годината, така че сравнение между различни тримесечия щеше да мери и ` +
+          `календара. Взетото число е клетка, която НСИ са отпечатали: нищо не се осреднява. ` +
+          `Брутното става нето по днешните осигуровки и данък, същата сметка, която ` +
+          `калкулаторът прави с твоята заплата. Под тавана на осигурителния доход тя е една и ` +
+          `съща за всички градове и всички години, тоест мести числата, но не и подредбата.`,
+        en:
+          `NSI publish an average wage by oblast rather than by city. The same quarter is taken ` +
+          `for every year: ` +
+          `${periodLong(afford.refPeriod, "en")} and that quarter in each earlier year. Wages ` +
+          `rise through the year, so a comparison across different quarters would partly ` +
+          `measure the calendar. The figure taken is a cell NSI printed: nothing is averaged. ` +
+          `The gross becomes net at today's contributions and tax, the same sum the calculator ` +
+          `runs on your own pay. Below the insurance ceiling it is the same for every city and ` +
+          `every year, so it moves the figures and not the order.`,
+      })}
+
+      <p class="cap">
+        <span class="l-bg"
+          >Обявената цена и платената цена са различни неща: тук са обявените. Заплатата е средната
+          за цялата област, а не за самия град. {#if afford.isPreliminary}Заплатата за {afford.latestYear}
+            г. е предварителна: НСИ още могат да я коригират.{/if}
+          Средната цена за всяка година е сметната по кварталите, които имот.bg е публикувал тогава, а
+          те не са едни и същи всяка година. {#if affordShifted.length}{affordNames(
+              affordShifted,
+              "bg"
+            )}: там броят им се е променил с над една пета, така че част от разликата идва оттам, а
+            не от цените.{/if} Броят квартали за всяка година е в таблицата отгоре. Между двете години
+          числата не се движат по права линия. Всяка година е в същата таблица.</span
+        >
+        <span class="l-en"
+          >An asking price and a paid price are different things: these are the asking ones. The
+          wage is the average for the whole oblast rather than for the city itself. {#if afford.isPreliminary}The
+            wage for {afford.latestYear} is preliminary: NSI may still revise it.{/if}
+          Each year's average price is taken across the districts imot.bg had published by then, and that
+          set is not the same every year. {#if affordShifted.length}{affordNames(
+              affordShifted,
+              "en"
+            )}: there the count moved by more than a fifth, so part of the difference comes from
+            that rather than from prices.{/if} The number of districts behind each year is in the table
+          above. Between the two years the figures do not move in a straight line. Every year is in that
+          same table.</span
+        >
+      </p>
+
+      {#if afford.omitted.length}
+        <!-- The области with no row, each with the reason it has none. A table
+             of 25 under a heading saying «по градове» reads as the country; a
+             reader who lives in one of the three and cannot find out why they
+             are absent has been told something false by omission (P11). -->
+        <p class="cap">
+          <span class="l-bg">
+            {#if affordNoPage.length}
+              {t(COPY.mktAffordNoPage, "bg", { places: affordNames(affordNoPage, "bg") })}
+            {/if}
+            {#if affordShort.length}
+              {t(COPY.mktAffordShortArchive, "bg", {
+                places: affordNames(affordShort, "bg"),
+                year: afford.baseYear,
+              })}
+            {/if}
+          </span>
+          <span class="l-en">
+            {#if affordNoPage.length}
+              {t(COPY.mktAffordNoPage, "en", { places: affordNames(affordNoPage, "en") })}
+            {/if}
+            {#if affordShort.length}
+              {t(COPY.mktAffordShortArchive, "en", {
+                places: affordNames(affordShort, "en"),
+                year: afford.baseYear,
+              })}
+            {/if}
+          </span>
+        </p>
+      {/if}
+    {/if}
+  </section>
+
+  <!-- 6 ------------------------------------------------------------------ -->
   <section id="credit">
     <h2>
       <span class="l-bg">Кой купува с кредит</span>
@@ -2772,7 +3163,7 @@
     </p>
   </section>
 
-  <!-- 6 -----------------------------------------------------------------
+  <!-- 7 -----------------------------------------------------------------
        ITS OWN SECTION, for the reason §cities has one: a different subject and
        different publishers. Everything in §credit is one survey's shares of the
        population; this is a flow of money, from БНБ's loan book and ЕЦБ's
@@ -3014,7 +3405,7 @@
     </p>
   </section>
 
-  <!-- 7 ------------------------------------------------------------------ -->
+  <!-- 8 ------------------------------------------------------------------ -->
   <section id="stock">
     <h2>
       <span class="l-bg">Колко жилища преброи преброяването</span>
@@ -3200,7 +3591,7 @@
     {/if}
   </section>
 
-  <!-- 8 ------------------------------------------------------------------ -->
+  <!-- 9 ------------------------------------------------------------------ -->
   <section id="ratio">
     <h2>
       <span class="l-bg">Скъпо ли е спрямо доходите</span>
@@ -3951,16 +4342,34 @@
     height: 20px;
     display: block;
   }
-  /* Both ends of the shared scale and the zero between them, under the head. */
-  .fig-table .nowaxis {
-    display: flex;
-    justify-content: space-between;
-    width: 108px;
-    margin-top: 4px;
-    font-family: var(--mono);
+  /* The year over a figure column, in the head's own weight rather than the
+     bolder one a column name takes: the name of this pair is the group head
+     above it, and these two say which year each half is. */
+  .fig-table.afford thead .afd-year {
     font-weight: 400;
-    letter-spacing: 0;
-    color: var(--muted);
+  }
+  /* **Four columns do not want the whole measure.** `.fig-table` is 100% wide,
+     which is right for the six-column tables on this page and leaves this one
+     with 430px of nothing between «Габрово» and «4,9» — 25 rows a reader has to
+     track across by eye. Capped, the name and its three figures sit close
+     enough to read as a row. Still `width: 100%` below the cap, so the narrow
+     screens the cap never reaches are unaffected. */
+  .fig-table.afford {
+    max-width: 34rem;
+  }
+  /* **Every head sits on the bottom of the head block, not on the first line of
+     it.** `fig-table.css` aligns cells to the baseline, which is right for a
+     data row and wrong for a head one column of which carries an axis and a
+     key: the one-line heads then sit against the TALL cell's first line, three
+     rows of air above the figures they name, and the reader reads a caption
+     that is nowhere near its column. Bottom-aligned, every label is the line
+     directly above the first city.
+
+     Scoped to this table. The six-city one has its own head shape and its own
+     spacing, and a rule reaching both is a change to a table this section did
+     not touch. */
+  .fig-table.afford thead th {
+    vertical-align: bottom;
   }
   /* The key to that column, laid out as a chart's figcaption is, inside the
      head it belongs to. Lower case and unemphasised against the head above it:

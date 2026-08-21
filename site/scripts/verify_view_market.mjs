@@ -40,7 +40,11 @@ import {
   marketBorrowedShare,
   RANGE_MIN_POINTS,
   statusLettersUsed,
+  marketCityAffordability,
+  COVERAGE_SHIFT,
+  CITY_SHORT_ARCHIVE,
 } from "../src/lib/view/market.js";
+import { CITY_NO_PAGE } from "../src/lib/view/region.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
 
@@ -464,6 +468,343 @@ test("the live payloads still carry every field the market wiring reads", () => 
     assert.ok(city.nameBg && city.nameEn, `${city.code} is named in one language only`);
     assert.ok(city.pricePeriod, `${city.code}'s price cell is undated`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// `/market/`'s cross-city affordability table — the three-payload join
+// ---------------------------------------------------------------------------
+
+/** имот.bg's archive, shaped as `city_price.json` carries it. */
+const CITY_PRICE = Object.freeze({
+  as_of: "2026-08-16",
+  source_url: "https://example.invalid/imot",
+  city_pages: ["sofiya", "varna", "vratsa", "smolyan"],
+  cities: [
+    {
+      code: "sofiya",
+      bg_name: "София",
+      en_name: "Sofia",
+      source_url: "https://example.invalid/imot/sofiya",
+      historical: [
+        { year: 2020, eur_per_m2_median: 1200, n_districts: 100 },
+        { year: 2021, eur_per_m2_median: 1300, n_districts: 100 },
+        { year: 2022, eur_per_m2_median: 1400, n_districts: 102 },
+      ],
+    },
+    {
+      code: "varna",
+      bg_name: "Варна",
+      en_name: "Varna",
+      source_url: "https://example.invalid/imot/varna",
+      // Half as many districts again by the end, which is the composition
+      // change the row has to disclose.
+      historical: [
+        { year: 2020, eur_per_m2_median: 900, n_districts: 20 },
+        { year: 2021, eur_per_m2_median: 1000, n_districts: 24 },
+        { year: 2022, eur_per_m2_median: 1150, n_districts: 30 },
+      ],
+    },
+    {
+      code: "vratsa",
+      bg_name: "Враца",
+      en_name: "Vratsa",
+      source_url: "https://example.invalid/imot/vratsa",
+      historical: [
+        { year: 2020, eur_per_m2_median: 400, n_districts: 12 },
+        { year: 2021, eur_per_m2_median: 480, n_districts: 12 },
+        { year: 2022, eur_per_m2_median: 640, n_districts: 12 },
+      ],
+    },
+    {
+      // имот.bg publish this city and their archive starts after the base year.
+      code: "smolyan",
+      bg_name: "Смолян",
+      en_name: "Smolyan",
+      source_url: "https://example.invalid/imot/smolyan",
+      historical: [{ year: 2022, eur_per_m2_median: 700, n_districts: 8 }],
+    },
+  ],
+});
+
+/** НСИ's quarters, shaped as `region_salary.json` carries them. */
+const REGION_SALARY = Object.freeze({
+  ref_period: "2022-Q2",
+  is_preliminary: true,
+  dataset: "Labour_1.1.2.2",
+  source_url: "https://example.invalid/nsi/en.xlsx",
+  source_url_bg: "https://example.invalid/nsi/bg.xlsx",
+  regions: [
+    {
+      code: "sofiya",
+      bg_name: "София(столица)",
+      en_name: "Sofia cap.",
+      value_eur: 1600,
+      // Q1 and Q2 differ in every year, so a wiring that read the wrong quarter
+      // — or averaged the four — comes back with a figure no assertion here
+      // could mistake for the right one.
+      series_by_period: {
+        "2020-Q1": 1000,
+        "2020-Q2": 1200,
+        "2020-Q3": 1300,
+        "2020-Q4": 1500,
+        "2021-Q1": 1100,
+        "2021-Q2": 1300,
+        "2021-Q3": 1400,
+        "2021-Q4": 1600,
+        "2022-Q1": 1400,
+        "2022-Q2": 1600,
+      },
+    },
+    {
+      code: "varna",
+      bg_name: "Варна",
+      en_name: "Varna",
+      value_eur: 1000,
+      series_by_period: {
+        "2020-Q1": 700,
+        "2020-Q2": 800,
+        "2020-Q3": 850,
+        "2020-Q4": 950,
+        "2021-Q1": 780,
+        "2021-Q2": 880,
+        "2021-Q3": 900,
+        "2021-Q4": 1000,
+        "2022-Q1": 900,
+        "2022-Q2": 1000,
+      },
+    },
+    {
+      code: "vratsa",
+      bg_name: "Враца",
+      en_name: "Vratsa",
+      value_eur: 900,
+      series_by_period: {
+        "2020-Q1": 600,
+        "2020-Q2": 700,
+        "2020-Q3": 720,
+        "2020-Q4": 800,
+        "2021-Q1": 680,
+        "2021-Q2": 780,
+        "2021-Q3": 800,
+        "2021-Q4": 880,
+        "2022-Q1": 800,
+        "2022-Q2": 900,
+      },
+    },
+    {
+      code: "smolyan",
+      bg_name: "Смолян",
+      en_name: "Smolyan",
+      value_eur: 800,
+      series_by_period: {
+        "2020-Q2": 600,
+        "2020-Q3": 610,
+        "2021-Q2": 700,
+        "2021-Q3": 710,
+        "2022-Q2": 800,
+        "2022-Q3": 810,
+      },
+    },
+    {
+      // НСИ publish a wage for it and имот.bg serve no page: the one область
+      // that is in a payload here and can never be a row.
+      code: "sofia-oblast",
+      bg_name: "София",
+      en_name: "Sofia",
+      value_eur: 1100,
+      series_by_period: {
+        "2020-Q2": 900,
+        "2020-Q3": 910,
+        "2021-Q2": 1000,
+        "2021-Q3": 1010,
+        "2022-Q2": 1100,
+        "2022-Q3": 1110,
+      },
+    },
+  ],
+});
+
+const PAYROLL = Object.freeze({
+  employee_contrib_rates: { total: 0.1378 },
+  income_tax_rate: 0.1,
+  max_insurable_income_eur: 2300,
+});
+
+/** One row out of the answer, by код. */
+const rowFor = (result, code) => result.rows.find((r) => r.code === code);
+
+test("marketCityAffordability reads one quarter per year, and averages nothing", () => {
+  // **The licence property and the seasonal one, held together.** НСИ forbid
+  // distributing производни и сборни произведения, so every wage in this table
+  // has to be a cell they printed rather than a mean of four — and the same
+  // selection is what stops the two ends of a comparison describing different
+  // seasons. A year's mean would fail both at once, and the figure it produced
+  // would sit in a plausible column with nothing on the page to contradict it.
+  const a = marketCityAffordability(CITY_PRICE, REGION_SALARY, PAYROLL);
+  assert.equal(a.quarter, "Q2", "the anchor quarter is not the payload's own ref_period");
+  assert.equal(a.baseYear, 2020);
+  assert.equal(a.latestYear, 2022);
+  assert.deepEqual(a.years, [2020, 2021, 2022]);
+
+  for (const row of a.rows) {
+    const series = REGION_SALARY.regions.find((r) => r.code === row.code).series_by_period;
+    for (const point of row.points) {
+      // The cell itself, by identity: `2020-Q2` and not the mean of 2020, and
+      // not `2020-Q1` either.
+      assert.equal(
+        point.gross,
+        series[`${point.year}-Q2`],
+        `${row.code} ${point.year} divides by a wage НСИ did not print at Q2`
+      );
+    }
+  }
+
+  // …and it is that област's own wage. A lookup that fell back to the first row
+  // would put София's 1600 under Варна's name, on a table whose whole point is
+  // that the two differ (`docs/site.md` §"A correct formula fed the wrong
+  // number").
+  assert.equal(rowFor(a, "varna").latest.gross, 1000);
+  assert.equal(rowFor(a, "vratsa").latest.gross, 900);
+
+  // The net is the published payroll table's, not a constant frozen here: at
+  // 13.78% and 10% the 1600 gross pays 1241.568 net, and 70 m² at €1400 is
+  // 98,000 over twelve months of it.
+  const sofia = rowFor(a, "sofiya");
+  assert.ok(near(sofia.latest.net, 1600 * (1 - 0.1378) * 0.9, 1e-9));
+  assert.ok(near(sofia.latest.value, (1400 * a.m2) / (sofia.latest.net * 12), 1e-12));
+  assert.equal(a.m2, 70, "the size is not the one the calculator itself defaults to");
+});
+
+test("the window is the years both publishers cover, whichever is ahead", () => {
+  // **The failure this refuses emptied the whole section, silently.** The two
+  // release on their own clocks: ended at НСИ's own year, the first quarter of
+  // a January имот.bg had not scraped yet failed every city's newest-year check
+  // at once, and 25 rows became none with no error anywhere — a table of
+  // nothing is exactly what "no city has both halves" produces.
+  const a = marketCityAffordability(CITY_PRICE, REGION_SALARY, PAYROLL);
+  assert.deepEqual([a.baseYear, a.latestYear], [2020, 2022]);
+
+  // НСИ a year ahead: the table stays on the newest year that can be computed.
+  const wagesAhead = {
+    ...REGION_SALARY,
+    ref_period: "2023-Q2",
+    regions: REGION_SALARY.regions.map((r) => ({
+      ...r,
+      series_by_period: { ...r.series_by_period, "2023-Q2": r.series_by_period["2022-Q2"] + 100 },
+    })),
+  };
+  const ahead = marketCityAffordability(CITY_PRICE, wagesAhead, PAYROLL);
+  assert.equal(ahead.latestYear, 2022, "НСИ publishing first empties the table");
+  assert.ok(ahead.rows.length >= 3);
+
+  // имот.bg a year ahead: the same, from the other side.
+  const pricesAhead = {
+    ...CITY_PRICE,
+    cities: CITY_PRICE.cities.map((c) => ({
+      ...c,
+      historical: [...c.historical, { ...c.historical.at(-1), year: 2023 }],
+    })),
+  };
+  const other = marketCityAffordability(pricesAhead, REGION_SALARY, PAYROLL);
+  assert.equal(other.latestYear, 2022, "имот.bg publishing first empties the table");
+  assert.ok(other.rows.length >= 3);
+
+  // And the anchor follows НСИ's own quarter rather than being written down.
+  const q3 = { ...REGION_SALARY, ref_period: "2022-Q3" };
+  assert.equal(marketCityAffordability(CITY_PRICE, q3, PAYROLL).quarter, "Q3");
+});
+
+test("an област with no row is named with the reason it has none", () => {
+  // A table of three under a heading saying «по градове» reads as the country.
+  // Two different absences and therefore two different reasons: «имот.bg не
+  // публикуват цени за Смолян» is false — they publish this year's — and it is
+  // the sentence one flag would produce for both.
+  const a = marketCityAffordability(CITY_PRICE, REGION_SALARY, PAYROLL);
+  assert.deepEqual(
+    a.omitted.map((o) => [o.code, o.reason]),
+    [
+      ["smolyan", CITY_SHORT_ARCHIVE],
+      ["sofia-oblast", CITY_NO_PAGE],
+    ]
+  );
+  // Every област НСИ publish is accounted for: a row or a reason, never gone.
+  assert.deepEqual(
+    [...a.rows.map((r) => r.code), ...a.omitted.map((o) => o.code)].sort(),
+    REGION_SALARY.regions.map((r) => r.code).sort()
+  );
+  // Both Софии keep the picker's own names, so the област is not the capital
+  // wearing the same word.
+  assert.equal(a.omitted.find((o) => o.code === "sofia-oblast").bgName, "Софийска област");
+  assert.equal(rowFor(a, "sofiya").bgName, "София");
+});
+
+test("the affordability rows are ordered by the newest reading", () => {
+  // The finding IS the order: the capital is not at the top of it, and a table
+  // sorted by anything else buries that. Nothing else in the section says so —
+  // there is no chart here, so the ordering carries the whole comparison and
+  // the prose above quotes the rows it produced.
+  const a = marketCityAffordability(CITY_PRICE, REGION_SALARY, PAYROLL);
+  assert.deepEqual(
+    a.rows.map((r) => r.code),
+    ["varna", "sofiya", "vratsa"]
+  );
+  assert.ok(rowFor(a, "varna").latest.value > rowFor(a, "sofiya").latest.value);
+  assert.deepEqual(
+    a.aboveCapital.map((r) => r.code),
+    ["varna"],
+    "the cities above the capital are not the ones the order says they are"
+  );
+  // Two of the three got dearer against pay and София got easier, which is what
+  // makes this count a count rather than the number of rows.
+  assert.equal(a.worse, 2);
+  assert.ok(rowFor(a, "sofiya").changePct < 0);
+});
+
+test("a city whose district set moved carries both counts, and one whose did not carries none", () => {
+  // имот.bg's median is taken across whichever districts they published that
+  // year, so where the set grew by half the move is partly composition. The
+  // failure this catches is a flag computed off the wrong pair — the two counts
+  // of one year, or the change in price — which discloses nothing while looking
+  // exactly like disclosure.
+  const a = marketCityAffordability(CITY_PRICE, REGION_SALARY, PAYROLL);
+  const varna = rowFor(a, "varna");
+  assert.equal(varna.nBase, 20);
+  assert.equal(varna.nLatest, 30);
+  assert.equal(varna.coverageShifted, true, "a district set half as large again is not disclosed");
+
+  assert.equal(rowFor(a, "vratsa").coverageShifted, false, "an unchanged set is flagged anyway");
+  // София's 100 → 102 is inside the line and stays quiet: a flag on every row
+  // marks nothing.
+  assert.equal(rowFor(a, "sofiya").coverageShifted, false);
+  assert.ok(COVERAGE_SHIFT > 0 && COVERAGE_SHIFT < 1, "the line is not a proportion");
+});
+
+test("the live payloads still carry the affordability wiring's own fields", () => {
+  // The contract behind the fixtures above: имот.bg's `historical` blocks and
+  // НСИ's quarterly series both, joined at a quarter neither payload knows the
+  // other has. A refresh that stopped writing `n_districts`, or an НСИ release
+  // that moved `ref_period` to a quarter their archive does not reach back to,
+  // empties this table with every fixture test green.
+  const cityPrice = read("city_price");
+  const regionSalary = read("region_salary");
+  const payroll = read("payroll");
+  if (!cityPrice || !regionSalary || !payroll) return; // no refresh in this checkout
+
+  const a = marketCityAffordability(cityPrice, regionSalary, payroll);
+  assert.ok(a.rows.length >= 20, `only ${a.rows.length} cities reach the table`);
+  assert.ok(a.capital, "the capital has no row, so nothing on the page can be read against it");
+  assert.equal(a.refPeriod, regionSalary.ref_period);
+  for (const row of a.rows) {
+    assert.ok(row.bgName && row.enName, `${row.code} is named in one language only`);
+    assert.equal(row.points.length, a.years.length, `${row.code} has a year missing from its path`);
+    assert.ok(row.latest.value > 0 && row.base.value > 0, `${row.code} draws a non-positive year`);
+    assert.ok(
+      Number.isFinite(row.nBase) && Number.isFinite(row.nLatest),
+      `${row.code} carries no district count, so its composition change cannot be disclosed`
+    );
+  }
+  // Every област is a row or a named absence, on the live payloads too.
+  assert.equal(a.rows.length + a.omitted.length, regionSalary.regions.length);
 });
 
 // ---------------------------------------------------------------------------

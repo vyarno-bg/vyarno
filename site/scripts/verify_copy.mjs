@@ -35,6 +35,7 @@ import * as supportModule from "../src/lib/support.js";
 import { COPY } from "../src/lib/content.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
 import { regionRow, cityRow, SOFIA_CITY_CODE } from "../src/lib/view/region.js";
+import { COVERAGE_SHIFT } from "../src/lib/view/market.js";
 import { SHARE_COPY_KEYS, SHARE_DOMAIN, SHARE_ORIGIN } from "../src/lib/view/share.js";
 import { shareCardText, SHARE_CARD_COPY_KEYS } from "../src/lib/share-card.js";
 import { published } from "./published-payload.mjs";
@@ -2278,6 +2279,35 @@ const MARKET_SRC = readFileSync(join(HERE, "..", "src", "Market.svelte"), "utf8"
 
 /** The same, as one line — wrapped prose is read by sentence, never by line. */
 const MARKET_FLAT = MARKET_SRC.replace(/\s*\n\s*/g, " ");
+
+test("the coverage caveat states the line the code actually draws", () => {
+  // **A threshold written in prose and a threshold written in code are two
+  // numbers.** The sentence says «с над една пета» / "by more than a fifth" and
+  // `COVERAGE_SHIFT` is what decides which cities the sentence then names.
+  // Tuned to a quarter or a tenth, the code names a different set of places and
+  // the sentence beside them goes on claiming a fifth, with every figure on the
+  // page still correct.
+  //
+  // Held on the WORD rather than on a rendered number, because the word is what
+  // a reader can check and «20%» is what the sentence deliberately does not
+  // say: a threshold of ours reads better as a fraction, and it is only honest
+  // while the fraction is the one the code uses.
+  assert.equal(
+    COVERAGE_SHIFT,
+    0.2,
+    "COVERAGE_SHIFT moved and the copy still says a fifth. Change both, or say " +
+      "the new fraction in words a reader can check."
+  );
+  const market = readFileSync(new URL("../src/Market.svelte", import.meta.url), "utf8");
+  assert.ok(
+    /над една пета/.test(market),
+    "the Bulgarian coverage caveat no longer states the fraction the code uses"
+  );
+  assert.ok(
+    /more than a fifth/.test(market),
+    "the English coverage caveat no longer states the fraction the code uses"
+  );
+});
 
 test("the market page describes the market and does not judge it", () => {
   // P6, on the page most exposed to losing it. Every figure there is one
