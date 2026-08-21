@@ -374,10 +374,10 @@ hand and nobody thinks to gate.
 
 **`house-market` writes both `house_market.json` and
 `house_market_structure.json`**, and the second stem starting with the first is
-a CI contract rather than a naming preference: `refresh.yml` decides which
-payloads an arm owns by matching stems against the `--source` name with hyphens
-swapped for underscores, so a payload no arm owns never publishes while the run
-reports success.
+a CI contract rather than a naming preference: a refresh decides which payloads
+an arm owns by matching stems against the `--source` name with hyphens swapped
+for underscores (`refresh_report.owns`), so a payload no arm owns never publishes
+while the run reports success.
 
 **Ten of the eleven run on a schedule without you.** `.github/workflows/
 refresh-*.yml` fires each one on its own upstream's cadence and opens a pull

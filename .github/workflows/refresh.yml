@@ -1,14 +1,15 @@
-# Reusable workflow: refresh one published payload and open a PR.
+# Reusable workflow: refresh one published payload and open a PR — when the
+# upstream republished, and at no other time.
 #
 # Inputs: `source` — the name passed to `vyarno-pipeline refresh --source`;
 # `detected` — what `watch.yml` saw the upstream publish, empty when a backstop
 # cron started the run instead. It reaches the pull-request body and nothing
 # else: a run decides what to publish by fetching, never by what it was told.
 #
-# Steps: checkout, install the pipeline, run it against live upstreams,
-# stage and capture changes, compute the source's as_of plus any payloads
-# past their own cadence, commit with --signoff, push the data/<source>
-# branch, open a PR, and dispatch CI against it.
+# Steps: checkout, install the pipeline, run it against live upstreams, stage
+# and capture changes, ask `vyarno-pipeline refresh-report` whether any figure
+# moved and what to date the commit with, then — only if one did — commit with
+# --signoff, push the data/<source> branch, open a PR, and dispatch CI on it.
 #
 # The pipeline's exit codes drive the rest of the workflow:
 #   0 — published, JSON written
@@ -109,12 +110,9 @@ jobs:
 
       - name: Capture changed files
         id: diff
-        # Stage first, THEN capture `git diff --cached`. Running diff
-        # before `git add` always returns an empty list.
-        #
-        # If nothing changed, the rest of the workflow is skipped via
-        # the `if: steps.diff.outputs.changed != ''` gates below —
-        # no commit, no push, no PR.
+        # Stage first, THEN capture `git diff --cached`: run before `git add`,
+        # diff always returns an empty list. Nothing changed means every step
+        # below is skipped on `steps.diff.outputs.changed` — no commit, no PR.
         run: |
           set -euo pipefail
           git add -- data/published
@@ -126,151 +124,34 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           if [[ -z "$CHANGED" ]]; then
             echo "::notice::No data/published changes — upstream has not republished. Nothing to PR."
+            # On the run page, where a notice folded into a job that did nothing
+            # is not. A refresh finding the same figures is the good outcome and
+            # has to read as one without opening the log.
+            echo "### ${{ inputs.source }} — nothing republished" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The payload the run wrote is the one already committed, byte for byte." \
+              >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Compute as_of + stale-sources
+      - name: Ask the pipeline what actually changed
         id: meta
         if: steps.diff.outputs.changed != ''
-        # The threshold is per payload and comes from the manifest, the same
-        # table `freshness-check.yml` reads (`site/scripts/payload-cadence.mjs`).
-        # A flat number here would list most of the directory under "other
-        # payloads that have gone quiet" on every quarterly refresh — the
-        # Eurostat property cubes and the НСИ wage tables spend two thirds of a
-        # healthy quarter past thirty days — and a list that is mostly wrong is
-        # one a reviewer scrolls past on the run where it names something real.
-        #
-        # Also detects a "cached read" — a pipeline run that produced
-        # the same data values as the previously committed version
-        # (only the run-date as_of differs). In that case, the
-        # downstream commit/push/PR steps are skipped via
-        # `outputs.real_change`. PRs only ever open when the
-        # upstream actually republished different data.
+        # **The decision is the pipeline's; this step only hands it a ref.** A
+        # comparison written here is executed by nothing in this repository —
+        # `make check` does not run GitHub Actions — so the only check available
+        # over it reads the YAML and agrees with it. `refresh_report.py` carries
+        # what it decides, the manifest's per-payload cadence included.
         run: |
           set -euo pipefail
           node site/scripts/payload-cadence.mjs > /tmp/cadence.json
-          python3 - <<'PY'
-          import datetime, glob, json, os, subprocess
-          from pathlib import Path
-
-          source = os.environ["SOURCE"]
-          repo = Path(os.environ["GITHUB_WORKSPACE"])
-          cadence = json.load(open("/tmp/cadence.json"))
-          today = datetime.date.today()
-
-          # **A `--source` name is not a filename.** The CLI option is
-          # hyphenated and the payload it writes is not: `--source
-          # region-salary` produces `region_salary.json`, and `salary-dist`
-          # produces `salary_dist.json`. Matching the option name against the
-          # stem finds nothing for either, and "nothing of mine changed" is
-          # read below as a cached read — so the commit, the push and the PR
-          # are all skipped and the run goes GREEN saying so. That is the worst
-          # shape a data bug can take here: a quarterly payload that silently
-          # never publishes, reported as a successful refresh.
-          prefix = source.replace("-", "_")
-
-          def stem_of(path):
-              return os.path.basename(path).removesuffix(".json")
-
-          def is_ours(stem):
-              # `hicp` writes two files; every other arm writes one named
-              # exactly for it.
-              return stem == prefix or stem.startswith(prefix)
-
-          paths = sorted(glob.glob(str(repo / "data/published/*.json")))
-
-          # The as_of this run publishes, which is THIS source's — never the
-          # newest date in the directory. A commit message reading "mortgage as
-          # of 2026-08-10" over a payload dated 2026-06-30 dates the review
-          # wrong, and the date in a data commit is the thing a reviewer checks
-          # first.
-          mine_as_of = []
-          for path in paths:
-              if not is_ours(stem_of(path)):
-                  continue
-              value = json.load(open(path)).get("as_of")
-              if value:
-                  mine_as_of.append(value)
-          as_of = max(mine_as_of) if mine_as_of else "unknown"
-
-          stale = []
-          for path in paths:
-              stem = stem_of(path)
-              if is_ours(stem):
-                  continue
-              as_of_other = json.load(open(path)).get("as_of")
-              if not as_of_other:
-                  continue
-              # A file in the directory with no row in the manifest renders
-              # nowhere on the site, so it is named rather than passed over —
-              # the weekly check reports the same thing the same way.
-              threshold_days = cadence.get(stem)
-              if threshold_days is None:
-                  stale.append(f"{stem} (not in the payload manifest)")
-                  continue
-              days = (today - datetime.date.fromisoformat(as_of_other)).days
-              if days > threshold_days:
-                  stale.append(f"{stem} ({days}d, cadence {threshold_days}d)")
-
-          # Real-change detection: compare the working-tree payload
-          # against the version currently committed on origin/main,
-          # excluding the `as_of` field. Same data values = cached
-          # read = skip the commit/PR entirely. The pipeline's own
-          # exit-0 vs non-zero distinction is not enough — it can
-          # exit 0 on a no-op re-publish.
-          real_change = "yes"
-          payload_files = []
-          for path in paths:
-              if not is_ours(stem_of(path)):
-                  continue
-              new_payload = json.load(open(path))
-              # Read the committed version via `git show`.
-              rel = os.path.relpath(path, repo)
-              try:
-                  committed = subprocess.check_output(
-                      ["git", "-C", str(repo), "show", f"origin/main:{rel}"],
-                      stderr=subprocess.DEVNULL,
-                  )
-                  committed_payload = json.loads(committed)
-              except subprocess.CalledProcessError:
-                  # File does not exist on origin/main yet — first
-                  # commit for this source. Counts as a real change.
-                  payload_files.append(path)
-                  continue
-              # **Every field stamped with the RUN date has to go, not just
-              # `as_of`.** `transform.py` writes `published_at=as_of` into
-              # region_salary, sector_salary and unemployment, so a comparison
-              # that drops one of the two finds those three changed on any run
-              # that lands on a new calendar day — and opens a pull request
-              # whose whole diff is two dates. That is the review this project
-              # spends its one human look on, spent on nothing.
-              # `test_cli_dispatch.py` holds this set to what the payloads
-              # actually carry.
-              RUN_STAMPED = {"as_of", "published_at"}
-              new_norm = {k: v for k, v in new_payload.items() if k not in RUN_STAMPED}
-              committed_norm = {
-                  k: v for k, v in committed_payload.items() if k not in RUN_STAMPED
-              }
-              if new_norm != committed_norm:
-                  payload_files.append(path)
-
-          if not payload_files:
-              real_change = "no"
-              print("::notice::Cached read — no real data change. Skipping commit/PR.")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"as_of={as_of}\n")
-              f.write(f"real_change={real_change}\n")
-              f.write(f"stale={'yes' if stale else 'no'}\n")
-              if stale:
-                  f.write(f"stale_list<<EOF\n")
-                  f.write(", ".join(stale) + "\n")
-                  f.write("EOF\n")
-          print(f"as_of={as_of}")
-          print(f"real_change={real_change}")
-          print(f"stale={stale}")
-          PY
-        env:
-          SOURCE: ${{ inputs.source }}
+          pipeline/.venv/bin/vyarno-pipeline refresh-report \
+            --source "${{ inputs.source }}" \
+            --published data/published \
+            --cadence /tmp/cadence.json \
+            --against origin/main \
+            --repo "$GITHUB_WORKSPACE" \
+            --github-output "$GITHUB_OUTPUT" \
+            --step-summary "$GITHUB_STEP_SUMMARY"
 
       - name: Commit
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'

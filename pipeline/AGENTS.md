@@ -32,7 +32,12 @@ median across districts has to be taken where the districts are read. `transform
 published shapes — **no network, no validation**. `validate.py` and
 `mortgage.py` hold the gates; a gate raises, it never repairs. `publish.py`
 writes the envelopes and the provenance frame. `cli.py` is one arm per
-`--source` and the exit codes — **no domain logic**. `release_calendar.py` and
+`--source` and the exit codes — **no domain logic**. `refresh_report.py` is what
+a run reports afterwards: which payloads the arm owns, whether anything but the
+run date moved, and what a pull request would be dated. It is here rather than in
+`refresh.yml` because `make check` does not run GitHub Actions, so a decision
+written into a workflow is executed by nothing in this repository.
+`release_calendar.py` and
 `watch.py` are beside all of it rather than in it: when each upstream
 publishes, and the ten-minute poll that catches a release. They read a
 timestamp and never a value, and they import **nothing outside the standard

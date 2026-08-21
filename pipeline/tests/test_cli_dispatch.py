@@ -22,7 +22,6 @@ offline, and indifferent to how any one of them works.
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 
@@ -30,6 +29,7 @@ import pytest
 from click.testing import CliRunner
 
 from vyarno_pipeline import cli
+from vyarno_pipeline.refresh_report import Report, github_output, owns
 
 # Every arm, and the `--source` value that should reach it. This mapping is the
 # test: adding a connector means adding a line here, and the `all` test below
@@ -56,9 +56,9 @@ ARMS = {
     "nsi-housing": "_refresh_nsi_housing",
 }
 
-# What each arm is allowed to write. `refresh.yml` derives this from the source
-# name itself, so this table restates the rule the workflow applies rather than
-# adding one — see the test below for why it is worth restating.
+# What each arm is allowed to write. A refresh derives this from the source name
+# itself (`refresh_report.owns`), so this table is the other direction: the files
+# the arms actually write, held against the rule — see the test below.
 ARM_PAYLOADS = {
     "hicp": ["hicp_headline.json", "hicp_categories.json"],
     "unemployment": ["unemployment.json"],
@@ -356,29 +356,25 @@ def test_the_weekly_check_reads_the_data_pull_requests_and_never_merges_them() -
 def test_every_payload_an_arm_writes_is_owned_by_that_arm() -> None:
     """A payload whose stem does not match its arm never publishes, and CI goes green.
 
-    `refresh.yml` works out which files a run owns by taking the `--source`
-    name, swapping hyphens for underscores, and keeping payload stems that
-    equal it or start with it. Nothing checks the other direction, and the
-    failure that leaves is the worst-behaved one in the pipeline: an arm writes
-    a correct, fully-gated payload to disk, the workflow finds nothing of its
-    own changed, the commit and the PR are skipped, and the run reports a
-    successful refresh. The payload sits at its first `as_of` for ever and the
-    only thing that ever notices is the staleness banner, months later, in
-    front of a reader.
+    A refresh works out which files it owns from the `--source` name it was
+    given, so the failure this leaves is the worst-behaved one in the pipeline:
+    an arm writes a correct, fully-gated payload to disk, the run finds nothing
+    of its own changed, the commit and the pull request are skipped, and it
+    reports a successful refresh. The payload sits at its first `as_of` for ever
+    and the only thing that ever notices is the staleness banner, months later,
+    in front of a reader.
 
-    `hicp` is the reason the rule is `startswith` rather than equality — one
-    arm, two files. `house-market` is the same shape and the reason this test
-    exists: `housing_structure.json` was the natural name for its second
-    payload and is owned by no arm at all.
+    `refresh_report.owns` is called rather than restated: a test carrying its own
+    copy of the rule passes whatever the rule does. `hicp` is why it is a prefix
+    rather than an equality — one arm, two files. `house-market` is the same
+    shape and the reason this test exists: `housing_structure.json` was the
+    natural name for its second payload and is owned by no arm at all.
     """
     for source, payloads in sorted(ARM_PAYLOADS.items()):
-        prefix = source.replace("-", "_")
         for filename in payloads:
-            stem = filename.removesuffix(".json")
-            assert stem == prefix or stem.startswith(prefix), (
-                f"`--source {source}` writes {filename}, but refresh.yml only "
-                f"claims stems equal to or starting with {prefix!r}. That run "
-                f"publishes nothing and still reports success."
+            assert owns(source, filename.removesuffix(".json")), (
+                f"`--source {source}` writes {filename}, which no arm claims. "
+                f"That run publishes nothing and still reports success."
             )
 
 
@@ -390,39 +386,78 @@ def test_the_payload_table_names_every_arm() -> None:
     )
 
 
-def test_the_refresh_workflow_ignores_every_field_stamped_with_the_run_date() -> None:
-    """A payload that differs only by when it was fetched is not a data refresh.
+def test_the_refresh_workflow_asks_the_pipeline_whether_anything_really_changed() -> None:
+    """The decision that opens a pull request is code this repository runs.
 
-    `refresh.yml` decides whether to open a pull request by comparing the fresh
-    payload against the committed one with the run-date fields removed. Miss one
-    and the arm carrying it reports a real change on any run that lands on a new
-    calendar day: a branch pushed, a pull request opened, CI dispatched, and a
-    diff of two dates. This project spends exactly one human look on a published
-    figure and that look is the review — a pull request that moves no number
-    spends it on nothing, and teaches the reviewer to skim the next one.
+    A payload differing only by when it was fetched is not a data refresh, and
+    the check that says so has to be able to be WRONG in a test. Written into the
+    workflow it cannot: `make check` does not run GitHub Actions, so the only
+    thing a test can do with a heredoc is read it and agree with it — which a
+    strip that drops the run date at the top level of a payload and nowhere else
+    passes comfortably, while opening a pull request whose whole diff is dates.
 
-    `transform.py` writes `published_at=as_of`, so the two are equal by
-    construction in every payload that carries both. The check is therefore the
-    payloads themselves: any top-level field holding the payload's own `as_of`
-    is a run stamp, and the workflow has to be dropping it.
+    So the workflow may call `refresh-report` and may not carry a second copy of
+    the decision. `test_refresh_report.py` is what holds the decision itself, on
+    the real payloads.
+
+    The output names are checked in the same place because they are the seam: a
+    key renamed on one side leaves the commit step reading an empty string, which
+    is not `yes`, so the arm goes quiet and every run reports success.
     """
-    root = Path(__file__).resolve().parents[2]
-    workflow = (root / ".github" / "workflows" / "refresh.yml").read_text("utf-8")
+    workflow = (
+        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh.yml"
+    ).read_text("utf-8")
 
-    declared = re.search(r"RUN_STAMPED = \{([^}]*)\}", workflow)
-    assert declared, (
-        "refresh.yml no longer names a RUN_STAMPED set, so nothing says which "
-        "fields are the run date rather than the data."
+    assert "vyarno-pipeline refresh-report" in workflow, (
+        "refresh.yml no longer asks the pipeline whether the upstream republished. "
+        "A comparison written in YAML is executed by nothing in this repository."
     )
-    ignored = set(re.findall(r'"([^"]+)"', declared.group(1)))
+    for copied in ("RUN_STAMPED", "git show origin/main", "json.load"):
+        assert copied not in workflow, (
+            f"refresh.yml carries `{copied}`, so the workflow is deciding for "
+            f"itself again. Two copies of this rule means the tested one is not "
+            f"necessarily the one that runs."
+        )
 
-    for path in sorted((root / "data" / "published").glob("*.json")):
-        payload = json.loads(path.read_text("utf-8"))
-        as_of = payload.get("as_of")
-        stamped = {key for key, value in payload.items() if key != "as_of" and value == as_of}
-        missed = sorted(stamped - ignored)
-        assert not missed, (
-            f"{path.name} carries {missed}, which hold its own as_of and are "
-            f"therefore the run date. refresh.yml compares them, so this arm "
-            f"opens a pull request on every run that lands on a new day."
+    emitted = set()
+    for report in (
+        Report(as_of="2026-08-21", real_change=True, changed=("hicp.json",), stale=("x (9d)",)),
+        Report(as_of="unknown", real_change=False, changed=(), stale=()),
+    ):
+        emitted |= set(re.findall(r"^([a-z_]+)(?:=|<<)", github_output(report), re.M))
+
+    referenced = set(re.findall(r"steps\.meta\.outputs\.([a-z_]+)", workflow))
+    missing = sorted(referenced - emitted)
+    assert not missing, (
+        f"refresh.yml reads {missing} off the report step, and `refresh-report` "
+        f"writes no such output. The step that reads it sees an empty string."
+    )
+
+
+def test_nothing_commits_pushes_or_opens_a_pull_request_without_a_real_change() -> None:
+    """The answer is only worth having if the publishing steps are gated on it.
+
+    This is the half that lives in the workflow and nowhere else. The comparison
+    can be perfect and a run still opens a pull request over two changed dates,
+    because the step that commits ran anyway — and the diff a reviewer is then
+    asked to look at contains no number at all.
+    """
+    workflow = (
+        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh.yml"
+    ).read_text("utf-8")
+
+    publishing = [
+        block
+        for block in re.split(r"^      - name: ", workflow, flags=re.M)
+        if re.search(r"^\s+git commit\b|^\s+git push\b|pulls\.create", block, re.M)
+    ]
+    assert len(publishing) >= 3, (
+        f"expected the commit, the push and the pull request to be three separate "
+        f"steps; found {len(publishing)}. Has the publish path moved?"
+    )
+    for block in publishing:
+        name = block.splitlines()[0].strip()
+        assert "real_change == 'yes'" in block, (
+            f"the `{name}` step runs whatever the comparison decided, so a run that "
+            f"re-read the same figures still publishes them."
         )
