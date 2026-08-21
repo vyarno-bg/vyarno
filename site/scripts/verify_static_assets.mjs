@@ -60,6 +60,30 @@ const directives = (src) =>
     .map((l) => l.trim())
     .filter((l) => l && !l.startsWith("#"));
 
+/**
+ * The `User-agent` groups, each with the rules that belong to it.
+ *
+ * A group opens with one or more consecutive `User-agent` lines and runs to the
+ * next one. `Sitemap` belongs to the file rather than to any group (RFC 9309
+ * §2.2.3), so it is dropped instead of read as the last group's rule.
+ */
+const groups = (src) => {
+  const out = [];
+  for (const line of directives(src)) {
+    const at = line.indexOf(":");
+    if (at < 0) continue;
+    const field = line.slice(0, at).trim().toLowerCase();
+    if (field === "user-agent") {
+      const open = out.at(-1);
+      if (open && open.rules.length === 0) open.agents.push(line.slice(at + 1).trim());
+      else out.push({ agents: [line.slice(at + 1).trim()], rules: [] });
+    } else if (field !== "sitemap" && out.length) {
+      out.at(-1).rules.push(line);
+    }
+  }
+  return out;
+};
+
 // ---------------------------------------------------------------------------
 // robots.txt
 // ---------------------------------------------------------------------------
@@ -91,66 +115,37 @@ test("robots.txt keeps crawlers out of the published data and lets them at the p
   );
 });
 
-test("robots.txt declines the training crawlers, by the names they use", () => {
-  // A typo in a user-agent token is a silent no-op: the crawler reads the file,
-  // finds no group addressed to it, and falls through to `User-agent: *`.
-  for (const bot of ["GPTBot", "ClaudeBot", "CCBot", "Google-Extended"]) {
-    const at = directives(ROBOTS).indexOf(`User-agent: ${bot}`);
-    assert.ok(at >= 0, `robots.txt no longer names ${bot}`);
-    assert.equal(
-      directives(ROBOTS)[at + 1],
-      "Disallow: /",
-      `the ${bot} group does not disallow the site — an empty group is the ` +
-        "same as no group at all."
+test("no group in robots.txt declines the whole site", () => {
+  // A rule over every group rather than a list of names, so it still holds for
+  // a group somebody adds next year. This file is the whole policy (note 4),
+  // and a decline typed back into it fails silently: the site stops being read
+  // by whatever the name belongs to, and nothing here measures that.
+  const found = groups(ROBOTS);
+  assert.ok(found.length > 0, "robots.txt carries no User-agent group at all");
+  for (const { agents, rules } of found) {
+    assert.ok(
+      !rules.includes("Disallow: /"),
+      `the ${agents.join(", ")} group declines the whole site. Every crawler is ` +
+        "welcome on every page here, note 3 of the file argues why, and a " +
+        "decline reintroduced by hand reverses that with nothing else to show " +
+        "for it: robots.txt binds the operators who honour it and nobody else."
     );
   }
 });
 
-test("the AI crawlers that cite are allowed, and still kept out of the payloads", () => {
-  // Two failures, and the second is the one nobody would notice.
-  //
-  // A citing agent silently rejoining the declined list reverses a decision
-  // taken on the operators' own documentation, and the only symptom is that
-  // ChatGPT and Perplexity stop citing a site nobody is watching the citation
-  // rate of.
-  //
-  // The second: RFC 9309 2.2.1 has a crawler obey the most specific group
-  // matching its token WITHOUT merging the catch-all into it. So a group
-  // written as `User-agent: X` + `Allow: /` — which is what anybody
-  // simplifying this file would write — hands that agent the raw payloads,
-  // and the /data/published/ rule three lines above goes on looking like it
-  // covers everyone.
-  const lines = directives(ROBOTS);
-  for (const bot of [
-    "OAI-SearchBot",
-    "ChatGPT-User",
-    "PerplexityBot",
-    "Perplexity-User",
-    "Claude-SearchBot",
-    "Claude-User",
-  ]) {
-    const at = lines.indexOf(`User-agent: ${bot}`);
-    assert.ok(at >= 0, `robots.txt no longer names ${bot}`);
-
-    // A group may open with several User-agent lines; the rules start after
-    // the last of them and run to the next one.
-    let i = at;
-    while (lines[i + 1]?.startsWith("User-agent:")) i += 1;
-    const next = lines.findIndex((l, j) => j > i && l.startsWith("User-agent:"));
-    const group = lines.slice(i + 1, next === -1 ? undefined : next);
-
+test("every group in robots.txt is kept out of the published data", () => {
+  // RFC 9309 2.2.1 has a crawler obey the single most specific group matching
+  // its token WITHOUT merging the catch-all into it. So a group written as
+  // `User-agent: X` + `Allow: /` hands that agent the raw payloads while the
+  // catch-all above goes on reading as though it covered everyone.
+  for (const { agents, rules } of groups(ROBOTS)) {
     assert.ok(
-      !group.includes("Disallow: /"),
-      `${bot} is declined the whole site. It is documented by its operator as ` +
-        "surfacing a link to the source rather than training on it, which is " +
-        "the side of note 3's test the file puts it on."
-    );
-    assert.ok(
-      group.includes("Disallow: /data/published/"),
-      `the ${bot} group does not repeat Disallow: /data/published/. A named ` +
-        "group replaces the catch-all rather than adding to it (RFC 9309 " +
-        "2.2.1), so without this line that agent is invited into the raw " +
-        "payloads while the group above still reads as though it covers them."
+      rules.includes("Disallow: /data/published/"),
+      `the ${agents.join(", ")} group does not carry Disallow: /data/published/. ` +
+        "A named group replaces the catch-all rather than adding to it (RFC " +
+        "9309 2.2.1), so that agent is invited into the raw payloads. Indexing " +
+        "them helps no reader and the repository is the machine route, which " +
+        "llms.txt and the terms of use both say."
     );
   }
 });
@@ -767,8 +762,7 @@ test("the crawler's copy is served in the language its entry declares", () => {
   // The pair is `<span class="l-bg">` beside `<span class="l-en">`, hidden one
   // way or the other by a rule in `tokens.css`. CSS reaches a browser and
   // Googlebot; an agent that fetches the HTML and strips the tags reads both
-  // halves run together, and the six agents `robots.txt` allows by name are
-  // that kind of consumer.
+  // halves run together, and an agent that quotes a page is that consumer.
   const pair =
     '<p><span class="l-bg">Твоите числа.</span> <span class="l-en">Your numbers.</span></p>';
   assert.equal(

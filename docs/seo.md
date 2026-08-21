@@ -12,7 +12,7 @@ point somebody would edit it. Everything else is here.
 
 | Thing | Where | What it does |
 |---|---|---|
-| `robots.txt` | `site/public/robots.txt` | pages allowed, `/data/published/` disallowed, the sitemap named, and a per-crawler AI policy with its reasoning inline |
+| `robots.txt` | `site/public/robots.txt` | one group and nothing named: pages allowed to every crawler, `/data/published/` disallowed, the sitemap named, and each of those decisions argued inline |
 | `llms.txt` | `site/public/llms.txt` | the site in one file for a consumer that reads rather than crawls: every page the sitemap lists, what each published payload carries, and the repository as the route to the figures — `robots.txt` disallows `/data/published/` to every group, so a map sending an agent there would contradict it. `verify_static_assets.mjs` asserts the page list against `gen-sitemap.mjs` and holds the attribution line and the code/figures split, which no `src/` scanner can see in `public/` |
 | `sitemap.xml` | `site/scripts/gen-sitemap.mjs` | generated at build time so `lastmod` is the newest published `as_of` rather than the day somebody typed it |
 | Canonical, OG, Twitter card, JSON-LD | each `.html` entry | one canonical URL per entry, a static 1200×630 preview carrying no figure — one per content route per language, so `/market/` unfurls as itself and an English title never sits over Cyrillic artwork (`site.md` §"Share previews") — and a `WebApplication` / `WebPage` node that describes the code rather than the data — **`license` sits on the `WebApplication` and nowhere else**, because on a `WebPage` full of Eurostat's, БНБ's and НСИ's figures it states that those are Apache-2.0 (`verify_legal.mjs`, `docs/legal.md`) |
@@ -151,13 +151,13 @@ a pair anyway.
 Every string is authored as a pair, `<span class="l-bg">` beside
 `<span class="l-en">`, and the rule at the foot of `tokens.css` hides whichever
 one `html[data-lang]` does not name. A stylesheet is what a browser applies and
-what Googlebot applies. It is not what an agent applies: the six that
-`robots.txt` allows by name fetch the HTML and strip the tags, so the `<h1>` of
-`/` reaches them as «Твоите числа. Твоята реалност. Your numbers. Your
-reality.», and every heading and sentence under it doubles the same way. That is
-the worst input for exactly the consumer note 3 of `robots.txt` was written to
-attract, and on `/legal/` — the page a citing agent has most reason to parse —
-37% of the served bytes are the half it cannot use.
+what Googlebot applies. It is not what an agent applies: one that
+quotes a page fetches the HTML and strips the tags, so the `<h1>` of `/` reaches
+it as «Твоите числа. Твоята реалност. Your numbers. Your reality.», and every
+heading and sentence under it doubles the same way. That is the worst input for exactly the
+consumer note 3 of `robots.txt` asks to quote a period, and on `/legal/` — the
+page a citing agent has most reason to parse — 37% of the served bytes are the
+half it cannot use.
 
 So `prerender.mjs` writes the language its entry declares and drops the other,
 reading `data-lang` off `<html>` rather than assuming `bg`, because that
@@ -360,13 +360,32 @@ One link, because a second to the same page is navigation noise.
 
 ## What is deliberately not done
 
-**The declined crawlers stay declined.** GPTBot, ClaudeBot, CCBot,
-Google-Extended, Applebot-Extended, meta-externalagent, Bytespider, Amazonbot
-and CloudflareBrowserRenderingCrawler are refused on the reasoning in note 3 of
-`robots.txt`; the six agents that cite their source are allowed, each repeating
-the `/data/published/` `Disallow` because RFC 9309 §2.2.1 does not merge a
-specific group with the catch-all. Reopening any of them to chase reach is a
-decision for a person, argued in the pull request, not an edit.
+**No crawler is declined, and that is a decision rather than a default.** This
+section recorded the opposite: nine training and content-ingestion crawlers
+refused by name, six citing agents allowed, and a line saying that reopening any
+of them to chase reach was a decision for a person, argued in the pull request
+and not an edit. It was argued and taken on 2026-08-21, and note 3 of
+`robots.txt` carries it. The harm that note names did not move — a figure
+restated without the period it describes is the thing this project exists to
+replace — but a decline binds the operators who honour robots.txt and nobody
+else, so it bought a position and no protection while costing the reach a
+Bulgarian-language public good has no substitute for, which is being present in
+the models people ask instead of searching. The file asks for the citation now
+rather than withholding access over it, and the ask is made where a machine
+reads: llms.txt's closing line, the publisher and the period beside every
+prerendered figure, a `source_url` on every payload row. **`/data/published/`
+was not part of that trade** and stays disallowed on note 2's own
+search-quality grounds, with `X-Robots-Tag: noindex` beside it in `_headers`.
+
+**One group, and nothing named.** Naming a subset did work only while some names
+were treated differently. Six allow-groups with nobody declined carry the RFC
+9309 §2.2.1 trap for no gain: a named group replaces the catch-all rather than
+merging with it, so any one of them that lost its `/data/published/` line would
+silently invite that agent into the raw payloads. What holds that now is a rule
+over the collection instead of a list of names —
+`verify_static_assets.mjs` §"no group in robots.txt declines the whole site" and
+§"every group in robots.txt is kept out of the published data" — so it still
+guards a group somebody adds next year.
 
 **Visits are counted; readers are not followed.** `principles.md` still closes
 session recording, any measurement that can see what a consumer typed, and a
