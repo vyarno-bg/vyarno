@@ -38,6 +38,8 @@ import {
   plotX,
   columnX,
   columnW,
+  hitX,
+  hitW,
   tickAt,
   niceTicks,
   yearTicks,
@@ -114,6 +116,41 @@ test("a column takes its own slot and never disappears", () => {
   // wide. Without the floor the columns round away and the chart is empty.
   assert.equal(columnW(2000, 600), 0.8);
   assert.ok(columnW(2000, 600) > 0);
+});
+
+test("hit targets tile the plot, so a pointer between two points lands on one", () => {
+  // The defect this pair exists for: a fixed-width target stops tiling once the
+  // points are closer together than the width, and SVG then hands the pointer
+  // whichever box was drawn LAST — a neighbour's reading under this month's
+  // name, on a chart where nothing else is wrong.
+  for (const n of [2, 12, 85, 318, 1200]) {
+    const w = hitW(n, 600);
+    assert.ok(w > 0, `${n} points produced a target ${w} wide`);
+    for (let i = 1; i < n; i++) {
+      // Each band starts exactly where the one before it ended: no overlap for
+      // the last-drawn box to win, and no gap for the pointer to fall into.
+      assert.ok(
+        near(hitX(i, n, 600), hitX(i - 1, n, 600) + w, 1e-9),
+        `at ${n} points, band ${i} does not meet band ${i - 1}`
+      );
+    }
+  }
+});
+
+test("a hit target is centred on the point it names", () => {
+  // Off-centre by half a band and every tooltip is its neighbour's over half
+  // the plot — the numbers stay right and every one of them is mislabelled.
+  for (const n of [2, 7, 318]) {
+    for (const i of [0, 1, n - 1]) {
+      assert.ok(
+        near(hitX(i, n, 600) + hitW(n, 600) / 2, plotX(i, n, 600), 1e-9),
+        `${i} of ${n} is not the middle of its own target`
+      );
+    }
+  }
+  // A lone point is centred in the box by `plotX`, and its target follows it
+  // rather than sitting at the left edge.
+  assert.ok(near(hitX(0, 1, 600) + hitW(1, 600) / 2, 300, 1e-9));
 });
 
 // ---------------------------------------------------------------------------

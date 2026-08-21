@@ -86,9 +86,12 @@ export const PAYLOADS = Object.freeze(
       // Eurostat's HICP release is monthly, mid-month, not pinned to a date.
       cadenceDays: 31,
       name: { bg: "Официална инфлация", en: "Official inflation" },
+      // No year here. How far back the index reaches is the payload's to say —
+      // `sources/eurostat.py#INDEX_SINCE_YEAR` decides it and a refresh can move
+      // it — and this row is a fixed string nothing rewrites afterwards.
       feeds: {
-        bg: "числото на Евростат за всички стоки и услуги, и индексът от 2020 г.",
-        en: "Eurostat's all-items figure, and the index back to 2020",
+        bg: "числото на Евростат за всички стоки и услуги, и индексът зад него",
+        en: "Eurostat's all-items figure, and the index behind it",
       },
       refPeriod: (p) => p?.ref_period ?? null,
     },

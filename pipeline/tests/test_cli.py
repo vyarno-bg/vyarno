@@ -372,14 +372,14 @@ def test_refresh_aborts_on_coverage_failure(tmp_path: Path, cubes):
     """Punch a hole in the middle of the index and the coverage gate must
     fail: 2022 would render as a broken anchor in the year dropdown.
 
-    2020-12 (the earliest anchor), 2025-12 (the chain link) and 2026-06 (the
-    latest month) are kept so the earlier gates pass and this one is what
-    actually fires.
+    One year and only one. Every other reading stays, so the earlier gates pass
+    on their own inputs and this one is what actually fires — dropping the
+    floor year or the chain link would abort in the transform instead, and the
+    test would go green on the wrong failure.
     """
     cube = cubes["i15"]
-    keep = ["2020-12", "2021-12", "2023-12", "2024-12", "2025-12", "2026-06"]
     tcat = cube["dimension"]["time"]["category"]
-    dropped = {tcat["index"][t] for t in tcat["index"] if t not in keep}
+    dropped = {tcat["index"]["2022-12"]}
     time_axis = cube["id"].index("time")
     stride = 1
     for s in cube["size"][time_axis + 1 :]:

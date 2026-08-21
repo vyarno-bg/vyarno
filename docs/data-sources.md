@@ -36,7 +36,7 @@ what comes back.
 | Source | Tag | Feeds |
 |---|---|---|
 | **HICP rate per code** — `prc_hicp_minr` (unit=RCH_A) | VERIFIED | Every `annual_rate_pct` and the headline. ECOICOP ver.2, dim `coicop18`. One unfiltered call for the whole BG slice. |
-| **HICP index per code** — `prc_hicp_minr` (unit=I15) | VERIFIED | `index_by_year` and `latest_index`. Same cube, `sinceTimePeriod=2020-01`. The whole BG slice in one response. |
+| **HICP index per code** — `prc_hicp_minr` (unit=I15) | VERIFIED | `index_by_year` and `latest_index`. Same cube, `sinceTimePeriod` at `INDEX_SINCE_YEAR`. The whole BG slice in one response. |
 | **HICP basket weights** — `prc_hicp_iw` | VERIFIED | `weight_pct`. ECOICOP ver.2 item weights, dim `coicop18` — the same dimension the rate cube uses. Per-thousand ÷ 10. |
 | **ЕЦБ MIR new-business rate** — `M.BG.B.A2C.A.R.A.2250.{BGN,EUR}.N` | VERIFIED | `mortgage.json → new_business.value_pct`. **The mortgage headline** — the rate excluding charges; `R` is AAR-or-NDER and which one BG reports is unsettled. |
 | **ЕЦБ MIR new-business APRC** — `M.BG.B.A2C.A.C.A.2250.{BGN,EUR}.N` | VERIFIED | `new_business.aprc.value_pct` — the same loans' all-in cost with fees (ГПР). |
@@ -57,7 +57,7 @@ what comes back.
 | **Individual earnings distribution** — `earn_ses_monthly` | VERIFIED | The percentile ladder's **shape** (D1 / median / mean / D9 gross, 4-yearly). |
 | **Average gross wage by област** — НСИ `Labour_1.1.2.2_EUR_EN.xlsx` + `_EUR.xlsx` | VERIFIED | `region_salary.json`. All 28 области, both language editions, НСИ's published quarters from 2020-Q1. |
 | **€/m² by city** — `imot.bg/sredni-ceni` | VERIFIED | `city_price.json`. 27 cities, each with its own district count and its own year window. |
-| **Unemployment rate** — `une_rt_m` | VERIFIED | `unemployment.json → value_pct`. **Monthly**, seasonally adjusted, since 2020-01. |
+| **Unemployment rate** — `une_rt_m` | VERIFIED | `unemployment.json → value_pct`. **Monthly**, seasonally adjusted, from the cube's first month. |
 | **НСИ house price index, national** — `HPI_1.3.xlsx` | VERIFIED | `nsi_housing.json`. Change on the same quarter a year earlier. **The cross-publisher reconciliation reads this** against Eurostat's `RCH_A`. |
 | **НСИ house price index, six cities** — `HPI_2.6.xlsx` | VERIFIED | `nsi_housing.json`. The six cities over 120,000 people, y/y. A percentage, never a level. |
 | **НСИ sales count, six cities** — `HSI_2.4.5.xlsx` | VERIFIED | `nsi_housing.json`. The change in the NUMBER of sales in those cities, y/y. |
@@ -318,7 +318,7 @@ BASE=https://ec.europa.eu/eurostat/api/dissemination
 # HICP rate and index — ONE unfiltered call each for the whole BG slice.
 # Adding coicop18=A+B would return an EMPTY cube with HTTP 200.
 curl -sS "$BASE/statistics/1.0/data/prc_hicp_minr?format=JSON&lang=EN&geo=BG&unit=RCH_A&lastTimePeriod=12"
-curl -sS "$BASE/statistics/1.0/data/prc_hicp_minr?format=JSON&lang=EN&geo=BG&unit=I15&sinceTimePeriod=2020-01"
+curl -sS "$BASE/statistics/1.0/data/prc_hicp_minr?format=JSON&lang=EN&geo=BG&unit=I15&sinceTimePeriod=2003-01"
 
 # Item weights — prc_hicp_iw (ver.2, dim coicop18). NOT prc_hicp_inw: that is
 # the archived ver.1 cube, 12 divisions, no CP13.
@@ -351,7 +351,7 @@ curl -sS -O https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_
 Other datasets take the same Eurostat shape with their own dimensions:
 `earn_ses_monthly`
 (`nace_r2=B-S_X_O&isco08=TOTAL&worktime=FT&age=TOTAL&sex=T&lastTimePeriod=1`),
-`une_rt_m` (`sinceTimePeriod=2020-01`).
+`une_rt_m` (`sinceTimePeriod=2000-01`).
 
 > **Probe protocol, especially for BG.** Before assuming any Eurostat series
 > works for Bulgaria, `curl` it with `geo=BG` and check `len(payload.value) > 0`.

@@ -35,6 +35,7 @@ from vyarno_pipeline.validate import (
     validate_payroll,
     validate_reconciliation,
     validate_sector_salary,
+    validate_unemployment,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -1031,3 +1032,68 @@ def test_the_shipped_payroll_payload_passes_its_own_gate() -> None:
         )
     )
     validate_payroll(published)
+
+
+# ---------------------------------------------------------------------------
+# The unemployment payload — the headline, and the publisher's marks on it
+# ---------------------------------------------------------------------------
+
+
+def _unemployment(**over) -> dict:
+    """An unemployment payload that passes, so each test breaks exactly one thing."""
+    payload = {
+        "ref_period": "2026-06",
+        "value": 3.0,
+        "series_by_period": {"2000-01": 14.3, "2009-01": 6.4, "2026-06": 3.0},
+        "status_by_period": {"2009-01": "b"},
+    }
+    payload.update(over)
+    return payload
+
+
+def test_unemployment_gate_refuses_a_headline_the_series_disagrees_with() -> None:
+    """The strip prints `value`; `/how/` draws the series. Two numbers about one
+    month on one page, and no other gate can see it."""
+    with pytest.raises(ValidationError, match="one cell published twice"):
+        validate_unemployment(_unemployment(value=3.4))
+
+
+def test_unemployment_gate_refuses_a_reference_month_the_series_does_not_carry() -> None:
+    with pytest.raises(ValidationError, match="not a month the series carries"):
+        validate_unemployment(_unemployment(ref_period="2026-07"))
+
+
+def test_unemployment_gate_refuses_an_empty_series() -> None:
+    """A headline with no chart behind it is one number nobody can place."""
+    with pytest.raises(ValidationError, match="no series"):
+        validate_unemployment(_unemployment(series_by_period={}))
+
+
+def test_unemployment_gate_refuses_a_flag_at_a_month_that_is_not_there() -> None:
+    """A rule drawn at a month the line does not reach marks nothing."""
+    with pytest.raises(ValidationError, match="does not carry"):
+        validate_unemployment(_unemployment(status_by_period={"2007-03": "b"}))
+
+
+def test_unemployment_gate_refuses_a_letter_eurostat_do_not_publish() -> None:
+    """A footnote marker with nothing to look it up in is worse than none."""
+    with pytest.raises(ValidationError, match="not one of Eurostat's own letters"):
+        validate_unemployment(_unemployment(status_by_period={"2009-01": "x"}))
+
+
+def test_unemployment_gate_admits_a_series_with_no_flags_at_all() -> None:
+    """`status_by_period` is a field the payload may carry, not one it must:
+    a publisher who flags nothing is not a payload that fails."""
+    validate_unemployment(_unemployment(status_by_period={}))
+    payload = _unemployment()
+    del payload["status_by_period"]
+    validate_unemployment(payload)
+
+
+def test_the_shipped_unemployment_payload_passes_its_own_gate() -> None:
+    published = json.loads(
+        (
+            Path(__file__).resolve().parents[2] / "data" / "published" / "unemployment.json"
+        ).read_text(encoding="utf-8")
+    )
+    validate_unemployment(published)

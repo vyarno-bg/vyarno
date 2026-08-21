@@ -765,9 +765,9 @@ test("quarterGrid lays the same cells out a year to a row, and combines nothing"
 });
 
 test("the unemployment curve floors at zero, and its two ends come off the points", () => {
-  // 6,7% down to 2,9% cropped to its own band draws unemployment reaching
-  // nothing. Against zero it draws what happened: a little over half of what
-  // it was. There is no argument here that would let a caller raise the floor.
+  // Cropped to its own band, any fall draws unemployment reaching nothing.
+  // Against zero it draws the fraction of the old rate it actually is. There is
+  // no argument here that would let a caller raise the floor.
   const payload = read("unemployment");
   if (!payload) return; // no refresh in this checkout
   const history = unemploymentHistory(payload);
@@ -795,6 +795,47 @@ test("the unemployment curve is published cells in order, and nothing else", () 
   assert.equal(history.peak.period, "2020-04");
   assert.equal(history.trough.period, "2026-06");
   assert.equal(history.sourceUrl, "https://ec.europa.eu/eurostat/");
+});
+
+test("a break the publisher declared reaches the chart as a mark of its own", () => {
+  // Eurostat flag Bulgaria's series at a month of their own, and a chart that
+  // joins the two stretches without saying so has made a claim on their behalf
+  // that they declined to make. The months come off `status_by_period`, so a
+  // flag Eurostat move or withdraw moves the rule with it.
+  const history = unemploymentHistory({
+    series_by_period: { "2000-01": 14.3, "2009-01": 6.4, "2026-06": 3.0 },
+    status_by_period: { "2009-01": "b" },
+  });
+  assert.deepEqual(history.breaks, [{ period: "2009-01", i: 1 }]);
+
+  // Only `b`. The other letters qualify a reading — estimated, provisional,
+  // counted differently — and none of them says the line either side is two
+  // measurements, which is the only thing a rule through the plot can mean.
+  for (const letter of ["e", "p", "d", "", "bp"]) {
+    const flagged = unemploymentHistory({
+      series_by_period: { "2000-01": 14.3, "2009-01": 6.4, "2026-06": 3.0 },
+      status_by_period: { "2009-01": letter },
+    });
+    assert.equal(
+      flagged.breaks.length,
+      letter.includes("b") ? 1 : 0,
+      `${letter || "an unflagged month"} drew the wrong number of rules`
+    );
+  }
+
+  // A break at the first point is not a break within the line — there is
+  // nothing to its left for the rule to separate it from, and a rule on the
+  // y-axis reads as furniture.
+  const atStart = unemploymentHistory({
+    series_by_period: { "2000-01": 14.3, "2026-06": 3.0 },
+    status_by_period: { "2000-01": "b" },
+  });
+  assert.deepEqual(atStart.breaks, []);
+
+  // And a payload from before the flags were published draws no rules rather
+  // than failing: `status_by_period` is a field the site reads, not one it
+  // requires.
+  assert.deepEqual(unemploymentHistory({ series_by_period: { a: 1, b: 2 } }).breaks, []);
 });
 
 test("a series with no line in it draws no chart rather than an empty box", () => {

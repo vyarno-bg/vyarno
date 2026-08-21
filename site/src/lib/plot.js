@@ -115,6 +115,42 @@ export const columnX = (i, n, w) => (w / n) * (i + 0.12);
 export const columnW = (n, w) => Math.max(0.8, (w / n) * 0.76);
 
 /**
+ * The hit target over point `i` of `n`: its left edge, and its width.
+ *
+ * The ungapped pair to `columnX`/`columnW`. A `<title>` needs a box to hang on
+ * — a line has no mark of its own — and the boxes have to TILE, because a
+ * reader pointing between two of them must land on one of the two rather than
+ * on whichever was drawn last. Fixed-width targets stop tiling as soon as a
+ * series is long enough to space its points closer than that width: on a
+ * 318-month series in a 600-unit box the points sit 1.9 apart, and a 4-wide
+ * target then reports a neighbour's reading under this month's name.
+ *
+ * Centred on the point, so half a band hangs off each end of the plot. The SVG
+ * clips it, and the alternative — squaring the two ends up — would give the
+ * first and last points half the target of every other.
+ *
+ * @param {number} i
+ * @param {number} n
+ * @param {number} w
+ * @returns {number}
+ */
+export const hitX = (i, n, w) => plotX(i, n, w) - hitW(n, w) / 2;
+
+/**
+ * The width of one hit band. See `hitX`.
+ *
+ * `n - 1`, not `n`: the divisor is the GAP between points, which is what
+ * `plotX` spaces them by. Over `n` the bands come out a hair narrow and stop
+ * meeting — a gap of `w / n(n-1)` between each pair, where a pointer lands on
+ * the plot and nothing else.
+ *
+ * @param {number} n
+ * @param {number} w
+ * @returns {number}
+ */
+export const hitW = (n, w) => (n > 1 ? w / (n - 1) : w);
+
+/**
  * Where a tick sits down the plot, as the percentage its HTML gutter takes.
  *
  * The box's height cancels — it is `plotY` over the same `h` — so this is the

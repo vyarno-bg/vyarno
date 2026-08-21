@@ -42,7 +42,7 @@
   import { QUARTERS, unemploymentHistory } from "./lib/view/country.js";
   import { monthsSplit as monthsAreSplit } from "./lib/view/results.js";
   import { number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
-  import { niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
+  import { hitW, hitX, niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   /**
    * The published payloads, read off disk by `scripts/prerender.mjs`.
@@ -152,8 +152,12 @@
   // CP01/Food for the first and to the dataset's default geo for the second.
   const ESTAT_HEADLINE_URL =
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&coicop18=TOTAL&unit=RCH_A&lastTimePeriod=12";
+  // The `sinceTimePeriod` is the connector's own — `sources/eurostat.py#UNEMPLOYMENT_SINCE_PERIOD`
+  // — so the extract returns the window the chart below was drawn from. A
+  // shorter one would answer a reader checking the peak with a series that does
+  // not contain it.
   const ESTAT_UNEMPLOYMENT_URL =
-    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_m?geo=BG&s_adj=SA&sex=T&age=TOTAL&unit=PC_ACT&sinceTimePeriod=2020-01";
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/une_rt_m?geo=BG&s_adj=SA&sex=T&age=TOTAL&unit=PC_ACT&sinceTimePeriod=2000-01";
   // The shares in the basket table's own column. Their cube is not the rates'
   // — a row's ↗ is a `prc_hicp_minr` query and returns no weight — so this is
   // the one place on the page `prc_hicp_iw` is reachable from.
@@ -202,6 +206,8 @@
     CH_H = 150;
   const yOf = (v, axis) => plotY(v, axis, CH_H);
   const xOf = (i, n) => plotX(i, n, CH_W);
+  const hitOf = (i, n) => hitX(i, n, CH_W);
+  const bandOf = (n) => hitW(n, CH_W);
   // A year rule's x. `yearTicks` answers in a percentage, so one value places
   // both the HTML label in the gutter and the rule inside the box; this is the
   // inverse, through the same width, so the two land on the same column.
@@ -1192,14 +1198,27 @@
             {#each xTicks(unemployment) as tick (tick.year)}
               <line class="plot-year" x1={yearX(tick.at)} y1="0" x2={yearX(tick.at)} y2={CH_H} />
             {/each}
+            <!-- A month Eurostat marked as a break in their own series. Drawn as
+                 a rule rather than smoothed over: the line either side of it is
+                 not one continuous measurement, and joining them without saying
+                 so is a claim the publisher declined to make. -->
+            {#each unemployment.breaks as brk (brk.period)}
+              {@const x = xOf(brk.i, unemployment.points.length)}
+              <line class="plot-break" x1={x} y1="0" x2={x} y2={CH_H}
+                ><title>{periodLong(brk.period, $lang)}: {t(COPY.mktFlagB, $lang)}</title></line
+              >
+            {/each}
             <path class="plot-line" d={pathOf({ ...unemployment, ...axis }, CH_W, CH_H)} />
             <line class="plot-axis" x1="0" y1={yOf(0, axis)} x2={CH_W} y2={yOf(0, axis)} />
+            <!-- One band per month, tiled, so a month's tooltip is the month
+                 under the pointer. `plot.js#hitX` carries why a fixed width
+                 stops working at three hundred points. -->
             {#each unemployment.points as p, i (p.period)}
               <rect
                 class="plot-hit"
-                x={xOf(i, unemployment.points.length) - 2}
+                x={hitOf(i, unemployment.points.length)}
                 y="0"
-                width="4"
+                width={bandOf(unemployment.points.length)}
                 height={CH_H}
                 ><title>{periodLong(p.period, $lang)}: {number(p.value, 1, $lang)}%</title></rect
               >
@@ -1207,6 +1226,18 @@
           </svg>
           {@render xYears(xTicks(unemployment))}
         </div>
+        {#if unemployment.breaks.length > 0}
+          <!-- Named only where one is drawn, `Market.svelte`'s rule: a mark with
+               no key is a mark a reader cannot account for, and a key for a mark
+               nowhere on the picture is a question they cannot answer. -->
+          <figcaption>
+            <span class="key brk"
+              ><span class="l-bg">{COPY.mktKeyBreak.bg}</span><span class="l-en"
+                >{COPY.mktKeyBreak.en}</span
+              ></span
+            >
+          </figcaption>
+        {/if}
       </figure>
       <p class="cap">
         <span class="l-bg"
@@ -1420,6 +1451,21 @@
     font-family: var(--mono);
     font-size: var(--fs-micro);
     color: var(--muted);
+  }
+  /* This page's one legend entry: the break rule `chart.css#.plot-break` draws
+     where Eurostat flag their own series. Self-contained rather than an
+     override of a shared base, because /market/ and /credit/ each build a key
+     out of a different one — a filled block and a stroked rule — so there is no
+     base here to extend. The swatch is a vertical dotted rule because that is
+     what the mark on the plot is. */
+  .chart figcaption .key.brk::before {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 11px;
+    margin-right: 5px;
+    border-left: 1px dashed var(--muted);
+    vertical-align: -2px;
   }
   /* The disclosure that a figure is ours. Marked, not buried: it sits directly
      under the number it is about, in the erode accent the app already uses for

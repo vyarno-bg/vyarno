@@ -71,14 +71,14 @@ fields are exactly as traceable as a division's.
 | `hicp_headline.json.headline_rate_pct` | `prc_hicp_minr` RCH_A (TOTAL) | latest month | none — verbatim |
 | `hicp_headline.json.ref_period` | `prc_hicp_minr` RCH_A (TOTAL) | latest month | none |
 | `hicp_headline.json.is_flash` | which Eurostat release the run fetched | that month | none — a fact about the release, gated against the payload's own two months |
-| `hicp_headline.json.index_by_year` | `prc_hicp_minr` I15 (TOTAL) | Dec of completed years, since 2020 | none — verbatim |
+| `hicp_headline.json.index_by_year` | `prc_hicp_minr` I15 (TOTAL) | Dec of completed years, back to `INDEX_SINCE_YEAR` | none — verbatim |
 | `hicp_headline.json.latest_index` | `prc_hicp_minr` I15 (TOTAL) | freshest monthly reading | none — verbatim |
 | `categories[*].annual_rate_pct` | `prc_hicp_minr` RCH_A (CPnn) | latest month | none — verbatim |
 | `categories[*].ref_period` | `prc_hicp_minr` RCH_A (CPnn) | latest month | none |
 | `categories[*].weight_pct` | `prc_hicp_iw` (CPnn) | most recent year | per-thousand → percent (÷10) |
 | `categories[*].eurostat_label` | `prc_hicp_minr` dimension label | — | none — the cube's own English name |
 | `categories[*].groups[*].*` | same cubes, group code (CPnnx) | same anchors | same as the division |
-| `categories[*].index_by_year` | `prc_hicp_minr` I15 (CPnn) | Dec of completed years, since 2020 | none — verbatim |
+| `categories[*].index_by_year` | `prc_hicp_minr` I15 (CPnn) | Dec of completed years, back to `INDEX_SINCE_YEAR` | none — verbatim |
 | `categories[*].value` | `prc_hicp_minr` I15 (CPnn) | year-end of the latest completed year | none — verbatim |
 | `categories[*].latest_index` | `prc_hicp_minr` I15 (CPnn) | freshest monthly reading | none — verbatim |
 | `categories[*].unit` / `index_base_year` | `INDEX_UNIT`'s base | — | names the base the values are on, and `api_url_index` resolves to that unit |
@@ -126,8 +126,8 @@ divides by (`latest_index / index_by_year[Y] − 1`).
 
 Whichever base `INDEX_UNIT` is published on. `prc_hicp_minr` offers exactly two
 index units — `I15` (2015=100) and `I25` (2025=100), ver.2's official base —
-and no 2020 one, which is the question a reader asks first given the anchor
-selector starts at 2020. The answer is that the anchor needs no base of its
+and no base matching any year the anchor selector offers, which is the question
+a reader asks first. The answer is that the anchor needs no base of its
 own: `mirror.js#rateFor` computes `latest_index / index_by_year[anchor] − 1`,
 and a ratio of two readings on one base is the same number on any base.
 

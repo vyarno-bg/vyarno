@@ -5,11 +5,11 @@ from datetime import date
 
 import pytest
 
-from vyarno_pipeline.sources.eurostat import CP_DIVISIONS, HicpCube
+from vyarno_pipeline.sources.eurostat import CP_DIVISIONS, INDEX_SINCE_YEAR, HicpCube
 from vyarno_pipeline.transform import (
     COICOP_META,
     MissingSeriesError,
-    index_years_from_2020,
+    index_years_from_floor,
     latest_monthly_index,
     rows_to_category_observations,
     rows_to_yearly_index,
@@ -61,7 +61,18 @@ def test_coicop_metadata_covers_every_group_of_every_division():
         assert g[:4] in CP_DIVISIONS, f"{g} has no published parent division"
 
 
-def test_index_years_from_2020_leaves_every_value_untouched():
+def _series_from_floor(**overrides: float) -> dict[int, float]:
+    """A complete year-end series over the published window, 100.0 everywhere.
+
+    Built from `INDEX_SINCE_YEAR` rather than written out, so the tests below
+    stay about the rule and not about the year the floor currently sits at.
+    """
+    src = dict.fromkeys(range(INDEX_SINCE_YEAR, 2027), 100.0)
+    src.update({int(y): v for y, v in overrides.items()})
+    return src
+
+
+def test_index_years_from_floor_leaves_every_value_untouched():
     """Eurostat's values reach the payload as they came, at their own base.
 
     The temptation is to divide through so the anchor year reads a round 100.
@@ -70,28 +81,37 @@ def test_index_years_from_2020_leaves_every_value_untouched():
     Eurostat's copyright notice, needing a disclaimer at the number. So the
     thing to protect is that this function does no arithmetic at all.
     """
-    src = {2020: 95.0, 2026: 130.0}
-    out = index_years_from_2020(src)
+    src = _series_from_floor(**{str(INDEX_SINCE_YEAR): 95.0, "2026": 130.0})
+    out = index_years_from_floor(src)
     assert out == src
-    assert out[2020] == 95.0, "an anchor year rescaled to 100 is a modified figure"
+    assert out[INDEX_SINCE_YEAR] == 95.0, "an anchor year rescaled to 100 is a modified figure"
 
 
-def test_index_years_from_2020_drops_years_the_anchor_selector_cannot_reach():
-    """Pre-2020 years are unreachable in the UI, so publishing them is dead weight."""
-    src = {2018: 80.0, 2019: 90.0, 2020: 100.0, 2021: 104.0}
-    out = index_years_from_2020(src)
-    assert set(out) == {2020, 2021}
-    assert out[2021] == 104.0
+def test_index_years_from_floor_drops_years_the_anchor_selector_cannot_reach():
+    """Years below the floor are unreachable in the UI, so publishing them is
+    dead weight — and the deepest of them is Bulgaria's hyperinflation, which
+    `INDEX_SINCE_YEAR` argues about at length."""
+    src = _series_from_floor(**{"2026": 104.0})
+    src[INDEX_SINCE_YEAR - 1] = 80.0
+    src[1996] = 7.28
+    out = index_years_from_floor(src)
+    assert min(out) == INDEX_SINCE_YEAR
+    assert out[2026] == 104.0
 
 
-def test_index_years_from_2020_raises_when_2020_missing():
-    """The savings card divides by 2020; a series without it renders a blank card.
+@pytest.mark.parametrize("dropped", [INDEX_SINCE_YEAR, 2020])
+def test_index_years_from_floor_raises_on_a_year_a_surface_divides_by(dropped: int):
+    """Two years have a named consumer, and each fails by name.
 
-    Raising here is the difference between a refresh that fails and a page that
+    `INDEX_SINCE_YEAR` is the oldest anchor the selector offers; 2020 is what
+    the savings card divides by, in fixed copy naming the year. Either one
+    missing is the difference between a refresh that fails and a page that
     quietly stops answering its own question.
     """
-    with pytest.raises(ValueError, match="2020"):
-        index_years_from_2020({2019: 90.0, 2021: 110.0})
+    src = _series_from_floor()
+    del src[dropped]
+    with pytest.raises(ValueError, match=str(dropped)):
+        index_years_from_floor(src)
 
 
 def test_rows_to_yearly_index_picks_december_when_present():
@@ -216,13 +236,20 @@ def _cube(rows, labels=None, dataset="prc_hicp_minr"):
 
 
 def _full_index_rows(code, base=100.0, step=1.05, latest=("2026-06", None)):
-    """Year-end index rows 2020-12…2025-12 plus one fresher month."""
+    """Year-end index rows over the published window plus one fresher month.
+
+    Spans `INDEX_SINCE_YEAR` rather than a written-out year, so the floor moves
+    in one place — `index_fields` raises on any code short of it, which is the
+    whole point of the floor and not something to work around per test.
+    """
+    years = range(INDEX_SINCE_YEAR, 2026)
     rows = [
-        {"coicop": code, "time": f"{y}-12", "value": base * step ** (y - 2020)}
-        for y in range(2020, 2026)
+        {"coicop": code, "time": f"{y}-12", "value": base * step ** (y - INDEX_SINCE_YEAR)}
+        for y in years
     ]
     t, v = latest
-    rows.append({"coicop": code, "time": t, "value": v if v is not None else base * step**6})
+    fresher = base * step ** len(years)
+    rows.append({"coicop": code, "time": t, "value": v if v is not None else fresher})
     return rows
 
 
@@ -304,7 +331,8 @@ def test_latest_index_is_fresher_than_the_year_end_series():
         as_of=date(2026, 7, 1),
     )
     cp01 = cats["CP01"]
-    assert set(cp01.index_by_year) == set(range(2020, 2026))  # 2026 has no Dec yet
+    # 2026 has no December yet, so it is absent at both ends of the window.
+    assert set(cp01.index_by_year) == set(range(INDEX_SINCE_YEAR, 2026))
     assert cp01.latest_index["time"] == "2026-06"
 
 
@@ -322,7 +350,12 @@ def test_both_index_fields_reach_the_payload_at_the_cube_s_own_base():
     test on the value it changes. A fixture on 100 would make one no-op and
     could not catch it.
     """
+    # The years before 2020 only have to exist — `index_fields` refuses a code
+    # short of the floor. What this test is about is the four readings below.
     index_rows = [
+        {"coicop": "CP01", "time": f"{y}-12", "value": 60.0 + y - INDEX_SINCE_YEAR}
+        for y in range(INDEX_SINCE_YEAR, 2020)
+    ] + [
         {"coicop": "CP01", "time": "2020-12", "value": 115.65},  # anchor base ≠ 100
         {"coicop": "CP01", "time": "2021-12", "value": 130.0},
         {"coicop": "CP01", "time": "2022-12", "value": 150.0},
