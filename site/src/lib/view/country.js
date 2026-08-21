@@ -482,24 +482,34 @@ export function quarterGrid(payload) {
 /**
  * The unemployment rate as a series, for the curve beside the figure.
  *
- * **The axis floors at zero and the whole point is that it can.** The series
- * runs 6,7% down to 2,9%, so cropped to its own band the fall reads as
- * unemployment approaching nothing; against zero it reads as what it is, a
- * little over half of what it was. This is a rate, so zero means something.
+ * **The axis floors at zero and the whole point is that it can.** Cropped to
+ * its own band, a fall reads as unemployment approaching nothing whatever the
+ * numbers are; against zero it reads as the fraction of the old rate it
+ * actually is. This is a rate, so zero means something — and the deeper the
+ * window, the further apart those two pictures get.
  *
- * `trough` is carried beside `peak` because the two are the whole shape: the
- * lockdown month and the record low the series ends near. Both come off the
- * points rather than out of the prose — nothing recomputes a sentence.
+ * `trough` is carried beside `peak` because the two are the whole shape. Both
+ * come off the points rather than out of the prose, so nothing recomputes a
+ * sentence — and neither one is fixed at an end of the series: the peak can sit
+ * in the first month and the trough in the last, which is what a caption
+ * naming either by year would get wrong the moment the window moved.
+ *
+ * `breaks` are the months the publisher flagged `b`, a break in their own
+ * series. A chart drawing one unbroken line across a declared break has made a
+ * claim on their behalf that they declined to make. The first point is excluded
+ * because a break at the start of a window is not a break within the line.
  *
  * Its own measurement of a `{period: value}` map rather than an import of
  * `view/market.js#plotSeries`, which is the same arithmetic: that module is 967
  * lines about the property market and `/how/` fetches none of its payloads, so
  * an import here is that whole module in this page's bundle for one reducer.
  *
- * @param {{series_by_period?: Record<string, number>, source_url?: string}|null} payload
+ * @param {{series_by_period?: Record<string, number>,
+ *          status_by_period?: Record<string, string>, source_url?: string}|null} payload
  * @returns {{points: Array<{period: string, value: number}>, min: number,
  *            max: number, peak: object|null, trough: object|null,
  *            latest: object|null, from: string|null, to: string|null,
+ *            breaks: Array<{period: string, i: number}>,
  *            sourceUrl: string|null}|null} null below two points, where there
  *            is no line to draw
  */
@@ -507,6 +517,7 @@ export function unemploymentHistory(payload) {
   const points = seriesCells(payload);
   if (points.length < 2) return null;
   const values = points.map((p) => p.value);
+  const flags = payload?.status_by_period ?? {};
   return {
     points,
     min: Math.min(0, ...values),
@@ -516,6 +527,9 @@ export function unemploymentHistory(payload) {
     latest: points[points.length - 1],
     from: points[0].period,
     to: points[points.length - 1].period,
+    breaks: points
+      .map((p, i) => ({ period: p.period, i }))
+      .filter(({ period, i }) => i > 0 && String(flags[period] ?? "").includes("b")),
     sourceUrl: payload?.source_url ?? null,
   };
 }

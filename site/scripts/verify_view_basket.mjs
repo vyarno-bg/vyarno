@@ -23,8 +23,10 @@ import {
   basketSumQuery,
   fastestRisingDivision,
   divisionRateState,
+  anchorYears,
+  anchorYearDecades,
 } from "../src/lib/view/basket.js";
-import { officialInflation } from "../src/lib/mirror.js";
+import { officialInflation, rateFor } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
 
@@ -242,5 +244,111 @@ test("divisionRateState says nothing where there is no rate", () => {
   // «цената ѝ не се е променила» is a claim, and absence is not a measurement.
   for (const bad of [null, undefined, NaN, Infinity, -Infinity, "3.1"]) {
     assert.equal(divisionRateState(bad), "unsaid", `${bad} produced a verdict`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// The anchors the dropdown offers
+// ---------------------------------------------------------------------------
+
+/** One published row, at whatever years it is given. */
+const withYears = (cp, years, latest = 200) => ({
+  cp_code: cp,
+  index_by_year: Object.fromEntries(years.map((y) => [String(y), 100 + y - 2000])),
+  latest_index: { time: "2026-07", value: latest },
+});
+
+test("anchorYears offers only years EVERY published code can answer", () => {
+  // Bulgaria's `CP122` (banking and financial services) starts eleven years
+  // after most of the basket, and the detailed mode divides by a GROUP's own
+  // index. An anchor offered above a group's first year renders `undefined` as
+  // a percentage: no error, no blank, a figure that is simply not a number.
+  const years = anchorYears([
+    {
+      ...withYears("CP01", [2003, 2004, 2005, 2006]),
+      groups: [withYears("CP011", [2003, 2004, 2005, 2006])],
+    },
+    { ...withYears("CP12", [2003, 2004, 2005, 2006]), groups: [withYears("CP122", [2005, 2006])] },
+  ]);
+  assert.deepEqual(years, [2005], "a year the short group cannot answer reached the dropdown");
+});
+
+test("anchorYears excludes the newest year-end, which is the numerator's own year", () => {
+  // Every option divides `latest_index` by its year. Against the newest
+  // December that answers "the months since it" under a label naming the whole
+  // year — a different question wearing the same words.
+  const years = anchorYears([{ ...withYears("CP01", [2003, 2004, 2005]), groups: [] }]);
+  assert.deepEqual(years, [2004, 2003], "newest first, and the numerator's year is not an option");
+});
+
+test("anchorYears says nothing rather than guessing where there is no payload", () => {
+  for (const empty of [null, undefined, [], [{ groups: [] }]]) {
+    assert.deepEqual(anchorYears(empty), [], `${JSON.stringify(empty)} produced anchors`);
+  }
+});
+
+test("the oldest anchor on offer answers for every division AND every group", () => {
+  // docs/how-it-works.md §4's failure mode, at the depth it bites hardest: the
+  // 12-month view stays correct while a since-a-year number is nonsense, so a
+  // green basket page proves nothing about the oldest option in its own
+  // dropdown. Gate 5 refuses to PUBLISH a payload with a hole; this reads the
+  // artefact the browser actually fetches, through the same `rateFor` the
+  // screen does rather than re-deriving the division here.
+  const cats = read("hicp_categories")?.categories;
+  if (!cats) return;
+  const years = anchorYears(cats);
+  assert.ok(years.length > 0, "the shipped payload offers no year anchor at all");
+
+  const oldest = years[years.length - 1];
+  const rows = cats.flatMap((c) => [c, ...(c.groups ?? [])]);
+  assert.ok(rows.length > cats.length, "no groups in the payload — the detailed mode has no rows");
+
+  for (const row of rows) {
+    const base = row.index_by_year?.[String(oldest)];
+    assert.ok(
+      Number.isFinite(base) && base > 0,
+      `${row.cp_code} has no usable ${oldest} reading, and ${oldest} is on offer`
+    );
+    const pct = rateFor(row, oldest);
+    assert.ok(Number.isFinite(pct), `${row.cp_code} since ${oldest} is ${pct}`);
+    // An index is a positive level, so −100% is the arithmetic floor: prices
+    // reaching zero. Anything at or below it means the two readings are not one
+    // series. There is deliberately no ceiling — measured on BG's shipped
+    // payload the divisions and groups run from −79% to +596% since 2003, and a
+    // band loose enough to hold tobacco would not catch a rescaled series.
+    // What catches that is the base pair in `verify_data_contracts.mjs`.
+    assert.ok(pct > -100, `${row.cp_code} since ${oldest} is ${pct}%, at or below a zero price`);
+  }
+});
+
+test("anchorYearDecades groups the years without losing or reordering one", () => {
+  // A rule over the whole list rather than an example: the dropdown renders
+  // these and nothing else, so a year dropped here is an anchor a reader can no
+  // longer pick, and a reordering puts 2011 above 2019.
+  const years = [2026, 2025, 2020, 2019, 2010, 2009, 2003];
+  const groups = anchorYearDecades(years);
+  assert.deepEqual(
+    groups.map((g) => g.decade),
+    [2020, 2010, 2000]
+  );
+  assert.deepEqual(
+    groups.flatMap((g) => g.years),
+    years,
+    "the grouping moved or lost a year"
+  );
+  for (const g of groups) {
+    for (const y of g.years) {
+      assert.equal(Math.floor(y / 10) * 10, g.decade, `${y} is filed under ${g.decade}`);
+    }
+  }
+});
+
+test("anchorYearDecades opens no empty group", () => {
+  // An `<optgroup>` with nothing in it renders as a heading a reader cannot
+  // choose from — a decade that looks unavailable rather than absent.
+  for (const years of [[], null, undefined, [2003]]) {
+    for (const g of anchorYearDecades(years)) {
+      assert.ok(g.years.length > 0, `${g.decade} is an empty heading`);
+    }
   }
 });

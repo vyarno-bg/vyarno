@@ -71,9 +71,10 @@ class GroupObservation(BaseModel):
 class CategoryObservation(Observation):
     """One COICOP division across time, with its groups nested underneath.
 
-    Carries index history (`index_by_year`) so ANY anchor year from 2020 to now
-    can compute `idx_now / idx_Y - 1` without an extra API call. This is the
-    architectural reason we don't trust upstream pre-computed cumulative rates.
+    Carries index history (`index_by_year`) so ANY anchor year the payload
+    reaches back to can compute `idx_now / idx_Y - 1` without an extra API call.
+    This is the architectural reason we don't trust upstream pre-computed
+    cumulative rates. How far back that is, and why, is `INDEX_SINCE_YEAR`.
 
     The `latest_index` field is the freshest monthly index reading (e.g.
     2026-06) — separate from `index_by_year` (year-end only) because the SPA's
@@ -144,6 +145,14 @@ class TimeSeriesObservation(BaseModel):
     unit: str
     value: float  # latest observation (for dashboard summaries)
     series_by_period: dict[str, float]
+    # The publisher's own flag letters on their own cells, {period: letter}.
+    #
+    # Sparse: a period the publisher did not flag carries no entry, so the
+    # presence of one MEANS something rather than being a default a reader has
+    # to filter. `b` is the one that changes a picture — a chart drawing an
+    # unbroken line across a declared break has made a claim on the publisher's
+    # behalf that they declined to make.
+    status_by_period: dict[str, str] = Field(default_factory=dict)
     notes: str = ""
     # Optional: methodology-change note (BG eurozone discontinuity etc.)
     methodology_change: str | None = None

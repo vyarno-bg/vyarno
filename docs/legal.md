@@ -119,7 +119,7 @@ it and the answer has to be architectural. §НСИ is that answer.
 and `hicp_categories.json` publish `index_by_year`, `latest_index` and — in the
 categories file — `value`, all three carrying Eurostat's own index values, so
 there is no modification to disclose on them — but there is a selection,
-December out of the monthly series and 2020 onwards, and a reader deciding
+December out of the monthly series and `INDEX_SINCE_YEAR` onwards, and a reader deciding
 whether a verify link ought to match needs to be told which. Both payloads say
 it from one constant (`publish.py#INDEX_DERIVATION_NOTE`), so the statement
 cannot drift from what the pipeline does. Anything that starts scaling those

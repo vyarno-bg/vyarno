@@ -35,12 +35,15 @@ from pathlib import Path
 
 import httpx
 
+from vyarno_pipeline.sources.eurostat import INDEX_SINCE_YEAR
+
 BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data"
 HERE = Path(__file__).parent
 
-# Periods the tests need: every December from 2020 (the earliest anchor) through
-# 2025 (the chain link month), plus the two most recent published months.
-INDEX_PERIODS = [f"{y}-12" for y in range(2020, 2026)] + ["2026-05", "2026-06"]
+# Periods the tests need: every December from `INDEX_SINCE_YEAR` (the earliest
+# anchor, and what gate 5 demands of every code) through 2025 (the chain link
+# month), plus the two most recent published months.
+INDEX_PERIODS = [f"{y}-12" for y in range(INDEX_SINCE_YEAR, 2026)] + ["2026-05", "2026-06"]
 RATE_PERIODS = ["2026-05", "2026-06"]
 # The flash fixture adds the month Eurostat published the all-items rate for
 # ahead of everything else. It is a SEPARATE file rather than a third period on
@@ -173,7 +176,7 @@ def main() -> None:
             _trim(rch, "coicop18", flash_codes, FLASH_RATE_PERIODS),
         )
 
-        i15 = get("prc_hicp_minr", unit="I15", sinceTimePeriod="2020-01")
+        i15 = get("prc_hicp_minr", unit="I15", sinceTimePeriod=f"{INDEX_SINCE_YEAR}-01")
         _write("eurostat_hicp_i15_bg.json", _trim(i15, "coicop18", keep, INDEX_PERIODS))
 
         inw = get("prc_hicp_inw", lastTimePeriod=1)

@@ -473,6 +473,10 @@ export const COPY = {
     bg: "(сравнява днешните цени с цените в края на избраната година)",
     en: "(compares today's prices with prices at the end of the chosen year)",
   },
+  // A heading inside the year list, one per decade. «2010-те» is how somebody
+  // says it out loud; "2010s" is the same thing in English. The decade is
+  // interpolated because nothing here may name a year the payload decides.
+  anchorDecade: { bg: "{decade}-те", en: "{decade}s" },
   rent: { bg: "Наем на месец", en: "Monthly rent" },
   rentHint: { bg: "(0, ако нямаш)", en: "(0 if none)" },
   cash: { bg: "Спестявания в брой", en: "Cash savings" },
@@ -2789,10 +2793,16 @@ export const COPY = {
     bg: "най-високото ниво досега",
     en: "the highest level so far",
   },
-  // The key for the dotted rules the index chart draws where Eurostat flagged a
-  // break in their own series. `mktFlagB` next to it is the same fact for a
-  // TABLE cell, where the letter is what a reader is looking at; on the picture
-  // there is no letter, only a rule, so the key names the rule instead.
+  // The key for the dotted rules a chart draws where Eurostat flagged a break
+  // in their own series. `mktFlagB` next to it is the same fact for a TABLE
+  // cell, where the letter is what a reader is looking at; on the picture there
+  // is no letter, only a rule, so the key names the rule instead.
+  //
+  // These two carry the `mkt` prefix and are read by /market/ AND /how/, whose
+  // unemployment series Eurostat flag at a month of their own. One wording for
+  // one publisher's mark, because a reader who learns it on one page has
+  // learnt it — and the prefix keeps them inside `verify_copy.mjs`'s check that
+  // no flag copy names a period.
   mktKeyBreak: {
     bg: "оттук се мери по друг начин",
     en: "measured a different way from here",

@@ -89,6 +89,27 @@ IW_DATASET: str = "prc_hicp_iw"  # item weights
 INDEX_UNIT: str = "I15"
 INDEX_BASE_YEAR: int = 2015
 
+# How far back the index history goes, and therefore how far back the site's
+# anchor selector reaches. Both halves of this are load-bearing.
+#
+# **2003 is where the shallowest code we publish begins.** Eurostat carry BG's
+# all-items index from 1996-12 and most groups with it, but `CP122` (banking
+# and financial services) has no BG reading before 2003-12 — checked against the
+# live cube per code, not inferred from the divisions. Gate 5 requires every
+# division AND every group to carry every offered year, because the SPA's
+# detailed mode divides by a group's own index; a deeper floor would either fail
+# the publish or need that gate to accept a per-code start, which is the
+# assertion it exists to make. So this moves down only when Eurostat backfill
+# CP122, and the check is the cube rather than this comment.
+#
+# **And it must not go below 1998 even then.** Bulgaria's 1996-97
+# hyperinflation is in this series: December 1996 reads 7,28 against 2026-07's
+# 149,73, so a «от 1996 г.» anchor prints +1957%, and February 1997 alone ran
+# 10,8 → 37,1. Arithmetically it is Eurostat's own ratio; on a page whose
+# subject is one household's own prices it is a number that dominates every axis
+# and describes an economy that ended with the currency board on 1997-07-01.
+INDEX_SINCE_YEAR: int = 2003
+
 # A ver.2 GROUP code is a division plus one digit (CP011 "Food", CP072
 # "Operation of personal transport equipment", ...). This is the second level
 # of the hierarchy and the depth the SPA's detailed mode exposes. Which groups
@@ -260,15 +281,19 @@ def fetch_hicp_rates_bg(
 
 def fetch_hicp_index_bg(
     geo: str = "BG",
-    since_year: int = 2020,
+    since_year: int = INDEX_SINCE_YEAR,
     codes: list[str] | None = None,
 ) -> HicpCube:
     """Monthly index on `INDEX_UNIT`'s base since `since_year`, one call.
 
     The values travel through to `data/published/` unchanged — the pipeline
-    selects which of them to publish (December, and 2020 onwards) and scales
-    none of them. `INDEX_BASE_YEAR` is what the payload names as their base,
-    so the two constants are the only place the choice of unit is recorded.
+    selects which of them to publish (December, and `INDEX_SINCE_YEAR` onwards)
+    and scales none of them. `INDEX_BASE_YEAR` is what the payload names as
+    their base, so the two constants are the only place the choice of unit is
+    recorded.
+
+    The cube reaches back to 1996-12 whatever we ask for; `INDEX_SINCE_YEAR`
+    carries why we stop where we do.
     """
     cube = _fetch_minr(geo, INDEX_UNIT, {"sinceTimePeriod": f"{since_year}-01"})
     _require_codes(cube, codes if codes is not None else ["CP00", *CP_DIVISIONS])
@@ -698,10 +723,20 @@ def fetch_housing_structure_bg(geo: str = "BG") -> dict[str, CubeFetch]:
 
 UNEMPLOYMENT_DATASET = "une_rt_m"
 
+# The first month `une_rt_m` carries for BG, so this asks for the whole series
+# rather than trimming it. Pinned rather than dropped: without it a backfill
+# would redraw `/how/`'s chart with nobody deciding to, and the verify link
+# beside the figure has to resolve to the window the chart was drawn from.
+#
+# Eurostat flag 2009-01 as a break in their own series, which the payload
+# carries in `status_by_period` and the chart draws as a rule — the line either
+# side of it is not one continuous measurement.
+UNEMPLOYMENT_SINCE_PERIOD: str = "2000-01"
+
 
 def fetch_unemployment_bg(
     geo: str = "BG",
-    since_period: str = "2020-01",
+    since_period: str = UNEMPLOYMENT_SINCE_PERIOD,
 ) -> list[dict[str, Any]]:
     """MONTHLY unemployment rate for BG (15-74, both sexes).
 

@@ -133,19 +133,28 @@
           ? ` · ${calc.yoyWindowLabel}`
           : ""}</option
       >
-      {#each calc.anchorYears as y (y)}
-        <!-- The end-point range lives in a title rather than the option text:
-             inline it is wider than the field and the dropdown breaks. -->
-        <option
-          value={String(y)}
-          title={calc.idxLatestYearLabel && calc.idxLatestYearLabel !== String(y)
-            ? $lang === "bg"
-              ? `от края на ${y} до ${calc.idxLatestYearLabel}`
-              : `end-of-${y} → ${calc.idxLatestYearLabel}`
-            : ""}
-        >
-          {y}</option
-        >
+      <!-- Grouped by decade, because the list is two dozen long and the control
+           a phone opens shows five rows at a time. A heading every ten rungs is
+           what turns the spin into navigation; which decade a year falls in is
+           arithmetic, so no label here can go stale against the data.
+           `view/basket.js#anchorYearDecades` does the placing. -->
+      {#each calc.anchorDecades as group (group.decade)}
+        <optgroup label={t(COPY.anchorDecade, $lang, { decade: group.decade })}>
+          {#each group.years as y (y)}
+            <!-- The end-point range lives in a title rather than the option text:
+                 inline it is wider than the field and the dropdown breaks. -->
+            <option
+              value={String(y)}
+              title={calc.idxLatestYearLabel && calc.idxLatestYearLabel !== String(y)
+                ? $lang === "bg"
+                  ? `от края на ${y} до ${calc.idxLatestYearLabel}`
+                  : `end-of-${y} → ${calc.idxLatestYearLabel}`
+                : ""}
+            >
+              {y}</option
+            >
+          {/each}
+        </optgroup>
       {/each}
     </select>
     <div class="hint">

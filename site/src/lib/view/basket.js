@@ -138,3 +138,61 @@ export function fastestRisingDivision(categories) {
   if (!categories?.length) return null;
   return categories.reduce((best, c) => (c.annual_rate_pct > best.annual_rate_pct ? c : best));
 }
+
+/**
+ * The year anchors the payload can actually answer, newest first.
+ *
+ * **The intersection across every published code, not the first one's keys.**
+ * A year the selector offers is divided into by whichever rows the reader has
+ * open, and the detailed mode divides by a GROUP's own index — Bulgaria's
+ * `CP122` (banking and financial services) starts eleven years after most of
+ * the basket, and a group short of the offered anchor renders `undefined` as a
+ * percentage rather than as an error. Gate 5 refuses to publish such a payload;
+ * this is the same rule stated where the option list is built, so the site
+ * offers what its data can answer rather than what a constant here says it can.
+ *
+ * That is also why there is no floor written down on this side. How far back
+ * the history reaches, and the hyperinflation argument for stopping where it
+ * does, is `sources/eurostat.py#INDEX_SINCE_YEAR` — one place, upstream of the
+ * payload, rather than a second copy that can disagree with the file it
+ * describes.
+ *
+ * The newest year-end is excluded: `latest_index` is the numerator of every one
+ * of these, and against its own December the answer is the months since it,
+ * under a label naming the whole year.
+ *
+ * @param {Array<{index_by_year?:Record<string,number>}>} categories
+ * @returns {number[]} newest first; empty where nothing is loaded
+ */
+export function anchorYears(categories) {
+  const rows = (categories ?? []).flatMap((c) => [c, ...(c?.groups ?? [])]);
+  if (!rows.length) return [];
+  const years = rows.map((r) => new Set(Object.keys(r?.index_by_year ?? {})));
+  const shared = [...years[0]].filter((y) => years.every((set) => set.has(y))).map(Number);
+  if (!shared.length) return [];
+  const newest = Math.max(...shared);
+  return shared.filter((y) => y < newest).sort((a, b) => b - a);
+}
+
+/**
+ * The same years, grouped by decade — what the dropdown is built from.
+ *
+ * **A phone is why.** Twenty-odd bare four-digit numbers in one run is a list a
+ * reader scans rather than reads, and the native picker they meet it in shows
+ * five rows at a time. A decade heading every ten rungs turns the spin into
+ * navigation, and it is the one grouping that needs no editorial claim: which
+ * decade a year is in is arithmetic, so nothing here can go stale against the
+ * data the way a label naming an era would.
+ *
+ * @param {number[]} years  newest first, as `anchorYears` returns them
+ * @returns {Array<{decade:number, years:number[]}>} newest decade first
+ */
+export function anchorYearDecades(years) {
+  const out = [];
+  for (const year of years ?? []) {
+    const decade = Math.floor(year / 10) * 10;
+    if (out.at(-1)?.decade !== decade) out.push({ decade, years: [] });
+    out.at(-1).years.push(year);
+  }
+  return out;
+}

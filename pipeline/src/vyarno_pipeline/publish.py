@@ -18,6 +18,7 @@ from vyarno_pipeline.sources.eurostat import (
     CLASSIFICATION,
     COICOP_DIM,
     INDEX_BASE_YEAR,
+    INDEX_SINCE_YEAR,
     IW_DATASET,
     MINR_DATASET,
 )
@@ -81,7 +82,7 @@ def write_payload(payload: dict, target_dir: Path, filename: str) -> Path:
 # `sources/eurostat.py` names, arriving in the JSON as the cube returned it.
 # What is left is a SELECTION — which readings appear, not what they say:
 # `rows_to_yearly_index` keeps December and drops any year without one, and
-# `index_years_from_2020` drops the years the anchor selector cannot reach.
+# `index_years_from_floor` drops the years the anchor selector cannot reach.
 #
 # So this note describes a choice of rows rather than a modification of them,
 # and keeping it that way is worth some discipline. Every figure the site
@@ -100,9 +101,9 @@ INDEX_DERIVATION_NOTE = (
     "unmodified, at the unit named in each row's api_url_index — open it and "
     "the same digits come back. What is ours is the SELECTION: index_by_year "
     "takes the December reading of each year out of the monthly series (a year "
-    "without a December is omitted) and starts at 2020, and latest_index is the "
-    "most recent month published. The annual rate of change is Eurostat's own "
-    "figure, unmodified."
+    f"without a December is omitted) and starts at {INDEX_SINCE_YEAR}, and "
+    "latest_index is the most recent month published. The annual rate of change "
+    "is Eurostat's own figure, unmodified."
 )
 
 

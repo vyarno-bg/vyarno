@@ -23,12 +23,14 @@ Seven gates guard the HICP publish:
    one either calls a settled figure an estimate or lets an estimate render as
    settled.
 
-One more guards the НСИ by-sector wage publish, and it is listed apart because
-it gates a different payload rather than an eighth property of the same one:
+Two more guard other payloads, and they are listed apart because each gates a
+different file rather than an eighth property of the same one:
 
 8. **Sector wages** — every activity carries both language names and a value at
    the payload's own reference period, no two rows resolve to one activity, and
    the headline IS the published cell rather than anything computed from it.
+9. **Unemployment** — the headline is the series' own cell at `ref_period`, and
+   every status flag is one of Eurostat's letters at a month the series carries.
 """
 
 from __future__ import annotations
@@ -884,30 +886,40 @@ def _validate_index_base(payload: dict) -> None:
         )
 
 
-def _validate_status_flags(payload: dict) -> None:
+def validate_status_flags(series: dict, status: dict | None, what: str) -> None:
     """Every published flag is a letter Eurostat actually use, at a real period.
 
     The flags exist so the page can decline to draw an unbroken line across a
-    break the publisher declared. A flag at a quarter the series does not carry
+    break the publisher declared. A flag at a period the series does not carry
     would mark nothing; a letter outside Eurostat's own vocabulary would render
     as a footnote a reader cannot look up.
+
+    Takes the two maps rather than a payload, because the two shapes that reach
+    it are `{period: letter}` and `{period: {field: letter}}` and neither one is
+    a payload's whole shape. One implementation for both: a second copy is a
+    second place the vocabulary can fall behind Eurostat's.
     """
+    for period, flags in (status or {}).items():
+        if period not in series:
+            raise ValidationError(f"{what} flags {period}, which its own series does not carry.")
+        entries = flags.items() if isinstance(flags, dict) else [(None, flags)]
+        for field, letter in entries:
+            if not set(str(letter)) <= STATUS_FLAGS:
+                at = f"{period}/{field}" if field else period
+                raise ValidationError(
+                    f"{what} flags {at} as {letter!r}, which is not one of Eurostat's "
+                    f"own letters ({''.join(sorted(STATUS_FLAGS))}). A marker a reader "
+                    f"cannot look up is worse than none."
+                )
+
+
+def _validate_status_flags(payload: dict) -> None:
+    """The house market's two indices, through the shared flag check."""
     for key in ("price_index", "price_index_real"):
         block = payload.get(key, {})
-        series = block.get("series_by_period", {})
-        for period, flags in (block.get("status_by_period") or {}).items():
-            if period not in series:
-                raise ValidationError(
-                    f"house market: {key} flags {period}, which its own series does not carry."
-                )
-            entries = flags.items() if isinstance(flags, dict) else [("total", flags)]
-            for field, letter in entries:
-                if not set(str(letter)) <= STATUS_FLAGS:
-                    raise ValidationError(
-                        f"house market: {key} flags {period}/{field} as {letter!r}, which is "
-                        f"not one of Eurostat's own letters ({''.join(sorted(STATUS_FLAGS))}). "
-                        f"A marker a reader cannot look up is worse than none."
-                    )
+        validate_status_flags(
+            block.get("series_by_period", {}), block.get("status_by_period"), f"house market: {key}"
+        )
 
 
 def validate_house_market_structure(payload: dict) -> None:
@@ -1175,3 +1187,48 @@ def validate_payroll(payload: dict) -> None:
                 f"agree with it; a line that is over for any other reason is a "
                 f"table that has drifted from the working beside it."
             )
+
+
+# ---------------------------------------------------------------------------
+# The unemployment payload — the series and the publisher's own marks on it
+# ---------------------------------------------------------------------------
+
+
+def validate_unemployment(payload: dict) -> None:
+    """Gate `unemployment.json` before it is written.
+
+    Two properties, and only the second is about the flags.
+
+    **The headline is a cell in the series, not a figure beside it.** The strip
+    prints `value` and `/how/` draws `series_by_period`; a headline that is not
+    the series' own reading at `ref_period` puts two numbers about one month on
+    one page, and nothing else can see it — an identity rather than a band,
+    because there is no arithmetic between them that could round.
+
+    **The flags are Eurostat's own letters, at periods the series carries.** BG
+    is flagged `b` at 2009-01, and `/how/` draws a rule there rather than
+    joining two stretches the publisher declined to call one measurement. A flag
+    at a month the series does not carry would mark nothing.
+    """
+    series = payload.get("series_by_period") or {}
+    if not series:
+        raise ValidationError(
+            "unemployment: no series. The chart on /how/ is the payload's whole "
+            "second half, and a headline with nothing behind it renders as one "
+            "number nobody can put in context."
+        )
+
+    ref = str(payload.get("ref_period", ""))
+    if ref not in series:
+        raise ValidationError(
+            f"unemployment: ref_period {ref!r} is not a month the series carries "
+            f"({min(series)}..{max(series)}). The headline and the chart would "
+            f"describe different months."
+        )
+    if payload.get("value") != series[ref]:
+        raise ValidationError(
+            f"unemployment: the headline is {payload.get('value')}% at {ref} while "
+            f"the series reads {series[ref]}% there. They are one cell published twice."
+        )
+
+    validate_status_flags(series, payload.get("status_by_period"), "unemployment:")

@@ -13,10 +13,19 @@ rule and what it costs are §"Multi-value filters return nothing" there.
 | Connector | Query | Notes |
 |---|---|---|
 | `fetch_hicp_rates_bg` | `geo=BG&unit=RCH_A&lastTimePeriod=12` | `RCH_A` is the published annual rate of change. The cube also carries `RCH_M`, `RCH_MV12MAVR`, `I15`, `I25` — ignored. |
-| `fetch_hicp_index_bg` | `geo=BG&unit=INDEX_UNIT&sinceTimePeriod=2020-01` | `INDEX_UNIT` is `I15` (2015=100). Values are unscaled and every site figure is a ratio of two of them, so the unit moves no rendered number — but `INDEX_BASE_YEAR` and `api_url_index` must move with it. |
+| `fetch_hicp_index_bg` | `geo=BG&unit=INDEX_UNIT&sinceTimePeriod=INDEX_SINCE_YEAR-01` | `INDEX_UNIT` is `I15` (2015=100). Values are unscaled and every site figure is a ratio of two of them, so the unit moves no rendered number — but `INDEX_BASE_YEAR` and `api_url_index` must move with it. |
 
 - **`coicop18`** is the ver.2 dimension name; the connector normalises
   `TOTAL ↔ CP00`.
+- **The index reaches 1996-12 and we ask for `INDEX_SINCE_YEAR` onwards, and one
+  group sets that.** Probed per code 2026-08-21: TOTAL, all 13 divisions and 43
+  of the 46 groups carry BG from 1996-12; `CP12`, `CP121` and `CP133` start
+  1999-12, `CP063` and `CP098` 2000-12, and **`CP122` (banking and financial
+  services) 2003-12**. Gate 5 demands every offered year of every code because
+  the SPA's detailed mode divides by a group's own index, so the shallowest one
+  is the floor. The constant carries the second reason it may not go much
+  deeper: Bulgaria's 1996-97 hyperinflation is in this series, and December 1996
+  reads 7,28 against 2026-07's 149,73.
 - Rate and index come from the same cube at the same publication, so
   `annual_rate_pct`, `latest_index` and the headline share the latest month.
 - **The flash release breaks that, on purpose.** Eurostat publish BG's all-items
@@ -122,9 +131,20 @@ lands in 2028. BG's waves: 2002, 2006, 2010, 2014, 2018, 2022.
 
 ## `une_rt_m` — unemployment, monthly
 
-`geo=BG&sinceTimePeriod=2020-01`, no further filters — the BG slice is small. The
-transform pins `s_adj=SA` × `sex=T` × `age=TOTAL` × `unit=PC_ACT` and **raises**
-if that cell is absent.
+`geo=BG&sinceTimePeriod=UNEMPLOYMENT_SINCE_PERIOD`, no further filters — the BG
+slice is small. The transform pins `s_adj=SA` × `sex=T` × `age=TOTAL` ×
+`unit=PC_ACT` and **raises** if that cell is absent.
+
+**The window is the cube's own.** BG runs 2000-01 onward at that cell, 318
+months to 2026-06 with no gap, which is what `UNEMPLOYMENT_SINCE_PERIOD` asks
+for. It stays pinned rather than dropped so a backfill cannot redraw `/how/`'s
+chart with nobody deciding to, and so the verify link beside the figure resolves
+to the window the chart was drawn from.
+
+**Eurostat flag 2009-01 `b` — a break in their own series** — and
+`status_by_period` carries it to the payload, where `/how/` draws a rule rather
+than joining two stretches they declined to call one measurement. The letters
+are theirs and gate 9 refuses one outside their vocabulary.
 
 **Why monthly and not `une_rt_a`.** The annual cube publishes one figure a year,
 so mid-year its freshest reading is an average of the year before last — over a
