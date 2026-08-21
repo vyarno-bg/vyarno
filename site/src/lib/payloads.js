@@ -130,13 +130,17 @@ export const PAYLOADS = Object.freeze(
     {
       key: "regionSalary",
       file: "region_salary",
-      pages: ["home"],
+      // `/market/` reads the quarterly series, which the calculator does not:
+      // the cross-city table divides имот.bg's median by each област's wage at
+      // one quarter of every year, and neither published file may carry the
+      // other's number (docs/legal.md §НСИ).
+      pages: ["home", "market"],
       // НСИ publishes the regional wage series quarterly.
       cadenceDays: 92,
       name: { bg: "Средна заплата по области", en: "Average wage by oblast" },
       feeds: {
-        bg: "сравнението на заплатата ти със средната за твоята област",
-        en: "the comparison of your pay with the average for your oblast",
+        bg: "сравнението на заплатата ти със средната за твоята област и сравнението между градовете",
+        en: "the comparison of your pay with the average for your oblast, and the comparison between cities",
       },
       refPeriod: (p) => p?.ref_period ?? null,
     },
@@ -212,7 +216,10 @@ export const PAYLOADS = Object.freeze(
     {
       key: "cityPrice",
       file: "city_price",
-      pages: ["home"],
+      // `/market/` reads the `historical` blocks the calculator never opens:
+      // one median per year per city, which is the price half of the cross-city
+      // years-of-pay table.
+      pages: ["home", "market"],
       // imot.bg publishes no release calendar, so this is our own refresh
       // expectation rather than a schedule anyone promised us. A quarter,
       // because a €/m² average moves slowly enough that a month's lag is not a
@@ -220,8 +227,8 @@ export const PAYLOADS = Object.freeze(
       cadenceDays: 92,
       name: { bg: "Цени на жилищата по градове", en: "Home prices by city" },
       feeds: {
-        bg: "цената на квадратен метър в твоя град и колко струва жилище",
-        en: "the €/m² in your city and what a home costs",
+        bg: "цената на квадратен метър в твоя град, колко струва жилище и сравнението между градовете",
+        en: "the €/m² in your city, what a home costs, and the comparison between cities",
       },
       // имот.bg's own newest published snapshot, read from each page's own
       // `<select name="date">`, else the day we read it. A DAY rather than a

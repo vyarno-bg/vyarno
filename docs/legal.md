@@ -376,8 +376,10 @@ asserted over one.
 
 **What remains, stated rather than implied.** The composed pay ladder is still a
 scalar multiplication of Eurostat's decile shape by an НСИ figure, displayed on
-screen. If §2.1.1's «сборни произведения» reaches a display that puts two
-publishers' figures in one chart, that display is within it. Two things answer
+screen, and `/market/`'s cross-city table divides имот.bg's median by an НСИ
+quarter for every град both publishers cover, at every year of the window at
+once. If §2.1.1's «сборни произведения» reaches a display that puts two
+publishers' figures in one chart, both displays are within it. Two things answer
 that and neither is a permission. The prohibition is written in copyright
 vocabulary — what may not be distributed is a **произведение**, and ЗАПСП чл. 3
 conditions that on being «резултат на творческа дейност» while чл. 4, т. 4 (read
@@ -396,7 +398,11 @@ reader's screen is the paragraph above — a comparison the reader asked for,
 against a figure that is still НСИ's, computed nowhere we could distribute it
 from. `view/payroll.js#regionGap` and `view/payroll.js#sectorComparison` are both that: a
 percentage between the reader's own pay and a published average, existing only
-in their tab.
+in their tab. `view/market.js#marketCityAffordability` is the third and the one
+with no reader's figure in it at all: имот.bg's median over an НСИ quarter, city
+by city, computed in the browser precisely because the file it would otherwise
+live in may not carry it. Its wage is selected at one quarter and never
+averaged, for the same reason `regionQuarter` selects.
 
 The line matters because the two halves have different answers. A derived
 figure written into `data/published/` is distributed by us, to everyone, as a

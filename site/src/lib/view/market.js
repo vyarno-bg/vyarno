@@ -20,12 +20,15 @@
  */
 
 import {
+  bgNetSalary,
   completeYearTotals,
   dealInYearsOfPay,
   dealsAtQuarter,
   eurosFromMixedCurrency,
+  homeYears,
   indexTimesBase,
   lessSharePct,
+  payrollParams,
   rangePosition,
   sharePctByKey,
   shortfallPct,
@@ -33,6 +36,11 @@ import {
   yearEndGrowth,
   yearOnYearChanges,
 } from "../mirror.js";
+// The size the calculator itself defaults to, so the two pages quote one home.
+// A second constant here would be a second answer to "how big", differing from
+// the one a reader has already been shown, with nothing on either page saying so.
+import { HOME } from "../content.js";
+import { cityCoverage, regionDisplayName, SOFIA_CITY_CODE } from "./region.js";
 
 /**
  * A figure with everything the page has to print beside it.
@@ -1087,4 +1095,259 @@ export function marketRangeStrip(houseMarket, structure) {
   }
 
   return { rows };
+}
+
+/**
+ * имот.bg publish prices for this град and their archive does not reach the
+ * base year — the third state beside `view/region.js`'s two, and a different
+ * claim from either. «имот.bg не публикуват цени за Смолян» is false; what is
+ * true is that they publish this year's and not the one this table starts at.
+ */
+export const CITY_SHORT_ARCHIVE = "short";
+
+/**
+ * How much имот.bg's district set may move before the row says so.
+ *
+ * **Every threshold on this page is ours and this one says so on screen.** The
+ * median is taken across whichever districts имот.bg published that year, so
+ * where the set grew by half — Кърджали 6 to 9, Варна 51 to 69 — part of the
+ * move is coverage rather than price, and a reader who cannot see that reads a
+ * composition change as a market. A fifth is where the line is drawn; the two
+ * counts are printed beside every row that crosses it, so a reader who would
+ * draw it elsewhere has the figures to.
+ */
+export const COVERAGE_SHIFT = 0.2;
+
+/**
+ * How many years of the local average pay one home costs, in every city with
+ * both halves published.
+ *
+ * **THE JOIN HAPPENS HERE AND MAY NEVER HAPPEN IN A PAYLOAD.** имот.bg's median
+ * is ours over their district averages; the wage is НСИ's cell, unmodified.
+ * НСИ's licence §2.1.1 forbids distributing производни и сборни произведения,
+ * so no file this repository publishes may carry a figure computed over their
+ * cells — the division exists in the reader's tab and nowhere else, exactly as
+ * `view/payroll.js#regionGap` does it (docs/legal.md §НСИ). Moving this into
+ * the pipeline to simplify the wiring would breach the licence.
+ *
+ * **The wage is SELECTED at one quarter, never averaged over the year.** НСИ
+ * publish quarters; a year's mean is a figure they did not print, and the newest
+ * year has two quarters in it rather than four — so a mean would compare half a
+ * year against a whole one, on a series that rises through the year, and the
+ * bias would run in the direction of the finding. The anchor is the quarter the
+ * payload's own `ref_period` names, read at that same quarter in every earlier
+ * year, so both ends of a comparison describe the same season.
+ *
+ * **NET, at the payroll table this build ships.** The reader's own years-to-buy
+ * in `HomeRow` divides by take-home, and two figures called the same thing on
+ * one site may not be a third apart. The conversion is `bgNetSalary`, the same
+ * one the calculator runs on the reader's own pay, and the section says whose
+ * table it is: below the insurance ceiling it is one factor applied to every
+ * city and every year, so it moves the level and no comparison here.
+ *
+ * **A city missing either half is NAMED, not dropped.** имот.bg serve no page
+ * for Софийска област and their archive reaches back further for some cities
+ * than others, so НСИ's области outnumber the rows. A reader who knows their
+ * own place is absent and cannot find out why has been told the table is the
+ * country.
+ *
+ * @param {object|null} cityPrice     data.cityPrice (city_price.json)
+ * @param {object|null} regionSalary  data.regionSalary (region_salary.json)
+ * @param {object|null} payroll       data.payroll (payroll.json)
+ * @returns {{rows: Array<object>, omitted: Array<object>, quarter: string|null,
+ *            baseYear: number|null, latestYear: number|null, years: number[],
+ *            refPeriod: string|null, m2: number, worse: number,
+ *            medianChangePct: number|null, aboveCapital: Array<object>,
+ *            capital: object|null, isPreliminary: boolean,
+ *            priceUrl: string|null, wageUrl: string|null,
+ *            wageUrlBg: string|null}}
+ */
+export function marketCityAffordability(cityPrice, regionSalary, payroll) {
+  const empty = {
+    rows: [],
+    omitted: [],
+    quarter: null,
+    baseYear: null,
+    latestYear: null,
+    years: [],
+    refPeriod: null,
+    m2: HOME.m2Default,
+    worse: 0,
+    medianChangePct: null,
+    aboveCapital: [],
+    isPreliminary: false,
+    priceUrl: null,
+    wageUrl: null,
+    wageUrlBg: null,
+  };
+
+  const refPeriod = String(regionSalary?.ref_period ?? "");
+  const match = /^(\d{4})-(Q[1-4])$/.exec(refPeriod);
+  if (!match) return empty;
+  const [, refYearText, quarter] = match;
+  const refYear = Number(refYearText);
+
+  const regions = Array.isArray(regionSalary?.regions) ? regionSalary.regions : [];
+  const cities = Array.isArray(cityPrice?.cities) ? cityPrice.cities : [];
+  if (!regions.length || !cities.length) return empty;
+
+  /**
+   * **THE WINDOW IS THE OVERLAP, AND NEITHER PUBLISHER SETS IT ALONE.**
+   *
+   * The two release on their own clocks: НСИ publish a quarter of the new year
+   * around the middle of it, имот.bg's archive gains its row whenever they
+   * recompute. Ended at НСИ's own year, the first release of a January nobody
+   * had scraped yet failed EVERY city's newest-year check at once and the whole
+   * section stopped rendering — 25 cities gone, no error, no empty state,
+   * because a table of nothing is what "no city has both halves" produces.
+   *
+   * So the window is the years both sides carry: the anchor quarter present for
+   * every област, and a price published for at least one град. Whichever
+   * publisher is ahead, the table shows the newest year that can actually be
+   * computed, and it moves on its own when the other one catches up.
+   */
+  const wageYears = new Set(
+    regions.length
+      ? Object.keys(regions[0]?.series_by_period ?? {})
+          .filter((key) => key.endsWith(`-${quarter}`))
+          .map((key) => Number(key.slice(0, 4)))
+          .filter((year) =>
+            regions.every((region) =>
+              Number.isFinite(region?.series_by_period?.[`${year}-${quarter}`])
+            )
+          )
+      : []
+  );
+  const priceYears = new Set(
+    cities.flatMap((city) =>
+      (Array.isArray(city?.historical) ? city.historical : [])
+        .filter((entry) => Number.isFinite(entry?.eur_per_m2_median))
+        .map((entry) => entry.year)
+    )
+  );
+  const shared = [...wageYears].filter((year) => priceYears.has(year) && year <= refYear).sort();
+  if (shared.length < 2) return empty;
+  const baseYear = shared[0];
+  const latestYear = shared[shared.length - 1];
+
+  const years = [];
+  for (let year = baseYear; year <= latestYear; year += 1) years.push(year);
+  const params = payrollParams(payroll);
+  const priceBy = new Map(cities.map((city) => [city?.code, city]));
+  const m2 = HOME.m2Default;
+
+  const rows = [];
+  const omitted = [];
+  for (const region of regions) {
+    const code = region?.code ?? "";
+    const city = priceBy.get(code) ?? null;
+    // Through the picker's own renamer, so «София(столица)» reaches this table
+    // as «София» and Софийска област is not the row above it wearing the same
+    // word. One implementation with the control a reader picked their област in.
+    const names = {
+      code,
+      bgName: regionDisplayName(region?.bg_name, "bg"),
+      enName: regionDisplayName(region?.en_name, "en"),
+    };
+    if (!city) {
+      // Through the picker's own answer to "does имот.bg publish this place":
+      // two implementations are two places that can answer it differently.
+      omitted.push({ ...names, reason: cityCoverage(cityPrice, code) });
+      continue;
+    }
+
+    const priceBySeries = new Map(
+      (Array.isArray(city.historical) ? city.historical : [])
+        .filter((entry) => Number.isFinite(entry?.eur_per_m2_median))
+        .map((entry) => [entry.year, entry])
+    );
+    const points = [];
+    for (const year of years) {
+      const entry = priceBySeries.get(year);
+      const gross = region?.series_by_period?.[`${year}-${quarter}`];
+      if (!entry || !Number.isFinite(gross) || gross <= 0) continue;
+      const net = bgNetSalary(gross, params).net;
+      const value = homeYears(entry.eur_per_m2_median * m2, net);
+      if (!Number.isFinite(value)) continue;
+      points.push({
+        year,
+        value,
+        gross,
+        net,
+        eurPerM2: entry.eur_per_m2_median,
+        nDistricts: Number.isFinite(entry.n_districts) ? entry.n_districts : null,
+      });
+    }
+
+    // Both ends or no row. A city имот.bg's archive reaches back three years for
+    // is a real reading and an unreal comparison: printed in a column headed
+    // with the base year it would report a change over a window it does not
+    // cover, and the digits either side of it would be right.
+    const first = points[0] ?? null;
+    const last = points[points.length - 1] ?? null;
+    if (!first || !last || first.year !== baseYear || last.year !== latestYear) {
+      omitted.push({ ...names, reason: CITY_SHORT_ARCHIVE, from: first?.year ?? null });
+      continue;
+    }
+
+    rows.push({
+      ...names,
+      points,
+      base: first,
+      latest: last,
+      changePct: ((last.value - first.value) / first.value) * 100,
+      // имот.bg's coverage per year, which the payload has carried all along.
+      // The median is taken across the districts they published THAT year, and
+      // where the set grew the move is partly composition — Варна's is half as
+      // many districts again. Carried as the two counts rather than as a verdict
+      // on them: `COVERAGE_SHIFT` is where the line is drawn, once.
+      nBase: first.nDistricts,
+      nLatest: last.nDistricts,
+      coverageShifted:
+        Number.isFinite(first.nDistricts) &&
+        Number.isFinite(last.nDistricts) &&
+        first.nDistricts > 0 &&
+        Math.abs(last.nDistricts - first.nDistricts) / first.nDistricts >= COVERAGE_SHIFT,
+    });
+  }
+
+  // Most years first, which is the order the finding is in: the capital is not
+  // at the top of it. Ties by код, so the order is stable across builds.
+  rows.sort((a, b) => b.latest.value - a.latest.value || a.code.localeCompare(b.code));
+
+  const capital = rows.find((row) => row.code === SOFIA_CITY_CODE) ?? null;
+
+  return {
+    rows,
+    omitted,
+    quarter,
+    baseYear,
+    latestYear,
+    years,
+    refPeriod,
+    m2,
+    worse: rows.filter((row) => row.changePct > 0).length,
+    medianChangePct: median(rows.map((row) => row.changePct)),
+    aboveCapital: capital
+      ? rows.filter((row) => row.code !== capital.code && row.latest.value >= capital.latest.value)
+      : [],
+    capital,
+    isPreliminary: Boolean(regionSalary?.is_preliminary),
+    priceUrl: cityPrice?.source_url ?? null,
+    wageUrl: regionSalary?.source_url ?? null,
+    wageUrlBg: regionSalary?.source_url_bg ?? null,
+  };
+}
+
+/**
+ * The middle of a list, or null where there is nothing to take a middle of.
+ *
+ * @param {number[]} values
+ * @returns {number|null}
+ */
+function median(values) {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!sorted.length) return null;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }

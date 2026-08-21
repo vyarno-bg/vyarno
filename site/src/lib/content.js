@@ -2885,6 +2885,56 @@ export const COPY = {
     bg: "Цени и брой сделки по градове",
     en: "Prices and number of sales by city",
   },
+
+  // The cross-city affordability table. Every figure in it is a slot: the
+  // window's two ends, the counts, the movers and the spread all come out of
+  // `view/market.js#marketCityAffordability` at render, because each of them is
+  // a claim the next имот.bg archive read or the next НСИ quarter can falsify
+  // and nothing recomputes prose.
+  mktAffordCol: { bg: "Град", en: "City" },
+  // Both figure heads name the unit, because a reader meeting «7,8» in a column
+  // headed «2026 г.» has to be told what 7,8 is, and a table is read without the
+  // paragraph above it. Which quarter of each year the wage comes from is in the
+  // source line under the table rather than here: it is the same quarter in both
+  // columns, so hung on one of them it would read as that column's alone.
+  mktAffordColYears: { bg: "Години заплата, {year} г.", en: "Years of pay, {year}" },
+  mktAffordColChange: { bg: "Промяна", en: "Change" },
+  // A year as a column head, in the numbers tables and above each of the two
+  // figure columns. One key rather than one per year: two keys carrying the
+  // same string are two places for a year format to drift.
+  mktAffordKeyYear: { bg: "{year} г.", en: "{year}" },
+  mktAffordTbl: {
+    bg: "Колко години заплата струва жилище, по градове",
+    en: "How many years of pay a home costs, by city",
+  },
+  mktAffordOpenYears: {
+    bg: "виж всичките {n} години за всеки град",
+    en: "read all {n} years for every city",
+  },
+  mktAffordTblYears: {
+    bg: "Години заплата за едно жилище, по градове и години",
+    en: "Years of pay for one home, by city and year",
+  },
+  mktAffordOpenDistricts: {
+    bg: "виж по колко квартала е сметната всяка година ({n})",
+    en: "read how many districts each year is measured across ({n})",
+  },
+  mktAffordTblDistricts: {
+    bg: "Брой квартали, които имот.bg публикува, по градове и години",
+    en: "Number of districts imot.bg publish, by city and year",
+  },
+  // The three области with no row, each with the reason it has none. Two
+  // different reasons and therefore two strings: «имот.bg не публикуват цени за
+  // Смолян» is false — they publish this year's — and it is the sentence one
+  // flag would produce for both.
+  mktAffordNoPage: {
+    bg: "имот.bg не публикуват цени за {places}. Затова в таблицата няма такъв ред.",
+    en: "imot.bg publish no prices for {places}. There is no row for it in the table.",
+  },
+  mktAffordShortArchive: {
+    bg: "Архивът на имот.bg за {places} не стига до {year} г., затова ги няма в таблицата: цена за днес има, но няма с какво да се сравни.",
+    en: "imot.bg's archive for {places} does not reach {year}, so they are not in the table: there is a price for today and nothing to compare it with.",
+  },
   // НСИ's name, for a caption that is otherwise Bulgarian. A Latin "NSI" inside
   // Bulgarian caption text is the defect `srcEurostat` exists to prevent.
   srcNsi: { bg: "НСИ", en: "NSI" },
