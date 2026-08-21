@@ -245,7 +245,14 @@ than an upstream anybody can poll.
 ### What happens to a data pull request
 
 Every refresh arm but `city-price` pushes `data/<source>` and
-opens a pull request against `main`. **A published figure reaches a reader
+opens a pull request against `main` — **when the upstream republished, and at no
+other time.** A run that re-reads the same figures on a later day writes the same
+payload with a later date on it, and `refresh_report.py` is what tells those two
+apart: it drops the fields the pipeline stamps with the run date, at every depth,
+and compares the rest against what is committed. A pull request that moves no
+number spends the one human look below on nothing.
+
+**A published figure reaches a reader
 through a merge and no other way**, and nothing in this repository merges one.
 That is deliberate, and the failure it leaves is the one worth naming: left
 alone the site ages while every gate stays green — the refresh ran, the gates

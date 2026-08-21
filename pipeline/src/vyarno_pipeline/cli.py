@@ -93,6 +93,12 @@ from vyarno_pipeline.publish import (
     write_salary_distribution_payload,
     write_time_series,
 )
+from vyarno_pipeline.refresh_report import (
+    build_report,
+    committed_reader,
+    github_output,
+    step_summary,
+)
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS
 from vyarno_pipeline.sources.bnb import (
     FIXATION_BUCKETS,
@@ -201,6 +207,23 @@ from vyarno_pipeline.validate import (
     validate_unemployment,
 )
 
+# Every arm the CLI offers. `all` is appended where a bulk refresh makes sense
+# and left off where a single arm is required, so a command that can date a
+# commit with one `as_of` cannot be handed eleven.
+REFRESH_SOURCES = [
+    "hicp",
+    "unemployment",
+    "mortgage",
+    "credit",
+    "city-price",
+    "region-salary",
+    "sector-salary",
+    "salary-dist",
+    "payroll",
+    "house-market",
+    "nsi-housing",
+]
+
 
 @click.group()
 def main() -> None:
@@ -255,6 +278,88 @@ def verify_citations(published: Path, only: str | None, quiet: bool) -> None:
         sys.exit(3)
 
 
+@main.command("refresh-report")
+@click.option(
+    "--source",
+    required=True,
+    type=click.Choice(REFRESH_SOURCES),
+    help=(
+        "The arm that has just written. `all` is not accepted: eleven arms "
+        "carry eleven as_of dates and a commit can only be dated with one."
+    ),
+)
+@click.option(
+    "--published",
+    default=Path("data/published"),
+    show_default=True,
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    help="Directory of published payloads the arm has just written into",
+)
+@click.option(
+    "--cadence",
+    required=True,
+    type=click.Path(path_type=Path, exists=True, dir_okay=False),
+    help="JSON from site/scripts/payload-cadence.mjs — the manifest's own per-payload days",
+)
+@click.option("--against", default="origin/main", show_default=True, help="Git ref to compare with")
+@click.option(
+    "--repo",
+    default=Path(),
+    show_default=True,
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    help="Repository root the ref is read from",
+)
+@click.option(
+    "--github-output",
+    "github_output_path",
+    default=None,
+    type=click.Path(path_type=Path, dir_okay=False),
+    help="Append the workflow outputs here ($GITHUB_OUTPUT)",
+)
+@click.option(
+    "--step-summary",
+    "step_summary_path",
+    default=None,
+    type=click.Path(path_type=Path, dir_okay=False),
+    help="Append the run's own summary here ($GITHUB_STEP_SUMMARY)",
+)
+def refresh_report_command(
+    source: str,
+    published: Path,
+    cadence: Path,
+    against: str,
+    repo: Path,
+    github_output_path: Path | None,
+    step_summary_path: Path | None,
+) -> None:
+    """Did an upstream republish, and what should the commit be dated?
+
+    `refresh.yml` gates its commit, push and pull-request steps on `real_change`.
+    The decision itself is `refresh_report.py`, which says why it is not in the
+    workflow. Exits 0 either way — a run that finds the same figures on a later
+    day has done its job.
+    """
+    report = build_report(
+        published_dir=published,
+        source=source,
+        cadence=json.loads(cadence.read_text("utf-8")),
+        committed=committed_reader(repo, against),
+        today=clock.today(),
+    )
+    if github_output_path:
+        with github_output_path.open("a", encoding="utf-8") as handle:
+            handle.write(github_output(report))
+    if step_summary_path:
+        with step_summary_path.open("a", encoding="utf-8") as handle:
+            handle.write(step_summary(report, source))
+    click.echo(github_output(report), nl=False)
+    if not report.real_change:
+        click.echo(
+            f"::notice::{source} — the upstream is still serving the committed figures. "
+            f"Only the run date moved, so no pull request."
+        )
+
+
 # How far back the per-city archive walk starts. имот.bg's deepest city is
 # София, whose pages answer from 2000; most others begin 2003 and five 2004.
 # The walk starts at the deepest and lets the misses fall out, because a
@@ -307,22 +412,7 @@ def _month_before(period: str) -> str:
 @click.option(
     "--source",
     required=True,
-    type=click.Choice(
-        [
-            "hicp",
-            "unemployment",
-            "mortgage",
-            "credit",
-            "city-price",
-            "region-salary",
-            "sector-salary",
-            "salary-dist",
-            "payroll",
-            "house-market",
-            "nsi-housing",
-            "all",
-        ]
-    ),
+    type=click.Choice([*REFRESH_SOURCES, "all"]),
     help=(
         "Which dataset to refresh. 'mortgage' pulls ECB MIR (new-business "
         "AAR + APRC) and BNB (outstanding housing stock) into one "
