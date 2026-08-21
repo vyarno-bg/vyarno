@@ -1149,23 +1149,21 @@
           >Върхът е {number(unemployment.peak.value, 1, $lang)}% през {periodLong(
             unemployment.peak.period,
             $lang
-          )}, по време на извънредното положение заради COVID. Оттам слиза без прекъсване до {number(
+          )}. Най-ниската стойност, която Евростат са отчели за България в този период, е {number(
             unemployment.trough.value,
             1,
             $lang
-          )}% през {periodLong(unemployment.trough.period, $lang)}, най-ниската стойност, която
-          Евростат са отчели за България в този период.</span
+          )}% през {periodLong(unemployment.trough.period, $lang)}.</span
         >
         <span class="l-en"
           >The peak is {number(unemployment.peak.value, 1, $lang)}% in {periodLong(
             unemployment.peak.period,
             $lang
-          )}, during the COVID state of emergency. From there it falls without interruption to {number(
+          )}. The lowest Eurostat have recorded for Bulgaria over this window is {number(
             unemployment.trough.value,
             1,
             $lang
-          )}% in {periodLong(unemployment.trough.period, $lang)}, the lowest Eurostat have recorded
-          for Bulgaria over this window.</span
+          )}% in {periodLong(unemployment.trough.period, $lang)}.</span
         >
       </p>
       <figure class="chart">

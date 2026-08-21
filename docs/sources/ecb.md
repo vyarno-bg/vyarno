@@ -30,7 +30,8 @@ FREQ . REF_AREA . BS_REP_SECTOR . BS_ITEM . MATURITY_NOT_IRATE
 | All-in cost — APRC (ГПР), fees included | `M.BG.B.A2C.A.C.A.2250.EUR.N` |
 | New-business volume (splice evidence) | `M.BG.B.A2C.A.B.A.2250.EUR.N` |
 | Outstanding stock (cross-check gate only) | `M.BG.B.A22.A.R.A.2250.EUR.O` |
-| Pre-2026 legs of the three above | same keys with `BGN` |
+| New lending to companies, the mortgage rate's comparator | `M.BG.B.A2A.A.R.A.2240.EUR.N` |
+| Pre-2026 legs of the four above | same keys with `BGN` |
 
 ## What the codes mean, in the ЕЦБ's own words
 
@@ -62,6 +63,35 @@ All read **2026-08-13**.
   общества, читалища, културни и спортни клубове». A wider counterparty than
   «домакинства» means anywhere else in this app, so both `rate_basis` strings in
   `mortgage.json` name the pair. `2240` is non-financial corporations.
+
+## The corporate rate, and the splice that is not optional here
+
+`credit.json#business_lending` carries what a company is charged on new term
+lending, so `/credit/` can put it beside what a homebuyer is charged. Two key
+dimensions separate it from the mortgage series and not one:
+`BS_COUNT_SECTOR` 2240 against 2250, and `BS_ITEM` **`A2A` against `A2C`** —
+MIR publishes no purpose split for corporate borrowing, so the corporate side
+is term lending for any purpose while the household side is narrowed to house
+purchase. Both exclude revolving credit, overdrafts and card debt. The payload
+says so in `business_lending.comparability`, because it is the difference a
+reader is owed rather than one a caption can wave away.
+
+**The euro leg is the trap, and it is sharper than the mortgage one.** `EUR`
+before 2026-01 means loans DENOMINATED in euro. On mortgages that was a ~36
+m/month niche beside BGN's ~1,090 m; on corporate lending BOTH currencies were
+in real use, and over the months both legs publish they sit as far as 2.08 pp
+apart (2023-04: BGN 3.48%, EUR 5.56%). So the euro leg's 234 months back to
+2007 look like a corporate rate series and are not one. `credit.py#validate_business_splice`
+is the gate: it reads where the published series STARTS and which leg each
+pre-changeover month came from, because no plausibility band can tell two
+plausible rates apart.
+
+**The splice carries no volume behind it**, unlike `A2C`'s:
+`M.BG.B.A2A.A.B.A.2240.{BGN,EUR}.N` is a 404 on both legs, since BG reports
+new-business volume by loan-size bucket and never at the all-sizes total. What
+stands in is `AMOUNT_CAT=2`, «Up to and including EUR 0.25 million» — the
+bucket an ordinary company borrows in — whose euro volume steps up an order of
+magnitude at the changeover while the lev leg simply ends.
 
 ## «New business» is not «new lending»
 

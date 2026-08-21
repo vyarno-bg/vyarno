@@ -18,7 +18,9 @@ Exit codes:
 
 from __future__ import annotations
 
+import itertools
 import json
+import statistics
 import sys
 import time
 from collections.abc import Callable
@@ -45,6 +47,7 @@ from vyarno_pipeline.credit import (
     cross_check_stock_rate,
     product_block,
     savings_ratio,
+    validate_business_splice,
     validate_card_above_mortgage,
     validate_card_nesting,
     validate_credit_freshness,
@@ -108,6 +111,8 @@ from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import (
     BSI_KEYS,
     BSI_SERIES_START,
+    BUSINESS_KEYS,
+    BUSINESS_SERIES_START,
     CBD2_NPL_SCOPES,
     CONSUMER_KEYS,
     EURO_SWITCH_PERIOD,
@@ -1519,6 +1524,15 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         # succeeds or fails by the order they ran in, and `--source credit`
         # alone would compare today's card rate against whatever was on disk.
         mortgage_now = fetch_mir_series(SERIES_KEYS["new_business_aar_eur"])
+        click.echo("→ fetching ECB MIR new lending to companies (the other borrower)...")
+        # Over the whole comparable record rather than the 2020 default the
+        # household keys are pulled on: the lev legs of this key and of the
+        # mortgage one both begin at 2017-08, so that is where a comparison
+        # between them can begin.
+        business = {
+            name: fetch_mir_series(key, start_period=BUSINESS_SERIES_START)
+            for name, key in BUSINESS_KEYS.items()
+        }
         click.echo("→ fetching ECB CBD2 non-performing loans (households vs companies)...")
         npl = {scope: fetch_cbd2_series(cbd2_npl_key(scope)) for scope in CBD2_NPL_SCOPES}
         click.echo("→ fetching ECB BSI household deposits and loans (the levels)...")
@@ -1561,6 +1575,14 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             "card_aar",
         )
     }
+    # The corporate leg splices on the same rule and for a sharper reason: here
+    # BOTH currencies were in real use before 2026, so the euro leg is not the
+    # ~5% niche it is on mortgages but a differently priced slice of a live
+    # market, up to 2.08 pp away from the lev one in the same month.
+    spliced["business_aar"] = splice_at_euro_changeover(
+        business["business_aar_bgn"], business["business_aar_eur"]
+    )
+
     # Deposits over one window, and it is the source that decides which: the BGN
     # leg of `L22` at this aggregation is a 404, so the term series begins at
     # euro adoption. Drawing the overnight series further back than its pair
@@ -1638,8 +1660,14 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             ("card", spliced["card_aar"]),
             ("deposit_overnight", deposits["deposit_overnight"]),
             ("deposit_term", deposits["deposit_term"]),
+            ("business_lending", spliced["business_aar"]),
         ):
             validate_product_series(series, product)
+
+        click.echo("→ gate: the company rate is the splice, not the euro leg whole...")
+        validate_business_splice(
+            spliced["business_aar"], business["business_aar_bgn"], EURO_SWITCH_PERIOD
+        )
 
         click.echo("→ gate: APRC ≥ AAR on consumer credit...")
         validate_aprc_above_aar(spliced["consumer_aar"], spliced["consumer_aprc"])
@@ -1861,6 +1889,141 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         ),
     }
 
+    business_ref = max(spliced["business_aar"])
+    # The three figures the block's own prose cites, computed rather than
+    # typed: a payload that explains its splice with numbers somebody measured
+    # once is a payload whose explanation goes stale on the next release.
+    business_leg_gap_pp = round(
+        max(
+            abs(business["business_aar_bgn"][p] - business["business_aar_eur"][p])
+            for p in business["business_aar_bgn"]
+            if p in business["business_aar_eur"]
+        ),
+        2,
+    )
+    business_moves = [
+        abs(b - a)
+        for a, b in itertools.pairwise(spliced["business_aar"][p] for p in spliced["business_aar"])
+    ]
+    business_splice_step_pp = round(
+        abs(
+            spliced["business_aar"][EURO_SWITCH_PERIOD]
+            - spliced["business_aar"][_month_before(EURO_SWITCH_PERIOD)]
+        ),
+        2,
+    )
+    business_typical_move_pp = round(statistics.median(business_moves), 2)
+    small_volume = business["business_small_volume_eur"]
+    small_before = [v for p, v in small_volume.items() if p < EURO_SWITCH_PERIOD][-12:]
+    small_after = [v for p, v in small_volume.items() if p >= EURO_SWITCH_PERIOD]
+    small_volume_before = round(sum(small_before) / len(small_before), 1)
+    small_volume_after = round(sum(small_after) / len(small_after), 1)
+    business_lending = {
+        # **The other borrower.** Every other price in this payload is one a
+        # household is quoted; this is what the same banks charge a company for
+        # the same kind of term lending in the same month. It is here rather
+        # than in a payload of its own because it means nothing alone: what it
+        # answers is whether a change in the price of money reaches both.
+        "_role": (
+            "what a Bulgarian company is charged on a new term loan, over the "
+            "agreements signed in the reference month — the corporate twin of "
+            "the mortgage rate beside it, so the two can be read against each "
+            "other"
+        ),
+        "source": "ecb",
+        "dataset": (
+            f"MIR {BUSINESS_KEYS['business_aar_bgn']} (to "
+            f"{_month_before(EURO_SWITCH_PERIOD)}) spliced with "
+            f"{BUSINESS_KEYS['business_aar_eur']} (from {EURO_SWITCH_PERIOD})"
+        ),
+        "source_url": series_url(
+            BUSINESS_KEYS["business_aar_eur"], start_period=BUSINESS_SERIES_START
+        ),
+        "ref_period": business_ref,
+        "value_pct": spliced["business_aar"][business_ref],
+        "series_by_period": spliced["business_aar"],
+        "rate_basis": (
+            "the MIR rate excluding charges (DATA_TYPE_MIR=R), new business, "
+            "non-financial corporations (S.11), loans other than revolving "
+            "loans and overdrafts and card credit (BS_ITEM A2A), all loan "
+            "sizes, all initial rate-fixation periods"
+        ),
+        # **Two dimensions differ from the mortgage key, not one.** The
+        # counterparty is the obvious one (2240 against 2250); the instrument
+        # is the other, because MIR publishes no purpose split for company
+        # lending — A2C narrows the household series to house purchase and A2A
+        # has no such narrowing to make. Both exclude revolving credit,
+        # overdrafts and card debt, so the pair is term lending against term
+        # lending, and this is the difference a reader is owed rather than one
+        # the payload can call away.
+        "comparability": (
+            "the mortgage rate is MIR A2C, term lending narrowed to house "
+            "purchase; this is MIR A2A, term lending to companies for any "
+            "purpose, because MIR carries no purpose split for corporate "
+            "borrowing. Both exclude revolving credit, overdrafts and card "
+            "debt, both are new business over the same month, and both are "
+            "volume-weighted across every bank in Bulgaria"
+        ),
+        "counterparty": (
+            "BS_COUNT_SECTOR 2240, non-financial corporations (S.11) — companies "
+            "that produce goods and services, not banks, insurers or funds"
+        ),
+        "no_aprc": (
+            "BG reports no APRC here: БНБ compute the ГПР for consumer and "
+            "housing credit only, so a company's rate carries no fees-included "
+            "companion and must not be compared with the mortgage ГПР"
+        ),
+        "currency": "EUR",
+        "currency_history": (
+            f"BGN through {_month_before(EURO_SWITCH_PERIOD)}, EUR from "
+            f"{EURO_SWITCH_PERIOD} (BG adopted the euro on 2026-01-01)"
+        ),
+        # The same splice as the mortgage series and a stronger reason for it.
+        # There the euro leg was a ~36 m/month niche; here both currencies were
+        # in real use, so the euro leg is not a rounding error but a different
+        # price, and reading it whole would publish nineteen years of the wrong
+        # one.
+        "methodology_change": (
+            f"Bulgaria adopted the euro on 2026-01-01. Before then "
+            f"CURRENCY_TRANS=EUR meant loans DENOMINATED in euro rather than "
+            f"the currency of the country, and for company lending that was a "
+            f"real and differently priced part of the market: over the months "
+            f"both legs publish, the lev and euro rates sit as much as "
+            f"{business_leg_gap_pp} pp apart. This series is therefore BGN "
+            f"through {_month_before(EURO_SWITCH_PERIOD)} spliced with EUR from "
+            f"{EURO_SWITCH_PERIOD}. The euro leg publishes months this series "
+            f"does not use, and reading it whole would report that slice as "
+            f"the market. The splice steps "
+            f"{business_splice_step_pp} pp against a median month-to-month move "
+            f"of {business_typical_move_pp} pp, so it is an ordinary month for "
+            f"this series rather than the near-zero join the mortgage splice "
+            f"shows."
+        ),
+        "series_starts": BUSINESS_SERIES_START,
+        "why_it_starts_there": (
+            "the lev leg of this key begins here, and so does the lev leg of "
+            "the mortgage rate this is compared with. Before it there is no "
+            "month in which both are published in the currency Bulgarians "
+            "were borrowing in"
+        ),
+        # **The splice has no volume behind it, unlike the mortgage's.** The
+        # all-sizes volume key does not exist for BG, so what stands in is the
+        # smallest size bucket — the one an ordinary company borrows in — and
+        # the lev leg simply ending.
+        "splice_evidence": (
+            f"MIR publishes no new-business volume for this aggregation "
+            f"({BUSINESS_KEYS['business_aar_eur'].replace('.R.', '.B.')} is a "
+            f"404 on both legs), so the evidence is the smallest loan bucket "
+            f"instead: euro lending up to EUR 0.25 m averaged "
+            f"{small_volume_before} m/month over the year before the "
+            f"changeover and {small_volume_after} m/month since, while the lev "
+            f"leg stops at {max(business['business_aar_bgn'])}"
+        ),
+        "splice_evidence_source_url": series_url(
+            BUSINESS_KEYS["business_small_volume_eur"], start_period=BUSINESS_SERIES_START
+        ),
+    }
+
     outstanding = {
         # The question the rest of this payload does not answer. Every figure
         # beside it is a price; this is the quantity, and «21% на кредитна
@@ -2024,6 +2187,7 @@ def _refresh_credit(out: Path, as_of: date) -> None:
     write_credit_payload(
         as_of=as_of,
         products=products,
+        business_lending=business_lending,
         outstanding=outstanding,
         non_performing=non_performing,
         savings=savings,

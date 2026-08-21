@@ -340,6 +340,73 @@ export function creditSavings(credit) {
 }
 
 /**
+ * What a company is charged on a new loan, against what a homebuyer is.
+ *
+ * **The two series are cut to the months BOTH are published on, and that is
+ * the wiring this function exists to hold.** `business_lending` publishes from
+ * 2017-08, where its own lev leg starts; the mortgage rate is published from
+ * 2020-01. Drawn at their own lengths the corporate line would run alone
+ * across a third of the picture, which is the objection `savings` already
+ * makes to two lines over two windows — and every difference on that stretch
+ * would be a difference from nothing. The intersection is computed rather than
+ * pinned to a month, so a payload that later reaches further back extends the
+ * chart instead of needing this line edited.
+ *
+ * **The difference is ours** (P3): two published rates of the same month,
+ * subtracted, with both operands' links carried through so a reader can check
+ * either. Nothing is carried forward, so it is a measurement rather than a
+ * projection (P5).
+ *
+ * **`widest` and `narrowest` come back rather than a verdict**, and the reason
+ * is that a verdict would be this page's one claim that stops being true
+ * without anything going red. Which of the two costs more is a fact about
+ * today's payload; a heading or a sentence asserting it would survive the
+ * month it inverts. So this returns the extremes with their periods and the
+ * component prints what they say.
+ *
+ * @param {object|null} credit
+ * @param {object|null} mortgage
+ */
+export function creditBusinessSpread(credit, mortgage) {
+  const block = credit?.business_lending ?? null;
+  const homeBlock = mortgage?.new_business ?? null;
+  const businessBy = block?.series_by_period ?? null;
+  const homeBy = homeBlock?.series_by_period ?? null;
+  const shared = Object.keys(businessBy ?? {})
+    .filter((period) => Number.isFinite(businessBy[period]) && Number.isFinite(homeBy?.[period]))
+    .sort();
+  if (shared.length < 2) return null;
+  const only = (entries) => Object.fromEntries(shared.map((period) => [period, entries[period]]));
+  const business = plotLevels(only(businessBy));
+  const home = plotLevels(only(homeBy));
+  const points = shared.map((period) => ({ period, value: businessBy[period] - homeBy[period] }));
+  const latest = points[points.length - 1];
+  const widest = points.reduce((best, p) => (best.value >= p.value ? best : p));
+  return {
+    business: sourced(block?.value_pct, block),
+    home: sourced(homeBlock?.value_pct, homeBlock),
+    series: { business, home },
+    // One axis for two rates from one table, so the taller of them sets it —
+    // a component reaching for `business.max` would be right only while the
+    // company rate is the higher one.
+    scaleMax: Math.max(business.max, home.max),
+    gap: {
+      points,
+      latest,
+      widest,
+      narrowest: points.reduce((worst, p) => (worst.value <= p.value ? worst : p)),
+      // Whether today is the record, decided here rather than in the template.
+      // The section has two phrasings and this picks between them, which is a
+      // choice a test can hold: written inline it would be a comparison of two
+      // figures with no unit test able to reach the month it flips.
+      latestIsWidest: latest.period === widest.period,
+    },
+    from: business.from,
+    to: business.to,
+  };
+}
+
+/**
  * How much household lending is not being repaid, and whose.
  *
  * **The two scopes come back together because separately the first one misleads.**

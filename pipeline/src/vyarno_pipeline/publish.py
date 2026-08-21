@@ -454,6 +454,7 @@ def write_mortgage_payload(
 def write_credit_payload(
     as_of: date,
     products: dict,
+    business_lending: dict,
     outstanding: dict,
     non_performing: dict,
     savings: dict,
@@ -479,6 +480,13 @@ def write_credit_payload(
     rates are ЕЦБ MIR, the euro amounts are БНБ workbooks (MIR publishes no
     outstanding volume for BG at all) and the arrears ratio is ЕЦБ CBD2.
 
+    `business_lending` is the one block on this page whose borrower is not a
+    household, and it is here rather than in a file of its own because it is
+    not a figure on its own: what it answers is whether the price of money
+    moves the same way for a company as for a homebuyer, which needs the
+    mortgage rate beside it. Same flow, same release, same cadence as the
+    prices above, so it dates off the same freshness row.
+
     `savings` is the other side of the same household's balance sheet, from a
     fourth ECB flow. It carries its own loan level rather than reusing
     `outstanding`'s, and the two differ: BSI counts S.14+S.15 where БНБ's
@@ -498,11 +506,15 @@ def write_credit_payload(
             "every ECB MIR outstanding-amount volume key for BG is a 404: MIR "
             "publishes what the stock costs and never how big it is. The arrears "
             "ratios are ECB CBD2, split by counterparty, because the "
-            "portfolio-wide figure that reaches the news is not a household one."
+            "portfolio-wide figure that reaches the news is not a household one. "
+            "One block has a different borrower: new lending to non-financial "
+            "corporations, spliced from the same lev and euro legs, so what a "
+            "company is charged can be read against what a homebuyer is."
         ),
     )
-    payload["schema_version"] = "1.1"
+    payload["schema_version"] = "1.2"
     payload.update(products)
+    payload["business_lending"] = business_lending
     payload["outstanding"] = outstanding
     payload["non_performing"] = non_performing
     payload["savings"] = savings

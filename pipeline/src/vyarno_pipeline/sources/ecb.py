@@ -285,6 +285,53 @@ OUTSTANDING_SERIES_START = "2022-01"
 
 
 # ---------------------------------------------------------------------------
+# What a COMPANY pays, against what a homebuyer pays
+# ---------------------------------------------------------------------------
+# `BS_COUNT_SECTOR` is the whole difference from the mortgage keys: `2240` is
+# «Non-Financial corporations (S.11)» where `2250` is households and NPISH. The
+# instrument is the corporate twin of `A2C` — `A2A` «Loans other than revolving
+# loans and overdrafts, convenience and extended credit card debt» — so both
+# sides of the comparison are term lending signed in the reference month, at a
+# rate excluding charges, over every bank in Bulgaria.
+#
+# **THE EUR LEG REACHES BACK TO 2007 AND MUST NOT BE READ WHOLE.** Before
+# 2026-01 `CURRENCY_TRANS=EUR` means loans DENOMINATED in euro, which was a
+# subset of the market and priced differently: over the months both legs
+# publish, BGN and EUR sit as much as 2.08 pp apart (2023-04, 3.48% against
+# 5.56%), so unlike the mortgage's ~5% euro niche BOTH currencies were in real
+# use here. Splicing at `EURO_SWITCH_PERIOD` is therefore not a formality —
+# reading the 234-month EUR leg as the corporate rate would report the
+# euro-denominated slice as the Bulgarian market for nineteen years.
+#
+# The spliced series runs from 2017-08, which is where the BGN leg starts and
+# also, exactly, where the mortgage BGN leg starts.
+#
+# **There is no volume key to justify the splice with**, unlike `A2C`:
+# `M.BG.B.A2A.A.B.A.2240.{BGN,EUR}.N` is a 404 on both legs, probed 2026-08-21,
+# because BG reports new-business volume by loan-size bucket and never at the
+# all-sizes total. What stands in for it is the size buckets' own euro volumes
+# — the ≤€0.25 m bucket averaged €10 m/month across 2025 and €83–139 m/month
+# from 2026-01 — plus the BGN leg ending at 2025-12.
+# fmt: off
+BUSINESS_KEYS: dict[str, str] = {
+    "business_aar_bgn": "M.BG.B.A2A.A.R.A.2240.BGN.N",
+    "business_aar_eur": "M.BG.B.A2A.A.R.A.2240.EUR.N",
+    # The splice evidence, and it is the smallest bucket rather than the total
+    # because the total does not exist. `AMOUNT_CAT=2` is «Up to and including
+    # EUR 0.25 million», the bucket an ordinary Bulgarian company borrows in —
+    # so a jump here is the euro arriving in the market this page describes,
+    # not in one multinational's treasury.
+    "business_small_volume_eur": "M.BG.B.A2A.A.B.2.2240.EUR.N",
+}
+# fmt: on
+
+# Where the corporate BGN leg begins, and the mortgage one with it. Passed as
+# the fetch's `start_period` so the payload carries the whole comparable record
+# rather than the 2020 default the household keys are pulled on.
+BUSINESS_SERIES_START = "2017-08"
+
+
+# ---------------------------------------------------------------------------
 # BSI — Balance Sheet Items, the levels underneath the MIR prices
 # ---------------------------------------------------------------------------
 # MIR says what money COSTS. BSI says how much of it there is: the stock of

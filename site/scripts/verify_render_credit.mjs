@@ -237,4 +237,36 @@ test("the three prices are drawn as three lines under a legend of three", { skip
   }, "/credit/");
 });
 
+test(
+  "the company and home rates are drawn as two lines under a legend of two",
+  { skip },
+  async () => {
+    // §9's whole reading is one line against the other, so a section that
+    // rendered its figures and dropped its chart says nothing — and the count of
+    // `.stat` blocks the suite already checks would not move enough to notice.
+    await withApp(async (page, errors) => {
+      const chart = page.locator("main.credit #business .chart");
+      assert.equal(await chart.locator(".plot-line").count(), 2, "the spread chart drew two lines");
+      // The dashed second stroke is the company's, so which line is which is read
+      // off the plot rather than off the order they were drawn in. The same
+      // assignment §10 gives the same two actors one section below, because a
+      // reader who has learnt the pair here should not have to learn it twice.
+      assert.equal(await chart.locator(".plot-line.second").count(), 1);
+      const keys = await chart
+        .locator("figcaption .key")
+        .evaluateAll((els) => els.map((el) => el.textContent.trim()));
+      assert.deepEqual(
+        keys.length,
+        2,
+        `the legend names ${keys.length} lines over a plot that draws two`
+      );
+      assert.ok(
+        keys.every((key) => key.length > 0),
+        "a legend key rendered blank, which is what a missing translation looks like"
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, "/credit/");
+  }
+);
+
 test.after(shutdown);

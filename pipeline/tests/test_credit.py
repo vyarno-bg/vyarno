@@ -17,6 +17,7 @@ from vyarno_pipeline.credit import (
     cross_check_household_stock,
     cross_check_stock_rate,
     product_block,
+    validate_business_splice,
     validate_card_above_mortgage,
     validate_card_nesting,
     validate_credit_freshness,
@@ -66,6 +67,35 @@ def test_a_series_that_arrived_out_of_order_is_not_published():
         validate_stock_series(dict(reversed(list(_stock(11_301.239).items()))), "consumer")
 
 
+def test_the_company_rate_cannot_be_the_euro_leg_read_whole():
+    """The trap this gate exists for, and no band can see it.
+
+    Both legs of the corporate key are plausible rates over their whole length,
+    so the euro one read whole publishes a subset of the market as the market
+    and every value in it clears `PRODUCT_BANDS["business"]`. What separates
+    them is where the record starts.
+    """
+    lev = {"2017-08": 3.79, "2017-09": 4.14, "2025-12": 4.09}
+    euro = {"2007-01": 8.69, "2017-08": 2.05, "2026-01": 4.30}
+    spliced = {"2017-08": 3.79, "2017-09": 4.14, "2025-12": 4.09, "2026-01": 4.30}
+    validate_business_splice(spliced, lev, "2026-01")
+    with pytest.raises(MortgageValidationError, match="DENOMINATED in euro"):
+        validate_business_splice(euro, lev, "2026-01")
+
+
+def test_a_month_before_the_changeover_has_to_be_the_lev_leg():
+    """The other half of the same failure, one month at a time.
+
+    A splice that starts in the right place can still take the euro leg's value
+    for a month the lev leg publishes — the two run as far as 2.08 pp apart, so
+    the result is a rate nothing else here would question.
+    """
+    lev = {"2017-08": 3.79, "2017-09": 4.14}
+    mixed = {"2017-08": 3.79, "2017-09": 5.56}
+    with pytest.raises(MortgageValidationError, match="the lev leg"):
+        validate_business_splice(mixed, lev, "2026-01")
+
+
 def test_card_credit_cannot_read_below_a_mortgage():
     validate_card_above_mortgage(21.15, 2.41)
     # Unsecured revolving credit priced under a secured home loan means the two
@@ -87,7 +117,7 @@ def test_a_product_block_pulls_the_latest_reading_out_of_its_own_series():
     assert block["_role"] == "role"
 
 
-def test_the_published_payload_carries_five_products_and_no_invented_volume():
+def test_the_published_payload_carries_every_gated_block_and_no_invented_volume():
     payload = json.loads(PUBLISHED.read_text(encoding="utf-8"))
     for key in PRODUCT_BANDS:
         assert payload[key]["value_pct"] is not None, key
