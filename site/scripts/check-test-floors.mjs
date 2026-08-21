@@ -131,7 +131,11 @@ const junitAsserted = (text) => {
 /** THE ONLY TEST COUNTS IN THE REPOSITORY. Read the header before changing one. */
 export const FLOORS = {
   pytest: { floor: 541, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
-  node: { floor: 651, report: join(SITE, ".report-node.tap"), count: tapPassed },
+  // Raised with the direction-state suites: the three state functions
+  // (`indexVerdictState`, `divisionRateState`, `peak`/`troughWorthNaming`),
+  // the rule over COPY that stops a fixed direction returning, and the
+  // COPY-table shape in `verify_template_safety.mjs`.
+  node: { floor: 688, report: join(SITE, ".report-node.tap"), count: tapPassed },
   render: { floor: 202, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 

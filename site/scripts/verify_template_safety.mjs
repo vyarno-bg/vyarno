@@ -102,6 +102,8 @@ function atHtmlExpressions(source) {
  * in-repo constants:
  *   `t(COPY.key, …)`               content.js, with numeric substitutions
  *   `t(cond ? COPY.a : COPY.b, …)` same, choosing between two COPY keys
+ *   `t(TABLE[state], …)`           same, choosing between three or more, where
+ *                                  `TABLE` is verified below to hold only COPY
  *   `COPY.key.bg.replace(…)`       same, substituting one bolded number
  *   `para.bg` / `para.en`          a legal.js paragraph flagged `html: true`
  *
@@ -115,6 +117,34 @@ const ROOTED_LEAVES = [
   /^COPY\.[A-Za-z0-9_]+\.(bg|en)\b/,
   /^para\.(bg|en)$/,
 ];
+
+/**
+ * The `const NAME = { k: COPY.x, … }` tables in one component, by name.
+ *
+ * A verdict with more than two states cannot be a ternary the leaf regexes
+ * recognise, and nesting them puts the choosing back in the template — which
+ * is the thing `view/` exists to hold. The table is the shape that keeps the
+ * state in a testable layer and the words in the component.
+ *
+ * **Admitting the shape means checking it**, and that is the whole of why this
+ * function returns names rather than a regex being widened: a table is rooted
+ * only while every value in it is a `COPY` member, so one holding a fetched
+ * string is not a table this file has heard of.
+ */
+function copyTables(text) {
+  const names = new Set();
+  for (const m of text.matchAll(/const\s+([A-Z][A-Z0-9_]*)\s*=\s*\{([^}]*)\}/g)) {
+    const entries = m[2]
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!entries.length) continue;
+    if (entries.every((e) => /^[A-Za-z0-9_"']+\s*:\s*COPY\.[A-Za-z0-9_]+$/.test(e))) {
+      names.add(m[1]);
+    }
+  }
+  return names;
+}
 
 /**
  * Split a ternary into its two branches, or return null if it is not one.
@@ -188,12 +218,17 @@ function splitConcat(expression) {
  * because it binds looser than `+`, so `cond ? COPY.a.bg : COPY.b.bg + x` is
  * two branches, and the `+` is caught when the second branch recurses.
  */
-function isRooted(expression) {
+function isRooted(expression, tables = new Set()) {
   const branches = splitTernary(expression);
-  if (branches !== null) return branches.every(isRooted);
+  if (branches !== null) return branches.every((b) => isRooted(b, tables));
   const parts = splitConcat(expression);
-  if (parts !== null) return parts.every(isRooted);
-  return ROOTED_LEAVES.some((re) => re.test(expression));
+  if (parts !== null) return parts.every((p) => isRooted(p, tables));
+  if (ROOTED_LEAVES.some((re) => re.test(expression))) return true;
+  // A table lookup, and only for a table this file has verified holds nothing
+  // but COPY members. The name is matched exactly rather than by shape, so
+  // `t(SOMETHING[x])` where SOMETHING is built at runtime stays unrooted.
+  const lookup = /^t\(\s*([A-Z][A-Z0-9_]*)\s*\[/.exec(expression);
+  return lookup !== null && tables.has(lookup[1]);
 }
 
 test("a rooted head does not launder an unrooted value concatenated after it", () => {
@@ -209,11 +244,31 @@ test("a rooted head does not launder an unrooted value concatenated after it", (
   assert.equal(isRooted("COPY.x.bg + fetchedMarkup"), false);
 });
 
+test("a table is a rooted head only while it holds nothing but COPY", () => {
+  // Admitting the lookup shape is what lets a three-state verdict keep its
+  // choosing in `view/` instead of nesting ternaries in the template. The
+  // admission is worth exactly what the check behind it is worth: a table whose
+  // values are not COPY members is a way to launder a fetched string into the
+  // DOM behind an upper-case name, so the contents decide, never the shape.
+  const good = copyTables("const RANK_ROW = { up: COPY.rankRow, down: COPY.rankRowDown };");
+  assert.ok(good.has("RANK_ROW"));
+  assert.equal(isRooted('t(RANK_ROW[state], "bg", { r: x })', good), true);
+  // Unknown name, verified table: still not rooted.
+  assert.equal(isRooted('t(OTHER[state], "bg", {})', good), false);
+  // A table carrying one non-COPY value is not a table this file knows.
+  const bad = copyTables("const EVIL = { up: COPY.rankRow, down: fetched.markup };");
+  assert.equal(bad.has("EVIL"), false);
+  assert.equal(isRooted('t(EVIL[state], "bg", {})', bad), false);
+});
+
 test("every {@html} expression is rooted in an in-repo constant", () => {
   const offenders = [];
   for (const { name, text } of COMPONENTS) {
+    // Per component: a table is a rooted head only in the file that declares
+    // it, so one component cannot borrow another's name.
+    const tables = copyTables(text);
     for (const { index, expression } of atHtmlExpressions(text)) {
-      if (!isRooted(expression)) {
+      if (!isRooted(expression, tables)) {
         const line = withoutComments(text).slice(0, index).split("\n").length;
         offenders.push(`${name}:${line} → ${expression.slice(0, 90)}`);
       }

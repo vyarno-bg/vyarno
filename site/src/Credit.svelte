@@ -46,6 +46,8 @@
     creditProducts,
     creditRates,
     creditStockHistory,
+    peakWorthNaming,
+    troughWorthNaming,
     creditRenegotiation,
     creditSavings,
   } from "./lib/view/credit.js";
@@ -249,14 +251,20 @@
             class="pane"
             viewBox="0 0 {CH_W} {CH_H}"
             role="img"
-            aria-label={t(COPY.crdChartStockRate, $lang, {
-              from: periodLong(line.from, $lang),
-              to: periodLong(line.to, $lang),
-              fromPct: number(line.first?.value, 2, $lang),
-              toPct: number(line.latest?.value, 2, $lang),
-              peakPct: number(stockHistory.peak.value, 2, $lang),
-              peakAt: periodLong(stockHistory.peak.period, $lang),
-            })}
+            aria-label={t(
+              peakWorthNaming(stockHistory.series)
+                ? COPY.crdChartStockRate
+                : COPY.crdChartStockRateNoPeak,
+              $lang,
+              {
+                from: periodLong(line.from, $lang),
+                to: periodLong(line.to, $lang),
+                fromPct: number(line.first?.value, 2, $lang),
+                toPct: number(line.latest?.value, 2, $lang),
+                peakPct: number(stockHistory.peak.value, 2, $lang),
+                peakAt: periodLong(stockHistory.peak.period, $lang),
+              }
+            )}
           >
             {#each axis.values as v (v)}
               <line class="plot-grid" x1="0" y1={yOf(v, axis)} x2={CH_W} y2={yOf(v, axis)} />
@@ -332,24 +340,28 @@
     {#if fixationHistory}
       {@const line = fixationHistory.series}
       {@const axis = niceTicks(0, line.max, 4)}
+      <!-- The dip and the recovery are two claims, and only the first is safe
+           unconditionally. «После делът се върна нагоре» goes false the month a
+           fresh low arrives as the latest reading, with every printed figure in
+           the sentence still correct — the failure the chart's own trough marker
+           already refuses, so the prose refuses it on the same test. -->
       <p>
         <span class="l-bg"
-          >Така е през целия период, който БНБ публикуват. Делът не е падал под {number(
-            fixationHistory.trough.value,
-            1,
-            $lang
-          )}% нито веднъж, а най-ниската му стойност е през {periodLong(
+          >Делът не е падал под {number(fixationHistory.trough.value, 1, $lang)}% нито веднъж през
+          периода, който БНБ публикуват, а най-ниската му стойност е през {periodLong(
             fixationHistory.trough.period,
             $lang
-          )}, когато лихвите в Европа се вдигаха и част от хората избраха фиксирана лихва. После
-          делът се върна нагоре.</span
+          )}.{#if troughWorthNaming(fixationHistory.series)}
+            Тогава лихвите в Европа се вдигаха и част от хората избраха фиксирана лихва. После делът
+            се върна нагоре.{/if}</span
         >
         <span class="l-en"
-          >It has been that way across the whole period BNB publish. The share has never once fallen
-          below {number(fixationHistory.trough.value, 1, $lang)}%, and its lowest reading is {periodLong(
+          >The share has never once fallen below {number(fixationHistory.trough.value, 1, $lang)}%
+          in the period BNB publish, and its lowest reading is {periodLong(
             fixationHistory.trough.period,
             $lang
-          )}, when rates across Europe were rising and some borrowers did fix. Then it went back up.</span
+          )}.{#if troughWorthNaming(fixationHistory.series)}
+            Rates across Europe were rising then and some borrowers did fix. Then it went back up.{/if}</span
         >
       </p>
       <figure class="chart">
@@ -1044,18 +1056,22 @@
             class="pane"
             viewBox="0 0 {CH_W} {CH_TALL}"
             role="img"
-            aria-label={t(COPY.crdChartPrices, $lang, {
-              from: periodLong(productHistory.from, $lang),
-              to: periodLong(productHistory.to, $lang),
-              cardFrom: number(card.first.value, 2, $lang),
-              cardTo: number(card.latest.value, 2, $lang),
-              consFrom: number(consumer.first.value, 2, $lang),
-              consTo: number(consumer.latest.value, 2, $lang),
-              consPeak: number(consumer.peak.value, 2, $lang),
-              consPeakAt: periodLong(consumer.peak.period, $lang),
-              mortFrom: number(mortgageLine.first.value, 2, $lang),
-              mortTo: number(mortgageLine.latest.value, 2, $lang),
-            })}
+            aria-label={t(
+              peakWorthNaming(consumer) ? COPY.crdChartPrices : COPY.crdChartPricesNoPeak,
+              $lang,
+              {
+                from: periodLong(productHistory.from, $lang),
+                to: periodLong(productHistory.to, $lang),
+                cardFrom: number(card.first.value, 2, $lang),
+                cardTo: number(card.latest.value, 2, $lang),
+                consFrom: number(consumer.first.value, 2, $lang),
+                consTo: number(consumer.latest.value, 2, $lang),
+                consPeak: number(consumer.peak.value, 2, $lang),
+                consPeakAt: periodLong(consumer.peak.period, $lang),
+                mortFrom: number(mortgageLine.first.value, 2, $lang),
+                mortTo: number(mortgageLine.latest.value, 2, $lang),
+              }
+            )}
           >
             {#each axis.values as v (v)}
               <line
@@ -1229,12 +1245,12 @@
       </p>
       <p class="cap">
         <span class="l-bg"
-          >Двата кредита не са едно и също и разлика между тях е нормална: фирмите изостават с
-          плащанията по-често от домакинствата. Въпросът е колко голяма е тя.</span
+          >Двата кредита не са едно и също и разлика между тях е нормална. Въпросът е колко голяма е
+          тя и накъде се движи.</span
         >
         <span class="l-en"
-          >The two loans are not the same thing, and a gap between them is normal: companies fall
-          behind on their payments more often than households do. The question is how big it is.</span
+          >The two loans are not the same thing, and a gap between them is normal. The question is
+          how big it is and which way it is moving.</span
         >
       </p>
       <figure class="chart">
@@ -1361,15 +1377,13 @@
       <p>
         <span class="l-bg"
           >Когато в новините излезе едно число за необслужваните кредити, то обикновено е за всички
-          кредити на банките наведнъж. Това е третото число тук, а не първото. Фирмите изостават с
-          плащанията по-често от хората във всяко тримесечие, което ЕЦБ публикуват, затова общото
-          число е по-високо от това за домакинствата.</span
+          кредити на банките наведнъж. Това е третото число тук, а не първото. То събира кредитите
+          на фирмите и на домакинствата, а трите числа горе показват коя част каква е.</span
         >
         <span class="l-en"
           >When a single figure for bad loans turns up in the news, it is usually for all the banks'
-          lending at once. That is the third figure here, not the first. Companies fall behind on
-          their payments more often than people do in every quarter the ECB publish, so the combined
-          figure sits above the household one.</span
+          lending at once. That is the third figure here, not the first. It puts company and
+          household lending together, and the three figures above say which part is which.</span
         >
       </p>
       <p class="cap">

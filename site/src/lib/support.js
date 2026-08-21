@@ -1,11 +1,11 @@
 /**
  * Where someone can support Вярно, and the rules about how we ask.
  *
- * Вярно is a public good. Every feature is free to everyone, there is no
- * account, nothing is held back and nothing is sold. That is not a stage the
- * project is passing through on the way to a paid tier — it is what the
- * project is. Donations exist so the running costs stay paid, and for no
- * other reason.
+ * Вярно takes donations, and today nothing on the site is sold. Whether that
+ * second half stays true is a business decision, recorded in
+ * `docs/principles.md` §"Charging for something". What this module fixes is
+ * narrower and does not move with it: **a donation buys nothing, whatever else
+ * the project may charge for.** Rule 4 carries the mechanism.
  *
  * **The asking rules, because the failure mode here is obvious.** A civic
  * tool that nags is a worse civic tool. So:
@@ -42,17 +42,22 @@
  *      in `legal.js` scans rendered copy for "€N/month" patterns and fails a
  *      release build on a hit, which is exactly the right outcome. Amounts
  *      live on the donation platform, where the person has already decided.
- *   4. **Nothing is given in return.** No supporter tier, no badge, no early
- *      access, no ad-free mode, no name in lights. The moment a donation buys
- *      something, the service is provided срещу възнаграждение and
- *      `LEGAL_FORM.takesPayment` in `legal.js` has to flip — which pulls in
- *      the rest of ЗЕТ чл. 4 (postal address, register entry). Keep gifts
- *      gifts.
+ *   4. **Nothing is given in return for a donation.** No supporter tier, no
+ *      badge, no early access, no ad-free mode, no name in lights. The moment
+ *      a donation buys something, the service is provided срещу
+ *      възнаграждение and `LEGAL_FORM.takesPayment` in `legal.js` has to flip,
+ *      pulling in the rest of ЗЕТ чл. 4 (postal address, register entry).
+ *
+ *      **This binds the donation channel and not the project's revenue.**
+ *      Selling a product outright is its own decision with its own
+ *      disclosures. What the rule stops is a paid tier arriving THROUGH this
+ *      channel, flipping the flag for the whole site as a side effect of a
+ *      copy change nobody read as a legal one.
  *
  * Rule 4 is the load-bearing one legally. A донация under ЗЗД is gratuitous:
- * the donor gets nothing back, so the service stays безвъзмездна and the
- * identity in `legal.js` stays true. Attaching ANY benefit to a donation
- * changes that analysis and is not a copy tweak.
+ * the donor gets nothing back, so a gift on its own leaves the identity in
+ * `legal.js` true. Attaching ANY benefit to a donation changes that analysis
+ * and is not a copy tweak.
  */
 
 /**

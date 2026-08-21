@@ -22,6 +22,7 @@ import {
   verifyUrl,
   basketSumQuery,
   fastestRisingDivision,
+  divisionRateState,
 } from "../src/lib/view/basket.js";
 import { officialInflation } from "../src/lib/mirror.js";
 import { published } from "./published-payload.mjs";
@@ -201,4 +202,45 @@ test("fastestRisingDivision does not mutate the caller's array", () => {
     cats.map((c) => c.annual_rate_pct),
     before
   );
+});
+
+test("divisionRateState follows the sign, including where every division fell", () => {
+  // The failure it exists for: `fastestRisingDivision` returns a MAXIMUM and
+  // promises nothing about its sign, so in a broad price fall the card's own
+  // comment says the rate is negative while the label calls it a rise.
+  assert.equal(divisionRateState(9.4), "up");
+  assert.equal(divisionRateState(-3.2), "down");
+  assert.equal(divisionRateState(0), "flat");
+
+  // Inverting the whole basket must invert every verdict. A rule over the pair
+  // rather than two assertions: a state function that got the sign right in one
+  // direction and not the other is the defect, not a typo.
+  for (const r of [0.4, 2.5, 9.4, 41]) {
+    assert.equal(divisionRateState(r), "up", `+${r} is not a rise`);
+    assert.equal(divisionRateState(-r), "down", `-${r} is not a fall`);
+  }
+});
+
+test("divisionRateState refuses a direction the printed figure does not show", () => {
+  // The dead band is the printed precision. Rates draw at one decimal, so
+  // ±0,04 renders as «0,0%» and a verb beside it names a direction the reader
+  // cannot see — the rule `pocketVerdictState` keeps at ±1 pp.
+  for (const r of [0.04, -0.04, 0.0001, -0.0001, 0]) {
+    assert.equal(
+      divisionRateState(r),
+      "flat",
+      `${r} pp is inside the band and must not get a verb`
+    );
+  }
+  // And the edges of the band are outside it, so nothing falls between states.
+  assert.equal(divisionRateState(0.05), "up");
+  assert.equal(divisionRateState(-0.05), "down");
+});
+
+test("divisionRateState says nothing where there is no rate", () => {
+  // A division with no published rate must not be handed the flat sentence:
+  // «цената ѝ не се е променила» is a claim, and absence is not a measurement.
+  for (const bad of [null, undefined, NaN, Infinity, -Infinity, "3.1"]) {
+    assert.equal(divisionRateState(bad), "unsaid", `${bad} produced a verdict`);
+  }
 });

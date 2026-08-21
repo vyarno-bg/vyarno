@@ -17,8 +17,10 @@ The user-facing form of the shipped documents is
 
 ## Our own licence
 
-**Apache-2.0.** Вярно is a public good: the code is open, every feature is free
-to everyone, and there is no paid version, no donor tier and nothing held back.
+**Apache-2.0.** The code is open, and everything the site publishes today is
+free to every visitor, with no paid version and no donor tier. Whether that
+stays true is `docs/principles.md` §"Charging for something"; the licence on the
+code does not move with it.
 `LICENSE` carries the licence text and `NOTICE` states its boundary;
 `site/package.json` declares `"license": "Apache-2.0"` and
 `pipeline/pyproject.toml` declares `license = "Apache-2.0"`. Keep all four in
@@ -573,15 +575,27 @@ should change without re-reading it.
 **Unfair competition** (ЗЗК чл. 29 и сл.) needs a competitive relationship, and
 a free calculator is not a property portal. The scenario that would matter — BG
 price levels entering a **paid data feed**, whose buyers would overlap with
-Rezon's commercial audience — does not exist: Вярно sells nothing, there is no
-billing code, and `CONTRIBUTING.md`, the PR template and `verify_support.mjs`
-each make "no feature is gated" a merge condition.
+Rezon's commercial audience — does not exist today: Вярно sells nothing and
+there is no billing code.
+
+**What does not support this paragraph is a merge condition.** The project's
+position on charging is `docs/principles.md` §"Charging for something", which
+prices a paid surface rather than forbidding one. So the protection here is the
+present fact, checkable in `LEGAL_FORM.takesPayment`, and not a gate a proposal
+would have to argue past. **Of everything the project might sell, a data feed
+carrying имот.bg-derived price levels is the one product this paragraph is
+about** — and §НСИ is a second, independent obstacle to the same product, since
+НСИ's terms forbid redistributing derived and composite works whether or not
+money changes hands. An AI calculation over the reader's own figures raises
+neither.
 
 **Do not upgrade that to "and never will be".** A decision recorded in a
 repository is a decision that can be revisited, and telling a rights-holder
 otherwise is the kind of overclaim that costs the credibility of everything
-around it. What is true and checkable is enough: nothing is sold, and the
-constraint is enforced in code rather than promised. **If that ever changes,
+around it. What is true and checkable is enough: nothing is sold, and
+`check-identity.mjs` fails a release where the shipped copy and
+`LEGAL_FORM.takesPayment` disagree, so the claim tracks the code rather than a
+promise. **If that ever changes,
 this section and §НСИ are both re-opened in the same commit** — both are written
 against a service that sells nothing.
 
@@ -1065,10 +1079,12 @@ project once already, and an undated quote is exactly what that costs.
   employer IP clause, no co-author, no commissioned asset, no agreement with
   anyone, and the domain is in their own name. That is what made it theirs to
   license under Apache-2.0.
-- **The project is a public good and is not for sale.** Every feature is free
-  to everyone, there is no paid tier, no donor tier and no enterprise edition,
-  and the code is Apache-2.0. Donations are gratuitous and buy nothing.
-  `CONTRIBUTING.md` and the PR template both make it a merge condition.
+- **Nothing is sold today** — no paid tier, no donor tier, no enterprise
+  edition — and the code is Apache-2.0. Donations are gratuitous and buy
+  nothing, which `CONTRIBUTING.md`, the PR template and `verify_support.mjs`
+  each keep true. This row records the present position rather than a
+  commitment: what a paid surface would owe is `docs/principles.md`
+  §"Charging for something".
 - **The domain is registered and in use.** How `.bg` names are protected is
   governed by register.bg's Общи условия, which are revised — so this page links
   to them rather than restating clause numbers that age.

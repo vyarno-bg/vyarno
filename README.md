@@ -95,8 +95,8 @@ Not because we say so — because you can verify it:
 - **The arithmetic is open.** The code that computes is here and meant to be
   [read](./site/src/lib/mirror.js); how each figure is derived is written down
   in [`docs/math.md`](./docs/math.md).
-- **Nothing is behind a paywall.** No account, no paid tier, no feature held
-  back for later.
+- **Nothing is behind a paywall.** No account and no paid version: whatever the
+  site publishes, it publishes for everyone.
 
 ## Where the numbers come from
 
@@ -315,10 +315,10 @@ generated from `site/src/lib/legal.js`. Nothing in this repo is legal advice.
 
 ## Support this project
 
-Вярно is a public good: every feature is free to everyone, there is no account,
-no paid version and nothing held back for later. It is sustained by donations,
-and **a donation buys nothing** — no features, no priority, no influence over
-any figure the site publishes. The site makes the same statement itself, at
+Everything on the site is free to everyone, with no account and no paid version.
+It is sustained by donations, and **a donation buys nothing** — no features, no
+priority, no influence over any figure the site publishes. That last part does
+not change even if the project one day sells something: a gift stays a gift. The site makes the same statement itself, at
 [vyarno.bg/support/](https://vyarno.bg/support/).
 
 **[Ko-fi](https://ko-fi.com/vyarno)** — one-off, no account needed.

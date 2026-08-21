@@ -31,6 +31,8 @@ import {
   creditProducts,
   creditRates,
   creditStockHistory,
+  peakWorthNaming,
+  troughWorthNaming,
   creditRenegotiation,
   creditSavings,
 } from "../src/lib/view/credit.js";
@@ -523,4 +525,84 @@ test("a missing savings block drops its section rather than throwing", () => {
   assert.equal(empty.ratio, null);
   assert.equal(empty.depositsEurM, null);
   assert.deepEqual(empty.series.deposits.points, []);
+});
+
+// ---------------------------------------------------------------------------
+// Whether an extreme may be named as one
+// ---------------------------------------------------------------------------
+
+/** A series in the shape `plotLevels` returns, from three readings. */
+const arc = (first, peakOrTrough, latest) => ({
+  first: { value: first },
+  peak: { value: Math.max(first, peakOrTrough, latest) },
+  trough: { value: Math.min(first, peakOrTrough, latest) },
+  latest: { value: latest },
+});
+
+test("peakWorthNaming allows «с връх» only where the rate came back down", () => {
+  // «с връх 9,00% през ноември 2008 г.» tells a reader the rate climbed and
+  // returned. True while the maximum is inside the record; false the month it
+  // IS the latest reading, where the sentence reports a level the series is
+  // still standing at as one it has left.
+  assert.equal(peakWorthNaming(arc(8.38, 9.0, 2.66)), true, "an interior peak is a peak");
+  assert.equal(
+    peakWorthNaming(arc(2.66, 5, 9.0)),
+    false,
+    "a peak at the latest reading is not one"
+  );
+  assert.equal(peakWorthNaming(arc(9.0, 5, 2.66)), false, "a peak at the first reading is not one");
+});
+
+test("troughWorthNaming gates the recovery, not the figure", () => {
+  // «после делът се върна нагоре» is the half that goes false with every
+  // printed digit still correct: a fresh low arriving as the latest reading
+  // leaves the trough and its date right and the verb describing a return that
+  // has not happened.
+  assert.equal(troughWorthNaming(arc(87.21, 84.03, 99.59)), true);
+  assert.equal(
+    troughWorthNaming(arc(99.59, 90, 84.03)),
+    false,
+    "a fresh low as the latest reading has not been recovered from"
+  );
+  assert.equal(troughWorthNaming(arc(84.03, 90, 99.59)), false, "a low at the start is not a dip");
+});
+
+test("neither names an extreme on a flat or a one-sided series", () => {
+  // A series that never moves has no peak and no dip worth a word, and one
+  // where an endpoint ties the extreme is the same case: `>` rather than `>=`
+  // is what keeps «връх» off a level the series is sitting on.
+  assert.equal(peakWorthNaming(arc(5, 5, 5)), false, "a flat series has no peak");
+  assert.equal(troughWorthNaming(arc(5, 5, 5)), false, "a flat series has no dip");
+  assert.equal(peakWorthNaming(arc(5, 9, 9)), false, "a peak tied with the latest is not interior");
+  assert.equal(
+    troughWorthNaming(arc(5, 1, 1)),
+    false,
+    "a dip tied with the latest is not interior"
+  );
+});
+
+test("neither speaks where a reading is missing", () => {
+  // A series short of an end has no shape to describe. Returning false renders
+  // the figures with no verdict, which is the neutral form the caption falls
+  // back to rather than a sentence with a hole in it.
+  for (const bad of [null, undefined, {}, { peak: { value: 9 } }, arc(1, 9, NaN)]) {
+    assert.equal(peakWorthNaming(bad), false, `${JSON.stringify(bad)} produced a peak`);
+    assert.equal(troughWorthNaming(bad), false, `${JSON.stringify(bad)} produced a trough`);
+  }
+});
+
+test("the shipped credit series get the verdict their own readings support", () => {
+  // Against the payload, so the gate and the caption cannot disagree on today's
+  // data. Nothing is pinned: which quarter holds the extreme is upstream's.
+  const mortgage = PUBLISHED;
+  for (const history of [creditStockHistory(mortgage), creditFixationHistory(mortgage)]) {
+    if (!history) continue;
+    const s = history.series;
+    if (peakWorthNaming(s)) {
+      assert.ok(s.peak.value > s.latest.value && s.peak.value > s.first.value);
+    }
+    if (troughWorthNaming(s)) {
+      assert.ok(s.trough.value < s.latest.value && s.trough.value < s.first.value);
+    }
+  }
 });

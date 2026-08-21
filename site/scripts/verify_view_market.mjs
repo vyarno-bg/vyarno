@@ -30,6 +30,7 @@ import {
   marketPriceIndexSeries,
   marketPriceIndexRealSeries,
   marketIndexReading,
+  indexVerdictState,
   marketRent,
   marketPriceRateSeries,
   marketVolumeChangeSeries,
@@ -1554,5 +1555,59 @@ test("the borrowed share joins two publishers in one currency, over whole years"
       borrowed.axis.slice(series.offset, series.offset + series.points.length),
       `${name}'s readings do not sit on the years its offset claims`
     );
+  }
+});
+
+test("indexVerdictState reads an index below its base as cheaper, not dearer", () => {
+  // The defect it retires, and it was live rather than hypothetical: the
+  // caption said «Колко пъти по-скъпи са жилищата» while naming its own lowest
+  // reading, and the nominal record opens at ×0,76. A multiple under 1 is the
+  // wrong half of the same chart.
+  assert.equal(indexVerdictState(2.73), "dearer");
+  assert.equal(indexVerdictState(0.76), "cheaper");
+  assert.equal(indexVerdictState(1), "level");
+
+  // Symmetric about the base: a ratio and its reciprocal must land in opposite
+  // states, or the function is right in one direction only.
+  for (const x of [1.6, 2.73, 4]) {
+    assert.equal(indexVerdictState(x), "dearer", `×${x} is not dearer`);
+    assert.equal(indexVerdictState(1 / x), "cheaper", `×${(1 / x).toFixed(3)} is not cheaper`);
+  }
+});
+
+test("indexVerdictState says nothing at a difference the page rounds away", () => {
+  // The pages draw a multiple at one decimal, so everything in this band paints
+  // «×1,0» and a verdict beside it narrates a difference the digits do not
+  // show. The dead band IS the printed precision, which is why it is 0,05 here
+  // and 1 pp on the pocket row.
+  for (const x of [0.96, 0.99, 1, 1.01, 1.049]) {
+    assert.equal(indexVerdictState(x), "level", `×${x} draws as ×1,0 and must carry no verdict`);
+  }
+  assert.equal(indexVerdictState(1.05), "dearer");
+  assert.equal(indexVerdictState(0.95), "cheaper");
+});
+
+test("indexVerdictState refuses a reading that is not one", () => {
+  // A zero or negative index is not a cheap home, it is a broken series, and
+  // the card renders nothing rather than «×0,0 от цената». `unsaid` is what the
+  // component's table has no entry for.
+  for (const bad of [null, undefined, NaN, 0, -1, Infinity, "1.6"]) {
+    assert.equal(indexVerdictState(bad), "unsaid", `${bad} produced a verdict`);
+  }
+});
+
+test("indexVerdictState agrees with the multiple the page actually prints", () => {
+  // Against the shipped payload, so the state and the figure beside it cannot
+  // disagree on today's data. No multiple is written down here: which way the
+  // index points is upstream's to move, and a pinned expectation turns a
+  // refresh that is only a refresh red.
+  const market = published("house_market");
+  if (!market) return;
+  const r = marketIndexReading(market);
+  for (const times of [r.times, r.realTimes]) {
+    if (!Number.isFinite(times)) continue;
+    const state = indexVerdictState(times);
+    if (state === "dearer") assert.ok(times > 1, `${times} called dearer`);
+    if (state === "cheaper") assert.ok(times < 1, `${times} called cheaper`);
   }
 });

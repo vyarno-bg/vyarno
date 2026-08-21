@@ -53,6 +53,7 @@
     marketOverburdenSeries,
     marketPriceIndexRealSeries,
     marketIndexReading,
+    indexVerdictState,
     marketRangeStrip,
     marketRent,
     marketBorrowedShare,
@@ -112,6 +113,21 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  // Which label each ×N card carries. The STATE is decided in `view/market.js`
+  // so a suite can reach it; the words stay here, because this layer is the one
+  // that knows COPY. The tables hold the entries rather than their names, so
+  // `verify_copy.mjs`'s dead-key scan can still see every one of the six.
+  const K_NOMINAL = {
+    dearer: COPY.mktKTimesNominal,
+    cheaper: COPY.mktKTimesNominalDown,
+    level: COPY.mktKTimesNominalLevel,
+  };
+  const K_REAL = {
+    dearer: COPY.mktKTimesReal,
+    cheaper: COPY.mktKTimesRealDown,
+    level: COPY.mktKTimesRealLevel,
+  };
 
   /**
    * A period as a `{bg, en}` pair, never picked by `$lang`.
@@ -1110,12 +1126,12 @@
     and a card's LABEL is a statement rather than the name of a measure.
   -->
   <div class="stats answers">
-    {#if reading.times != null}
+    {#if K_NOMINAL[indexVerdictState(reading.times)]}
       {@render figure(
         `×${fmt(reading.times)}`,
         {
-          bg: t(COPY.mktKTimesNominal, "bg", { year: reading.baseYear }),
-          en: t(COPY.mktKTimesNominal, "en", { year: reading.baseYear }),
+          bg: t(K_NOMINAL[indexVerdictState(reading.times)], "bg", { year: reading.baseYear }),
+          en: t(K_NOMINAL[indexVerdictState(reading.times)], "en", { year: reading.baseYear }),
         },
         COPY.srcEurostat,
         reading.sourceUrl,
@@ -1123,12 +1139,12 @@
         reading.apiUrl
       )}
     {/if}
-    {#if reading.realTimes != null}
+    {#if K_REAL[indexVerdictState(reading.realTimes)]}
       {@render figure(
         `×${fmt(reading.realTimes)}`,
         {
-          bg: t(COPY.mktKTimesReal, "bg", { year: reading.baseYear }),
-          en: t(COPY.mktKTimesReal, "en", { year: reading.baseYear }),
+          bg: t(K_REAL[indexVerdictState(reading.realTimes)], "bg", { year: reading.baseYear }),
+          en: t(K_REAL[indexVerdictState(reading.realTimes)], "en", { year: reading.baseYear }),
         },
         COPY.srcEurostat,
         reading.realSourceUrl,
@@ -1547,9 +1563,9 @@
       {#if reading.times != null && reading.realTimes != null}
         <p class="reading">
           <span class="l-bg"
-            >Днес за жилище се плащат <b>×{fmt(reading.times)}</b> повече пари, отколкото през {reading.baseYear}
-            г. Но и всичко останало поскъпна, а спрямо него жилищата са
-            <b>×{fmt(reading.realTimes)}</b> по-скъпи.
+            >Парите, които се плащат за жилище днес, са <b>×{fmt(reading.times)}</b> от тези през {reading.baseYear}
+            г. Но и всичко останало поскъпна, и мерено спрямо него жилището е
+            <b>×{fmt(reading.realTimes)}</b> от тогавашната си цена.
             {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
               Така мерено, нивото днес е с {fmt(reading.realBelowPeakPct)}% под най-високото, което
               Евростат е отчитал, през {periodLong(reading.realPeakPeriod, "bg")}.{/if}</span
