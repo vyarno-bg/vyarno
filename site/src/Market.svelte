@@ -75,6 +75,8 @@
     plotX,
     columnX,
     columnW,
+    hitX,
+    hitW,
     tickAt,
     niceTicks,
     yearTicks,
@@ -853,7 +855,7 @@
          The height is the box's, so a target covers its own column of the plot
          it is drawn in — handed the default in the tall chart it would leave
          the bottom quarter of the picture with nothing to point at. -->
-    <rect class="plot-hit" x={lineX(i, n) - CH_W / n / 2} y="0" width={CH_W / n} height={h}>
+    <rect class="plot-hit" x={hitX(i, n, CH_W)} y="0" width={hitW(n, CH_W)} height={h}>
       <title>{p.period}: {label(p.value)}</title>
     </rect>
   {/each}
@@ -4239,13 +4241,6 @@
   .plot-bar.season {
     fill: var(--real);
     opacity: 0.42;
-  }
-  /* A break the publisher declared, drawn as a rule through the plot. Quiet on
-     purpose: it qualifies the line, it is not a second series. */
-  .plot-break {
-    stroke: var(--muted);
-    stroke-width: 1;
-    stroke-dasharray: 2 3;
   }
   .fig-table .flag {
     color: var(--muted);

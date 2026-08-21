@@ -1,8 +1,8 @@
 # Validation gates
 
-Seven gates block the HICP publish, plus five on the mortgage panel and one on
-the by-sector wage payload. They run in order, short-circuit on the first failure,
-and never pass silently. On any failure the CLI exits **before** that arm's
+Seven gates block the HICP publish, plus five on the mortgage panel, one on the
+by-sector wage payload and one on unemployment. They run in order, short-circuit
+on the first failure, and never pass silently. On any failure the CLI exits **before** that arm's
 publish, so no payload on disk is the output of a run that failed its gates.
 
 **`--source all` is per arm, not per run.** The arms run in sequence and each
@@ -21,6 +21,7 @@ refresh, not an untouched one.
 | 6 | Link status | A published verify link that does not resolve to real data |
 | 7 | Flash marker | A headline that does not say which Eurostat release it came from |
 | 8 | Sector wages | An НСИ by-activity headline that was computed rather than selected |
+| 9 | Unemployment | A headline that is not the series' own cell, or a status flag nobody can look up |
 
 ## Gate 1 — classification agreement
 
@@ -135,14 +136,22 @@ group-discovery filter drops something it should not.
 `validate.py::validate_coverage`
 
 For every division **and every group**, `index_by_year` must contain a value for
-every year from `since_year` (default 2020) through the most recent completed
-year — `as_of.year - 1`, matching the partial-year exclusion in the transform.
+every year from `since_year` (default `INDEX_SINCE_YEAR`) through the most
+recent completed year — `as_of.year - 1`, matching the partial-year exclusion in
+the transform.
 
 The site's anchor selector lets users pick any year in that range at both levels
 of detail; a missing year renders nothing rather than an error.
 
+**This gate is what sets the floor**, and one code sets it for the rest.
+Eurostat carry most of BG's basket from 1996-12, but `CP122` (banking and
+financial services) starts at 2003-12 — so `INDEX_SINCE_YEAR` is 2003, and
+deepening it means either failing here or teaching this gate a per-code start,
+which is the assertion it exists to make. `sources/eurostat.py#INDEX_SINCE_YEAR`
+carries that and the editorial floor underneath it.
+
 **When it trips:** Eurostat publishes a partial series; `since_year` is earlier
-than the available data; a new code's first observation lands mid-year.
+than the available data; a code new to BG's basket has a short history.
 
 **What to do:** the message names the code and the missing years. If upstream
 published partially, wait — do not widen the gate.
@@ -254,6 +263,31 @@ nothing here rounds.
 **What to do when it trips:** open the workbook at the sheet and row the error
 names. Do not widen the band — every failure it is written for puts the parse on
 a column that is not a wage.
+
+## Gate 9 — unemployment (`--source unemployment`)
+
+`validate.py#validate_unemployment`. Two properties, and only the second is
+about the flags.
+
+**The headline is a cell in the series, not a figure beside it.** The national
+strip prints `value` and `/how/` draws `series_by_period`; a headline that is
+not the series' own reading at `ref_period` puts two numbers about one month on
+one page, and nothing downstream can see it. An identity rather than a band,
+because there is no arithmetic between them that could round.
+
+**Every status flag is one of Eurostat's letters, at a month the series
+carries.** Eurostat flag BG at 2009-01 with `b` — a break in their own series —
+and `/how/` draws a rule there rather than joining two stretches they declined
+to call one measurement. A flag at a month the series does not carry would mark
+nothing; a letter outside their vocabulary would render as a footnote a reader
+cannot look up. `validate.py#validate_status_flags` is the same check the two
+house-price indices go through, so the vocabulary lives in one place.
+
+**What to do when it trips:** the headline check means the transform picked a
+different month for `value` than for `ref_period` — read
+`rows_to_unemployment_observation`, not the payload. The flag check means
+Eurostat published a letter we have not read; look it up in their code list and
+add it to `STATUS_FLAGS` with the reading, rather than dropping the flag.
 
 ## Payroll gates (`--source payroll`)
 
@@ -455,7 +489,7 @@ admits every cell in the workbook.
 | `sector-salary` | gate 8 (below) + three connector guards, else exit 2 / exit 3 | Both language editions must agree cell for cell |
 | `salary-dist` | No published-JSON gate. The arm fetches, transforms and writes | **The P1 floor is not here.** It applies after the ladder is re-levelled to today's София average, which happens in the reader's browser (`mirror.js#composeLadder`, minimum wage out of `payroll.json`) — flooring an unlevelled rung would floor a number that is not a wage |
 | `payroll` | the four payroll gates (above) over the assembled payload, plus `sources/dv.py`'s five refusals on the fetched appendix. `payroll.py` still raises on an entry setting both or neither currency side, and on half a ДВ citation or one dated after the entry is in force | One network call — ЗБДОО's ТЗПБ appendix. It is not best-effort: no `work_accident` block, no publish. `test_payroll.py` reads `mirror.js` and rebuilds the shipped payload from a committed ДВ fixture |
-| `unemployment` | transform fails loudly on a shape mismatch | No published-JSON gate |
+| `unemployment` | gate 9 (above) over the assembled payload, plus the transform's own refusal on a shape mismatch | The three pinned dimensions have no fallback: each neighbour is a different statistic |
 | `nsi-housing` | every published figure is a cell НСИ published, and the national price index change reconciles with Eurostat's at the newest shared quarter | The reconciliation reads `house_market.json` off disk and says so when it is absent rather than passing quietly |
 | `house-market` | the two blocks above: the derivation reproduces, the purchase codes are not swapped, the average is inside €10k–€500k, both indices average 100 across the base year they name, every published flag is one of Eurostat's own letters at a quarter the series carries, and the tenure and census identities hold. Gate 6 over every published `api_url` unless `--skip-link-check` | One arm, two payloads — the stems both start `house_market` because `refresh.yml` matches them against the `--source` name, and a payload no arm owns publishes nothing while the run reports success |
 
@@ -466,15 +500,15 @@ admits every cell in the workbook.
   got 557 weight rows · vintage 2026 · 46 groups in BG's basket
 → fetching annual rates (prc_hicp_minr RCH_A, last 12 months)...
   got 5023 rows
-→ fetching monthly index (prc_hicp_minr I15, since 2020)...
-  got 35807 rows
+→ fetching monthly index (prc_hicp_minr I15, since 2003)...
+  got 105432 rows
   weights sum (CP01..CP13): 99.9990% (expected 100.0)
 → gate: classification agreement (59 codes × prc_hicp_iw vs prc_hicp_minr)...
 → gate: chain reconciliation (divisions rebuild the all-items index, ±0.02 pp)...
 → gate: basket sum (Σ(w·r) near headline, ±0.5 pp)...
 → gate: group consistency (each division's groups sum to it)...
 → gate: flash marker (is_flash agrees with the two published months)...
-→ gate: coverage (every division AND group, every completed year 2020→2025; partial 2026 excluded)...
+→ gate: coverage (every division AND group, every completed year 2003→2025; partial 2026 excluded)...
 → gate: link status (52 URLs — both extracts per division plus a sampled group, body inspection)...
 → publishing to ../data/published/
 OK: wrote hicp_categories.json (13 divisions + 46 groups, 2026 weights) + hicp_headline.json (headline 5.2% / 2026-06)
@@ -491,7 +525,7 @@ skipped one — usually `--skip-link-check`.
   FLASH: 2026-07 carries CP00 alone — the divisions and the index are still at 2026-06
 → gates: chain reconciliation, basket sum, group consistency SKIPPED — no index and no divisions at the flash month to feed them
 → gate: flash marker (is_flash agrees with the two published months)...
-→ gate: coverage (every division AND group, every completed year 2020→2025; partial 2026 excluded)...
+→ gate: coverage (every division AND group, every completed year 2003→2025; partial 2026 excluded)...
 → gate: link status (52 URLs — both extracts per division plus a sampled group, body inspection)...
 → publishing to ../data/published/
   hicp_categories.json left untouched — the flash has no divisions

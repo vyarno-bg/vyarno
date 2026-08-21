@@ -249,7 +249,7 @@ cd pipeline && source .venv/bin/activate
 pytest -q                          # all tests, summary
 pytest -v                          # one line per test
 pytest tests/test_transform.py     # one file
-pytest tests/test_transform.py::test_index_years_from_2020_leaves_every_value_untouched
+pytest tests/test_transform.py::test_index_years_from_floor_leaves_every_value_untouched
 pytest -x                          # stop on first failure
 pytest --tb=short                  # shorter tracebacks
 ```

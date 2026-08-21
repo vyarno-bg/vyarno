@@ -118,7 +118,7 @@ and `null` everywhere else.
 
 | File | Carries |
 |---|---|
-| `hicp_categories.json` (68 KB) | 13 ECOICOP ver.2 divisions + ~46 groups; per code `weight_pct`, `annual_rate_pct`, `index_by_year` (year-end, since 2020), `latest_index`, BG/EN labels, two verify URLs |
+| `hicp_categories.json` (90 KB) | 13 ECOICOP ver.2 divisions + ~46 groups; per code `weight_pct`, `annual_rate_pct`, `index_by_year` (year-end, back to `INDEX_SINCE_YEAR`), `latest_index`, BG/EN labels, two verify URLs |
 | `hicp_headline.json` | Eurostat's all-items 12-month rate, verbatim, with its reference month |
 | `salary_dist.json` | An 11-point gross ladder P1…P99 inside a `shape` block carrying Eurostat SES's own provenance. The НСИ level the ladder is re-set to is **not** copied in here — the SPA reads it from `sector_salary.json`'s all-activities row, so no payload carries a second publisher's figures |
 | `payroll.json` | The dated BG payroll-law table + `scheduled_changes` |
@@ -127,7 +127,7 @@ and `null` everywhere else.
 | `city_price.json` | Per-city €/m² for the 27 cities имот.bg cover: each city's district count, summary and its OWN year window, chosen from how far back имот.bg's coverage of it supports a comparison. Keyed by the same `code`. No per-district dict — nothing read it |
 | `mortgage.json` (28 KB) | Two rate tiers (`new_business` with nested `aprc`, `outstanding_stock`), the БНБ↔ЕЦБ `cross_check`, `lending_limits`, the `fixation` split over four initial-fixation buckets and the `new_business_split` between pure new lending and renegotiation |
 | `credit.json` | What the same household pays on everything that is not a home — consumer credit with its ГПР, overdrafts, credit-card balances carried past the interest-free period — and the two deposit series that are the comparator |
-| `unemployment.json` | BG unemployment — **monthly**, seasonally adjusted, 2020-01 onward (`une_rt_m`, not the annual `une_rt_a`) |
+| `unemployment.json` | BG unemployment — **monthly**, seasonally adjusted, the cube's whole series (`une_rt_m`, not the annual `une_rt_a`), with Eurostat's own break flags in `status_by_period` |
 | `house_market.json` (40 KB) | The quarterly transaction market: `deals` and `value` (how many dwellings households bought and what they paid), `avg_deal_eur`, and `price_index` beside `price_index_real` — the nominal series and the same series deflated, so a rise in prices is never reported as a rise in what a home costs in real terms |
 | `house_market_structure.json` | `tenure`, `census_dwellings` and `housing_cost_overburden` — what the country owns rather than rents, the census dwelling stock, and the share spending over 40% of income on housing. Annual, so it moves on a different clock from the quarterly market above and carries its own `ref_period` |
 | `nsi_housing.json` (20 KB) | НСИ's own housing series: `national_price_index_yoy`, `city_price_index_yoy` for the six cities over 120,000, and `city_deals_yoy`. **Percentages, never a level** — no НСИ city series carries €/m², which is why `/market/` compares change against change and the € level comes from `city_price.json` |

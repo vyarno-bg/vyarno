@@ -41,9 +41,12 @@ from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
 from vyarno_pipeline.sources.ecb import SERIES_KEYS, fetch_mir_series
 from vyarno_pipeline.sources.eurostat import (
     CP_DIVISIONS,
+    INDEX_SINCE_YEAR,
+    UNEMPLOYMENT_SINCE_PERIOD,
     fetch_hicp_index_bg,
     fetch_hicp_rates_bg,
     fetch_hicp_weights_bg,
+    fetch_unemployment_bg,
     group_codes_in_basket,
 )
 from vyarno_pipeline.sources.imot import _min_districts_for, fetch_city_prices
@@ -148,14 +151,52 @@ def test_eurostat_still_serves_the_live_rate_cube():
     )
 
 
-def test_eurostat_still_serves_the_index_back_to_2020():
-    """The index must reach back to 2020 — the site's earliest anchor."""
-    times = {r["time"] for r in fetch_hicp_index_bg(geo="BG", since_year=2020).rows}
-    assert any(t.startswith("2020") for t in times), (
-        "the live index no longer covers 2020; every since-2020 number on the site depends on it"
+def test_eurostat_still_serves_the_index_back_to_the_floor():
+    """Every code we publish must reach the floor, at both levels.
+
+    **Asked of every code rather than of the cube**, because the floor is set by
+    the shallowest one: `CP122` starts at 2003-12 for BG where most of the
+    basket starts at 1996-12, and a check on TOTAL alone would pass through the
+    exact case `INDEX_SINCE_YEAR` exists for. Gate 5 catches this at refresh
+    time; catching it here says whether the floor can move rather than only that
+    today's publish is safe.
+    """
+    published = ["CP00", *CP_DIVISIONS, *group_codes_in_basket(fetch_hicp_weights_bg(geo="BG"))]
+    by_cp: dict[str, set[str]] = {}
+    for r in fetch_hicp_index_bg(geo="BG").rows:
+        by_cp.setdefault(r["coicop"], set()).add(str(r["time"]))
+
+    link = f"{INDEX_SINCE_YEAR}-12"
+    short = [cp for cp in published if link not in by_cp.get(cp, set())]
+    assert not short, (
+        f"{short} carry no {link} reading. It is the denominator of the oldest "
+        f"anchor the site offers, and gate 5 will fail the next refresh."
     )
-    assert "2020-12" in times, (
-        "December 2020 is missing — it is the denominator of every since-2020 figure"
+
+
+def test_une_rt_m_still_starts_where_we_ask_it_to():
+    """`UNEMPLOYMENT_SINCE_PERIOD` is the cube's own first month, so the whole
+    series reaches the chart.
+
+    Asked of the published cell rather than of the cube, because the three
+    pinned dimensions each have a neighbour with a longer history: a filter that
+    silently stopped matching would leave this passing on somebody else's rows.
+    A month EARLIER than we ask for is a backfill and not a failure — it means
+    the constant can move, which is what the assertion names.
+    """
+    rows = [
+        r
+        for r in fetch_unemployment_bg(geo="BG", since_period="1990-01")
+        if r.get("s_adj") == "SA"
+        and r.get("sex") == "T"
+        and r.get("age") == "TOTAL"
+        and r.get("unit") == "PC_ACT"
+    ]
+    assert rows, "the SA × T × TOTAL × PC_ACT cell is gone — re-enumerate the cube"
+    first = min(str(r["time"]) for r in rows)
+    assert first <= UNEMPLOYMENT_SINCE_PERIOD, (
+        f"une_rt_m now starts at {first}, after the {UNEMPLOYMENT_SINCE_PERIOD} "
+        f"we ask for — /how/'s chart is drawing a window Eurostat no longer fill."
     )
 
 

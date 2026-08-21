@@ -73,7 +73,13 @@ import {
 // between a formula and its input is testable. Wiring that lives in a
 // `$derived(...)` is wiring nothing can test — see the header of any `view/`
 // module, and docs/site.md §"`src/lib/view/` — one module per subject".
-import { basketSumQuery, officialBasketWeights, verifyUrl } from "./view/basket.js";
+import {
+  anchorYearDecades,
+  anchorYears as offeredAnchorYears,
+  basketSumQuery,
+  officialBasketWeights,
+  verifyUrl,
+} from "./view/basket.js";
 import {
   payLadder,
   quarterGrid,
@@ -1338,8 +1344,8 @@ export class Calculator {
   // Year-anchor options compare `idx[latestYear] / idx[yearEnd] − 1`. The
   // numerator end-point is the freshest monthly index Eurostat has published
   // (e.g. "2026-06"), which is what this label states — honest about the
-  // partial-year end-point. (The year-anchor OPTIONS are still only the
-  // completed years 2020..2025; `anchorYears` enforces that.)
+  // partial-year end-point. The OPTIONS are completed years only, which is
+  // `view/basket.js#anchorYears`' job and not this label's.
   idxLatestYearLabel = $derived(
     this.categories.length > 0
       ? String(
@@ -1381,13 +1387,9 @@ export class Calculator {
     return `${p.replace("-", ".")} → ${r.replace("-", ".")}`;
   });
   /** Completed years available as anchors, newest first. */
-  anchorYears = $derived.by(() => {
-    if (!this.data.hicpCategories) return [];
-    const latest = +latestIndexYear(this.categories[0]?.index_by_year ?? {});
-    const years = [];
-    for (let y = 2020; y < latest; y++) years.push(y);
-    return years.reverse();
-  });
+  anchorYears = $derived(offeredAnchorYears(this.categories));
+  /** The same years as the dropdown's decade groups. */
+  anchorDecades = $derived(anchorYearDecades(this.anchorYears));
 
   // ---------------------------------------------------------------------
   // Per-division readings

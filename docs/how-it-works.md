@@ -66,7 +66,7 @@ does:
 ```
 food index at the end of 2020 ≈ 115
 food index today              ≈ 185
-→ 185 ÷ 115 = 1.6 → food costs 60% more than in 2020
+→ 185 ÷ 115 = 1.6 → food costs 60% more than at the end of 2020
 ```
 
 That single division — today's index ÷ the index in the year you pick — is how
@@ -76,16 +76,16 @@ it divides by the 2022 index instead. No magic, just a ratio.
 ### Why the index numbers look odd
 
 Eurostat starts its indices at 100 back in **2015**, so the levels do not read
-the way you might expect: food's 2020 index is about 115, not 100, even though
-the anchor selector starts at 2020. We leave them exactly as published rather
+the way you might expect: no year the anchor selector offers reads 100, and the
+oldest ones read well under it. We leave them exactly as published rather
 than rescaling them to a tidier scale, and nothing on screen suffers for it —
 every figure the app shows is one index value divided by another, and a common
 scale cancels in a division. What it buys is that the "check this number" link
 next to a row returns the same digits the app used.
 
 The trap is what happens if only *some* of the values get rescaled. Dividing a
-2015-scale number by a 2020-scale one is like measuring your height in inches
-at the top and centimetres at the bottom: a number comes out, and it is
+number on one base by a number on another is like measuring your height in
+inches at the top and centimetres at the bottom: a number comes out, and it is
 nonsense.
 
 **The rule: every index field stays on the base Eurostat published it on.** In
@@ -95,9 +95,10 @@ they cannot drift apart.
 There is a corollary worth knowing. The "last 12 months" number divides this
 month's index by the index twelve months ago. If both are wrong by the same
 scale factor the error cancels and the number looks perfectly correct — **even
-while the "since 2020" number is badly wrong.** So the 12-month view can never be
+while a "since year Y" number is badly wrong.** So the 12-month view can never be
 the only sanity check; always verify a since-a-year number against the raw
-Eurostat series too.
+Eurostat series too, and check the OLDEST year on offer: the further back the
+anchor, the larger a base mistake reads.
 
 ## 5. Why your number can differ from "official inflation"
 

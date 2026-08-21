@@ -261,6 +261,20 @@
   stroke-width: 1;
 }
 
+/* A break the publisher declared, drawn as a rule through the plot. Quiet on
+   purpose: it qualifies the line, it is not a second series. Here rather than
+   in a component because /market/ and /how/ both draw one — the same mark for
+   the same Eurostat flag, and a reader who learns it on one page has learnt it.
+   Its swatch stays with each page's own legend: the two pages build a key out
+   of different base rules (a filled block, a stroked rule), so a shared
+   override would have to win a specificity fight against whichever it landed
+   beside. */
+.plot-break {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
 /* **The datum a series is measured against: the base year on an index, zero on
    a sparkline. It is furniture, and it is drawn as furniture.**
    `--erode` was doing this job, which made the loudest mark on every plot a

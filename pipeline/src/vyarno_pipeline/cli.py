@@ -130,6 +130,7 @@ from vyarno_pipeline.sources.ecb import (
 )
 from vyarno_pipeline.sources.eurostat import (
     CP_DIVISIONS,
+    INDEX_SINCE_YEAR,
     IW_DATASET,
     MINR_DATASET,
     fetch_hicp_index_bg,
@@ -197,6 +198,7 @@ from vyarno_pipeline.validate import (
     validate_reconciliation,
     validate_region_salary,
     validate_sector_salary,
+    validate_unemployment,
 )
 
 
@@ -361,7 +363,7 @@ def _month_before(period: str) -> str:
 @click.option("--geo", default="BG", show_default=True, help="Geography code")
 @click.option(
     "--since-year",
-    default=2020,
+    default=INDEX_SINCE_YEAR,
     type=int,
     show_default=True,
     help="Earliest year for index history",
@@ -831,6 +833,17 @@ def _refresh_unemployment(out: Path, geo: str, as_of: date) -> None:
         click.echo(f"ERROR: transform failed: {e}", err=True)
         sys.exit(2)
 
+    # Gated on the model's own dict rather than on the written file: a gate that
+    # reads back what it just published cannot block the publish.
+    try:
+        click.echo(
+            "→ gate: unemployment (headline is the series' own cell; flags are Eurostat's)..."
+        )
+        validate_unemployment(obs.model_dump(mode="json"))
+    except ValidationError as e:
+        click.echo(f"GATE FAILED: {e}", err=True)
+        sys.exit(3)
+
     write_time_series(
         payload_name="unemployment",
         series=obs,
@@ -842,7 +855,13 @@ def _refresh_unemployment(out: Path, geo: str, as_of: date) -> None:
             f"Latest: {obs.value:.1f}% at {obs.ref_period}."
         ),
     )
-    click.echo(f"OK: wrote {UNEMPLOYMENT_FILE} (latest {obs.value:.1f}% at {obs.ref_period})")
+    flagged = sorted(obs.status_by_period)
+    click.echo(
+        f"OK: wrote {UNEMPLOYMENT_FILE} ({len(obs.series_by_period)} months "
+        f"{min(obs.series_by_period)}→{obs.ref_period}, latest {obs.value:.1f}%"
+        + (f", Eurostat flag {', '.join(flagged)}" if flagged else "")
+        + ")"
+    )
 
 
 def _refresh_city_price(out: Path, as_of: date) -> None:

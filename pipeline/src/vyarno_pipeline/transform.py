@@ -17,8 +17,8 @@ Provenance contract (single source of truth for headline math):
   NOT derived from the index.
 - `index_by_year` and `latest_index` are Eurostat's own index values from the
   SAME `prc_hicp_minr` cube at `INDEX_UNIT`, published unscaled. The pipeline
-  chooses which readings appear — December, and 2020 onwards — and changes
-  none of them.
+  chooses which readings appear — December, and `INDEX_SINCE_YEAR` onwards —
+  and changes none of them.
 - `weight_pct` comes from `prc_hicp_iw` for the most recent year — refreshed
   every run, never hardcoded.
 - All three cubes are ECOICOP **ver.2**, keyed by `coicop18`, so a code's
@@ -58,6 +58,7 @@ from vyarno_pipeline.sources.eurostat import (
     HOUSE_SALES_VALUE_UNIT,
     HOUSING_OVERBURDEN_DATASET,
     INDEX_BASE_YEAR,
+    INDEX_SINCE_YEAR,
     INDEX_UNIT,
     IW_DATASET,
     MINR_DATASET,
@@ -169,27 +170,35 @@ COICOP_META: dict[str, tuple[str, str]] = {
 # fmt: on
 
 
-def index_years_from_2020(index_by_year: dict[int, float]) -> dict[int, float]:
-    """Keep 2020 onwards. Values pass through at whatever base they arrive on.
+def index_years_from_floor(index_by_year: dict[int, float]) -> dict[int, float]:
+    """Keep `INDEX_SINCE_YEAR` onwards. Values pass through at whatever base
+    they arrive on.
 
     This selects years; it scales nothing. Every figure the site builds out of
     the series is a ratio of two of its own members —
     `latest_index / index_by_year[anchor]` — and a ratio is unchanged by the
-    base both members sit on. So dividing through to make 2020 read 100 would
-    move no number a reader sees, and it would turn every published level into
-    one Eurostat cannot be asked to stand behind. Their copyright notice makes
-    that a disclosure obligation, not a matter of taste: adapted data has to be
-    declared as adapted, with a disclaimer, at every figure. Publishing their
-    values is how that obligation stops existing.
+    base both members sit on. So dividing through to make an anchor year read
+    100 would move no number a reader sees, and it would turn every published
+    level into one Eurostat cannot be asked to stand behind. Their copyright
+    notice makes that a disclosure obligation, not a matter of taste: adapted
+    data has to be declared as adapted, with a disclaimer, at every figure.
+    Publishing their values is how that obligation stops existing.
 
-    2020 must be present, and the failure is loud rather than a short map: the
-    savings card divides by it (`allItemsCumulativeSince2020`), so a series
-    that skipped it would render a blank card and no error. Earlier years are
-    dropped because the anchor selector cannot reach them.
+    Two years must be present and each has its own consumer, so each fails by
+    name rather than through a short map somebody has to notice:
+
+    - **`INDEX_SINCE_YEAR`** is the oldest anchor the selector offers.
+    - **2020** is what the savings card divides by
+      (`allItemsCumulativeSince2020`), in fixed copy that names the year. Gate 5
+      covers it for the divisions and their groups; the all-items headline is
+      not in that gate's input, and it is the payload that card reads.
+
+    Earlier years are dropped because the anchor selector cannot reach them.
     """
-    if 2020 not in index_by_year:
-        raise ValueError("2020 not in index_by_year — the since-2020 anchor has no base")
-    return {y: v for y, v in index_by_year.items() if y >= 2020}
+    for year, who in ((INDEX_SINCE_YEAR, "the oldest anchor"), (2020, "the savings card")):
+        if year not in index_by_year:
+            raise ValueError(f"{year} not in index_by_year — {who} has no base")
+    return {y: v for y, v in index_by_year.items() if y >= INDEX_SINCE_YEAR}
 
 
 def rows_to_yearly_index(rows: list[dict]) -> dict[int, float]:
@@ -249,7 +258,7 @@ def rate_api_url(cp: str, geo: str = "BG") -> str:
     )
 
 
-def index_api_url(cp: str, geo: str = "BG", since_year: int = 2020) -> str:
+def index_api_url(cp: str, geo: str = "BG", since_year: int = INDEX_SINCE_YEAR) -> str:
     """The per-code index dissemination extract — the since-year link.
 
     It resolves to the same unit the payload's values came from, which is what
@@ -277,7 +286,7 @@ def index_fields(
     rows: list[dict],
     cp: str,
 ) -> tuple[dict[int, float], dict[str, float | str], float]:
-    """(index_by_year from 2020, latest_index, the latest year-end value).
+    """(index_by_year from `INDEX_SINCE_YEAR`, latest_index, the latest year-end value).
 
     Both index fields are Eurostat's own values off one cube at one unit, so
     they share a base by construction rather than by an arithmetic step
@@ -291,7 +300,7 @@ def index_fields(
     """
     if not rows:
         raise MissingSeriesError(f"{cp}: no index rows")
-    yearly = index_years_from_2020(rows_to_yearly_index(rows))
+    yearly = index_years_from_floor(rows_to_yearly_index(rows))
     if not yearly:
         raise MissingSeriesError(f"{cp}: no year-end index reading")
     latest = latest_monthly_index(rows)
@@ -654,6 +663,15 @@ def rows_to_unemployment_observation(
             "than relaxing the filter — every neighbouring cell is a "
             "different statistic, not a coarser one."
         )
+    # Eurostat's own letters on their own cells, sparse (`_flags_by_period` has
+    # the vocabulary). The one that reaches a reader is `b`: BG's series is
+    # flagged at 2009-01, and the chart draws a rule there rather than joining
+    # two stretches the publisher declined to call one measurement.
+    status = {
+        str(r["time"]): str(r["status"])
+        for r in filtered
+        if r.get("status") and r.get("time") is not None
+    }
     latest_period = max(series.keys())
     return TimeSeriesObservation(
         dataset="une_rt_m:s_adj=SA:sex=T:age=TOTAL:unit=PC_ACT",
@@ -666,6 +684,7 @@ def rows_to_unemployment_observation(
         unit="percent",
         value=series[latest_period],
         series_by_period=series,
+        status_by_period=status,
         # The pins are the easy half and were all this said. The hard half is
         # that «unemployed» is the ILO test, not "has no job": `une_rt_m_esms`
         # §3.4 — "Unemployed persons are all persons 15 to 74 years of age who
