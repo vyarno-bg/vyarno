@@ -18,7 +18,18 @@
     safeText,
     yearText,
   } from "$lib/format.js";
-  import { fastestRisingDivision } from "$lib/view/basket.js";
+  import { fastestRisingDivision, divisionRateState } from "$lib/view/basket.js";
+
+  // The card draws the highest of the thirteen rates, signed. Its label follows
+  // that sign: in a broad price fall the maximum is still negative, and
+  // «най-бързо поскъпващата група» printed over «−0,4%» is the caption denying
+  // the figure under it.
+  const FAST_K = {
+    up: COPY.statFastK,
+    down: COPY.statFastKDown,
+    flat: COPY.statFastKFlat,
+    unsaid: COPY.statFastKFlat,
+  };
   import { CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE } from "$lib/view/region.js";
 
   const {
@@ -259,7 +270,12 @@
               >
             </div>
           {/if}
-          {#if nationalNet > 0}
+          <!-- Gated on the two figures the sentence compares, not on the mean
+               alone: «средната е по-висока» is a claim about the pair, and the
+               skew is read off the payload rather than assumed — the rule
+               `mirror.js#meanAboveMedian` already keeps for the sector card. A
+               euro of band, because both are drawn as whole euro. -->
+          {#if nationalNet - ladder[5] >= 1}
             <div>
               <span class="l-bg"
                 >{COPY.statMedianVsMean.bg.replace("{mean}", fmt0(nationalNet))}</span
@@ -339,7 +355,9 @@
         </div>
         <div class="sl">
           <span class="l-bg">{fastest.bg_name}</span><span class="l-en">{fastest.en_name}</span>
-          <span class="l-bg">{COPY.statFastK.bg}</span><span class="l-en">{COPY.statFastK.en}</span>
+          <span class="l-bg">{FAST_K[divisionRateState(fastest.annual_rate_pct)].bg}</span><span
+            class="l-en">{FAST_K[divisionRateState(fastest.annual_rate_pct)].en}</span
+          >
         </div>
         <div class="ss">
           <a href={estatCatUrl(fastest)} target="_blank" rel="noopener"

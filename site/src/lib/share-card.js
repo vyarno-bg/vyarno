@@ -106,6 +106,11 @@ const CARD_COPY = Object.freeze({
   mine: "shareCardMine",
   average: "shareCardAverage",
   top: "shareCardTop",
+  // `ranked[0]` is the largest contribution, which where every division has
+  // fallen is the least negative one. «Най-тежко удря» over a minus sign is the
+  // picture contradicting its own figure, on the one surface that leaves the
+  // device and cannot be corrected after it has been sent.
+  topDown: "shareCardTopDown",
   source: "shareCardSource",
   cta: "shareCardCta",
 });
@@ -196,7 +201,7 @@ export function shareCardText({ share, copy, lang = "bg" }) {
     // every slider at zero has no biggest bite, and a dangling «Най-тежко
     // удря:» with nothing after it is worse than the silence.
     detail: Number.isFinite(share.topPp)
-      ? t(copy[CARD_COPY.top], lang, {
+      ? t(copy[share.topPp < 0 ? CARD_COPY.topDown : CARD_COPY.top], lang, {
           c: (lang === "bg" ? share.topBgName : share.topEnName).toLowerCase(),
           pp: number(share.topPp, 1, lang),
           p: piText,

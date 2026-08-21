@@ -660,6 +660,30 @@ export function marketPriceIndexRealSeries(houseMarket) {
 }
 
 /**
+ * Which way a multiple of the base year points, as a state rather than a word.
+ *
+ * **An index below its base is not «по-скъпи», and this series goes there.**
+ * The nominal record opens at ×0,76 and the deflated one sat at ×0,97 as
+ * recently as 2013-Q1, so a caption with «по-скъпи» fixed between its slots
+ * describes the wrong half of its own chart — the reading is a figure, and so
+ * is its direction.
+ *
+ * The dead band is the PRINTED precision, not a taste: the pages draw a
+ * multiple at one decimal, so anything inside ±0,05 renders as ×1,0 and a
+ * verdict there narrates a difference the digits beside it do not show. Same
+ * refusal as `pocketVerdictState`'s ±1 pp, sized to what this surface prints.
+ *
+ * @param {number|null|undefined} times  a reading over its base, from `indexTimesBase`
+ * @returns {'dearer'|'cheaper'|'level'|'unsaid'}
+ */
+export function indexVerdictState(times) {
+  if (!Number.isFinite(times) || times <= 0) return "unsaid";
+  if (times >= 1.05) return "dearer";
+  if (times <= 0.95) return "cheaper";
+  return "level";
+}
+
+/**
  * The index said out loud: how many times the base year, and where the deflated
  * line sits against its own highest reading.
  *

@@ -87,9 +87,12 @@ enforces the first half.
 - **A number-changing PR says which number and why**, with the upstream link.
 - **New copy is written in both languages.** A missing string renders as a
   blank line, not a fallback.
-- **No feature is gated.** Вярно has no paid tier and no donor tier; a change
-  that makes any functionality conditional on payment or supporter status will
-  not be merged. This is what the project *is*, not a phase.
+- **A donation buys nothing.** No supporter tier, no donor badge, no early
+  access: anything given in return makes the service възмездна and flips
+  `LEGAL_FORM.takesPayment` for the whole site. Charging for a *product* is a
+  separate decision and an open one; what it owes the reader is
+  [`docs/principles.md`](./docs/principles.md) §"Charging for something", and a
+  PR that takes it says so in the description.
 - Match the surrounding code. The codebase comments the *why* rather than the
   *what*, sometimes at length, and that is deliberate.
 - **A test moves with the code it protects, in the same commit.**

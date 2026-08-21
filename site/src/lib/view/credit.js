@@ -152,6 +152,51 @@ export function creditFixationHistory(mortgage) {
 }
 
 /**
+ * Whether an extreme sits inside the record, so a caption may name it as one.
+ *
+ * «с връх 9,00% през ноември 2008 г.» tells a reader the rate climbed and came
+ * back down. That holds while the maximum is strictly inside the series and
+ * fails the moment it IS the latest reading, where the same sentence reports a
+ * level the series is still standing at as one it has left. The date beside it
+ * does not save the word: a reader who believed «връх» has the wrong shape.
+ *
+ * Both ends are checked, not only the last. A maximum that is also the FIRST
+ * reading makes «връх» describe the start of the record rather than an event
+ * in it, which is the same sentence wrong in the other direction.
+ *
+ * @param {{peak?:{value:number}, first?:{value:number}, latest?:{value:number}}|null} series
+ * @returns {boolean}
+ */
+export function peakWorthNaming(series) {
+  const peak = series?.peak?.value;
+  const first = series?.first?.value;
+  const latest = series?.latest?.value;
+  if (![peak, first, latest].every(Number.isFinite)) return false;
+  return peak > first && peak > latest;
+}
+
+/**
+ * The same question for a dip, and the sentence it gates is longer-lived.
+ *
+ * `/credit/` says the floating share fell to a trough and «после делът се върна
+ * нагоре». The recovery is the half that can go false without any number in the
+ * sentence looking wrong — a fresh low arriving as the latest reading leaves
+ * every printed figure correct and the verb describing a return that has not
+ * happened. The chart's own trough marker already refuses that case; this is
+ * what lets the prose refuse it too.
+ *
+ * @param {{trough?:{value:number}, first?:{value:number}, latest?:{value:number}}|null} series
+ * @returns {boolean}
+ */
+export function troughWorthNaming(series) {
+  const trough = series?.trough?.value;
+  const first = series?.first?.value;
+  const latest = series?.latest?.value;
+  if (![trough, first, latest].every(Number.isFinite)) return false;
+  return trough < first && trough < latest;
+}
+
+/**
  * How much of «new lending» is a household repricing a loan it already had.
  *
  * @param {object|null} mortgage

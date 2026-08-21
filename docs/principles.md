@@ -15,13 +15,16 @@ to satisfy, are in [`README.md`](./README.md) §"Who this is for".
 - **Product:** Вярно / vyarno.bg — «икономиката, честно». A calculator that
   measures Bulgaria's official statistics against one household's own numbers:
   personal inflation, real wage, salary percentile, the tax wedge, rent,
-  savings and the path to a home. **A public good: open source
-  (Apache-2.0), and free to every visitor — nothing is sold to a reader.** No
-  paid tier, no donor tier, no feature gating, no billing code. That is what the
-  project *is*, and no funding decision reaches it: a change making any
-  functionality conditional on payment or supporter status does not get merged
-  (`CONTRIBUTING.md`, and a checkbox in the PR template). How the site is paid
-  for is a separate question, answered under §"What is closed" below.
+  savings and the path to a home. **Open source (Apache-2.0), and everything
+  it publishes today is free to every visitor.** Nothing is sold at present,
+  `LEGAL_FORM.takesPayment` says so, and `check-identity.mjs` holds the two in
+  agreement.
+  **That is a description of today and not a promise about every future**, for
+  the reason [`legal.md`](./legal.md) gives about the same claim: a decision
+  recorded in a repository is one that can be revisited, and writing "and never
+  will be" is an overclaim that costs the credibility of the sentences beside
+  it. What a paid surface would owe is §"Charging for something" below; how the
+  site is paid for otherwise is §"What is closed".
 - **Sustained by donations today, and not by them alone indefinitely** — see
   §"What is closed" on what an advertiser may and may not buy. Donations
   themselves are gratuitous and buy nothing.
@@ -119,12 +122,16 @@ explainer deliberately teaches the method. That is what the project is for.
 2. **Never describe the FIGURES as openly licensed.** Identity above, and
    [`legal.md`](./legal.md) §"Our own licence" for the reasoning and the test.
 
-3. **No feature is gated, ever.** No paid tier, no donor tier, no supporter
-   badge, no early access. Beyond the project's stated purpose, rule 4 in
-   `site/src/lib/support.js` explains the legal mechanism: anything given in
-   return for a donation makes the service възмездна and flips
-   `LEGAL_FORM.takesPayment`. `verify_support.mjs` fails the build on copy that
-   would announce such a thing.
+3. **A donation buys nothing, whatever else the project may sell.** No
+   supporter tier, no donor badge, no early access, no ad-free mode. This rule
+   rests on legal mechanics rather than on taste: a донация under ЗЗД is
+   gratuitous, so attaching any benefit to giving converts the gift into
+   възнаграждение **for the whole service** and flips
+   `LEGAL_FORM.takesPayment` without anybody having decided to sell anything.
+   `support.js` rule 4 carries the reasoning and `verify_support.mjs` fails the
+   build on copy that would announce such a thing. Selling a product is the
+   separate and permitted thing (§"Charging for something"), and routing it
+   past the donation channel is what keeps that channel legally simple.
 
 4. **The published legal identity must be true for the legal form we actually
    are**, and `npm run build:release` fails when it is not.
@@ -139,8 +146,8 @@ explainer deliberately teaches the method. That is what the project is for.
 
 | # | Principle |
 |---|---|
-| **P1** | **A consumer's own figures never leave their device.** Salary, rent, savings and basket exist only in their tab. We do not transmit, store, or hold anything that could reconstruct them. *"No backend" is not part of the promise* — a server may exist for anything that touches no consumer figure. |
-| **P1a** | **A consumer never needs an account.** Everything the calculator does, it does for an anonymous visitor. If a feature only works once someone identifies themselves, it is not a consumer feature. |
+| **P1** | **A consumer's own figures never leave their device, unless they have asked for something that cannot be answered on it.** Salary, rent, savings and basket are computed in the reader's own tab, and the free calculator transmits none of them. *"No backend" is not part of the promise* — a server may exist for anything that touches no consumer figure, and a feature that genuinely needs one (a model, a scoring method) is permitted on the terms in §"Charging for something": asked for per use, covered by the privacy notice **before** it ships, and never a silent re-routing of arithmetic that already ran locally. The last clause is the one that carries the weight: the promise is checkable because a reader can watch the network tab, and a feature that quietly posts what used to stay local breaks the proof rather than the policy. |
+| **P1a** | **The free calculator never needs an account.** Everything it does today, it does for an anonymous visitor, and putting a figure it already shows behind a sign-in is a regression rather than a product decision. A paid surface may require an account, for the ordinary reason that somebody has to be billed; what it may not do is take the anonymous route away from what was already free. |
 | **P2** | **A shared number must not reconstruct a private one.** `extraPerMonth = salary × π/(100+π)` inverts exactly, so a € absolute beside the percentage it came from reveals the salary. **A rank is not automatically safe either** — `percentile` interpolates over rungs published in `data/published/`, so "ahead of 34%" inverts to the pay just as surely and carries no currency symbol to warn you. `SHARE_FIELDS` is the closed list of what may travel — rates, the anchor and its period, the leading division by name and contribution, the domain — and it carries no salary, no euro figure and no rank. `view/share.js#sharePayload` is where the list is closed, and it takes no salary. Check every new card against the inversion, not against intent. |
 | **P3** | **Every number is sourced, dated and clickable** — including numbers derived from published numbers, which inherit the obligation and must name their inputs and their `as_of`. A chart axis is a number. |
 | **P4** | **Freshest possible, never silently stale.** The live cube, not the archived one. `as_of` is surfaced. Anything pinned to a snapshot shows its date prominently. |
@@ -168,14 +175,14 @@ margin are irrelevant to them, and none is an open question.
 | Idea | Why not |
 |---|---|
 | Crowd-sourced "average real basket" from users | Requires collecting personal spending on a server. P1. The privacy-preserving version — comparing your basket to the *official* one, locally — is what the site already does |
-| Accounts, saved profiles, email capture, cross-device sync | Same. "Remember my basket **across devices**" is the one-line request that converts a client-side convenience into a server-side store of somebody's spending pattern — a new decision against P1, not an extension of the local one. The local half is what the `vyarno_inputs` switch does, and the boundary is the word *devices*: it writes to the reader's own `localStorage`, off until they turn it on, and no request carries it |
+| Accounts, saved profiles, email capture, cross-device sync | Same. "Remember my basket **across devices**" is the one-line request that converts a client-side convenience into a server-side store of somebody's spending pattern — a new decision against P1, not an extension of the local one. The local half is what the `vyarno_inputs` switch does, and the boundary is the word *devices*: it writes to the reader's own `localStorage`, off until they turn it on, and no request carries it. An account that exists to bill somebody is not this row: what P1 guards is the spending pattern, not the identity |
 | **Session recording, or any measurement that can see what a consumer typed** | P1 without qualification. A replay of the calculator is a recording of somebody's salary being entered. **The visit counter is the line, not a step towards it**: `site/src/lib/analytics.js` sends the pageview the loaded script sends by itself, calls `window.plausible(...)` nowhere, and `verify_analytics.mjs` fails on a call appearing. A custom event is the one edit that could carry a figure off the device, so it is refused as a class rather than judged per event |
 | **A second measurer, a pixel, a tag manager, or an analytics product that sets an identifier** | The counter was admitted on properties, not on need: no cookie, no storage write, no identifier that survives 24 hours, no cross-site join, EU-only processing, and an opt-out the reader controls. Anything that fails one of those is a different decision and gets argued as one. Two measurers also make the notice's "exactly one thing that is not our code" false, which is a sentence a reader can check |
 | **Selling, sharing or brokering user data** | P1. There is nothing to sell — we hold nothing — and building the capability in order to sell it is what P1 exists to prevent |
 | **Any commercial relationship that changes a number** | P10. If money could alter which figure is shown, which lender appears, or how affordable a home looks, it is declined regardless of margin |
 | Advice ("cut your spending on X", "refinance now") | P6 |
 | Loosening the 30%-of-net affordability line | P7. Homes do not become affordable because a calculator says so |
-| A consumer account required to see your own number | P1a |
+| A sign-in required to see a number that was already free | P1a. An account carried by a paid surface is a different question and is open |
 | Any € absolute on a shareable image beside the percentage it inverts | P2 |
 | **A salary percentile on a share surface** | P2. The rungs it is read off are published in `data/published/`, so a rank inverts to the pay to within a rung's width. It looks safe because it carries no currency symbol, which is what makes it worth naming here |
 | **A sector pay gap on a share surface** | P2, and it inverts harder than the percentile above. The rank is bounded by a rung's width; a gap divides by one of twenty averages published in `sector_salary.json`, so "18% below Information and communication" is one net wage to the euro — and naming the sector has already narrowed the sender to one of the nineteen sections `view/payroll.js#sectorOptions` offers (НСИ's twentieth row is the all-activities total, which is not a sector and is not in the picker). `view/share.js#sharePayload` takes no sector, which is what makes it unexpressible rather than merely disallowed |
@@ -185,13 +192,58 @@ margin are irrelevant to them, and none is an open question.
 | **A share count, a click event or a campaign parameter on an outgoing share** | P1. A measurement fired at the moment a basket is shared is a measurement that can see what somebody typed. We do not find out whether sharing works, and that is the trade rather than an oversight |
 | A second headline number (НСИ CPI alongside HICP) | Two competing headlines confuse. The distinction is explained in plain language instead ([`math.md`](./math.md)) — an editorial call rather than a promise, and the only row here that could be revisited |
 
-**What the reader pays is decided; who else pays is not.** Вярно is Apache-2.0,
-every feature free to everyone, no paid tier, no donor tier, no billing code —
-do not add pricing, billing or paywall code, copy or docs. Donations buy nothing
-— no supporter tier, no badge, no early access, no ad-free mode — because
-anything given in return makes the service възмездна, flips
+**Donations buy nothing, and that is a rule about donations rather than about
+revenue.** No supporter tier, no badge, no early access, no ad-free mode,
+because anything given in return makes the service възмездна, flips
 `LEGAL_FORM.takesPayment` and pulls in the rest of ЗЕТ чл. 4
-(`site/src/lib/support.js` rule 4, enforced by `verify_support.mjs`).
+(`site/src/lib/support.js` rule 4, enforced by `verify_support.mjs`). Selling a
+product does not go through that channel and does not disturb it.
+
+## Charging for something
+
+**Nothing here forbids it and the machinery is already built.** `IDENTITY` rows
+carry `dueWhen: "always" | "paid" | "vat"`, `identityRows()` publishes the ones
+the current form owes, and `verify_legal.mjs` already tests the paid path. What
+follows is what a paid surface costs on the day somebody ships one, in the order
+the build asks for it.
+
+1. **`LEGAL_FORM.takesPayment` flips in the same commit as the first price.**
+   `check-identity.mjs` blocks a release where shipped copy names a price while
+   the flag still says the service is free, and it blocks the other direction
+   too: flipping the flag makes the ЗЕТ чл. 4 register-entry row due and holds
+   the release until that row carries a value. Neither failure is an obstacle to
+   route around. Each names a disclosure the law attaches to the decision.
+   **Four shipped strings move in that same commit**, and they are the easiest
+   thing on this list to miss because each reads as marketing: `SUPPORT_COPY`'s
+   three answers about who pays, and the Terms-of-Use clause in `legal.js`
+   («няма платена версия, няма заключени функции») — which is a term of the
+   agreement with the reader, so `LEGAL_VERSION` moves with it. They are written
+   in the present tense on purpose: they state what is true today rather than
+   promising a future, and that is what keeps them cheap to change.
+2. **A register entry needs something to enter.** `LEGAL_FORM.id` is
+   `natural_person`. ЗДДС registration is owed above €51,130 a year, which
+   flips `vatRegistered` and publishes a ninth row.
+3. **The privacy notice covers the server before the feature reaches it.** A
+   paid calculation running off the device processes what the reader typed,
+   which is what today's notice says does not happen. The notice and
+   `LEGAL_VERSION` move in the release that ships the feature, never after it.
+4. **P1, P2 and P10 do not relax, and none of them costs revenue.** The free
+   calculator keeps computing locally, a share surface still may not carry a
+   figure that inverts to somebody's pay, and no advertiser or buyer moves a
+   number. P10 is the one to state plainly to anyone negotiating: the moment a
+   figure can be bought, every other figure on the page is worth less,
+   including the ones nobody paid for.
+5. **The price is visible before the reader commits**, in both languages. ЗЕТ
+   чл. 5-6 is the settled half of what else attaches: a търговско съобщение has
+   to be identifiable as one and has to name whose it is. The consumer-protection
+   questions around distance selling are answered in writing by whoever ships
+   the first paid surface, on the same footing as the ЗКНИП question in
+   `legal.js` §Advertising: this file does not pre-answer them.
+
+**None of the five is permission, because none is needed.** A paid tier, an
+advertisement, a data feed and an enterprise edition are decisions for the
+copyright holder. What this section records is what each owes the reader, so the
+decision is priced rather than argued.
 
 **Advertising is open, and P10 is what it may not buy.** Donations are not
 expected to carry the site alone, so an advertiser paying is a live option and

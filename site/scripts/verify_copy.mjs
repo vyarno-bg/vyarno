@@ -295,6 +295,149 @@ test("every placeholder in a COPY string is substituted somewhere", () => {
 });
 
 // ---------------------------------------------------------------------------
+// No caption fixes a direction the data is free to reverse
+// ---------------------------------------------------------------------------
+
+/**
+ * Verbs and comparatives that assert which way a series moved.
+ *
+ * The defect: a sentence with slots for the numbers and a FIXED word between
+ * them. «жилищните кредити растат от {hFrom} до {hTo}» reads as dynamic and
+ * passes review, and then a refresh lands, the figures update and the verb does
+ * not. Templating is what hides these — every digit stays correct while the
+ * sentence stops being true.
+ *
+ * `\b` is ASCII-only in JS, so the Cyrillic alternatives use a `(?!\p{L})`
+ * lookahead, the device `legal.js#commercialSignals` uses for the same reason.
+ * It is what keeps «поскъпването» — the deflator's NAME, a noun — from reading
+ * as a claim that something rose.
+ *
+ * **Pure quantifiers are deliberately out of scope**: «повече», «по-малко»,
+ * «вече», "more than", "now". Each appears in far more legitimate copy than
+ * false claims — the reader's own over-allocation, a carve-out, a stand-still
+ * ask — and including them put thirty entries on the allowlist below, which is
+ * an allowlist nobody reads. The cost is real and worth naming: this rule would
+ * NOT have caught «толкова пъти повече се плаща за жилище днес» over a multiple
+ * that can fall below 1. Verbs are what it reaches, and a quantifier beside a
+ * slot is a review note.
+ */
+const DIRECTION_WORD = new RegExp(
+  [
+    "раст(е|ат)(?!\\p{L})",
+    "спада(т|л)?(?!\\p{L})",
+    "(?<!се )пада(т|л)?(?!\\p{L})",
+    "намалява(т)?(?!\\p{L})",
+    "увеличава(т)?(?!\\p{L})",
+    "поскъпва(т)?(?!\\p{L})",
+    "поскъпна(ха)?(?!\\p{L})",
+    "поевтиня(ва(т)?)?(?!\\p{L})",
+    "изпреварва(ш|т)?(?!\\p{L})",
+    "изостава(т)?(?!\\p{L})",
+    "върна(?!\\p{L})",
+    "рекорд",
+    "за пръв път",
+    "по-скъп",
+    "по-евтин",
+    "по-висок",
+    "по-нисък",
+    "\\b(grows?|falls?|rises?|rose|drops?|climbs?|shrinks?)\\b",
+    "\\b(dearer|cheaper|higher|lower|outpaces|lags)\\b",
+    "\\b(record|went (up|back))\\b",
+  ].join("|"),
+  "iu"
+);
+
+/**
+ * Keys allowed to fix a direction, each with the reason it may.
+ *
+ * **A key goes on here only with a sentence saying why**, and the test asserts
+ * the reason is non-empty so the requirement is mechanical rather than a
+ * convention. Two reasons are admissible and no third has come up:
+ *
+ *   "state"      — a `view/` function decides the direction and this is one of
+ *                  the sentences it picks between. The word is a figure.
+ *   "structural" — the direction follows from law or from arithmetic, so no
+ *                  refresh can reverse it without a legislative change that
+ *                  moves a payload field.
+ */
+const DIRECTION_ALLOWED = {
+  // state — view/basket.js#divisionRateState
+  rankRow: "state: divisionRateState picks up/down/flat for the row's own rate",
+  rankRowDown: "state: the down branch of the same",
+  rankRowNoPay: "state: the same, on the no-salary variant",
+  rankRowNoPayDown: "state: the down branch of the no-salary variant",
+  // state — view/results.js#pocketVerdictState and #answerLine
+  answerPayAhead: "state: pocketVerdictState, and the ±1 pp band decides the wording",
+  answerPayBehind: "state: the behind branch of the same",
+  answerMoverUp: "state: answerLine returns `up` only where the rate is above zero",
+  answerMoverDown: "state: answerLine returns `down` only where the rate is below zero",
+  // state — view/share.js#sharePayload verdict, which carries a `close` third state
+  shareLineDearer: "state: sharePayload's verdict, dearer/cheaper/close",
+  shareLineCheaper: "state: the cheaper branch of the same",
+  // state — read off the two figures the sentence compares
+  statMedianVsMean: "state: rendered only where the published mean sits a euro above the median",
+  // structural — the ceiling is in ЗБДОО, not in a series
+  wedgeOver:
+    "structural: above the insurable-income ceiling the share falls by arithmetic, not by a figure that moved",
+  wedgeNone: "structural: the same claim, stated without a salary entered",
+  wedgeWhy: "structural: the same, and `the wedge copy says the rate FALLS` asserts this direction",
+  // structural — a percentile is a share of the population and cannot invert
+  pctTopTxt: "structural: «изпреварваш {r}%» is true at every r a percentile can take",
+  pctEarnerLine: "structural: the same, per earner",
+  // structural — a conditional about the reader's own money, not a series
+  leftCash:
+    "structural: «пак изостават» is inside «ако ти носят по-малко от {i}%», so the condition carries the direction",
+};
+
+test("no COPY string fixes a direction the data is free to reverse", () => {
+  // The guard against the class, rather than against the instances: a caption
+  // added tomorrow is checked without anybody adding a test. What it cannot see
+  // is prose inlined in a component — `docs/writing-style.md` argues that case
+  // for leaving a regex over prose to review, and the same reasoning holds here.
+  const offenders = [];
+  for (const [key, value] of bilingualEntries()) {
+    if (key in DIRECTION_ALLOWED) continue;
+    for (const lang of ["bg", "en"]) {
+      const text = value[lang] ?? "";
+      if (!/\{\{?[a-zA-Z_]\w*\}\}?/.test(text)) continue;
+      // Slots come out before the words are judged: `{now}` and `{lowAt}` are
+      // placeholder NAMES, and a rule that read them would report the caption
+      // that interpolates a period as one asserting a direction.
+      const found = DIRECTION_WORD.exec(withoutTags(withoutSlots(text)));
+      if (found) offenders.push(`COPY.${key}.${lang} fixes "${found[0]}": ${text}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    "a slot for the number and a fixed word for its direction is the sentence " +
+      "that goes false on a refresh with every digit in it still correct. Decide " +
+      "the direction in a `view/` function, give the component one sentence per " +
+      "state, or drop the word — a neutral «{from} → {to}» is right in every " +
+      `future. If it genuinely cannot reverse, add the key to DIRECTION_ALLOWED ` +
+      `with the reason:\n  ${offenders.join("\n  ")}`
+  );
+});
+
+test("every allowlisted direction states why it is allowed", () => {
+  // The allowlist is the review surface, and an entry with no reason is one
+  // nobody can check. Asserting the reason exists is what makes "say why" a
+  // rule rather than a habit.
+  for (const [key, reason] of Object.entries(DIRECTION_ALLOWED)) {
+    assert.ok(
+      COPY[key],
+      `DIRECTION_ALLOWED names COPY.${key}, which is gone from content.js — ` +
+        "an allowlist entry outliving its string is an exemption nobody meant to keep"
+    );
+    assert.match(
+      reason,
+      /^(state|structural): \S/,
+      `DIRECTION_ALLOWED.${key} must say why, starting "state:" or "structural:"`
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------
 // No em-dash in anything a reader sees
 // ---------------------------------------------------------------------------
 

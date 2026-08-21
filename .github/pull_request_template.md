@@ -30,8 +30,11 @@ without its source link cannot be reviewed, only trusted.
       so there is no number to check by eye
 - [ ] New or changed user-facing copy is written in **both** BG and EN
       (a missing string renders as a blank line, not a fallback)
-- [ ] This adds no paid tier, donor tier, feature gate or any functionality
-      conditional on payment or supporter status
+- [ ] This attaches no benefit to a donation (supporter tier, badge, early
+      access), which would flip `LEGAL_FORM.takesPayment` for the whole site
+- [ ] If this charges for anything, it works through
+      `docs/principles.md` §"Charging for something" — the flag, the register
+      entry, the privacy notice — rather than around the checks that ask for them
 
 ## If this touches a data source
 

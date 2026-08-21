@@ -93,9 +93,12 @@ commit that grew the suite.
 - **never move a personal-figure calculation server-side.** Salary, rent,
   savings and basket are computed in `mirror.js`, in the reader's own tab, and
   posted nowhere;
-- **never add feature gating, a paid tier or donor benefits.** Anything given in
-  return for a donation makes the service възмездна and flips
-  `LEGAL_FORM.takesPayment` (`docs/principles.md`);
+- **never attach a benefit to a donation** — no supporter tier, no badge, no
+  early access. Anything given in return makes the service възмездна and flips
+  `LEGAL_FORM.takesPayment` for the whole site, with nobody having decided to
+  sell anything. Selling a product is a separate and open decision;
+  `docs/principles.md` §"Charging for something" is what it costs, not an
+  argument against it;
 - **never invent a legal, registration or organisational fact**, and never add a
   badge or a metric that nothing measures;
 - **never write a comment or a doc paragraph that describes an earlier version

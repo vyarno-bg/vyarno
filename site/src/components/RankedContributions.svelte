@@ -11,6 +11,25 @@
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
   import { number, integer, signed } from "$lib/format.js";
+  import { divisionRateState } from "$lib/view/basket.js";
+
+  // The working under a row, one sentence per direction. The STATE is decided
+  // in `view/basket.js`; the words are picked here, because that layer does not
+  // import COPY. The rate is rendered unsigned for the same reason the euro
+  // figure already was: a sentence that says «поевтиня» and then prints a minus
+  // has stated the direction twice, and one of the two is redundant.
+  const RANK_ROW = {
+    up: COPY.rankRow,
+    down: COPY.rankRowDown,
+    flat: COPY.rankRowFlat,
+    unsaid: COPY.rankRowFlat,
+  };
+  const RANK_ROW_NO_PAY = {
+    up: COPY.rankRowNoPay,
+    down: COPY.rankRowNoPayDown,
+    flat: COPY.rankRowNoPayFlat,
+    unsaid: COPY.rankRowNoPayFlat,
+  };
 
   const {
     /** Rows from mirror.js#contributions, already ordered by size. */
@@ -179,29 +198,29 @@
           <div class="rankwhy">
             {#if householdNet > 0}
               <span class="l-bg"
-                >{@html t(COPY.rankRow, "bg", {
+                >{@html t(RANK_ROW[divisionRateState(r.rate)], "bg", {
                   s: fmt0(r.spendEur),
-                  r: fmt(r.rate),
+                  r: fmt(Math.abs(r.rate)),
                   e: fmt0(Math.abs(r.eurPerMonth)),
                 })}</span
               >
               <span class="l-en"
-                >{@html t(COPY.rankRow, "en", {
+                >{@html t(RANK_ROW[divisionRateState(r.rate)], "en", {
                   s: fmt0(r.spendEur),
-                  r: fmt(r.rate),
+                  r: fmt(Math.abs(r.rate)),
                   e: fmt0(Math.abs(r.eurPerMonth)),
                 })}</span
               >
             {:else}
               <span class="l-bg"
-                >{@html t(COPY.rankRowNoPay, "bg", {
-                  r: fmt(r.rate),
+                >{@html t(RANK_ROW_NO_PAY[divisionRateState(r.rate)], "bg", {
+                  r: fmt(Math.abs(r.rate)),
                   w: fmt0(100 * r.share),
                 })}</span
               >
               <span class="l-en"
-                >{@html t(COPY.rankRowNoPay, "en", {
-                  r: fmt(r.rate),
+                >{@html t(RANK_ROW_NO_PAY[divisionRateState(r.rate)], "en", {
+                  r: fmt(Math.abs(r.rate)),
                   w: fmt0(100 * r.share),
                 })}</span
               >

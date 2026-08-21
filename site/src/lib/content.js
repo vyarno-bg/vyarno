@@ -807,17 +807,38 @@ export const COPY = {
   },
   rankPp: { bg: "пункта", en: "points" },
   // The per-row plain-language line. {s} spend, {r} rise, {e} what it costs.
+  // One sentence per direction, picked by `view/basket.js#divisionRateState`.
+  // A row whose rate is negative used to read «поскъпна с −3,0% … струва ти
+  // €21 повече» with «поевтиня» appended after it: the same row saying dearer
+  // and cheaper, over a euro figure the template had already taken the sign
+  // off. The euro is still unsigned, so the words carry the direction alone.
   rankRow: {
     bg: "даваш ≈ <b>€{s}</b>/мес · поскъпна с <b>{r}%</b> · това ти струва ≈ <b>€{e}</b> повече на месец",
     en: "you spend ≈ <b>€{s}</b>/mo · it rose <b>{r}%</b> · that costs you ≈ <b>€{e}</b> more a month",
+  },
+  rankRowDown: {
+    bg: "даваш ≈ <b>€{s}</b>/мес · поевтиня с <b>{r}%</b> · това ти спестява ≈ <b>€{e}</b> на месец",
+    en: "you spend ≈ <b>€{s}</b>/mo · it got cheaper by <b>{r}%</b> · that saves you ≈ <b>€{e}</b> a month",
+  },
+  rankRowFlat: {
+    bg: "даваш ≈ <b>€{s}</b>/мес · цената ѝ не се е променила за година",
+    en: "you spend ≈ <b>€{s}</b>/mo · its price has not moved in a year",
   },
   rankRowNoPay: {
     bg: "поскъпна с <b>{r}%</b> · твоят дял е <b>{w}%</b>",
     en: "it rose <b>{r}%</b> · your share of it is <b>{w}%</b>",
   },
+  rankRowNoPayDown: {
+    bg: "поевтиня с <b>{r}%</b> · твоят дял е <b>{w}%</b>",
+    en: "it got cheaper by <b>{r}%</b> · your share of it is <b>{w}%</b>",
+  },
+  rankRowNoPayFlat: {
+    bg: "цената ѝ не се е променила за година · твоят дял е <b>{w}%</b>",
+    en: "its price has not moved in a year · your share of it is <b>{w}%</b>",
+  },
   rankFalling: {
-    bg: "поевтиня, тегли числото ти надолу",
-    en: "got cheaper, pulling your number down",
+    bg: "тегли числото ти надолу",
+    en: "pulling your number down",
   },
   // The tail of the list. Only the eight biggest rows are drawn, but
   // `rankLead` promises the rows add up to exactly the user's number — so the
@@ -1853,7 +1874,14 @@ export const COPY = {
     bg: "НСИ · средна брутна заплата за цялата област · {region} · {gross} € · ≈ {net} € нето по наша сметка · {period}{prelim}",
     en: "NSI · average GROSS pay for the whole oblast · {region} · {gross} € · ≈ {net} € net, our conversion · {period}{prelim}",
   },
+  // The card shows the highest of the thirteen rates, and the highest rate in a
+  // broad price fall is still a negative one — `fastestRisingDivision` takes a
+  // maximum and promises nothing about its sign. So the label follows the sign
+  // (`view/basket.js#divisionRateState`) rather than asserting a rise over a
+  // figure the card has already drawn with a minus in front of it.
   statFastK: { bg: ", най-бързо поскъпващата група", en: ", the fastest-rising group" },
+  statFastKDown: { bg: ", групата с най-малко поевтиняване", en: ", the group that fell least" },
+  statFastKFlat: { bg: ", групата с най-голяма промяна", en: ", the group that moved most" },
   // The housing card's label, and it needs one: every card in the strip has
   // the same anatomy — value, label, chart, source. Folding the place name
   // into the value slot as "София · €175 070" and pushing the rest into the
@@ -2395,9 +2423,22 @@ export const COPY = {
   // that has already given it. English puts the home first and the multiple
   // where «толкова» is, which is the same job done the way the language does
   // it.
+  //
+  // Three labels rather than one, chosen by `view/market.js#indexVerdictState`.
+  // «пъти повече» needs the multiple above it to exceed 1 and the record opens
+  // at ×0,76, so the one label was already describing the wrong half of its own
+  // chart. Which way it points is a figure like the figure itself.
   mktKTimesNominal: {
     bg: "толкова пъти повече се плаща за жилище днес, отколкото през {year} г.",
     en: "a home today costs that many times what it cost in {year}",
+  },
+  mktKTimesNominalDown: {
+    bg: "толкова от цената през {year} г. се плаща за жилище днес",
+    en: "that is the share of the {year} price a home costs today",
+  },
+  mktKTimesNominalLevel: {
+    bg: "толкова, колкото и през {year} г., се плаща за жилище днес",
+    en: "a home today costs what it cost in {year}",
   },
   // The year is on BOTH multiples and not only on the first. A card carrying a
   // «×N» whose base is stated on the card beside it reads correctly only while
@@ -2408,7 +2449,15 @@ export const COPY = {
   // (view/market.js#marketRangeStrip).
   mktKTimesReal: {
     bg: "толкова пъти повече от {year} г., след като се извади поскъпването на всичко останало",
-    en: "that many times what it cost in {year}, once the rise in everything else is taken out",
+    en: "that many times what it cost in {year}, once the change in everything else is taken out",
+  },
+  mktKTimesRealDown: {
+    bg: "толкова от цената през {year} г., след като се извади поскъпването на всичко останало",
+    en: "that share of what it cost in {year}, once the change in everything else is taken out",
+  },
+  mktKTimesRealLevel: {
+    bg: "толкова, колкото и през {year} г., след като се извади поскъпването на всичко останало",
+    en: "what it cost in {year}, once the change in everything else is taken out",
   },
   // "dwellings households across the country bought in the quarter" is four
   // nouns before the verb that governs them, which English readers parse by
@@ -2611,8 +2660,8 @@ export const COPY = {
   // read a number and told nothing; «два цяло и седем пъти повече, отколкото
   // през две хиляди и петнайсета» is the same cell and is a sentence.
   mktChartIndex: {
-    bg: "Колко пъти по-скъпи са жилищата спрямо {base} г., по тримесечия от {from} до {to}. Повече пари: най-ниско ×{low} през {lowAt}, най-високо ×{peak} през {peakAt}, а за {to} е ×{last}. По-скъпо от всичко друго: най-високо ×{realPeak} през {realPeakAt}, а за {to} е ×{realLast}.",
-    en: "How many times dearer homes are than in {base}, by quarter from {from} to {to}. More money: the lowest is ×{low} in {lowAt}, the highest ×{peak} in {peakAt}, and for {to} it is ×{last}. Dearer than everything else: the highest is ×{realPeak} in {realPeakAt}, and for {to} it is ×{realLast}.",
+    bg: "Цената на жилищата спрямо {base} г., по тримесечия от {from} до {to}. В пари: най-ниско ×{low} през {lowAt}, най-високо ×{peak} през {peakAt}, а за {to} е ×{last}. Спрямо всичко друго, което купуваме: най-високо ×{realPeak} през {realPeakAt}, а за {to} е ×{realLast}.",
+    en: "House prices against {base}, by quarter from {from} to {to}. In money: the lowest is ×{low} in {lowAt}, the highest ×{peak} in {peakAt}, and for {to} it is ×{last}. Against everything else we buy: the highest is ×{realPeak} in {realPeakAt}, and for {to} it is ×{realLast}.",
   },
   mktChartRate: {
     bg: "Годишна промяна на цените на жилищата по тримесечия, от {from} до {to}. Най-ниска стойност {low} през {lowAt}, най-висока {peak} през {peakAt}; за {to} е {last}.",
@@ -2701,10 +2750,10 @@ export const COPY = {
   // naming the operation instead («без поскъпването на всичко останало») says
   // what was DONE to the line rather than what it now measures, which leaves a
   // reader holding a subtraction and no result.
-  mktKeyNominal: { bg: "повече пари", en: "more money" },
+  mktKeyNominal: { bg: "в пари", en: "in money" },
   mktKeyReal: {
-    bg: "по-скъпо от всичко друго",
-    en: "dearer than everything else",
+    bg: "спрямо всичко друго",
+    en: "against everything else",
   },
   // **Not «Без инфлацията».** On this site "inflation" is a specific published
   // series — the HICP the whole calculator is built on — and Eurostat deflate
@@ -3129,6 +3178,14 @@ export const COPY = {
     bg: "Най-тежко удря: {c} - {pp} от {p} пункта",
     en: "The biggest bite: {c} - {pp} of {p} points",
   },
+  // The same row where its contribution is negative. `ranked[0]` is the largest
+  // contribution, and where every division has fallen that is the least
+  // negative one: «най-тежко удря» over a minus sign is the picture saying the
+  // opposite of its own figure, on the one surface that leaves the device.
+  shareCardTopDown: {
+    bg: "Най-много смъква: {c} - {pp} от {p} пункта",
+    en: "The biggest saving: {c} - {pp} of {p} points",
+  },
   // THE PICTURE HAS TO NAME WHAT ITS BIGGEST OBJECT COUNTS. The card is read by
   // a stranger in a chat window with nothing else on screen, and the largest
   // thing on it is a numeral: «6,5» over a kicker naming a basket, two bars and
@@ -3295,8 +3352,8 @@ export const COPY = {
   // the shape rather than repeating the heading: where it started, where it is,
   // and which of the two lines ended up on top.
   crdChartStock: {
-    bg: "Дългът на домакинствата от {from} до {to}: жилищните кредити растат от {hFrom} до {hTo} млн. евро, потребителските от {cFrom} до {cTo} млн. евро.",
-    en: "Household debt from {from} to {to}: home loans grow from {hFrom} to {hTo} million euro, consumer loans from {cFrom} to {cTo} million euro.",
+    bg: "Дългът на домакинствата от {from} до {to}: жилищни кредити {hFrom} → {hTo} млн. евро, потребителски {cFrom} → {cTo} млн. евро.",
+    en: "Household debt from {from} to {to}: home loans {hFrom} → {hTo} million euro, consumer loans {cFrom} → {cTo} million euro.",
   },
   crdKeyHousing: { bg: "жилищни", en: "home loans" },
   crdKeyConsumer: { bg: "потребителски", en: "consumer" },
@@ -3339,8 +3396,8 @@ export const COPY = {
   // person would say out loud, because the shape is the only thing the picture
   // carries that the figures above it do not.
   crdChartSavings: {
-    bg: "Пари в банката срещу дълг на домакинствата, от {from} до {to}. Парите в банката са от {dFrom} до {dTo} млн. евро, а дългът от {lFrom} до {lTo} млн. евро. На всеки 1 евро дълг вече се падат {rTo} евро в банката, а в началото са били {rFrom}.",
-    en: "Money in the bank against household debt, from {from} to {to}. The money in the bank runs from {dFrom} to {dTo} million euro and the debt from {lFrom} to {lTo} million euro. Every euro owed is now matched by {rTo} euro in the bank, against {rFrom} at the start.",
+    bg: "Пари в банката срещу дълг на домакинствата, от {from} до {to}. Парите в банката са от {dFrom} до {dTo} млн. евро, а дългът от {lFrom} до {lTo} млн. евро. На всеки 1 евро дълг се падат {rFrom} евро в банката в началото и {rTo} евро за {to}.",
+    en: "Money in the bank against household debt, from {from} to {to}. The money in the bank runs from {dFrom} to {dTo} million euro and the debt from {lFrom} to {lTo} million euro. Every euro owed is matched by {rFrom} euro in the bank at the start and {rTo} euro in {to}.",
   },
   // The deposit contrast, and it may be the most useful pair on the page for an
   // ordinary saver: what a deposit opened this month is quoted, against what the
@@ -3374,22 +3431,36 @@ export const COPY = {
     bg: "Необслужвани кредити от {from} до {to}: при домакинствата от {hFrom}% до {hTo}%, при фирмите от {cFrom}% до {cTo}%.",
     en: "Non-performing loans from {from} to {to}: households from {hFrom}% to {hTo}%, companies from {cFrom}% to {cTo}%.",
   },
+  // Two forms, chosen by `view/credit.js#peakWorthNaming`. «с връх» says the
+  // rate climbed and came back down, which is a claim about the SHAPE and is
+  // false the month the maximum is also the latest reading. Where it sits at
+  // either end, the second form states the same figure without the shape.
   crdChartStockRate: {
     bg: "Средна лихва по изплащаните жилищни кредити от {from} до {to}: от {fromPct}% до {toPct}%, с връх {peakPct}% през {peakAt}.",
     en: "Average rate on housing loans being repaid from {from} to {to}: from {fromPct}% to {toPct}%, peaking at {peakPct}% in {peakAt}.",
   },
+  crdChartStockRateNoPeak: {
+    bg: "Средна лихва по изплащаните жилищни кредити от {from} до {to}: от {fromPct}% до {toPct}%, а най-високата стойност за периода е {peakPct}% през {peakAt}.",
+    en: "Average rate on housing loans being repaid from {from} to {to}: from {fromPct}% to {toPct}%, and the highest reading in the period is {peakPct}% in {peakAt}.",
+  },
   crdKeyFirms: { bg: "фирми", en: "companies" },
   crdKeyHouseholds: { bg: "домакинства", en: "households" },
   // The dip is what the chart is for, so the label names the trough before the
-  // level. A share that has spent nineteen years near its ceiling has no peak
-  // worth naming.
+  // latest level. It states the trough and no more: «държи се над X през целия
+  // период» reads as reassurance that the share is high, which is a reading of
+  // today's data rather than a description of the picture, and it survives a
+  // collapse in the series with every printed digit still correct.
   crdChartFixation: {
-    bg: "Дял на новото жилищно кредитиране с лихва, която банката може да промени до година, от {from} до {to}: държи се над {troughPct}% през целия период, с най-ниска стойност през {troughAt}, а последното измерване е {toPct}%.",
-    en: "Share of new home lending carrying a rate the bank can change within a year, from {from} to {to}: it stays above {troughPct}% throughout, at its lowest in {troughAt}, and the latest reading is {toPct}%.",
+    bg: "Дял на новото жилищно кредитиране с лихва, която банката може да промени до година, от {from} до {to}: най-ниска стойност {troughPct}% през {troughAt}, а последното измерване е {toPct}%.",
+    en: "Share of new home lending carrying a rate the bank can change within a year, from {from} to {to}: its lowest reading is {troughPct}% in {troughAt}, and the latest is {toPct}%.",
   },
   crdChartPrices: {
     bg: "Три лихви от {from} до {to}: по кредитна карта от {cardFrom}% до {cardTo}%, по потребителски кредит от {consFrom}% до {consTo}% с връх {consPeak}% през {consPeakAt}, по нов жилищен кредит от {mortFrom}% до {mortTo}%.",
     en: "Three rates from {from} to {to}: on a credit card from {cardFrom}% to {cardTo}%, on a consumer loan from {consFrom}% to {consTo}% peaking at {consPeak}% in {consPeakAt}, on a new home loan from {mortFrom}% to {mortTo}%.",
+  },
+  crdChartPricesNoPeak: {
+    bg: "Три лихви от {from} до {to}: по кредитна карта от {cardFrom}% до {cardTo}%, по потребителски кредит от {consFrom}% до {consTo}%, с най-висока стойност {consPeak}% през {consPeakAt}, по нов жилищен кредит от {mortFrom}% до {mortTo}%.",
+    en: "Three rates from {from} to {to}: on a credit card from {cardFrom}% to {cardTo}%, on a consumer loan from {consFrom}% to {consTo}%, its highest reading {consPeak}% in {consPeakAt}, on a new home loan from {mortFrom}% to {mortTo}%.",
   },
   crdKeyCard: { bg: "карта", en: "card" },
   crdKeyConsumerLoan: { bg: "потребителски", en: "consumer loan" },

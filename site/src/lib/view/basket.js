@@ -103,6 +103,30 @@ export function basketSumQuery(categories) {
 }
 
 /**
+ * Which way a published rate points, as a state the component turns into words.
+ *
+ * Three surfaces print a rate under a fixed verb: the rank row's «поскъпна с
+ * {r}%», the strip's «най-бързо поскъпващата група» and the share image's
+ * «Най-тежко удря». Each takes a MAXIMUM or a row off a sorted list, and
+ * nothing guarantees the maximum is above zero — in a broad price fall the
+ * highest rate there is, is still a negative one, which `NationalStrip` says
+ * in a comment and then labels as a rise anyway.
+ *
+ * The dead band is the printed precision: rates draw at one decimal, so
+ * anything inside ±0,05 pp reads as «0,0%» and a verb there names a direction
+ * the digits do not show. Same refusal as `pocketVerdictState`'s ±1 pp.
+ *
+ * @param {number|null|undefined} ratePct  a 12-month rate in percent
+ * @returns {'up'|'down'|'flat'|'unsaid'}
+ */
+export function divisionRateState(ratePct) {
+  if (!Number.isFinite(ratePct)) return "unsaid";
+  if (ratePct >= 0.05) return "up";
+  if (ratePct <= -0.05) return "down";
+  return "flat";
+}
+
+/**
  * The division whose 12-month rate is highest — the "fastest-rising group"
  * card. Sorted descending; a sign slip here advertises the *slowest*-rising
  * division as the fastest, which reads as plausible and is exactly backwards.
