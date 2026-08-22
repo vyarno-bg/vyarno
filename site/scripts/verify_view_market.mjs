@@ -42,10 +42,7 @@ import {
   RANGE_MIN_POINTS,
   statusLettersUsed,
   marketCityAffordability,
-  COVERAGE_SHIFT,
-  CITY_SHORT_ARCHIVE,
 } from "../src/lib/view/market.js";
-import { CITY_NO_PAGE } from "../src/lib/view/region.js";
 import { published } from "./published-payload.mjs";
 import { near } from "./near.mjs";
 
@@ -715,20 +712,17 @@ test("the window is the years both publishers cover, whichever is ahead", () => 
   assert.equal(marketCityAffordability(CITY_PRICE, q3, PAYROLL).quarter, "Q3");
 });
 
-test("an област with no row is named with the reason it has none", () => {
+test("an област with no row is named rather than dropped", () => {
   // A table of three under a heading saying «по градове» reads as the country.
-  // Two different absences and therefore two different reasons: «имот.bg не
-  // публикуват цени за Смолян» is false — they publish this year's — and it is
-  // the sentence one flag would produce for both.
+  // Both absences are here, and they reach the page in one sentence: the област
+  // имот.bg serve no page for, and the one whose archive starts after the year
+  // this table does.
   const a = marketCityAffordability(CITY_PRICE, REGION_SALARY, PAYROLL);
   assert.deepEqual(
-    a.omitted.map((o) => [o.code, o.reason]),
-    [
-      ["smolyan", CITY_SHORT_ARCHIVE],
-      ["sofia-oblast", CITY_NO_PAGE],
-    ]
+    a.omitted.map((o) => o.code),
+    ["smolyan", "sofia-oblast"]
   );
-  // Every област НСИ publish is accounted for: a row or a reason, never gone.
+  // Every област НСИ publish is accounted for: a row or a name, never gone.
   assert.deepEqual(
     [...a.rows.map((r) => r.code), ...a.omitted.map((o) => o.code)].sort(),
     REGION_SALARY.regions.map((r) => r.code).sort()
@@ -761,31 +755,11 @@ test("the affordability rows are ordered by the newest reading", () => {
   assert.ok(rowFor(a, "sofiya").changePct < 0);
 });
 
-test("a city whose district set moved carries both counts, and one whose did not carries none", () => {
-  // имот.bg's median is taken across whichever districts they published that
-  // year, so where the set grew by half the move is partly composition. The
-  // failure this catches is a flag computed off the wrong pair — the two counts
-  // of one year, or the change in price — which discloses nothing while looking
-  // exactly like disclosure.
-  const a = marketCityAffordability(CITY_PRICE, REGION_SALARY, PAYROLL);
-  const varna = rowFor(a, "varna");
-  assert.equal(varna.nBase, 20);
-  assert.equal(varna.nLatest, 30);
-  assert.equal(varna.coverageShifted, true, "a district set half as large again is not disclosed");
-
-  assert.equal(rowFor(a, "vratsa").coverageShifted, false, "an unchanged set is flagged anyway");
-  // София's 100 → 102 is inside the line and stays quiet: a flag on every row
-  // marks nothing.
-  assert.equal(rowFor(a, "sofiya").coverageShifted, false);
-  assert.ok(COVERAGE_SHIFT > 0 && COVERAGE_SHIFT < 1, "the line is not a proportion");
-});
-
 test("the live payloads still carry the affordability wiring's own fields", () => {
   // The contract behind the fixtures above: имот.bg's `historical` blocks and
   // НСИ's quarterly series both, joined at a quarter neither payload knows the
-  // other has. A refresh that stopped writing `n_districts`, or an НСИ release
-  // that moved `ref_period` to a quarter their archive does not reach back to,
-  // empties this table with every fixture test green.
+  // other has. An НСИ release that moved `ref_period` to a quarter their archive
+  // does not reach back to empties this table with every fixture test green.
   const cityPrice = read("city_price");
   const regionSalary = read("region_salary");
   const payroll = read("payroll");
@@ -799,10 +773,6 @@ test("the live payloads still carry the affordability wiring's own fields", () =
     assert.ok(row.bgName && row.enName, `${row.code} is named in one language only`);
     assert.equal(row.points.length, a.years.length, `${row.code} has a year missing from its path`);
     assert.ok(row.latest.value > 0 && row.base.value > 0, `${row.code} draws a non-positive year`);
-    assert.ok(
-      Number.isFinite(row.nBase) && Number.isFinite(row.nLatest),
-      `${row.code} carries no district count, so its composition change cannot be disclosed`
-    );
   }
   // Every област is a row or a named absence, on the live payloads too.
   assert.equal(a.rows.length + a.omitted.length, regionSalary.regions.length);

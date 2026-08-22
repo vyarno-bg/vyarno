@@ -40,7 +40,7 @@ import {
 // A second constant here would be a second answer to "how big", differing from
 // the one a reader has already been shown, with nothing on either page saying so.
 import { HOME } from "../content.js";
-import { cityCoverage, regionDisplayName, SOFIA_CITY_CODE } from "./region.js";
+import { regionDisplayName, SOFIA_CITY_CODE } from "./region.js";
 
 /**
  * A figure with everything the page has to print beside it.
@@ -1122,27 +1122,6 @@ export function marketRangeStrip(houseMarket, structure) {
 }
 
 /**
- * имот.bg publish prices for this град and their archive does not reach the
- * base year — the third state beside `view/region.js`'s two, and a different
- * claim from either. «имот.bg не публикуват цени за Смолян» is false; what is
- * true is that they publish this year's and not the one this table starts at.
- */
-export const CITY_SHORT_ARCHIVE = "short";
-
-/**
- * How much имот.bg's district set may move before the row says so.
- *
- * **Every threshold on this page is ours and this one says so on screen.** The
- * median is taken across whichever districts имот.bg published that year, so
- * where the set grew by half — Кърджали 6 to 9, Варна 51 to 69 — part of the
- * move is coverage rather than price, and a reader who cannot see that reads a
- * composition change as a market. A fifth is where the line is drawn; the two
- * counts are printed beside every row that crosses it, so a reader who would
- * draw it elsewhere has the figures to.
- */
-export const COVERAGE_SHIFT = 0.2;
-
-/**
  * How many years of the local average pay one home costs, in every city with
  * both halves published.
  *
@@ -1172,8 +1151,10 @@ export const COVERAGE_SHIFT = 0.2;
  * **A city missing either half is NAMED, not dropped.** имот.bg serve no page
  * for Софийска област and their archive reaches back further for some cities
  * than others, so НСИ's области outnumber the rows. A reader who knows their
- * own place is absent and cannot find out why has been told the table is the
- * country.
+ * own place is absent and cannot find out that it is absent has been told the
+ * table is the country. Why имот.bg carry no price is not recorded, because the
+ * page does not say: the two absences differ in what имот.bg publish today and
+ * not in what this table could be built from.
  *
  * @param {object|null} cityPrice     data.cityPrice (city_price.json)
  * @param {object|null} regionSalary  data.regionSalary (region_salary.json)
@@ -1182,7 +1163,7 @@ export const COVERAGE_SHIFT = 0.2;
  *            baseYear: number|null, latestYear: number|null, years: number[],
  *            refPeriod: string|null, m2: number, worse: number,
  *            medianChangePct: number|null, aboveCapital: Array<object>,
- *            capital: object|null, isPreliminary: boolean,
+ *            capital: object|null,
  *            priceUrl: string|null, wageUrl: string|null,
  *            wageUrlBg: string|null}}
  */
@@ -1199,7 +1180,6 @@ export function marketCityAffordability(cityPrice, regionSalary, payroll) {
     worse: 0,
     medianChangePct: null,
     aboveCapital: [],
-    isPreliminary: false,
     priceUrl: null,
     wageUrl: null,
     wageUrlBg: null,
@@ -1274,9 +1254,7 @@ export function marketCityAffordability(cityPrice, regionSalary, payroll) {
       enName: regionDisplayName(region?.en_name, "en"),
     };
     if (!city) {
-      // Through the picker's own answer to "does имот.bg publish this place":
-      // two implementations are two places that can answer it differently.
-      omitted.push({ ...names, reason: cityCoverage(cityPrice, code) });
+      omitted.push({ ...names });
       continue;
     }
 
@@ -1299,7 +1277,6 @@ export function marketCityAffordability(cityPrice, regionSalary, payroll) {
         gross,
         net,
         eurPerM2: entry.eur_per_m2_median,
-        nDistricts: Number.isFinite(entry.n_districts) ? entry.n_districts : null,
       });
     }
 
@@ -1310,7 +1287,7 @@ export function marketCityAffordability(cityPrice, regionSalary, payroll) {
     const first = points[0] ?? null;
     const last = points[points.length - 1] ?? null;
     if (!first || !last || first.year !== baseYear || last.year !== latestYear) {
-      omitted.push({ ...names, reason: CITY_SHORT_ARCHIVE, from: first?.year ?? null });
+      omitted.push({ ...names });
       continue;
     }
 
@@ -1320,18 +1297,6 @@ export function marketCityAffordability(cityPrice, regionSalary, payroll) {
       base: first,
       latest: last,
       changePct: ((last.value - first.value) / first.value) * 100,
-      // имот.bg's coverage per year, which the payload has carried all along.
-      // The median is taken across the districts they published THAT year, and
-      // where the set grew the move is partly composition — Варна's is half as
-      // many districts again. Carried as the two counts rather than as a verdict
-      // on them: `COVERAGE_SHIFT` is where the line is drawn, once.
-      nBase: first.nDistricts,
-      nLatest: last.nDistricts,
-      coverageShifted:
-        Number.isFinite(first.nDistricts) &&
-        Number.isFinite(last.nDistricts) &&
-        first.nDistricts > 0 &&
-        Math.abs(last.nDistricts - first.nDistricts) / first.nDistricts >= COVERAGE_SHIFT,
     });
   }
 
@@ -1356,7 +1321,6 @@ export function marketCityAffordability(cityPrice, regionSalary, payroll) {
       ? rows.filter((row) => row.code !== capital.code && row.latest.value >= capital.latest.value)
       : [],
     capital,
-    isPreliminary: Boolean(regionSalary?.is_preliminary),
     priceUrl: cityPrice?.source_url ?? null,
     wageUrl: regionSalary?.source_url ?? null,
     wageUrlBg: regionSalary?.source_url_bg ?? null,

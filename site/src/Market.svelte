@@ -59,7 +59,6 @@
     marketBorrowedShare,
     statusLettersUsed,
     marketCityAffordability,
-    CITY_SHORT_ARCHIVE,
   } from "./lib/view/market.js";
   import {
     number,
@@ -250,19 +249,6 @@
   const affordQuoted = $derived(
     new Set([afford.rows[0], afford.capital, ...affordMoved].filter(Boolean).map((row) => row.code))
   );
-  /**
-   * The cities имот.bg measure over a visibly different set of districts now.
-   *
-   * **A sentence rather than a mark on the row.** The row's job is which city
-   * and how many years; a footnote about how WE measured, printed under eight
-   * of the names, reads as a fact about those places. It is the same kind of
-   * caveat as «обявена цена, не платена» — a limit on the comparison — and that
-   * one is a sentence too, naming what it applies to.
-   */
-  const affordShifted = $derived(afford.rows.filter((row) => row.coverageShifted));
-  /** The two reasons an област has no row, kept apart: they are two claims. */
-  const affordNoPage = $derived(afford.omitted.filter((o) => o.reason !== CITY_SHORT_ARCHIVE));
-  const affordShort = $derived(afford.omitted.filter((o) => o.reason === CITY_SHORT_ARCHIVE));
   /** A year as a column head, from the one key the track's key already fills. */
   const yearCol = (year) => ({
     bg: t(COPY.mktAffordKeyYear, "bg", { year }),
@@ -537,18 +523,12 @@
    * column past the eighth would be missing from a printed copy. Seven years
    * across the top is eight, and it matches the table above, where a reader has
    * already found their own city as a row.
-   *
-   * `pick` is which figure of each year, so the years and the district counts
-   * come out of one transpose rather than two.
    */
-  const affordRows = (years, rows, pick) =>
+  const affordRows = (years, rows) =>
     rows.map((row) => ({
       period: row.code,
       label: { bg: row.bgName, en: row.enName },
-      values: years.map((year) => {
-        const point = row.points.find((p) => p.year === year);
-        return point ? pick(point) : null;
-      }),
+      values: years.map((year) => row.points.find((p) => p.year === year)?.value ?? null),
     }));
 
   const rowsOf = (series, extra = []) => {
@@ -2887,9 +2867,8 @@
           <a href={httpUrl(afford.wageUrlBg)} target="_blank" rel="noopener"
             >{COPY.srcNsi.bg} я публикува</a
           >
-          за {periodLong(afford.refPeriod, "bg")} и за същото тримесечие на всяка предходна година. Умножаваме
-          цената по {fmt0(afford.m2)} кв. м, превръщаме брутното в нето и делим на дванадесет месеца.
-          Никое от двете публикувани числа не е променяно.</span
+          за {periodLong(afford.refPeriod, "bg")} и за същото тримесечие на всяка предходна година. Никое
+          от двете публикувани числа не е променяно.</span
         >
         <span class="l-en"
           >Our arithmetic over two published figures. The prices are the average asking prices per
@@ -2899,9 +2878,8 @@
           <a href={httpUrl(afford.wageUrl)} target="_blank" rel="noopener"
             >as {COPY.srcNsi.en} publish it</a
           >
-          for {periodLong(afford.refPeriod, "en")} and for the same quarter of every earlier year. We
-          multiply the price by {fmt0(afford.m2)} m², convert the gross to net and divide by twelve months.
-          Neither of the two published figures is altered.</span
+          for {periodLong(afford.refPeriod, "en")} and for the same quarter of every earlier year. Neither
+          of the two published figures is altered.</span
         >
       </p>
 
@@ -2909,105 +2887,64 @@
         countLabel(COPY.mktAffordOpenYears, afford.years.length),
         COPY.mktAffordTblYears,
         afford.years.map((year) => yearCol(year)),
-        affordRows(afford.years, afford.rows, (p) => p.value),
+        affordRows(afford.years, afford.rows),
         (v) => fmt(v),
         false,
         null,
         COPY.mktAffordCol
       )}
-      <!-- имот.bg's coverage, year by year, which the payload has carried all
-           along and nothing drew. It is what the caveat below rests on: a reader
-           who wants to know whether their own city's move is price or coverage
-           can read the set each year was measured across rather than take the
-           sentence's word for which cities it names. -->
-      {@render numbersTable(
-        countLabel(COPY.mktAffordOpenDistricts, afford.years.length),
-        COPY.mktAffordTblDistricts,
-        afford.years.map((year) => yearCol(year)),
-        affordRows(afford.years, afford.rows, (p) => p.nDistricts),
-        (v) => (Number.isFinite(v) ? fmt0(v) : "—"),
-        false,
-        null,
-        COPY.mktAffordCol
-      )}
 
+      <!-- What the two years are anchored at, and nothing else. The division
+           itself is stated once, in the paragraph that defines «години
+           заплата», so a second telling here would be the same sum in worse
+           words. What that paragraph cannot carry is the quarter: it is the one
+           choice in this table a reader cannot see from the figures. -->
       {@render howMade({
         bg:
           `НСИ публикуват средна заплата по области, не по градове. За всяка година вземаме ` +
           `едно и също тримесечие: ` +
           `${periodLong(afford.refPeriod, "bg")} и същото тримесечие назад. Заплатите растат ` +
           `в течение на годината, така че сравнение между различни тримесечия щеше да мери и ` +
-          `календара. Взетото число е клетка, която НСИ са отпечатали: нищо не се осреднява. ` +
-          `Брутното става нето по днешните осигуровки и данък, същата сметка, която ` +
-          `калкулаторът прави с твоята заплата. Под тавана на осигурителния доход тя е една и ` +
-          `съща за всички градове и всички години, тоест мести числата, но не и подредбата.`,
+          `календара.`,
         en:
           `NSI publish an average wage by oblast rather than by city. The same quarter is taken ` +
           `for every year: ` +
           `${periodLong(afford.refPeriod, "en")} and that quarter in each earlier year. Wages ` +
           `rise through the year, so a comparison across different quarters would partly ` +
-          `measure the calendar. The figure taken is a cell NSI printed: nothing is averaged. ` +
-          `The gross becomes net at today's contributions and tax, the same sum the calculator ` +
-          `runs on your own pay. Below the insurance ceiling it is the same for every city and ` +
-          `every year, so it moves the figures and not the order.`,
+          `measure the calendar.`,
       })}
 
       <p class="cap">
         <span class="l-bg"
           >Обявената цена и платената цена са различни неща: тук са обявените. Заплатата е средната
-          за цялата област, а не за самия град. {#if afford.isPreliminary}Заплатата за {afford.latestYear}
-            г. е предварителна: НСИ още могат да я коригират.{/if}
-          Средната цена за всяка година е сметната по кварталите, които имот.bg е публикувал тогава, а
-          те не са едни и същи всяка година. {#if affordShifted.length}{affordNames(
-              affordShifted,
-              "bg"
-            )}: там броят им се е променил с над една пета, така че част от разликата идва оттам, а
-            не от цените.{/if} Броят квартали за всяка година е в таблицата отгоре. Между двете години
-          числата не се движат по права линия. Всяка година е в същата таблица.</span
+          за цялата област, а не за самия град. Между двете години числата не се движат по права
+          линия: всяка година е в таблицата отгоре.</span
         >
         <span class="l-en"
           >An asking price and a paid price are different things: these are the asking ones. The
-          wage is the average for the whole oblast rather than for the city itself. {#if afford.isPreliminary}The
-            wage for {afford.latestYear} is preliminary: NSI may still revise it.{/if}
-          Each year's average price is taken across the districts imot.bg had published by then, and that
-          set is not the same every year. {#if affordShifted.length}{affordNames(
-              affordShifted,
-              "en"
-            )}: there the count moved by more than a fifth, so part of the difference comes from
-            that rather than from prices.{/if} The number of districts behind each year is in the table
-          above. Between the two years the figures do not move in a straight line. Every year is in that
-          same table.</span
+          wage is the average for the whole oblast rather than for the city itself. Between the two
+          years the figures do not move in a straight line: every year is in the table above.</span
         >
       </p>
 
       {#if afford.omitted.length}
-        <!-- The области with no row, each with the reason it has none. A table
-             of 25 under a heading saying «по градове» reads as the country; a
-             reader who lives in one of the three and cannot find out why they
-             are absent has been told something false by omission (P11). -->
+        <!-- The области with no row. A table of 25 under a heading saying «по
+             градове» reads as the country; a reader who lives in one of the
+             missing ones and cannot find out that they are missing has been
+             told something false by omission (P11). -->
         <p class="cap">
-          <span class="l-bg">
-            {#if affordNoPage.length}
-              {t(COPY.mktAffordNoPage, "bg", { places: affordNames(affordNoPage, "bg") })}
-            {/if}
-            {#if affordShort.length}
-              {t(COPY.mktAffordShortArchive, "bg", {
-                places: affordNames(affordShort, "bg"),
-                year: afford.baseYear,
-              })}
-            {/if}
-          </span>
-          <span class="l-en">
-            {#if affordNoPage.length}
-              {t(COPY.mktAffordNoPage, "en", { places: affordNames(affordNoPage, "en") })}
-            {/if}
-            {#if affordShort.length}
-              {t(COPY.mktAffordShortArchive, "en", {
-                places: affordNames(affordShort, "en"),
-                year: afford.baseYear,
-              })}
-            {/if}
-          </span>
+          <span class="l-bg"
+            >{t(COPY.mktAffordNoRow, "bg", {
+              places: affordNames(afford.omitted, "bg"),
+              year: afford.baseYear,
+            })}</span
+          >
+          <span class="l-en"
+            >{t(COPY.mktAffordNoRow, "en", {
+              places: affordNames(afford.omitted, "en"),
+              year: afford.baseYear,
+            })}</span
+          >
         </p>
       {/if}
     {/if}
