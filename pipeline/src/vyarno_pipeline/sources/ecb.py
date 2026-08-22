@@ -276,11 +276,19 @@ CONSUMER_KEYS: dict[str, str] = {
 # euro amounts under those rates come from БНБ's workbooks (`sources/bnb.py`)
 # and there is no key to add here instead.
 #
-# The three stock rates above START AT 2022-01 rather than 2020-01. Nothing
-# needs doing about that — they are the gate's input and a cross-check needs
-# only the month it is checking — but a caller expecting `MIN_SERIES_MONTHS` of
-# them from a 2020 start would find 54 months where the new-business keys give
-# 78.
+# The three stock rates above start in three different months, and only one of
+# them is this constant. Enumerated with no `startPeriod` on 2026-08-22:
+#
+#   A22 (housing)        2013-04 → 2026-06, 159 obs
+#   L22 (term deposits)  2022-01 → 2026-06,  54 obs
+#   A20 (all household)  2019-12 → 2026-06,  79 obs
+#
+# So this is a fetch window rather than a description of the data: 2022-01 is
+# the month all three are known to carry, and a cross-check needs only the month
+# it is checking. Do not read it as "there is nothing before it" — a caller
+# wanting the housing stock's full history has thirteen years of it, and one
+# expecting `MIN_SERIES_MONTHS` of the DEPOSIT stock from a 2020 start is the
+# only one of the three that would come up short.
 OUTSTANDING_SERIES_START = "2022-01"
 
 

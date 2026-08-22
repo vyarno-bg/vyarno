@@ -39,7 +39,13 @@ from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS, REGIONS_BY_CODE, SO
 from vyarno_pipeline.release_calendar import WATCHED
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
-from vyarno_pipeline.sources.ecb import SERIES_KEY_DIMS, SERIES_KEYS, fetch_mir_series
+from vyarno_pipeline.sources.ecb import (
+    CONSUMER_KEYS,
+    OUTSTANDING_SERIES_START,
+    SERIES_KEY_DIMS,
+    SERIES_KEYS,
+    fetch_mir_series,
+)
 from vyarno_pipeline.sources.eurostat import (
     CP_DIVISIONS,
     INDEX_SINCE_YEAR,
@@ -342,6 +348,42 @@ def test_every_ecb_series_key_still_resolves(name):
             f"{name}: {series[latest]} at {latest} sits inside the rate band — "
             f"a lending volume that reads like a percentage is the wrong cell"
         )
+
+
+# The three stock rates the constant below is a window over. They are split
+# across two dicts because two of them feed `credit.json` and one feeds
+# `mortgage.json`, so neither dict alone is "the three" the comment beside
+# `OUTSTANDING_SERIES_START` describes.
+_STOCK_KEYS = {
+    name: key for name, key in {**SERIES_KEYS, **CONSUMER_KEYS}.items() if key.endswith(".O")
+}
+
+
+@pytest.mark.parametrize("name", sorted(_STOCK_KEYS))
+def test_the_outstanding_stock_keys_still_reach_the_month_we_ask_them_from(name):
+    """`OUTSTANDING_SERIES_START` is a window, not the month these series begin.
+
+    The three stock keys start in three different months — probed 2026-08-22,
+    A22 at 2013-04, A20 at 2019-12 and only L22 at 2022-01 — so the constant is
+    the month all three are known to carry. Reading it as "there is nothing
+    before it" is the mistake the comment beside it now names, and this is that
+    comment made executable: a start EARLIER than the constant is the ordinary
+    case here rather than a backfill, and only a start LATER than it means the
+    window we fetch has an end the data does not fill.
+
+    Asked with `start_period` at the constant itself, because that is the
+    request the arm actually sends — a probe reaching further back would pass on
+    months no gate ever sees.
+    """
+    series = fetch_mir_series(_STOCK_KEYS[name], start_period=OUTSTANDING_SERIES_START)
+    assert series, f"{name}: nothing at or after {OUTSTANDING_SERIES_START}"
+    first = min(series)
+    assert first == OUTSTANDING_SERIES_START, (
+        f"{name} answers a request from {OUTSTANDING_SERIES_START} with "
+        f"{first} first — the window the cross-check fetches has an end the ЕЦБ "
+        f"no longer fill, so the constant has to move or this key has stopped "
+        f"being one all three share."
+    )
 
 
 # ---------------------------------------------------------------------------

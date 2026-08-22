@@ -834,3 +834,40 @@ def test_the_published_revolving_amounts_are_still_nested_and_not_added() -> Non
             f"БНБ {cross['bnb_pct']}% against ЕЦБ {cross['ecb_mir_pct']}% is "
             f"outside the tolerance the arm published it under"
         )
+
+
+def test_the_published_ses_cells_agree_with_the_rungs_built_from_them() -> None:
+    """The four Eurostat figures, against the four copies the SPA reads.
+
+    `salary_dist.json` carries D1, the median, the mean and D9 twice over:
+    `shape.ses_gross_eur` is the provenance copy, and `shape.ladder_ses`'s
+    P10/P50/P90 plus `shape.ses_mean` are what the site actually opens —
+    `composeLadder` re-levels the rungs and `meanRungPosition` reads the mean.
+
+    So the sector card's claim and the evidence for it live in different keys,
+    and the copy a reader would check is not the copy the page used.
+    `docs/math.md` §"A sector average" pairs "SES median → `ladder_ses.P50` ·
+    published" and "SES mean → `ses_mean` · published" precisely because both
+    are Eurostat's rather than ours — which stops being true the moment the two
+    copies drift, with the card still saying «published» over a number that is
+    no longer the published one.
+
+    The rungs BETWEEN these are modelled and are not checked here: only the
+    three the survey actually reports are cells, and only cells can be held to
+    the cells they came from.
+    """
+    shape = _published("salary_dist")["shape"]
+    published, ladder = shape["ses_gross_eur"], shape["ladder_ses"]
+
+    for cell, rung in (("d1", "P10"), ("median", "P50"), ("d9", "P90")):
+        assert published[cell] == ladder[rung], (
+            f"salary_dist publishes {cell}={published[cell]} but the ladder the "
+            f"SPA ranks against carries {rung}={ladder[rung]}. These are one "
+            f"Eurostat cell written twice, and the card calls the second one "
+            f"published."
+        )
+    assert published["mean"] == shape["ses_mean"], (
+        f"salary_dist publishes mean={published['mean']} beside "
+        f"ses_mean={shape['ses_mean']} — the figure `meanRungPosition` reads is "
+        f"not the one the payload cites."
+    )
