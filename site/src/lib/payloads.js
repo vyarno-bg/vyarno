@@ -284,7 +284,22 @@ export const PAYLOADS = Object.freeze(
         bg: "кой живее в собствено жилище, кой дължи по него и колко жилища стоят празни",
         en: "who owns their home, who owes on it, and how many dwellings stand empty",
       },
+      // The envelope's own period, which is EU-SILC's — tenure and overburden.
       refPeriod: (p) => p?.ref_period ?? null,
+      // **And the census, which is the other clock the cadence note above
+      // already names.** The dwelling counts are four years older than the two
+      // figures beside them and no refresh can move them, so a row dating the
+      // whole file by the envelope reported the empty-dwellings share at a year
+      // nobody counted dwellings in. Same slot, same guard and the same reason
+      // as `credit`'s quarterly block.
+      refPeriodSecondary: (p) => {
+        const census = p?.census_dwellings?.ref_period;
+        if (!census || String(census) === String(p?.ref_period ?? "")) return null;
+        return {
+          period: String(census),
+          label: { bg: "преброяване", en: "census" },
+        };
+      },
     },
     {
       key: "nsiHousing",
@@ -332,9 +347,35 @@ export const PAYLOADS = Object.freeze(
         bg: "какво струват потребителският кредит, овърдрафтът, кредитната карта и кредитът за фирма, и какво плаща депозитът",
         en: "what a consumer loan, an overdraft, a credit card and a loan to a company cost, and what a deposit pays",
       },
-      // Six blocks, one release, so any of them dates the file. Consumer
-      // credit is the one with a volume behind it.
+      // **Nine blocks and TWO release clocks, so no single one dates the file.**
+      // Eight are ECB MIR, monthly; `non_performing` is CBD2, quarterly and
+      // about five months behind the quarter it names — the payload's own
+      // `quarterly` field says so. Dated by `consumer` alone the row reported
+      // the whole file at June while carrying a Q1 figure, which is the same
+      // defect as the basket's «1 година назад» option taken from the headline
+      // rather than from the divisions: every figure the publisher's own, and
+      // the period over them wrong for one of them.
+      //
+      // The rates keep the primary slot because they are what the row is NAMED
+      // for, and the quarter is named beside them rather than replacing them.
       refPeriod: (p) => p?.consumer?.ref_period ?? null,
+      // The other clock, labelled, and **only when the two differ** — the same
+      // equality guard `salary_dist` carries above, for the same reason: were
+      // CBD2 ever to land in the month it describes, a row printing the same
+      // period twice reads as a defect rather than as provenance.
+      //
+      // `verify_view_freshness.mjs` holds the pair against the published file:
+      // every distinct `ref_period` among a payload's blocks has to be named by
+      // one of these two slots, so a THIRD clock arriving in any payload is a
+      // red suite rather than a period quietly dropped.
+      refPeriodSecondary: (p) => {
+        const npl = p?.non_performing?.ref_period;
+        if (!npl || npl === p?.consumer?.ref_period) return null;
+        return {
+          period: String(npl),
+          label: { bg: "необслужвани", en: "non-performing" },
+        };
+      },
     },
     {
       key: "unemployment",
