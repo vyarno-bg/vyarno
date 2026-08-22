@@ -113,8 +113,16 @@
                 <span class="status status-{row.status}"> · {statusCopy(row)}</span>
               </span>
             </th>
+            <!-- `data-freshness` marks the two cells whose contents are a
+                 PAYLOAD's dates rather than anything written in this
+                 repository. `screenshot-frame.mjs#frameText` skips them, so a
+                 refresh does not move the README screenshot's sidecar and turn
+                 a data PR red over a date that has its own gates in the
+                 pipeline. It is on the VALUES and not on the cells, so the
+                 secondary vintage's label — «форма: Евростат SES», copy — stays
+                 pinned beside the year it labels. -->
             <td>
-              {periodCopy(row)}
+              <span data-freshness>{periodCopy(row)}</span>
               <!-- A payload blended from two vintages names both. Dating
                    `salary_dist` by its anchor quarter alone would present a
                    four-year-old survey's dispersion as this quarter's. -->
@@ -122,16 +130,16 @@
                 <span class="second">
                   <span class="l-bg"
                     >{row.refPeriodSecondary.label.bg}
-                    {period(row.refPeriodSecondary.period)}</span
+                    <span data-freshness>{period(row.refPeriodSecondary.period)}</span></span
                   >
                   <span class="l-en"
                     >{row.refPeriodSecondary.label.en}
-                    {period(row.refPeriodSecondary.period)}</span
+                    <span data-freshness>{period(row.refPeriodSecondary.period)}</span></span
                   >
                 </span>
               {/if}
             </td>
-            <td>{row.asOf ? dateShort(row.asOf, $lang) : "—"}</td>
+            <td><span data-freshness>{row.asOf ? dateShort(row.asOf, $lang) : "—"}</span></td>
             <td>
               {#if httpUrl(row.sourceUrl)}
                 <a href={httpUrl(row.sourceUrl)} target="_blank" rel="noopener noreferrer"

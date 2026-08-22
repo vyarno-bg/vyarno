@@ -93,11 +93,36 @@ export async function poseForTheShot(page) {
  *   rather than reading `textContent` captures the half a reader was shown.
  * - **A node crossing the bottom edge is skipped.** It is half in the picture,
  *   so it is not something the picture asserts.
+ * - **A node inside `[data-freshness]` is skipped**, which is the paragraph
+ *   below.
  *
  * Whitespace is collapsed before anything is compared, which is what makes the
  * result the same on every machine: the fonts are self-hosted `woff2` and the
  * viewport is fixed, so the words and their order are identical, and only the
  * line breaks between them could ever have differed.
+ *
+ * ## Why a payload's own dates are not in it
+ *
+ * The frame includes the open data panel, and two of its columns are the
+ * `ref_period` and the `as_of` of every payload. **`as_of` is the day we
+ * fetched, so it moves on every refresh whether or not a single figure did** —
+ * which made this check fail on the arm that publishes the payload rather than
+ * on any commit that changed a word. `data/hicp` run 32485580094 went red at
+ * line 24 with «19.08.2026 г.» against «21.08.2026 г.», and took `site` and
+ * `windows` — two of the five required checks — with it, so PR #135 could not
+ * be merged and was closed.
+ *
+ * A payload's date is not copy, and this check exists for copy. The dates are
+ * gated where they are produced: `validate.py` refuses to publish an envelope
+ * whose `as_of` or reference period is missing, malformed or ahead of the
+ * clock, and `verify_view_freshness.mjs` holds what the panel does with them.
+ * Nothing here was their second reader.
+ *
+ * The marks are on the VALUES rather than on the cells (`DataPanel.svelte`), so
+ * everything around them stays pinned — the column headings «период» and
+ * «изтеглено», the per-row status words, the secondary vintage's «форма:
+ * Евростат SES» label, and the paragraph under the table. A copy edit to any of
+ * those still moves this text and still goes red.
  */
 export async function frameText(page) {
   return page.evaluate((height) => {
@@ -106,6 +131,8 @@ export async function frameText(page) {
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const text = node.textContent.replace(/\s+/g, " ").trim();
       if (!text) continue;
+      // A payload's own date, skipped before it is measured. See the header.
+      if (node.parentElement?.closest("[data-freshness]")) continue;
       const range = document.createRange();
       range.selectNodeContents(node);
       const box = range.getBoundingClientRect();
