@@ -31,6 +31,19 @@
 # CI, so local green implies CI green and never the reverse. Everywhere else,
 # if the two disagree, CI is right.
 #
+# That is a statement about the jobs this reproduces, and it reproduces three of
+# CI's five. `pipeline` and `site` are the two it runs command for command.
+# `data` it covers without running: that job re-asserts what `pytest` and
+# `verify:math` already assert, install-free, so it still answers on a run where
+# a toolchain failed to install — remove a payload here and both go red.
+#
+# The other two are not reachable from a working tree, and a green run here says
+# nothing about either. `windows` runs these commands on the other platform, for
+# the six reasons the job lists. `authorship` reads the commit AUTHOR, which is
+# not a property of the tree in front of you — green here and a red branch there
+# is the ordinary outcome of committing under an agent's git identity, and
+# CONTRIBUTING.md §"Who a commit is from" is what to do about it.
+#
 #   make setup     once, after cloning
 #   make check     everything CI runs
 #   make help      the full list
