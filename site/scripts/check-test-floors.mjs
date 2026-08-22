@@ -80,6 +80,12 @@
  * exactly like a file of passes — reaches whichever suite is counted by its
  * run size.
  *
+ * ## And one thing that is not a count
+ *
+ * A floor cannot see a suite that was never in the argument list, and neither
+ * can the suite that checks the argument list see its own absence from it. That
+ * last guard is checked here instead, for the reason `OUTERMOST_SUITE` gives.
+ *
  * Usage — name the suites whose reports should be there:
  *
  *     node scripts/check-test-floors.mjs pytest node render
@@ -169,6 +175,49 @@ export function counted(key) {
 }
 
 /**
+ * The suite that reconciles the runner list against the directory.
+ *
+ * `verify_suites.mjs` is what notices a suite left out of `package.json`, and
+ * it is the one suite it cannot notice about itself: dropped from the argument
+ * list it stops running, and the four tests it takes with it fit inside the
+ * slack a floor deliberately leaves. Its own header calls that the shape of the
+ * problem — something has to be the outermost list — and it is right that
+ * something does. What it does not have to be is a suite, and while it was one,
+ * removing the guard over every suite was a one-line edit nothing reported.
+ *
+ * So the outermost list is checked from outside the suites. Here, because both
+ * routes to a green run reach this file and neither reaches it through the
+ * runner being checked: `check-all.mjs` imports it, and CI invokes it directly
+ * in the `pipeline` and `site` jobs.
+ */
+const OUTERMOST_SUITE = "verify_suites.mjs";
+
+/** The npm scripts that hand suite files to `node --test`. */
+const RUNNERS = ["verify:math", "test:render"];
+
+/**
+ * Whether a runner still names the suite that watches the runners.
+ *
+ * @returns {string|null} the problem, or null when it is wired in
+ */
+function outermostSuiteProblem() {
+  const path = join(SITE, "package.json");
+  let scripts;
+  try {
+    scripts = JSON.parse(readFileSync(path, "utf8")).scripts ?? {};
+  } catch (e) {
+    return `site/package.json could not be read (${e.message}) — cannot tell which suites run`;
+  }
+  const named = RUNNERS.some((runner) => (scripts[runner] ?? "").includes(OUTERMOST_SUITE));
+  if (named) return null;
+  return (
+    `no runner names ${OUTERMOST_SUITE} — it is the suite that checks every OTHER ` +
+    `suite is in the argument list, so with it out nothing reports a suite that ` +
+    `stopped running. Put it back in "${RUNNERS.join('" or "')}"`
+  );
+}
+
+/**
  * Check the named suites.
  *
  * @param {Array<keyof typeof FLOORS>} keys
@@ -177,6 +226,10 @@ export function counted(key) {
 export function checkFloors(keys) {
   const summary = [];
   const problems = [];
+  // Asked on every run rather than alongside a particular floor: it is not a
+  // count, and the run it has to survive is the one where a suite is missing.
+  const outermost = outermostSuiteProblem();
+  if (outermost) problems.push(outermost);
   for (const key of keys) {
     if (!FLOORS[key]) {
       problems.push(`${key}: not a suite this knows about`);
@@ -203,10 +256,10 @@ export function checkFloors(keys) {
   return { summary: summary.join(" · "), problems };
 }
 
-/** The message a failing floor gets. Exported so `check-all.mjs` prints the same one. */
+/** The message a failing check gets. Exported so `check-all.mjs` prints the same one. */
 export function floorsMessage(problems) {
   return (
-    `\nFAILED: a floor is not doing its job.\n\n  ${problems.join("\n  ")}\n\n` +
+    `\nFAILED: a guard is not doing its job.\n\n  ${problems.join("\n  ")}\n\n` +
     `A count BELOW its floor means a suite is smaller than it was. Tests move with\n` +
     `the code they protect, in the same commit — if the deletion is deliberate, lower\n` +
     `the floor in site/scripts/check-test-floors.mjs alongside it and say in the commit\n` +

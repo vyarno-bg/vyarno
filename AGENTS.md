@@ -22,10 +22,12 @@ make check                       # lint → test → render, in CI's order
 cd site && npm run check:all     # the same run, without make
 ```
 
-`make check` is strictly stricter than CI, so local green implies CI green and
-never the reverse. The two deliberate differences are argued at the top of the
-`Makefile`. `make help` lists the rest; `docs/local-development.md` is the long
-form.
+`make check` is strictly stricter than CI over the jobs it reproduces, so local
+green implies those go green and never the reverse. The two deliberate
+differences are argued at the top of the `Makefile`, beside the two CI jobs no
+run over a working tree can reproduce — one of which reads the commit author, so
+a green run here is not a green branch if you committed as an agent. `make help`
+lists the rest; `docs/local-development.md` is the long form.
 
 **`render` needs a Chromium and `make check` fails without one.**
 `site/scripts/find-chromium.mjs` finds Playwright's own, anything under

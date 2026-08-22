@@ -33,12 +33,13 @@ import httpx
 import pytest
 
 from vyarno_pipeline import clock
+from vyarno_pipeline.mortgage import RATE_MAX_PCT, RATE_MIN_PCT
 from vyarno_pipeline.payroll import BG_PAYROLL_TABLE, NSI_SECTION_DIVISIONS
 from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS, REGIONS_BY_CODE, SOFIA_CITY_CODE
 from vyarno_pipeline.release_calendar import WATCHED
 from vyarno_pipeline.sources.bnb import fetch_housing_stock_rate_bg
 from vyarno_pipeline.sources.dv import fetch_tzpb_appendix
-from vyarno_pipeline.sources.ecb import SERIES_KEYS, fetch_mir_series
+from vyarno_pipeline.sources.ecb import SERIES_KEY_DIMS, SERIES_KEYS, fetch_mir_series
 from vyarno_pipeline.sources.eurostat import (
     CP_DIVISIONS,
     INDEX_SINCE_YEAR,
@@ -320,10 +321,26 @@ def test_every_ecb_series_key_still_resolves(name):
         assert _months_old(latest) <= 5, (
             f"{name}: latest observation {latest} is stale; MIR normally runs 6-8 weeks behind"
         )
-    if "volume" not in name:
-        assert 0.25 <= series[latest] <= 12.0, (
+    # Which band applies is read off the key's own DATA_TYPE_MIR slot, never off
+    # the spelling of `name`. A substring test for "volume" matched the two
+    # `new_business_volume_*` keys and missed the four `new_business_vol_*`
+    # splits added beside them, so a percent band was asserted over a figure in
+    # millions of euro — four of these went red on healthy upstreams, and a
+    # probe that is red on correct data is one people stop running.
+    data_type = SERIES_KEYS[name].split(".")[SERIES_KEY_DIMS.index("DATA_TYPE_MIR")]
+    if data_type in ("R", "C"):
+        assert RATE_MIN_PCT <= series[latest] <= RATE_MAX_PCT, (
             f"{name}: {series[latest]}% at {latest} is outside the plausible "
             f"BG mortgage band — the wrong cell or the wrong series"
+        )
+    else:
+        # Monthly new lending, in millions of euro, and BG runs in the hundreds.
+        # The floor is the rate band's own ceiling because the failure is the
+        # same one the branch above names: a volume that reads like a percentage
+        # is the rate cell answering under a volume key.
+        assert series[latest] > RATE_MAX_PCT, (
+            f"{name}: {series[latest]} at {latest} sits inside the rate band — "
+            f"a lending volume that reads like a percentage is the wrong cell"
         )
 
 
