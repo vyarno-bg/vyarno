@@ -507,3 +507,34 @@ def test_nothing_commits_pushes_or_opens_a_pull_request_without_a_real_change() 
             f"the `{name}` step runs whatever the comparison decided, so a run that "
             f"re-read the same figures still publishes them."
         )
+
+
+def test_the_workflow_the_refresh_dispatches_ci_onto_exists() -> None:
+    """A refresh pull request has no other way to get a check run on it.
+
+    Nothing this job pushes triggers a workflow — GitHub raises no run for an
+    event its own token created — so `refresh.yml` dispatches `ci.yml` by name,
+    and that step is `continue-on-error: true` because a payload already pushed
+    is worth more than a red run over a good refresh. Both halves are right and
+    together they are silent: rename or move the workflow and every refresh
+    opens a pull request carrying zero checks, unmergeable against five required
+    by name, with nothing anywhere reporting a fault.
+
+    Only the file's existence is checked here. That the five job NAMES still
+    match the contexts branch protection requires is not readable from the tree
+    at all, and is the other half of the same hole.
+    """
+    workflows = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    refresh = (workflows / "refresh.yml").read_text("utf-8")
+
+    dispatched = re.findall(r"workflow_id: '([^']+\.yml)'", refresh)
+    assert dispatched, (
+        "refresh.yml dispatches no workflow. Without it a refresh pull request "
+        "carries no check runs at all — the token that pushed it raises no events."
+    )
+    for name in dispatched:
+        assert (workflows / name).exists(), (
+            f"refresh.yml dispatches `{name}`, which is not in .github/workflows. "
+            f"The step is continue-on-error, so this fails as a green run over a "
+            f"pull request no check will ever reach."
+        )
