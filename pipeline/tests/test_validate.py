@@ -925,6 +925,17 @@ def test_city_gate_rejects_a_headline_the_chart_disagrees_with():
         validate_city_price([_city(since_baseline_median_pct=31.0)], _COVERED)
 
 
+def test_city_gate_rejects_a_headline_level_the_chart_disagrees_with():
+    """The test above holds the two PERCENTAGES together and this holds the
+    €/m² they are measured from — which is the figure the home block actually
+    prices a flat with, and the one that can drift on its own while every check
+    around it stays satisfied. 1450 is inside Varna's own 700–2400, so the
+    range check passes; the change beside it was computed from the series, so
+    that agrees with itself too."""
+    with pytest.raises(ValidationError, match="but its newest published year"):
+        validate_city_price([_city(eur_per_m2_median=1450.0)], _COVERED)
+
+
 def test_city_gate_admits_a_city_with_no_history_at_all():
     """имот.bg cover some cities from this year only, and a current €/m² with
     no trend behind it is a complete answer rather than a broken one."""
