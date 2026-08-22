@@ -24,6 +24,7 @@ from pathlib import Path
 
 import pytest
 
+from vyarno_pipeline.refresh_report import owns
 from vyarno_pipeline.release_calendar import (
     BACKSTOP,
     ECB_BASE,
@@ -185,8 +186,13 @@ def test_no_backstop_opens_an_upstream_on_a_watch_tick() -> None:
     Both push `data/<source>`, and the second meets a branch whose history it
     does not contain. `refresh.yml`'s concurrency group is what stops that
     becoming a failed run; keeping the hours apart is what stops it happening.
+
+    Both watch schedules, because the wide sweep probes every upstream whatever
+    the window says — so a backstop moved into an hour only the sweep occupies
+    (1, 5, 13 or 17 UTC) collides with a tick the other half of this assertion
+    cannot see.
     """
-    watched_hours = _cron_field(WATCH_CRON, 1)
+    watched_hours = _cron_field(WATCH_CRON, 1) | _cron_field(SWEEP_CRON, 1)
     for source, crons in sorted(BACKSTOP.items()):
         # `payroll` is exempt because nothing watches it: its hour is a
         # statutory boundary in Sofia rather than a window, and no probe ever
@@ -281,9 +287,24 @@ def test_a_window_is_read_in_its_publisher_s_own_timezone() -> None:
     assert "region-salary" in releases_due(winter.replace(hour=7, minute=30))
 
 
-def test_a_source_owns_the_payloads_the_refresh_workflow_gives_it() -> None:
-    """`hicp` writes two files and `house_market` is a prefix of two more."""
+def test_a_source_owns_the_payloads_the_refresh_gives_it() -> None:
+    """`hicp` writes two files and `house_market` is a prefix of two more.
+
+    `payload_stems` is a copy of `refresh_report.owns`, kept because a watcher
+    tick may import nothing this module cannot. Two copies of one rule drift in
+    the direction nobody watches, and the drift is silent both ways: the arm
+    publishes a payload the watcher then never counts as read, or the watcher
+    dispatches an arm for a file the refresh does not own. So the copies are
+    compared over the payloads that actually exist rather than over an example.
+    """
     stems = ["hicp_headline", "hicp_categories", "house_market", "house_market_structure"]
     assert payload_stems("hicp", stems) == ["hicp_headline", "hicp_categories"]
     assert payload_stems("house-market", stems) == ["house_market", "house_market_structure"]
     assert payload_stems("credit", stems) == []
+
+    published = sorted(path.stem for path in (ROOT / "data" / "published").glob("*.json"))
+    for source in sorted(set(ARMS)):
+        assert payload_stems(source, published) == [s for s in published if owns(source, s)], (
+            f"`payload_stems` and `refresh_report.owns` disagree about what "
+            f"`--source {source}` writes."
+        )
