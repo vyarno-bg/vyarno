@@ -65,12 +65,25 @@ jobs:
         # **The clock is the arm's last run, not the payload's commit date** —
         # `unemployment.json` was touched on 2026-08-17 by a run that had
         # already read the cube Eurostat updated on 2026-08-12, so a commit
-        # date makes a release we are missing look like one we have. Conclusion
-        # is ignored: a run that started IS a read, and counting only the
-        # successful ones re-dispatches a broken arm every ten minutes.
+        # date makes a release we are missing look like one we have.
+        #
+        # **Every arm gets a key, `null` where it has never run.** An absent
+        # key sent `watch.py` to its commit-date fallback, which on this
+        # `fetch-depth: 1` checkout dates every payload to the tip commit — so
+        # the clock for those arms was "the last push to main", and a release
+        # landing before an unrelated push was never seen. `null` says what is
+        # true instead: nothing has read this upstream, so read it.
+        #
+        # A run counts as a read whatever it CONCLUDED — counting only the
+        # successful ones re-dispatches a broken arm every ten minutes. What it
+        # may not count is a run that never got as far as fetching:
+        # `startup_failure` never entered the job, and a cancelled one can have
+        # been stopped before the first request. Those advance the clock past a
+        # release nobody read, so they are skipped.
         with:
           script: |
             const fs = require('fs');
+            const UNREAD = new Set(['startup_failure', 'cancelled']);
             const { data } = await github.rest.actions.listRepoWorkflows({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -86,11 +99,10 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: arm.path.replace(/.*\//, ''),
-                per_page: 1,
+                per_page: 10,
               });
-              if (runs.workflow_runs.length > 0) {
-                lastRun[source] = runs.workflow_runs[0].created_at;
-              }
+              const read = runs.workflow_runs.find((r) => !UNREAD.has(r.conclusion));
+              lastRun[source] = read ? read.created_at : null;
             }
             fs.writeFileSync('/tmp/last-run.json', JSON.stringify(lastRun));
             core.info(`last run: ${JSON.stringify(lastRun)}`);
