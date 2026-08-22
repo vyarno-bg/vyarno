@@ -30,7 +30,7 @@
     flat: COPY.statFastKFlat,
     unsaid: COPY.statFastKFlat,
   };
-  import { CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE } from "$lib/view/region.js";
+  import { CITY_PRICED, CITY_UNREAD, CITY_NO_PAGE, CITY_UNKNOWN } from "$lib/view/region.js";
 
   const {
     /** Published HICP divisions, for the fastest-rising card. */
@@ -411,7 +411,14 @@
          because only the first is имот.bg's doing. Saying «имот.bg не
          публикува цени за Варна» about the second is false about a publisher
          who does publish Варна, in wording borrowed from the one place it is
-         true. -->
+         true.
+
+         A payload that did not load at all is a THIRD state and reaches the
+         same objection: both of the above are read off `city_pages`, so
+         without it every област answers `nopage` and the sentence in имот.bg's
+         name goes to all twenty-eight. `view/region.js#CITY_UNKNOWN` is where
+         that is told apart. -->
+
     {#if categories.length > 0 && !regionChosen}
       <div class="stat">
         <div class="sv mono none"><span>—</span></div>
@@ -434,7 +441,13 @@
           <span class="l-en">{COPY.statHomeNoCity.en}</span>
         </div>
       </div>
-    {:else if categories.length > 0 && cityCoverage === CITY_UNREAD}
+    {:else if categories.length > 0 && (cityCoverage === CITY_UNREAD || cityCoverage === CITY_UNKNOWN)}
+      <!-- Two states, one sentence, and the sentence is what they have in
+           common: there is no €/m² here yet. «Очакваме данни от имот.bg» claims
+           nothing about their coverage, so it stays true whether they serve
+           this град and a refresh missed it or the payload never arrived to
+           say. The claim that has to be told apart is the one above, in
+           имот.bg's name. -->
       <div class="stat">
         <div class="sv mono none"><span>—</span></div>
         <div class="sl">

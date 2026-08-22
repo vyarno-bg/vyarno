@@ -674,4 +674,59 @@ test(
   }
 );
 
+test(
+  "a payload that never arrived is not reported as имот.bg publishing nothing",
+  { skip },
+  async () => {
+    // The card has two ways to say there is no €/m², and only one of them may
+    // be said in имот.bg's name. Both were read off `city_pages`, so a 404 on
+    // `city_price.json` — an empty list to `.includes` — answered `nopage` for
+    // every област, and Варна, whose price имот.bg publish, was captioned
+    // «нито един град от тази област не е сред тях». Every other figure on the
+    // page was fine, which is why nothing else could see it.
+    //
+    // Asserted in a browser rather than on `cityCoverage` alone because the
+    // defect is a sentence: the unit test next to it holds the state, and this
+    // holds that the state is what the reader is shown.
+    const prices = published("city_price");
+    if (prices) {
+      assert.ok(prices.city_pages.includes("varna"), "имот.bg's list no longer carries Варна");
+    }
+
+    await withApp(
+      async (page, errors) => {
+        await page.selectOption("#region-select", "varna");
+        const card = page.locator(".strip .stat", { hasText: /имот\.bg|жилище|a home/ }).first();
+        const text = await card.innerText();
+
+        assert.doesNotMatch(
+          text,
+          /нито един град|no town in this oblast/,
+          "a fetch of ours that failed is being reported as имот.bg publishing no " +
+            `price for Варна, which they publish:\n${text}`
+        );
+        assert.match(
+          text,
+          /(очакваме данни|waiting on)/,
+          `the card names no reason for the missing €/m²:\n${text}`
+        );
+        // The 404 this test serves is one the browser reports, so the empty-list
+        // assertion the other tests make would fail on the scenario itself.
+        // Everything OTHER than that is still held: a component that threw on
+        // the degraded payload is exactly what this would otherwise miss.
+        const unexpected = errors.filter((e) => !/city_price\.json|404/.test(e));
+        assert.deepEqual(unexpected, [], unexpected.join(" | "));
+      },
+      "/",
+      {},
+      // Before the navigation: `onMount` has already issued the fetch by the
+      // time a route set afterwards would bind. See `openApp`.
+      async (page) =>
+        page.route("**/data/published/city_price.json", (r) =>
+          r.fulfill({ status: 404, body: "not found" })
+        )
+    );
+  }
+);
+
 test.after(shutdown);
