@@ -1844,12 +1844,68 @@ test("the staleness banner has a sentence for the count it is about to print", (
   assert.match(manyEn, /\bare\b/, "the English plural says «is» about several");
 
   // And the banner has to choose between them, or the pair is decoration.
-  const banner = readFileSync(join(SRC, "components", "DataBanner.svelte"), "utf8");
+  const banner = readFileSync(join(SRC, "components", "DataBanner.svelte"), "utf8").replace(
+    /\s+/g,
+    " "
+  );
   assert.match(
-    banner.replace(/\s+/g, " "),
-    /dataOverdueCount === 1 \? COPY\.dataStaleOne : COPY\.dataStale/,
+    banner,
+    /late\.length === 1 \? COPY\.dataStaleOne : COPY\.dataStale/,
     "DataBanner renders one staleness sentence for every count"
   );
+
+  // The same rule for the OTHER way a figure goes wrong. A payload that never
+  // arrived gets its own sentence, and its hint carries a pronoun back to the
+  // count — «Един … не се зареди. Числата от ТЯХ липсват» refers a plural
+  // pronoun to a singular subject, and "One dataset did not load. THEIR
+  // figures" does the same. Both halves are a pair and both are chosen here.
+  const [goneOneBg, goneOneEn] = pair("dataGoneBannerOne");
+  const [goneManyBg, goneManyEn] = pair("dataGoneBanner");
+  assert.ok(
+    !goneOneBg.includes("{n}"),
+    "the singular missing-data line still interpolates a count"
+  );
+  assert.ok(!goneOneEn.includes("{n}"), "the English singular missing-data line still counts");
+  assert.ok(
+    goneManyBg.includes("{n}") && goneManyEn.includes("{n}"),
+    "the plural missing-data line lost its count"
+  );
+  // The negative lookahead is the whole assertion: «заредиха» CONTAINS
+  // «зареди», and `\b` cannot separate them — JS word boundaries are ASCII, so
+  // there is none between a Cyrillic letter and the space after it.
+  assert.match(
+    goneOneBg,
+    /не се зареди(?!ха)/,
+    "the Bulgarian singular does not agree with one payload"
+  );
+  assert.match(goneManyBg, /не се заредиха/, "the Bulgarian plural does not agree with several");
+
+  const [hintOneBg, hintOneEn] = pair("dataGoneHintOne");
+  const [hintManyBg, hintManyEn] = pair("dataGoneHint");
+  assert.match(hintOneBg, /от него/, "the Bulgarian singular hint refers to several payloads");
+  assert.match(hintManyBg, /от тях/, "the Bulgarian plural hint refers to one payload");
+  assert.match(hintOneEn, /\bIts\b/, "the English singular hint says «their» about one payload");
+  assert.match(hintManyEn, /\bTheir\b/, "the English plural hint says «its» about several");
+
+  for (const chooser of [
+    /gone\.length === 1 \? COPY\.dataGoneBannerOne : COPY\.dataGoneBanner/,
+    /gone\.length === 1 \? COPY\.dataGoneHintOne : COPY\.dataGoneHint/,
+  ]) {
+    assert.match(banner, chooser, "DataBanner does not choose the missing-data pair by its count");
+  }
+
+  // `DataLate` carries the same pair on the three pages with no panel, where it
+  // NAMES the payloads instead of counting them.
+  const late = readFileSync(join(SRC, "components", "DataLate.svelte"), "utf8").replace(
+    /\s+/g,
+    " "
+  );
+  for (const chooser of [
+    /gone\.length === 1 \? COPY\.dataGoneOne : COPY\.dataGoneSome/,
+    /gone\.length === 1 \? COPY\.dataGoneHintOne : COPY\.dataGoneHint/,
+  ]) {
+    assert.match(late, chooser, "DataLate does not choose the missing-data pair by its count");
+  }
 });
 
 test("no prose freezes a date or a count the payloads already carry", () => {

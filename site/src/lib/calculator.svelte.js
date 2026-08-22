@@ -90,7 +90,7 @@ import {
   systemWedgeLadder,
   wedgeCurve,
 } from "./view/country.js";
-import { dataAge } from "./view/freshness.js";
+import { dataAge, dataNotice } from "./view/freshness.js";
 import { homePriceFor, homePriceBasis, clampTerm, mortgagePanel } from "./view/home.js";
 import {
   convertPay,
@@ -177,6 +177,15 @@ export class Calculator {
   dataOldestAsOf = $state("");
   /** One row per manifest payload: status, dates, what it feeds. See view/freshness.js#dataAge. */
   dataRows = $state([]);
+  /**
+   * The whole `dataAge` verdict, kept so `dataNotice` can be handed it.
+   *
+   * The three fields above are the ones the strip reads one at a time; this is
+   * the object the notice is a function of, and splitting it into a fourth and
+   * fifth flag here is what put the two halves of "is anything wrong" in
+   * different places to begin with (view/freshness.js#dataNotice).
+   */
+  dataAgeNow = $state(null);
   reloading = $state(false);
 
   // ---------------------------------------------------------------------
@@ -403,6 +412,7 @@ export class Calculator {
     this.dataStale = age.stale;
     this.dataOldestAsOf = age.oldestAsOf;
     this.dataRows = age.rows;
+    this.dataAgeNow = age;
   };
 
   /**
@@ -591,18 +601,22 @@ export class Calculator {
    * `ref_period` in the same strip.
    */
   asOfDisplay = $derived(this.basketRefPeriod || this.headlineRefPeriod);
-  showStaleBanner = $derived(this.dataReady && this.dataStale);
   /**
-   * The payloads overdue against their own cadence.
+   * What this page owes a reader about its own data — both the overdue
+   * payloads and the ones that never arrived.
    *
-   * The rows rather than the count, because `/how/` names them: it has no data
+   * The rows rather than a count, because `/how/` names them: it has no data
    * panel to open, so a warning there that says how many are late and not which
-   * is one a reader can do nothing with. The calculator's banner counts off
-   * this, so the two can never disagree about how many there are.
+   * is one a reader can do nothing with. The calculator's banner counts off the
+   * same object, so the two can never disagree about how many there are.
+   *
+   * One call, and the readiness gate travels inside it —
+   * `view/freshness.js#dataNotice` refuses to speak before `loadAll` resolves,
+   * because every payload reads as absent until it does.
    */
-  dataOverdue = $derived(this.dataRows.filter((r) => r.status === "overdue"));
-  /** How many payloads are overdue against their own cadence — what the banner counts. */
-  dataOverdueCount = $derived(this.dataOverdue.length);
+  dataNotice = $derived(dataNotice({ age: this.dataAgeNow, ready: this.dataReady }));
+  /** The overdue rows alone, for the one consumer that asks about a single payload. */
+  dataOverdue = $derived(this.dataNotice.late);
   /**
    * Whether the headline rate printed in the as-of strip is itself one of the late ones.
    *

@@ -34,7 +34,7 @@
   import { COPY, t } from "./lib/content.js";
   import { loadAll } from "./lib/data.js";
   import { payloadsFor } from "./lib/payloads.js";
-  import { dataAge } from "./lib/view/freshness.js";
+  import { dataAge, dataNotice } from "./lib/view/freshness.js";
   import {
     creditArrears,
     creditBusinessSpread,
@@ -62,13 +62,16 @@
   // and percentile ladder render nothing here, and `payloadsFor` is what stops
   // a reader of this page paying for them (`payloads.js`).
   let data = $state(payloads ?? {});
-  // Set in `onMount` and never seeded from the prop: the verdict is a function
-  // of the clock, and the build's clock is not the reader's.
-  let late = $state([]);
+  // Which payloads are overdue, and which never arrived. Set in `onMount` and
+  // never seeded from the prop: the verdict is a function of the clock, and the
+  // build's clock is not the reader's. `ready: true` because this line only
+  // runs after the await — the gate is for surfaces that render while the fetch
+  // is still outstanding (view/freshness.js#dataNotice).
+  let notice = $state(null);
 
   onMount(async () => {
     data = await loadAll("credit");
-    late = dataAge(data, payloadsFor("credit")).overdue;
+    notice = dataNotice({ age: dataAge(data, payloadsFor("credit")), ready: true });
   });
 
   const mortgage = $derived(data.mortgage ?? null);
@@ -163,7 +166,7 @@
     >
   </p>
 
-  <DataLate rows={late} inset />
+  <DataLate {notice} inset />
 
   <!-- 1 ------------------------------------------------------------------ -->
   <section id="rates">

@@ -45,10 +45,18 @@
      * calculator.svelte.js#headlineOverdue.
      */
     headlineOverdue = false,
-    /** True when some payload is overdue against its own cadence. */
-    showStaleBanner = false,
-    /** How many payloads are overdue — the banner counts them, not days. */
-    dataOverdueCount = 0,
+    /**
+     * The whole verdict from `view/freshness.js#dataNotice` — the overdue
+     * payloads and the ones that never arrived, together.
+     *
+     * **The object rather than a flag and a count**, for the reason
+     * `DataLate` gives: the pair that was here before could only describe the
+     * late ones, so a payload that failed to fetch raised nothing at all. It
+     * carries its own readiness gate, so this strip does not need a second one
+     * — before `loadAll` resolves every payload reads as absent, which is the
+     * alarm condition.
+     */
+    notice = { late: [], gone: [], count: 0, show: false },
     dataOldestAsOf = "",
     /** One row per payload, for the panel. See view/freshness.js#dataAge. */
     dataRows = [],
@@ -66,7 +74,20 @@
    * singular, English needs "is". Picked here rather than inside the string
    * because neither language builds the singular by editing the plural.
    */
-  const staleCopy = $derived(dataOverdueCount === 1 ? COPY.dataStaleOne : COPY.dataStale);
+  const late = $derived(notice?.late ?? []);
+  const gone = $derived(notice?.gone ?? []);
+  const staleCopy = $derived(late.length === 1 ? COPY.dataStaleOne : COPY.dataStale);
+  /**
+   * The same singular/plural choice for the absent ones.
+   *
+   * These COUNT rather than name, which is the split `DataLate` argues: the
+   * panel directly below this lists every payload with its own state, so the
+   * banner's job is to send a reader who never opens it there.
+   */
+  const goneCopy = $derived(gone.length === 1 ? COPY.dataGoneBannerOne : COPY.dataGoneBanner);
+  // Picked by the same count as the sentence above it: the hint's pronoun has
+  // to agree, in both languages.
+  const goneHint = $derived(gone.length === 1 ? COPY.dataGoneHintOne : COPY.dataGoneHint);
 </script>
 
 <!-- As-of data banner -->
@@ -130,17 +151,38 @@
          the control that says WHICH seven already behind them, and opening it
          pushed the warning off a phone screen entirely — a thousand pixels of
          table between the alarm and the rows it is about. -->
-    {#if showStaleBanner}
+    {#if gone.length}
+      <!-- Above the late strip, because a figure that is not on the page at all
+           outranks one that is merely old — and because the two can be up
+           together, which is the shape a broken refresh actually has. -->
       <div class="stale-banner">
         <div class="wrap mono">
           <span class="mark" aria-hidden="true">⚠</span>
           <span class="said">
             <span class="l-bg"
-              >{t(staleCopy, "bg", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
+              >{t(goneCopy, "bg", { n: gone.length })}
+              {t(goneHint, "bg")}</span
+            >
+            <span class="l-en"
+              >{t(goneCopy, "en", { n: gone.length })}
+              {t(goneHint, "en")}</span
+            >
+          </span>
+        </div>
+      </div>
+    {/if}
+
+    {#if late.length}
+      <div class="stale-banner">
+        <div class="wrap mono">
+          <span class="mark" aria-hidden="true">⚠</span>
+          <span class="said">
+            <span class="l-bg"
+              >{t(staleCopy, "bg", { n: late.length, date: fmtDate(dataOldestAsOf) })}
               {t(COPY.dataStaleHint, "bg")}</span
             >
             <span class="l-en"
-              >{t(staleCopy, "en", { n: dataOverdueCount, date: fmtDate(dataOldestAsOf) })}
+              >{t(staleCopy, "en", { n: late.length, date: fmtDate(dataOldestAsOf) })}
               {t(COPY.dataStaleHint, "en")}</span
             >
           </span>

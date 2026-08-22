@@ -2046,6 +2046,54 @@ export const COPY = {
     en: "What is shown is the last officially published figure. Nothing here is estimated, and under each one is the period it describes.",
   },
 
+  // The other half of the same warning: a payload that did not arrive at all.
+  // «Закъсняло» and «не се зареди» are different states and a reader can do
+  // different things about them — the first is a figure that is real and old,
+  // the second is a figure that is not on the page. A 404 on one payload takes
+  // nine of `/market/`'s tables off it under headings that still promise them,
+  // so the page has to say which, not merely that something is wrong.
+  //
+  // NO AGE ON THESE NAMES. An absent payload has no `as_of` to count from —
+  // `dataLateAge` would print «(преди null дни)» — and its age is not the
+  // finding anyway.
+  dataGoneOne: {
+    bg: "Един от наборите данни за тази страница не се зареди: {names}.",
+    en: "One of this page's datasets did not load: {names}.",
+  },
+  dataGoneSome: {
+    bg: "{n} от наборите данни за тази страница не се заредиха: {names}.",
+    en: "{n} of this page's datasets did not load: {names}.",
+  },
+  // The calculator's banner COUNTS where these NAME, for the reason
+  // `DataLate` carries: `/` has a panel listing every payload with its own
+  // state, and the two pages with no panel have to name them inline.
+  dataGoneBannerOne: {
+    bg: "Един от наборите данни не се зареди · виж кой по-долу",
+    en: "One dataset did not load · see which below",
+  },
+  dataGoneBanner: {
+    bg: "{n} от наборите данни не се заредиха · виж кои по-долу",
+    en: "{n} datasets did not load · see which below",
+  },
+  // What is still true while it is up, and it is the opposite of the late
+  // hint's: there is no last-published figure standing in, because nothing is
+  // standing in at all. Said plainly, because a reader who sees a gap where a
+  // table was is entitled to know it is a gap rather than a zero.
+  //
+  // **A pair, because the hint carries a pronoun back to the count above it.**
+  // Both languages break on it — «Един … не се зареди. Числата от ТЯХ липсват»
+  // refers a plural pronoun to a singular subject, and "One dataset did not
+  // load. THEIR figures" does the same. One late payload is the commonest shape
+  // this takes, so the singular is the sentence most readers would get.
+  dataGoneHint: {
+    bg: "Числата от тях липсват от страницата. Нищо не е заместено с приблизителна стойност.",
+    en: "Their figures are missing from the page. Nothing has been replaced with an estimate.",
+  },
+  dataGoneHintOne: {
+    bg: "Числата от него липсват от страницата. Нищо не е заместено с приблизителна стойност.",
+    en: "Its figures are missing from the page. Nothing has been replaced with an estimate.",
+  },
+
   // Loading and failure states. A person who has just typed their salary into
   // a page that then failed needs three things: what happened, that nothing of
   // theirs was lost or sent anywhere, and a way to try again. A bare "reload

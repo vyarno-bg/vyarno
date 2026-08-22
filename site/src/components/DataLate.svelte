@@ -1,10 +1,19 @@
 <!--
-  The line `/market/` and `/how/` owe a reader when one of their figures is late.
+  The line `/market/`, `/how/` and `/credit/` owe a reader when one of their
+  figures is late — or when it never arrived at all.
 
   `DataBanner` puts this on the calculator and nowhere else, and the two pages
   built to be quoted had nothing: a payload whose workflow stops firing shows an
   old period caption and no sign that it is overdue — on the page that argues
   its numbers are checkable, and on the page a citing agent reads.
+
+  **Two states, because a figure can be wrong in two ways and they are not the
+  same news.** Late means the figure is real and old, and the last officially
+  published one is still on the page. Absent means it is not on the page: a 404
+  on `house_market.json` takes nine of `/market/`'s eighteen tables off it under
+  headings that still promise them. `view/freshness.js#dataNotice` decides both
+  and this takes the whole verdict, because taking one list is exactly what let
+  every surface report the first and none report the second.
 
   **It NAMES the late payloads, where the calculator's banner only counts
   them.** That difference is the whole reason this is a second component rather
@@ -30,11 +39,18 @@
 
   const {
     /**
-     * The overdue rows from `view/freshness.js#dataAge`, each carrying the manifest's own
-     * `name` pair and how many days old it is. Empty is the ordinary case and
-     * draws nothing.
+     * The whole verdict from `view/freshness.js#dataNotice` — `late` and `gone`
+     * together, each row carrying the manifest's own `name` pair.
+     *
+     * **The object rather than one of its lists**, because taking `rows` is
+     * what let three of the four surfaces pass `.overdue` and silently drop
+     * `.missing`: a payload that never arrived warned nobody, on the pages
+     * built to be quoted. A prop that cannot be handed half the verdict cannot
+     * render half of it.
+     *
+     * Both empty is the ordinary case and draws nothing.
      */
-    rows = [],
+    notice = { late: [], gone: [], count: 0, show: false },
     /**
      * Whether the band spans the window or sits inside the page's own column.
      *
@@ -50,6 +66,9 @@
     inset = false,
   } = $props();
 
+  const late = $derived(notice?.late ?? []);
+  const gone = $derived(notice?.gone ?? []);
+
   /**
    * The plural or the singular sentence, chosen by the count.
    *
@@ -58,24 +77,52 @@
    * English needs "is". Picked here rather than inside the string because
    * neither language builds its singular by editing its plural.
    */
-  const copy = $derived(rows.length === 1 ? COPY.dataLateOne : COPY.dataLateSome);
+  const copy = $derived(late.length === 1 ? COPY.dataLateOne : COPY.dataLateSome);
   const named = (lang) =>
-    rows.map((r) => t(COPY.dataLateAge, lang, { name: r.name[lang], n: r.daysOld })).join(", ");
+    late.map((r) => t(COPY.dataLateAge, lang, { name: r.name[lang], n: r.daysOld })).join(", ");
+
+  /**
+   * The same choice for the absent ones, and their names WITHOUT an age.
+   *
+   * A payload that never arrived carries no `as_of`, so `daysOld` is null and
+   * `dataLateAge` would render «(преди null дни)» beside every name.
+   */
+  const goneCopy = $derived(gone.length === 1 ? COPY.dataGoneOne : COPY.dataGoneSome);
+  // The hint refers back to the count in the sentence above it, so it is picked
+  // by the same number: both languages carry a pronoun that has to agree.
+  const goneHint = $derived(gone.length === 1 ? COPY.dataGoneHintOne : COPY.dataGoneHint);
+  const goneNamed = (lang) => gone.map((r) => r.name[lang]).join(", ");
 </script>
 
-{#if rows.length}
+{#if late.length || gone.length}
+  <!-- One band, not two. The states differ in what they say and not in how
+       urgent they are, and a page with both would otherwise stack two identical
+       warning strips above the thing the reader came for. The absent ones lead,
+       because a figure that is not on the page outranks one that is old. -->
   <div class="late" class:inset>
     <div class="wrap mono">
       <span class="mark" aria-hidden="true">⚠</span>
       <span class="said">
-        <span class="l-bg"
-          >{t(copy, "bg", { n: rows.length, names: named("bg") })}
-          {t(COPY.dataLateHint, "bg")}</span
-        >
-        <span class="l-en"
-          >{t(copy, "en", { n: rows.length, names: named("en") })}
-          {t(COPY.dataLateHint, "en")}</span
-        >
+        {#if gone.length}
+          <span class="l-bg"
+            >{t(goneCopy, "bg", { n: gone.length, names: goneNamed("bg") })}
+            {t(goneHint, "bg")}</span
+          >
+          <span class="l-en"
+            >{t(goneCopy, "en", { n: gone.length, names: goneNamed("en") })}
+            {t(goneHint, "en")}</span
+          >
+        {/if}
+        {#if late.length}
+          <span class="l-bg"
+            >{t(copy, "bg", { n: late.length, names: named("bg") })}
+            {t(COPY.dataLateHint, "bg")}</span
+          >
+          <span class="l-en"
+            >{t(copy, "en", { n: late.length, names: named("en") })}
+            {t(COPY.dataLateHint, "en")}</span
+          >
+        {/if}
       </span>
     </div>
   </div>
