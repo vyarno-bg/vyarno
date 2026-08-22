@@ -203,6 +203,63 @@ test("every manifest payload resolves a reference period from what it publishes"
   );
 });
 
+test("a payload on two clocks names both of them, not whichever block was asked", () => {
+  // A row's period slot is a claim about EVERY figure in the file, and a
+  // payload whose blocks run on different releases cannot honour it with one of
+  // them picked by name. `credit.json` is the case: eight ECB MIR blocks at a
+  // month, and `non_performing` at a quarter about five months behind — so
+  // dated by `consumer` alone the row reported June over a Q1 figure.
+  //
+  // The rule is over the WHOLE manifest rather than over that row, which is
+  // what makes a third clock inexpressible: a block added to any payload with a
+  // period neither slot names fails here, rather than being dropped silently
+  // into a period that is wrong for it.
+  //
+  // Only top-level blocks carry a `ref_period` of their own; a nested one (a
+  // rate tier inside `mortgage`) is that block's business and is dated where it
+  // is rendered.
+  const unnamed = [];
+  for (const p of PAYLOADS) {
+    const payload = read(p.file);
+    if (!payload) continue;
+
+    const inFile = new Set(
+      Object.values(payload)
+        .filter((v) => v && typeof v === "object" && !Array.isArray(v))
+        .map((v) => v.ref_period)
+        .filter((v) => typeof v === "string" && v)
+    );
+    if (inFile.size < 2) continue; // one clock, and the row above holds it
+
+    const named = new Set(
+      [p.refPeriod(payload), p.refPeriodSecondary?.(payload)?.period].filter(Boolean)
+    );
+    for (const period of inFile) {
+      if (!named.has(period)) unnamed.push(`${p.file}: ${period}`);
+    }
+  }
+  assert.deepEqual(
+    unnamed,
+    [],
+    "a block's reference period that no manifest slot names, so the panel dates " +
+      `it by another block's clock: ${unnamed.join(", ")}`
+  );
+
+  // And the case that prompted it, asserted by name so the row cannot quietly
+  // lose its second slot while the sweep above still passes on one clock.
+  const credit = read("credit");
+  if (credit) {
+    const row = PAYLOADS.find((p) => p.key === "credit");
+    assert.equal(row.refPeriod(credit), credit.consumer.ref_period);
+    assert.equal(row.refPeriodSecondary(credit)?.period, credit.non_performing.ref_period);
+    assert.notEqual(
+      credit.consumer.ref_period,
+      credit.non_performing.ref_period,
+      "premise: credit.json still runs on two clocks"
+    );
+  }
+});
+
 test("a second reference period is shown only where there is a second vintage", () => {
   // The label exists so one vintage cannot date another — `salary_dist` is the
   // case it was written for. When the ladder was re-levelled to an НСИ quarter
@@ -222,6 +279,21 @@ test("a second reference period is shown only where there is a second vintage", 
       `${p.file} offers a second period equal to its first — the panel would ` +
         "print the same vintage twice, once bare and once labelled."
     );
+    // **The label is what says which vintage the period belongs to**, and the
+    // panel renders `.l-bg` and `.l-en` from it. A missing half is a blank line
+    // rather than a fallback, so the row would print a bare year under a
+    // heading that no longer says what it is a year of.
+    for (const lang of ["bg", "en"]) {
+      assert.equal(
+        typeof secondary.label?.[lang],
+        "string",
+        `${p.file}'s second period carries no ${lang} label`
+      );
+      assert.ok(
+        secondary.label[lang].trim(),
+        `${p.file}'s ${lang} label for its second period is empty — it renders as a blank line`
+      );
+    }
   }
 
   // And the accessor still fires when the vintages genuinely differ, so this is
