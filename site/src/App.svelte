@@ -191,8 +191,7 @@
   headlineRefPeriod={calc.headlineRefPeriod}
   headlineIsFlash={calc.headlineIsFlash}
   headlineOverdue={calc.headlineOverdue}
-  showStaleBanner={calc.showStaleBanner}
-  dataOverdueCount={calc.dataOverdueCount}
+  notice={calc.dataNotice}
   dataOldestAsOf={calc.dataOldestAsOf}
   dataRows={calc.dataRows}
   bind:panelOpen={calc.panelOpen}

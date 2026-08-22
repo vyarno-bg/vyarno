@@ -17,7 +17,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { dataAge, payloadStatus, STALE_AFTER_DAYS } from "../src/lib/view/freshness.js";
+import { dataAge, dataNotice, payloadStatus, STALE_AFTER_DAYS } from "../src/lib/view/freshness.js";
 import { PAYLOADS } from "../src/lib/payloads.js";
 import { published } from "./published-payload.mjs";
 
@@ -103,6 +103,63 @@ test("dataAge reports a payload that failed to load instead of skipping it", () 
     ["b"],
     "…but it must be visible in the panel rather than silently absent"
   );
+});
+
+test("a payload that never arrived reaches the notice, not only the panel", () => {
+  // `dataAge` has returned `overdue` and `missing` side by side all along, and
+  // every surface reached for `.overdue` alone — so a 404 raised nothing. On
+  // `/market/` that took nine of eighteen tables off the page under headings
+  // that still promised them, with no line anywhere saying so.
+  const age = dataAge(
+    { a: { as_of: "2026-07-20" }, b: null, c: { as_of: "2026-01-01" } },
+    [entry("a"), entry("b"), entry("c")],
+    NOW
+  );
+  const notice = dataNotice({ age, ready: true });
+
+  assert.deepEqual(
+    notice.gone.map((r) => r.key),
+    ["b"],
+    "the payload that failed to fetch is not in the notice, so nothing warns about it"
+  );
+  assert.deepEqual(
+    notice.late.map((r) => r.key),
+    ["c"],
+    "the overdue payload dropped out while the missing one was added"
+  );
+  // The count is both, because the banner announces one number and a reader
+  // who is told "1 of the figures" over two broken payloads has been undercounted.
+  assert.equal(notice.count, 2);
+  assert.equal(notice.show, true);
+
+  // Each row still carries the manifest's own name pair, in both languages —
+  // `DataLate` names them and a missing half renders as a blank line.
+  for (const row of [...notice.gone, ...notice.late]) {
+    assert.equal(typeof row.name.bg, "string");
+    assert.equal(typeof row.name.en, "string");
+    assert.ok(row.name.bg && row.name.en, `${row.key} carries no name in one language`);
+  }
+});
+
+test("the notice says nothing until the fetch has resolved", () => {
+  // Before `loadAll` resolves, every payload is `absent` — which is this
+  // function's own alarm condition. Ungated, the band would announce that every
+  // dataset on the site had failed, on every first paint, and then vanish.
+  const age = dataAge({}, [entry("a"), entry("b")], NOW);
+  assert.equal(age.missing.length, 2, "premise: an unfetched manifest reads as wholly absent");
+
+  const loading = dataNotice({ age, ready: false });
+  assert.deepEqual(loading.gone, []);
+  assert.deepEqual(loading.late, []);
+  assert.equal(loading.show, false, "the band would flash on every page load");
+
+  // And it is not merely quiet — once the fetch resolves on the same verdict it
+  // speaks, so the gate delays the warning rather than swallowing it.
+  assert.equal(dataNotice({ age, ready: true }).show, true);
+
+  // A caller with no verdict at all gets silence rather than a crash: `/market/`
+  // holds `null` until `onMount` runs.
+  assert.equal(dataNotice({ age: null, ready: true }).show, false);
 });
 
 test("dataAge falls back to today when nothing loaded", () => {
