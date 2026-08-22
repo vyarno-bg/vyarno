@@ -22,6 +22,7 @@ offline, and indifferent to how any one of them works.
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -264,6 +265,51 @@ def test_the_refresh_workflow_commits_under_an_identity() -> None:
         assert re.search(r"^\s+git config user\.name\b", block, re.M), (
             f"the `{name}` step commits without setting user.name in the same block."
         )
+
+
+def test_every_arm_that_fetches_bnb_is_given_the_intermediate() -> None:
+    """`www.bnb.bg` does not always send its intermediate, and the fix is per arm.
+
+    `refresh.yml` appends the missing GeoTrust link to certifi's bundle under an
+    `if:` naming the arms, so an arm that fetches БНБ and is not named runs the
+    same handshake without it. That is green for exactly as long as БНБ's edge
+    happens to serve a full chain, and then exits 4 with no rate at all — the
+    failure the step exists to remove, arriving at the arm nobody listed. It was
+    `credit`, whose two workbooks are the same host as `mortgage`'s.
+
+    Derived from the imports rather than from a list: a third arm reaching
+    `sources/bnb.py` has to be named in that condition, and this is what says so.
+    """
+    package = Path(__file__).resolve().parents[1] / "src" / "vyarno_pipeline"
+    tree = ast.parse((package / "cli.py").read_text("utf-8"))
+
+    from_bnb = {
+        alias.asname or alias.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module == "vyarno_pipeline.sources.bnb"
+        for alias in node.names
+    }
+    arm_of = {handler: source for source, handler in ARMS.items()}
+    fetches_bnb = {
+        arm_of[node.name]
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name in arm_of
+        if {n.id for n in ast.walk(node) if isinstance(n, ast.Name)} & from_bnb
+    }
+    assert fetches_bnb, "no arm imports from sources/bnb.py — has the connector moved?"
+
+    workflow = (
+        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh.yml"
+    ).read_text("utf-8")
+    step = next(
+        block for block in re.split(r"^      - name: ", workflow, flags=re.M) if "certifi" in block
+    )
+    condition = next(line for line in step.splitlines() if line.strip().startswith("if:"))
+    missing = sorted(arm for arm in fetches_bnb if f"'{arm}'" not in condition)
+    assert not missing, (
+        f"{missing} fetch(es) www.bnb.bg but the certificate step's condition does "
+        f"not name them: {condition.strip()}"
+    )
 
 
 def test_neither_workflow_decides_for_itself_how_old_is_too_old() -> None:

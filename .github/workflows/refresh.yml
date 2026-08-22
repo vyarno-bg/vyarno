@@ -76,14 +76,21 @@ jobs:
           .venv/bin/pip install -q -e '.[dev]'
 
       - name: Trust the БНБ intermediate
-        if: inputs.source == 'mortgage'
+        if: inputs.source == 'mortgage' || inputs.source == 'credit'
         # `www.bnb.bg` presents a leaf issued by GeoTrust EV RSA CA G2 and does
-        # not send that intermediate, so a default trust store cannot build the
-        # chain and the mortgage arm exits 4 with "unable to get local issuer
+        # not always send that intermediate, so a default trust store cannot
+        # build the chain and the arm exits 4 with "unable to get local issuer
         # certificate". The fix is to supply the missing link from the leaf's
-        # own AIA URL — never to disable verification, which would hand the one
-        # connector that fetches a rate over a bank's own TLS to anyone on the
+        # own AIA URL — never to disable verification, which would hand the
+        # connectors that fetch a rate over a bank's own TLS to anyone on the
         # path (docs/data-sources.md §"TLS setup").
+        #
+        # **Both arms that reach `sources/bnb.py`, not just the mortgage one.**
+        # `credit` reads the revolving and non-financial workbooks off the same
+        # host. Named alone, `mortgage` got the fix and `credit` ran the same
+        # handshake without it — green for as long as БНБ's edge happened to
+        # serve a full chain, and no rate at all on the day one did not.
+        # `test_cli_dispatch.py` derives the pair from the imports.
         #
         # Written into certifi's bundle AND exported as SSL_CERT_FILE, because
         # which one httpx reads depends on how its default SSL context is
@@ -97,7 +104,7 @@ jobs:
           BUNDLE=$(pipeline/.venv/bin/python -c 'import certifi; print(certifi.where())')
           cat /tmp/g2.pem >> "$BUNDLE"
           echo "SSL_CERT_FILE=$BUNDLE" >> "$GITHUB_ENV"
-          curl -sS -o /dev/null -w 'бнб reachable: %{http_code}\n' --cacert "$BUNDLE" \
+          curl -sS -o /dev/null -w 'бнб chain builds: %{http_code}\n' --cacert "$BUNDLE" \
             https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx
 
       - name: Run pipeline
