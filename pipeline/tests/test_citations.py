@@ -91,7 +91,7 @@ def test_a_derived_total_is_checked_through_its_components():
     }
     assert _derived(node, "")
     # The sum is ours and is in no cell of the workbook; the addend is a cell.
-    ((_, _, want),) = [(w, u, x) for w, u, x in extract(node)]
+    ((_, _, want),) = [(w, u, x) for w, u, x, _ in extract(node)]
     assert want == {"housing": 18_580.075}
 
 
@@ -108,7 +108,7 @@ def test_a_second_citation_in_the_block_keeps_its_own_component():
         "source_url": "https://www.bnb.bg/loans.xlsx",
         "overdraft_source_url": "https://www.bnb.bg/overdrafts.xlsx",
     }
-    wants = {where: want for where, _, want in extract(node)}
+    wants = {where: want for where, _, want, _ in extract(node)}
     assert wants["source_url"] == {"housing": 60.0}
     assert "overdraft" not in wants["source_url"]
 
@@ -124,7 +124,7 @@ def test_a_bare_url_beside_two_series_checks_neither_rather_than_merging_them():
         "corporations_by_period": {"2026-Q1": 4.74},
         "source_url": "https://data-api.ecb.europa.eu/service/data/CBD2/Q.BG…",
     }
-    ((_, _, want),) = extract(node)
+    ((_, _, want, _),) = extract(node)
     assert want == {}
 
 
@@ -139,7 +139,7 @@ def test_a_eurostat_citation_is_read_at_the_unit_it_declares():
         "api_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&unit=RCH_A",
         "api_url_index": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&unit=I15",
     }
-    wants = {where: want for where, _, want in extract(node)}
+    wants = {where: want for where, _, want, _ in extract(node)}
     assert wants["api_url"] == {"2026-06": 2.3}
     assert wants["api_url_index"] == {"2026-06": 182.45}
 
@@ -156,7 +156,7 @@ def test_every_citation_in_every_payload_is_read_or_named_unreadable():
     seen: list[tuple[str, str]] = []
     for path in sorted(PUBLISHED.glob("*.json")):
         payload = json.loads(path.read_text(encoding="utf-8"))
-        for _where, url, _ in extract(payload):
+        for _where, url, _, _ in extract(payload):
             seen.append((path.name, url))
     assert seen, "the walk found no citations at all"
 
@@ -190,3 +190,101 @@ def test_every_citation_in_every_payload_is_read_or_named_unreadable():
 
     total = sum(grep(json.loads(p.read_text(encoding="utf-8"))) for p in PUBLISHED.glob("*.json"))
     assert len(seen) == total, f"the walk visited {len(seen)} citations, a grep finds {total}"
+
+
+def test_a_series_is_held_to_its_whole_published_history():
+    """Not the newest twelve. **The old window was where the last check of any
+    kind stopped**: `validate.py`'s gates read the reference-period cell of a
+    series and little else, so twelve months back was the edge of everything —
+    and a БНБ restatement of 2019 or a Eurostat revision of the recalculated
+    I15 back-series moved numbers nothing would re-read.
+
+    Twenty periods rather than thirteen, because thirteen would pass against
+    an off-by-one and say nothing about the cap being gone.
+    """
+    series = {f"2024-{m:02d}": float(m) for m in range(1, 13)}
+    series.update({f"2025-{m:02d}": 12.0 + m for m in range(1, 9)})
+    node = {
+        "ref_period": "2025-08",
+        "series_by_period": series,
+        "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG…",
+    }
+    ((_, _, want, excluded),) = extract(node)
+    assert want == series, f"held to {len(want)} of {len(series)} published periods"
+    assert excluded == []
+
+
+def test_a_spliced_series_stops_at_the_changeover_and_says_how_much_it_left():
+    """The euro bound stays, and the silence around it does not.
+
+    The cited euro key answers for the pre-2026 months with euro-DENOMINATED
+    lending — a niche beside the lev market — so reaching across the seam finds
+    real numbers that are the wrong ones. What the widened window may not do is
+    leave that unsaid: a check quietly covering a twelfth of what it claims is
+    the failure this module argues against in its own header.
+    """
+    node = {
+        "ref_period": "2026-03",
+        "dataset": "MIR M.BG.B.A2B.A.R.A.2250.BGN.N spliced with …EUR.N",
+        "series_by_period": {
+            "2025-10": 8.1,
+            "2025-11": 8.2,
+            "2025-12": 8.3,
+            "2026-01": 8.4,
+            "2026-02": 8.5,
+            "2026-03": 8.6,
+        },
+        "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG…EUR.N",
+    }
+    ((_, _, want, excluded),) = extract(node)
+    assert set(want) == {"2026-01", "2026-02", "2026-03"}
+    assert excluded == ["2025-10", "2025-11", "2025-12"], (
+        "the pre-changeover months were dropped without being reported, so the "
+        "run cannot say it covered half of what the payload publishes"
+    )
+
+
+def test_the_index_history_is_held_at_each_years_december():
+    """`index_by_year` against the cube the citation already asks for.
+
+    `api_url_index` fetches `sinceTimePeriod=2003-01` and was held to the one
+    `latest_index` beside it, so every anchor the site divides by — "up X%
+    since 2015" — rested on a figure nothing re-read. A year key means that
+    year's DECEMBER reading (`docs/math.md` invariant #4), so the payload's own
+    year-end rule is the lookup and this checks the convention with the values.
+    """
+    node = {
+        "ref_period": "2026-07",
+        "value": 143.83,
+        "latest_index": {"time": "2026-07", "value": 149.73},
+        "index_by_year": {"2024": 138.99, "2025": 143.83},
+        "api_url_index": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&unit=I15&sinceTimePeriod=2003-01",
+    }
+    ((_, _, want, _),) = extract(node)
+    assert want == {"2024-12": 138.99, "2025-12": 143.83, "2026-07": 149.73}
+
+
+def test_the_year_end_level_is_never_dated_by_the_blocks_ref_period():
+    """`value` is the newest completed December, not a reading at `ref_period`.
+
+    Caught by running the widened check rather than by reading it: accumulating
+    the I15 fields instead of returning the first wrote a December level under
+    a July key, and thirteen divisions reported a revision on a payload whose
+    every figure was Eurostat's. It is `EUROSTAT_UNIT_FIELDS`' own failure —
+    a figure held against the wrong period — one field further in, so the guard
+    is that the block's `ref_period` appears only when the freshest reading
+    actually carries it.
+    """
+    node = {
+        "ref_period": "2026-07",
+        "value": 143.83,
+        "latest_index": {"time": "2026-07", "value": 149.73},
+        "index_by_year": {"2025": 143.83},
+        "api_url_index": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=BG&unit=I15&sinceTimePeriod=2003-01",
+    }
+    ((_, _, want, _),) = extract(node)
+    assert want["2026-07"] == 149.73, (
+        f"the July key carries {want['2026-07']} — the year-end level was dated "
+        f"by the block's ref_period instead of by its own December"
+    )
+    assert want["2025-12"] == 143.83

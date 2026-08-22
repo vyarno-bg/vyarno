@@ -68,6 +68,7 @@ from __future__ import annotations
 
 import json
 import re
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -113,6 +114,11 @@ class Finding:
     verdict: str
     detail: str = ""
     checked: int = 0
+    # Periods the payload publishes under this citation that it cannot be held
+    # to. Counted rather than inferred from `checked`, because "6 of 78" and
+    # "6 of 6" are the same number of values checked and only one of them is
+    # complete coverage.
+    uncovered: int = 0
     notes: list[str] = field(default_factory=list)
 
 
@@ -301,11 +307,25 @@ def _find_in_workbook(book: Any, want: dict[str, float]) -> tuple[str, str, int]
             for cell in row:
                 if isinstance(cell, (int, float)):
                     seen.add(round(float(cell), 4))
-    missing = [
-        f"{period}={value}"
-        for period, value in want.items()
-        if not any(abs(value - candidate) <= tolerance_for(value) for candidate in seen)
-    ]
+
+    # **Sorted once and bisected, rather than scanned per value.** The linear
+    # scan this replaces was fine against twelve wanted values and is not
+    # against a full history: `credit.json#outstanding` alone publishes five
+    # series of 234 months under one workbook citation, which is 1,170 lookups
+    # over ~10,000 cells. Widening the window is meant to cost coverage nothing,
+    # so the search underneath it changes rather than the window above it.
+    #
+    # Same semantics as the scan: a value matches if any cell lies within its
+    # own tolerance, so the bisect brackets [value - tol, value + tol] and asks
+    # whether the slice is empty.
+    cells = sorted(seen)
+    missing = []
+    for period, value in want.items():
+        tolerance = tolerance_for(value)
+        left = bisect_left(cells, value - tolerance)
+        right = bisect_right(cells, value + tolerance)
+        if left == right:
+            missing.append(f"{period}={value}")
     if missing:
         return REVISED, f"not in the workbook: {', '.join(missing[:4])}", len(want)
     return OK, "", len(want)
@@ -343,13 +363,54 @@ def _compare(live: dict[str, float], want: dict[str, float]) -> tuple[str, str, 
     return OK, "", len(overlap)
 
 
-# How many of a series' months a citation is held to. **Not the whole history,
-# and the reason is the splice.** `credit.json#consumer` is the BGN leg through
-# 2025 and the EUR leg after it, under one URL that can only be one of the two —
-# so comparing 2020-2025 against the euro series would report six years of
-# revisions on a payload that is correct. A shifted column or a swapped key
-# moves the recent months too, which is what this is for.
-SERIES_WINDOW = 12
+# **A citation is held to every period the payload publishes under it**, and the
+# only thing that narrows that is the euro splice below.
+#
+# It used to be the newest twelve. That was defensible while this ran by hand
+# after a refresh — a shifted column or a swapped key moves the recent months
+# too — and it is not defensible as the only standing check on the published
+# history. Of roughly 10,000 observations in `data/published/`, the gates in
+# `validate.py` read the reference-period cell of each series and little else,
+# so twelve months back was where the last check of any kind stopped. A БНБ
+# restatement of 2019 (they restated the whole pre-2026 euro history once
+# already, in February 2026) or a Eurostat revision of the recalculated I15
+# back-series moved numbers nobody would ever look at again.
+#
+# What this costs is nothing per citation: the fetch is the same request either
+# way and the comparison is in memory. See `_find_in_workbook` for the one place
+# the wider window needed the search underneath it to change rather than the
+# coverage above it.
+#
+# **The splice is the one real bound and it stays.** `credit.json#consumer` is
+# the BGN leg through 2025 and the EUR leg after it, under one URL that can only
+# ever be one of the two. The euro leg does answer for the earlier months — with
+# euro-denominated lending, a niche beside the lev market — so reaching across
+# the seam finds real numbers that are the wrong ones, and reports six years of
+# revisions on a payload that is correct. Those periods are excluded and then
+# SAID: `_coverage_note` puts the count and the reason on the finding, and the
+# report totals them. A check that quietly covers less than it claims is the
+# failure this whole module exists against.
+def _covered_periods(node: dict[str, Any], series: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """`(checked, excluded)` — the periods this citation can answer for, and the rest."""
+    periods = sorted(series)
+    if not _spliced(node):
+        return periods, []
+    return (
+        [p for p in periods if p >= EURO_SWITCH_PERIOD],
+        [p for p in periods if p < EURO_SWITCH_PERIOD],
+    )
+
+
+def _coverage_note(excluded: list[str]) -> str:
+    """What the run says about periods a citation cannot be held to."""
+    if not excluded:
+        return ""
+    return (
+        f"{len(excluded)} period(s) before the euro changeover not covered "
+        f"({min(excluded)}..{max(excluded)}) — the payload splices them from the "
+        f"BGN leg and this URL serves the EUR one"
+    )
+
 
 # Keys whose value is a citation. Four spellings and every one of them is a
 # link this repository asks a reader to trust: `api_url` is Eurostat's data
@@ -414,8 +475,11 @@ def _spliced(node: dict[str, Any]) -> bool:
     return "splice" in declared or "currency of the period" in declared
 
 
-def _wanted(node: dict[str, Any], prefix: str, url: str = "") -> dict[str, float]:
+def _wanted(node: dict[str, Any], prefix: str, url: str = "") -> tuple[dict[str, float], list[str]]:
     """The figures in `node` that a citation with this prefix stands behind.
+
+    Returns them with the periods it had to leave out, so a caller can report
+    coverage rather than only the count it managed.
 
     Prefix-first and then bare, because a block carries both: `stock_source_url`
     is answerable by `stock_rate_pct` and never by the `value_pct` above it,
@@ -437,17 +501,16 @@ def _wanted(node: dict[str, Any], prefix: str, url: str = "") -> dict[str, float
     # the corporate figures — which agree to nothing, so it reported a revision
     # every quarter while both series were correct. Where the payload splits by
     # scope it also cites each scope separately, and those citations are exact.
+    excluded: list[str] = []
     if len(series_keys) == 1:
         series = node[series_keys[0]]
         if isinstance(series, dict):
-            periods = sorted(series)
-            if _spliced(node):
-                periods = [p for p in periods if p >= EURO_SWITCH_PERIOD]
-            for period in periods[-SERIES_WINDOW:]:
+            periods, excluded = _covered_periods(node, series)
+            for period in periods:
                 if isinstance(series[period], (int, float)):
                     want[period] = float(series[period])
     if want:
-        return want
+        return want, excluded
     period = node.get(f"{prefix}_ref_period") if prefix else None
     period = period or node.get("ref_period")
     unit = _eurostat_unit(url)
@@ -456,16 +519,45 @@ def _wanted(node: dict[str, Any], prefix: str, url: str = "") -> dict[str, float
     )
     # A cube whose unit this module has no field mapping for is not guessed at.
     if unit and not candidates:
-        return {}
+        return {}, excluded
+    # **The whole index history, and it is a separate branch because `value` is
+    # not dated by `ref_period`.** The index citation asks Eurostat for
+    # `sinceTimePeriod=2003-01` — twenty-three years of monthly readings — and
+    # was held to the single `latest_index` beside it. Every anchor the site
+    # offers divides by one of those years, so "your basket is up X% since 2015"
+    # rested on a figure published once and re-read by nothing, under a URL that
+    # serves every one of them.
+    #
+    # A year key means that year's DECEMBER reading and nothing else
+    # (`docs/math.md` invariant #4), so the payload's own year-end rule is the
+    # mapping and this checks the convention as well as the values: a key that
+    # had come to mean "the latest month we had" fails against December's.
+    #
+    # `value` is deliberately not read here. It is the newest completed
+    # December — `index_by_year`'s own last entry, which this already carries —
+    # and it is NOT a reading at `ref_period`. Dating it by the block's
+    # `ref_period`, which is what the scalar branch below would do, writes a
+    # December level under a July key and reports thirteen revisions on a
+    # correct payload. That is the failure `EUROSTAT_UNIT_FIELDS` exists to
+    # prevent, one field further in.
+    if isinstance(node.get("index_by_year"), dict) and "latest_index" in candidates:
+        latest = node.get("latest_index")
+        if isinstance(latest, dict) and isinstance(latest.get("value"), (int, float)):
+            want[str(latest.get("time", period))] = float(latest["value"])
+        for year, level in node["index_by_year"].items():
+            if isinstance(level, (int, float)):
+                want[f"{year}-12"] = float(level)
+        return want, excluded
+
     for key in candidates:
         cell = node[key]
         # `latest_index` carries its own period, which is the one the citation
         # answers for rather than the block's headline `ref_period`.
         if isinstance(cell, dict) and isinstance(cell.get("value"), (int, float)):
-            return {str(cell.get("time", period)): float(cell["value"])}
+            return {str(cell.get("time", period)): float(cell["value"])}, excluded
         if isinstance(cell, (int, float)) and isinstance(period, str):
-            return {period: float(cell)}
-    return want
+            return {period: float(cell)}, excluded
+    return want, excluded
 
 
 def _claimed_by_another(node: dict[str, Any], key: str) -> bool:
@@ -497,14 +589,21 @@ def _addends(node: dict[str, Any]) -> dict[str, float]:
     return out
 
 
-def extract(payload: Any, where: str = "") -> list[tuple[str, str, dict[str, float]]]:
-    """Every citation in a payload, with the figures it stands behind."""
-    found: list[tuple[str, str, dict[str, float]]] = []
+def extract(payload: Any, where: str = "") -> list[tuple[str, str, dict[str, float], list[str]]]:
+    """Every citation in a payload, the figures it stands behind, and what it cannot.
+
+    The fourth element is the periods a citation is NOT held to, which is only
+    ever the pre-changeover half of a spliced series. It travels with the
+    citation rather than being recomputed at report time, because the rule that
+    excluded them is `_covered_periods` and a second implementation of it in the
+    renderer is the one that would go stale.
+    """
+    found: list[tuple[str, str, dict[str, float], list[str]]] = []
     if isinstance(payload, dict):
         for key, value in payload.items():
             if isinstance(value, str) and _URL_KEY.search(key) and value.startswith("http"):
                 prefix = _prefix_of(key)
-                want = _wanted(payload, prefix, value)
+                want, excluded = _wanted(payload, prefix, value)
                 basis = _derived(payload, prefix)
                 if basis:
                     # The total is ours; its addends are the publisher's, and
@@ -515,6 +614,7 @@ def extract(payload: Any, where: str = "") -> list[tuple[str, str, dict[str, flo
                         f"{where}.{key}".lstrip("."),
                         value,
                         want if not basis or _addends(payload) else {},
+                        excluded,
                     )
                 )
             elif isinstance(value, dict) and _URL_KEY.search(key):
@@ -522,7 +622,8 @@ def extract(payload: Any, where: str = "") -> list[tuple[str, str, dict[str, flo
                 # behind the same-named figure in the block above it.
                 for name, url in value.items():
                     if isinstance(url, str) and url.startswith("http"):
-                        found.append((f"{where}.{key}.{name}", url, _wanted(payload, name, url)))
+                        want, excluded = _wanted(payload, name, url)
+                        found.append((f"{where}.{key}.{name}", url, want, excluded))
             else:
                 found.extend(extract(value, f"{where}.{key}".lstrip(".")))
     elif isinstance(payload, list):
@@ -572,7 +673,7 @@ def verify(published: Path, only: str | None = None, timeout: float = 60.0) -> l
             # databrowser page from all thirteen divisions, and 132 requests to
             # say one thing is a check that takes long enough to stop being run.
             cache: dict[tuple[str, frozenset], tuple[str, str, int]] = {}
-            for where, url, want in extract(payload):
+            for where, url, want, excluded in extract(payload):
                 key = (url, frozenset(want.items()))
                 if key not in cache:
                     try:
@@ -580,5 +681,17 @@ def verify(published: Path, only: str | None = None, timeout: float = 60.0) -> l
                     except httpx.HTTPError as exc:
                         cache[key] = (UNCHECKED, f"unreachable from here: {exc!r}", 0)
                 verdict, detail, checked = cache[key]
-                findings.append(Finding(path.name, where, url, verdict, detail, checked))
+                note = _coverage_note(excluded)
+                findings.append(
+                    Finding(
+                        path.name,
+                        where,
+                        url,
+                        verdict,
+                        detail,
+                        checked,
+                        uncovered=len(excluded),
+                        notes=[note] if note else [],
+                    )
+                )
     return findings

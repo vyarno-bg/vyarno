@@ -186,27 +186,47 @@ and that link is what the reader clicks to verify a number.
 rate-limiting, wait and re-run. If the URL shape changed, fix `api_url` in
 `transform.py`.
 
-## Not a gate — `make citations`
+## Not a gate — the citation check
 
-`citations.py`, run by hand, and it is here because Gate 6 is the reason it had
-to exist. **A gate checks the run that wrote a payload; nothing checked the
-payload afterwards.** Gate 6 is the closest and it is liveness on Eurostat
-alone, so a БНБ workbook URL now serving a Site Studio shell with HTTP 200, an
-ЕЦБ key resolving to a different series, or a figure the upstream has since
-restated all pass it.
+`citations.py`, and it is here because Gate 6 is the reason it had to exist.
+**A gate checks the run that wrote a payload; nothing checked the payload
+afterwards.** Gate 6 is the closest and it is liveness on Eurostat alone, so a
+БНБ workbook URL now serving a Site Studio shell with HTTP 200, an ЕЦБ key
+resolving to a different series, or a figure the upstream has since restated
+all pass it.
 
-`make citations` walks all 220 citations in `data/published/`, fetches each and
-holds the payload's own numbers against what comes back. **A revision is not a
-fault and the split is the design**: `BROKEN` is a citation that does not
-resolve to what the payload says it does and exits 3; `REVISED` is an upstream
-that restated; `STALE` is a refresh falling due. Neither of the last two is
-fatal, because a check that failed identically for a restated month and a dead
-link is one somebody mutes.
+It walks every citation in `data/published/`, fetches each and holds the
+payload's own numbers against what comes back. **A revision is not a fault and
+the split is the design**: `BROKEN` is a citation that does not resolve to what
+the payload says it does and exits 3; `REVISED` is an upstream that restated;
+`STALE` is a refresh falling due. Neither of the last two is fatal, because a
+check that failed identically for a restated month and a dead link is one
+somebody mutes.
+
+**A citation is held to every period the payload publishes under it.** It used
+to be the newest twelve, which was defensible while this ran by hand after a
+refresh and was not defensible as the only standing check on the published
+history: the gates above read the reference-period cell of a series and little
+else, so twelve months back was where checking of any kind stopped. The biggest
+block that reaches is the index history — every `index_by_year` level behind
+every "up X% since ⟨year⟩" the site prints, held at that year's own December,
+under a citation that was already asking Eurostat for all of them.
+
+**The euro splice is the one bound that stays, and the run says what it costs.**
+A spliced series is the BGN leg through 2025 and the EUR leg after it under one
+URL that can only be one of the two, so the pre-changeover months are excluded —
+and then counted, per citation and in the run's last line. A check quietly
+covering less than it claims is the failure this whole file argues against.
 
 Outside `make check` for the reason `make headers` is: it needs a network and
-six upstreams. 138 citations are read for their values, 52 for liveness (a
-Eurostat databrowser page and a БНБ press release carry no value to compare),
-and 30 are `UNCHECKED` with a sentence each saying why —
+five upstreams. Run it by hand — `vyarno-pipeline verify-citations`, or
+`make citations` — after a refresh, or when an upstream announces a methodology
+change. **`.github/workflows/citation-check.yml` runs it weekly**, which is what
+makes it a standing check rather than one somebody remembers: nothing merges on
+it, `contents: read` is its only scope, and a red run is a fact about the data
+rather than about somebody's network. Citations read for liveness rather than
+for a value (a Eurostat databrowser page, a БНБ press release) carry none to
+compare, and the `UNCHECKED` ones each carry a sentence saying why —
 `tests/test_citations.py` fails if a citation is neither, so a new `source_url`
 cannot arrive unexamined.
 
