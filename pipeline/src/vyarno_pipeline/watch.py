@@ -112,7 +112,7 @@ def _git(repo: Path, *args: str) -> str:
 EPOCH = datetime.fromtimestamp(0, tz=UTC)
 
 
-def last_read(repo: Path, source: str, last_runs: dict[str, str]) -> datetime:
+def last_read(repo: Path, source: str, last_runs: dict[str, str] | None) -> datetime:
     """When this arm last fetched its upstream — which is what a marker beats.
 
     **The question is when we last LOOKED, not when we last published.** A
@@ -126,11 +126,21 @@ def last_read(repo: Path, source: str, last_runs: dict[str, str]) -> datetime:
 
     So the clock is the arm's own last workflow run, whatever it concluded.
     That advances exactly when we read the upstream, which makes a dispatched
-    refresh its own acknowledgement. `watch.yml` passes the times in; the
-    commit-date fallback is for a person running this by hand off a checkout.
+    refresh its own acknowledgement.
+
+    **`last_runs` is the whole answer whenever `watch.yml` supplies one**, so
+    an arm missing from it has never read anything and its clock is the epoch.
+    Falling back to git there read the tip commit instead: `git log -- <path>`
+    on the watcher's `fetch-depth: 1` clone dates every payload to that one
+    commit, so the clock was "the last push to main" and a release landing
+    before an unrelated push was never seen. Credit, house-market and
+    nsi-housing sat on it. The fallback below is for a hand run off a full
+    checkout, where there is no run history to be had.
     """
-    recorded = last_runs.get(source)
-    if recorded:
+    if last_runs is not None:
+        recorded = last_runs.get(source)
+        if not recorded:
+            return EPOCH
         return datetime.fromisoformat(recorded.replace("Z", "+00:00")).astimezone(UTC)
 
     published = repo / "data" / "published"
@@ -149,7 +159,7 @@ def sweep(
     repo: Path,
     now: datetime,
     watch_all: bool,
-    last_runs: dict[str, str],
+    last_runs: dict[str, str] | None,
 ) -> dict[str, object]:
     """Probe every upstream in window and report which arms the release moved past."""
     watching = WATCHED if watch_all else releases_due(now)
@@ -197,11 +207,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--last-run",
-        help="JSON of {source: ISO instant} — when each arm last ran. See `last_read`.",
+        help="JSON of {source: ISO instant or null} — when each arm last ran. See `last_read`.",
     )
     args = parser.parse_args(argv)
 
-    last_runs = json.loads(Path(args.last_run).read_text("utf-8")) if args.last_run else {}
+    last_runs = json.loads(Path(args.last_run).read_text("utf-8")) if args.last_run else None
     now = datetime.now(UTC)
     result = sweep(Path(args.repo).resolve(), now, args.all, last_runs)
     print(json.dumps(result))

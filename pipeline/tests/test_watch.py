@@ -65,12 +65,59 @@ def test_a_marker_behind_the_last_run_dispatches_nothing(monkeypatch, tmp_path) 
     assert result["probed"] > 0, "nothing was probed, so this proves nothing"
 
 
+def test_an_arm_never_run_is_dispatched_however_recent_the_commits_are(
+    monkeypatch, tmp_path
+) -> None:
+    """A supplied run history is the whole answer, and absent from it means never read.
+
+    The failure this replaces was invisible on every green tick. `watch.yml`
+    checks out at `fetch-depth: 1`, where `git log -1 -- <payload>` answers with
+    the tip commit whatever that commit touched — so an arm missing from the run
+    history got a clock reading "the last push to main". A release that landed
+    minutes before an unrelated push then read as `unchanged` for ever, and the
+    only thing that ever published it was a backstop cron a month later.
+
+    So the repository below is deliberately the hostile case: a payload
+    committed seconds ago, which the old fallback would have read as a
+    just-refreshed arm.
+    """
+    published = tmp_path / "data" / "published"
+    published.mkdir(parents=True)
+    (published / "region_salary.json").write_text("{}", "utf-8")
+    for args in (
+        ("init", "-q", "-b", "main"),
+        ("config", "user.email", "a@b.c"),
+        ("config", "user.name", "A"),
+        ("add", "-A"),
+        ("commit", "-qm", "just now"),
+    ):
+        watch._git(tmp_path, *args)
+
+    monkeypatch.setattr(watch, "marker_of", _markers(PUBLISHED))
+    told = watch.sweep(
+        tmp_path, IN_WINDOW, watch_all=False, last_runs={"hicp": "2026-08-01T00:00:00Z"}
+    )
+    assert "region-salary" in _sources(told), (
+        "an arm absent from the run history has never read its upstream, and was not dispatched"
+    )
+
+    # `null` is what the workflow writes for an arm with no run at all, and it
+    # has to mean the same thing as the key being missing.
+    explicit = watch.sweep(tmp_path, IN_WINDOW, watch_all=False, last_runs={"region-salary": None})
+    assert "region-salary" in _sources(explicit)
+
+    # And with no run history at all — a person running this by hand — the
+    # commit date is all there is, so the same repository answers the other way.
+    by_hand = watch.sweep(tmp_path, IN_WINDOW, watch_all=False, last_runs=None)
+    assert "region-salary" not in _sources(by_hand)
+
+
 def test_an_arm_outside_its_window_is_not_even_probed(monkeypatch, tmp_path) -> None:
     """A window is what keeps four public APIs from being polled around the clock.
 
-    An empty `last_runs` over a directory with no payloads is the never-published
-    case, which reads as "the upstream is ahead" — so every arm probed here is
-    an arm dispatched, and the difference between the two runs is the window.
+    An empty `last_runs` is the never-run case for every arm, which reads as
+    "the upstream is ahead" — so every arm probed here is an arm dispatched, and
+    the difference between the two runs is the window.
     """
     monkeypatch.setattr(watch, "marker_of", _markers(PUBLISHED))
     windowed = watch.sweep(tmp_path, IN_WINDOW, watch_all=False, last_runs={})
