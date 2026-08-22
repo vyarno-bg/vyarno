@@ -13,14 +13,18 @@
 # thing watching for a refresh arm that has quietly stopped firing.
 # `site/scripts/payload-cadence.mjs` prints the table and carries the argument.
 #
-# **The second half is the one that makes the first actionable.** Every arm but
-# `city-price` refreshes on a cron and opens a pull request, so a payload
-# reaches a reader only through a merge — and nothing merges them. Left alone
-# the site ages while every gate stays green: the refresh ran, the gates passed,
-# the PR opened, CI went green on it, and the figure a reader sees is the one
-# from before. The only other signal is the overdue line on a page that reader
-# may never open. So this check reports the two halves together, and a stale
-# payload is reported beside the pull request that would fix it.
+# **The second half is the one that makes the first actionable.** Every source
+# with a `refresh-<source>.yml` refreshes on a cron and opens a pull request.
+# `city-price` has no such file and cannot have one — имот.bg answers a
+# datacenter IP with a 403, so it is refreshed by hand instead
+# (`release_calendar.NOT_WATCHED`), and this check is the only thing watching
+# whether that has happened. Either way a payload reaches a reader only through
+# a merge — and nothing merges them. Left alone the site ages while every gate
+# stays green: the refresh ran, the gates passed, the PR opened, CI went green
+# on it, and the figure a reader sees is the one from before. The only other
+# signal is the overdue line on a page that reader may never open. So this
+# check reports the two halves together, and a stale payload is reported beside
+# the pull request that would fix it.
 #
 # **Nothing here merges anything, and `permissions` says so.** Auto-merge on
 # green was the alternative and it is refused: a data refresh is the change
