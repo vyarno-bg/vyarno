@@ -39,8 +39,9 @@ from pathlib import Path
 
 import pytest
 
-from vyarno_pipeline import clock, publish
-from vyarno_pipeline.regions import REGIONS
+from vyarno_pipeline import clock, publish, validate
+from vyarno_pipeline.mortgage import CROSS_CHECK_TOLERANCE_PP
+from vyarno_pipeline.regions import PRICED_REGIONS, REGIONS
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data" / "published"
@@ -53,7 +54,7 @@ manifest_src = MANIFEST.read_text(encoding="utf-8")
 def _published(name: str) -> dict:
     """The committed payload. An absent one is a failure, never a skip.
 
-    All eight files under `data/published/` are tracked, so a missing one is
+    Every file under `data/published/` is tracked, so a missing one is
     not a fresh clone, a CI checkout or a machine that has never run a refresh
     — it is a committed file somebody deleted, moved or emptied, which is
     precisely the moment every contract below has something to say. Skipping
@@ -719,3 +720,117 @@ def test_published_unemployment_is_monthly_and_seasonally_adjusted() -> None:
     assert len(payload["series_by_period"]) > 24, "a monthly series since 2020 should be long"
     # Sanity band: a national unemployment rate, not thousands of persons.
     assert 0 < payload["value"] < 30, payload["value"]
+
+
+# ---------------------------------------------------------------------------
+# The payload gates, re-run on what is committed
+# ---------------------------------------------------------------------------
+
+# Every gate below takes the published shape, so the offline run is the SAME
+# function the arm ran — not a restatement of it. A restatement is two
+# implementations of one identity, and the one nobody edits is the one that
+# stops being true.
+#
+# The arguments a gate compares AGAINST come from `regions.py` and from the
+# payload's own `ref_period`, which is how each is called in `cli.py`. Handing
+# a gate the list the payload itself publishes would let a wrong table pass by
+# agreeing with itself, and the coverage lists are the half that cannot.
+_PAYLOAD_GATES = {
+    "house_market": lambda p: validate.validate_house_market(p("house_market")),
+    "house_market_structure": lambda p: validate.validate_house_market_structure(
+        p("house_market_structure")
+    ),
+    "nsi_housing": lambda p: validate.validate_nsi_housing(p("nsi_housing")),
+    "unemployment": lambda p: validate.validate_unemployment(p("unemployment")),
+    "payroll": lambda p: validate.validate_payroll(p("payroll")),
+    "region_salary": lambda p: validate.validate_region_salary(
+        p("region_salary")["regions"],
+        p("region_salary")["ref_period"],
+        [r.code for r in REGIONS],
+    ),
+    "sector_salary": lambda p: validate.validate_sector_salary(
+        p("sector_salary")["sectors"], p("sector_salary")["ref_period"]
+    ),
+    "city_price": lambda p: validate.validate_city_price(
+        p("city_price")["cities"], [r.code for r in PRICED_REGIONS]
+    ),
+}
+
+
+@pytest.mark.parametrize("name", sorted(_PAYLOAD_GATES))
+def test_the_committed_payload_still_passes_its_own_gate(name: str) -> None:
+    """A gate guards the run that wrote a payload; this guards the file.
+
+    `validate.py` runs once, against rows fetched from an upstream, and is gone
+    by the time anybody opens the diff. So nothing between that run and the
+    reader re-asks whether the file still holds — and the gates whose whole
+    subject is an identity INSIDE one payload are exactly the ones a later edit
+    can break without touching a number that looks wrong.
+
+    Measured before this test existed: `nsi_housing`'s national change, its
+    Sofia city change, `region_salary`'s Sofia-city wage, `sector_salary`'s
+    all-activities wage and `house_market`'s latest average deal could each be
+    edited on disk to a figure that reaches the page, and `pytest -q` plus
+    `npm run verify:math` stayed green on all five.
+
+    The identities are not restated here. Each gate is called with the
+    published shape, so a tolerance or a rule that moves in `validate.py` moves
+    for the committed file in the same commit — and a gate somebody softens to
+    get a refresh through stops guarding both places at once, which is visible,
+    rather than one of them, which is not.
+    """
+    _PAYLOAD_GATES[name](_published)
+
+
+def test_the_two_house_price_publishers_still_agree_on_the_committed_files() -> None:
+    """НСИ and Eurostat, off disk — the reconciliation the arm can only skip.
+
+    `validate_hpi_across_publishers` runs inside the `nsi-housing` arm and is
+    skipped, loudly, when `house_market.json` is not in the output directory.
+    Both files are committed, so here it can never be skipped: the two payloads
+    carry ONE statistic by two routes, and a disagreement means one of them was
+    read at the wrong quarter, the wrong column or the wrong purchase type.
+
+    That is also the only check in this file that holds one payload against
+    another, which is why a refresh of either arm alone cannot satisfy it.
+    """
+    validate.validate_hpi_across_publishers(_published("nsi_housing"), _published("house_market"))
+
+
+def test_the_published_revolving_amounts_are_still_nested_and_not_added() -> None:
+    """БНБ's «в т.ч.» read flat, on the file rather than on the fetch.
+
+    `credit.validate_card_nesting` reads the workbook's three cells, and only
+    two of them are published: `card.stock_eur_m` is the balance carried past
+    the interest-free period, and `overdraft.stock_eur_m` is the whole block
+    less its card sub-block. The containment that survives into the payload is
+    therefore that the two of them together fit inside the block they were cut
+    from, which `outstanding.blocks` publishes beside them.
+
+    Read flat and summed the three would report roughly twice what households
+    owe on revolving credit, and every one of the figures would still look like
+    a believable balance — which is the whole reason the fetch has a gate, and
+    the reason the file needs one too.
+    """
+    payload = _published("credit")
+    block = next(b for b in payload["outstanding"]["blocks"] if b["block"] == "overdraft")
+    card = payload["card"]["stock_eur_m"]
+    overdraft = payload["overdraft"]["stock_eur_m"]
+
+    assert card < block["volume_eur_m"], (
+        f"the card balance {card} m EUR is not inside the overdraft block "
+        f"{block['volume_eur_m']} m EUR it is «в т.ч.» of"
+    )
+    assert overdraft + card <= block["volume_eur_m"] + 0.001, (
+        f"overdraft-less-cards ({overdraft}) plus the card balance ({card}) is "
+        f"{overdraft + card} m EUR, above the {block['volume_eur_m']} m EUR block "
+        f"both come out of — the sub-block was added rather than contained"
+    )
+    # The subtraction is what the ЕЦБ cross-check proves happened, and the
+    # payload ships that check's own working so the file states its evidence.
+    for where in (payload["overdraft"], payload["card"]):
+        cross = where["stock_cross_check"]
+        assert abs(cross["bnb_pct"] - cross["ecb_mir_pct"]) <= CROSS_CHECK_TOLERANCE_PP, (
+            f"БНБ {cross['bnb_pct']}% against ЕЦБ {cross['ecb_mir_pct']}% is "
+            f"outside the tolerance the arm published it under"
+        )

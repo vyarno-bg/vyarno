@@ -731,6 +731,21 @@ def validate_city_price(cities: list[dict], covered_codes: list[str]) -> None:
                     f"is not its newest published year's. The headline and the "
                     f"chart would disagree, and only one of them can be right."
                 )
+            # And the level the percentage was measured from. The check above
+            # holds the two PERCENTAGES together, so a headline median that
+            # drifted from the newest year's while both figures stayed inside
+            # this city's own min-max passes everything else here: the €/m² the
+            # home block prices a flat with is one number and the series the
+            # chart draws ends at another, with the change between them still
+            # reading as correct because it was computed from the second.
+            if median != history[-1].get("eur_per_m2_median"):
+                raise ValidationError(
+                    f"city prices: {code!r} headlines {median} €/m² but its newest "
+                    f"published year ({years[-1]}) carries "
+                    f"{history[-1].get('eur_per_m2_median')}. These are the same "
+                    f"reading, so the headline must BE that cell — the change "
+                    f"beside it was measured from the series, not from the headline."
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -817,6 +832,36 @@ def validate_house_market(payload: dict) -> None:
                 f"({existing:,.0f}). DW_NEW and DW_EXST differ by one letter and "
                 f"swapping them keeps both series plausible — check the codes "
                 f"before assuming the market did this."
+            )
+
+    # `latest` is the block's headline, and it is the series' own cell at
+    # `ref_period`. The loop above walks every quarter against the two cubes it
+    # came from and never opens `latest`, so a headline that stopped being the
+    # cell it names is the one figure in this file with no check on it — dated
+    # by a `ref_period` that goes on naming the quarter it no longer carries.
+    #
+    # **A refresh cannot break this and that is not a reason to leave it
+    # unstated.** `transform.py` hands `latest` the same dict object as the
+    # newest series entry, so the two agree by identity until they are
+    # serialised; the published file carries them as two independent objects,
+    # and from there on it is an ordinary duplicated figure that an edit can
+    # move one of. `test_published_contracts.py` runs this gate over the
+    # committed payload, which is where the identity stops holding for free.
+    ref_period = payload.get("ref_period")
+    latest = payload.get("avg_deal_eur", {}).get("latest", {})
+    at_ref = avg.get(ref_period, {})
+    for field, headline in sorted(latest.items()):
+        if field not in at_ref:
+            raise ValidationError(
+                f"house market: avg_deal_eur.latest carries {field!r} but the "
+                f"series has no {field!r} at the payload's own ref_period "
+                f"{ref_period!r}."
+            )
+        if headline != at_ref[field]:
+            raise ValidationError(
+                f"house market: avg_deal_eur.latest[{field}] is {headline} but the "
+                f"series carries {at_ref[field]} at {ref_period}. The headline must "
+                f"BE the cell the payload dates, not a figure beside it."
             )
 
     rates = payload.get("price_index", {}).get("annual_rate_pct", {})

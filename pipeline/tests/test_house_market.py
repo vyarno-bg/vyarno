@@ -306,6 +306,29 @@ def test_an_average_that_does_not_reproduce_is_refused(market):
         validate_house_market(market)
 
 
+def test_a_headline_average_that_is_not_the_dated_quarter_is_refused(market):
+    """The block's headline against the cell the block's own `ref_period` names.
+
+    The reproduction check above walks `series_by_period` and never opens
+    `latest`, so the headline is the one figure in this file the derivation
+    cannot vouch for: it stays inside the band, the series under it still
+    reproduces from both cubes, and `ref_period` goes on naming a quarter the
+    headline no longer carries.
+
+    **The fixture is round-tripped through JSON first, because that is the form
+    this can go wrong in.** `transform.py` hands `latest` the same dict object
+    as the series' newest entry, so in memory the two cannot disagree and the
+    mutation below would move both. Serialising splits them into the two
+    independent objects the published file carries — which is what the file
+    keeps, what a hand-edit touches one of, and what
+    `test_published_contracts.py` re-reads.
+    """
+    market = json.loads(json.dumps(market))
+    market["avg_deal_eur"]["latest"]["total"] *= 1.2
+    with pytest.raises(ValidationError, match="must BE the cell the payload dates"):
+        validate_house_market(market)
+
+
 def test_swapping_the_two_purchase_codes_is_refused(market):
     """`DW_NEW` and `DW_EXST` differ by one letter, and a swap stays plausible.
 
