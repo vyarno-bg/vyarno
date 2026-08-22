@@ -245,13 +245,31 @@ export function httpUrl(value) {
   }
 }
 
-/** An ISO date as "17 юли 2026" / "17 Jul 2026". */
+/**
+ * An ISO date as "17 юли 2026" / "17 Jul 2026".
+ *
+ * **Formatted in UTC, because every value here is a DAY and not a moment.**
+ * `new Date("2026-08-21")` is midnight UTC, so a reader whose clock is behind
+ * it is shown the day before: «21.08.2026 г.» became «20.08.2026 г.» anywhere
+ * in the Americas, on the panel whose whole job is provenance. Nothing about
+ * the reader's own zone is involved in what day НСИ refreshed a payload.
+ *
+ * Three of the values are dates somebody is meant to look up with — the ДВ
+ * issue that carries the payroll table, the day the БНБ limits came into
+ * force, and имот.bg's own «обновена на» snapshot — so a day either way is a
+ * citation to the wrong record rather than a cosmetic slip.
+ *
+ * `periodLong` above pins the zone for the same reason and has all along; this
+ * is the same rule applied to the other half of the pair, and a test that
+ * only ever ran on a UTC machine could not tell them apart.
+ */
 export function dateShort(value, lang = "bg") {
   if (!value) return "—";
   return new Date(value).toLocaleDateString(locale(lang), {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
