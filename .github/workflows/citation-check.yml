@@ -1,0 +1,132 @@
+# Weekly citation check — does every source_url still serve the figure beside it?
+#
+# `vyarno-pipeline verify-citations` walks every citation in `data/published/`,
+# fetches it, and holds the payload's own numbers against what comes back.
+# `pipeline/src/vyarno_pipeline/citations.py` carries the argument and the
+# BROKEN/REVISED split that keeps an upstream restating a month from reading
+# like a broken link.
+#
+# **Why this is a workflow and not a step in `make check`.** The gates in
+# `validate.py` describe the run that wrote a payload, against rows that are
+# gone by the time anybody opens the diff; this describes the file afterwards,
+# which needs five upstreams and a network. Putting that inside `make check`
+# would mean an Eurostat outage reddening an unrelated pull request and a
+# contributor's local build — and a suite that fails when somebody else's
+# server is down is one people learn to skip, taking the real signal with it.
+# `make check` stays hermetic. This runs where a red result is a fact about the
+# data rather than about the wifi.
+#
+# **What it is the only check for.** Every gate reads the reference-period cell
+# of a series and little else, so of roughly 10,000 published observations the
+# history behind them was checked by nothing once written. This holds 1,904 of
+# them against their upstream every week, the biggest block being the 1,357
+# `index_by_year` levels behind every "up X% since <year>" the site prints.
+#
+# **Both halves report and the last line decides**, the shape freshness-check
+# uses: a run that finds a broken citation AND a revision says both rather than
+# whichever it met first. The exit code is the command's own — 3 when a citation
+# does not resolve to what the payload says it does, 0 otherwise. A revision is
+# not a fault: upstreams restate, a refresh carries it, and a check that failed
+# identically for that and for a dead link is one somebody mutes within two
+# months.
+#
+# **Nothing here merges, pushes or writes.** `contents: read` and no other
+# scope; the fix for anything this finds is a refresh, which is
+# `refresh-<source>.yml`'s job and a human's merge.
+#
+# Cadence: weekly. What this catches moves on the order of months — a citation
+# dies when an upstream reorganises, a value moves when a publisher restates —
+# so daily would ask five upstreams for the same answer 1,554 times a week.
+# Monthly was the alternative and it loses the one window that is dated:
+# Eurostat's annual item-weights release lands around late February and moves
+# the recalculated I15 back-series with it, which is exactly the 1,357 levels
+# above. Weekly meets that inside seven days.
+#
+# Thursday rather than Monday, to keep this clear of freshness-check's Monday
+# alert — the two answer different questions (is the data late, against is the
+# data still what its source says) and arriving together invites reading one as
+# the cause of the other.
+#
+# Wall clock, measured 2026-08-22 over all thirteen payloads: 48s for 222
+# citations against five upstreams. Nothing is banded by series kind and
+# nothing needs to be — widening the window from twelve periods to the full
+# history added no requests, only comparisons, and the run came back no slower
+# than the narrow one it replaced.
+#
+# Failure handling: a non-zero exit surfaces in the GitHub Actions UI and (when
+# configured in repo Notifications) emails the maintainer. No external alert
+# integration.
+
+name: citation-check
+
+on:
+  schedule:
+    # Thursday 09:00 UTC. cron schedules are UTC, no DST.
+    - cron: "0 9 * * 4"
+  workflow_dispatch:
+
+jobs:
+  citations:
+    runs-on: ubuntu-latest
+    # 48s measured; the headroom is for an upstream answering slowly rather
+    # than for more work. A run that needs fifteen minutes has met something
+    # worth failing on.
+    timeout-minutes: 15
+    permissions:
+      # Read the checkout and nothing else. This check reports; it never
+      # becomes the thing that fixes what it reports.
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install pipeline
+        working-directory: pipeline
+        run: |
+          set -euo pipefail
+          python -m venv .venv
+          .venv/bin/pip install -q -e '.[dev]'
+
+      - name: Trust the БНБ intermediate
+        # Five of the citations are БНБ workbooks. `www.bnb.bg` presents a leaf
+        # issued by GeoTrust EV RSA CA G2 and does not always send that
+        # intermediate, so a default trust store cannot build the chain and the
+        # fetch fails with "unable to get local issuer certificate" — which
+        # would arrive here as a citation that looks broken and is not.
+        #
+        # The fix is the missing link from the leaf's own AIA URL, never
+        # disabling verification: these connectors read a bank's own figures
+        # over that bank's TLS, and turning the check off hands them to anyone
+        # on the path (docs/data-sources.md §"TLS setup"). Same step as
+        # `refresh.yml` runs for the two arms that reach `sources/bnb.py`.
+        run: |
+          set -euo pipefail
+          curl -sSL -o /tmp/g2.crt 'http://cacerts.digicert.com/GeoTrustEVRSACAG2.crt'
+          openssl x509 -in /tmp/g2.crt -inform DER -out /tmp/g2.pem
+          BUNDLE=$(pipeline/.venv/bin/python -c 'import certifi; print(certifi.where())')
+          cat /tmp/g2.pem >> "$BUNDLE"
+          echo "SSL_CERT_FILE=$BUNDLE" >> "$GITHUB_ENV"
+          curl -sS -o /dev/null -w 'бнб chain builds: %{http_code}\n' --cacert "$BUNDLE" \
+            https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx
+
+      - name: Hold every published figure against its citation
+        # The full report, not `--quiet`: a scheduled run has no reader looking
+        # over its shoulder, so the log is the whole record of what was covered.
+        # It is also where the coverage line lands — the count of published
+        # periods this could NOT be held to, which is the pre-changeover half of
+        # every spliced series and is stated every run rather than inferred from
+        # a total.
+        #
+        # имот.bg answers a datacenter IP with 403 and a GitHub runner is one,
+        # so its 27 citations report UNCHECKED here exactly as they do anywhere
+        # else this runs. That is a fact about that publisher, reported by name,
+        # and not a failure.
+        run: pipeline/.venv/bin/vyarno-pipeline verify-citations

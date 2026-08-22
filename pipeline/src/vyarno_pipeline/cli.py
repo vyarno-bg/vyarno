@@ -257,9 +257,16 @@ def verify_citations(published: Path, only: str | None, quiet: bool) -> None:
         if quiet and finding.verdict in (OK, LIVENESS):
             continue
         values = f"{finding.checked} value(s)" if finding.checked else "no value"
+        if finding.uncovered:
+            values += f" of {finding.checked + finding.uncovered}"
         click.echo(f"{finding.verdict:9s} {finding.payload} {finding.where} — {values}")
         if finding.detail:
             click.echo(f"          {finding.detail}")
+        # Printed on an OK line too, and that is the point of it: a citation
+        # that answered for six of seventy-eight months is not the same result
+        # as one that answered for all six it has, and only the run can say so.
+        for note in finding.notes:
+            click.echo(f"          {note}")
         click.echo(f"          {finding.url}")
     click.echo("")
     click.echo(
@@ -269,6 +276,22 @@ def verify_citations(published: Path, only: str | None, quiet: bool) -> None:
     click.echo(
         f"{len(findings)} citations, {checked} published values held against their upstream."
     )
+    # **The coverage line is not optional and does not depend on `--quiet`.**
+    # This check's own argument is that a gate which stops at the reference
+    # period leaves the history unread; a widened check that quietly stops at
+    # the euro changeover would be the same failure one seam further on. The
+    # excluded periods are a real bound — the cited euro key does not serve the
+    # lev leg — so what is owed is the number, every run.
+    uncovered = sum(f.uncovered for f in findings)
+    if uncovered:
+        blocks = sum(1 for f in findings if f.uncovered)
+        click.echo(
+            f"{uncovered} further published value(s) across {blocks} spliced block(s) are NOT "
+            f"covered: they predate the euro changeover ({EURO_SWITCH_PERIOD}) and the URL "
+            f"cited for them serves the EUR leg. Nothing checks those."
+        )
+    else:
+        click.echo("Every published period under every citation was covered.")
     if tally.get(BROKEN):
         click.echo(
             f"ERROR: {tally[BROKEN]} citation(s) do not resolve to what the payload says "
