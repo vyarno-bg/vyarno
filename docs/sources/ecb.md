@@ -33,6 +33,25 @@ FREQ . REF_AREA . BS_REP_SECTOR . BS_ITEM . MATURITY_NOT_IRATE
 | New lending to companies, the mortgage rate's comparator | `M.BG.B.A2A.A.R.A.2240.EUR.N` |
 | Pre-2026 legs of the four above | same keys with `BGN` |
 
+### Where each outstanding-stock series actually begins
+
+`sources/ecb.py#OUTSTANDING_SERIES_START` is 2022-01, and that is a **fetch
+window rather than a property of the data** — the month all three of these
+carry, not the month any of them starts. Enumerated with no `startPeriod`,
+**2026-08-22**:
+
+| Key | First observation | Count |
+|---|---|---|
+| `M.BG.B.A22.A.R.A.2250.EUR.O` | 2013-04 | 159 |
+| `M.BG.B.L22.A.R.A.2250.EUR.O` | 2022-01 | 54 |
+| `M.BG.B.A20.A.R.A.2250.EUR.O` | 2019-12 | 79 |
+
+Worth the row because the constant reads like a limit and is not one: the
+housing stock has thirteen years behind that date, and only the deposit stock
+would come up short of a 2020 start. Each of these is a cross-check input read
+at one month, so none of it is load-bearing today — it is load-bearing the
+moment somebody wants one of these as a series.
+
 ## What the codes mean, in the ЕЦБ's own words
 
 All read **2026-08-13**.
