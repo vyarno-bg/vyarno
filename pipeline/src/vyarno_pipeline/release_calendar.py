@@ -525,9 +525,13 @@ def utc_hours(year: int) -> set[int]:
 def payload_stems(source: str, stems: list[str]) -> list[str]:
     """The published stems `--source {source}` owns, out of `stems`.
 
-    The rule is `refresh.yml`'s — swap hyphens for underscores and keep stems
-    equal to that or starting with it — and it lives there because that is the
-    workflow whose commit step depends on it. Restated here only as a call.
+    The rule is `refresh_report.owns` — swap hyphens for underscores and keep
+    the stems starting with that — and it lives there because that is what
+    decides whether a refresh opens a pull request. Restated here rather than
+    imported, because a watcher tick runs before the pipeline is installed and
+    this module may reach nothing outside the standard library (see the module
+    docstring), while nothing holds `refresh_report` to that. The copy is held
+    to the original by `test_a_source_owns_the_payloads_the_refresh_gives_it`.
     """
     prefix = source.replace("-", "_")
     return [stem for stem in stems if stem == prefix or stem.startswith(prefix)]
