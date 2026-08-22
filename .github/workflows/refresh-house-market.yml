@@ -5,10 +5,10 @@
 #
 # **One arm writes two payloads**, `house_market.json` and
 # `house_market_structure.json`, and that is a constraint rather than a
-# convenience: `refresh.yml` decides which files an arm owns by matching
-# payload stems against the `--source` name with hyphens swapped for
+# convenience: `refresh_report.owns` decides which files an arm owns by
+# matching payload stems against the `--source` name with hyphens swapped for
 # underscores. A structure payload named anything not starting `house_market`
-# would be owned by no arm, so the workflow would find nothing of its own
+# would be owned by no arm, so `refresh.yml` would find nothing of its own
 # changed, skip the commit and the PR, and report the run GREEN while the
 # payload never published.
 #

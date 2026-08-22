@@ -22,6 +22,7 @@ offline, and indifferent to how any one of them works.
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -266,6 +267,51 @@ def test_the_refresh_workflow_commits_under_an_identity() -> None:
         )
 
 
+def test_every_arm_that_fetches_bnb_is_given_the_intermediate() -> None:
+    """`www.bnb.bg` does not always send its intermediate, and the fix is per arm.
+
+    `refresh.yml` appends the missing GeoTrust link to certifi's bundle under an
+    `if:` naming the arms, so an arm that fetches БНБ and is not named runs the
+    same handshake without it. That is green for exactly as long as БНБ's edge
+    happens to serve a full chain, and then exits 4 with no rate at all — the
+    failure the step exists to remove, arriving at the arm nobody listed. It was
+    `credit`, whose two workbooks are the same host as `mortgage`'s.
+
+    Derived from the imports rather than from a list: a third arm reaching
+    `sources/bnb.py` has to be named in that condition, and this is what says so.
+    """
+    package = Path(__file__).resolve().parents[1] / "src" / "vyarno_pipeline"
+    tree = ast.parse((package / "cli.py").read_text("utf-8"))
+
+    from_bnb = {
+        alias.asname or alias.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module == "vyarno_pipeline.sources.bnb"
+        for alias in node.names
+    }
+    arm_of = {handler: source for source, handler in ARMS.items()}
+    fetches_bnb = {
+        arm_of[node.name]
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name in arm_of
+        if {n.id for n in ast.walk(node) if isinstance(n, ast.Name)} & from_bnb
+    }
+    assert fetches_bnb, "no arm imports from sources/bnb.py — has the connector moved?"
+
+    workflow = (
+        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh.yml"
+    ).read_text("utf-8")
+    step = next(
+        block for block in re.split(r"^      - name: ", workflow, flags=re.M) if "certifi" in block
+    )
+    condition = next(line for line in step.splitlines() if line.strip().startswith("if:"))
+    missing = sorted(arm for arm in fetches_bnb if f"'{arm}'" not in condition)
+    assert not missing, (
+        f"{missing} fetch(es) www.bnb.bg but the certificate step's condition does "
+        f"not name them: {condition.strip()}"
+    )
+
+
 def test_neither_workflow_decides_for_itself_how_old_is_too_old() -> None:
     """Both age checks read the manifest's cadence, and neither carries a number.
 
@@ -460,4 +506,35 @@ def test_nothing_commits_pushes_or_opens_a_pull_request_without_a_real_change() 
         assert "real_change == 'yes'" in block, (
             f"the `{name}` step runs whatever the comparison decided, so a run that "
             f"re-read the same figures still publishes them."
+        )
+
+
+def test_the_workflow_the_refresh_dispatches_ci_onto_exists() -> None:
+    """A refresh pull request has no other way to get a check run on it.
+
+    Nothing this job pushes triggers a workflow — GitHub raises no run for an
+    event its own token created — so `refresh.yml` dispatches `ci.yml` by name,
+    and that step is `continue-on-error: true` because a payload already pushed
+    is worth more than a red run over a good refresh. Both halves are right and
+    together they are silent: rename or move the workflow and every refresh
+    opens a pull request carrying zero checks, unmergeable against five required
+    by name, with nothing anywhere reporting a fault.
+
+    Only the file's existence is checked here. That the five job NAMES still
+    match the contexts branch protection requires is not readable from the tree
+    at all, and is the other half of the same hole.
+    """
+    workflows = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    refresh = (workflows / "refresh.yml").read_text("utf-8")
+
+    dispatched = re.findall(r"workflow_id: '([^']+\.yml)'", refresh)
+    assert dispatched, (
+        "refresh.yml dispatches no workflow. Without it a refresh pull request "
+        "carries no check runs at all — the token that pushed it raises no events."
+    )
+    for name in dispatched:
+        assert (workflows / name).exists(), (
+            f"refresh.yml dispatches `{name}`, which is not in .github/workflows. "
+            f"The step is continue-on-error, so this fails as a green run over a "
+            f"pull request no check will ever reach."
         )
