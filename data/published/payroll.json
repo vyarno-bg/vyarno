@@ -116,6 +116,12 @@
   "income_tax_rate": 0.1,
   "max_insurable_income_eur": 2300.0,
   "max_insurable_income_bgn": 4498.41,
+  "max_insurable_income_source": {
+    "source_url": "https://dv.parliament.bg/DVWeb/showMaterialDV.jsp?idMat=244982",
+    "provision": "ЗБДОО 2026 чл. 9, т. 2, б. „в“",
+    "gazette_issue": 68,
+    "gazette_date": "2026-07-28"
+  },
   "min_wage_gross_eur": 620.2,
   "min_wage_gross_bgn": 1213.0,
   "scheduled_changes": [],

@@ -47,13 +47,30 @@ would be wrong in the same direction for every salary on the site. ДЗПО-УП
 the quieter one: чл. 157, ал. 3 sets it at **2,8/2,2** of five points, where
 60:40 would read 3,0.
 
-**The ДВ citation is a field, not a caption.** `source_url` is
-dv.parliament.bg's landing page and can be nothing else: their permalinks are
-built from a session-side id that the issue number does not yield, so a
-constructed one 404s for the reader who checks. P9 therefore puts the
-instrument in the caption instead of behind the link, and an entry that IS one
-act carries `gazette_issue` + `gazette_date` — «бр. 68 от 28.07.2026», which is
-what ДВ's own archive is searched by. `payroll.py#_gazette` **raises on half a
+**The ДВ citation is a field, not a caption.** The envelope's `source_url` is
+dv.parliament.bg's landing page, because that key stands over the WHOLE
+parameter set and four instruments produced it: КСО чл. 6 and ЗБНЗОК 2026 чл. 2
+for the ten contribution rates, ЗДДФЛ чл. 48, ал. 1 for the flat tax, ЗБДОО
+2026 for the insurance ceiling, a ПМС for the minimum wage. A permalink there
+would resolve and would answer for a tenth of what it appeared to, which is
+worse than a link that reaches nothing. P9 therefore puts the instrument in the
+caption instead of behind the link, and an entry that IS one act carries
+`gazette_issue` + `gazette_date` — «бр. 68 от 28.07.2026», which is what ДВ's
+own archive is searched by.
+
+**A figure whose own act is known gets its own permalink.** The ceiling is the
+first: `max_insurable_income_source` cites ДВ material 244982 at ЗБДОО 2026 чл.
+9, т. 2, б. „в“ — «максимален месечен размер на осигурителния доход – 2 300
+евро», read from that document 2026-08-23. The id is not derivable from the
+issue number, so `payroll.py#_ceiling_citation` publishes it only for a
+material THIS RUN fetched and whose own «брой: N, от дата D» header matched the
+pair recorded beside it; a fetch that disagrees stops the run rather than
+shipping a link nothing followed, and no fetch at all publishes no link. Today
+the ceiling and the ТЗПБ table are one act, so that fetch is already happening.
+
+The other three are the same work and are not done: each needs its issue found
+in ДВ's archive, which is JSF postbacks behind a session ViewState rather than
+addressable URLs, so it is a person's search and not a script's. `payroll.py#_gazette` **raises on half a
 citation** (the archive is indexed by both, and a date alone names a day
 several issues were promulgated on) and on a promulgation dated after the entry
 comes into force. Both keys are published as `null` where the set comes from
@@ -142,8 +159,14 @@ quoted verbatim in the table:
 | LTV-O | **≤ 85%** | "the ratio between the loan amount and the value of the immovable property at origination (LTV-O) shall not exceed 85%" |
 | DSTI-O | **≤ 50%** | "the ratio between the current debt service amount and the **monthly disposable income** of the debtor at origination (DSTI-O) shall not exceed 50%" |
 | Maturity | **≤ 30 years** | "the maximum term of the loan agreement (maturity) shall not exceed 30 years" |
+| Deviation allowance | **≤ 5%** | "banks could originate or renegotiate RRE loans with parameters that deviate from the introduced requirements with a total approved or renegotiated volume during the current quarter of up to 5% of the total gross amount of the new or renegotiated RRE loans during the preceding quarter" |
 
-Banks may deviate on up to 5% of the prior quarter's new RRE lending.
+Four caps and the payload carries four, though only three have a surface: the
+allowance is `deviation_allowance_pct_of_prior_quarter` and nothing on the site
+reads it. It stays because a reader auditing the other three against the
+decision meets a fourth there. All four re-read off that press release
+**2026-08-23**, which also serves the 2024-10-01 in-force date and the
+«monthly disposable income» basis the payload quotes.
 
 **15% down is the regulatory floor**, not a convention — it is `100 − LTV-O`.
 DSTI-O is measured against **net** income, which matches the app's "% of net

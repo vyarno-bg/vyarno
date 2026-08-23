@@ -78,12 +78,13 @@ def _pair(entry: dict[str, Any], field: str) -> tuple[float, float]:
 def _gazette(entry: dict[str, Any]) -> tuple[int | None, str | None]:
     """The ДВ issue an entry's instrument was promulgated in, as (issue, ISO date).
 
-    `source_url` is dv.parliament.bg's landing page and cannot be anything
-    else — their permalinks are built from a session-side id that the issue
-    number does not yield, so a constructed one 404s for the reader who checks.
-    P9 says a citation that cannot carry a link carries the source name AND the
-    date, and «Държавен вестник · 2026» satisfies neither half: a year is not
-    an issue, and four figures on the page hang off it.
+    The entry's `source_url` is dv.parliament.bg's landing page, because it
+    stands over a parameter set that several instruments produced and no one
+    permalink answers for. P9 says a citation that cannot carry a link carries
+    the source name AND the date, and «Държавен вестник · 2026» satisfies
+    neither half: a year is not an issue, and four figures on the page hang off
+    it. A figure whose own act IS known gets its own permalink instead —
+    `_ceiling_citation` is the first of those.
 
     (None, None) is a legitimate answer and the reason is the January entry.
     Its parameter set is not one act — ЗБДОО for the ceiling and the five
@@ -316,8 +317,9 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
         # wage — and ДВ is where each is promulgated. ЗАПСП чл. 4, т. 1 puts
         # «нормативни и индивидуални актове на държавни органи за управление»
         # outside copyright, so this table carries a provenance duty to the
-        # reader and no licence condition to anyone. Swap in a per-issue ДВ
-        # permalink the next time these rates move.
+        # reader and no licence condition to anyone. A per-issue permalink goes
+        # per FIGURE and not here — see the entry below, where the ceiling has
+        # one and this key still does not.
         "source_url": "https://dv.parliament.bg/",
         "note": (
             "Transcribed from Bulgarian legislation, not from a machine-readable "
@@ -394,17 +396,46 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
         # the DERIVED side here, at the same fixed rate, and comes out
         # 4498.41 BGN rather than the round 4500 the press coverage rounds to.
         "max_insurable_income_eur": 2300.0,
+        # THE ONE FIGURE HERE WITH A CITATION A READER CAN FOLLOW, and it is
+        # per-figure rather than on the entry because the entry's `source_url`
+        # covers ten contribution rates, a flat tax and a minimum wage that
+        # THIS ACT DOES NOT SET. Pointing one permalink at all of them would be
+        # a link that looks checkable and is not, which is worse than the
+        # landing page it replaced.
+        #
+        # Read out of the act at ДВ material 244982 on 2026-08-23: «Чл. 9.
+        # Определят се следните размери на месечния осигурителен доход за 2026
+        # г.: … 2. от 1 август до 31 декември: … в) максимален месечен размер
+        # на осигурителния доход – 2 300 евро.»
+        #
+        # The id is not derivable from the issue number (`sources/dv.py`), so
+        # it is recorded rather than built — and `_ceiling_citation` publishes
+        # it only when THIS RUN fetched that material and its own header
+        # matched the pair below. An unverified id refuses to publish.
+        "max_insurable_income_gazette": {
+            "dv_material_id": 244982,
+            "provision": "ЗБДОО 2026 чл. 9, т. 2, б. „в“",
+            "gazette_issue": 68,
+            "gazette_date": date(2026, 7, 28),
+        },
         "min_wage_gross_bgn": 1213.0,
         "scheduled_changes": [],
         # ДВ is where the act is promulgated, and now that it has been, it is
         # the citation rather than the National Assembly's bill page: бр. 68 of
-        # 2026-07-28 is the text in force. Still the landing page and not a
-        # per-issue permalink — dv.parliament.bg builds those from a session-side
-        # id that is not derivable from the issue number, and a guessed one
-        # would 404 for the reader who checks. The issue and its date therefore
-        # travel as fields: the link cannot reach the instrument, so the caption
-        # has to name it (P9), and four figures on /how/ are captioned off this
-        # entry.
+        # 2026-07-28 is the text in force. The issue and its date travel as
+        # fields, because this URL cannot reach the instrument and the caption
+        # therefore has to name it (P9) — four figures on /how/ are captioned
+        # off this entry.
+        #
+        # **Still the landing page, and now for a narrower reason than before.**
+        # It is not that a permalink is unreachable: `max_insurable_income_source`
+        # above carries one. It is that this key sits over the whole parameter
+        # set, and ЗБДОО 2026 sets one figure in it. The rates are КСО чл. 6 and
+        # ЗБНЗОК 2026 чл. 2, the flat tax is ЗДДФЛ чл. 48, ал. 1, the minimum
+        # wage is a ПМС — four instruments in four issues, none of them found
+        # yet. A permalink here would resolve, and would answer for a tenth of
+        # what it appears to. The other three go the way the ceiling did: find
+        # the id, record it, verify it on the fetch.
         "source_url": "https://dv.parliament.bg/",
         "gazette_issue": 68,
         "gazette_date": date(2026, 7, 28),
@@ -418,6 +449,61 @@ BG_PAYROLL_TABLE: list[dict[str, Any]] = [
         ),
     },
 ]
+
+
+def _ceiling_citation(entry: dict[str, Any], tzpb: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The maximum-insurable-income permalink, or nothing.
+
+    **A permalink is published only for a material this run actually opened.**
+    `dv.py` refuses a document whose own «брой: N, от дата D» header disagrees
+    with the pair the entry cites, so a verified fetch is the evidence that the
+    id addresses the act the entry names. Emitting the URL without that would
+    publish a link this pipeline has never followed, and a citation nobody
+    checked is the thing this whole field exists against.
+
+    Today the ceiling and the ТЗПБ table come from one act, so the ТЗПБ fetch
+    IS that evidence and nothing extra is requested. A year where they part
+    raises rather than degrades: the fix is to fetch and verify the second
+    material, not to publish its id on trust.
+
+    Two ways to get nothing, and only one of them is a fault:
+
+    - **No fetch ran.** The offline build, which several tests take and which
+      cannot reach `data/published/` anyway — `validate.py` refuses a payroll
+      payload with no `work_accident` block. Nothing was claimed, so nothing is
+      published and nothing is wrong.
+    - **A fetch ran and disagrees** with what the entry cites. Now there IS
+      evidence and it contradicts the table, so the run stops.
+
+    (None) is also the answer for the entry whose parameters come from several
+    instruments and which therefore cites no single one.
+    """
+    cite = entry.get("max_insurable_income_gazette")
+    if cite is None or tzpb is None:
+        return None
+    want = (cite["dv_material_id"], cite["gazette_issue"], cite["gazette_date"].isoformat())
+    got = (
+        (tzpb or {}).get("material_id"),
+        (tzpb or {}).get("gazette_issue"),
+        (tzpb or {}).get("gazette_date"),
+    )
+    if got != want:
+        raise ValueError(
+            f"payroll entry effective {entry['effective_from']} cites ДВ material "
+            f"{want[0]} (бр. {want[1]} от {want[2]}) for the insurable-income "
+            f"ceiling, and this run verified {got}. The permalink would be one "
+            f"nothing here has opened. Fetch that material and check its header "
+            f"the way `dv.py` does for the ТЗПБ table, or drop the citation."
+        )
+    return {
+        # The URL that was fetched, not one rebuilt from the id beside it. A
+        # second construction of the same address is a second thing to keep
+        # true, and the one published would be the one nothing opened.
+        "source_url": tzpb["source_url"],
+        "provision": cite["provision"],
+        "gazette_issue": cite["gazette_issue"],
+        "gazette_date": cite["gazette_date"].isoformat(),
+    }
 
 
 def in_force_entry(as_of: date) -> dict[str, Any]:
@@ -512,6 +598,7 @@ def build_payroll_payload(as_of: date, *, tzpb: dict[str, Any] | None = None) ->
     max_ins_eur, max_ins_bgn = _pair(e, "max_insurable_income")
     min_wage_eur, min_wage_bgn = _pair(e, "min_wage_gross")
     gazette_issue, gazette_date = _gazette(e)
+    ceiling = _ceiling_citation(e, tzpb)
 
     # Scheduled changes: fill EUR alongside the BGN so the SPA needn't convert.
     scheduled = []
@@ -548,6 +635,12 @@ def build_payroll_payload(as_of: date, *, tzpb: dict[str, Any] | None = None) ->
         "income_tax_rate": e["income_tax_rate"],
         "max_insurable_income_eur": max_ins_eur,
         "max_insurable_income_bgn": max_ins_bgn,
+        # Present only where the entry cites one act for this figure AND the
+        # run verified it. Absent is not a gap to fill with the envelope's own
+        # `source_url`: that is ДВ's landing page, and the whole reason this
+        # key exists is that the landing page cannot say which instrument any
+        # one figure comes from.
+        **({"max_insurable_income_source": ceiling} if ceiling else {}),
         "min_wage_gross_eur": min_wage_eur,
         "min_wage_gross_bgn": min_wage_bgn,
         # NB: no `min_hourly_wage_bgn`. The statutory hourly minimum is a

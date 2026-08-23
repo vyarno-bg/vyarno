@@ -91,6 +91,7 @@ def _fixture_tzpb(as_of: date) -> dict:
     page = (FIXTURES / "dv_zbdoo_2026_tzpb.html").read_text(encoding="utf-8")
     return {
         "appendix": citation["appendix"],
+        "material_id": citation["dv_material_id"],
         "source_url": dv.MATERIAL_URL_TEMPLATE.format(material_id=citation["dv_material_id"]),
         "gazette_issue": citation["gazette_issue"],
         "gazette_date": citation["gazette_date"].isoformat(),
@@ -244,10 +245,11 @@ def test_an_entry_must_set_exactly_one_currency_side() -> None:
 def test_the_entry_in_force_names_the_gazette_issue_that_promulgated_it() -> None:
     """The four figures on /how/ are captioned off this pair.
 
-    `source_url` is dv.parliament.bg's landing page and can be nothing else —
-    their permalinks come from a session-side id the issue number does not
-    yield — so P9 puts the instrument in the caption instead of behind a link,
-    and a year identifies no act.
+    The entry's `source_url` is dv.parliament.bg's landing page because it
+    stands over a parameter set four instruments produced, so P9 puts the
+    instrument in the caption instead of behind a link and a year identifies no
+    act. A figure whose own act is known carries a permalink of its own —
+    `max_insurable_income_source`, asserted below.
     """
     p = build_payroll_payload(date(2026, 8, 2))
     assert p["gazette_issue"] == 68
@@ -256,6 +258,45 @@ def test_the_entry_in_force_names_the_gazette_issue_that_promulgated_it() -> Non
     # force. Asserted on the shipped pair rather than only inside the guard,
     # because this is the one direction a plausible typo runs.
     assert date.fromisoformat(p["gazette_date"]) <= date.fromisoformat(p["effective_from"])
+
+
+def test_the_insurable_income_ceiling_carries_a_link_that_reaches_its_act() -> None:
+    """The one payroll figure a reader can follow to the text that sets it.
+
+    ЗБДОО 2026 чл. 9, т. 2, б. „в“ reads «максимален месечен размер на
+    осигурителния доход – 2 300 евро», and ДВ material 244982 is where. The
+    other figures in this payload stay on the landing page because their acts
+    are КСО, ЗБНЗОК, ЗДДФЛ and a ПМС, and a permalink covering all of them
+    would resolve while answering for one.
+    """
+    as_of = date(2026, 8, 2)
+    cite = build_payroll_payload(as_of, tzpb=_fixture_tzpb(as_of))["max_insurable_income_source"]
+    assert cite["source_url"].endswith("idMat=244982")
+    assert cite["gazette_issue"] == 68
+    assert cite["gazette_date"] == "2026-07-28"
+    assert "чл. 9" in cite["provision"]
+
+
+def test_a_ceiling_permalink_this_run_did_not_open_is_refused() -> None:
+    """Publishing an id nothing followed is the failure the field exists against.
+
+    `dv.py` refuses a document whose own «брой: N, от дата D» header disagrees
+    with the pair cited beside it, so a verified fetch is the only evidence
+    that an id addresses the act the entry names. Without one there is no link
+    to publish, and the run stops rather than shipping a citation whose only
+    backing is that somebody typed it.
+    """
+    as_of = date(2026, 8, 2)
+    good = _fixture_tzpb(as_of)
+    # No fetch claims nothing, so it publishes nothing. `validate.py` is what
+    # keeps that build out of data/published/, and it already did.
+    assert "max_insurable_income_source" not in build_payroll_payload(as_of)
+    # A fetch, but of another act's material.
+    with pytest.raises(ValueError, match="nothing here has opened"):
+        build_payroll_payload(as_of, tzpb={**good, "material_id": 244983})
+    # A fetch of the right material under a mis-stated issue.
+    with pytest.raises(ValueError, match="nothing here has opened"):
+        build_payroll_payload(as_of, tzpb={**good, "gazette_issue": 67})
 
 
 def test_a_parameter_set_from_several_acts_publishes_no_single_issue() -> None:
