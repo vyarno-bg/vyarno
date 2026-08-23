@@ -281,7 +281,7 @@ from key order.
 | `new_business.monthly_volume` | How much was lent — the evidence for the splice. |
 | `outstanding_stock` | БНБ. `_role`, the XLSX + sheet + cell in `dataset`, `value_pct`, `book_volume_eur_m`, `series_by_period` monthly back to 2007-01, `methodology_change`. |
 | `cross_check` | `bnb_outstanding_pct`, `ecb_mir_outstanding_pct`, `delta_pp`, `tolerance_pp`, `status`. |
-| `lending_limits` | `effective_from`, `ltv_max_pct` 85, `dsti_max_pct` 50, `maturity_max_years` 30, `min_down_payment_pct` 15, `prudent_dsti_pct` 30, `observed_weighted_avg_dsti_pct` 38.5, `dsti_income_basis`. |
+| `lending_limits` | `effective_from`, `ltv_max_pct` 85, `dsti_max_pct` 50, `maturity_max_years` 30, `deviation_allowance_pct_of_prior_quarter` 5, `min_down_payment_pct` 15, `prudent_dsti_pct` 30, `observed_weighted_avg_dsti_pct` 38.5, `dsti_income_basis`. The deviation allowance is БНБ's fourth cap and no site surface reads it: a reader auditing the other three against the decision meets a fourth there, so the enumeration carries it rather than the payload dropping a correct field for tidiness. |
 
 Every `_role` string is in the payload on purpose: the three rates answer three
 different questions, and the file has to say which is which to someone reading
