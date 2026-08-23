@@ -25,6 +25,37 @@ one `г` and «Кърджали» is `kardzhali` with one `ъ`. The 28th обл�
 has no имот.bg page of any kind; a reader who picks it is told so rather than
 handed София's figure.
 
+## How this payload gets refreshed, and what tells you it is due
+
+**By hand, from an ordinary network, every quarter.** There is no
+`refresh-city-price.yml` and there cannot be one: имот.bg answer a datacenter IP
+with 403 by policy, and every hosted runner is one. `city-price` is in
+`cli.py#REFRESH_SOURCES` because the arm works — it is the runner that cannot
+reach the pages, not the code.
+
+The same 403 is why no CI job and no `make citations` can hold these figures
+against their source. The weekly citation check reports all 28 of them
+UNCHECKED by name, which is honest and is not verification. **So this is the one
+payload on the site whose numbers a second party never re-reads** — 3,066 cells
+across 27 cities and 511 city-years, and the only standing check on them is the
+connector's own internal consistency, which is clean and is a different claim.
+`docs/legal.md` and `data-sources.md` each carry one half of that; this
+paragraph is the two of them in one place, because separately neither says that
+the payload can also go stale in silence.
+
+**Nothing new is built to watch it. The freshness banner already does.**
+`payloads.js` gives `city_price` `cadenceDays: 92`, so `view/freshness.js` calls
+it `due` past a quarter and `overdue` past 138 days — `OVERDUE_MULTIPLE` is 1.5
+— and at `overdue` `dataNotice` raises the banner that names it to the reader
+and to whoever opens the site next. That is the reminder: 92 is the quarter this
+section documents, and the 46 days after it are the slack a hand-run refresh
+gets before a reader is told.
+
+[`local-development.md`](../local-development.md) §"`--source city-price` — the
+one that has to be run by hand" is the run itself and the six things to check
+before committing what it wrote. This section is only the cadence and the
+reason nothing else will tell you.
+
 ## What имот.bg say the number is, and what they do not
 
 **Unsettled, and it cannot be settled from here.** Every figure this connector
