@@ -10,24 +10,31 @@
  *
  * **`--test-concurrency=1` in `package.json`, and the reason is Windows.** Left
  * at the runner's default — one process per core — four Chromiums and four
- * servers run at once, and every test opens a FRESH browser context (it has to;
- * see `withApp`), so no connection is ever reused between tests. A run is
- * therefore on the order of a hundred page loads times a dozen assets, in four
- * processes, against four loopback servers. On a Windows CI runner that
- * exhausts the socket pool: an asset request comes back
- * `net::ERR_NO_BUFFER_SPACE` and the bundle never finishes, failing whichever
- * suite happened to be unlucky. Three times observed, in three different files,
- * on three different branches — the third at a cap of 2, which is what settled
- * it: halving the peak lowered the odds and left the ceiling where it was.
+ * servers run at once, and a run is on the order of a hundred page loads times
+ * a dozen assets, in four processes against four loopback servers. On a Windows
+ * CI runner a run that opens a connection per request exhausts the socket pool:
+ * an asset
+ * request comes back `net::ERR_NO_BUFFER_SPACE` and the bundle never finishes,
+ * failing whichever suite happened to be unlucky. Three times observed, in
+ * three different files, on three different branches — the third at a cap of 2,
+ * which is what settled it: halving the peak lowered the odds and left the
+ * ceiling where it was.
  *
  * Serial costs 78s locally against 43s at 2, and that trade is not close. A
  * suite whose failure is a coin toss is one whose green stops being evidence,
  * and every one of those failures cost more than 35s to read.
  *
+ * **What the pool costs is measured now, and it is the number to argue this
+ * flag against.** One context for the file (`sharedContext`) keeps the
+ * connections rather than rebuilding them per test: the shell suite's page
+ * opens accept 16 sockets, against 262 for the same suite taking a context
+ * each. That is 16x the headroom the runs that failed had. It is not on its own
+ * a licence to raise the cap — what settled the number was a Windows runner, so
+ * what unsettles it is a Windows runner too, and this machine cannot be one.
+ *
  * **There is no 0.** If `ERR_NO_BUFFER_SPACE` returns from here, the next move
- * is the connection count itself — a browser context reused across the tests
- * that can share one, or the servers collapsed to a single instance — not
- * another number in this flag.
+ * is the connection count itself — the servers collapsed to a single instance —
+ * not another number in this flag.
  *
  * It lives in the npm script rather than in the Windows job so that `make
  * check` and CI run the identical command — and because the flag is silently
@@ -122,6 +129,91 @@ const browser = built ? await launch() : null;
 const site = browser ? await serveDist() : null;
 const origin = site ? `http://127.0.0.1:${site.port}` : "";
 
+/** The page every test gets unless it asks for another size. */
+const VIEWPORT = { width: 1280, height: 1200 };
+
+/**
+ * Context options a PAGE can emulate on its own, and how.
+ *
+ * These are the two the suites pass, and both are page-level in Playwright, so
+ * a test asking for either still shares the context below. Anything else gets a
+ * context to itself: an option nobody anticipated may not be quietly dropped
+ * onto a context that cannot honour it, because the test would then pass while
+ * describing a reader it never rendered for.
+ */
+const PER_PAGE = {
+  viewport: (page, size) => page.setViewportSize(size),
+  reducedMotion: (page, reducedMotion) => page.emulateMedia({ reducedMotion }),
+};
+
+/**
+ * Wipe the device on a page's FIRST load, and never on a reload inside it.
+ *
+ * One context for the file is one `localStorage` for the file, and the suites
+ * type into the same inputs — so this is what keeps one test's remembered
+ * figures out of the next, and keeps the order they run in from deciding what
+ * they see. Clearing on every navigation is the obvious version and it is
+ * wrong: `switched on, the figures survive a reload` asserts precisely that a
+ * reload keeps them, so a blanket wipe deletes the thing under test and reports
+ * the feature broken.
+ *
+ * `sessionStorage` is what tells the two apart, because it is scoped to the
+ * tab: a page opened for the next test has none of it and clears, while a
+ * reload inside a test finds the flag and leaves the device alone. Nothing in
+ * `src/` reads or writes `sessionStorage` — the four keys the privacy notice
+ * names are all `localStorage` — so the flag is invisible to every assertion.
+ */
+const FRESH_DEVICE = () => {
+  try {
+    if (sessionStorage.getItem("vyarno_render_page")) return;
+    sessionStorage.setItem("vyarno_render_page", "1");
+    localStorage.clear();
+  } catch {
+    /* an opaque origin — about:blank — carries no storage into the load that
+       follows, so there is nothing here to clear. */
+  }
+};
+
+/**
+ * One browser context for the file, and a page per test inside it.
+ *
+ * `browser.newPage()` is not a page, it is a context WITH a page — a private
+ * profile whose connection pool starts empty. A context per test is therefore a
+ * connection pool per test, reusing nothing, and that is the quantity the
+ * header's Windows failure is made of: the shell suite's page opens accept 16
+ * sockets through one context and 262 through a context each.
+ *
+ * A context is shareable here because everything a test needs to differ in is
+ * either per-page already (`PER_PAGE`) or is the device state `FRESH_DEVICE`
+ * wipes. What it buys is the pool, not the clock — a page open costs about the
+ * same either way, because the app's own boot is the bulk of it.
+ *
+ * The promise is stored rather than the context, so two opens that overlap
+ * share one rather than racing to build two.
+ */
+let shared = null;
+function sharedContext() {
+  shared ??= browser.newContext({ viewport: VIEWPORT }).then(async (context) => {
+    await context.addInitScript(FRESH_DEVICE);
+    return context;
+  });
+  return shared;
+}
+
+/** A page in the shared context, or in one of its own where it has to be. */
+async function newPage(options) {
+  if (Object.keys(options).some((option) => !(option in PER_PAGE))) {
+    return browser.newPage({ viewport: VIEWPORT, ...options });
+  }
+  const page = await (await sharedContext()).newPage();
+  // Before the navigation, so the first render is the one the test asked for:
+  // a component measuring the viewport at mount reads it once.
+  for (const [option, apply] of Object.entries(PER_PAGE)) {
+    if (option in options) await apply(page, options[option]);
+  }
+  return page;
+}
+
 /**
  * What "this page has finished loading" MEANS, per entry.
  *
@@ -161,6 +253,17 @@ const origin = site ? `http://127.0.0.1:${site.port}` : "";
  *   reason it does on `/how/`: a module script has executed by the time `load`
  *   fires, so `market-main.js` has already emptied `#app` and mounted over it.
  *   The element half only rules out a page that mounted something else.
+ * - **`/credit/`** — prerendered too, and the entry where `#app` having a child
+ *   proves the least: the frozen copy carries all 23 `.stat` blocks and all 26
+ *   of their `.src` links, so that predicate is satisfied at 40ms by the markup
+ *   `verify_render_credit.mjs` is not there to read — and the assertions pass,
+ *   because build-time markup looks like the live page. Under a 4x CPU throttle
+ *   the same predicate lands mid-mount instead, on 4 figures out of 23, which
+ *   is that bug arriving as a failure rather than as a pass.
+ *   `readyState === "complete"` proves the wipe happened, for the reason it
+ *   does on `/market/`; the `.src` is what proves the payloads did, because the
+ *   client's own render before they arrive draws the figures with no publisher
+ *   behind them — 5 `.stat` and 0 `.src`, at every throttle from 1x to 20x.
  * - **`/legal/` and `/support/`** — prerendered for the same reason and waited
  *   for the same way. Their prose is assembled from in-repo constants rather
  *   than from a payload, which changes nothing about what a predicate has to
@@ -181,6 +284,8 @@ const READY_BY_ROUTE = {
   "/market/": () =>
     document.readyState === "complete" &&
     document.querySelector("#prices table.fig-table") !== null,
+  "/credit/": () =>
+    document.readyState === "complete" && document.querySelector("main.credit .stat .src") !== null,
   "/legal/": () =>
     document.readyState === "complete" && document.querySelector("main.legal article") !== null,
   "/support/": () =>
@@ -272,11 +377,25 @@ async function whyNotReady(page, path, errors) {
  * alone would pass on a page the visitor sees as half-drawn.
  */
 export async function openApp(path = "/", context = {}, before = null) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 1200 }, ...context });
+  const page = await newPage(context);
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  page.on("requestfailed", (r) => errors.push(`request failed: ${r.url()}`));
+  // `ERR_ABORTED` is the browser dropping a request because the document that
+  // asked for it went away — a reload or a link the TEST followed while the
+  // favicon or a lazy chunk was still in flight. Nothing failed there; that is
+  // what leaving a page looks like, and every reader does it. Counting it made
+  // `assert.deepEqual(errors, [])` a coin toss in whichever test navigated
+  // soonest, and which test that is depends on how the machine was loaded:
+  // one run in eight on this machine, on the favicon, in the test that stores
+  // a language and reloads.
+  //
+  // A request a test aborts ON PURPOSE reports `ERR_FAILED` instead, so the
+  // load-failure state — the one `before` exists to reach — still lands here.
+  page.on("requestfailed", (r) => {
+    if (r.failure()?.errorText === "net::ERR_ABORTED") return;
+    errors.push(`request failed: ${r.url()}`);
+  });
   // The one hook that has to run BEFORE the navigation: a `page.route` set
   // afterwards misses the fetches `onMount` has already issued. It exists for
   // the load-failure state, which is a state readers reach and which no suite
@@ -302,13 +421,15 @@ export async function openApp(path = "/", context = {}, before = null) {
  * One server for the whole file — it is stateless and reading `dist/` twenty
  * times is not the thing worth isolating. Each test gets its OWN page, because
  * they type into the same inputs and `localStorage` carries the language and
- * theme across a reload.
+ * theme across a reload; the page is where the isolation has to live, and
+ * `FRESH_DEVICE` is what makes a page enough of it.
  *
  * `context` reaches Playwright's context options, which is how a test asks for
  * a reader the default page cannot represent — `reducedMotion: "reduce"` is the
  * one in use, because `tokens.css` drops every transition for them and an
  * affordance built out of motion is invisible to that reader while passing
- * every other test in this file.
+ * every other test in this file. `PER_PAGE` lists the ones a page can be handed
+ * directly; anything else gets a context to itself.
  */
 export async function withApp(fn, path = "/", context = {}, before = null) {
   const { page, errors } = await openApp(path, context, before);
