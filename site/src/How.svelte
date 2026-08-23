@@ -336,20 +336,18 @@
     <span class="l-en">Bulgaria's numbers, explained</span>
   </h1>
 
+  <!-- **The lead names what every figure carries and stops.** The seven
+       subjects were listed here in prose above a nav that lists the same seven
+       and links them, so a reader read the contents twice and could click
+       neither the first time. -->
   <p class="lead">
     <span class="l-bg"
-      >Тук са официалните числа, с които калкулаторът смята: инфлацията и 13-те групи на кошницата,
-      данъкът и осигуровките, подредбата на заплатите, лихвата по жилищен кредит, цената на
-      квадратен метър в София и безработицата. До всяко стои институцията, която го публикува,
-      периодът, за който се отнася, и връзка към таблицата, от която е взето. Нищо тук не е
-      измислено от нас и нищо не е закръглено на око.</span
+      >Тук са официалните числа, с които калкулаторът смята. До всяко стои институцията, която го
+      публикува, периодът, за който се отнася, и връзка към таблицата, от която е взето.</span
     >
     <span class="l-en"
-      >These are the official figures the calculator works from: inflation and the 13 basket groups,
-      tax and contributions, how pay is spread out, the home-loan rate, the price of a square metre
-      in Sofia, and unemployment. Each one carries the body that publishes it, the period it
-      describes, and a link to the table it was taken from. Nothing here is invented and nothing is
-      rounded by eye.</span
+      >These are the official figures the calculator works from. Each one carries the body that
+      publishes it, the period it describes, and a link to the table it was taken from.</span
     >
   </p>
 
@@ -380,19 +378,17 @@
     <p>
       <span class="l-bg"
         >Официалната инфлация е едно число за цялата страна: с колко са по-скъпи нещата днес спрямо
-        преди година. Не всичко тежи еднакво: храната тежи повече от учебниците, защото за нея
-        отиват повече пари. Цените ги събира НСИ всеки месец и НСИ изчислява от тях българския
-        индекс; единните европейски правила и проверката дали са спазени са на Евростат, който
-        публикува резултата. Вярно го взима дословно и не го пресмята наново, за да не се разминава
-        с публикуваното.</span
+        преди година. Цените ги събира НСИ всеки месец и НСИ изчислява от тях българския индекс;
+        единните европейски правила и проверката дали са спазени са на Евростат, който публикува
+        резултата. Вярно го взима дословно и не го пресмята наново, за да не се разминава с
+        публикуваното.</span
       >
       <span class="l-en"
         >Official inflation is one number for the whole country: how much dearer things are today
-        than a year ago. Not everything counts the same: food moves the figure more than textbooks
-        do, because more money goes to it. NSI collects the prices every month and builds Bulgaria's
-        index from them; the one common European method, and the check that it was followed, are
-        Eurostat's, and Eurostat publishes the result. Vyarno takes it verbatim and never recomputes
-        it, so it cannot drift from what is published.</span
+        than a year ago. NSI collects the prices every month and builds Bulgaria's index from them;
+        the one common European method, and the check that it was followed, are Eurostat's, and
+        Eurostat publishes the result. Vyarno takes it verbatim and never recomputes it, so it
+        cannot drift from what is published.</span
       >
     </p>
 
@@ -463,7 +459,7 @@
         <b>Всеки януари Евростат обновява кошницата</b>, защото хората харчат малко по-различно от
         предната година. Числото за последните дванадесет месеца минава през тази смяна и хваща и
         двете кошници, старата и новата; нашият сбор ползва само днешната. Затова двете се
-        разминават съвсем малко. Показваме и двете, вместо да представим едното за другото.</span
+        разминават съвсем малко.</span
       >
       <span class="l-en"
         >Both figures above come from Eurostat and both are equally official. They are not the same
@@ -478,20 +474,17 @@
         <b>Every January Eurostat refreshes the basket</b>, because people spend a little
         differently than the year before. The figure for the last twelve months runs through that
         changeover and catches both baskets - the old one and the new; our sum uses only today's.
-        That is why the two come out slightly apart. Both are shown rather than one being passed off
-        as the other.</span
+        That is why the two come out slightly apart.</span
       >
     </p>
     <p>
       <span class="l-bg"
         >Твоята инфлация е същата сметка с твоите дялове. Ако храната е една трета от парите ти, а в
-        националната кошница е една пета, поскъпването на храната тежи повече при теб. Кошницата се
-        описва в калкулатора и сметката се прави изцяло в браузъра ти.</span
+        националната кошница е една пета, поскъпването на храната тежи повече при теб.</span
       >
       <span class="l-en"
         >Your own inflation is that same sum with your shares in it. If food is a third of your
-        money where the national basket puts a fifth, food's price rise weighs more for you. The
-        basket is described in the calculator and the arithmetic happens entirely in your browser.</span
+        money where the national basket puts a fifth, food's price rise weighs more for you.</span
       >
     </p>
   </section>
@@ -558,9 +551,9 @@
                   <span class="l-en">{cat.en_name}</span>
                 </th>
                 <!-- The weight at the precision Eurostat publishes it, not at
-                     the strip's. This page says in its own lead that nothing on
-                     it is rounded by eye, and a reader following the ↗ link
-                     lands on 22.323 rather than on 22.3. -->
+                     the strip's. A reader following the ↗ link lands on 22.323,
+                     and a table rounded to 22.3 beside it is a figure they
+                     cannot match to the cube it claims to come from. -->
                 <td class="num mono">{fmt(cat.weight_pct, 3)}%</td>
                 <td class="num mono">{fmt(cat.annual_rate_pct)}%</td>
                 <td class="mono">
@@ -930,15 +923,13 @@
       <p>
         <span class="l-bg"
           >Изследването дава три числа за България: колко изкарват най-ниско платените 10%, колко
-          изкарва човекът точно по средата и колко изкарват най-високо платените 10%. Всички стъпала
-          между тях са пресметнати, а не преброени, и таблицата казва кое кое е. Затова числото
+          изкарва човекът точно по средата и колко изкарват най-високо платените 10%. Затова числото
           показва приблизително къде се нарежда една заплата, а не точно: никой не е обиколил всички
           работещи в страната този месец.</span
         >
         <span class="l-en"
           >The survey gives three figures for Bulgaria: what the lowest-paid 10% earn, what the
-          person exactly in the middle earns, and what the highest-paid 10% earn. Every rung between
-          them is worked out rather than counted, and the table says which is which. So the figure
+          person exactly in the middle earns, and what the highest-paid 10% earn. So the figure
           shows roughly where a salary sits, not exactly: nobody polled every worker in the country
           this month.</span
         >
@@ -975,9 +966,8 @@
         заплата, но излиза веднъж на четири години, тоест сумите в него са остарели. Второто е
         <b>днешната средна заплата за страната</b>, която НСИ публикува всяко тримесечие. Взимаме
         разпъването от първото и го прилагаме върху днешната средна от второто, за да носят
-        стъпалата днешни суми. После всяко стъпало се превръща от бруто в нето. И двете числа са за
-        цялата страна: никой не публикува как са разпределени заплатите вътре в една област, затова
-        тази подредба не зависи от нея.</span
+        стъпалата днешни суми. И двете числа са за цялата страна: никой не публикува как са
+        разпределени заплатите вътре в една област, затова тази подредба не зависи от нея.</span
       >
       <span class="l-en"
         >This needs two official numbers, because neither is enough on its own. The first says
@@ -986,9 +976,8 @@
         time, but is published once every four years, so its amounts are out of date. The second is
         <b>today's average wage for the country</b>, which NSI publishes every quarter. We take the
         spread from the first and set it against today's average from the second, so the rungs carry
-        today's amounts. Each rung is then converted from gross to net. Both figures are the whole
-        country's: nobody publishes how wages are spread inside one oblast, so this ladder does not
-        change with the oblast.</span
+        today's amounts. Both figures are the whole country's: nobody publishes how wages are spread
+        inside one oblast, so this ladder does not change with the oblast.</span
       >
     </p>
   </section>
@@ -1097,8 +1086,8 @@
         <span class="l-bg"
           >имот.bg публикува по едно число на квартал и нито едно за София като цяло. Медианата на
           {fmt0(calc.cityHome.nDistricts)} квартала и сравнението с {calc.cityHome.baselineYear} г. са
-          наши сметки върху техните числа, затова стоят тук, а не се приписват на тях. Колко заплати струва
-          жилище стои в калкулатора, до самата цена. Числата по сключени сделки са на
+          наши сметки върху техните числа, затова стоят тук, а не се приписват на тях. Числата по сключени
+          сделки са на
           <a href="/market/">страницата за пазара</a>, защото идват от Евростат и НСИ и мерят друго.</span
         >
         <span class="l-en"
@@ -1106,8 +1095,7 @@
           across
           {fmt0(calc.cityHome.nDistricts)} districts, and the comparison with {calc.cityHome
             .baselineYear}, are our arithmetic over their figures, which is why they are named here
-          rather than attributed to them. How many salaries a home is sits in the calculator, next
-          to the price itself. The figures from closed sales are on
+          rather than attributed to them. The figures from closed sales are on
           <a href="/market/">the market page</a>, because they come from Eurostat and НСИ and
           measure something else.</span
         >

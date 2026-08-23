@@ -152,17 +152,18 @@
     <span class="l-bg">Кредитите в България</span>
     <span class="l-en">Borrowing in Bulgaria</span>
   </h1>
+  <!-- The scope, then what every figure on the page carries. The three
+       sections after the rates were listed here as well, in the words of their
+       own headings, which is a contents page a reader reads before the
+       headings and cannot click. -->
   <p class="lede">
     <span class="l-bg"
       >Какво струва да вземеш пари назаем в България: жилищен кредит, потребителски, овърдрафт,
-      кредитна карта. Колко дължат домакинствата, колко имат в банките и каква част от кредитите не
-      се връща. Всяко число е на БНБ или на ЕЦБ, с посочен период и връзка към източника.</span
+      кредитна карта. Всяко число е на БНБ или на ЕЦБ, с посочен период и връзка към източника.</span
     >
     <span class="l-en"
       >What it costs to borrow money in Bulgaria: a home loan, a consumer loan, an overdraft, a
-      credit card. How much households owe, how much they hold in the banks, and how much of it is
-      not being repaid. Every figure is BNB's or the ECB's, with its period and a link to the
-      source.</span
+      credit card. Every figure is BNB's or the ECB's, with its period and a link to the source.</span
     >
   </p>
 
@@ -191,16 +192,14 @@
       <span class="l-bg"
         >Първата е лихвата, от която се смята вноската. Втората е ГПР, тоест годишен процент на
         разходите: същите кредити, но с таксите, които банката изисква, за да ти отпусне заема.
-        Затова е по-висока, и не с нея се смята вноската. Третата не е за нов кредит: тя е средното
-        по всички жилищни кредити, които хората в момента изплащат, включително договори отпреди
-        години.</span
+        Затова е по-висока, и не с нея се смята вноската. Третата не е за нов кредит: в нея влизат и
+        договори отпреди години.</span
       >
       <span class="l-en"
         >The first is the rate the monthly payment is worked out from. The second is the APRC, the
         annual percentage rate of charge: the same loans with the fees the bank requires in order to
         lend, so it is higher, and it is not the one the payment is worked out from. The third is
-        not for a new loan at all. It is the average across every housing loan people are repaying
-        right now, agreements signed years ago included.</span
+        not for a new loan at all: agreements signed years ago are in it too.</span
       >
     </p>
   </section>
@@ -343,11 +342,16 @@
     {#if fixationHistory}
       {@const line = fixationHistory.series}
       {@const axis = niceTicks(0, line.max, 4)}
-      <!-- The dip and the recovery are two claims, and only the first is safe
-           unconditionally. «После делът се върна нагоре» goes false the month a
-           fresh low arrives as the latest reading, with every printed figure in
-           the sentence still correct — the failure the chart's own trough marker
-           already refuses, so the prose refuses it on the same test. -->
+      <!-- WHY the dip happened, and only where the dip is history: the
+           explanation goes false the month a fresh low arrives as the latest
+           reading, with every printed figure in the sentence still correct —
+           the failure the chart's own trough marker already refuses, so the
+           prose refuses it on the same test.
+
+           That the share came back up afterwards is the line's own shape, next
+           to a marker labelled «най-ниското ниво досега» and under a sentence
+           saying it has never been lower. -->
+
       <p>
         <span class="l-bg"
           >Делът не е падал под {number(fixationHistory.trough.value, 1, $lang)}% нито веднъж през
@@ -355,8 +359,7 @@
             fixationHistory.trough.period,
             $lang
           )}.{#if troughWorthNaming(fixationHistory.series)}
-            Тогава лихвите в Европа се вдигаха и част от хората избраха фиксирана лихва. После делът
-            се върна нагоре.{/if}</span
+            Тогава лихвите в Европа се вдигаха и част от хората избраха фиксирана лихва.{/if}</span
         >
         <span class="l-en"
           >The share has never once fallen below {number(fixationHistory.trough.value, 1, $lang)}%
@@ -364,7 +367,7 @@
             fixationHistory.trough.period,
             $lang
           )}.{#if troughWorthNaming(fixationHistory.series)}
-            Rates across Europe were rising then and some borrowers did fix. Then it went back up.{/if}</span
+            Rates across Europe were rising then and some borrowers did fix.{/if}</span
         >
       </p>
       <figure class="chart">
@@ -760,17 +763,9 @@
         <span class="l-bg">Какво имат домакинствата и какво дължат</span>
         <span class="l-en">What households have and what they owe</span>
       </h2>
-      <!-- Which of the two grows faster is what the ratio under the cards
-           already says, in figures that move with the payload. Said again up
-           here as prose it is the same claim with nothing recomputing it. -->
-      <p class="lede">
-        <span class="l-bg"
-          >Колко пари държат домакинствата в банките, и колко дължат на същите банки.</span
-        >
-        <span class="l-en"
-          >How much households hold in the banks, and how much they owe the same banks.</span
-        >
-      </p>
+      <!-- No lede. Which of the two grows faster is what the ratio under the
+           cards already says, in figures that move with the payload; what the
+           two cards ARE is the heading over them, in the same words. -->
       <div class="stats">
         <div class="stat">
           <strong
@@ -1015,39 +1010,33 @@
            and a reading outlives the month it stops being true. -->
       <p>
         <span class="l-bg"
-          >Трите цени имат различни причини да се движат. Потребителският кредит стигна {number(
-            consumer.peak.value,
+          >Потребителският кредит стигна {number(consumer.peak.value, 2, $lang)}% през {periodLong(
+            consumer.peak.period,
+            $lang
+          )}, а сега е {number(consumer.latest.value, 2, $lang)}%. Лихвата по картата тръгва от {number(
+            card.first.value,
             2,
             $lang
-          )}% през {periodLong(consumer.peak.period, $lang)}, а сега е {number(
-            consumer.latest.value,
+          )}% и стига {number(card.latest.value, 2, $lang)}%. Новият жилищен кредит тръгва от {number(
+            mortgageLine.first.value,
             2,
             $lang
-          )}%. Лихвата по картата тръгва от {number(card.first.value, 2, $lang)}% и стига {number(
+          )}% и стига {number(mortgageLine.latest.value, 2, $lang)}%.</span
+        >
+        <span class="l-en"
+          >The consumer loan reached {number(consumer.peak.value, 2, $lang)}% in {periodLong(
+            consumer.peak.period,
+            $lang
+          )} and is {number(consumer.latest.value, 2, $lang)}% now. The card rate starts the period
+          at {number(card.first.value, 2, $lang)}% and ends at {number(
             card.latest.value,
             2,
             $lang
-          )}%. Новият жилищен кредит тръгва от {number(mortgageLine.first.value, 2, $lang)}% и стига {number(
+          )}%. A new home loan starts at {number(mortgageLine.first.value, 2, $lang)}% and ends at {number(
             mortgageLine.latest.value,
             2,
             $lang
           )}%.</span
-        >
-        <span class="l-en"
-          >The three prices have different reasons to move. The consumer loan reached {number(
-            consumer.peak.value,
-            2,
-            $lang
-          )}% in {periodLong(consumer.peak.period, $lang)} and is {number(
-            consumer.latest.value,
-            2,
-            $lang
-          )}% now. The card rate starts the period at {number(card.first.value, 2, $lang)}% and ends
-          at {number(card.latest.value, 2, $lang)}%. A new home loan starts at {number(
-            mortgageLine.first.value,
-            2,
-            $lang
-          )}% and ends at {number(mortgageLine.latest.value, 2, $lang)}%.</span
         >
       </p>
       <figure class="chart">
@@ -1246,14 +1235,14 @@
           company sooner than it reaches a home loan.</span
         >
       </p>
+      <!-- The caveat against reading the gap as a scandal, and nothing after
+           it: the chart and the figure over it are what say how big the gap is
+           and which way it is going, so a sentence announcing them as the
+           question is a closing line restating its own section. -->
       <p class="cap">
-        <span class="l-bg"
-          >Двата кредита не са едно и също и разлика между тях е нормална. Въпросът е колко голяма е
-          тя и накъде се движи.</span
-        >
+        <span class="l-bg">Двата кредита не са едно и също и разлика между тях е нормална.</span>
         <span class="l-en"
-          >The two loans are not the same thing, and a gap between them is normal. The question is
-          how big it is and which way it is moving.</span
+          >The two loans are not the same thing, and a gap between them is normal.</span
         >
       </p>
       <figure class="chart">
