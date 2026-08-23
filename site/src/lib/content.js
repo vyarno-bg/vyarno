@@ -602,7 +602,7 @@ export const COPY = {
   // lost to a chip row that looked like the answer.
   presetsHint: {
     bg: "Готови кошници: четирите са наши, измислени за пример, а „официалната кошница“ е на Евростат.",
-    en: 'Ready-made baskets: the four are ours, invented as illustrations, and the "official basket" is Eurostat\'s.',
+    en: "Ready-made baskets: the four are ours, invented as illustrations, and the “official basket” is Eurostat's.",
   },
   // Shown in the RESULTS card while a hand-made preset is active. The hint
   // above sits by the chips, but the number it produces ends up 400 px away in
@@ -611,7 +611,7 @@ export const COPY = {
   // the caveat travels with it.
   presetActive: {
     bg: "Числото е сметнато по готовата кошница „{p}“. Тя е измислена от нас за пример, не е измерена. Дръпни плъзгачите към своите разходи, за да стане твое.",
-    en: 'This is computed from the ready-made "{p}" basket. It is our illustration, not a measured one. Drag the sliders to your own spending to make it yours.',
+    en: "This is computed from the ready-made “{p}” basket. It is our illustration, not a measured one. Drag the sliders to your own spending to make it yours.",
   },
   // The same caveat for the basket EVERY reader starts on, and it was the one
   // basket without one. `presetActive` covers the four we invented; the
@@ -864,7 +864,7 @@ export const COPY = {
   // The accessible name for a ranked row's own name, which is a control: a
   // screen reader otherwise meets «Транспорт и гориво, бутон» beside a link to
   // Eurostat and has no way to tell the two destinations apart.
-  rankToRow: { bg: "Към „{c}“ в кошницата", en: 'Go to "{c}" in the basket' },
+  rankToRow: { bg: "Към „{c}“ в кошницата", en: "Go to “{c}” in the basket" },
   rankRest: {
     bg: "останалите {n} групи заедно · {pp} пункта",
     en: "the other {n} groups together · {pp} points",
@@ -1318,7 +1318,7 @@ export const COPY = {
   // a rate no statute sets.
   employerCostRange: {
     bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedgeLow}–{wedgeHigh}%</b> от разхода за труд не стигат до теб. Точният дял зависи от вноската за трудова злополука: в „{sector}“ тя е между {zLow}% и {zHigh}%, което прави разхода до €{costHigh}.",
-    en: '<b>€{net}</b> reaches your account: <b>{wedgeLow}–{wedgeHigh}%</b> of the cost of employing you does not. The exact share turns on the work-accident contribution: in "{sector}" it runs {zLow}% to {zHigh}%, putting the cost as high as €{costHigh}.',
+    en: "<b>€{net}</b> reaches your account: <b>{wedgeLow}–{wedgeHigh}%</b> of the cost of employing you does not. The exact share turns on the work-accident contribution: in “{sector}” it runs {zLow}% to {zHigh}%, putting the cost as high as €{costHigh}.",
   },
   // No sector chosen. The fallback is the whole statutory span rather than its
   // floor: 0,4% is a specific claim about this reader that happens to be the
@@ -1701,11 +1701,11 @@ export const COPY = {
   // one sentence is the translation showing through rather than a clarification.
   sectorDiff: {
     bg: "твоята нетна заплата е <b>{delta}</b> средната за „{sector}“",
-    en: 'your net pay is <b>{delta}</b> the average for "{sector}"',
+    en: "your net pay is <b>{delta}</b> the average for “{sector}”",
   },
   sectorDiffEarner: {
     bg: "доход {n} е <b>{delta}</b> средната за „{sector}“",
-    en: 'income {n} is <b>{delta}</b> the average for "{sector}"',
+    en: "income {n} is <b>{delta}</b> the average for “{sector}”",
   },
   // НСИ publish a GROSS average, and it is the only figure on this line that is
   // theirs. The net beside it is our payroll conversion of it, so both are named
@@ -1955,8 +1955,8 @@ export const COPY = {
   // имот.bg's name or in ours as the case may be, and repeating it here would
   // be the same admission twice on one screen.
   homeNoPrice: {
-    bg: "Още нямаме цена на квадратен метър, с която да сметнем жилището. Кажи по-горе къде живееш или въведи своя цена.",
-    en: "We have no €/m² to price a home with yet. Say above where you live, or enter your own price.",
+    bg: "Още нямаме цена на квадратен метър, с която да сметнем жилището. Кажи по-горе къде живееш или въведи цена.",
+    en: "We have no €/m² to price a home with yet. Say above where you live, or enter a price yourself.",
   },
   // **The sentence names имот.bg, so it has to be true of имот.bg.** It reads
   // for the one област whose towns are not among the 27 cities they publish,
@@ -1990,7 +1990,7 @@ export const COPY = {
   // `percentSigned` carries the sign, the minus glyph the rest of the page
   // uses, and no sign at all where the figure rounds to zero.
   statHomeDelta: { bg: "{pct} от {y} · медиана", en: "{pct} since {y} · median" },
-  statUnempK: { bg: "безработица · 15-74 г.", en: "unemployment · age 15-74" },
+  statUnempK: { bg: "безработица · 15–74 г.", en: "unemployment · age 15–74" },
 
   // As-of banner. The period it names is the REFERENCE PERIOD of the headline
   // inflation figure — the month the prices are from, not the day we downloaded
@@ -3099,9 +3099,14 @@ export const COPY = {
   // destinations answer different questions — one puts the reader's own numbers
   // against these, the other carries the same country at a different subject.
   howToCalculatorK: { bg: "Сметни своята инфлация", en: "Work out your own inflation" },
+  // «кошницата и заплатата си», not «своя кошница и своята заплата»: a
+  // possessive standing before the noun is the English shape carried across,
+  // and the two it coordinated did not even agree — an indefinite «своя
+  // кошница» beside a definite «своята заплата». One clitic covers both nouns,
+  // which is what the sentence would be said as out loud.
   howToCalculatorSub: {
-    bg: "със своя кошница и своята заплата, тук в браузъра",
-    en: "with your own basket and your own pay, here in the browser",
+    bg: "с кошницата и заплатата си, тук в браузъра",
+    en: "with your own basket and pay, here in the browser",
   },
   howToMarketK: { bg: "Пазарът на жилища", en: "The property market" },
   howToMarketSub: {
