@@ -2439,12 +2439,25 @@ test("every НСИ credit line marks a preliminary quarter as preliminary", () =
       `srcFlash reads as НСИ's provisional-quarter marker: ${text}`
     );
   }
-  for (const text of pair("headlineRate")) {
-    assert.ok(
-      /\{flash\}/.test(text),
-      `COPY.headlineRate has no slot for the flash marker: ${text}`
-    );
-  }
+  // The marker's slot used to be a `{flash}` placeholder inside
+  // `COPY.headlineRate`, and that is the behaviour that moved: the strip's
+  // sentence is now three copy keys with the payload's three figures marked
+  // between them, so the marker is appended to the rendered period instead of
+  // substituted into a string. What has to hold is unchanged — the strip can
+  // still say the month is a flash — so the assertion follows it to the
+  // component. `screenshot-frame.mjs` §"Why a payload's own dates are not in
+  // it" is why the sentence was split at all.
+  const banner = readFileSync(join(SRC, "components", "DataBanner.svelte"), "utf8");
+  assert.match(
+    banner,
+    /headlineIsFlash\s*\n?\s*\?\s*t\(COPY\.srcFlash, "bg"\)/,
+    "the strip no longer prints the flash marker in Bulgarian"
+  );
+  assert.match(
+    banner,
+    /headlineIsFlash\s*\n?\s*\?\s*t\(COPY\.srcFlash, "en"\)/,
+    "the strip no longer prints the flash marker in English"
+  );
 });
 
 // ---------------------------------------------------------------------------

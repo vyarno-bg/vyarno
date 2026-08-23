@@ -101,7 +101,7 @@ export async function poseForTheShot(page) {
  * viewport is fixed, so the words and their order are identical, and only the
  * line breaks between them could ever have differed.
  *
- * ## Why a payload's own dates are not in it
+ * ## Why a payload's own figures are not in it
  *
  * The frame includes the open data panel, and two of its columns are the
  * `ref_period` and the `as_of` of every payload. **`as_of` is the day we
@@ -123,6 +123,27 @@ export async function poseForTheShot(page) {
  * «изтеглено», the per-row status words, the secondary vintage's «форма:
  * Евростат SES» label, and the paragraph under the table. A copy edit to any of
  * those still moves this text and still goes red.
+ *
+ * **The national strip is the same problem on a longer clock, and it needed the
+ * copy restructured before a mark could reach it.** The panel's dates move on
+ * every refresh; the strip's «Числата са към {период}» and «официална инфлация
+ * … {rate} за {период}» move only on a release that carries genuinely new
+ * figures — rarer, and worse, because that is the pull request there is most
+ * reason to merge. Both were single interpolated strings, so a mark could cover
+ * the whole sentence or none of it, and covering the whole sentence would have
+ * unpinned the words this check exists for.
+ *
+ * They are three copy keys now — `dataAsOfLead`, `headlineRateLead`,
+ * `headlineRateFor` — with the month, the rate and the flash marker marked
+ * between them (`DataBanner.svelte`). The rendered sentences are unchanged to
+ * the character. What the frame keeps is «Числата са към», «официална инфлация
+ * по данни на Евростат:» and the «за» between the two figures, which is the
+ * word only the split could pin.
+ *
+ * The flash marker is marked with the period rather than beside it: its WORDS
+ * are copy and `verify_copy.mjs` holds them, but whether it is on the page is
+ * the payload's, and a release landing inside Eurostat's flash window would
+ * otherwise move the frame with nothing edited.
  */
 export async function frameText(page) {
   return page.evaluate((height) => {
