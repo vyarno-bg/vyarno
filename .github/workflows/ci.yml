@@ -75,6 +75,32 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  # **THESE FIVE `name:` VALUES ARE THE REQUIRED CHECKS IN BRANCH PROTECTION,
+  # CHARACTER FOR CHARACTER.** Renaming one does not rename the context it
+  # satisfies:
+  #
+  #     site · lint + types + math + contracts + build
+  #     pipeline · ruff + pytest
+  #     data · published JSON is committed and parses
+  #     authorship · every commit is signed by a person
+  #     windows · both toolchains install and both suites run
+  #
+  # A renamed job produces a check nobody is waiting for and leaves the one
+  # they are waiting for permanently absent, so the pull request does not go
+  # red — it waits forever, which is the worse failure because nothing on the
+  # page says why. Refresh pull requests meet it first: they are opened by an
+  # automatic token whose events raise no workflow runs, so `refresh.yml`
+  # dispatches this file explicitly and that step is `continue-on-error`.
+  # Nothing downstream notices a context that never arrives.
+  #
+  # **Nothing in this repository enforces the match.** Branch protection lives
+  # in the repository's settings, not in the tree, and no job here can read it
+  # — a check that compared these names against a list committed beside them
+  # would compare them against a copy and pass while protection said something
+  # else. So this comment is the enforcement: it sits where the rename happens,
+  # and updating branch protection is a manual step in the same change. The
+  # separator is U+00B7, not a hyphen.
+  #
   # Every job below carries a `timeout-minutes`, and the reasoning is the same
   # for all five so it is written once here.
   #
