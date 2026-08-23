@@ -60,6 +60,13 @@ const servedStale = (stem) => async (page) => {
   );
 };
 
+/** The other way a figure goes wrong: the payload never arrives at all. */
+const servedMissing = (stem) => async (page) => {
+  await page.route(`**/data/published/${stem}.json`, (route) =>
+    route.fulfill({ status: 404, body: "not found" })
+  );
+};
+
 test("every figure on the market page carries a source under it", { skip }, async () => {
   // Cards and tables both, because most of this page's figures moved into
   // tables and a rule that only walks `.stat` would have gone on passing over a
@@ -534,6 +541,75 @@ test(
     );
   }
 );
+
+test("a payload that never arrived says so too, and names itself", { skip }, async () => {
+  // The other half of the same warning, and the half nothing rendered.
+  // `dataAge` has returned `overdue` and `missing` side by side all along;
+  // every surface passed `.overdue` and none passed `.missing`, so a 404 raised
+  // nothing anywhere. On this page it took whole sections' tables off under
+  // headings that still promised them — «Първо най-простото: с колко са се
+  // променили цените…» over nothing at all — and the page otherwise looked
+  // exactly as it does on the day of a refresh.
+  //
+  // `house_market_structure` rather than `house_market`, because this suite's
+  // readiness predicate is `#prices table.fig-table` and that table is one of
+  // the ones `house_market` draws: 404 it and the wait times out before any
+  // assertion runs, reporting a page that never mounted instead of a warning
+  // that never appeared.
+  if (!payload("house_market_structure")) return; // no refresh in this checkout
+
+  await withApp(
+    async (page, errors) => {
+      const note = page.locator(".late");
+      assert.equal(await note.count(), 1, "a payload that failed to load raises no warning");
+      const text = (await note.innerText()).trim();
+      // The manifest's own name, so a row renamed there renames this.
+      assert.ok(
+        text.includes("Жилищен фонд и собственост"),
+        `the warning does not name the payload that failed: "${text}"`
+      );
+      // And it says the figures are ABSENT rather than old. The two read the
+      // same to anybody who only sees a warning triangle, and the late
+      // sentence — «показаното е последното официално публикувано» — is false
+      // here, because nothing is shown.
+      assert.match(
+        text,
+        /не се зареди/,
+        `the warning does not say the payload failed to load: "${text}"`
+      );
+      assert.doesNotMatch(
+        text,
+        /закъсня/,
+        `a payload that never arrived is being reported as merely overdue: "${text}"`
+      );
+
+      // The same phone constraint the overdue band keeps, re-asserted because
+      // this sentence is the longer of the two: it names the payloads AND says
+      // nothing was substituted for them.
+      const probe = await page.evaluate(() => {
+        const cards = [...document.querySelectorAll("main.market .answers .stat")];
+        return {
+          bottom: Math.max(...cards.map((c) => c.getBoundingClientRect().bottom)),
+          screen: window.innerHeight,
+        };
+      });
+      assert.ok(
+        probe.bottom <= probe.screen,
+        `with the missing-data warning up the answer row ends ${Math.round(probe.bottom)}px down ` +
+          `a ${probe.screen}px screen at 360px.`
+      );
+
+      // The deliberate 404 is one the browser reports, so the empty-list
+      // assertion the other tests make would fail on the scenario itself.
+      // Everything else is still held.
+      const unexpected = errors.filter((e) => !/house_market_structure\.json|404/.test(e));
+      assert.deepEqual(unexpected, [], unexpected.join(" | "));
+    },
+    "/market/",
+    { viewport: { width: 360, height: 800 } },
+    servedMissing("house_market_structure")
+  );
+});
 
 test("the charts are legible on the phone, not only on the desk", { skip }, async () => {
   // The failure this exists to refuse, measured on the built page: an SVG sized

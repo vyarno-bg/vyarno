@@ -151,6 +151,33 @@ test("dateShort renders a readable day-month-year in both languages", () => {
   assert.equal(dateShort("2026-07-17", "bg"), "17.07.2026 г.");
 });
 
+test("a published day is the same day in every reader's zone", () => {
+  // An ISO day parses to midnight UTC, so a clock behind it renders the day
+  // before: every `as_of` in the data panel, имот.bg's «обновена на», the ДВ
+  // issue the payroll table comes from and the day the БНБ limits came into
+  // force all read a day early across the Americas. Two of those are records a
+  // reader is meant to look up with, where a day off is the wrong record.
+  //
+  // **The zone is set here because CI's is UTC**, which is the one zone that
+  // cannot see this: the assertion above passes either way, and did.
+  // `periodLong` is asserted beside it because it has pinned UTC all along —
+  // the pair is what shows the rule is the module's rather than this function's.
+  const tz = process.env.TZ;
+  try {
+    for (const zone of ["America/New_York", "Pacific/Honolulu", "Pacific/Auckland", "UTC"]) {
+      process.env.TZ = zone;
+      assert.equal(dateShort("2026-08-21", "bg"), "21.08.2026 г.", zone);
+      assert.equal(dateShort("2026-01-01", "en"), "1 Jan 2026", zone);
+      assert.equal(periodLong("2026-08", "bg"), "август 2026 г.", zone);
+    }
+  } finally {
+    // Restored rather than left set: `node --test` runs a file's tests in one
+    // process, so a zone left behind here is a zone every test after it runs in.
+    if (tz === undefined) delete process.env.TZ;
+    else process.env.TZ = tz;
+  }
+});
+
 test("a monthly reference period is spoken as its own month, in both languages", () => {
   // Nobody reads «2026-06» as June, so the banner, the strip and the explainer
   // all say the month — and the render suites that read those back build their

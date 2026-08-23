@@ -9,16 +9,16 @@ calculator. The user's browser never calls an upstream API.
 with no router and no rewrite rules (`vite.config.js#rollupOptions.input`, which
 is the list to read this off — a count written here is a count nothing checks):
 
-| Entry | URL | What it is |
-|---|---|---|
-| `index.html` → `src/main.js` → `App.svelte` | `/` | the calculator |
-| `how/index.html` → `src/how-main.js` → `How.svelte` | `/how/` | the country's figures, with their sources |
-| `market/index.html` → `src/market-main.js` → `Market.svelte` | `/market/` | the residential property market, with every figure sourced |
-| `credit/index.html` → `src/credit-main.js` → `Credit.svelte` | `/credit/` | what borrowing costs, and how long a mortgage's rate is fixed for |
-| `legal/index.html` → `src/legal-main.js` → `Legal.svelte` | `/legal/` | terms, privacy, ЗЕТ чл. 4 identity, sources |
-| `support/index.html` → `src/support-main.js` → `Support.svelte` | `/support/` | how the project is paid for |
-| `en/index.html`, `en/how/…`, `en/market/…`, `en/credit/…`, `en/legal/…`, `en/support/…` | `/en/…` | those six again, declaring `en` |
-| `404.html` → `src/notfound-main.js` → `NotFound.svelte` | `/404.html` | served for any unmatched path by name |
+| Entry                                                                                   | URL         | What it is                                                        |
+| --------------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------- |
+| `index.html` → `src/main.js` → `App.svelte`                                             | `/`         | the calculator                                                    |
+| `how/index.html` → `src/how-main.js` → `How.svelte`                                     | `/how/`     | the country's figures, with their sources                         |
+| `market/index.html` → `src/market-main.js` → `Market.svelte`                            | `/market/`  | the residential property market, with every figure sourced        |
+| `credit/index.html` → `src/credit-main.js` → `Credit.svelte`                            | `/credit/`  | what borrowing costs, and how long a mortgage's rate is fixed for |
+| `legal/index.html` → `src/legal-main.js` → `Legal.svelte`                               | `/legal/`   | terms, privacy, ЗЕТ чл. 4 identity, sources                       |
+| `support/index.html` → `src/support-main.js` → `Support.svelte`                         | `/support/` | how the project is paid for                                       |
+| `en/index.html`, `en/how/…`, `en/market/…`, `en/credit/…`, `en/legal/…`, `en/support/…` | `/en/…`     | those six again, declaring `en`                                   |
+| `404.html` → `src/notfound-main.js` → `NotFound.svelte`                                 | `/404.html` | served for any unmatched path by name                             |
 
 **The `en/` entries name the same bootstraps and the same components as their
 Bulgarian counterparts.** What separates a pair is the `data-lang` on `<html>`,
@@ -236,7 +236,7 @@ section below.
 ### A correct formula fed the wrong number
 
 This is the class of bug the pipeline gates structurally cannot see, because
-everything they check is already correct on disk. What is left is *which*
+everything they check is already correct on disk. What is left is _which_
 correct number reaches which correct formula.
 
 The layers exist to make a wrong wiring **impossible to express** rather than
@@ -275,7 +275,7 @@ the rendered text against the payload the page fetched.
 3. `App.svelte` constructs a `Calculator` and its `onMount` calls `calc.load()`,
    which calls `loadAll()` from `$lib/data.js`.
 4. `data.js` does `Promise.all` of one `fetch('/data/published/<name>.json',
-   { cache: 'no-cache' })` per manifest row and returns whichever succeeded; failures become
+{ cache: 'no-cache' })` per manifest row and returns whichever succeeded; failures become
    `null` and the page renders whatever subset loaded. The list is
    `payloads.js#PAYLOADS`, not a copy of it (below).
 5. `Calculator#load` computes `dataAge` over the route's own manifest rows
@@ -321,7 +321,7 @@ Three helpers on the same module:
   `HOME.rateDefaultPct` (offline sentinel). Returns `{ pct, label, refPeriod }`
   — the period is what dates the rate on screen, so it travels with it rather
   than being looked up again; the label
-  drives the provenance caption, because tier 2 answers a *different* question
+  drives the provenance caption, because tier 2 answers a _different_ question
   ("what people already repaying average") and must re-caption rather than pass
   for "the rate". The default is the **AAR**, not the APRC.
 - **`mortgageAprc(mortgage)`** — the all-in cost of the same new loans (APRC /
@@ -364,15 +364,15 @@ whichever of them nobody is looking at.
 
 Each row carries what the payload cannot say about itself:
 
-| Field | What it is |
-|---|---|
-| `key` | the property in the `loadAll()` result — components read `data.<key>` |
-| `file` | the published stem, `data/published/<file>.json` |
-| `pages` | the routes that render a figure from it, and the filter `loadAll` applies |
-| `cadenceDays` | the upstream's release rhythm. Past it a payload is *due*; past 1.5× it is *overdue* and the banner fires |
-| `name` / `feeds` | the panel's row label, and what this payload produces **on the page** |
-| `refPeriod(payload)` | where this payload keeps the period its figures describe |
-| `refPeriodSecondary(payload)` | a second vintage, where a payload blends two |
+| Field                         | What it is                                                                                                |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `key`                         | the property in the `loadAll()` result — components read `data.<key>`                                     |
+| `file`                        | the published stem, `data/published/<file>.json`                                                          |
+| `pages`                       | the routes that render a figure from it, and the filter `loadAll` applies                                 |
+| `cadenceDays`                 | the upstream's release rhythm. Past it a payload is _due_; past 1.5× it is _overdue_ and the banner fires |
+| `name` / `feeds`              | the panel's row label, and what this payload produces **on the page**                                     |
+| `refPeriod(payload)`          | where this payload keeps the period its figures describe                                                  |
+| `refPeriodSecondary(payload)` | a second vintage, where a payload blends two                                                              |
 
 Everything else the panel shows — `as_of`, `source`, `source_url` — is read from
 the envelope, because the payload already states it and a second copy could drift.
@@ -381,14 +381,14 @@ the envelope, because the payload already states it and a second copy could drif
 **`salary_dist`'s `cadenceDays` is the SES cycle rather than a quarter** —
 `payloads.js` carries both arguments on the rows they belong to, including why a
 banner that fires when nothing is wrong is worse than no banner. What the doc
-adds is where the second vintage comes from: a ladder whose *shape* is a
-Eurostat SES wave and whose *level* is a recent НСИ quarter is composed in the
+adds is where the second vintage comes from: a ladder whose _shape_ is a
+Eurostat SES wave and whose _level_ is a recent НСИ quarter is composed in the
 browser, so the two are dated on the two clocks they actually follow
 ([`legal.md`](./legal.md) §НСИ is why neither file may carry the other's figure).
 
 **A row is not a consumer.** The panel renders every payload, so "is it used?"
 is trivially true for anything in the manifest. `verify_data_contracts.mjs`
-therefore searches for `data.<key>` in the SPA *excluding* `payloads.js` and
+therefore searches for `data.<key>` in the SPA _excluding_ `payloads.js` and
 `DataPanel.svelte`: a payload must feed a figure, not just a dated row in the
 freshness table.
 
@@ -457,14 +457,14 @@ Pure geometry, a sibling of `mirror.js` rather than part of it: give it numbers
 and a box and it says where the marks go. Nothing in it knows about property,
 wages or inflation, which is the line between the two files.
 
-| Export | What it answers |
-|---|---|
+| Export                     | What it answers                                                             |
+| -------------------------- | --------------------------------------------------------------------------- |
 | `span` · `plotY` · `plotX` | a scale's range; a value's y in a box `h` tall; a point's x in one `w` wide |
-| `columnX` · `columnW` | a column's slot and its width, floored so a long series still draws |
-| `tickAt` | a tick's height as a PERCENTAGE of the plot |
-| `niceTicks` | an axis that ends on round numbers, and the values to label along it |
-| `yearTicks` | which years to mark on a time axis, and where each sits |
-| `sparkY` · `pathOf` | a value's y in the small box; a series as an SVG path |
+| `columnX` · `columnW`      | a column's slot and its width, floored so a long series still draws         |
+| `tickAt`                   | a tick's height as a PERCENTAGE of the plot                                 |
+| `niceTicks`                | an axis that ends on round numbers, and the values to label along it        |
+| `yearTicks`                | which years to mark on a time axis, and where each sits                     |
+| `sparkY` · `pathOf`        | a value's y in the small box; a series as an SVG path                       |
 
 **Not a component, and the rule is why.** A component may keep display-shape
 helpers that cannot produce a wrong number on their own; axis labels are digits
@@ -478,7 +478,7 @@ so no call site spells the box out. The module's header carries the rest.
 
 Every number the components render, as a pure function. This is the layer between
 "what is the arithmetic" and "where does it go on the page", and its functions
-are shaped to make a wrong wiring *unexpressible*:
+are shaped to make a wrong wiring _unexpressible_:
 
 - `savingsSince2020(cash, headline, categories)` takes the **categories**, not a rate, so
   no caller can hand it the user's own basket rate.
@@ -498,23 +498,23 @@ what `verify_view_home.mjs` tests, `view/market.js` is what
 `verify_docs_map.mjs` §"every view/ module is paired with the suite of the same stem"
 holds the pairing in both directions, so neither half can be added alone.
 
-| Module | What it answers | Its suite |
-|---|---|---|
-| `freshness.js` | Are the figures on the page still current? | `verify_view_freshness.mjs` |
-| `basket.js` | Which published divisions do the sliders start from, and where does a row verify? | `verify_view_basket.mjs` |
-| `region.js` | Which област did the reader pick, and what is published about it? | `verify_view_region.mjs` |
-| `results.js` | What does the results card claim about their year? | `verify_view_results.mjs` |
-| `spend.js` | How much of their money is the price rise charged against? | `verify_view_spend.mjs` |
-| `home.js` | What does a home cost the reader buying one? | `verify_view_home.mjs` |
-| `payroll.js` | Where does a household's pay stand once it has been taxed? | `verify_view_payroll.mjs` |
-| `employer.js` | What does the job cost, and how much of that never arrives? | `verify_view_employer.mjs` |
-| `country.js` | What does `/how/` render with nobody in it? | `verify_view_country.mjs` |
-| `share.js` | What leaves the page when a reader shares it? | `verify_view_share.mjs` |
-| `market.js` | Which published field feeds which figure on `/market/`? | `verify_view_market.mjs` |
-| `credit.js` | Which published field feeds which figure on `/credit/`? | `verify_view_credit.mjs` |
+| Module         | What it answers                                                                   | Its suite                   |
+| -------------- | --------------------------------------------------------------------------------- | --------------------------- |
+| `freshness.js` | Are the figures on the page still current?                                        | `verify_view_freshness.mjs` |
+| `basket.js`    | Which published divisions do the sliders start from, and where does a row verify? | `verify_view_basket.mjs`    |
+| `region.js`    | Which област did the reader pick, and what is published about it?                 | `verify_view_region.mjs`    |
+| `results.js`   | What does the results card claim about their year?                                | `verify_view_results.mjs`   |
+| `spend.js`     | How much of their money is the price rise charged against?                        | `verify_view_spend.mjs`     |
+| `home.js`      | What does a home cost the reader buying one?                                      | `verify_view_home.mjs`      |
+| `payroll.js`   | Where does a household's pay stand once it has been taxed?                        | `verify_view_payroll.mjs`   |
+| `employer.js`  | What does the job cost, and how much of that never arrives?                       | `verify_view_employer.mjs`  |
+| `country.js`   | What does `/how/` render with nobody in it?                                       | `verify_view_country.mjs`   |
+| `share.js`     | What leaves the page when a reader shares it?                                     | `verify_view_share.mjs`     |
+| `market.js`    | Which published field feeds which figure on `/market/`?                           | `verify_view_market.mjs`    |
+| `credit.js`    | Which published field feeds which figure on `/credit/`?                           | `verify_view_credit.mjs`    |
 
-What the pairing buys is not tidiness. It makes *where is the test for this
-function* answerable from the filename, and it makes moving a function between
+What the pairing buys is not tidiness. It makes _where is the test for this
+function_ answerable from the filename, and it makes moving a function between
 modules force its test to move — which is the rule
 [`AGENTS.md`](../AGENTS.md) §Tests states and which nothing else enforces.
 **A module whose sentence in that table needs an "and" is two modules**, the
@@ -549,11 +549,11 @@ is doing five things.
 **And a barrel hands back the whole bundle saving.** Measured on this tree, both
 ways, from `npm run build:release`:
 
-| Entry | One `view.js` | Barrel over the modules | Split, no barrel |
-|---|---|---|---|
-| `main` (`/`) | 360,620 B | 360,588 B | **352,224 B** |
-| `how-main` (`/how/`) | 244,062 B | 244,032 B | **235,673 B** |
-| `market-main` (`/market/`) | 256,631 B | 256,299 B | **244,352 B** |
+| Entry                      | One `view.js` | Barrel over the modules | Split, no barrel |
+| -------------------------- | ------------- | ----------------------- | ---------------- |
+| `main` (`/`)               | 360,620 B     | 360,588 B               | **352,224 B**    |
+| `how-main` (`/how/`)       | 244,062 B     | 244,032 B               | **235,673 B**    |
+| `market-main` (`/market/`) | 256,631 B     | 256,299 B               | **244,352 B**    |
 
 Transitive JS per entry, `dist/assets`, uncompressed. The barrel column is the
 finding: Rollup resolves a re-export module into one chunk reached by all three
@@ -567,34 +567,34 @@ per entry does not move, so this is not bytes traded for requests.
 bytes is a boundary that will not survive its first real edit; if a future
 Rollup chunks this differently the split stands on the paragraph above it.
 
-| Function | Returns | The wrong number it prevents |
-|---|---|---|
-| `officialBasketWeights(categories)` | the slider seed, **unrounded** | rounding makes the default basket sum to 97 and puts a third figure on screen |
-| `dataAge(parts, manifest, now)` | `{rows, oldestAsOf, newestAsOf, daysOld, stale, overdue, missing}` | measuring from the *newest* payload lets one fresh file hide eight stale ones |
-| `headlineRate(payload)` | Eurostat's all-items rate, verbatim | the strip rendering our Σ(w·r) reconstruction instead of the official figure |
-| `pctAhead(rank)` | display position, 1–99, from the bottom | "top 63%" for a below-median income |
-| `savingsSince2020(cash, headline, categories)` | `{valueToday, eaten, cumulativePct, basis}` | deflating by the 12-month rate (~5%) instead of the since-2020 cumulative (~40%) — and, since it prefers the published all-items index, showing our ~41.8% reconstruction under a sentence naming Eurostat |
-| `housingCarveOut({…})` | `{housingCost, spendable}` | the per-division € column ignoring rent or the mortgage |
-| `basketBudget({…})` | `{entered, spendBase, leftover, over, …}` | **a basket rescaled up to the whole salary** — thirteen euro figures nobody typed, and a headline charged on money nobody spends |
-| `clampSpendShare(pct)` | the stated spend share, 0–100 | an unreadable answer read as "spends nothing", emptying every € figure on the page |
-| `exposedSpend({…})` | €/month the price rise is charged on | "what the same life costs" billed against money that was never spent |
-| `leftoverIfHeldAsCash({…})` | `{ratePct, valueToday, eaten}` | the unplaced money deflated by the reader's own basket rate instead of the general price level |
-| `homePriceFor({…})` | the price the mortgage math runs on | a typed asking price being ignored, or a €0 home in manual mode |
-| `clampTerm(years, limits)` | term, capped at the БНБ maturity ceiling | quoting a 40-year mortgage no BG bank can originate |
-| `mortgagePanel({…})` | the whole home row | **the APRC amortised as if it were the interest rate** |
-| `taxWedgePanel({…})` | the effective/marginal rate curve and the cap marker | a marginal rate drawn flat across the insurance ceiling |
-| `scheduledMaxInsurable(payroll)` | the legislated next cap, from `scheduled_changes` | a future cap presented as if it were in force |
-| `sectorComparison({…})` | the chosen activity's published average, its gross and net, and one gap per earner | the country's by-activity average being drawn as if it were the reader's own област's, or a gap computed against a gross while the reader's figure is net |
-| `sectorOptions(payload, hints)` | the picker's rows, in НСИ's classification order, each leading with the everyday words for the work and ending with НСИ's own label | «Общо» offered as somebody's industry — the all-activities row is what the sections are read *against*, and in a list headed «Твоят сектор» it collects every reader who cannot find their own line. Sorting by wage is the second one: a league table is a claim the ordering makes on its own. The third is our words *replacing* НСИ's rather than preceding them |
-| `verifyUrl(row, anchor)` | the "↗" target for one row | linking to the index cube while showing a rate |
-| `fastestRisingDivision(categories)` | the highest-rate division | advertising the *slowest*-rising division as the fastest |
-| `anchorYears(categories)` | the year anchors the dropdown offers, newest first | an anchor a GROUP's history cannot reach — the detailed mode divides by that group's own index, so BG's `CP122` (eleven years shorter than the basket) renders `undefined` as a percentage |
-| `rankedSplit(ranked, limit)` | the rows the ranked list draws **plus the folded remainder** | a capped list under a sentence promising the column adds up — 5.1 points on screen against a stated 5.4 |
-| `pocketVerdictState(raise, pocket)` | which of the seven pocket verdicts a raise lands in | the answer block and the pocket row drifting apart over one number that has not moved |
-| `answerLine({…})` | the three things a reader arrives asking, as states | the plain answer ranking a reader who has typed nothing, or naming a mover out of a basket they zeroed |
-| `sharePayload({…})` | the closed set of fields a share surface may carry | **a € figure beside the percentage, which inverts to the salary** |
-| `shareSentence({share, copy, lang})` | the message a reader copies or hands to the share sheet | a shared number with no national figure beside it, which nobody can place |
-| `barCeiling({…})` | the value both comparison bars are drawn against | the picture a reader sends showing a different comparison from the screen it came from |
+| Function                                       | Returns                                                                                                                             | The wrong number it prevents                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `officialBasketWeights(categories)`            | the slider seed, **unrounded**                                                                                                      | rounding makes the default basket sum to 97 and puts a third figure on screen                                                                                                                                                                                                                                                                                        |
+| `dataAge(parts, manifest, now)`                | `{rows, oldestAsOf, newestAsOf, daysOld, stale, overdue, missing}`                                                                  | measuring from the _newest_ payload lets one fresh file hide eight stale ones                                                                                                                                                                                                                                                                                        |
+| `headlineRate(payload)`                        | Eurostat's all-items rate, verbatim                                                                                                 | the strip rendering our Σ(w·r) reconstruction instead of the official figure                                                                                                                                                                                                                                                                                         |
+| `pctAhead(rank)`                               | display position, 1–99, from the bottom                                                                                             | "top 63%" for a below-median income                                                                                                                                                                                                                                                                                                                                  |
+| `savingsSince2020(cash, headline, categories)` | `{valueToday, eaten, cumulativePct, basis}`                                                                                         | deflating by the 12-month rate (~5%) instead of the since-2020 cumulative (~40%) — and, since it prefers the published all-items index, showing our ~41.8% reconstruction under a sentence naming Eurostat                                                                                                                                                           |
+| `housingCarveOut({…})`                         | `{housingCost, spendable}`                                                                                                          | the per-division € column ignoring rent or the mortgage                                                                                                                                                                                                                                                                                                              |
+| `basketBudget({…})`                            | `{entered, spendBase, leftover, over, …}`                                                                                           | **a basket rescaled up to the whole salary** — thirteen euro figures nobody typed, and a headline charged on money nobody spends                                                                                                                                                                                                                                     |
+| `clampSpendShare(pct)`                         | the stated spend share, 0–100                                                                                                       | an unreadable answer read as "spends nothing", emptying every € figure on the page                                                                                                                                                                                                                                                                                   |
+| `exposedSpend({…})`                            | €/month the price rise is charged on                                                                                                | "what the same life costs" billed against money that was never spent                                                                                                                                                                                                                                                                                                 |
+| `leftoverIfHeldAsCash({…})`                    | `{ratePct, valueToday, eaten}`                                                                                                      | the unplaced money deflated by the reader's own basket rate instead of the general price level                                                                                                                                                                                                                                                                       |
+| `homePriceFor({…})`                            | the price the mortgage math runs on                                                                                                 | a typed asking price being ignored, or a €0 home in manual mode                                                                                                                                                                                                                                                                                                      |
+| `clampTerm(years, limits)`                     | term, capped at the БНБ maturity ceiling                                                                                            | quoting a 40-year mortgage no BG bank can originate                                                                                                                                                                                                                                                                                                                  |
+| `mortgagePanel({…})`                           | the whole home row                                                                                                                  | **the APRC amortised as if it were the interest rate**                                                                                                                                                                                                                                                                                                               |
+| `taxWedgePanel({…})`                           | the effective/marginal rate curve and the cap marker                                                                                | a marginal rate drawn flat across the insurance ceiling                                                                                                                                                                                                                                                                                                              |
+| `scheduledMaxInsurable(payroll)`               | the legislated next cap, from `scheduled_changes`                                                                                   | a future cap presented as if it were in force                                                                                                                                                                                                                                                                                                                        |
+| `sectorComparison({…})`                        | the chosen activity's published average, its gross and net, and one gap per earner                                                  | the country's by-activity average being drawn as if it were the reader's own област's, or a gap computed against a gross while the reader's figure is net                                                                                                                                                                                                            |
+| `sectorOptions(payload, hints)`                | the picker's rows, in НСИ's classification order, each leading with the everyday words for the work and ending with НСИ's own label | «Общо» offered as somebody's industry — the all-activities row is what the sections are read _against_, and in a list headed «Твоят сектор» it collects every reader who cannot find their own line. Sorting by wage is the second one: a league table is a claim the ordering makes on its own. The third is our words _replacing_ НСИ's rather than preceding them |
+| `verifyUrl(row, anchor)`                       | the "↗" target for one row                                                                                                          | linking to the index cube while showing a rate                                                                                                                                                                                                                                                                                                                       |
+| `fastestRisingDivision(categories)`            | the highest-rate division                                                                                                           | advertising the _slowest_-rising division as the fastest                                                                                                                                                                                                                                                                                                             |
+| `anchorYears(categories)`                      | the year anchors the dropdown offers, newest first                                                                                  | an anchor a GROUP's history cannot reach — the detailed mode divides by that group's own index, so BG's `CP122` (eleven years shorter than the basket) renders `undefined` as a percentage                                                                                                                                                                           |
+| `rankedSplit(ranked, limit)`                   | the rows the ranked list draws **plus the folded remainder**                                                                        | a capped list under a sentence promising the column adds up — 5.1 points on screen against a stated 5.4                                                                                                                                                                                                                                                              |
+| `pocketVerdictState(raise, pocket)`            | which of the seven pocket verdicts a raise lands in                                                                                 | the answer block and the pocket row drifting apart over one number that has not moved                                                                                                                                                                                                                                                                                |
+| `answerLine({…})`                              | the three things a reader arrives asking, as states                                                                                 | the plain answer ranking a reader who has typed nothing, or naming a mover out of a basket they zeroed                                                                                                                                                                                                                                                               |
+| `sharePayload({…})`                            | the closed set of fields a share surface may carry                                                                                  | **a € figure beside the percentage, which inverts to the salary**                                                                                                                                                                                                                                                                                                    |
+| `shareSentence({share, copy, lang})`           | the message a reader copies or hands to the share sheet                                                                             | a shared number with no national figure beside it, which nobody can place                                                                                                                                                                                                                                                                                            |
+| `barCeiling({…})`                              | the value both comparison bars are drawn against                                                                                    | the picture a reader sends showing a different comparison from the screen it came from                                                                                                                                                                                                                                                                               |
 
 ### Three of these are boundaries, not conveniences
 
@@ -602,15 +602,15 @@ Three `view/` functions are load-bearing in a way the table above cannot show,
 and each carries its argument, its measurements and the defect it prevents in
 the module that owns it:
 
-| Boundary | Reasoning in |
-|---|---|
-| **`mortgagePanel` amortises the AAR, never the APRC.** APRC is for comparing, AAR is for computing | `view/home.js` |
+| Boundary                                                                                                                                                                                                                                    | Reasoning in    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| **`mortgagePanel` amortises the AAR, never the APRC.** APRC is for comparing, AAR is for computing                                                                                                                                          | `view/home.js`  |
 | **`sharePayload` takes no salary at all**, because `salary × π/(100+π)` inverts exactly. Check a new share surface against the inversion rather than against the presence of a euro sign — the dangerous fields are the ones that look safe | `view/share.js` |
-| **`basketBudget` decides what the € column is a share of**, and the two entry modes measure the remainder differently on purpose: euro mode measures it, share mode has the reader state it, and only one is ever live | `view/spend.js` |
+| **`basketBudget` decides what the € column is a share of**, and the two entry modes measure the remainder differently on purpose: euro mode measures it, share mode has the reader state it, and only one is ever live                      | `view/spend.js` |
 
 `SHARE_FIELDS` is the closed list of what may cross onto a share surface, so
 adding a figure to a card means adding it there first — which is where the
-argument happens. What the unplaced money *is* — savings, help sent home — is
+argument happens. What the unplaced money _is_ — savings, help sent home — is
 not ours to say: P5 puts the assumption on the line beneath, and P6 and §7a
 close "save it" and "invest it".
 
@@ -635,14 +635,14 @@ here rather than at Eurostat, and `verify_wiring.mjs` fails on one.
 **The thirteen rows come first, and the ready-made baskets sit under them.**
 This is an ordering rule rather than a layout preference, and it is worth the
 paragraph because the obvious arrangement is the broken one. A chip row placed
-directly beneath «За какво отиват парите ти?» *answers* that question — five
+directly beneath «За какво отиват парите ти?» _answers_ that question — five
 first-person options, exactly one of which can be lit, is a persona picker, and
 a persona picker asks which of these five people you are. The thirteen rows
 below it then read as what the answer produced, which they are not: they carry
 a name, a code, a rate, a share and a €/month, the same anatomy as the ranked
 contributions in the results card, so a reader who has met that row as an
 output classifies these as one too. A user did exactly that and reported the
-calculator could not hold a man who drives to work *and* feeds a family — he
+calculator could not hold a man who drives to work _and_ feeds a family — he
 had seen the sliders and read them as a readout. Two sentences in `COPY` said
 otherwise, one beside the chips and one beside the number, and both lost to the
 arrangement around them. Under the list the same chips are what they are:
@@ -674,16 +674,16 @@ mixture, which is what the sliders are for.
 
 Eurostat publishes four levels of ECOICOP. We expose **two**:
 
-| Level | Codes for BG | Exposed? | Why |
-|---|---|---|---|
-| Division (`CP07`) | 13 | Always | Thirteen rows is already at the edge of what someone will read |
-| Group (`CP072`) | 46 | Behind *"show more detail"* | This is where the decisions people make live: car vs tickets, rent vs electricity, medicines vs hospital care. 46 rows at once is a spreadsheet; 3–8 rows inside one division you chose to open is a question you can answer |
-| Class (`CP0722`) | ~90+ | No | Below the resolution of anyone's memory of their own budget |
+| Level             | Codes for BG | Exposed?                    | Why                                                                                                                                                                                                                          |
+| ----------------- | ------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Division (`CP07`) | 13           | Always                      | Thirteen rows is already at the edge of what someone will read                                                                                                                                                               |
+| Group (`CP072`)   | 46           | Behind _"show more detail"_ | This is where the decisions people make live: car vs tickets, rent vs electricity, medicines vs hospital care. 46 rows at once is a spreadsheet; 3–8 rows inside one division you chose to open is a question you can answer |
+| Class (`CP0722`)  | ~90+         | No                          | Below the resolution of anyone's memory of their own budget                                                                                                                                                                  |
 
 **Progressive disclosure with one rule that makes it trustworthy: opening a
 division changes nothing.** An untouched division keeps its own published rate;
 only editing a group inside it switches to the user's split. Recombining a
-division's groups at Eurostat's own shares gives a slightly *different* number
+division's groups at Eurostat's own shares gives a slightly _different_ number
 than the published division rate, so "untouched" has to mean the published rate
 or the act of looking would move the answer. `mirror.js#divisionRate` encodes
 it. The first edit materialises the split from Eurostat's own within-division
@@ -693,7 +693,7 @@ rather than from zero, and a `your own split ↺` chip puts it back.
 **Two ways in: percentage shares or euros per month.** People know their euros
 better than their percentages, so the `€ per month` mode swaps each slider for a
 number input and shows a running tally against take-home. Both modes write to the
-**same array** and every consumer normalises by Σ, so `setSpendMode` *converts*
+**same array** and every consumer normalises by Σ, so `setSpendMode` _converts_
 rather than resets — flipping the toggle cannot move the user's inflation
 number. That property is why the toggle is safe to offer.
 
@@ -721,7 +721,7 @@ you spend ≈ €216/mo · it rose 11.0% · that costs you ≈ €21 more a mont
 
 - **The list is capped at eight rows and the remainder is still on screen.**
   `rankLead` tells the reader the rows sum to exactly their number, and
-  `contributions` makes that true of *all* of them — but twelve divisions clear
+  `contributions` makes that true of _all_ of them — but twelve divisions clear
   the drawing threshold on the default Bulgarian basket, so a capped column
   stops at 5.1 under a sentence saying 5.4. `view/results.js#rankedSplit` returns the
   folded tail with the rows, `verify_view_results.mjs` asserts
@@ -742,7 +742,7 @@ ids in the provenance fields of every payload `loadAll` actually fetches, **in
 both directions**, with a companion for the non-Eurostat upstreams.
 
 **Every row stays verifiable.** Divisions link to their own Eurostat extract;
-groups link to *theirs*, because a group inheriting its parent's link would send
+groups link to _theirs_, because a group inheriting its parent's link would send
 the user to a different number than the one on their screen. Each row's tooltip
 carries `eurostat_label`, Eurostat's own wording for the code, so our
 plain-language name is checkable rather than authoritative.
@@ -777,7 +777,7 @@ Three constraints, all argued at length in `stores.js` itself:
   `prefers-color-scheme` describes the device rather than guessing who is
   holding it.
 - **The URL outranks the saved preference, and `/` is the exception** — it is
-  the one address that names no language. Switching language is a *navigation*,
+  the one address that names no language. Switching language is a _navigation_,
   not a repaint.
 - **Nothing is written until the visitor chooses something**, which is ЗЕТ чл.
   4а, ал. 4, т. 2 rather than taste: the exemption is for storage «изрично
@@ -801,7 +801,7 @@ value it stands in for.
 
 The rule the copy has to keep is to **write for someone who does not know the
 vocabulary, and never at the cost of the number** — every term is either
-replaced with what it is a share *of* or explained where it first appears, and a
+replaced with what it is a share _of_ or explained where it first appears, and a
 translated idiom counts as jargon. `medianDefault` may not call the pre-filled
 salary typical: we publish no national median net wage, so calling it one
 borrows the ladder's provenance (P7).
@@ -859,16 +859,16 @@ than a second copy of it — every measurement, every defect that became a rule,
 and every rejected alternative is in the file named on the right, next to the
 code it constrains.
 
-| Component | The constraint that is not obvious from reading it |
-|---|---|
-| `NationalStrip` | A wrapping flex row, never an auto-fit grid, and the charted card renders last in a row of its own. Every card is gated on **its own payload**, never on what the reader typed |
-| `ResultsAnswer` | Introduces no arithmetic — `view/results.js#answerLine` decides what can honestly be stated. Two of its three clauses refuse to compute, and the refusals are the point |
-| `RankedContributions` | The fold is driven by the list's **own measured width**, not a `matchMedia` on the layout breakpoint. `rankedSplit` keeps Σshown + restPp === π at any limit |
-| `PercentileRow` | Ranks nobody who has not typed a salary. See the rule below |
-| `PayField` | Withholds the payslip and the област comparator until a salary is typed, for the same reason |
-| `PocketRow` | Seven states, one per verdict; «точно» is bound to `pocket === 0` and may not be said inside the dead zone |
-| `ShareCard` | The only canvas in an app that draws every chart as inline SVG. An SVG serialised into an `<img>` resolves no `@font-face`, so the card would come back in the system stack |
-| `WedgeChart` | Draws whatever markers it is handed and cannot tell whose gross they are, so who lands on the curve is decided in `view/`, where a suite can reach it |
+| Component             | The constraint that is not obvious from reading it                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NationalStrip`       | A wrapping flex row, never an auto-fit grid, and the charted card renders last in a row of its own. Every card is gated on **its own payload**, never on what the reader typed |
+| `ResultsAnswer`       | Introduces no arithmetic — `view/results.js#answerLine` decides what can honestly be stated. Two of its three clauses refuse to compute, and the refusals are the point        |
+| `RankedContributions` | The fold is driven by the list's **own measured width**, not a `matchMedia` on the layout breakpoint. `rankedSplit` keeps Σshown + restPp === π at any limit                   |
+| `PercentileRow`       | Ranks nobody who has not typed a salary. See the rule below                                                                                                                    |
+| `PayField`            | Withholds the payslip and the област comparator until a salary is typed, for the same reason                                                                                   |
+| `PocketRow`           | Seven states, one per verdict; «точно» is bound to `pocket === 0` and may not be said inside the dead zone                                                                     |
+| `ShareCard`           | The only canvas in an app that draws every chart as inline SVG. An SVG serialised into an `<img>` resolves no `@font-face`, so the card would come back in the system stack    |
+| `WedgeChart`          | Draws whatever markers it is handed and cannot tell whose gross they are, so who lands on the curve is decided in `view/`, where a suite can reach it                          |
 
 Three rules cut across all of them, and only these are stated here because no
 single component owns one:
@@ -1034,6 +1034,20 @@ first thing a stranger sees in both READMEs. So the same run writes
 `docs/img/screenshot.txt` — the words that were inside the frame — and
 `verify_render_screenshot.mjs` holds the built page to it. A copy change that
 reaches the frame fails the render suite and names the line that moved.
+
+**A payload's own dates are not among those words.** The frame includes the open
+data panel, whose `период` and `изтеглено` columns are every payload's reference
+period and the day it was fetched — and `as_of` moves on every refresh whether
+or not a figure did. Pinned here, the check failed on the arm that publishes the
+payload rather than on any commit that changed a word, taking `site` and
+`windows` with it and leaving the refresh PR unmergeable. `DataPanel.svelte`
+marks those values `data-freshness` and `frameText` skips them; the dates are
+gated where they are produced (`validate.py`, and `verify_view_freshness.mjs`
+for what the panel does with them), so nothing here was their second reader.
+
+The marks are on the values, not the cells, so the column headings, the status
+words, the secondary vintage's label and the paragraph under the table all stay
+pinned — a copy edit to any of them still goes red.
 
 **The words are checked and the pixels are not**, so a layout that broke without
 changing a word is still something only a person sees. Regenerate in the same

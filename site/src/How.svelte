@@ -328,7 +328,7 @@
      own tab: the verdict is a function of the clock and the build's clock is
      not the reader's, which is why the constructor deliberately does not seed
      it (calculator.svelte.js). -->
-<DataLate rows={calc.dataOverdue} />
+<DataLate notice={calc.dataNotice} />
 
 <main id="main" class="wrap how">
   <h1>

@@ -36,7 +36,7 @@
   import { COPY, t } from "./lib/content.js";
   import { loadAll } from "./lib/data.js";
   import { payloadsFor } from "./lib/payloads.js";
-  import { dataAge } from "./lib/view/freshness.js";
+  import { dataAge, dataNotice } from "./lib/view/freshness.js";
   import {
     marketVolume,
     marketAverageDeal,
@@ -97,7 +97,12 @@
    */
   let data = $state(payloads ?? {});
   /**
-   * Which of this page's payloads have fallen past their own cadence.
+   * Which of this page's payloads are overdue, and which never arrived at all.
+   *
+   * **`ready: true` because this line only runs after the await above.** The
+   * gate exists for the surfaces that render while the fetch is outstanding,
+   * where every payload reads as absent; here the assignment IS the moment it
+   * resolved (view/freshness.js#dataNotice).
    *
    * **Set in `onMount` and never seeded from the prop, for the reason
    * `calculator.svelte.js`'s constructor gives.** The verdict is a function of
@@ -106,10 +111,10 @@
    * was fresh goes on calling it fresh for as long as it is served — which is
    * the exact failure this line exists to report.
    */
-  let late = $state([]);
+  let notice = $state(null);
   onMount(async () => {
     data = await loadAll("market");
-    late = dataAge(data, payloadsFor("market")).overdue;
+    notice = dataNotice({ age: dataAge(data, payloadsFor("market")), ready: true });
   });
 
   const fmt = (x, d = 1) => number(x, d, $lang);
@@ -1162,7 +1167,7 @@
        the bottom on exactly the day the page most needs reading. Here it is the
        first thing after the row, in the erode accent, and it qualifies
        everything below it. Each card carries its own period either way. -->
-  <DataLate rows={late} inset />
+  <DataLate {notice} inset />
 
   <!--
     Directly under the cards it discloses. Three of the four are ours rather

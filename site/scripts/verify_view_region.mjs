@@ -27,6 +27,7 @@ import {
   CITY_PRICED,
   CITY_UNREAD,
   CITY_NO_PAGE,
+  CITY_UNKNOWN,
   SOFIA_CITY_CODE,
 } from "../src/lib/view/region.js";
 import { HOME } from "../src/lib/content.js";
@@ -186,6 +187,47 @@ test("a city with no price is told apart from a city nobody read yet", () => {
   for (const o of regionOptions(regions, prices, "bg")) {
     assert.equal(o.coverage, cityCoverage(prices, o.code), o.code);
   }
+});
+
+test("a payload that never arrived says nothing in имот.bg's name", () => {
+  // The same objection as the test above, one layer out. Both `unread` and
+  // `nopage` are read off `city_pages`, and a missing list is an EMPTY list to
+  // `.includes` — so a 404 on `city_price.json` answered `nopage` for every
+  // област and the housing card told all twenty-eight «имот.bg публикува цени
+  // по градове, а нито един град от тази област не е сред тях», over a list of
+  // twenty-seven cities имот.bg do publish. A failed fetch of ours is not a
+  // statement about a publisher.
+  const regions = read("region_salary");
+  const prices = read("city_price");
+  if (!regions || !prices) return;
+
+  // Варна is the case that names itself: имот.bg serve it, this is their own
+  // list saying so, and it is the город the wording is false about.
+  assert.ok(prices.city_pages.includes("varna"), "имот.bg's list no longer carries Варна");
+
+  // Every shape a payload that cannot answer arrives in — a 404 (null), a body
+  // that parsed to nothing, and an envelope whose coverage list did not survive.
+  for (const absent of [null, undefined, {}, { cities: [] }, { city_pages: [] }]) {
+    assert.equal(cityCoverage(absent, "varna"), CITY_UNKNOWN, JSON.stringify(absent));
+    assert.equal(cityCoverage(absent, SOFIA_CITY_CODE), CITY_UNKNOWN, JSON.stringify(absent));
+    // The picker reads it through the same predicate, so no option carries a
+    // coverage the card it opens would contradict.
+    const options = regionOptions(regions, absent, "bg");
+    assert.ok(options.length > 0, "the wage payload still fills the picker");
+    for (const o of options) {
+      assert.equal(o.coverage, CITY_UNKNOWN, o.code);
+      assert.equal(o.coverage, cityCoverage(absent, o.code), o.code);
+    }
+  }
+
+  // And the three real answers are untouched: a payload that CAN answer still
+  // tells them apart, or this guard would have bought its truth by muting them.
+  assert.equal(cityCoverage(prices, "varna"), CITY_PRICED);
+  const noPage = regions.regions.map((r) => r.code).filter((c) => !prices.city_pages.includes(c));
+  assert.deepEqual(
+    noPage.map((c) => cityCoverage(prices, c)),
+    noPage.map(() => CITY_NO_PAGE)
+  );
 });
 
 test("regionQuarter reads НСИ's published quarter and computes nothing", () => {

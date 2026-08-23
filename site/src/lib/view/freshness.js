@@ -133,3 +133,37 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
     missing: rows.filter((r) => r.status === "absent"),
   };
 }
+
+/**
+ * What a page owes a reader about its own data — BOTH ways a figure can be
+ * unreliable, decided once.
+ *
+ * `dataAge` has returned `overdue` and `missing` side by side all along, and
+ * four surfaces each reached for `.overdue` and none for `.missing`. So a
+ * payload that failed to fetch raised nothing anywhere: the calculator's banner
+ * counted the late ones, `/how/`, `/market/` and `/credit/` named them, and a
+ * 404 on `house_market.json` took nine of `/market/`'s eighteen tables off the
+ * page under a heading promising them, with no line anywhere saying so.
+ *
+ * The two are one question — "is anything here not what it should be" — and
+ * splitting it across the call sites is what let three of four answer half of
+ * it. This returns both lists together and `DataLate` takes the whole object,
+ * so a surface cannot render one state and drop the other.
+ *
+ * **`ready` is a parameter and not a default.** Before `loadAll` resolves every
+ * payload is `absent`, which is this function's own alarm condition — so a
+ * caller that does not say whether the fetch has finished would flash "13
+ * datasets did not load" on every first paint, on every page. Naming it is what
+ * makes forgetting it visible here rather than in a reader's tab.
+ *
+ * @param {object} args
+ * @param {ReturnType<typeof dataAge>|null} args.age
+ * @param {boolean} args.ready  whether `loadAll` has resolved
+ * @returns {{late: Array<object>, gone: Array<object>, count: number, show: boolean}}
+ */
+export function dataNotice({ age, ready }) {
+  if (!ready) return { late: [], gone: [], count: 0, show: false };
+  const late = age?.overdue ?? [];
+  const gone = age?.missing ?? [];
+  return { late, gone, count: late.length + gone.length, show: late.length + gone.length > 0 };
+}

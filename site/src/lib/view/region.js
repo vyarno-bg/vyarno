@@ -34,23 +34,51 @@
 export const SOFIA_CITY_CODE = "sofiya";
 
 /**
- * The three states an област's €/m² can be in, and they are three claims.
+ * The four states an област's €/m² can be in, and they are four claims.
  *
  * - `priced`  — `city_price.json` carries a row for it.
  * - `unread`  — имот.bg serve a page for it and this refresh did not read it.
  * - `nopage`  — имот.bg serve no page for it at all.
+ * - `unknown` — the payload is not here to answer, so none of the three holds.
  *
  * **Only `nopage` may be said in имот.bg's name.** «имот.bg не публикува цени
  * за Варна» is false — they publish Варна's — and it is the sentence one flag
  * produces for every city a refresh missed, wearing the wording of the one
  * place it is true of. The payload's `city_pages` is what separates them; see
  * `sources/imot.py#build_city_price_payload`.
+ *
+ * **`unknown` is the same objection one layer out.** Both `unread` and `nopage`
+ * are read off `city_pages`, so a payload that did not load at all leaves
+ * neither answerable — and a missing list is an EMPTY list to `.includes`,
+ * which is `nopage` for all twenty-eight области. One 404 therefore told every
+ * reader in the country that имот.bg publish no price where they live, in
+ * имот.bg's name, over a list of twenty-seven cities they do publish. The
+ * fourth state is what the two exist for, applied to the payload rather than to
+ * a city inside it.
  */
 export const CITY_PRICED = "priced";
 
 export const CITY_UNREAD = "unread";
 
 export const CITY_NO_PAGE = "nopage";
+
+export const CITY_UNKNOWN = "unknown";
+
+/**
+ * Whether `city_price.json` can answer the coverage question at all.
+ *
+ * `city_pages` is имот.bg's own list of the cities they serve a page for, and
+ * every claim about a city they DO NOT serve rests on it. Absent, the honest
+ * answer about any област is that we do not know — never that имот.bg publish
+ * nothing there, which is a statement about a publisher made out of our own
+ * failed fetch.
+ *
+ * @param {{city_pages?: Array<string>} | null | undefined} cityPrice
+ * @returns {boolean}
+ */
+function coversCities(cityPrice) {
+  return Array.isArray(cityPrice?.city_pages) && cityPrice.city_pages.length > 0;
+}
 
 /**
  * The two НСИ labels that cannot stand alone in a list, and what a person calls
@@ -135,12 +163,23 @@ export function regionOptions(regionSalary, cityPrice, lang) {
   const rows = Array.isArray(regionSalary?.regions) ? regionSalary.regions : [];
   const priced = new Set((cityPrice?.cities ?? []).map((c) => c?.code).filter(Boolean));
   const pages = new Set(cityPrice?.city_pages ?? []);
+  // Off `coversCities` rather than off `pages.size`, so the option and the card
+  // it opens read the payload through one predicate. A second reading here is a
+  // second chance to answer `nopage` where `cityCoverage` answers `unknown`,
+  // and the two disagreeing is a suffix that contradicts the sentence under it.
+  const known = coversCities(cityPrice);
   const collator = new Intl.Collator(lang === "bg" ? "bg" : "en");
   return rows
     .map((r) => ({
       code: r?.code ?? "",
       name: regionDisplayName(lang === "bg" ? r?.bg_name : r?.en_name, lang),
-      coverage: priced.has(r?.code) ? CITY_PRICED : pages.has(r?.code) ? CITY_UNREAD : CITY_NO_PAGE,
+      coverage: priced.has(r?.code)
+        ? CITY_PRICED
+        : !known
+          ? CITY_UNKNOWN
+          : pages.has(r?.code)
+            ? CITY_UNREAD
+            : CITY_NO_PAGE,
     }))
     .filter((o) => o.code && o.name)
     .sort((a, b) => collator.compare(a.name, b.name));
@@ -180,7 +219,8 @@ export function regionNames(regionSalary, code) {
  */
 export function cityCoverage(cityPrice, code) {
   if (cityRow(cityPrice, code)) return CITY_PRICED;
-  return (cityPrice?.city_pages ?? []).includes(code) ? CITY_UNREAD : CITY_NO_PAGE;
+  if (!coversCities(cityPrice)) return CITY_UNKNOWN;
+  return cityPrice.city_pages.includes(code) ? CITY_UNREAD : CITY_NO_PAGE;
 }
 
 /**
