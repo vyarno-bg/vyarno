@@ -211,6 +211,19 @@ attached. The other direction fails too — a long sentence is usually long
 because it is in the wrong layer, and a ceiling gets it cut to fit rather than
 moved, which loses the reason it existed.
 
+**This was re-argued against "plain enough for a reader who has read no
+economics", and it held — on the measurement rather than on the reasoning.**
+Read the Bulgarian sentences on the site end to end and the median is a handful
+of words, with nine in ten under twenty; the calculator's own copy, which is
+what a reader meets first, sits at the short end of that. The long tail is
+almost entirely the privacy notice, the licence and the upstream descriptions,
+where a sentence is long because a qualification cannot be dropped and the two
+halves have to be read together anyway. So a ceiling would fire on the legal
+documents and almost nowhere else, which is the first argument above arriving
+from the other direction. **The plain-language requirement is real and it is
+step 2 below** — most long sentences are two ideas joined by a dash or a colon,
+and splitting one loses nothing.
+
 So what a reviewer reads a page for, in this order:
 
 1. **Which layer is this sentence in?** `/market/` is the worked example and its
@@ -265,6 +278,49 @@ easy to produce without noticing.
 | Praise vocabulary | comprehensive, seamless, powerful, leverage, delve, robust |
 
 "Successfully implemented X" is a status report to nobody. Say what X now does.
+
+## The Bulgarian tells
+
+The table above is English-shaped: em-dashes, rule of three, praise vocabulary.
+None of it catches a Bulgarian sentence that is grammatical, ordinary and
+translated. These are the ones that do, and the first four are the ones a
+literate reader notices before they notice the figures.
+
+| Tell | Looks like | Instead |
+|---|---|---|
+| Possessive before the noun | «вашата заплата», «твоите цени» | «заплатата ви», «цените ти» |
+| Guillemets | «Помни числата ми» | „Помни числата ми“ |
+| Пълен и кратък член | «плащаме данъкът» | «плащаме данъка» — subject takes -ът/-ят, object and after a preposition -а/-я |
+| Броена форма | «два левове», «пет процентa» | «два лева», «пет процента» |
+| Clitic order | «ще се ви покаже» | «ще ви се покаже» |
+| Calqued verb | «сметката се случва в браузъра ти» | «сметката се прави в браузъра ти» |
+| Anglicism with a plain word | опция, локация, релевантен, базиран на | възможност, място, съществен, въз основа на |
+| Nominalisation | «извършване на изчисление» | «изчислява се» |
+| Passive dragged in | «може да бъде изчислено» | «изчислява се» |
+| Throat-clearing | «Важно е да се отбележи, че…» | the sentence it is clearing its throat before |
+| Mixed address | «Вие» in one paragraph and «ти» in the next | one, or neither — Bulgarian drops it more gracefully than English |
+
+**Three of these are checked** and the rest are review notes:
+`verify_copy.mjs` §"neither language quotes with guillemets" holds the quotation
+marks in both languages, and §"no Bulgarian string reaches a reader through
+English" holds the anglicisms and the throat-clearing. The denylist behind the
+second is deliberately short — a word earns a place on it by being always wrong
+HERE with an obvious replacement, which is why `дефинира`, `интегрира` and
+`специфичен` are absent, and why «се случва» is too: `/market/` uses it
+correctly in «точно сега се случва нещо».
+
+**Pro-drop has one exception, and it is not optional.** Bulgarian carries the
+person in the verb, so «Ти въведе…» normally reads as English word for word.
+The aorist is the case where it does not: `въведе` is both 2sg and 3sg, so
+dropping the pronoun leaves a sentence that may be about the reader or about
+somebody else. The obvious repair is worse — «Въвел си» is a past participle
+and agrees with a gender the app has never been told, which is the same
+constraint `shareCardVerdictNoBasket` is written around. So the pronoun stays
+wherever the aorist needs it, and nowhere else.
+
+**Reading it aloud is still the only test that catches the rest**, and it is
+step 4 of the four above for a reason: a sentence can pass every row in this
+table and still be English word order in Cyrillic.
 
 ## What not to strip
 

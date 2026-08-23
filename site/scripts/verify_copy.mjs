@@ -579,6 +579,117 @@ test("no em-dash reaches a reader, in either language", () => {
 });
 
 // ---------------------------------------------------------------------------
+// The Bulgarian is the original, not a translation of the English
+// ---------------------------------------------------------------------------
+
+/** Every module whose values a reader is served, as the em-dash rule walks them. */
+const COPY_MODULES = [
+  ["content.js", contentModule],
+  ["legal.js", legalModule],
+  ["support.js", supportModule],
+  ["payloads.js", { PAYLOADS }],
+];
+
+test("neither language quotes with guillemets, nor with a straight quote in prose", () => {
+  // Bulgarian quotes with „…“ and English with “…”. Guillemets belong to
+  // neither, and seventeen reader-facing lines carried them — six inside the
+  // privacy notice, which quoted a switch as «Помни числата ми» in one
+  // paragraph and a promise as „не събираме нищо“ in the next. Nothing renders
+  // wrong, which is how it lasted: a reader does not report mixed quotes, they
+  // read the page as translated and trust the figures on it less.
+  //
+  // **`«` is the whole rule for the templates**, because it appears in no
+  // Svelte expression and in no attribute, so a match there is prose. The
+  // straight `"` is judged on the module values alone, where the string IS the
+  // prose: a `.svelte` file carries `"bg"` in every second expression, and a
+  // rule reporting those is one a contributor silences rather than reads.
+  const offenders = [];
+  for (const [name, module] of COPY_MODULES) {
+    for (const [path, value] of reachableStrings(module, name)) {
+      if (/[«»]/.test(value)) offenders.push(`${path}: ${value}`);
+      // `HOME` is the module's CONFIG export — offline sentinels, defaults, and
+      // notes on where a fallback figure was copied from — and no sentence in
+      // it reaches a reader. Its one quoted run names an НСИ spreadsheet sheet
+      // («"{year}trimes" sheets»), which is a token somebody types to find the
+      // file rather than a phrase, and curling it would break the search.
+      if (path.startsWith("content.js.HOME.")) continue;
+      // Tags first: `href="…"` is markup, and the rule is about sentences.
+      if (withoutTags(value).includes('"')) offenders.push(`${path}: ${value}`);
+    }
+  }
+  const check = (label, text) => {
+    for (const m of text.matchAll(/[«»]/g)) offenders.push(`${label}: …${quote(text, m.index)}…`);
+  };
+  for (const [path, src] of svelteFiles()) check(path, readerFacing(src));
+  for (const [path, src] of entryShells()) check(path, readerFacing(src));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "shipped copy quoted with the wrong marks. Bulgarian takes „…“ and English " +
+      "“…” (docs/writing-style.md §The Bulgarian tells). Guillemets are the " +
+      "convention for quoting a Bulgarian string inside an English COMMENT, and " +
+      "they stay there:\n  " +
+      offenders.join("\n  ")
+  );
+});
+
+/**
+ * Words that are an English one wearing Cyrillic, and what this copy says instead.
+ *
+ * **Every entry is a word with a plain Bulgarian equivalent the copy already
+ * uses**, which is what keeps the list short enough to stay switched on. A
+ * denylist that argues with the writer gets deleted, so the bar for adding one
+ * is not "an anglicism" but "always wrong HERE, with the replacement obvious" —
+ * `дефинира`, `интегрира` and `специфичен` are ordinary Bulgarian and are
+ * deliberately absent, and so is `се случва`, which `/market/` uses correctly
+ * in «точно сега се случва нещо» while «сметката се случва в браузъра ти» would
+ * be the calque. That one is a review note and reading aloud is what catches it.
+ *
+ * **No language detection is needed and none is done.** Every pattern is
+ * Cyrillic, so an English string cannot match one, and the rule runs over all
+ * reader-facing text without having to decide which side it is looking at.
+ */
+const CALQUES = [
+  [/базиран/iu, "въз основа на, според"],
+  [/адресира/iu, "решава, отговаря на"],
+  [/имплементира/iu, "въвежда, прилага"],
+  [/(?<!\p{L})опци[яи](?!\p{L})/iu, "възможност"],
+  [/(?<!\p{L})локаци[яи](?!\p{L})/iu, "място"],
+  [/релевант/iu, "съществен, подходящ"],
+  [/консистент/iu, "последователен"],
+  [/апликаци/iu, "приложение"],
+  [/дедикира/iu, "отделен, специален"],
+  [/таргет/iu, "цел"],
+  [/мониторира/iu, "следи"],
+  [/ъп(дейт|грейд)/iu, "обновяване, подобрение"],
+  [/(Важно|Струва си|Следва|Заслужава)\s+(е\s+)?да\s+се\s+отбележи/iu, "the sentence itself"],
+];
+
+test("no Bulgarian string reaches a reader through English", () => {
+  const offenders = [];
+  const check = (label, text) => {
+    for (const [pattern, instead] of CALQUES) {
+      const hit = pattern.exec(text);
+      if (hit) offenders.push(`${label}: «${hit[0]}» → ${instead}`);
+    }
+  };
+  for (const [name, module] of COPY_MODULES)
+    for (const [path, value] of reachableStrings(module, name)) check(path, value);
+  for (const [path, src] of svelteFiles()) check(path, readerFacing(src));
+  for (const [path, src] of entryShells()) check(path, readerFacing(src));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "a calque reached shipped copy. The Bulgarian is the original rather than a " +
+      "translation of the English (docs/writing-style.md §The Bulgarian tells), " +
+      "and each of these has a plain word this copy already uses:\n  " +
+      offenders.join("\n  ")
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Editorial rules: sentences that are commitments, not preferences
 // ---------------------------------------------------------------------------
 
