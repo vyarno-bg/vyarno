@@ -1137,6 +1137,30 @@ test("Eurostat's flags reach the page at the periods they are on, and nowhere el
   assert.deepEqual(statusLettersUsed([{}, null]), []);
 });
 
+test("the rate line does not borrow the index's flags", () => {
+  // `annual_rate_pct` and `status_by_period` are siblings under `price_index`,
+  // so wiring the rate chart to the map beside it is one line and looks right.
+  // It is not: Eurostat flag `prc_hpi_q` per unit, and the map published is
+  // `I15_Q`'s while the rate is `RCH_A`. Their estimate blocks sit a year apart
+  // — 2005-Q1..2009-Q1 against 2006-Q1..2010-Q1 — so the index's letters on the
+  // rate line would mark four quarters that carry no estimate and leave four
+  // that do. `docs/sources/eurostat.md` §"The property cubes" has the probe.
+  const market = read("house_market");
+  if (!market) return;
+
+  const rate = marketPriceRateSeries(market);
+  assert.ok(rate.points.length > 8, "the rate series is empty, so this proves nothing");
+  assert.equal(rate.flags, undefined, "the rate series carries flags it cannot have earned");
+  // And the letters really do disagree, so the guard above is not defending a
+  // difference that has quietly gone away.
+  const indexFlags = marketPriceIndexSeries(market).flags;
+  const ratePeriods = new Set(rate.points.map((p) => p.period));
+  assert.ok(
+    Object.keys(indexFlags).some((period) => !ratePeriods.has(period)),
+    "every index-flagged quarter is on the rate line too, so check whether the units still differ"
+  );
+});
+
 test("the count's year-on-year series compares like quarters, and says it is ours", () => {
   // The change beside the count is one quarter against the same quarter a year
   // earlier; this is the same arithmetic over the whole record, and the whole
