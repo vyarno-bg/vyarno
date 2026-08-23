@@ -1534,15 +1534,21 @@ export const COPY = {
   // it covers — the same latest month the calculator's default (y1) uses.
   // Plain language, no dataset code. "инфлация" is the everyday word for
   // how much prices went up; "ставка" sounds like a bank rate.
-  // `{flash}` lands at the END, next to the period it qualifies rather than
-  // next to the publisher's name — the estimate is a property of this month's
-  // reading, not of Eurostat. Which is also why the Bulgarian carries the
-  // attribution up front: two parentheticals in a row read as an aside about
-  // an aside, and the marker is the one a reader has to see.
-  headlineRate: {
-    bg: "официална инфлация по данни на Евростат: {rate}% за {ref_period}{flash}",
-    en: "official Eurostat inflation: {rate}% for {ref_period}{flash}",
+  // The flash marker lands at the END, next to the period it qualifies rather
+  // than next to the publisher's name — the estimate is a property of this
+  // month's reading, not of Eurostat. Which is also why the Bulgarian carries
+  // the attribution up front: two parentheticals in a row read as an aside
+  // about an aside, and the marker is the one a reader has to see.
+  //
+  // Three pieces rather than one string, for the reason `dataAsOfLead` carries:
+  // the rate, its month and whether that month is a flash are all the payload's,
+  // and the words between them are copy. `DataBanner.svelte` marks each figure
+  // and leaves these words bare. The rendered sentence is unchanged.
+  headlineRateLead: {
+    bg: "официална инфлация по данни на Евростат:",
+    en: "official Eurostat inflation:",
   },
+  headlineRateFor: { bg: "за", en: "for" },
   statInfK: { bg: "инфлация за година", en: "annual inflation" },
   // Always-on "typical pay" card. The MEDIAN (half earn less, half more) is
   // the honest "what people actually earn" number — unlike the average, it
@@ -1972,13 +1978,20 @@ export const COPY = {
   statHomeDelta: { bg: "{pct} от {y} · медиана", en: "{pct} since {y} · median" },
   statUnempK: { bg: "безработица · 15-74 г.", en: "unemployment · age 15-74" },
 
-  // As-of banner.
+  // As-of banner. The period it names is the REFERENCE PERIOD of the headline
+  // inflation figure — the month the prices are from, not the day we downloaded
+  // it. The two are a month apart, and a date reads as "prices current to this
+  // day" when it is not. Download dates are per payload, in the panel the next
+  // key opens.
   //
-  // `{period}` is the REFERENCE PERIOD of the headline inflation figure — the
-  // month the prices are from, not the day we downloaded it. The two are a month
-  // apart, and a date reads as "prices current to this day" when it is not.
-  // Download dates are per payload, in the panel the next key opens.
-  dataAsOf: { bg: "Числата са към {period}", en: "Figures for {period}" },
+  // **The lead is a phrase and not a sentence with a slot**, because the period
+  // is a payload's figure and the words around it are copy, and the two are
+  // checked by different things. `DataBanner.svelte` renders the month inside a
+  // `[data-freshness]` mark, which `screenshot-frame.mjs` skips — so a release
+  // moving the month leaves the README's frame alone, and an edit to these
+  // words still moves it. A single interpolated string cannot be marked that
+  // way: the mark would have to cover the whole sentence or none of it.
+  dataAsOfLead: { bg: "Числата са към", en: "Figures for" },
   dataPanelToggle: { bg: "всички данни и източници", en: "all data and sources" },
   dataPanelTitle: { bg: "Данните на тази страница", en: "The data on this page" },
   // Why the panel has two date columns, said once, in the reader's words.

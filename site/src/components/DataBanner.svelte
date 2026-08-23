@@ -103,13 +103,23 @@
            anything it cannot render, which is right for a table cell and is not
            a date. The loading state omits the whole strip and this now matches
            it. -->
+      <!-- **The month sits inside `[data-freshness]` and the words do not.**
+           `screenshot-frame.mjs` skips marked nodes, so the README's frame is
+           pinned to this copy and blind to which month the payload is at — the
+           release half of the fix that took the panel's dates out. Before it,
+           a refresh that carried genuinely new figures moved the frame, went
+           red on `site` and `windows`, and left a pull request nobody could
+           merge (run 32485580094, PR #135). The mark is on the VALUE, so a copy
+           edit to «Числата са към» still moves the frame and still goes red. -->
       {#if asOfDisplay}
         <span>
           <span class="l-bg"
-            >{t(COPY.dataAsOf, "bg", { period: periodLong(asOfDisplay, "bg") })}</span
+            >{t(COPY.dataAsOfLead, "bg")}
+            <span data-freshness>{periodLong(asOfDisplay, "bg")}</span></span
           >
           <span class="l-en"
-            >{t(COPY.dataAsOf, "en", { period: periodLong(asOfDisplay, "en") })}</span
+            >{t(COPY.dataAsOfLead, "en")}
+            <span data-freshness>{periodLong(asOfDisplay, "en")}</span></span
           >
         </span>
       {/if}
@@ -128,20 +138,31 @@
              has to make obvious, and a reader had to convert an ISO period
              before they could even see that they were not the same month.
              `/how/` prints the same pair as «юли 2026 г.» and «юни 2026 г.». -->
+        <!-- Same split, three figures. The flash marker is marked too: its
+             WORDS are copy, but whether it is on the page at all is the
+             payload's, and a release landing inside Eurostat's flash window
+             would otherwise move the frame with nothing edited. `verify_copy`
+             holds what it says; nothing else on this page prints it. -->
         <span class="off-fig" class:off-late={headlineOverdue}>
           <span class="l-bg"
-            >{t(COPY.headlineRate, "bg", {
-              rate: number(headline, 1, "bg"),
-              ref_period: periodLong(headlineRefPeriod, "bg"),
-              flash: headlineIsFlash ? t(COPY.srcFlash, "bg") : "",
-            })}</span
+            >{t(COPY.headlineRateLead, "bg")}
+            <span data-freshness>{number(headline, 1, "bg")}%</span>
+            {t(COPY.headlineRateFor, "bg")}
+            <span data-freshness
+              >{periodLong(headlineRefPeriod, "bg")}{headlineIsFlash
+                ? t(COPY.srcFlash, "bg")
+                : ""}</span
+            ></span
           >
           <span class="l-en"
-            >{t(COPY.headlineRate, "en", {
-              rate: number(headline, 1, "en"),
-              ref_period: periodLong(headlineRefPeriod, "en"),
-              flash: headlineIsFlash ? t(COPY.srcFlash, "en") : "",
-            })}</span
+            >{t(COPY.headlineRateLead, "en")}
+            <span data-freshness>{number(headline, 1, "en")}%</span>
+            {t(COPY.headlineRateFor, "en")}
+            <span data-freshness
+              >{periodLong(headlineRefPeriod, "en")}{headlineIsFlash
+                ? t(COPY.srcFlash, "en")
+                : ""}</span
+            ></span
           >
         </span>
       {/if}
