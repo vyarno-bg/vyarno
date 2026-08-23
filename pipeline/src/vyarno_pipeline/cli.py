@@ -61,6 +61,7 @@ from vyarno_pipeline.credit import (
 from vyarno_pipeline.mortgage import (
     MortgageValidationError,
     cross_check_fixation_rates,
+    cross_check_new_business_volume,
     cross_check_outstanding,
     latest_period,
     lending_limits_at,
@@ -1358,6 +1359,18 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         )
         click.echo("→ gate: pure new lending + renegotiation = new business...")
         validate_new_business_split(volume, split["vol_pure"], split["vol_reneg"])
+
+        click.echo("→ gate: БНБ vs ЕЦБ MIR agree on how much was lent...")
+        vol_cross = cross_check_new_business_volume(
+            volume,
+            {r["period"]: r["total_eur_m"] for r in fixation_rows},
+            EURO_SWITCH_PERIOD,
+        )
+        click.echo(
+            f"  {vol_cross['months']} euro month(s) from {vol_cross['since']}, "
+            f"worst {vol_cross['worst_pct']}% at {vol_cross['worst_period']} "
+            f"(tolerance {vol_cross['tolerance_pct']}%)"
+        )
 
         click.echo("→ gate: BNB vs ECB MIR agree on the outstanding book...")
         ecb_out_ref = latest_period(ecb_out)
