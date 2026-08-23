@@ -102,26 +102,6 @@
           <a class="how-more l-en" href="/how/">{COPY.howMoreK.en} →</a>
         </p>
 
-        <h4>
-          <span class="l-bg">Какво взимаме от него?</span><span class="l-en"
-            >What do we take from it?</span
-          >
-        </h4>
-        <p>
-          <span class="l-bg"
-            >Три неща: <b>(1)</b> готовия процент на инфлацията („транспортът е с 11% по-скъп
-            отпреди година“); <b>(2)</b> ценовия индекс, число, което показва докъде са стигнали
-            цените на всяка група; и <b>(3)</b> теглата на кошницата, каква част от всички пари, които
-            домакинствата в страната харчат, отива за всяка група (храна ≈ 22%, транспорт ≈ 14%).</span
-          >
-          <span class="l-en"
-            >Three things: <b>(1)</b> the ready-made inflation percentage ("transport is 11% more
-            expensive than a year ago"); <b>(2)</b> the price index, a number showing how far each
-            group's prices have got; and <b>(3)</b> the basket weights, how much of everything the country's
-            households spend goes to each group (food ≈ 22%, transport ≈ 14%).</span
-          >
-        </p>
-
         <!-- Two rules for this section, both learned the hard way. No metaphor
              that then has arithmetic done inside it ("today's sticker ÷ the
              sticker from the year you pick") — that asks the reader to hold a
@@ -152,27 +132,6 @@
             for the period you pick: today's number against the number for your year. Where each index
             starts does not matter: the starting point cancels in the division, so we leave the numbers
             exactly as Eurostat publishes them and the ↗ link on the row returns the same digits.</span
-          >
-        </p>
-
-        <h4>
-          <span class="l-bg">Защо да вярваш на числата?</span><span class="l-en"
-            >Why can you trust the numbers?</span
-          >
-        </h4>
-        <p>
-          <span class="l-bg"
-            >Официалният процент го взимаме <b>дословно</b> от Евростат. Не го пресмятаме сами, за
-            да не се разминава с публикуваното. Частите се събират: сборът на групите по твоите
-            тегла дава общата инфлация. И винаги показваме <b>датата</b> на данните: ако остареят, ще
-            видиш кога са обновени за последно, а не „днешни“ числа, които всъщност са стари.</span
-          >
-          <span class="l-en"
-            >We take the official percentage <b>verbatim</b> from Eurostat. We don't recompute it
-            ourselves, so it never drifts from what's published. The parts add up: the groups,
-            weighted by your basket, sum to overall inflation. And we always show the <b>date</b> of the
-            data: if it ages, you see when it last refreshed, not "today's" numbers that are secretly
-            old.</span
           >
         </p>
 
@@ -273,36 +232,6 @@
             So the two can sit a tenth or two apart. Neither is wrong: it is like measuring the same thing
             with two rulers whose markings differ slightly. We show only one of them (HICP) so there aren't
             two numbers competing to be right.</span
-          >
-        </p>
-
-        <h4>
-          <span class="l-bg">Откъде знаем заплатите („къде си по заплата“)?</span><span class="l-en"
-            >How do we know the salaries ("where you stand")?</span
-          >
-        </h4>
-        <p>
-          <span class="l-bg"
-            >Пак от официални данни, и пак две числа. Първото е <b>кой колко изкарва</b>, от
-            изследване на <b>Евростат</b> за заплатите; то показва как са подредени хората: колко
-            изкарват малко, колко средно, колко много. Второто е най-новата
-            <b>средна заплата в София</b>
-            от <b>НСИ</b>. По нея преизчисляваме сумите в цялата подредба, за да отговарят на
-            днешните заплати, защото изследването на Евростат е отпреди няколко години. После
-            сравняваме
-            <b>твоята чиста</b> заплата с получената картина. Затова числото показва приблизително къде
-            си, а не точно: никой не е обиколил всички работещи в София този месец. До числото има връзки
-            (↗) към Евростат и НСИ.</span
-          >
-          <span class="l-en"
-            >Official data again, and again two numbers. The first is <b>who earns what</b>, from a
-            <b>Eurostat</b>
-            survey of pay; it shows how people line up: how many earn little, how many in the middle,
-            how many a lot. The second is the latest <b>average wage in Sofia</b> from
-            <b>NSI</b>. We use it to set the amounts across that line-up to today's pay, because the
-            Eurostat survey is a few years old. Then we compare <b>your take-home</b> pay with the resulting
-            picture. So the figure shows roughly where you stand, not exactly: nobody polled every worker
-            in Sofia this month. Each figure links (↗) to Eurostat and NSI.</span
           >
         </p>
 

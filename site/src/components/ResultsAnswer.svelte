@@ -20,7 +20,7 @@
    */
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer, percentSigned } from "$lib/format.js";
+  import { number, integer } from "$lib/format.js";
   import { answerLine } from "$lib/view/results.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
@@ -28,7 +28,6 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
-  const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
   const answer = $derived(
     answerLine({
@@ -71,10 +70,6 @@
 </script>
 
 <div class="ans">
-  <p class="ans-lead">
-    <span class="l-bg">{@html t(COPY.answerLead, "bg", { pi: signedPct(calc.pi) })}</span>
-    <span class="l-en">{@html t(COPY.answerLead, "en", { pi: signedPct(calc.pi) })}</span>
-  </p>
   <ul>
     <li>
       <!-- The two states that carry a figure are written out rather than
@@ -175,13 +170,8 @@
     padding-top: 14px;
     border-top: 1px solid var(--line);
   }
-  .ans-lead {
-    margin: 0;
-    font-size: var(--fs-body);
-    color: var(--ink-2);
-  }
   .ans ul {
-    margin: 7px 0 0;
+    margin: 0;
     padding: 0;
     list-style: none;
     display: flex;

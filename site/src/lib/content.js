@@ -530,9 +530,14 @@ export const COPY = {
   // value, bar — and a reader who has met that row as an OUTPUT reads these as
   // one too. A legend that opens by explaining the columns confirms it: it is
   // the app teaching them to read a table one line before they decide it is one.
+  //
+  // The rate is the one column it still names, and only because the row does
+  // not: the share is the slider the reader is holding and the € carries its
+  // sign, while «+41%» beside a division reads as the annual rate whatever the
+  // anchor is set to, and the anchor select is up in the results card heading.
   basketLegend: {
-    bg: "Тринайсетте групи са на Евростат, но числата до тях са твои: всеки ред се мести. До името е поскъпването за избрания период, а вдясно твоят дял и ≈ €/месец.",
-    en: "The thirteen groups are Eurostat's, but the numbers beside them are yours: every row moves. By the name, how much it rose over the chosen period; on the right, your share and ≈ €/month.",
+    bg: "Тринайсетте групи са на Евростат, но числата до тях са твои: всеки ред се мести. До името е поскъпването за избрания период.",
+    en: "The thirteen groups are Eurostat's, but the numbers beside them are yours: every row moves. By the name, how much it rose over the chosen period.",
   },
   // Shown when home is on. Tells the user why the € column drops after
   // they pick a home: the € per group is carved out of (salary - mortgage)
@@ -596,8 +601,8 @@ export const COPY = {
   // the interface's job, not a sentence's - two sentences already tried and
   // lost to a chip row that looked like the answer.
   presetsHint: {
-    bg: "Готови кошници, ако ти е по-лесно да тръгнеш от нещо: четирите са наши, измислени за пример, а „официалната кошница“ е на Евростат.",
-    en: 'Ready-made baskets, if it helps to start from something: the four are ours, invented as illustrations, and the "official basket" is Eurostat\'s.',
+    bg: "Готови кошници: четирите са наши, измислени за пример, а „официалната кошница“ е на Евростат.",
+    en: 'Ready-made baskets: the four are ours, invented as illustrations, and the "official basket" is Eurostat\'s.',
   },
   // Shown in the RESULTS card while a hand-made preset is active. The hint
   // above sits by the chips, but the number it produces ends up 400 px away in
@@ -641,15 +646,20 @@ export const COPY = {
   // Input mode: percentage shares vs actual euros per month
   modePct: { bg: "дял в %", en: "share in %" },
   modeEur: { bg: "€ на месец", en: "€ per month" },
-  // The third sentence is load-bearing and belongs to both halves of the
-  // toggle. Naming only «€ на месец» made not-placing-everything read as a
+  // **The permission is the whole line, and it belongs to both halves of the
+  // toggle.** Naming only «€ на месец» made not-placing-everything read as a
   // property of one entry mode, so a reader in the other one - which is the one
   // everybody starts in - had no reason to look for it. Each mode reaches it
   // differently: the € tally measures what is left off thirteen typed amounts,
   // the share control states it in one number.
+  //
+  // What may not come back is the two sentences that stood in front of it —
+  // why the € mode exists, and that the two agree. A reader is looking at the
+  // toggle; being told a preference of theirs and then reassured about it is
+  // two lines they read before reaching the one that changes what they do.
   modeHint: {
-    bg: "Повечето хора знаят по-добре колко харчат в евро, отколкото в проценти. Избери както ти е удобно, сметката е същата. И по двата начина не е нужно да разпределиш цялата заплата.",
-    en: "Most people know their euros better than their percentages. Pick whichever suits you, the maths is identical. Neither way asks you to place your whole pay.",
+    bg: "И по двата начина не е нужно да разпределиш цялата заплата.",
+    en: "Neither way asks you to place your whole pay.",
   },
   // ---- How much of the pay is spent at all --------------------------------
   // Share mode carries no size, only a division, so the app has to assume how
@@ -793,10 +803,13 @@ export const COPY = {
     en: "You've placed <b>€{m}</b> more than you have left after the <b>€{h}</b> you said goes to housing. Your number is worked out on exactly what you entered. Worth checking whether one of the rows is bigger than what you really pay.",
   },
 
-  // Drill-down into ECOICOP groups
+  // Drill-down into ECOICOP groups. **What the `+` does is the affordance's
+  // job**; what the line is for is the one thing pressing it does NOT do. A
+  // reader who expects the number to move on opening a group, and sees it hold,
+  // reads the sliders as broken rather than as untouched.
   detailHint: {
-    bg: "Всяка група се разпъва на подгрупи: например транспортът се дели на кола, гориво и билети. Отвориш ли я, числото не се променя; променя се само ако преместиш нещо вътре.",
-    en: "Each group opens into sub-groups: transport splits into buying a car, running it, and tickets. Opening one changes nothing; only moving something inside does.",
+    bg: "Разпъването на група не променя числото; променя се само ако преместиш нещо вътре.",
+    en: "Opening a group changes nothing; only moving something inside does.",
   },
   detailOpen: { bg: "разпъни", en: "expand" },
   detailClose: { bg: "затвори", en: "collapse" },
@@ -944,10 +957,11 @@ export const COPY = {
   // below. What may not happen is the rank travelling to the top of the card
   // with nothing attached: this is the same figure that row refuses to print
   // in its corner without its sentence.
-  answerLead: {
-    bg: "Ето какво значи <b>{pi}</b> за теб:",
-    en: "Here is what <b>{pi}</b> means for you:",
-  },
+  //
+  // **No line introduces the three.** They sit under the headline percentage
+  // with a rule between them, and a sentence announcing that the list is about
+  // to explain it is a line a reader reads before the first one that tells
+  // them anything.
   answerPayAhead: {
     bg: "Увеличението ти изпреварва твоите цени с <b>{p}%</b>.",
     en: "Your raise is ahead of your prices by <b>{p}%</b>.",
