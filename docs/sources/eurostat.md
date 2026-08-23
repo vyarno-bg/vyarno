@@ -269,6 +269,22 @@ across the two bases can differ by rounding. So `annual_rate_pct` is Eurostat's
 `RCH_A`, which is also what the cross-publisher gate compares against НСИ's
 `HPI_1.3`.
 
+**`price_index.status_by_period` is the INDEX's flags, and the rate line has
+none.** Eurostat flag `prc_hpi_q` per unit, and the two do not agree: probed
+2026-08-23, `I15_Q` carries `e` at 2005-Q1 through 2009-Q1 while `RCH_A` carries
+it at 2006-Q1 through 2010-Q1 — the same seventeen quarters shifted a year,
+which is what a year-on-year change does to an estimate flag. The payload
+publishes one map and it is `I15_Q`'s.
+
+Nothing is lost that marks a break: `b` at 2015-Q1 and 2022-Q1 and `p` at
+2026-Q1 are identical in both units, so every quarter where the publisher
+declared a discontinuity is flagged on both lines. What is absent is the
+estimate marker on 2009-Q2..2010-Q1 of the rate line. A second map would be a
+schema change, a republish and its own gates for four quarters of a seventeen-
+year-old `e`, so this is written down instead — and `view/market.js` is where
+the constraint holds, because `marketPriceRateSeries` deliberately returns no
+`flags` at all rather than the index's.
+
 **The index covers every household purchase, not owner-occupation.** BG's
 national metadata, read 2026-08-13: «All transactions are included (both cash and
 mortgage) acquired by households regardless of its final use … Luxury properties

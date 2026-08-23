@@ -937,6 +937,15 @@ quarters and the numbers table prints the letter per row, with a key naming only
 the letters the series actually carries — a legend for a marker that is nowhere
 on the chart is a question a reader cannot answer.
 
+**Both maps are an index's, and the rate line is drawn without flags.** Eurostat
+flag `prc_hpi_q` per unit: `I15_Q`'s estimate block sits at 2005-Q1..2009-Q1 and
+`RCH_A`'s at 2006-Q1..2010-Q1, a year later because a year-on-year change
+inherits its inputs' flag a year on. `price_index.status_by_period` is `I15_Q`'s,
+so it belongs to the index chart and its table and to nothing else. Every `b`
+and `p` agrees across the two units, so no declared break goes unmarked;
+`docs/sources/eurostat.md` §"The property cubes" carries the measurement and why
+a second map is not worth a schema change.
+
 ### The two charts, and the axis rule they are drawn under
 
 `plotSeries` shapes every series the page draws, and **its minimum is clamped at
@@ -1160,7 +1169,7 @@ or feed the staleness banner, and are not listed per block below.
 | `value.series_by_period.{new,existing}` | the average-deal table's other two «Платено общо» cells, at `ref_period` |
 | `price_index.series_by_period.total` | the index chart as a multiple, and the numbers table as the published level |
 | `price_index.annual_rate_pct.{total,new,existing}` | the rate table, all three at `rate_ref_period`; the total also as the rate chart |
-| `price_index.status_by_period` | the break rules on the chart, the flag column, and the key |
+| `price_index.status_by_period` | the break rules on the INDEX chart, its flag column, and the key. Not the rate chart: this is `I15_Q`'s map and the rate is `RCH_A`, flagged separately |
 | `price_index.base_year` | «×1 = колкото през {year} г.», the disclosure and the chart's text alternative |
 | `price_index_real.series_by_period` | the second index line and its column |
 | `price_index_real.status_by_period` | the flag key |
