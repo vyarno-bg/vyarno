@@ -245,6 +245,29 @@ BUCKET_RATE_MAX_PCT = 16.0
 # having stopped describing one population.
 SPLIT_SUM_TOLERANCE_EUR_M = 0.05
 
+# The month's new housing lending is the one VOLUME in this payload two
+# publishers answer for: ЕЦБ MIR's `A2C.A.B.A` aggregate, and the printed total
+# of the БНБ workbook's four fixation buckets. The rates have had a
+# cross-publisher gate since the beginning and the volumes have had none.
+#
+# **1% is measured, not chosen.** Across every euro month that exists —
+# 2026-01 to 2026-06, the whole comparable history — the workbook reads BELOW
+# MIR every single month, by 0.16% to 0.28% (mean 0.22%, σ 0.05 pp). That
+# offset is systematic, so the bound is on its SIZE and never on its sign: the
+# two count a slightly different population and always have.
+#
+# The headroom is what makes it a gate rather than a decoration. The worst
+# observed month is 0.28% and the narrowest failure this has to catch — one
+# series read a month out of step — is 1.74% (ЕЦБ 2026-04 against БНБ
+# 2026-03); the other four shifts run 6.6% to 22%. So 1% sits 3.5× above the
+# publishers' own disagreement and 1.7× below the tightest way they stop
+# describing one population, and a unit or column error is two orders out.
+#
+# Six months is a thin sample and the number reflects that: a tolerance drawn
+# tight around six observations of a series six months old would trip on the
+# first December. Re-measure when a year exists.
+NEW_BUSINESS_VOLUME_TOLERANCE_PCT = 1.0
+
 
 def validate_fixation_rows(rows: list[dict[str, Any]]) -> None:
     """The four buckets are all of new housing lending, and each is plausible.
@@ -296,10 +319,11 @@ def cross_check_fixation_rates(
 ) -> None:
     """БНБ and ЕЦБ MIR on the same four buckets — the same reason as the book.
 
-    The volumes are БНБ's alone (the euro leg publishes none), so the rates
-    beside them are the only part of this block a second publisher can confirm.
-    A bucket only one of them prints is skipped rather than failed: the ЕЦБ omit
-    a month nobody lent in and БНБ print a zero.
+    The SPLIT is БНБ's alone: MIR's euro leg publishes no volume by fixation,
+    so nothing confirms how the month divides between the four. Its total is a
+    different matter and `cross_check_new_business_volume` holds that against
+    MIR. A bucket only one of them prints is skipped rather than failed: the ЕЦБ
+    omit a month nobody lent in and БНБ print a zero.
     """
     for bucket, ecb_pct in ecb_rates.items():
         bnb_pct = bnb_rates.get(bucket)
@@ -312,6 +336,55 @@ def cross_check_fixation_rates(
                 f"{CROSS_CHECK_TOLERANCE_PP} pp). The workbook column and the series "
                 f"key have stopped describing the same bucket."
             )
+
+
+def cross_check_new_business_volume(
+    ecb_volume: dict[str, float],
+    bnb_totals: dict[str, float],
+    since: str,
+) -> dict[str, Any]:
+    """ЕЦБ MIR and the БНБ workbook on how much was lent, month by month.
+
+    Only from `since` — the euro changeover. Before it MIR's EUR leg is the
+    euro-denominated niche beside a lev market (0.6× the workbook and falling),
+    so comparing across the seam would fail on the splice rather than on the
+    data, which is the same bound `citations.py` draws for the same reason.
+
+    Raises when a month is over tolerance, and returns what it compared so the
+    run's log can say how far apart the two publishers actually were rather
+    than only that they passed.
+    """
+    months = sorted(p for p in ecb_volume.keys() & bnb_totals.keys() if p >= since)
+    if not months:
+        raise MortgageValidationError(
+            f"New-business volume cross-check has no month at or after {since} to "
+            f"compare: ЕЦБ covers {sorted(ecb_volume)[-1:]}, the БНБ workbook "
+            f"{sorted(bnb_totals)[-1:]}. One of the two stopped where the other "
+            f"did not, and an unrun cross-check must not read as a passing one."
+        )
+    worst_period, worst_pct = "", 0.0
+    for period in months:
+        ecb, bnb = ecb_volume[period], bnb_totals[period]
+        if not ecb:
+            continue
+        deviation = abs(bnb - ecb) / ecb * 100
+        if deviation > worst_pct:
+            worst_period, worst_pct = period, deviation
+        if deviation > NEW_BUSINESS_VOLUME_TOLERANCE_PCT:
+            raise MortgageValidationError(
+                f"New-business volume cross-check failed at {period}: ЕЦБ MIR "
+                f"{ecb} m vs the БНБ workbook {bnb} m, {deviation:.3f}% apart "
+                f"(tolerance {NEW_BUSINESS_VOLUME_TOLERANCE_PCT}%). Measured, these "
+                f"two sit 0.16–0.28% apart every euro month; a gap this size is one "
+                f"of them reading a different month or a different column."
+            )
+    return {
+        "months": len(months),
+        "since": since,
+        "worst_period": worst_period,
+        "worst_pct": round(worst_pct, 4),
+        "tolerance_pct": NEW_BUSINESS_VOLUME_TOLERANCE_PCT,
+    }
 
 
 def validate_new_business_split(

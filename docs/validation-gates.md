@@ -423,7 +423,7 @@ directory — a checkout that has never run `--source house-market`.
 
 ## Mortgage gates (`--source mortgage`)
 
-All eight are hard-required; none degrades. The arm writes a complete
+All nine are hard-required; none degrades. The arm writes a complete
 `mortgage.json` or exits non-zero having written nothing.
 
 | Gate | What it catches | Exit |
@@ -435,7 +435,8 @@ All eight are hard-required; none degrades. The arm writes a complete
 | **БНБ vs ЕЦБ cross-check** (≤0.30 pp) | Either side's outstanding-stock read drifting. They are the same data — БНБ reports MIR to the ЕЦБ — so disagreement means one read is broken | 3 |
 | **Fixation buckets sum** (≤0.05 m) | A bucket dropping out of `s_ir_loan_nbf_hh_bg.xlsx`, or a column drifting out of the housing block. It cannot see a REORDERED block — every total stays intact — which is why `bnb.py` asserts the four bucket labels as well | 3 |
 | **Bucket rate bounds** [0.25%, 16%] | A decimal point, and not a column: the consumer block in the same workbook reads 8.7–13.4%, inside this range. Wider than the headline band because a bucket is one month's slice and can be a single loan — measured, buckets run 1.76% to 14.82% while the month's own total never passes 9.45% | 3 |
-| **Fixation cross-check** (≤0.30 pp) | The workbook column and the ЕЦБ series key ceasing to describe the same bucket. The only part of the block a second publisher can confirm — MIR's euro leg carries no volume by fixation, so the SPLIT itself has one source | 3 |
+| **Fixation cross-check** (≤0.30 pp) | The workbook column and the ЕЦБ series key ceasing to describe the same bucket. MIR's euro leg carries no volume by fixation, so the SPLIT has one source and only the rates beside it can be confirmed this way | 3 |
+| **New-business volume cross-check** (≤1%) | Either publisher reading a different month or a different column for how much was lent. The one VOLUME in the payload two publishers answer for: MIR `A2C.A.B.A` against the printed total of the four БНБ buckets. Euro months only — across the seam MIR's EUR leg is the euro-denominated niche, 0.6× the workbook | 3 |
 | **New-business split** (≤0.05 m) | `IR_BUS_COV` `P` + `R` ceasing to equal `N`. They partition new business by the ЕЦБ's own definition and BG reports them to the cent | 3 |
 
 Plus **freshness**: both tiers' reference month must be within 150 days, so a
@@ -458,6 +459,8 @@ A good mortgage run:
 → gate: freshness (both tiers within the publication lag)...
 → gate: the four fixation buckets are all of new housing lending...
 → gate: pure new lending + renegotiation = new business...
+→ gate: БНБ vs ЕЦБ MIR agree on how much was lent...
+  6 euro month(s) from 2026-01, worst 0.282% at 2026-03 (tolerance 1.0%)
 → gate: BNB vs ECB MIR agree on the outstanding book...
   BNB 2.6609% vs ECB 2.66% → Δ 0.0009 pp (tolerance 0.3 pp)
 OK: wrote mortgage.json — new_business AAR=2.41% / APRC=2.75% (2026-06), outstanding_stock=2.6609% (2026-06), floating=99.59%, renegotiated=19.94%

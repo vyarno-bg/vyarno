@@ -23,11 +23,13 @@ from vyarno_pipeline.mortgage import (
     CROSS_CHECK_TOLERANCE_PP,
     MAX_STALENESS_DAYS,
     MIN_SERIES_MONTHS,
+    NEW_BUSINESS_VOLUME_TOLERANCE_PCT,
     PRUDENT_DSTI_PCT,
     RATE_MAX_PCT,
     RATE_MIN_PCT,
     MortgageValidationError,
     cross_check_fixation_rates,
+    cross_check_new_business_volume,
     cross_check_outstanding,
     latest_period,
     lending_limits_at,
@@ -427,6 +429,59 @@ def test_the_split_legs_must_share_a_month_with_new_business():
     # no common period, and every per-month check below would simply not run.
     with pytest.raises(MortgageValidationError, match="share no month"):
         validate_new_business_split({"2026-06": 768.56}, {"2025-01": 615.33}, {"2025-01": 153.23})
+
+
+# The six euro months as both publishers print them, so the numbers the
+# tolerance was drawn from are the numbers the test runs on. ЕЦБ MIR
+# `A2C.A.B.A` against the printed total of the БНБ workbook's four buckets.
+_EURO_VOLUME_ECB = {
+    "2026-01": 447.35,
+    "2026-02": 545.06,
+    "2026-03": 630.89,
+    "2026-04": 640.25,
+    "2026-05": 599.12,
+    "2026-06": 768.56,
+}
+_EURO_VOLUME_BNB = {
+    "2026-01": 446.424,
+    "2026-02": 544.191,
+    "2026-03": 629.111,
+    "2026-04": 638.771,
+    "2026-05": 597.461,
+    "2026-06": 767.075,
+}
+
+
+def test_the_two_publishers_must_agree_on_how_much_was_lent():
+    # Real months, and the point of using them: the two disagree every single
+    # one, always in the same direction, and the gate has to pass anyway.
+    measured = cross_check_new_business_volume(_EURO_VOLUME_ECB, _EURO_VOLUME_BNB, "2026-01")
+    assert measured["months"] == 6
+    assert measured["worst_pct"] < NEW_BUSINESS_VOLUME_TOLERANCE_PCT
+    # A month read out of step is the narrowest real failure — the workbook's
+    # May against MIR's June is 22% — and 2026-04 against 2026-03 is the
+    # tightest of the five at 1.74%, so that is the one worth pinning.
+    shifted = {**_EURO_VOLUME_BNB, "2026-04": _EURO_VOLUME_BNB["2026-03"]}
+    with pytest.raises(MortgageValidationError, match="New-business volume cross-check failed"):
+        cross_check_new_business_volume(_EURO_VOLUME_ECB, shifted, "2026-01")
+
+
+def test_the_volume_cross_check_stops_at_the_euro_seam():
+    # Before 2026-01 MIR's EUR leg is the euro-denominated niche and the
+    # workbook is the whole market, so a comparison there fails on the splice
+    # rather than on the data: 2025-12 reads 1389 against 830.
+    ecb = {"2025-12": 1389.0, **_EURO_VOLUME_ECB}
+    bnb = {"2025-12": 830.194, **_EURO_VOLUME_BNB}
+    assert cross_check_new_business_volume(ecb, bnb, "2026-01")["months"] == 6
+    with pytest.raises(MortgageValidationError, match="New-business volume cross-check failed"):
+        cross_check_new_business_volume(ecb, bnb, "2025-12")
+
+
+def test_a_volume_cross_check_with_no_month_to_run_on_is_not_a_pass():
+    # The failure this refuses: one publisher stops where the other does not,
+    # the overlap empties, and a gate that compared nothing returns green.
+    with pytest.raises(MortgageValidationError, match="no month at or after"):
+        cross_check_new_business_volume(_EURO_VOLUME_ECB, {"2025-12": 830.194}, "2026-01")
 
 
 def test_the_two_publishers_must_agree_on_each_fixation_bucket():
