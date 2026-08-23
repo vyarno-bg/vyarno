@@ -332,6 +332,39 @@ test("salary_dist runs on the SES cycle, not on a quarterly clock", () => {
   assert.equal(status, "fresh", "salary_dist goes stale before the next SES wave exists");
 });
 
+test("city_price is refreshed by hand, and the banner is what says it is due", () => {
+  // The only payload no job can refresh and no check can verify: имот.bg answer
+  // a datacenter IP with 403, so there is no refresh-city-price.yml and the 28
+  // citations report UNCHECKED every week. `docs/sources/imot.md` §"How this
+  // payload gets refreshed" decides the process — by hand, quarterly — and this
+  // is the machinery that process leans on, so it is asserted rather than
+  // assumed. Nothing else here would go red if the row lost its cadence: the
+  // fallback is 45 days and a shipped payload that young looks fine.
+  const city = PAYLOADS.find((p) => p.key === "cityPrice");
+  assert.equal(city.cadenceDays, 92, "the documented cadence is a quarter");
+
+  const parts = Object.fromEntries(PAYLOADS.map((p) => [p.key, read(p.file)]));
+  if (!parts.cityPrice) return;
+  const at = (days) => Date.parse(parts.cityPrice.as_of) + days * DAY;
+  // Only this row is asked about: advancing the clock ages every payload, and
+  // the monthly ones going overdue alongside it is not what is under test.
+  const named = (days) =>
+    dataNotice({ age: dataAge(parts, PAYLOADS, at(days)), ready: true }).late.some(
+      (r) => r.file === "city_price"
+    );
+
+  // A quarter is `due`, not an alarm: a hand-run refresh gets the 46 days
+  // OVERDUE_MULTIPLE allows before a reader is told anything.
+  assert.equal(payloadStatus(parts.cityPrice, city.cadenceDays, at(92)).status, "fresh");
+  assert.equal(payloadStatus(parts.cityPrice, city.cadenceDays, at(120)).status, "due");
+  assert.equal(named(138), false, "the banner names it inside the slack a hand refresh gets");
+
+  // Past 138 days the refresh was skipped rather than late, and the banner
+  // names the file — to the reader and to whoever opens the site next, which
+  // is the whole of the reminder this payload has.
+  assert.equal(named(139), true, "139 days on, the banner does not name city_price");
+});
+
 test("the shipped payloads are all fresh against their own cadences as committed", () => {
   const parts = Object.fromEntries(PAYLOADS.map((p) => [p.key, read(p.file)]));
   if (!parts.hicpHeadline) return;
