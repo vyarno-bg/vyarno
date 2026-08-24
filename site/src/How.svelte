@@ -1514,33 +1514,42 @@
   .stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    /* Wide enough that two tiles' labels do not read as one paragraph now
+       that nothing but the gap separates them. */
+    gap: 22px;
     align-items: stretch;
     margin-top: 16px;
   }
   .stats:empty {
     display: none;
   }
+  /* Hung from a rule rather than drawn as a box — `docs/design.md` §"A figure
+     is hung from a rule, not drawn in a box" is the argument, and `/market/`,
+     `/credit/` and the calculator's strip already follow it. This page was the
+     one still boxing the same object, so a reader moving between two sibling
+     documents met two designs of one stat. */
   .stat {
     flex: 1 1 190px;
     min-width: 0;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 13px 15px;
+    border-top: 2px solid var(--ink);
+    padding-top: 11px;
     display: flex;
     flex-direction: column;
   }
+  /* `--fs-figure` and not `--fs-h2`: a card's number has to outrank the
+     heading of a section carrying a row of them, so the two are separate
+     steps (`tokens.css` argues the pair). */
   .stat .sv {
-    font-size: var(--fs-h2);
+    font-size: var(--fs-figure);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
   .stat .sl {
     font-size: var(--fs-meta);
     color: var(--ink-2);
-    margin-top: 6px;
+    margin-top: 8px;
     line-height: 1.35;
   }
   /* Pinned to the foot, so the source captions line up across a row whatever
