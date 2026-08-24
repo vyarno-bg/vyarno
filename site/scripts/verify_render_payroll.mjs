@@ -11,6 +11,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
 import { published } from "./published-payload.mjs";
+import { parseDecimal } from "../src/lib/format.js";
 import { buildLadder, payrollParams } from "../src/lib/mirror.js";
 import { nationalQuarter } from "../src/lib/view/country.js";
 import { earnerRanks } from "../src/lib/view/payroll.js";
@@ -324,7 +325,11 @@ test("switching to gross moves the field and nothing else", { skip }, async () =
     await page.getByRole("button", { name: /^бруто$/i }).click();
     await page.waitForTimeout(400);
 
-    const typed = Number(await page.locator("#inSalary").inputValue());
+    // `parseDecimal` and not `Number`: the box holds the reader's own notation
+    // now, so a Bulgarian gross comes back as «3 093,45» and `Number` reads
+    // that as NaN — which would fail this test for the one thing it is not
+    // about.
+    const typed = parseDecimal(await page.locator("#inSalary").inputValue());
     assert.ok(
       typed > 2400 * 1.2,
       `the field still reads ${typed} — the toggle relabelled the number instead of converting it`

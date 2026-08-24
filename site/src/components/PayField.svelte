@@ -44,7 +44,16 @@
    * total take-home).
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, label, period, httpUrl, safeText } from "../lib/format.js";
+  import {
+    number,
+    integer,
+    label,
+    period,
+    httpUrl,
+    safeText,
+    decimalText,
+    parseDecimal,
+  } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import PayslipTable from "./PayslipTable.svelte";
 
@@ -53,6 +62,25 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+
+  /**
+   * Put the reader's own notation back in the box whenever the AMOUNT moved
+   * without them typing — a restore off this device, and the net/gross flip,
+   * which converts every figure in place.
+   *
+   * Gated on the box no longer parsing to its own amount, which is what keeps
+   * it off the keystroke path: while somebody is typing, the amount IS the
+   * parse of what is in the box, so «1200,» is left alone rather than rewritten
+   * to «1200» under the cursor. `decimalText` is here rather than in the
+   * calculator because it picks a SEPARATOR, and a separator is a language.
+   */
+  $effect(() => {
+    for (const earner of calc.earners) {
+      if (parseDecimal(earner.amountText) !== earner.amount) {
+        earner.amountText = decimalText(earner.amount, $lang);
+      }
+    }
+  });
 
   // The direction word carries the sign, so the magnitude is unsigned. Emitting
   // both produced «-39% под средната» / "-39% below the average" — a double
@@ -171,12 +199,11 @@
     <span class="unit" data-u="€">
       <input
         id="inSalary"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="10"
-        bind:value={calc.earners[0].amount}
-        oninput={() => calc.onEarnerInput(0)}
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        value={calc.earners[0].amountText}
+        oninput={(e) => calc.onEarnerInput(0, e)}
         aria-label={calc.hasHousehold ? t(COPY.earnerLabel, $lang, { n: 1 }) : t(payLabel, $lang)}
       />
     </span>
@@ -212,12 +239,11 @@
           <span class="unit" data-u="€">
             <input
               id="inEarner{i}"
-              type="number"
-              inputmode="numeric"
-              min="0"
-              step="10"
-              bind:value={calc.earners[i].amount}
-              oninput={() => calc.onEarnerInput(i)}
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              value={calc.earners[i].amountText}
+              oninput={(e) => calc.onEarnerInput(i, e)}
               aria-label={t(COPY.earnerLabel, $lang, { n: i + 1 })}
             />
           </span>

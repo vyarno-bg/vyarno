@@ -32,10 +32,17 @@ function locale(lang) {
  * correctly-typed number multiplied by a hundred. A 3,5% raise became 35%
  * the same way. Setting the browser's locale to bg-BG changes none of it.
  *
- * So the two decimal fields are `type="text" inputmode="decimal"` and arrive
- * here instead. Nothing is lost by that: the page has no `<form>`, so `min`
- * and `step` never validated anything — they drew the spinner arrows, and the
- * mangled value passed `validity.valid` regardless.
+ * So every field a reader types a figure into is `type="text"
+ * inputmode="decimal"` and arrives here instead. Nothing is lost by that: the
+ * page has no `<form>`, so `min` and `step` never validated anything — they
+ * drew the spinner arrows, and the mangled value passed `validity.valid`
+ * regardless.
+ *
+ * **The money fields are the same failure and it is worth more there.** A rate
+ * is read back off the mortgage row; a salary is the figure the whole page is
+ * priced off, and «1 200,50» reaching the model as 120 050 moves the tax
+ * wedge, the percentile, the rent burden and the affordability line at once,
+ * every one of them stated in the second person.
  *
  * Both separators are accepted, because both are things a person here types.
  * Spaces go too. `\s` covers the non-breaking and narrow ones `toLocaleString`
@@ -49,6 +56,34 @@ export function parseDecimal(raw) {
   if (text === "" || (text.includes(",") && text.includes("."))) return NaN;
   const value = Number(text.replace(",", "."));
   return Number.isFinite(value) ? value : NaN;
+}
+
+/**
+ * The same characters as an AMOUNT: a number, or `null` for "not answered".
+ *
+ * The two callers want different things out of an unreadable box and the
+ * difference is not cosmetic. A raise that will not parse is NaN, because an
+ * unsaid raise is genuinely unknown and every row downstream declines to
+ * answer about it. An empty pay or rent box is `null`, which is what
+ * `bind:value` on an emptied number input used to produce and what
+ * `stores.js#isAmount` accepts on the way back off the disk — so a reader who
+ * clears a field lands in the state the rest of the page already handles
+ * rather than in a new one.
+ *
+ * **The unit comes off first, and only here.** These are the boxes a figure
+ * gets PASTED into — off a payslip, a rental listing, or the results card on
+ * this very page, all of which write the currency beside the number. Stripping
+ * it is the same argument `parseDecimal` already makes for the thousands
+ * space. It stays out of `parseDecimal` because the rate and the raise are
+ * percentages, and a field that quietly accepted «€2,75» as a rate would be
+ * reading a figure out of something that is not one.
+ *
+ * Negative is refused rather than clamped: a salary of −500 is a typo, and
+ * showing 500 puts a figure in the box the reader did not type.
+ */
+export function parseAmount(raw) {
+  const value = parseDecimal(String(raw ?? "").replace(/€|лв\.?|BGN|EUR/gi, ""));
+  return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 /**

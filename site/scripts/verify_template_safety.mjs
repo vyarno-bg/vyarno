@@ -8,12 +8,12 @@
  *
  *   1. Nothing a visitor types can be anything but a number. Every control is
  *      a number, range, checkbox or radio, and there is no `<textarea>` and no
- *      `contenteditable`. The two decimal fields are `type="text"` — the
- *      number sanitiser ate the comma a Bulgarian reader types, and «2,75»
- *      reached the mortgage row as 275 — so their characters go to
- *      `parseDecimal` and the model keeps what it returns. What they hold
- *      raw goes to the input's own `value` and nowhere else, which the second
- *      assertion in that test checks by name.
+ *      `contenteditable`. Every figure field is `type="text"` — the number
+ *      sanitiser ate the comma a Bulgarian reader types, so «2,75» reached the
+ *      mortgage row as 275 and «1 200,50» reached the payroll as 120 050 — so
+ *      their characters go to `parseDecimal` and the model keeps what it
+ *      returns. What they hold raw goes to the input's own `value` and nowhere
+ *      else, which the second assertion in that test checks by name.
  *
  *   2. Every `{@html …}` expression is rooted in an in-repo constant — a `COPY`
  *      key from `src/lib/content.js`, or a paragraph from the legal documents
@@ -433,21 +433,22 @@ test("the app has no free-text input surface", () => {
   // Everything a visitor can enter is a NUMBER, which is what makes rendering
   // COPY through {@html} safe.
   //
-  // Two fields are `type="text"` and still keep that guarantee, because the
-  // type attribute is not what the guarantee rests on. They are the decimal
-  // ones — the mortgage rate and the raise — and they had to stop being
-  // `type="number"` because that type's value sanitiser silently deleted the
-  // comma a Bulgarian reader types, turning «2,75» into 275 and stating a
-  // €34,102 monthly payment as the answer (format.js#parseDecimal). What each
-  // one holds is still a number: the string goes to `parseDecimal`, the model
-  // stores what comes back, and the raw characters go nowhere but the input's
-  // own `value`, which Svelte escapes like any attribute.
+  // Every figure field is `type="text"` and they all still keep that
+  // guarantee, because the type attribute is not what the guarantee rests on.
+  // They had to stop being `type="number"` because that type's value sanitiser
+  // silently deleted the comma a Bulgarian reader types, turning «2,75» into
+  // 275 and stating a €34,102 monthly payment as the answer, and «1 200,50»
+  // into a salary of €120 050 that every second-person figure on the page then
+  // followed (format.js#parseDecimal). What each one holds is still a number:
+  // the string goes to `parseDecimal`, the model stores what comes back, and
+  // the raw characters go nowhere but the input's own `value`, which Svelte
+  // escapes like any attribute.
   //
   // So the exception is narrow — a text input must declare itself decimal —
   // and the assertion below is the half that actually protects the {@html}
-  // paths, naming the two states that hold reader characters and checking no
+  // paths, naming every state that holds reader characters and checking no
   // interpolation renders them. The allowlisted-value scan above would catch
-  // it too, since neither is in SAFE_VALUE_SOURCES; this says it in the test
+  // them too, since none is in SAFE_VALUE_SOURCES; this says it in the test
   // whose name a reader will look for.
   const ALLOWED_TYPES = new Set(["number", "range", "checkbox", "radio"]);
   const offenders = [];
@@ -472,9 +473,17 @@ test("the app has no free-text input surface", () => {
       offenders.join("\n  ")
   );
 
-  // The characters a reader types into those two fields, by the names the
-  // model stores them under. Neither may reach markup.
-  const RAW_READER_TEXT = ["rateDraft", "raiseText"];
+  // The characters a reader types into those fields, by the names the model
+  // stores them under. None may reach markup.
+  const RAW_READER_TEXT = [
+    "rateDraft",
+    "raiseText",
+    "amountText",
+    "rentText",
+    "cashText",
+    "m2Text",
+    "manualPriceText",
+  ];
   const rendered = [];
   for (const { name, text } of COMPONENTS) {
     for (const { expression } of atHtmlExpressions(text)) {
@@ -486,7 +495,7 @@ test("the app has no free-text input surface", () => {
   assert.deepEqual(
     rendered,
     [],
-    "A decimal field's raw characters are rendered as markup. They are the one\n" +
+    "A figure field's raw characters are rendered as markup. They are the one\n" +
       "thing on this page a visitor writes and the calculator does not turn into\n" +
       "a number, so they may go to an input's value and nowhere else:\n  " +
       rendered.join("\n  ")

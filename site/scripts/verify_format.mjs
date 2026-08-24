@@ -19,6 +19,7 @@ import {
   label,
   httpUrl,
   ordinalDay,
+  parseAmount,
   parseDecimal,
   decimalText,
   bgIn,
@@ -76,6 +77,37 @@ test("a decimal that could mean two things parses to neither", () => {
   assert.ok(Number.isNaN(parseDecimal("1.2.3")));
   assert.ok(Number.isNaN(parseDecimal("")));
   assert.ok(Number.isNaN(parseDecimal(null)));
+});
+
+test("an amount keeps its figure and drops the unit beside it", () => {
+  // The failure this exists for: `type="number"` deleted the comma and closed
+  // the gap, so a reader typing their real «1 200,50» was told they earn
+  // €120 050 — and the tax wedge, the percentile, the rent burden and the
+  // affordability line all followed it.
+  assert.equal(parseAmount("1 200,50"), 1200.5);
+  assert.equal(parseAmount("1 200,50"), 1200.5);
+  assert.equal(parseAmount("1200.50"), 1200.5);
+  assert.equal(parseAmount("1450"), 1450);
+  // Pasted off a payslip, a listing, or the results card on this very page.
+  assert.equal(parseAmount("€1 200,50"), 1200.5);
+  assert.equal(parseAmount("1 200 лв."), 1200);
+  // The unit strip is `parseAmount`'s alone. A rate is a percentage, and one
+  // that accepted «€2,75» would be reading a figure out of something that is
+  // not one.
+  assert.ok(Number.isNaN(parseDecimal("€2,75")));
+});
+
+test("an amount nobody answered is null, and a negative one is refused", () => {
+  // `null` and not NaN: it is what an emptied field used to produce and what
+  // `stores.js#isAmount` accepts off the disk, so clearing a box lands in a
+  // state the rest of the page already handles.
+  assert.equal(parseAmount(""), null);
+  assert.equal(parseAmount("abc"), null);
+  assert.equal(parseAmount(null), null);
+  // Refused rather than clamped: showing 500 for a typed −500 would put a
+  // figure in the box the reader did not type.
+  assert.equal(parseAmount("-500"), null);
+  assert.equal(parseAmount("0"), 0);
 });
 
 test("a field is handed the number back in the reader's own notation", () => {
