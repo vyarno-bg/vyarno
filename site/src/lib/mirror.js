@@ -437,10 +437,11 @@ export function percentile(monthlySalary, ladder) {
  * **The statutory minimum wage floors EVERY rung, after scaling.** A scalar
  * re-level moves the whole distribution by however much the MEAN moved, and
  * Bulgaria's minimum wage has moved faster: €363/month in SES's 2022 vintage
- * against €620 today, +71%, where the mean went 949 → 1407, +48%. So the
- * bottom of the scaled shape lands under a wage it is not lawful to pay a
- * full-time employee — P10 composes to €558 — and a rung below the legal floor
- * is an artefact of the model rather than a wage anybody is on.
+ * against €620.20 today, +71%, where the mean has climbed roughly half as
+ * fast. So the bottom of the scaled shape lands under a wage it is not lawful
+ * to pay a full-time employee — at the 2026-Q2 average, P10 composes to €572 —
+ * and a rung below the legal floor is an artefact of the model rather than a
+ * wage anybody is on.
  *
  * The floor is applied after scaling, which is the only place it means
  * anything: an unlevelled rung is not a wage anyone earns. It leaves the ladder

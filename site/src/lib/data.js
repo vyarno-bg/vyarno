@@ -51,13 +51,13 @@ async function fetchJson(name) {
  *   miss the home block falls back to a placeholder pill; there is no canonical
  *   Eurostat €/m² to fall back to (it publishes an hpi_ndh_q RATE-OF-CHANGE
  *   index, no absolute level).
- * - `regionSalary` — Sofia-city average monthly GROSS wage, by quarter (НСИ
- *   Labour_1.1.2.2_EUR_EN.xlsx, the "{year}trimes" sheets, row "-Sofia cap.").
- *   On a miss
- *   the comparator falls back to a sentinel, as `HOME.eurPerM2_offlineFallback`
- *   does for the €/m².
+ * - `regionSalary` — average monthly GROSS wage per област, by quarter (НСИ
+ *   Labour_1.1.2.2_EUR_EN.xlsx, the "{year}trimes" sheets, all 28 rows). On a
+ *   miss the comparator declines rather than substituting a region
+ *   (`view/region.js#regionQuarter` — a real wage under the wrong place name
+ *   is the failure that module exists to end).
  * - `salaryDist` — the individual gross-earnings percentile ladder: Eurostat
- *   SES distribution shape re-levelled to the live НСИ Sofia average. The unit
+ *   SES distribution shape re-levelled to the live НСИ national average. The unit
  *   is what matters — individual EARNINGS, not household disposable income,
  *   which mixes units and pushes almost every Sofia salary into the top few
  *   percent. `ilc_di01` is the wrong unit for this and is not published.
