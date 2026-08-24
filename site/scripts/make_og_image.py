@@ -49,7 +49,10 @@ from pathlib import Path
 PAPER = (0xEC, 0xEE, 0xE8)  # --paper
 LINE_2 = (0xE0, 0xE4, 0xDA)  # --line-2, the faint ledger rules
 INK = (0x17, 0x21, 0x1B)  # --ink, the wordmark
-MUTED = (0x67, 0x6E, 0x64)  # --muted (the AA-compliant value)
+# --muted. The old 0x676E64 sat at exactly 4.50:1 on PAPER — the floor, which
+# tokens.css says no small text should sit ON; the token itself was retuned to
+# 5.47:1 and this file had kept the pre-retune value.
+MUTED = (0x5A, 0x61, 0x57)
 REAL = (0x1C, 0x6B, 0x54)  # --real, the "now" bar and the underline
 ERODE = (0xB2, 0x3A, 0x2E)  # --erode, the call to action
 
