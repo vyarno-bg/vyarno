@@ -3851,7 +3851,13 @@
      hung from a rule, not drawn in a box" is the argument, and it covers the
      same tile on `/credit/` and in the calculator's strip. */
   .stat {
-    flex: 1 1 150px;
+    /* The basis is in `rem` so it follows the TEXT. At 150px a reader on 200%
+       text still got two tiles per row on a phone — 184px columns holding
+       doubled type, where a source caption alone is wider than its column and
+       ran off the page. In `rem` the same row goes one-up instead, which is
+       what the sentence above means by "the screen they are holding". Same
+       number at the default root size: 9.375rem is 150px. */
+    flex: 1 1 9.375rem;
     min-width: 0;
     border-top: 2px solid var(--ink);
     padding-top: 11px;
@@ -4110,6 +4116,16 @@
     justify-content: space-between;
     gap: 12px;
     margin-top: 6px;
+    /* The two ends of the census bar stack rather than leaving the page. At
+       200% text on a 320px phone «необитавани · 1 657 674» alone is wider than
+       half the column, and a flex row that cannot wrap puts the second end
+       past the right edge and scrolls the document with it. */
+    flex-wrap: wrap;
+  }
+  .stock .ends > * {
+    /* A flex item's minimum is its min-content, which held the row open at the
+       width of the longest label even after it was allowed to wrap. */
+    min-width: 0;
   }
   .stock .ends .mono {
     font-family: var(--mono);

@@ -789,6 +789,13 @@
   }
   .cat .top .nm {
     color: var(--ink-2);
+    /* The NAME gives way, never the figures. `.pc` below is two `ch` tracks and
+       `nowrap` — 201px at 200% text — and a flex item's minimum is its
+       min-content, so a long division name held the row open and pushed the
+       figures past the card, scrolling the document. Zeroed, the name wraps in
+       its own half and the tracks stay where the comment below says they have
+       to: in a column the thirteen rows are read down. */
+    min-width: 0;
   }
   /* **Two columns, so the thirteen rows read DOWN as well as across.** The
      share and the euro amount were two inline runs right-aligned as one blob,

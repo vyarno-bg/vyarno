@@ -1575,7 +1575,7 @@
      hung from a rule, not drawn in a box" is the argument, and it covers the
      same tile on `/market/` and in the calculator's strip. */
   .stat {
-    flex: 1 1 200px;
+    flex: 1 1 12.5rem;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -1603,7 +1603,7 @@
      reads as a different kind of thing rather than the last rung of the same
      one. */
   #other .stat {
-    flex-basis: 170px;
+    flex-basis: 10.625rem;
   }
   /* What the bank pays you, drawn as the other direction. `--real` is this
      app's "your number is the good one" colour and the deposit rows are the

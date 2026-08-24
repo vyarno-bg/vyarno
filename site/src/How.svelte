@@ -1529,7 +1529,7 @@
      one still boxing the same object, so a reader moving between two sibling
      documents met two designs of one stat. */
   .stat {
-    flex: 1 1 190px;
+    flex: 1 1 11.875rem;
     min-width: 0;
     border-top: 2px solid var(--ink);
     padding-top: 11px;

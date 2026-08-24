@@ -666,7 +666,7 @@
      is hung from a rule, not drawn in a box" argues for all three pages that
      carry these. */
   .stat {
-    flex: 1 1 180px;
+    flex: 1 1 11.25rem;
     min-width: 0;
     border-top: 2px solid var(--ink);
     padding-top: 11px;
