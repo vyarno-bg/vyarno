@@ -246,7 +246,24 @@ test("exposedSpend reduces to the whole take-home when nothing is left over", ()
     rent: 450,
   });
   const b = basketBudget({ spendMode: "pct", amounts: [22, 6, 4], spendable });
-  assert.equal(exposedSpend({ housingCost, spendBase: b.spendBase }), 2000);
+  assert.equal(exposedSpend({ salary: 2000, housingCost, spendBase: b.spendBase }), 2000);
+});
+
+test("housing above the take-home does not price the rise off the rent", () => {
+  // One earner's €1,450 net beside the household's €5,000 rent — a scope mix a
+  // reader makes without noticing, and the page answered it with «≈ €210
+  // повече всеки месец», priced off more money than they had said they earn.
+  // `spendable` clamps at zero, so the sum ran to the rent; the excess is the
+  // clamp showing through rather than spending anybody claimed.
+  const { housingCost, spendable } = housingCarveOut({
+    salary: 1450,
+    homeOn: false,
+    monthlyMortgage: 0,
+    rent: 5000,
+  });
+  assert.equal(spendable, 0);
+  const b = basketBudget({ spendMode: "pct", amounts: [22, 6, 4], spendable });
+  assert.equal(exposedSpend({ salary: 1450, housingCost, spendBase: b.spendBase }), 1450);
 });
 
 test("exposedSpend charges the rise only on money that is actually spent", () => {
@@ -260,7 +277,7 @@ test("exposedSpend charges the rise only on money that is actually spent", () =>
     rent: 450,
   });
   const b = basketBudget({ spendMode: "eur", amounts: [500, 300, 100], spendable });
-  assert.equal(exposedSpend({ housingCost, spendBase: b.spendBase }), 1350);
+  assert.equal(exposedSpend({ salary: 2000, housingCost, spendBase: b.spendBase }), 1350);
 });
 
 test("exposedSpend follows a stated share the same way it follows typed euros", () => {
@@ -282,19 +299,21 @@ test("exposedSpend follows a stated share the same way it follows typed euros", 
     spendable,
     spendSharePct: 70,
   });
-  assert.equal(exposedSpend({ housingCost, spendBase: stated.spendBase }), 1535);
+  assert.equal(exposedSpend({ salary: 2000, housingCost, spendBase: stated.spendBase }), 1535);
   const typed = basketBudget({ spendMode: "eur", amounts: [700, 285, 100], spendable });
   assert.equal(
-    exposedSpend({ housingCost, spendBase: typed.spendBase }),
-    exposedSpend({ housingCost, spendBase: stated.spendBase }),
+    exposedSpend({ salary: 2000, housingCost, spendBase: typed.spendBase }),
+    exposedSpend({ salary: 2000, housingCost, spendBase: stated.spendBase }),
     "the stated and the measured routes to the same spending disagree"
   );
 });
 
 test("exposedSpend keeps housing in — rent and a mortgage payment are spending", () => {
-  assert.equal(exposedSpend({ housingCost: 600, spendBase: 0 }), 600);
-  assert.equal(exposedSpend({ housingCost: 0, spendBase: 0 }), 0);
-  assert.equal(exposedSpend({ housingCost: undefined, spendBase: undefined }), 0);
+  assert.equal(exposedSpend({ salary: 2000, housingCost: 600, spendBase: 0 }), 600);
+  assert.equal(exposedSpend({ salary: 2000, housingCost: 0, spendBase: 0 }), 0);
+  assert.equal(exposedSpend({ salary: 2000, housingCost: undefined, spendBase: undefined }), 0);
+  // A salary nobody has typed yet cannot be exceeded either.
+  assert.equal(exposedSpend({ salary: undefined, housingCost: 600, spendBase: 0 }), 0);
 });
 
 // ---------------------------------------------------------------------------
