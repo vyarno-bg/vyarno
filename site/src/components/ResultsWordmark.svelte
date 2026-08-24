@@ -39,15 +39,18 @@
 </div>
 
 <style>
-  /* The results card is a flex column (App.svelte), and this is its last
-     child: `auto` pushes the wordmark to the bottom so it anchors there
-     instead of floating mid-card when the inputs card is taller. */
+  /* Last child of the card's flex column: `auto` anchors it to the bottom
+     when the inputs card is taller. The wrap and the gap are load-bearing —
+     `space-between` spaces the two spans only when there is room, and the
+     attribution outgrows the card at every width the calculator renders at,
+     which fused «vyarno.bg» to «Данни…» on the foot people screenshot. */
   .r-brand {
     margin-top: auto;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    margin-top: 14px;
+    gap: 6px 16px;
     padding-top: 10px;
     border-top: 1px solid var(--line-2);
     font-size: var(--fs-fine);
