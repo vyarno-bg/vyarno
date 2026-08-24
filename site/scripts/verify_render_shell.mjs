@@ -431,7 +431,7 @@ test("the footer's route to donating is a link, on every page", { skip }, async 
 
 test("typing a salary moves the euro figures", { skip }, async () => {
   await withApp(async (page, errors) => {
-    const salary = page.locator("input[type=number]").first();
+    const salary = page.locator("#inSalary");
     await salary.fill("1200");
     await page.waitForTimeout(300);
     const low = await page.locator(".r-money").first().innerText();
@@ -450,7 +450,7 @@ test("the home block draws its mortgage bar and the wedge chart", { skip }, asyn
     // scenario rather than setup around it. Without it the row renders what
     // it is waiting for, and every assertion below would be about that.
     await page.selectOption("#region-select", "sofiya");
-    await page.locator("input[type=number]").first().fill("2500");
+    await page.locator("#inSalary").fill("2500");
     await page.waitForTimeout(300);
     assert.ok(await page.locator(".wedge").count(), "the tax-wedge chart is not drawn");
     const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
@@ -482,7 +482,7 @@ test(
       // scenario rather than setup around it. Without it the row renders what
       // it is waiting for, and every assertion below would be about that.
       await page.selectOption("#region-select", "sofiya");
-      await page.locator("input[type=number]").first().fill("2500");
+      await page.locator("#inSalary").fill("2500");
       const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
       if (await homeToggle.count()) await homeToggle.check();
       await page.waitForTimeout(300);
@@ -515,7 +515,7 @@ test("the home block prices nothing before a €/m² has a source", { skip }, as
   // category figures the reader would never have connected to it. Hence the
   // second half — the carve-out sentence has to be absent too.
   await withApp(async (page, errors) => {
-    await page.locator("input[type=number]").first().fill("2500");
+    await page.locator("#inSalary").fill("2500");
     const homeToggle = page.locator(".homeTog input[type=checkbox]").first();
     assert.ok(await homeToggle.count(), "the home toggle is missing");
     await homeToggle.check();
@@ -613,7 +613,7 @@ test("a first visit leaves nothing on this device", { skip }, async () => {
   // types a salary and never touches it has to leave no trace at all — not a
   // preference, and above all not the salary.
   await withApp(async (page, errors) => {
-    await page.locator("input[type=number]").first().fill("1234");
+    await page.locator("#inSalary").fill("1234");
     await page.locator("#inRent").fill("700");
     await page.waitForTimeout(300);
 
@@ -629,7 +629,7 @@ test("a first visit leaves nothing on this device", { skip }, async () => {
 
 test("switched on, the figures survive a reload", { skip }, async () => {
   await withApp(async (page, errors) => {
-    const salary = page.locator("input[type=number]").first();
+    const salary = page.locator("#inSalary");
     const firstWeight = page.locator("#sliders .cat input[type=range]").first();
     await salary.fill("1234");
     await firstWeight.fill("40");
@@ -649,7 +649,7 @@ test("switched off, the figures are gone from the device at once", { skip }, asy
   // Not «stops writing»: the key goes in the same action. A switch that reads
   // off over yesterday's salary is the one state this feature must not have.
   await withApp(async (page, errors) => {
-    const salary = page.locator("input[type=number]").first();
+    const salary = page.locator("#inSalary");
     await salary.fill("1234");
     await rememberBox(page).check();
     await page.waitForTimeout(300);
@@ -681,7 +681,7 @@ test("a payload that will not load does not empty the device", { skip }, async (
   // problem. The snapshot waits for the retry instead. Swap the guard in
   // `App.svelte` and this goes red; nothing else in the suite would notice.
   await withApp(async (page) => {
-    await page.locator("input[type=number]").first().fill("1234");
+    await page.locator("#inSalary").fill("1234");
     await rememberBox(page).check();
     await page.waitForTimeout(300);
     const stored = await page.evaluate(() => localStorage.getItem("vyarno_inputs"));
@@ -711,7 +711,7 @@ test(
         "it offers to clear a device with nothing on it"
       );
 
-      await page.locator("input[type=number]").first().fill("1234");
+      await page.locator("#inSalary").fill("1234");
       await rememberBox(page).check();
       await page.waitForTimeout(300);
       assert.equal(await forget.isDisabled(), false);
@@ -1093,7 +1093,7 @@ test(
   { skip },
   async () => {
     await withApp(async (page, errors) => {
-      await page.locator("input[type=number]").first().fill("2100");
+      await page.locator("#inSalary").fill("2100");
       await page.waitForTimeout(300);
 
       const picker = page.locator("#sector-pick");
@@ -1277,7 +1277,7 @@ test(
           .first()
           .evaluate((el) => getComputedStyle(el).color);
       const below = await gapColour();
-      await page.locator("input[type=number]").first().fill("4200");
+      await page.locator("#inSalary").fill("4200");
       await page.waitForTimeout(300);
       const above = await gapColour();
       assert.equal(below, above, "the sector gap changes colour with its direction");

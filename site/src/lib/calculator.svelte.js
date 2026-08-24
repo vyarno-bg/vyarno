@@ -47,7 +47,7 @@
  * this is a rule without one.
  */
 import { HOME, PRESETS } from "./content.js";
-import { parseDecimal } from "./format.js";
+import { parseAmount, parseDecimal } from "./format.js";
 import { loadAll, mortgageDefaultRate, mortgageAprc, mortgageLendingLimits } from "./data.js";
 import { payloadsFor } from "./payloads.js";
 import {
@@ -210,22 +210,24 @@ export class Calculator {
   // as it did before anybody thought about households. Nothing about the
   // second income exists until the reader asks for it.
   //
-  // Each entry is `{ amount, stashed, raise, raiseText }`, never a bare number:
+  // Each entry is `{ amount, amountText, stashed, raise, raiseText }`, never a
+  // bare number:
   //   amount     what the reader typed, in whatever `payBasis` says
+  //   amountText the characters in the pay box, which `amount` is the parse of
   //   stashed    the last amount they typed in the OTHER basis, or null
   //   raise      that earner's own change over the window, percent, NaN if unsaid
   //   raiseText  the characters in the raise box, which `raise` is the parse of
-  // One object per person rather than four parallel arrays, because removing
-  // an income has to remove all four and parallel arrays are where that goes
+  // One object per person rather than five parallel arrays, because removing
+  // an income has to remove all five and parallel arrays are where that goes
   // wrong — silently, and one earner out of step.
   //
-  // `raiseText` is here rather than in the component for exactly that reason.
-  // The raise field is `type="text"` so a comma reaches `parseDecimal` (see
+  // Both text fields are here rather than in the component for exactly that
+  // reason. Each box is `type="text"` so a comma reaches `parseDecimal` (see
   // format.js), which means something has to hold the string; held beside the
   // template's `{#each}` index it survives the earner it belongs to being
   // removed, and the next reader to add an income inherits somebody else's
   // number in a box the model says is empty.
-  earners = $state([{ amount: 900, stashed: null, raise: NaN, raiseText: "" }]);
+  earners = $state([{ amount: 900, amountText: "900", stashed: null, raise: NaN, raiseText: "" }]);
   /**
    * Which figure the pay fields carry.
    *
@@ -264,6 +266,26 @@ export class Calculator {
   // separate from `earnersDirty` because the two gate different sentences.
   raiseDirty = $state(false);
   anchor = $state("y1");
+  /**
+   * The characters in each money box, beside the number each one parses to.
+   *
+   * **The number alone cannot hold what the reader typed.** These boxes are
+   * `type="text" inputmode="decimal"` so a comma survives to `parseDecimal`
+   * (format.js says what the number sanitiser was doing to «1 200,50»), and a
+   * field whose value is re-derived from the number rewrites «1200,» to
+   * «1200» under the cursor mid-keystroke. So the string is the field's value
+   * and the number is the parse of it, exactly as `raiseText` and `raise` sit
+   * on an earner.
+   *
+   * Not in `snapshot()`: an amount survives JSON as a number, so restoring one
+   * needs no string. The component re-seeds the box from the number, which is
+   * also where the reader's own notation is chosen — this class stays
+   * language-agnostic.
+   */
+  rentText = $state("");
+  cashText = $state("");
+  m2Text = $state("");
+  manualPriceText = $state("");
   rent = $state(0);
   // Empty, like the rent beside it, and for the same reason the payslip is
   // `null` for a salary nobody typed: «спестеното» is a row that says what
@@ -541,8 +563,12 @@ export class Calculator {
     );
     if (!splitsFit) return false;
 
+    // `amountText` is left empty rather than rebuilt here, and the component
+    // fills it: writing the separator is picking a language, and this class
+    // does not. The re-seed in PayField runs before the first paint.
     this.earners = saved.earners.map((e) => ({
       amount: e.amount,
+      amountText: "",
       stashed: null,
       raise: parseDecimal(e.raiseText),
       raiseText: e.raiseText,
@@ -1495,9 +1521,11 @@ export class Calculator {
   // one: typing €700 into it says the €900 above is not a stand-in either.
   // The stash is what the reader last typed in the OTHER basis, so typing here
   // makes it stale — a flip after this must convert rather than restore.
-  onEarnerInput = (i) => {
+  onEarnerInput = (i, event) => {
     this.earnersDirty = true;
     this.earners[i].stashed = null;
+    this.earners[i].amountText = event.currentTarget.value;
+    this.earners[i].amount = parseAmount(event.currentTarget.value);
   };
 
   /**
@@ -1512,7 +1540,10 @@ export class Calculator {
    */
   addEarner = () => {
     if (!this.canAddEarner) return;
-    this.earners = [...this.earners, { amount: null, stashed: null, raise: NaN, raiseText: "" }];
+    this.earners = [
+      ...this.earners,
+      { amount: null, amountText: "", stashed: null, raise: NaN, raiseText: "" },
+    ];
   };
 
   /**
@@ -1523,6 +1554,23 @@ export class Calculator {
   removeEarner = (i) => {
     if (this.earners.length <= 1) return;
     this.earners = this.earners.filter((_, k) => k !== i);
+  };
+
+  /**
+   * A money box's keystroke: the characters become the field, the parse
+   * becomes the figure the page is priced off.
+   *
+   * One handler for the five boxes rather than five, because the reasoning is
+   * one reasoning — `parseAmount` in format.js carries it — and restated per
+   * field it is five things to keep true.
+   *
+   * @param {"rent" | "cash" | "m2" | "manualPrice"} field
+   * @param {Event & {currentTarget: HTMLInputElement}} event
+   */
+  onAmountInput = (field, event) => {
+    const text = event.currentTarget.value;
+    this[`${field}Text`] = text;
+    this[field] = parseAmount(text);
   };
 
   onRaiseInput = (i, event) => {

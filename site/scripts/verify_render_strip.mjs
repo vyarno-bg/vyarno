@@ -236,7 +236,7 @@ test("the strip shows the same cards whatever the reader typed", { skip }, async
     // rather than somebody else's figures.
     await page.selectOption("#region-select", "sofiya");
     const before = await page.locator(".strip .stat").count();
-    await page.locator("input[type=number]").first().fill("4200");
+    await page.locator("#inSalary").fill("4200");
     await page.waitForTimeout(300);
     const after = await page.locator(".strip .stat").count();
     assert.equal(
@@ -463,7 +463,7 @@ test(
       // (P7), so before a reader chooses they render what they are waiting for
       // rather than somebody else's figures.
       await page.selectOption("#region-select", "sofiya");
-      await page.locator("input[type=number]").first().fill("3000");
+      await page.locator("#inSalary").fill("3000");
       await page.waitForTimeout(300);
 
       const marginal = page.locator(".wedge-marginal");
@@ -562,7 +562,7 @@ test("the wedge's right-edge labels belong to the series they sit on", { skip },
     // (P7), so before a reader chooses they render what they are waiting for
     // rather than somebody else's figures.
     await page.selectOption("#region-select", "sofiya");
-    await page.locator("input[type=number]").first().fill("900");
+    await page.locator("#inSalary").fill("900");
     await page.waitForTimeout(300);
 
     const svg = page.locator("svg.wedge").first();

@@ -16,7 +16,7 @@
    * sub-hint.
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, period, decimalText } from "../lib/format.js";
+  import { number, integer, period, decimalText, parseDecimal } from "../lib/format.js";
   import { COPY, HOME, t } from "../lib/content.js";
   import BasketEditor from "./BasketEditor.svelte";
   import RegionPicker from "./RegionPicker.svelte";
@@ -35,7 +35,7 @@
   /**
    * What the rate field SHOWS, which is not always what the model holds.
    *
-   * The two decimal fields on this card are `type="text"` so that a comma
+   * Every figure field on this card is `type="text"` so that a comma
    * reaches `parseDecimal` instead of being eaten by the number sanitiser
    * (format.js says what that cost). A text input has to be handed a string,
    * and the string cannot simply be `decimalText(calc.rate)`: re-deriving it
@@ -50,6 +50,24 @@
   let rateDraft = $state(decimalText(HOME.rateDefaultPct, $lang));
   $effect(() => {
     if (!calc.rateTouched) rateDraft = decimalText(calc.rate, $lang);
+  });
+
+  /**
+   * The same contract for the four money boxes, whose strings live on the
+   * calculator because their numbers do.
+   *
+   * `rateTouched` has no counterpart here, so the gate is the box no longer
+   * parsing to its own amount — true when a restore off this device sets one,
+   * false on every keystroke, since typing is what put the amount there. That
+   * is what leaves «1200,» alone until the reader finishes it.
+   */
+  const MONEY_FIELDS = ["rent", "cash", "m2", "manualPrice"];
+  $effect(() => {
+    for (const field of MONEY_FIELDS) {
+      if (parseDecimal(calc[`${field}Text`]) !== calc[field]) {
+        calc[`${field}Text`] = decimalText(calc[field], $lang);
+      }
+    }
   });
 
   // Short source label for the live-mortgage hint. We map the fallback chain
@@ -175,11 +193,11 @@
     <span class="unit" data-u="€">
       <input
         id="inRent"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="10"
-        bind:value={calc.rent}
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        value={calc.rentText}
+        oninput={(e) => calc.onAmountInput("rent", e)}
         aria-label={t(COPY.rent, $lang)}
       />
     </span>
@@ -197,11 +215,11 @@
     <span class="unit" data-u="€">
       <input
         id="inCash"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        step="100"
-        bind:value={calc.cash}
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        value={calc.cashText}
+        oninput={(e) => calc.onAmountInput("cash", e)}
         aria-label={t(COPY.cash, $lang)}
       />
     </span>
@@ -264,11 +282,11 @@
           <span class="unit" data-u="м²">
             <input
               id="inM2"
-              type="number"
-              inputmode="numeric"
-              min="20"
-              step="5"
-              bind:value={calc.m2}
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              value={calc.m2Text}
+              oninput={(e) => calc.onAmountInput("m2", e)}
               aria-label={t(COPY.m2Label, $lang)}
             />
           </span>
@@ -361,11 +379,11 @@
             <span class="unit" data-u="€">
               <input
                 id="inManualPrice"
-                type="number"
-                inputmode="numeric"
-                min="1000"
-                step="1000"
-                bind:value={calc.manualPrice}
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                value={calc.manualPriceText}
+                oninput={(e) => calc.onAmountInput("manualPrice", e)}
                 aria-label={t(COPY.manualPriceLabel, $lang)}
               />
             </span>
