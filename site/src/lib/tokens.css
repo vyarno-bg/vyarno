@@ -420,11 +420,12 @@
 
   /* Layout */
   --maxw: 1120px;
-  /* A single-column document page: `/how/`, `/market/`, `/credit/`, `/legal/`
-     and `/support/` all stop here rather than at `--maxw`, which is a measure
-     for the calculator's two-column grid and far too wide for a page that is
-     read top to bottom. In `rem` so it grows with the reader's own font size —
-     a `px` column at a raised size is a column with fewer words in it. */
+  /* A single-column document page: `/how/`, `/market/`, `/credit/` and
+     `/legal/` stop here rather than at `--maxw`, which is a measure for the
+     calculator's two-column grid and far too wide for a page that is read top
+     to bottom. `/support/` carries no figure and its column IS `--measure`
+     (`Support.svelte` argues it). In `rem` so it grows with the reader's own
+     font size — a `px` column at a raised size is a column with fewer words. */
   --col: 48rem;
   /* **The line length prose is set to, and it is narrower than `--col`.** A
      figure wants the width; a sentence does not. Measured on this page's own
