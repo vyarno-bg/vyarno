@@ -142,7 +142,10 @@ export const FLOORS = {
   // the rule over COPY that stops a fixed direction returning, and the
   // COPY-table shape in `verify_template_safety.mjs`.
   node: { floor: 688, report: join(SITE, ".report-node.tap"), count: tapPassed },
-  render: { floor: 202, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  // Raised with the typographic-integrity sweep in `verify_render_shell.mjs` —
+  // the rendered-text rule that no route prints «г..» or fuses two sentences
+  // at an {#if} boundary.
+  render: { floor: 203, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**
