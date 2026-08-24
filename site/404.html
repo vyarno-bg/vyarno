@@ -31,9 +31,12 @@
     <div id="app"></div>
     <noscript>
       <!--
-        Client-side render, so with JavaScript off #app is empty. Same fallback
-        as index.html: the app needs JavaScript, and the upstream attribution is
-        a licence condition that must appear on every page including this one.
+        `scripts/prerender.mjs` writes this page into #app at build time, so a
+        reader with no JavaScript already has the masthead, the heading and the
+        link back to the calculator. This stays for the reason index.html's
+        does: the upstream attribution is a licence condition that has to be on
+        every page whether the bundle runs or the prerender step ever stops
+        running.
       -->
       <div
         style="
@@ -45,12 +48,12 @@
         "
       >
         <p lang="bg">
-          Тази страница не съществува. Вярно смята изцяло в браузъра ти и има нужда от JavaScript.
-          Включи го и отвори vyarno.bg.
+          Тази страница я няма. Числата са си на мястото:
+          <a href="/">към калкулатора</a>.
         </p>
         <p lang="en">
-          This page does not exist. Vyarno computes entirely in your browser and needs JavaScript.
-          Turn it on and open vyarno.bg.
+          This page isn't here. The numbers are all still there:
+          <a href="/">to the calculator</a>.
         </p>
         <p>
           <small
