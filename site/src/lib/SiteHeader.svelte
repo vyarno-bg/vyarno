@@ -73,6 +73,69 @@
    * does nothing recognisable.
    */
   const brandHref = $derived(page === "/" ? "#main" : "/");
+
+  /**
+   * The section the reader is looking at, or "" near the top of the page.
+   *
+   * The language control is a navigation to another document, so the browser
+   * lands them at the top of it — and `/legal/` is 24 screens, `/market/` 16.
+   * A reader who switched language two-thirds of the way down one of them
+   * started that document again, which is a cost they did not ask for and had
+   * no way to avoid.
+   *
+   * A fragment is what can carry a place across two documents without storing
+   * anything: both trees are the same components, so the id under the reader
+   * here exists there. Nothing is written, nothing is transmitted, and the
+   * address they arrive at says where they are.
+   *
+   * Three things are skipped, and each of them lands the reader at the top
+   * while claiming not to:
+   *
+   *   - the top of the page, where a fragment would only make the URL longer;
+   *   - anything with no box of its own. An id inside an `<svg>` is usually a
+   *     `<pattern>` or a `<clipPath>`, which reports a top of 0 and therefore
+   *     beat every real section on `/how/` — a fragment naming a gradient;
+   *   - the calculator. Its cards are mounted by the bundle, so the browser
+   *     resolves the fragment before the element exists and does not come back
+   *     to it. The reader's own figures do not survive the navigation either
+   *     unless they asked this device to keep them, so landing them beside
+   *     inputs that have just reset would be the worse half of the trade.
+   *
+   * Form controls are skipped too: landing on a text box is not landing on a
+   * section.
+   */
+  function nearestSectionId() {
+    if (typeof document === "undefined" || page === "/") return "";
+    const reading = scrollY + 80;
+    if (reading < 240) return "";
+    let found = "";
+    for (const el of document.querySelectorAll("main [id]")) {
+      if (/^(input|select|textarea|button)$/i.test(el.tagName)) continue;
+      if (el.closest("svg") || !el.getClientRects().length) continue;
+      if (el.getBoundingClientRect().top + scrollY <= reading) found = el.id;
+    }
+    return found;
+  }
+
+  /**
+   * Record the choice, and keep the reader's place if there is one to keep.
+   *
+   * The default action is only taken over for a plain left click: a modified
+   * one is the reader asking for a new tab, and `preventDefault` there would
+   * answer a different question than the one they asked. With JavaScript off
+   * none of this runs and the anchor's own href still goes to the counterpart
+   * page, which is the property the control is a link for.
+   */
+  function switchLang(event, to, href) {
+    chooseLang(to);
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    const spot = nearestSectionId();
+    if (!spot) return;
+    event.preventDefault();
+    location.assign(`${href}#${spot}`);
+  }
 </script>
 
 <!-- The skip link. The first Tab stop would otherwise be the wordmark, which
@@ -155,22 +218,22 @@
       <!-- The language control, and it is a LINK rather than a button: the two
            languages are two URLs, and a handler that flipped a store would be
            unreachable with JavaScript off, where every entry hardcodes its own
-           `data-lang` and nothing on the page can change it. `chooseLang`
-           records the choice on the way out; the navigation happens whether or
-           not it runs. -->
+           `data-lang` and nothing on the page can change it. `switchLang`
+           records the choice on the way out and adds the section the reader
+           was on; the navigation happens whether or not it runs. -->
       <a
         class="pill icon l-bg"
         href={langHref(here, "en")}
         hreflang="en"
         aria-label={COPY.langToggle.bg}
-        onclick={() => chooseLang("en")}>EN</a
+        onclick={(e) => switchLang(e, "en", langHref(here, "en"))}>EN</a
       >
       <a
         class="pill icon l-en"
         href={langHref(here, "bg")}
         hreflang="bg"
         aria-label={COPY.langToggle.en}
-        onclick={() => chooseLang("bg")}>BG</a
+        onclick={(e) => switchLang(e, "bg", langHref(here, "bg"))}>BG</a
       >
     </div>
   </div>

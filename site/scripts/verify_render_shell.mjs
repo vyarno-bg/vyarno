@@ -897,6 +897,80 @@ test("the support page resolves as its own URL and carries the whole ask", { ski
   }, "/support/");
 });
 
+for (const [route, counterpart, stopAbove, settle] of [
+  ["/market/", "/en/market/", "#credit", null],
+  // `#lc-hatch` is the SVG `<pattern>` the labour-cost chart defines, and it
+  // arrives with that chart's own chunk. Waited for rather than assumed: it is
+  // the element this case exists to prove is skipped, so clicking before it
+  // lands tests a page it is not on.
+  ["/how/", "/en/how/", "#ladder", "#lc-hatch"],
+]) {
+  test(`the language control keeps the reader's place on ${route}`, { skip }, async () => {
+    // `/legal/` is twenty-four screens and `/market/` sixteen, and switching
+    // language is a navigation to another document — so a reader two-thirds of
+    // the way down one of them started it again. Both trees are the same
+    // components, so the section under them here exists there, and a fragment
+    // carries it across without storing anything or putting a figure in a URL.
+    //
+    // Asserted on where the reader ENDS UP, never on the href: the fragment is
+    // read off the DOM at click time, and the rule that reads it has one
+    // failure that produces a perfectly-shaped URL and still lands them at the
+    // top — naming an element with no box. `/how/` is in this list for that
+    // reason and not for coverage: its labour-cost chart defines an SVG
+    // `<pattern>` whose id reports a top of zero, so it beats every real
+    // section on the page and the reader arrives at the beginning of it.
+    await withApp(async (page, errors) => {
+      if (settle) await page.waitForSelector(settle, { state: "attached" });
+      // Parked just inside the section BEFORE `stopAbove`, read off the page
+      // rather than written here: the boxless id reports its top as the
+      // reader's own scroll position, so it only outranks a real section while
+      // the reader is above the next one — and a hard-coded y sits at a
+      // different section on the wide viewport this harness opens.
+      const before = await page.evaluate((sel) => {
+        const next = document.querySelector(sel).getBoundingClientRect().top + scrollY;
+        scrollTo(0, Math.round(next) - 300);
+        return Math.round(scrollY);
+      }, stopAbove);
+      await page.waitForTimeout(150);
+      assert.ok(before > 900, `${route} did not scroll: ${before}`);
+
+      await page.locator('a.pill[hreflang="en"]').first().click();
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(300);
+
+      const after = await page.evaluate(() => ({
+        path: location.pathname,
+        hash: location.hash,
+        y: Math.round(scrollY),
+      }));
+      assert.equal(after.path, counterpart, "the language control left its own route");
+      assert.match(after.hash, /^#[a-z-]+$/, "no section travelled with the reader");
+      // A screen down is the floor, not the goal: the sections are long, so
+      // landing at the start of the right one is up to two screens above
+      // where they were. What this refuses is arriving at the top wearing a
+      // fragment that says otherwise.
+      assert.ok(
+        after.y > 900,
+        `the reader was ${before}px down and arrived at ${after.y}px — ` +
+          `${after.hash} names something with no place on the page`
+      );
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, route);
+  });
+}
+
+test("near the top the language control carries no fragment", { skip }, async () => {
+  // The reader has not moved, so there is nothing to keep, and a fragment
+  // would be URL noise on the address most likely to be shared.
+  await withApp(async (page, errors) => {
+    await page.locator('a.pill[hreflang="en"]').first().click();
+    await page.waitForLoadState("networkidle");
+    const after = await page.evaluate(() => location.pathname + location.hash);
+    assert.equal(after, "/en/market/");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/market/");
+});
+
 // Every page carries the skip link, because every page carries the same
 // masthead — four tab stops before a word of prose, on all six entries. The
 // list is written out rather than derived so that adding an entry is a visible
