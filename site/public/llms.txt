@@ -27,7 +27,7 @@ hreflang alternate, so quote whichever you read and cite its own URL.
   institutions' own figures: how many dwellings households bought in the
   quarter, what was paid for them, Eurostat's own annual rate of change on the
   house price index, who owns and who owes, the census dwelling stock and the
-  price-to-income ratio against its own long-run average. No input on the page.
+  housing-cost overburden rate. No input on the page.
   Every figure carries its publisher, the period it describes and a link; every
   figure that is our arithmetic states the arithmetic and links the queries
   that reproduce it. The page takes no position on the market — several of the
@@ -89,9 +89,8 @@ own table.
   as high for the same quarter
 - house_market_structure — tenure (who owns, who owns with a loan, who rents at
   a market price), the census dwelling stock and how much of it stood
-  unoccupied, the price-to-income ratio against its own long-run average, and
-  the housing-cost overburden rate. Every figure a published cell; the
-  unoccupied share is derived in the browser from the two counts here
+  unoccupied, and the housing-cost overburden rate. Every figure a published
+  cell; the unoccupied share is derived in the browser from the two counts here
 - nsi_housing — НСИ's own housing statistics: the national house price index
   change on the same quarter a year earlier, the same figure for the six cities
   over 120,000 people, and the change in the NUMBER of sales for those cities.
