@@ -312,6 +312,15 @@
   }
   .rankhead .rk {
     color: var(--ink-2);
+    /* The NAME gives way, never the figure. A flex item's minimum is its
+       min-content, so at 200% text one long division name held the row open
+       and pushed `.rv` — which is `nowrap` — past the card, scrolling the
+       document. Zeroed, the name wraps inside its own half and «+1,3 пункта»
+       stays in the column the five rows are read down. Wrapping the ROW
+       instead was tried and is worse: it drops the figure to its own line on
+       the two longest names only, so the column a reader is comparing down
+       breaks on exactly the rows they are comparing. */
+    min-width: 0;
   }
   /* The name, as a control that does not look like five controls. It inherits
      the row's ink and carries the affordance on the glyph alone; the underline

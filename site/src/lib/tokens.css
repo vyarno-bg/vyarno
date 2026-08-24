@@ -538,6 +538,25 @@ h3 {
   text-wrap: balance;
 }
 
+/**
+ * A word longer than the line it is on breaks rather than leaving the box.
+ *
+ * Every type step above is in `rem`, so a reader who doubles their text size
+ * doubles the words: «институциите» in the `/market/` h1 becomes wider than a
+ * 390px phone on its own, and so do «домакинствата» on `/credit/` and the
+ * GitHub issues URL in the legal identity. An overlong word does not wrap, so
+ * it left its box and scrolled the whole DOCUMENT sideways — WCAG 1.4.4 asks
+ * that 200% text stay readable without that.
+ *
+ * `break-word` and not `anywhere`: it breaks a word only when the word cannot
+ * fit a line by itself, so nothing moves at any size the page fits at today,
+ * and `min-content` sizing is left alone — `anywhere` would let every grid and
+ * flex track collapse to one character.
+ */
+body {
+  overflow-wrap: break-word;
+}
+
 .mono {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;

@@ -271,12 +271,28 @@
     color: var(--ink-2);
   }
 
+  /* A URL is one word to a line-breaker and this page is made of them — the
+     issues address the ЗЕТ чл. 4 identity has to publish, and the supervisory
+     authority's. `anywhere` rather than `break-word` because it is the one
+     that also lowers min-content, which is what a grid track and a
+     shrink-to-fit link are sized by; without it the address held its box open
+     and the page scrolled sideways at 200% text. Scoped to this page: nowhere
+     else does a reader have to be shown a raw address. */
+  main :global(a) {
+    overflow-wrap: anywhere;
+  }
   .rows {
     margin: 14px 0 0;
   }
   .row {
     display: grid;
-    grid-template-columns: minmax(150px, 34%) 1fr;
+    /* `minmax(0, 1fr)` for the reason card.css gives about the calculator's
+       own grid: a bare `1fr` takes its minimum from min-content, so the one
+       unbreakable string in these rows — the GitHub issues URL, which is the
+       value of a row the law requires — sized the track and pushed the whole
+       page sideways at 200% text. Capped at zero, the track is the column and
+       the URL breaks inside it. */
+    grid-template-columns: minmax(150px, 34%) minmax(0, 1fr);
     gap: 4px 16px;
     padding: 9px 0;
     border-top: 1px solid var(--line-2);
@@ -370,7 +386,7 @@
 
   @media (max-width: 560px) {
     .row {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

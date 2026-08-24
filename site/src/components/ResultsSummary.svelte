@@ -551,10 +551,21 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 14px;
+    /* The figure drops under its label rather than out of the card. At 200%
+       text «средностатистическата кошница» alone is wider than a 390px phone,
+       and a flex row that does not wrap pushes its second item past the edge
+       and scrolls the document. Nothing wraps at a size the row fits at. */
+    flex-wrap: wrap;
   }
   .vbars .gm .lab {
     font-size: var(--fs-meta);
     color: var(--ink-2);
+    /* A flex item's minimum is its min-content, and «средностатистическата» is
+       one word 356px wide at 200% text — wider than the card it sits in, so the
+       label overflowed the row it had just been allowed to wrap onto. Zeroed,
+       the line is the card's and `overflow-wrap` in tokens.css breaks the word
+       inside it. */
+    min-width: 0;
   }
   .vbars .gm .num {
     font-family: var(--mono);
