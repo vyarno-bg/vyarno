@@ -278,11 +278,13 @@
     flex: none;
     border-radius: 1px;
   }
+  /* No outline: the band it stands for has none — its only edge is the red
+     wedge line below it, and a ringed swatch sends the eye hunting for an
+     outlined green region the plot never draws. */
   .lc-key .n::before {
     width: 16px;
     height: 10px;
     background: var(--real-soft);
-    box-shadow: inset 0 0 0 1px var(--real);
   }
   .lc-key .d::before {
     width: 16px;
