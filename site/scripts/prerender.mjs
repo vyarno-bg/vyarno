@@ -129,9 +129,14 @@ export const MOUNT_POINT = '<div id="app"></div>';
  * carries the ЗЕТ чл. 4 identity, which the law wants findable, and `/support/`
  * exists so the funding answer has an address a person can be given.
  *
- * The 404 is the one entry that stays out, and it is out on its own grounds:
- * `404.html` is `noindex` (`verify_static_assets.mjs` pins that), so no crawler
- * is meant to be holding it in the first place.
+ * **The 404 is in this list for the reader rather than for a crawler.** It is
+ * `noindex` (`verify_static_assets.mjs` pins that), so nothing here is about
+ * search — but a mistyped address is exactly where somebody with no
+ * JavaScript arrives, and left out of this list that page served them a
+ * `<noscript>` paragraph with no heading, no masthead, no footer and NOT ONE
+ * LINK. The route home was the sentence «отвори vyarno.bg», to be retyped by
+ * hand. Every other entry prerenders its way back; the page whose whole job is
+ * to give a lost reader one did not.
  *
  * Adding a row here is what puts a page in front of a crawler, and it is half
  * of a pair — `mount()` appends, so the page's bootstrap has to empty `#app`
@@ -192,6 +197,10 @@ export const PRERENDERED = Object.freeze(
         ["en", "support", "index.html"],
       ],
     },
+    // One page and not a pair: a path that matched nothing has no counterpart
+    // in the other tree, which is the same fact `SiteHeader` reads when it
+    // points this page's language control at the other tree's root.
+    { name: "notfound", source: "src/NotFound.svelte", pages: [["404.html"]] },
   ].map(Object.freeze)
 );
 

@@ -95,6 +95,20 @@ const MIN_PRERENDERED = 500;
  */
 const SERVED_PAGES = PRERENDERED.flatMap((entry) => entry.pages);
 
+/**
+ * The served pages a crawler is meant to hold, which is every one but the 404.
+ *
+ * `404.html` is prerendered for the READER — with no JavaScript it is the only
+ * page that can give somebody who mistyped an address a way back — and it
+ * carries a bare `noindex` with no canonical and no `hreflang` set, because it
+ * is served for whatever path did not match and has no counterpart in the
+ * other tree. Filtered out of the derived list rather than named in each test,
+ * so a route added to `PRERENDERED` is still covered without anybody
+ * remembering. `verify_static_assets.mjs` draws the same line for the same
+ * reason.
+ */
+const INDEXABLE_PAGES = SERVED_PAGES.filter((page) => page.at(-1) !== "404.html");
+
 test(
   "the built page carries its prose without running any JavaScript",
   { skip: needsBuild },
@@ -390,7 +404,7 @@ test(
     // one next to an og:description they were already editing. The runtime half
     // of the same rule is a browser test further down, because `<svelte:head>`
     // reaches the head only once the bundle runs.
-    for (const page of SERVED_PAGES) {
+    for (const page of INDEXABLE_PAGES) {
       const html = await readFile(join(DIST, ...page), "utf8");
       const where = page.join("/");
       // Counted over the HEAD, not the document. `<title>` is also SVG's

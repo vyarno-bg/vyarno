@@ -710,6 +710,7 @@ test("every prerendered page has a mount point, and one place that empties it", 
     support: "support-main.js",
     market: "market-main.js",
     credit: "credit-main.js",
+    notfound: "notfound-main.js",
   };
   for (const { name, pages } of PRERENDERED) {
     // Both addresses a component answers at. A row whose English entry lost its
