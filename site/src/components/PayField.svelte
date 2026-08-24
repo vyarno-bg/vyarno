@@ -152,10 +152,10 @@
 </script>
 
 <div class="m-card m-pay">
-  <h4>
+  <h2>
     <span class="l-bg">{COPY.yourNumbers.bg}</span>
     <span class="l-en">{COPY.yourNumbers.en}</span>
-  </h4>
+  </h2>
 
   <!-- Which figure the fields carry. The segmented control is the pattern the
        basket's %/€ toggle already uses, and it keeps the same contract: the

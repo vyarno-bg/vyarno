@@ -64,10 +64,10 @@
     <span class="plus mono">+</span>
   </summary>
 
-  <h3 class="mono">
+  <h2 class="mono">
     <span class="l-bg">{COPY.dataPanelTitle.bg}</span>
     <span class="l-en">{COPY.dataPanelTitle.en}</span>
-  </h3>
+  </h2>
 
   <!-- A real table: eight rows of four parallel facts is tabular data, and a
        screen reader announcing "период, юни 2026" beats a bare string. The
@@ -193,7 +193,7 @@
   .plus {
     transition: transform 0.15s ease;
   }
-  h3 {
+  h2 {
     margin: 16px 0 8px;
     font-size: var(--fs-fine);
     letter-spacing: 0.045em;

@@ -77,10 +77,10 @@
      rather than on `#sliders`: what says what the thirteen rows are is this
      line and the legend under it. `scroll-margin-top` for `#main`'s reason —
      the masthead is sticky. -->
-<h4 id="basket" style="margin-top:14px;margin-bottom:8px;scroll-margin-top:64px">
+<h3 id="basket" style="margin-top:14px;margin-bottom:8px;scroll-margin-top:64px">
   <span class="l-bg">{COPY.basketHead.bg}</span>
   <span class="l-en">{COPY.basketHead.en}</span>
-</h4>
+</h3>
 <p class="leg">
   <span class="l-bg">{COPY.basketLegend.bg}</span>
   <span class="l-en">{COPY.basketLegend.en}</span>

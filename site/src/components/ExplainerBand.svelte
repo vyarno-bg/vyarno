@@ -67,9 +67,9 @@
       </p>
 
       <div class="ex-body">
-        <h4>
+        <h3>
           <span class="l-bg">Какво е Евростат?</span><span class="l-en">What is Eurostat?</span>
-        </h4>
+        </h3>
         <p>
           <span class="l-bg"
             >Евростат е официалната статистическа служба на Европейския съюз. Цените в България
@@ -111,9 +111,9 @@
              The figures here must stay recognisable against the published
              payload: a reader who follows the ↗ link lands on the same index
              this paragraph is teaching them to read. -->
-        <h4>
+        <h3>
           <span class="l-bg">Какво е „индекс“?</span><span class="l-en">What is an "index"?</span>
-        </h4>
+        </h3>
         <p>
           <span class="l-bg"
             >Индексът е число, което следи цените на една група. Само по себе си то не значи нищо:
@@ -135,11 +135,11 @@
           >
         </p>
 
-        <h4>
+        <h3>
           <span class="l-bg">Защо твоето число се различава от „официалната инфлация“?</span><span
             class="l-en">Why does your number differ from the "official inflation"?</span
           >
-        </h4>
+        </h3>
         <p>
           <span class="l-bg"
             >Числото в лентата най-горе е официалната инфлация на Евростат за <b>цялата</b>
@@ -180,11 +180,11 @@
              `ResultsSummary` opens this band and scrolls here. Renaming the id
              breaks that route silently: the button would open the band onto
              whatever the browser scrolled to. -->
-        <h4 id="two-official">
+        <h3 id="two-official">
           <span class="l-bg">Защо и двете официални числа не съвпадат точно?</span><span
             class="l-en">Why don't the two official numbers match exactly?</span
           >
-        </h4>
+        </h3>
         <p>
           <span class="l-bg"
             >Числото в лентата най-горе и „средностатистическата кошница“ в сметката се разминават с
@@ -209,11 +209,11 @@
           >
         </p>
 
-        <h4>
+        <h3>
           <span class="l-bg">Защо по новините чуваш малко различно число?</span><span class="l-en"
             >Why does the news sometimes quote a slightly different number?</span
           >
-        </h4>
+        </h3>
         <p>
           <span class="l-bg"
             >Защото инфлацията в България се мери по два официални начина и те се разминават съвсем
@@ -235,7 +235,7 @@
           >
         </p>
 
-        <h4><span class="l-bg">А моите данни?</span><span class="l-en">And your data?</span></h4>
+        <h3><span class="l-bg">А моите данни?</span><span class="l-en">And your data?</span></h3>
         <p>
           <span class="l-bg"
             >Заплатата и разходите ти <b>никога</b> не напускат устройството ти. Сметката се прави изцяло
@@ -259,11 +259,11 @@
              hundredth. If this becomes a call to action, or acquires a second
              copy anywhere on the page, the rule it is permitted by has been
              broken by the code it permits. -->
-        <h4>
+        <h3>
           <span class="l-bg">{SUPPORT_COPY.explainK.bg}</span><span class="l-en"
             >{SUPPORT_COPY.explainK.en}</span
           >
-        </h4>
+        </h3>
         <p>
           <span class="l-bg"
             >{SUPPORT_COPY.explainBody.bg}
@@ -417,13 +417,13 @@
   .ex-body {
     padding: 4px 14px 14px;
   }
-  .ex-body h4 {
+  .ex-body h3 {
     margin: 16px 0 4px;
     font-size: var(--fs-meta);
     font-weight: 700;
     color: var(--ink);
   }
-  .ex-body h4:first-child {
+  .ex-body h3:first-child {
     margin-top: 6px;
   }
   .ex-body p {
