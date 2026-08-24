@@ -1001,9 +1001,8 @@ export const RANGE_MIN_POINTS = 5;
  *
  * `times` divides by the series' own reference, so an index arrives at the
  * strip in the multiples the rest of the page reads it in rather than as a
- * level nobody has a feel for. `pct` and `count` are already in their units;
- * `ratio` is Eurostat's own index against Bulgaria's long-run average and has
- * none.
+ * level nobody has a feel for. `signedPct` and `pct` are already in their
+ * units — a change carries its sign, a share does not.
  */
 const RANGE_ROWS = Object.freeze(
   [

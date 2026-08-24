@@ -346,7 +346,7 @@ export function householdRaise({ pay, raises, payroll }) {
  * Where each earner sits on the published net-earnings ladder.
  *
  * **The ladder ranks people, not households.** Its rungs are individual
- * full-time earnings (Eurostat SES, re-levelled onto НСИ's Sofia mean — see
+ * full-time earnings (Eurostat SES, re-levelled onto НСИ's national mean — see
  * `mirror.js#buildLadder`), so a household total read off it is a unit
  * mismatch of exactly the kind that once pushed every Sofia salary to the 99th
  * percentile: two people on €900 each would be reported as out-earning 78% of
