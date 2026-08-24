@@ -353,21 +353,26 @@
            saying it has never been lower. -->
 
       <p>
+        <!-- The BG sentence takes no stop of its own after «{месец} {година} г.»
+             — the abbreviation's dot ends it, and a second renders «г..». The
+             follow-on sentence opens with an explicit {" "}: Svelte strips the
+             whitespace at the block boundary, which rendered «г..Тогава» and
+             "2022.Rates" fused. -->
         <span class="l-bg"
           >Делът не е падал под {number(fixationHistory.trough.value, 1, $lang)}% нито веднъж през
           периода, който БНБ публикуват, а най-ниската му стойност е през {periodLong(
             fixationHistory.trough.period,
             $lang
-          )}.{#if troughWorthNaming(fixationHistory.series)}
-            Тогава лихвите в Европа се вдигаха и част от хората избраха фиксирана лихва.{/if}</span
+          )}{#if troughWorthNaming(fixationHistory.series)}&nbsp;Тогава лихвите в Европа се вдигаха
+            и част от хората избраха фиксирана лихва.{/if}</span
         >
         <span class="l-en"
           >The share has never once fallen below {number(fixationHistory.trough.value, 1, $lang)}%
           in the period BNB publish, and its lowest reading is {periodLong(
             fixationHistory.trough.period,
             $lang
-          )}.{#if troughWorthNaming(fixationHistory.series)}
-            Rates across Europe were rising then and some borrowers did fix.{/if}</span
+          )}.{#if troughWorthNaming(fixationHistory.series)}&nbsp;Rates across Europe were rising
+            then and some borrowers did fix.{/if}</span
         >
       </p>
       <figure class="chart">

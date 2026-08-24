@@ -1139,15 +1139,19 @@
     {#if unemployment}
       {@const axis = niceTicks(0, unemployment.max, 4)}
       <p>
+        <!-- No stop of our own after «{месец} {година} г.» — the abbreviation's
+             dot ends the sentence, and a second one renders «г..» on the page
+             (БАН's rule for изречение, завършващо със съкращение). The EN span
+             keeps its stops: "2026" ends with no dot to reuse. -->
         <span class="l-bg"
           >Върхът е {number(unemployment.peak.value, 1, $lang)}% през {periodLong(
             unemployment.peak.period,
             $lang
-          )}. Най-ниската стойност, която Евростат са отчели за България в този период, е {number(
+          )} Най-ниската стойност, която Евростат са отчели за България в този период, е {number(
             unemployment.trough.value,
             1,
             $lang
-          )}% през {periodLong(unemployment.trough.period, $lang)}.</span
+          )}% през {periodLong(unemployment.trough.period, $lang)}</span
         >
         <span class="l-en"
           >The peak is {number(unemployment.peak.value, 1, $lang)}% in {periodLong(

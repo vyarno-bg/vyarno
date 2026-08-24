@@ -1160,6 +1160,43 @@ test("the figures are drawn in the face the page chose, in both languages", { sk
   }
 });
 
+test("no page prints a double stop or fuses two sentences", { skip }, async () => {
+  // «г..» and "2022.Rates" are one seam showing through twice: a sentence a
+  // template closes with its own «.» after a formatted period that already ends
+  // in the abbreviation's dot, and a follow-on sentence inside an {#if} whose
+  // leading whitespace Svelte strips at the block boundary. Both survive every
+  // string-level suite because neither exists in any COPY string — they are
+  // made at render time, where the formatter's output meets the template's
+  // punctuation. So the rule is read off the rendered text, over every route,
+  // and cannot go stale as sentences move: any new site of either class fails
+  // here by name.
+  for (const path of ["/", "/how/", "/market/", "/credit/", "/legal/", "/support/"]) {
+    for (const prefix of ["", "/en"]) {
+      await withApp(async (page, errors) => {
+        const text = await page.evaluate(() => document.body.innerText);
+        const doubled = text.match(/г\.\./g);
+        assert.equal(
+          doubled,
+          null,
+          `${prefix}${path} prints «г..» — a sentence adds its own stop after a ` +
+            "period label that already ends in the abbreviation's dot"
+        );
+        // A stop followed directly by a capital is two sentences fused — the
+        // stripped-whitespace half of the seam. Letters only on the left, so
+        // decimals ("84.0%") and file names stay out of it.
+        const fused = text.match(/[a-zа-я]\.[А-ЯA-Z][a-zа-яa-z]/g);
+        assert.equal(
+          fused,
+          null,
+          `${prefix}${path} fuses two sentences: ${JSON.stringify(fused)} — the ` +
+            "follow-on sentence lost its space at a block boundary"
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      }, `${prefix}${path}`);
+    }
+  }
+});
+
 test.after(shutdown);
 
 test(
