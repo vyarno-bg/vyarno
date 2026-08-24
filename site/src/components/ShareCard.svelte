@@ -254,10 +254,10 @@
 {/snippet}
 
 <section class="share" aria-labelledby="shareHead">
-  <h4 id="shareHead">
+  <h3 id="shareHead">
     <span class="l-bg">{COPY.shareHead.bg}</span>
     <span class="l-en">{COPY.shareHead.en}</span>
-  </h4>
+  </h3>
 
   {#if share}
     <!-- The label sits on a wrapper rather than on the canvas: a `<canvas>` is
@@ -348,11 +348,11 @@
     padding-top: 14px;
     border-top: 1px solid var(--line-2);
   }
-  /* No type treatment of its own: `.m-card h4` in card.css is the results
+  /* No type treatment of its own: `.m-card :is(h2, h3)` in card.css is the results
      card's section heading, and a serif line here would announce the share
      block as more important than the rows above it — which are the number the
      reader came for. */
-  .share h4 {
+  .share h3 {
     margin-bottom: 10px;
   }
   /* The export is 1200×630 and the element is whatever the column allows; the

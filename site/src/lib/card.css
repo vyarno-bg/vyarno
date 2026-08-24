@@ -107,7 +107,7 @@
   border-radius: 6px;
   padding: 20px;
 }
-.m-card h4 {
+.m-card :is(h2, h3) {
   font-weight: 600;
   font-size: var(--fs-meta);
   letter-spacing: 0.04em;
@@ -115,7 +115,7 @@
   color: var(--muted);
   margin: 0 0 14px;
 }
-.h4row {
+.headrow {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -136,7 +136,7 @@
   }
 }
 /* Vertical rhythm between the stacked .field units the reader types into.
-   14px matches .h4row's margin-bottom, and the rule names the two input cards
+   14px matches .headrow's margin-bottom, and the rule names the two input cards
    so the home block's f-row fields, which have their own grid gap, do not
    double up. */
 .m-pay > .field,
@@ -152,7 +152,7 @@
    heading gets rather than the 14px between two fields. At the field rhythm
    «Ако искаш — още за теб» reads as a caption under the picker instead of as
    the label on everything below it, which inverts what the move was for. */
-.m-inputs > .field + h4 {
+.m-inputs > .field + h2 {
   margin-top: 24px;
 }
 /* The results card fills the m-grid row so its bottom items (drawer, share

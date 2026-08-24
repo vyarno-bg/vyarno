@@ -134,10 +134,10 @@
     </div>
   {/if}
 
-  <h4>
+  <h2>
     <span class="l-bg">{COPY.restOfNumbers.bg}</span>
     <span class="l-en">{COPY.restOfNumbers.en}</span>
-  </h4>
+  </h2>
 
   <!-- ONE RAISE PER INCOME. A household's rise is not a number people share:
        +10% for one earner and nothing for the other is not "+5% between us",
@@ -225,11 +225,11 @@
     </span>
   </div>
   <!-- HOME BLOCK -->
-  <div class="h4row home-h">
-    <h4 style="margin:0">
+  <div class="headrow home-h">
+    <h3 style="margin:0">
       <span class="l-bg">{COPY.homeHeading.bg}</span>
       <span class="l-en">{COPY.homeHeading.en}</span>
-    </h4>
+    </h3>
     <label class="homeTog">
       <input type="checkbox" bind:checked={calc.homeOn} />
       <span class="l-bg">{COPY.homeToggle.bg}</span>

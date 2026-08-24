@@ -114,11 +114,11 @@
      different one. Among the household's own fields it sits 3,113px below what
      it decides at 360px, and a reader who never reaches it never learns the big
      figure has a window at all. -->
-<div class="h4row">
-  <h4>
+<div class="headrow">
+  <h2>
     <span class="l-bg">{COPY.yourReal.bg}</span>
     <span class="l-en">{COPY.yourReal.en}</span>
-  </h4>
+  </h2>
   <div class="m-window">
     <!-- The option text is the visible label, so the accessible name is the
          question it answers: a screen reader otherwise meets bare years. -->
