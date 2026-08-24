@@ -153,11 +153,22 @@ export function basketBudget({ spendMode, amounts, spendable, spendSharePct }) {
  * euro basket smaller than their pay, gets a different — smaller, truer —
  * number.
  *
- * @param {{housingCost:number, spendBase:number}} args
+ * **Housing is capped at the take-home, and that reduction is not a rounding
+ * choice.** `spendable` clamps at zero, so a rent above the pay leaves
+ * `spendBase` at zero and the sum ran to the RENT — a reader who typed one
+ * earner's €1,450 net beside the household's €5,000 rent was told the same
+ * life now costs them €210 more a month, priced off a figure larger than the
+ * whole income they had just entered, in the second person. The excess is not
+ * spending the reader claimed; it is the clamp above showing through. Below
+ * the cap nothing moves, which is every reader whose housing fits inside their
+ * pay.
+ *
+ * @param {{salary:number, housingCost:number, spendBase:number}} args
  * @returns {number} EUR/month
  */
-export function exposedSpend({ housingCost, spendBase }) {
-  return Math.max(0, housingCost || 0) + Math.max(0, spendBase || 0);
+export function exposedSpend({ salary, housingCost, spendBase }) {
+  const housing = Math.min(Math.max(0, housingCost || 0), Math.max(0, salary || 0));
+  return housing + Math.max(0, spendBase || 0);
 }
 
 /**

@@ -1110,7 +1110,11 @@ export class Calculator {
   // someone who told us they put money aside. See view/spend.js#exposedSpend.
   extra = $derived(
     extraPerMonth(
-      exposedSpend({ housingCost: this.housingCost, spendBase: this.budget.spendBase }),
+      exposedSpend({
+        salary: this.householdNet,
+        housingCost: this.housingCost,
+        spendBase: this.budget.spendBase,
+      }),
       this.pi
     )
   );
@@ -1176,8 +1180,16 @@ export class Calculator {
    * `dpi` cannot answer this: it is 0 here for the reason a hand-made basket
    * landing on the national average is also 0, and those two want opposite
    * sentences.
+   *
+   * **A basket of nothing is not a basket of theirs.** Dragging all thirteen
+   * sliders to zero leaves Σw = 0, where `mirror.js#personalInflationDetailed`
+   * has nothing to weight and hands back the official rate it was given as a
+   * fallback — correctly, since there is no personal rate to compute. What was
+   * wrong was the label: the page put «твоята инфлация» on the country's own
+   * 4,4% while every row of the editor beside it read «0% ≈ €0». The number is
+   * the country's, so it is named as the country's.
    */
-  basketIsOwn = $derived(this.activePreset !== "official");
+  basketIsOwn = $derived(this.activePreset !== "official" && this.enteredTotal > 0);
 
   /**
    * The fields a share surface may carry, and nothing else.
