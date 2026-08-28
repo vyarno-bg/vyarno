@@ -1,11 +1,11 @@
 """Ask every upstream in its own window whether it has published since we did.
 
-Run by `.github/workflows/watch.yml` every ten minutes across the hours
+Run by `.github/workflows/watch.yml` every twenty minutes across the hours
 `release_calendar.py` says a publisher can release in. It answers one question
 per upstream — *has this publisher moved since the arm reading it last ran?* —
 and prints the arms that need dispatching. That is the whole reason this exists:
 the refresh itself takes three minutes and a runner install, and a poll that
-paid that cost could not run every ten minutes.
+paid that cost could not run on this cadence at all.
 
 **Nothing here decides anything about the data.** A probe reads a timestamp,
 never a value; the pipeline re-fetches from scratch and every gate runs as it
@@ -46,7 +46,7 @@ from vyarno_pipeline.release_calendar import (
 )
 
 # Named rather than anonymous, because four public services are being polled
-# every ten minutes and an operator reading their own logs should be able to
+# on a schedule and an operator reading their own logs should be able to
 # tell who this is and stop us without guessing.
 USER_AGENT = "vyarno.bg release watcher (+https://vyarno.bg)"
 

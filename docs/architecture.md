@@ -227,14 +227,16 @@ the same reason they always were: run them from an ordinary network with
 
 ### What starts a refresh
 
-**`watch.yml`, within about ten minutes of the upstream publishing.** A cron
+**`watch.yml`, within about twenty minutes of the upstream publishing.** A cron
 cannot be both safe and early on publishers who do not fix their day a month
 ahead, so the watcher polls a cheap marker per cube or file — a timestamp, never
 data — inside the window `release_calendar.py` records for it, and dispatches
 the arm whose publisher has moved since that arm last ran. A tick costs about
 fifteen seconds: `watch.py` is stdlib-only and runs before anything is
 installed. `docs/data-sources.md` §"When each upstream publishes" is the table
-and the evidence behind it.
+and the evidence behind it, and `release_calendar.WATCH_CRON` is why the poll
+line is a ceiling rather than a rate — GitHub drop most of what a denser one
+asks for.
 
 A run that went red still READ its upstream, so it would otherwise take the
 release it died on off the watcher's list for good. `watch.py#clock_of` holds

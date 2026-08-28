@@ -487,13 +487,23 @@ BACKSTOP: dict[str, tuple[str, ...]] = {
     "payroll": ("5 22 28,29,30,31 * *",),
 }
 
-# When `watch.yml` looks. The first line is the release watch: every ten
-# minutes across the UTC hours any window in this table can occupy, offset off
-# the hour because a run scheduled at :00 is the one GitHub delays under load.
-# The second is a wide sweep that probes every upstream regardless of window,
-# because a correction lands on no calendar and is still a figure to be first
-# with. `test_release_calendar.py` holds the first line to `utc_hours()`.
-WATCH_CRON = "5-55/10 6-10,20-22 * * *"
+# When `watch.yml` looks. The first line is the release watch: across the UTC
+# hours any window in this table can occupy, offset off the hour because a run
+# scheduled at :00 is the one GitHub delays under load. The second is a wide
+# sweep that probes every upstream regardless of window, because a correction
+# lands on no calendar and is still a figure to be first with.
+# `test_release_calendar.py` holds the first line to `utc_hours()`.
+#
+# **Twenty minutes rather than ten, and the line is a ceiling rather than a
+# rate.** GitHub serve `schedule` best-effort and drop the fires they cannot
+# place: on 2026-08-26 the in-window ticks landed at 06:02, 06:51, 07:34,
+# 08:20, 09:06, 09:54, 10:08, 10:21 and 10:54 — nine of the thirty this line
+# asked for, 13 to 49 minutes apart. What the ceiling has to be is a cadence we
+# would still want on the day GitHub honour it, and 48 probes of five public
+# APIs a day, for files that move on eight days a month, is not it. Twenty
+# still sits four times ahead of what was measured. Move it against a
+# measurement of what was DELIVERED, never against what was asked for.
+WATCH_CRON = "5-55/20 6-10,20-22 * * *"
 SWEEP_CRON = "40 1,5,9,13,17,21 * * *"
 
 

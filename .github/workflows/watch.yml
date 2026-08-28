@@ -28,11 +28,13 @@ name: watch
 
 on:
   schedule:
-    # The release watch: every ten minutes across the UTC hours any window in
-    # the calendar can occupy. Offset off the hour because a run scheduled at
-    # :00 is the one GitHub delays under load, and the delay is the whole
-    # quantity this workflow exists to shrink.
-    - cron: "5-55/10 6-10,20-22 * * *"
+    # The release watch, across the UTC hours any window in the calendar can
+    # occupy. Offset off the hour because a run scheduled at :00 is the one
+    # GitHub delays under load, and the delay is the whole quantity this
+    # workflow exists to shrink. `release_calendar.WATCH_CRON` is where the
+    # twenty minutes is argued — GitHub drop most of what a denser line asks
+    # for, so it is a ceiling and not a rate.
+    - cron: "5-55/20 6-10,20-22 * * *"
     # The wide sweep: every upstream, window or not, four-hourly. A correction
     # to a published figure lands on no calendar and is still a figure to be
     # first with, and this is the only thing that would ever see one.
