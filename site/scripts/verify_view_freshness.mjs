@@ -203,17 +203,17 @@ test("every manifest payload resolves a reference period from what it publishes"
   );
 });
 
-test("a payload on two clocks names both of them, not whichever block was asked", () => {
+test("a payload on several clocks names every one of them, not whichever block was asked", () => {
   // A row's period slot is a claim about EVERY figure in the file, and a
   // payload whose blocks run on different releases cannot honour it with one of
-  // them picked by name. `credit.json` is the case: eight ECB MIR blocks at a
-  // month, and `non_performing` at a quarter about five months behind — so
-  // dated by `consumer` alone the row reported June over a Q1 figure.
+  // them picked by name. `credit.json` is the case, on three: six ECB MIR
+  // blocks at a month, `savings` on BSI's own release about four days ahead of
+  // them, and `non_performing` at a quarter five months behind — so dated by
+  // `consumer` alone the row reported June over a Q1 figure and a July one.
   //
-  // The rule is over the WHOLE manifest rather than over that row, which is
-  // what makes a third clock inexpressible: a block added to any payload with a
-  // period neither slot names fails here, rather than being dropped silently
-  // into a period that is wrong for it.
+  // The rule is over the WHOLE manifest rather than over that row: a block
+  // added to any payload with a period nothing names fails here, rather than
+  // being dropped silently into a period that is wrong for it.
   //
   // Only top-level blocks carry a `ref_period` of their own; a nested one (a
   // rate tier inside `mortgage`) is that block's business and is dated where it
@@ -232,7 +232,9 @@ test("a payload on two clocks names both of them, not whichever block was asked"
     if (inFile.size < 2) continue; // one clock, and the row above holds it
 
     const named = new Set(
-      [p.refPeriod(payload), p.refPeriodSecondary?.(payload)?.period].filter(Boolean)
+      [p.refPeriod(payload), ...(p.refPeriodsBeside?.(payload) ?? []).map((r) => r.period)].filter(
+        Boolean
+      )
     );
     for (const period of inFile) {
       if (!named.has(period)) unnamed.push(`${p.file}: ${period}`);
@@ -246,16 +248,31 @@ test("a payload on two clocks names both of them, not whichever block was asked"
   );
 
   // And the case that prompted it, asserted by name so the row cannot quietly
-  // lose its second slot while the sweep above still passes on one clock.
+  // lose a slot while the sweep above still passes on one clock.
   const credit = read("credit");
   if (credit) {
     const row = PAYLOADS.find((p) => p.key === "credit");
     assert.equal(row.refPeriod(credit), credit.consumer.ref_period);
-    assert.equal(row.refPeriodSecondary(credit)?.period, credit.non_performing.ref_period);
     assert.notEqual(
       credit.consumer.ref_period,
       credit.non_performing.ref_period,
-      "premise: credit.json still runs on two clocks"
+      "premise: credit.json still runs on more than one clock"
+    );
+    assert.ok(
+      row.refPeriodsBeside(credit).some((r) => r.period === credit.non_performing.ref_period),
+      "the quarterly arrears block lost the slot that names it"
+    );
+    // BSI sits on the rates' own month most of the month, so this only asserts
+    // that the slot fires WHEN it diverges — the sweep above covers the rest.
+    assert.deepEqual(
+      row
+        .refPeriodsBeside({
+          consumer: { ref_period: "2026-06" },
+          savings: { ref_period: "2026-07" },
+          non_performing: { ref_period: "2026-Q1" },
+        })
+        .map((r) => r.period),
+      ["2026-07", "2026-Q1"]
     );
   }
 });
@@ -268,31 +285,35 @@ test("a second reference period is shown only where there is a second vintage", 
   // duplicate reads as a defect on the one panel the whole freshness argument
   // points at.
   for (const p of PAYLOADS) {
-    if (!p.refPeriodSecondary) continue;
+    if (!p.refPeriodsBeside) continue;
     const payload = read(p.file);
     if (!payload) continue;
-    const secondary = p.refPeriodSecondary(payload);
-    if (secondary === null) continue;
-    assert.notEqual(
-      String(secondary.period),
-      String(p.refPeriod(payload)),
-      `${p.file} offers a second period equal to its first — the panel would ` +
-        "print the same vintage twice, once bare and once labelled."
-    );
-    // **The label is what says which vintage the period belongs to**, and the
-    // panel renders `.l-bg` and `.l-en` from it. A missing half is a blank line
-    // rather than a fallback, so the row would print a bare year under a
-    // heading that no longer says what it is a year of.
-    for (const lang of ["bg", "en"]) {
-      assert.equal(
-        typeof secondary.label?.[lang],
-        "string",
-        `${p.file}'s second period carries no ${lang} label`
+    const beside = p.refPeriodsBeside(payload);
+    const seen = new Set();
+    for (const other of beside) {
+      assert.notEqual(
+        String(other.period),
+        String(p.refPeriod(payload)),
+        `${p.file} names a period equal to its first — the panel would ` +
+          "print the same vintage twice, once bare and once labelled."
       );
-      assert.ok(
-        secondary.label[lang].trim(),
-        `${p.file}'s ${lang} label for its second period is empty — it renders as a blank line`
-      );
+      assert.ok(!seen.has(other.period), `${p.file} names ${other.period} twice`);
+      seen.add(other.period);
+      // **The label is what says which vintage the period belongs to**, and the
+      // panel renders `.l-bg` and `.l-en` from it. A missing half is a blank line
+      // rather than a fallback, so the row would print a bare year under a
+      // heading that no longer says what it is a year of.
+      for (const lang of ["bg", "en"]) {
+        assert.equal(
+          typeof other.label?.[lang],
+          "string",
+          `${p.file}'s ${other.period} carries no ${lang} label`
+        );
+        assert.ok(
+          other.label[lang].trim(),
+          `${p.file}'s ${lang} label for ${other.period} is empty — it renders as a blank line`
+        );
+      }
     }
   }
 
@@ -300,11 +321,13 @@ test("a second reference period is shown only where there is a second vintage", 
   // not satisfied by an accessor that has quietly stopped returning anything.
   const dist = PAYLOADS.find((p) => p.key === "salaryDist");
   assert.deepEqual(
-    dist.refPeriodSecondary({ ref_period: "2026-Q1", shape: { ref_year: 2022 } }),
-    {
-      period: "2022",
-      label: { bg: "форма: Евростат SES", en: "shape: Eurostat SES" },
-    },
+    dist.refPeriodsBeside({ ref_period: "2026-Q1", shape: { ref_year: 2022 } }),
+    [
+      {
+        period: "2022",
+        label: { bg: "форма: Евростат SES", en: "shape: Eurostat SES" },
+      },
+    ],
     "a re-levelled ladder must name the SES wave its dispersion came from"
   );
 });

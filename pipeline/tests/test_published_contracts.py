@@ -836,6 +836,52 @@ def test_the_published_revolving_amounts_are_still_nested_and_not_added() -> Non
         )
 
 
+_MONTH = re.compile(r"^\d{4}-\d{2}$")
+
+
+def _monthly_keys(value: object) -> list[str] | None:
+    """The months of a `{"YYYY-MM": …}` series, or None for anything else."""
+    if not isinstance(value, dict) or not value:
+        return None
+    keys = [str(k) for k in value]
+    return keys if all(_MONTH.match(k) for k in keys) else None
+
+
+def test_no_block_publishes_a_series_that_runs_past_its_own_month() -> None:
+    """A block's curve ends on the month the block's card states.
+
+    `newest_shared_period` pins a card to the month both publishers carry and
+    leaves the series beside it free to run on — so `mortgage.json` shipped a
+    2026-06 card over a curve ending 2026-07, under a section that opens «Това
+    е третата лихва отгоре». A month a reader can see is one a cross-check has
+    to have run at. Swept rather than named per block, because a new series
+    added beside a pinned card has the same defect.
+    """
+    late: list[str] = []
+    for path in sorted(DATA_DIR.glob("*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            continue
+        for name, block in payload.items():
+            ref = block.get("ref_period") if isinstance(block, dict) else None
+            if not (isinstance(ref, str) and _MONTH.match(ref)):
+                continue
+            # One level of nesting as well as the flat case: `outstanding`
+            # publishes its balances as `{block: {period: amount}}`.
+            for field, value in block.items():
+                candidates = {field: value}
+                if isinstance(value, dict) and _monthly_keys(value) is None:
+                    candidates = {f"{field}.{k}": v for k, v in value.items()}
+                for where, series in candidates.items():
+                    months = _monthly_keys(series)
+                    if months and max(months) > ref:
+                        late.append(
+                            f"{path.name} {name}.{where} runs to {max(months)}, "
+                            f"past the {ref} the block publishes"
+                        )
+    assert late == [], "\n".join(late)
+
+
 def test_the_published_ses_cells_agree_with_the_rungs_built_from_them() -> None:
     """The four Eurostat figures, against the four copies the SPA reads.
 

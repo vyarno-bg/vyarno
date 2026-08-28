@@ -109,7 +109,7 @@ export function dataAge(parts, manifest = [], now = Date.now()) {
       asOf: payload?.as_of ?? null,
       refPeriod: entry.refPeriod?.(payload) ?? null,
       refPeriodIsDayDate: entry.refPeriodIsDayDate === true,
-      refPeriodSecondary: entry.refPeriodSecondary?.(payload) ?? null,
+      refPeriodsBeside: entry.refPeriodsBeside?.(payload) ?? [],
       source: payload?.source ?? null,
       sourceUrl: payload?.source_url ?? null,
     };
