@@ -1,7 +1,7 @@
 """The watcher dispatches on a release and on nothing else.
 
 Two failures, opposite and both silent. **Dispatching when nothing published**
-runs the pipeline every ten minutes against four public APIs, finds no change,
+runs the pipeline against four public APIs on every tick, finds no change,
 opens no pull request, and the only trace is a run history nobody reads.
 **Not dispatching when something did** leaves the figure the newspapers are
 running on out of this site until a backstop cron fires days later — which is
