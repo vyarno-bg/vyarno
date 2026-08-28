@@ -111,8 +111,45 @@ def _git(repo: Path, *args: str) -> str:
 
 EPOCH = datetime.fromtimestamp(0, tz=UTC)
 
+# A run that never reached its first request read nothing: `startup_failure`
+# never entered the job, and a cancelled one can have been stopped before the
+# fetch. Counting either advances the clock past a release nobody looked at.
+UNREAD_CONCLUSIONS = frozenset({"startup_failure", "cancelled"})
 
-def last_read(repo: Path, source: str, last_runs: dict[str, str] | None) -> datetime:
+# How many red runs in a row still count as "come back to this".
+#
+# **A failed run DID read its upstream**, so taking it as the clock makes the
+# arm swallow the release it died on: the next tick sees a marker older than the
+# run and reports `unchanged` for ever. That is what happened to БНБ's
+# 2026-08-27 upload — the credit and mortgage arms went red on it at 11:58, and
+# every tick after that read the 09:52 marker as already seen. Counting only the
+# green runs is the opposite failure, and the one this rule was first written to
+# avoid: an arm broken on a bad payload re-runs on every tick, for ever.
+#
+# So a failure holds the clock at the last success for this many ticks and then
+# lets go. Three is enough for a transient upstream or a same-day fix to land,
+# and short of the monthly backstop, which is the answer to an arm actually
+# broken.
+FAILED_RUN_RETRIES = 3
+
+
+def clock_of(runs: list[dict[str, str]]) -> str | None:
+    """Which of an arm's runs counts as the last time it read its upstream.
+
+    `runs` is newest first, as `watch.yml` reads them off the API. Returns that
+    run's `created_at`, or None where nothing has read this upstream yet.
+    """
+    read = [run for run in runs if run.get("conclusion") not in UNREAD_CONCLUSIONS]
+    if not read:
+        return None
+    reds = next((i for i, run in enumerate(read) if run.get("conclusion") == "success"), -1)
+    holding = 0 < reds <= FAILED_RUN_RETRIES
+    return (read[reds] if holding else read[0]).get("created_at")
+
+
+def last_read(
+    repo: Path, source: str, last_runs: dict[str, list[dict[str, str]]] | None
+) -> datetime:
     """When this arm last fetched its upstream — which is what a marker beats.
 
     **The question is when we last LOOKED, not when we last published.** A
@@ -124,12 +161,15 @@ def last_read(repo: Path, source: str, last_runs: dict[str, str] | None) -> date
     so any marker later in that same day reads as new for ever and the arm is
     dispatched on every tick.
 
-    So the clock is the arm's own last workflow run, whatever it concluded.
-    That advances exactly when we read the upstream, which makes a dispatched
-    refresh its own acknowledgement.
+    So the clock is the arm's own last workflow run, which advances exactly
+    when we read the upstream and makes a dispatched refresh its own
+    acknowledgement. Which run that is, when the newest are red, is `clock_of`:
+    a failure read the upstream and published nothing, and both answers to that
+    are a way to miss a release.
 
     **`last_runs` is the whole answer whenever `watch.yml` supplies one**, so
-    an arm missing from it has never read anything and its clock is the epoch.
+    an arm missing from it, or carrying no run that read anything, has never
+    read this upstream and its clock is the epoch.
     Falling back to git there read the tip commit instead: `git log -- <path>`
     on the watcher's `fetch-depth: 1` clone dates every payload to that one
     commit, so the clock was "the last push to main" and a release landing
@@ -138,7 +178,7 @@ def last_read(repo: Path, source: str, last_runs: dict[str, str] | None) -> date
     checkout, where there is no run history to be had.
     """
     if last_runs is not None:
-        recorded = last_runs.get(source)
+        recorded = clock_of(last_runs.get(source) or [])
         if not recorded:
             return EPOCH
         return datetime.fromisoformat(recorded.replace("Z", "+00:00")).astimezone(UTC)
@@ -207,7 +247,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--last-run",
-        help="JSON of {source: ISO instant or null} — when each arm last ran. See `last_read`.",
+        help=(
+            "JSON of {source: [{conclusion, created_at}, ...]} newest first — "
+            "each arm's own run history. See `last_read` and `clock_of`."
+        ),
     )
     args = parser.parse_args(argv)
 

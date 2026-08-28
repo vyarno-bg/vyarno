@@ -236,6 +236,11 @@ fifteen seconds: `watch.py` is stdlib-only and runs before anything is
 installed. `docs/data-sources.md` §"When each upstream publishes" is the table
 and the evidence behind it.
 
+A run that went red still READ its upstream, so it would otherwise take the
+release it died on off the watcher's list for good. `watch.py#clock_of` holds
+the clock at the last green run for three ticks instead, which re-dispatches an
+arm that was unlucky without re-dispatching one that is broken.
+
 The cron each arm still carries is the backstop for the watcher being broken.
 It fires once that arm's window has closed, which is the last hour at which
 running unconditionally is right, and `payroll` is the one arm where the cron
