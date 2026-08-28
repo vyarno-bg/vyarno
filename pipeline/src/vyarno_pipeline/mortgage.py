@@ -26,6 +26,7 @@ pipeline, never reach a person deciding on a home loan.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date
 from typing import Any
 
@@ -188,15 +189,68 @@ def validate_freshness(ref_period: str, as_of: date, name: str) -> None:
         )
 
 
+def newest_shared_period(what: str, **legs: Iterable[str]) -> str:
+    """The newest month every one of these publishers carries.
+
+    **Two publishers on one figure are two calendars.** `release_calendar.py`
+    records both windows and they do not coincide: БНБ re-upload their
+    workbooks from the 24th, the ЕЦБ's MIR release for the same month lands
+    between the last day of M+1 and the 5th of M+2. So for a few days a month
+    the workbooks carry a month MIR does not, and a check that took each side's
+    own newest reading compared July's balance against June's price. On
+    2026-08-27 that failed both arms with an accusation neither publisher had
+    earned: 0.4554 pp on the card cell, and 2.8634 pp on a fixation bucket
+    where the ЕЦБ's newest was two months back because they omit a month
+    nobody lent in.
+
+    Pinning the pair here is what makes the disagreement mean something. The
+    month one publisher had first is not dropped — its own series keeps it, and
+    the run after the other catches up publishes it beside a check that ran.
+    """
+    periods = {leg: set(months) for leg, months in legs.items()}
+    shared = set.intersection(*periods.values()) if periods else set()
+    if not shared:
+        raise MortgageValidationError(
+            f"{what}: no month is carried by all of "
+            + "; ".join(
+                f"{leg} (newest {max(months, default='none')})" for leg, months in periods.items()
+            )
+            + ". An unrun cross-check must not read as a passing one."
+        )
+    return max(shared)
+
+
+def rate_at(series: dict[str, float], period: str, whose: str, what: str) -> float:
+    """One publisher's reading at the month a cross-check is being made at.
+
+    Reached only when a caller pinned the pair to a month one side does not
+    have, which `newest_shared_period` exists to prevent — so it names that
+    rather than raising a bare KeyError two frames down.
+    """
+    if period not in series:
+        raise MortgageValidationError(
+            f"{what}: {whose} carries no {period} to check against "
+            f"(newest {max(series, default='none')}). The two sides of a "
+            f"cross-check are pinned to a month they share."
+        )
+    return series[period]
+
+
 def cross_check_outstanding(
-    bnb_pct: float,
-    ecb_pct: float,
+    bnb: dict[str, float],
+    ecb: dict[str, float],
+    period: str,
 ) -> dict[str, Any]:
-    """BNB vs ECB MIR on the outstanding book — they must agree.
+    """BNB vs ECB MIR on the outstanding book at one month — they must agree.
 
     Same underlying data reported by the same institution, so this is a
-    genuine integrity check rather than a comparison of two estimates.
+    genuine integrity check rather than a comparison of two estimates. It takes
+    the month rather than the two readings because the two reach it four days
+    apart — `newest_shared_period` is where that is argued.
     """
+    what = "Outstanding-stock cross-check"
+    bnb_pct = rate_at(bnb, period, "БНБ", what)
+    ecb_pct = rate_at(ecb, period, "ЕЦБ MIR", what)
     delta = round(abs(bnb_pct - ecb_pct), 4)
     if delta > CROSS_CHECK_TOLERANCE_PP:
         raise MortgageValidationError(
@@ -315,24 +369,31 @@ def validate_fixation_rows(rows: list[dict[str, Any]]) -> None:
 
 def cross_check_fixation_rates(
     bnb_rates: dict[str, float | None],
-    ecb_rates: dict[str, float],
+    ecb_series: dict[str, dict[str, float]],
+    period: str,
 ) -> None:
     """БНБ and ЕЦБ MIR on the same four buckets — the same reason as the book.
 
     The SPLIT is БНБ's alone: MIR's euro leg publishes no volume by fixation,
     so nothing confirms how the month divides between the four. Its total is a
     different matter and `cross_check_new_business_volume` holds that against
-    MIR. A bucket only one of them prints is skipped rather than failed: the ЕЦБ
-    omit a month nobody lent in and БНБ print a zero.
+    MIR. A bucket only one of them prints AT `period` is skipped rather than
+    failed: the ЕЦБ omit a month nobody lent in and БНБ print a zero.
+
+    **A bucket is the reason this takes a month rather than four readings.**
+    Each of these series is thin enough to skip months — `5y_to_10y` has no
+    2026-06 at all — so the newest reading in one of them can be a quarter old
+    while the workbook's newest is last month, and comparing them says nothing
+    about either. `newest_shared_period` picks the month.
     """
-    for bucket, ecb_pct in ecb_rates.items():
-        bnb_pct = bnb_rates.get(bucket)
+    for bucket, series in ecb_series.items():
+        bnb_pct, ecb_pct = bnb_rates.get(bucket), series.get(period)
         if not bnb_pct or not ecb_pct:
             continue
         if abs(bnb_pct - ecb_pct) > CROSS_CHECK_TOLERANCE_PP:
             raise MortgageValidationError(
-                f"Fixation cross-check failed on {bucket}: BNB {bnb_pct}% vs ECB MIR "
-                f"{ecb_pct}% differ by {abs(bnb_pct - ecb_pct):.4f} pp (tolerance "
+                f"Fixation cross-check failed on {bucket} at {period}: BNB {bnb_pct}% "
+                f"vs ECB MIR {ecb_pct}% differ by {abs(bnb_pct - ecb_pct):.4f} pp (tolerance "
                 f"{CROSS_CHECK_TOLERANCE_PP} pp). The workbook column and the series "
                 f"key have stopped describing the same bucket."
             )

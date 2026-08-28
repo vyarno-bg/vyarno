@@ -33,6 +33,7 @@ from vyarno_pipeline.mortgage import (
     cross_check_outstanding,
     latest_period,
     lending_limits_at,
+    newest_shared_period,
     validate_aprc_above_aar,
     validate_fixation_rows,
     validate_freshness,
@@ -190,7 +191,7 @@ def test_freshness_handles_a_december_reference_month():
 
 
 def test_the_real_pair_agrees():
-    result = cross_check_outstanding(bnb_pct=2.6717, ecb_pct=2.67)
+    result = cross_check_outstanding({"2026-05": 2.6717}, {"2026-05": 2.67}, "2026-05")
     assert result["status"] == "ok"
     assert result["delta_pp"] < 0.01
 
@@ -198,7 +199,7 @@ def test_the_real_pair_agrees():
 def test_rejects_the_blended_workbook_value():
     """4.12% (all household loans) vs 2.67% — the gate that catches the file mix-up."""
     with pytest.raises(MortgageValidationError, match="same book"):
-        cross_check_outstanding(bnb_pct=4.1209, ecb_pct=2.67)
+        cross_check_outstanding({"2026-05": 4.1209}, {"2026-05": 2.67}, "2026-05")
 
 
 def test_tolerance_is_tight_because_these_are_the_same_data():
@@ -211,9 +212,9 @@ def test_tolerance_is_tight_because_these_are_the_same_data():
     width is set. They agreed to 0.002 pp at 2026-05.
     """
     assert CROSS_CHECK_TOLERANCE_PP == 0.30
-    cross_check_outstanding(bnb_pct=2.67, ecb_pct=2.92)  # 0.25 pp apart
+    cross_check_outstanding({"2026-05": 2.67}, {"2026-05": 2.92}, "2026-05")  # 0.25 pp
     with pytest.raises(MortgageValidationError, match="same book"):
-        cross_check_outstanding(bnb_pct=2.67, ecb_pct=3.02)  # 0.35 pp apart
+        cross_check_outstanding({"2026-05": 2.67}, {"2026-05": 3.02}, "2026-05")  # 0.35 pp
 
 
 # ---------------------------------------------------------------------------
@@ -486,9 +487,48 @@ def test_a_volume_cross_check_with_no_month_to_run_on_is_not_a_pass():
 
 def test_the_two_publishers_must_agree_on_each_fixation_bucket():
     bnb = {"up_to_1y": 2.4051, "1y_to_5y": 2.9582, "5y_to_10y": 0.0, "over_10y": 2.5234}
-    cross_check_fixation_rates(bnb, {"up_to_1y": 2.41, "1y_to_5y": 2.96, "over_10y": 2.52})
+    ecb = {
+        b: {"2026-06": v} for b, v in (("up_to_1y", 2.41), ("1y_to_5y", 2.96), ("over_10y", 2.52))
+    }
+    cross_check_fixation_rates(bnb, ecb, "2026-06")
     with pytest.raises(MortgageValidationError, match="Fixation cross-check"):
-        cross_check_fixation_rates(bnb, {"up_to_1y": 8.76})
+        cross_check_fixation_rates(bnb, {"up_to_1y": {"2026-06": 8.76}}, "2026-06")
+
+
+def test_a_cross_check_runs_at_a_month_both_publishers_carry():
+    """БНБ upload four days before the ЕЦБ, so their newest months differ.
+
+    On 2026-08-27 both arms took each side's own newest and compared July
+    against June. `newest_shared_period` is the month they agree exists.
+    """
+    assert (
+        newest_shared_period(
+            "the outstanding housing book",
+            bnb_workbook={"2026-05", "2026-06", "2026-07"},
+            ecb_mir={"2026-05", "2026-06"},
+        )
+        == "2026-06"
+    )
+    with pytest.raises(MortgageValidationError, match="no month is carried by all"):
+        newest_shared_period(
+            "the outstanding housing book",
+            bnb_workbook={"2026-07"},
+            ecb_mir={"2026-06"},
+        )
+
+
+def test_a_bucket_is_read_at_the_month_asked_for_and_never_at_its_own_newest():
+    """The 2026-08-27 red run, from the numbers the arm printed.
+
+    `5y_to_10y` is thin enough to skip months — the ЕЦБ omit one nobody lent
+    in, so their newest reading was 2026-05 while the workbook was at 2026-07.
+    Comparing those two called a €123,000 month «the workbook column and the
+    series key have stopped describing the same bucket», 2.8634 pp apart.
+    """
+    ecb = {"5y_to_10y": {"2026-04": 4.05, "2026-05": 4.07}}
+    cross_check_fixation_rates({"5y_to_10y": 1.2066}, ecb, "2026-07")
+    with pytest.raises(MortgageValidationError, match="5y_to_10y at 2026-05"):
+        cross_check_fixation_rates({"5y_to_10y": 1.2066}, ecb, "2026-05")
 
 
 def test_the_bnb_fixation_workbook_reads_as_the_housing_block():

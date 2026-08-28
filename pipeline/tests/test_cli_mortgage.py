@@ -83,6 +83,22 @@ def _run(tmp_path: Path):
     return CliRunner().invoke(main, ["refresh", "--source", "mortgage", "--out", str(tmp_path)])
 
 
+def _ecb_without_its_newest_month(key: str) -> dict:
+    """One ЕЦБ fixture as it reads before that month's release lands.
+
+    БНБ upload their workbooks from the 24th and MIR's month arrives between
+    the last day of M+1 and the 5th of M+2, so this is the state of the pair
+    for a few days every month, not a hypothetical.
+    """
+    payload = _load(FIXTURE_FOR_KEY[key])
+    months = payload["structure"]["dimensions"]["observation"][0]["values"]
+    newest = str(len(months) - 1)
+    months.pop()
+    for series in payload["dataSets"][0]["series"].values():
+        series["observations"].pop(newest, None)
+    return payload
+
+
 # ---------------------------------------------------------------------------
 # Happy path
 # ---------------------------------------------------------------------------
@@ -102,6 +118,36 @@ def test_publishes_both_tiers_and_exits_zero(tmp_path):
     assert payload["outstanding_stock"]["value_pct"] == pytest.approx(2.6717, abs=1e-4)
     assert payload["cross_check"]["status"] == "ok"
     assert payload["lending_limits"]["min_down_payment_pct"] == 15.0
+
+
+@respx.mock
+def test_the_bnb_legs_publish_the_month_the_ecb_also_carry(tmp_path):
+    """The 2026-08-27 red run: БНБ at July, MIR at June, the buckets at May.
+
+    Taking each side's own newest reading made that a 2.8634 pp disagreement
+    on `5y_to_10y` and exited 3. Both publishers were right, so the arm
+    publishes the month they share and the month БНБ had first waits for the
+    run after MIR catch up.
+    """
+    _mock_all(
+        ecb_overrides={
+            key: _ecb_without_its_newest_month(key)
+            for key in (
+                SERIES_KEYS["outstanding_aar_eur"],
+                *(fixation_rate_key(bucket, "EUR") for bucket in FIXATION_BUCKETS),
+            )
+        }
+    )
+    result = _run(tmp_path)
+    assert result.exit_code == 0, result.output
+
+    payload = json.loads((tmp_path / "mortgage.json").read_text(encoding="utf-8"))
+    # The workbooks run to 2026-05 and 2026-06; the ЕЦБ now stop a month short
+    # of each, and each block follows its own cross-check partner.
+    assert payload["outstanding_stock"]["ref_period"] == "2026-04"
+    assert payload["outstanding_stock"]["value_pct"] == pytest.approx(2.6798, abs=1e-4)
+    assert payload["fixation"]["ref_period"] == "2026-05"
+    assert payload["cross_check"]["delta_pp"] < 0.01
 
 
 @respx.mock

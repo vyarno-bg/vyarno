@@ -29,6 +29,7 @@ from typing import Any
 from vyarno_pipeline.mortgage import (
     CROSS_CHECK_TOLERANCE_PP,
     MortgageValidationError,
+    rate_at,
     validate_freshness,
 )
 
@@ -215,8 +216,13 @@ def validate_card_nesting(row: dict[str, Any]) -> None:
         )
 
 
-def cross_check_stock_rate(bnb_pct: float, ecb_pct: float, what: str) -> dict[str, Any]:
-    """One БНБ cell against the ЕЦБ MIR series it is, or reproduces.
+def cross_check_stock_rate(
+    bnb_pct: float,
+    ecb: dict[str, float],
+    period: str,
+    what: str,
+) -> dict[str, Any]:
+    """One БНБ cell against the ЕЦБ MIR series it is, or reproduces, at one month.
 
     The same instrument as `mortgage.cross_check_outstanding` and the same
     tolerance, for the same reason: БНБ report MIR to the ЕЦБ, so agreement is
@@ -225,7 +231,9 @@ def cross_check_stock_rate(bnb_pct: float, ecb_pct: float, what: str) -> dict[st
     serves came in at 0.014 pp (the card balance past the grace period against
     A2Z3), 0.021 pp (the overdraft block less its card sub-block against A2Z1)
     and 0.049 pp (all four blocks blended against A20) — every one of them
-    inside a sixth of the tolerance.
+    inside a sixth of the tolerance. It takes the month rather than the ЕЦБ's
+    own newest reading because БНБ reach it four days first
+    (`mortgage.newest_shared_period`).
 
     **The overdraft one is a subtraction and that is why it is worth a gate.**
     ЕЦБ A2Z1 excludes card credit and БНБ's «Овърдрафт» includes it, so the
@@ -233,10 +241,11 @@ def cross_check_stock_rate(bnb_pct: float, ecb_pct: float, what: str) -> dict[st
     €205 m at 6.46% looks wrong; what proves the subtraction happened is that
     the rate it leaves behind is the one the ЕЦБ publish.
     """
+    ecb_pct = rate_at(ecb, period, "ЕЦБ MIR", what)
     delta = round(abs(bnb_pct - ecb_pct), 4)
     if delta > CROSS_CHECK_TOLERANCE_PP:
         raise MortgageValidationError(
-            f"{what}: БНБ {bnb_pct}% vs ЕЦБ MIR {ecb_pct}% differ by {delta} pp "
+            f"{what} at {period}: БНБ {bnb_pct}% vs ЕЦБ MIR {ecb_pct}% differ by {delta} pp "
             f"(tolerance {CROSS_CHECK_TOLERANCE_PP} pp). These describe the same "
             f"balances — one of the two reads is wrong. Re-verify the workbook "
             f"column and the series key before publishing the amount beside it."

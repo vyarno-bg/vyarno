@@ -231,6 +231,12 @@ Two things follow that are worth knowing before touching either file:
 - **A widened window costs one request; a narrowed one costs a period.**
   `observed` in that table is evidence somebody gathered on a date, not a
   commitment the publisher made.
+- **БНБ reach a month about four days before the ЕЦБ do**, and BSI about four
+  days before MIR, so an arm reading both routinely runs while one of them is a
+  month ahead. Every cross-publisher gate therefore compares the newest month
+  BOTH carry (`validation-gates.md` §"The month a cross-publisher gate runs
+  at"), and the run that finds only one of them moved publishes what it can
+  check.
 
 ## Update watch-list
 
