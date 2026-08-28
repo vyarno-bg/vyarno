@@ -436,9 +436,20 @@ the card cell against MIR's June, and 2.8634 pp on a fixation bucket whose
 newest ЕЦБ reading was two months back, because the ЕЦБ omit a month nobody
 lent in.
 
-The block a gate guards publishes that same month, so a figure in the payload
-is one a cross-check ran on. The month a publisher had first is not dropped —
-its own series carries it, and the run after the other catches up publishes it.
+The block a gate guards publishes that same month, **and so does every series
+in it** (`mortgage.py#series_through`). The card above a curve is that curve's
+own last point on the page, so a series running a month past its block draws a
+reading no cross-check saw under the month before it. The month a publisher had
+first is not dropped — it is still in their workbook, and the run after the
+other catches up publishes it.
+
+A block whose own publishers have both reached a month does **not** wait for the
+rest of the payload. `credit`'s savings pair is ЕЦБ BSI against БНБ, neither of
+them MIR, and BSI reaches a month about four days before MIR does — so for those
+days the block publishes a month the rates beside it do not have, under a
+cross-check that ran at it. The freshness panel names every clock in a file
+rather than two (`payloads.js#refPeriodsBeside`), which is what makes that
+expressible instead of forcing the block back a month.
 
 ## Mortgage gates (`--source mortgage`)
 

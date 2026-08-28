@@ -70,12 +70,16 @@ function isoDay(value) {
  *                 reader quoting the number needs: HICP figures fetched on 27
  *                 July describe June. Each payload keeps it under its own key,
  *                 so the row says where rather than the panel guessing.
- * - `refPeriodSecondary`
- *                 for a payload built from two vintages, the second one, with
- *                 its own label. `salary_dist` is the case: a 2022 survey's
- *                 dispersion re-levelled to a 2026 quarter's average, where
- *                 naming only the quarter would date the whole ladder four
- *                 years later than its shape.
+ * - `refPeriodsBeside`
+ *                 every OTHER vintage in the payload, each with its own label.
+ *                 A list rather than one slot because a payload can carry more
+ *                 than two: `credit` runs the ЕЦБ's rates, БНБ's savings pair
+ *                 and a quarterly arrears figure on three releases, and a clock
+ *                 with nowhere to be named is one the panel dates by another
+ *                 block's. `salary_dist` is the one-entry case — a 2022
+ *                 survey's dispersion re-levelled to a 2026 quarter's average,
+ *                 where naming only the quarter dates the ladder four years
+ *                 later than its shape.
  */
 export const PAYLOADS = Object.freeze(
   [
@@ -207,13 +211,15 @@ export const PAYLOADS = Object.freeze(
       // printing "2022" above "shape: Eurostat SES 2022" reads as a defect
       // rather than as provenance. Hence the equality guard: the label is owed
       // when there are two vintages to tell apart and not otherwise.
-      refPeriodSecondary: (p) => {
+      refPeriodsBeside: (p) => {
         const year = p?.shape?.ref_year;
-        if (!year || String(year) === String(p?.ref_period ?? "")) return null;
-        return {
-          period: String(year),
-          label: { bg: "форма: Евростат SES", en: "shape: Eurostat SES" },
-        };
+        if (!year || String(year) === String(p?.ref_period ?? "")) return [];
+        return [
+          {
+            period: String(year),
+            label: { bg: "форма: Евростат SES", en: "shape: Eurostat SES" },
+          },
+        ];
       },
     },
     {
@@ -292,13 +298,15 @@ export const PAYLOADS = Object.freeze(
       // whole file by the envelope reported the empty-dwellings share at a year
       // nobody counted dwellings in. Same slot, same guard and the same reason
       // as `credit`'s quarterly block.
-      refPeriodSecondary: (p) => {
+      refPeriodsBeside: (p) => {
         const census = p?.census_dwellings?.ref_period;
-        if (!census || String(census) === String(p?.ref_period ?? "")) return null;
-        return {
-          period: String(census),
-          label: { bg: "преброяване", en: "census" },
-        };
+        if (!census || String(census) === String(p?.ref_period ?? "")) return [];
+        return [
+          {
+            period: String(census),
+            label: { bg: "преброяване", en: "census" },
+          },
+        ];
       },
     },
     {
@@ -347,34 +355,36 @@ export const PAYLOADS = Object.freeze(
         bg: "какво струват потребителският кредит, овърдрафтът, кредитната карта и кредитът за фирма, и какво плаща депозитът",
         en: "what a consumer loan, an overdraft, a credit card and a loan to a company cost, and what a deposit pays",
       },
-      // **Nine blocks and TWO release clocks, so no single one dates the file.**
-      // Eight are ECB MIR, monthly; `non_performing` is CBD2, quarterly and
-      // about five months behind the quarter it names — the payload's own
-      // `quarterly` field says so. Dated by `consumer` alone the row reported
-      // the whole file at June while carrying a Q1 figure, which is the same
-      // defect as the basket's «1 година назад» option taken from the headline
-      // rather than from the divisions: every figure the publisher's own, and
-      // the period over them wrong for one of them.
+      // **Nine blocks and THREE release clocks, so no single one dates the
+      // file.** Six are ЕЦБ MIR, monthly; `savings` is ЕЦБ BSI, which is its
+      // own release and reaches a month about four days earlier; and
+      // `non_performing` is CBD2, quarterly and about five months behind the
+      // quarter it names. Dated by `consumer` alone the row reported the whole
+      // file at June while carrying a Q1 figure and, on 2026-08-28, a July one.
       //
       // The rates keep the primary slot because they are what the row is NAMED
-      // for, and the quarter is named beside them rather than replacing them.
+      // for, and the others are named beside them rather than replacing them.
       refPeriod: (p) => p?.consumer?.ref_period ?? null,
-      // The other clock, labelled, and **only when the two differ** — the same
-      // equality guard `salary_dist` carries above, for the same reason: were
-      // CBD2 ever to land in the month it describes, a row printing the same
-      // period twice reads as a defect rather than as provenance.
+      // Each labelled, and **only where it differs from the rates** — the same
+      // equality guard `salary_dist` carries above, for the same reason: a row
+      // printing one period twice reads as a defect rather than as provenance,
+      // and BSI sits on the rates' own month for most of the month.
       //
-      // `verify_view_freshness.mjs` holds the pair against the published file:
-      // every distinct `ref_period` among a payload's blocks has to be named by
-      // one of these two slots, so a THIRD clock arriving in any payload is a
-      // red suite rather than a period quietly dropped.
-      refPeriodSecondary: (p) => {
-        const npl = p?.non_performing?.ref_period;
-        if (!npl || npl === p?.consumer?.ref_period) return null;
-        return {
-          period: String(npl),
-          label: { bg: "необслужвани", en: "non-performing" },
-        };
+      // `verify_view_freshness.mjs` holds this against the published file:
+      // every distinct `ref_period` among a payload's blocks has to be named
+      // here or in `refPeriod`, so a clock arriving with nowhere to go is a red
+      // suite rather than a period quietly dropped.
+      refPeriodsBeside: (p) => {
+        const rates = p?.consumer?.ref_period;
+        return [
+          { at: p?.savings?.ref_period, label: { bg: "спестявания", en: "savings" } },
+          {
+            at: p?.non_performing?.ref_period,
+            label: { bg: "необслужвани", en: "non-performing" },
+          },
+        ]
+          .filter((r) => r.at && String(r.at) !== String(rates ?? ""))
+          .map((r) => ({ period: String(r.at), label: r.label }));
       },
     },
     {

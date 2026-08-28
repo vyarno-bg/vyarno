@@ -149,6 +149,18 @@ def test_the_bnb_legs_publish_the_month_the_ecb_also_carry(tmp_path):
     assert payload["fixation"]["ref_period"] == "2026-05"
     assert payload["cross_check"]["delta_pp"] < 0.01
 
+    # And the curve stops where the card does: pinning the card alone left the
+    # workbook's extra month drawing the last point of the chart above it, at a
+    # reading no cross-check ran at.
+    stock = payload["outstanding_stock"]
+    assert max(stock["series_by_period"]) == stock["ref_period"]
+    assert stock["series_by_period"][stock["ref_period"]] == stock["value_pct"]
+    fixation = payload["fixation"]
+    assert max(fixation["floating_share_by_period"]) == fixation["ref_period"]
+    assert fixation["floating_share_by_period"][fixation["ref_period"]] == pytest.approx(
+        fixation["buckets"][0]["share_pct"]
+    )
+
 
 @respx.mock
 def test_output_reports_the_cross_check_so_a_refresher_can_see_it(tmp_path):

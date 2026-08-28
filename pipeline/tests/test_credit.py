@@ -6,6 +6,7 @@ that is not there.
 """
 
 import json
+import re
 from datetime import date
 from pathlib import Path
 
@@ -306,6 +307,22 @@ def test_bsi_sits_above_bnb_by_the_npish_lending_and_never_below_it():
         cross_check_household_stock(30_000.0, 30_862.889, "2026-06")
     with pytest.raises(MortgageValidationError, match="outside"):
         cross_check_household_stock(40_000.0, 30_862.889, "2026-06")
+
+
+def test_the_savings_block_is_dated_by_the_month_its_own_cross_check_ran_at():
+    """BSI runs ahead of MIR for a few days a month, and publishes anyway.
+
+    Its two publishers are ЕЦБ BSI and БНБ, neither of them MIR, so the rates
+    being a month behind says nothing about this pair. What it may not do is
+    publish a month the cross-check did not run at.
+    """
+    payload = json.loads(PUBLISHED.read_text(encoding="utf-8"))
+    block = payload["savings"]
+    assert re.fullmatch(r"\d{4}-\d{2}", block["ref_period"])
+    assert max(block["deposits_by_period"]) == block["ref_period"]
+    assert max(block["loans_by_period"]) == block["ref_period"]
+    assert block["cross_check"]["ecb_bsi_eur_m"] == pytest.approx(block["loans_eur_m"])
+    assert 0 < block["cross_check"]["delta_pct"] <= 12.0
 
 
 def test_the_published_savings_block_divides_one_flow_by_itself():
