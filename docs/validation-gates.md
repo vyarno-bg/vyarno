@@ -421,6 +421,25 @@ existing. **If it fails, the bug is ours. Do not soften it into a band.**
 The gate is skipped, loudly, when `house_market.json` is not in the output
 directory — a checkout that has never run `--source house-market`.
 
+## The month a cross-publisher gate runs at
+
+Every gate below that holds БНБ against the ЕЦБ — and ЕЦБ BSI against БНБ —
+compares **the newest month both publishers carry**
+(`mortgage.py#newest_shared_period`), never each side's own newest reading. The
+two calendars do not coincide: БНБ re-upload their workbooks from the 24th and
+MIR's month lands between the last day of M+1 and the 5th of M+2, so for a few
+days every month the workbooks carry a month the ЕЦБ do not.
+
+Taking each side's newest compares two months and reports the gap as a misread
+column. On 2026-08-27 it took both arms red on БНБ's July upload: 0.4554 pp on
+the card cell against MIR's June, and 2.8634 pp on a fixation bucket whose
+newest ЕЦБ reading was two months back, because the ЕЦБ omit a month nobody
+lent in.
+
+The block a gate guards publishes that same month, so a figure in the payload
+is one a cross-check ran on. The month a publisher had first is not dropped —
+its own series carries it, and the run after the other catches up publishes it.
+
 ## Mortgage gates (`--source mortgage`)
 
 All nine are hard-required; none degrades. The arm writes a complete

@@ -177,10 +177,25 @@ def test_the_three_revolving_amounts_are_nested_rather_than_summed():
 
 
 def test_a_bnb_cell_that_stops_reproducing_its_ecb_series_stops_the_run():
-    cross = cross_check_stock_rate(21.1636, 21.15, "card")
+    card = {"2026-05": 21.12, "2026-06": 21.15}
+    cross = cross_check_stock_rate(21.1636, card, "2026-06", "card")
     assert cross["delta_pp"] < 0.05
     with pytest.raises(MortgageValidationError, match="differ by"):
-        cross_check_stock_rate(13.1999, 6.45, "overdraft")
+        cross_check_stock_rate(13.1999, {"2026-06": 6.45}, "2026-06", "overdraft")
+
+
+def test_the_ecb_side_is_read_at_the_month_asked_for_and_never_at_its_own_newest():
+    """The 2026-08-27 red run: БНБ's July cell against the ЕЦБ's June price.
+
+    БНБ re-upload the workbooks four days before MIR carries the same month,
+    so «21.6054% vs 21.15%, 0.4554 pp apart» was two correct readings of two
+    months. Falling back to the ЕЦБ's own newest is what made that a gate
+    failure, so a month they have not published is refused instead.
+    """
+    card = {"2026-05": 21.12, "2026-06": 21.15}
+    assert cross_check_stock_rate(21.1636, card, "2026-06", "card")["delta_pp"] < 0.05
+    with pytest.raises(MortgageValidationError, match="carries no 2026-07"):
+        cross_check_stock_rate(21.6054, card, "2026-07", "card")
 
 
 def test_the_blend_is_weighted_by_what_is_owed_not_by_the_number_of_blocks():

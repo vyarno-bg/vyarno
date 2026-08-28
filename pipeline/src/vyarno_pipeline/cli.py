@@ -65,6 +65,7 @@ from vyarno_pipeline.mortgage import (
     cross_check_outstanding,
     latest_period,
     lending_limits_at,
+    newest_shared_period,
     validate_aprc_above_aar,
     validate_fixation_rows,
     validate_freshness,
@@ -1333,6 +1334,7 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
 
     bnb_series = {r["period"]: r["rate_pct"] for r in bnb_rows}
     bnb_volume = {r["period"]: r["volume_eur_m"] for r in bnb_rows if r["volume_eur_m"] is not None}
+    fixation_by_period = {r["period"]: r for r in fixation_rows}
 
     # ---- 3. Gates -------------------------------------------------------
     try:
@@ -1346,7 +1348,24 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         validate_aprc_above_aar(aar, aprc)
 
         aar_ref = latest_period(aar)
-        bnb_ref = latest_period(bnb_series)
+        # БНБ upload the workbooks four days before the ЕЦБ's MIR release for
+        # the same month, so both БНБ legs are pinned to the month their
+        # cross-check partner also carries rather than to their own newest.
+        bnb_ref = newest_shared_period(
+            "the outstanding housing book",
+            bnb_workbook=bnb_series,
+            ecb_mir_outstanding=ecb_out,
+        )
+        # The UNION of the four ЕЦБ buckets, because a bucket nobody lent into
+        # is a month the ЕЦБ simply omit: intersecting them would pin the block
+        # to whenever the thinnest last took a loan, which for `5y_to_10y` is
+        # quarters back. Any of the four carrying the month is the ЕЦБ having
+        # published it.
+        fix_period = newest_shared_period(
+            "new housing lending by fixation",
+            bnb_workbook=fixation_by_period,
+            ecb_mir_fixation=set().union(*(set(s) for s in fixation_rates.values())),
+        )
         click.echo("→ gate: freshness (both tiers within the publication lag)...")
         validate_freshness(aar_ref, as_of, "ECB MIR new business")
         validate_freshness(bnb_ref, as_of, "BNB outstanding stock")
@@ -1354,8 +1373,9 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         click.echo("→ gate: the four fixation buckets are all of new housing lending...")
         validate_fixation_rows(fixation_rows)
         cross_check_fixation_rates(
-            fixation_rows[-1]["rate_pct"],
-            {b: s[max(s)] for b, s in fixation_rates.items() if s},
+            fixation_by_period[fix_period]["rate_pct"],
+            fixation_rates,
+            fix_period,
         )
         click.echo("→ gate: pure new lending + renegotiation = new business...")
         validate_new_business_split(volume, split["vol_pure"], split["vol_reneg"])
@@ -1373,11 +1393,7 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         )
 
         click.echo("→ gate: BNB vs ECB MIR agree on the outstanding book...")
-        ecb_out_ref = latest_period(ecb_out)
-        cross = cross_check_outstanding(
-            bnb_pct=bnb_series[bnb_ref],
-            ecb_pct=ecb_out[ecb_out_ref],
-        )
+        cross = cross_check_outstanding(bnb_series, ecb_out, bnb_ref)
         click.echo(
             f"  BNB {cross['bnb_outstanding_pct']}% vs ECB "
             f"{cross['ecb_mir_outstanding_pct']}% → Δ {cross['delta_pp']} pp "
@@ -1527,7 +1543,7 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         "methodology_change": BNB_METHODOLOGY_CHANGE_NOTE,
     }
 
-    fix_ref = fixation_rows[-1]
+    fix_ref = fixation_by_period[fix_period]
     fixation = {
         # The one figure on this page a reader can act on without knowing any
         # economics: almost every Bulgarian mortgage repriceS with the ЕЦБ, so
@@ -1753,7 +1769,6 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         & set(revolving_by_period) - {p for p in revolving_by_period if p < STOCK_SERIES_START}
     )
     stock_by_purpose = {purpose: {r["period"]: r for r in rows} for purpose, rows in stock.items()}
-    stock_ref = stock_periods[-1]
 
     def stock_volumes(period: str) -> dict[str, float]:
         """The four amounts that add up to what households owe, at one month."""
@@ -1770,34 +1785,47 @@ def _refresh_credit(out: Path, as_of: date) -> None:
     }
     volume_by_period["total"] = {p: round(sum(stock_volumes(p).values()), 3) for p in stock_periods}
 
-    ref_row = revolving_by_period[stock_ref]
-    # ЕЦБ A2Z1 «revolving loans and overdrafts» EXCLUDES card credit and БНБ's
-    # block includes it, so the amount that belongs beside the 6.45% already on
-    # the page is the block less its own sub-block. The rate that subtraction
-    # leaves behind is gated against A2Z1 below, which is what proves it
-    # happened — €205 m at 6.46% looks no more right than €695 m at 13.2%.
-    overdraft_ex_cards_eur_m = round(ref_row["overdraft_eur_m"] - ref_row["card_eur_m"], 3)
-    overdraft_ex_cards_rate_pct = round(
-        (
-            ref_row["overdraft_eur_m"] * ref_row["overdraft_rate_pct"]
-            - ref_row["card_eur_m"] * ref_row["card_rate_pct"]
-        )
-        / overdraft_ex_cards_eur_m,
-        4,
-    )
-    stock_blocks = {
-        purpose: {
-            "volume_eur_m": stock_by_purpose[purpose][stock_ref]["volume_eur_m"],
-            "rate_pct": stock_by_purpose[purpose][stock_ref]["rate_pct"],
-        }
-        for purpose in LOAN_PURPOSES
-    }
-    stock_blocks["overdraft"] = {
-        "volume_eur_m": ref_row["overdraft_eur_m"],
-        "rate_pct": ref_row["overdraft_rate_pct"],
-    }
-
     try:
+        # БНБ re-upload the workbooks four days before the ЕЦБ's MIR release
+        # for the same month, so the block this publishes is the newest month
+        # the three MIR series that gate it also carry — never the workbook's
+        # own newest, which would put July's balances beside June's prices and
+        # report the difference as a misread column.
+        stock_ref = newest_shared_period(
+            "the outstanding household book",
+            bnb_workbooks=stock_periods,
+            ecb_mir_card=spliced["card_aar"],
+            ecb_mir_overdraft=spliced["overdraft_aar"],
+            ecb_mir_household_stock=raw["household_stock_eur"],
+        )
+        ref_row = revolving_by_period[stock_ref]
+        # ЕЦБ A2Z1 «revolving loans and overdrafts» EXCLUDES card credit and
+        # БНБ's block includes it, so the amount that belongs beside the 6.45%
+        # already on the page is the block less its own sub-block. The rate that
+        # subtraction leaves behind is gated against A2Z1 below, which is what
+        # proves it happened — €205 m at 6.46% looks no more right than €695 m
+        # at 13.2%.
+        overdraft_ex_cards_eur_m = round(ref_row["overdraft_eur_m"] - ref_row["card_eur_m"], 3)
+        overdraft_ex_cards_rate_pct = round(
+            (
+                ref_row["overdraft_eur_m"] * ref_row["overdraft_rate_pct"]
+                - ref_row["card_eur_m"] * ref_row["card_rate_pct"]
+            )
+            / overdraft_ex_cards_eur_m,
+            4,
+        )
+        stock_blocks = {
+            purpose: {
+                "volume_eur_m": stock_by_purpose[purpose][stock_ref]["volume_eur_m"],
+                "rate_pct": stock_by_purpose[purpose][stock_ref]["rate_pct"],
+            }
+            for purpose in LOAN_PURPOSES
+        }
+        stock_blocks["overdraft"] = {
+            "volume_eur_m": ref_row["overdraft_eur_m"],
+            "rate_pct": ref_row["overdraft_rate_pct"],
+        }
+
         click.echo("→ gate: one plausibility band per product...")
         for product, series in (
             ("consumer", spliced["consumer_aar"]),
@@ -1839,20 +1867,22 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         click.echo("→ gate: БНБ's revolving cells reproduce the ЕЦБ rates beside them...")
         card_cross = cross_check_stock_rate(
             ref_row["card_outside_grace_rate_pct"],
-            spliced["card_aar"][max(spliced["card_aar"])],
+            spliced["card_aar"],
+            stock_ref,
             "card credit carried past the interest-free period (A2Z3)",
         )
         overdraft_cross = cross_check_stock_rate(
             overdraft_ex_cards_rate_pct,
-            spliced["overdraft_aar"][max(spliced["overdraft_aar"])],
+            spliced["overdraft_aar"],
+            stock_ref,
             "overdrafts and revolving credit, card credit taken out (A2Z1)",
         )
 
         click.echo("→ gate: the four blocks blended are the ЕЦБ's household stock rate...")
-        household_stock_ref = max(raw["household_stock_eur"])
         stock_cross = cross_check_stock_rate(
             round(blended_stock_rate(stock_blocks), 4),
-            raw["household_stock_eur"][household_stock_ref],
+            raw["household_stock_eur"],
+            stock_ref,
             "every household loan on the books, blended over the four blocks (A20)",
         )
         click.echo(
@@ -1864,7 +1894,12 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         validate_savings_series(bsi["household_deposits"], "BSI household deposits")
         validate_savings_series(bsi["household_loans"], "BSI household loans")
         validate_savings_window(bsi["household_deposits"], bsi["household_loans"])
-        savings_ref = max(bsi["household_deposits"])
+        savings_ref = newest_shared_period(
+            "what households have against what they owe",
+            ecb_bsi_deposits=bsi["household_deposits"],
+            ecb_bsi_loans=bsi["household_loans"],
+            bnb_workbooks=volume_by_period["total"],
+        )
         savings_cross = cross_check_household_stock(
             bsi["household_loans"][savings_ref],
             volume_by_period["total"][savings_ref],
