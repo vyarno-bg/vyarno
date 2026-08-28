@@ -1,6 +1,6 @@
 {
   "schema_version": "3.0",
-  "as_of": "2026-08-17",
+  "as_of": "2026-08-28",
   "source": "ecb+bnb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
   "notes": "BG mortgage panel. Two tiers: new_business (ECB MIR — what a home loan costs if you sign one now, over the agreements signed in the month, a renegotiated existing loan among them; the rate excluding charges plus the APRC with them) and outstanding_stock (BNB — what a housing loan already on the books averages). Both official and monthly. No scraped offered-rate tier by design.",
@@ -514,7 +514,8 @@
       "2026-03": 2.6887,
       "2026-04": 2.6798,
       "2026-05": 2.6717,
-      "2026-06": 2.6609
+      "2026-06": 2.6609,
+      "2026-07": 2.6587
     },
     "book_volume_eur_m": 18580.075,
     "currency": "EUR",
@@ -815,7 +816,8 @@
       "2026-03": 99.63,
       "2026-04": 99.34,
       "2026-05": 99.43,
-      "2026-06": 99.59
+      "2026-06": 99.59,
+      "2026-07": 99.75
     },
     "cross_check": "the per-bucket rates are gated against ЕЦБ MIR's own four series (MATURITY_NOT_IRATE F/I/O/P). The VOLUMES have no second publisher: the euro leg of MIR carries no volume by fixation, so this workbook is the only source of the split after 2026-01"
   },
