@@ -40,13 +40,18 @@ def _sources(result: dict) -> set[str]:
     return {entry["source"] for entry in result["refresh"]}
 
 
+def _ran_at(instant: str) -> dict[str, list[dict[str, str]]]:
+    """A run history where every arm last read its upstream at `instant`."""
+    return {source: [{"conclusion": "success", "created_at": instant}] for source in WATCHED}
+
+
 def test_a_marker_past_the_last_run_dispatches_that_arm(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(watch, "marker_of", _markers(PUBLISHED))
     result = watch.sweep(
         tmp_path,
         IN_WINDOW,
         watch_all=False,
-        last_runs=dict.fromkeys(WATCHED, "2026-08-01T00:00:00Z"),
+        last_runs=_ran_at("2026-08-01T00:00:00Z"),
     )
     assert "region-salary" in _sources(result)
     assert result["failed"] == []
@@ -59,10 +64,38 @@ def test_a_marker_behind_the_last_run_dispatches_nothing(monkeypatch, tmp_path) 
         tmp_path,
         IN_WINDOW,
         watch_all=False,
-        last_runs=dict.fromkeys(WATCHED, "2026-08-11T09:00:00Z"),
+        last_runs=_ran_at("2026-08-11T09:00:00Z"),
     )
     assert result["refresh"] == []
     assert result["probed"] > 0, "nothing was probed, so this proves nothing"
+
+
+def test_a_release_a_red_run_died_on_is_read_again() -> None:
+    """2026-08-27: both БНБ arms went red at 11:58 on a file uploaded at 09:52.
+
+    A failed run DID read that upstream, so counting it as the clock put the
+    marker permanently behind the run and every tick after it reported
+    `unchanged`. The release reached the site four days later, when a different
+    publisher moved. So the clock holds at the last success while an arm is
+    unlucky, and lets go once it is broken.
+    """
+    ok = {"conclusion": "success", "created_at": "2026-08-27T01:01:22Z"}
+    red = {"conclusion": "failure", "created_at": "2026-08-27T11:58:25Z"}
+    assert watch.clock_of([red, ok]) == ok["created_at"]
+
+    # Broken rather than unlucky: past the retries the arm stops being
+    # re-dispatched and waits for its monthly backstop.
+    reds = [
+        {"conclusion": "failure", "created_at": f"2026-08-2{day}T11:58:25Z"}
+        for day in (9, 8, 7, 6, 5)
+    ]
+    assert len(reds) > watch.FAILED_RUN_RETRIES
+    assert watch.clock_of([*reds, ok]) == reds[0]["created_at"]
+
+    # A run that never reached its first request read nothing at all.
+    unread = {"conclusion": "startup_failure", "created_at": "2026-08-27T23:00:00Z"}
+    assert watch.clock_of([unread, ok]) == ok["created_at"]
+    assert watch.clock_of([unread]) is None
 
 
 def test_an_arm_never_run_is_dispatched_however_recent_the_commits_are(
@@ -148,7 +181,7 @@ def test_a_failed_probe_is_reported_and_the_others_still_dispatch(monkeypatch, t
         tmp_path,
         IN_WINDOW,
         watch_all=False,
-        last_runs=dict.fromkeys(WATCHED, "2026-08-01T00:00:00Z"),
+        last_runs=_ran_at("2026-08-01T00:00:00Z"),
     )
     assert len(result["failed"]) == 1
     assert _sources(result), "one failed probe silenced every arm in the window"
