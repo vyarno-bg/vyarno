@@ -66,6 +66,7 @@ from vyarno_pipeline.mortgage import (
     latest_period,
     lending_limits_at,
     newest_shared_period,
+    series_through,
     validate_aprc_above_aar,
     validate_fixation_rows,
     validate_freshness,
@@ -1531,7 +1532,7 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         "source_url": BNB_SOURCE_URL,
         "ref_period": bnb_ref,
         "value_pct": bnb_series[bnb_ref],
-        "series_by_period": bnb_series,
+        "series_by_period": series_through(bnb_series, bnb_ref),
         "book_volume_eur_m": bnb_volume.get(bnb_ref),
         "currency": "EUR",
         "rate_basis": (
@@ -1581,7 +1582,7 @@ def _refresh_mortgage(out: Path, as_of: date) -> None:
         "floating_share_by_period": {
             row["period"]: round(100.0 * row["volume_eur_m"]["up_to_1y"] / row["total_eur_m"], 2)
             for row in fixation_rows
-            if row["total_eur_m"]
+            if row["total_eur_m"] and row["period"] <= fix_period
         },
         "cross_check": (
             "the per-bucket rates are gated against ЕЦБ MIR's own four series "
@@ -1798,6 +1799,16 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             ecb_mir_overdraft=spliced["overdraft_aar"],
             ecb_mir_household_stock=raw["household_stock_eur"],
         )
+        # БНБ's totals as fetched, kept whole for the savings cross-check below:
+        # that pair runs on BSI's own month, which is ahead of the rates for a
+        # few days each month and so ahead of what `outstanding` publishes.
+        bnb_household_totals = volume_by_period["total"]
+        # The balances the block publishes stop where the block does. It pairs
+        # each amount with a MIR rate at one month, so a volume running past
+        # `stock_ref` would draw a curve the card above it does not describe.
+        volume_by_period = {
+            block: series_through(series, stock_ref) for block, series in volume_by_period.items()
+        }
         ref_row = revolving_by_period[stock_ref]
         # ЕЦБ A2Z1 «revolving loans and overdrafts» EXCLUDES card credit and
         # БНБ's block includes it, so the amount that belongs beside the 6.45%
@@ -1894,15 +1905,22 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         validate_savings_series(bsi["household_deposits"], "BSI household deposits")
         validate_savings_series(bsi["household_loans"], "BSI household loans")
         validate_savings_window(bsi["household_deposits"], bsi["household_loans"])
+        # BSI is its own ЕЦБ release and reaches a month about four days before
+        # MIR, so this block runs ahead of the rates beside it for a few days
+        # each month. It publishes its own month rather than waiting: both its
+        # publishers carry it and the cross-check below runs at it. The panel
+        # names that clock (`payloads.js#refPeriodsBeside`).
         savings_ref = newest_shared_period(
             "what households have against what they owe",
             ecb_bsi_deposits=bsi["household_deposits"],
             ecb_bsi_loans=bsi["household_loans"],
-            bnb_workbooks=volume_by_period["total"],
+            bnb_workbooks=bnb_household_totals,
         )
+        savings_deposits_eur_m = bsi["household_deposits"][savings_ref]
+        savings_loans_eur_m = bsi["household_loans"][savings_ref]
         savings_cross = cross_check_household_stock(
-            bsi["household_loans"][savings_ref],
-            volume_by_period["total"][savings_ref],
+            savings_loans_eur_m,
+            bnb_household_totals[savings_ref],
             savings_ref,
         )
         click.echo(
@@ -2230,9 +2248,9 @@ def _refresh_credit(out: Path, as_of: date) -> None:
         # published rate here is the ЕЦБ's own A20, so the amount is БНБ's and
         # the rate beside it is a publisher's rather than our arithmetic — and
         # the gate has already shown the two describe the same book.
-        "rate_pct": raw["household_stock_eur"][max(raw["household_stock_eur"])],
+        "rate_pct": raw["household_stock_eur"][stock_ref],
         "rate_source": "ecb",
-        "rate_ref_period": max(raw["household_stock_eur"]),
+        "rate_ref_period": stock_ref,
         "rate_source_url": series_url(CONSUMER_KEYS["household_stock_eur"]),
         "rate_dataset": f"MIR {CONSUMER_KEYS['household_stock_eur']}",
         "cross_check": stock_cross,
@@ -2316,16 +2334,11 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             f"(U6), households and NPISH (S.14+S.15), all currencies, stocks"
         ),
         "ref_period": savings_ref,
-        "deposits_eur_m": bsi["household_deposits"][savings_ref],
+        "deposits_eur_m": savings_deposits_eur_m,
         "deposits_source_url": bsi_url(BSI_KEYS["household_deposits"]),
-        "loans_eur_m": bsi["household_loans"][savings_ref],
+        "loans_eur_m": savings_loans_eur_m,
         "loans_source_url": bsi_url(BSI_KEYS["household_loans"]),
-        "ratio": round(
-            savings_ratio(
-                bsi["household_deposits"][savings_ref], bsi["household_loans"][savings_ref]
-            ),
-            4,
-        ),
+        "ratio": round(savings_ratio(savings_deposits_eur_m, savings_loans_eur_m), 4),
         # Ours, so it says so and names its two inputs (P3). Both are published
         # levels in the same flow, so this is arithmetic over measurements and
         # not a projection — nothing here is assumed forward (P5).
@@ -2333,8 +2346,8 @@ def _refresh_credit(out: Path, as_of: date) -> None:
             "ours: the deposit level divided by the loan level, both ЕЦБ BSI, "
             "same month, same counterparty sector and same counterpart area"
         ),
-        "deposits_by_period": bsi["household_deposits"],
-        "loans_by_period": bsi["household_loans"],
+        "deposits_by_period": series_through(bsi["household_deposits"], savings_ref),
+        "loans_by_period": series_through(bsi["household_loans"], savings_ref),
         "series_starts": BSI_SERIES_START,
         # The whole of the window's justification, because the obvious edit to
         # this block is to draw the loan line further back — БНБ publish it from

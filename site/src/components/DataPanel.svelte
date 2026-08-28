@@ -118,26 +118,27 @@
                  repository. `screenshot-frame.mjs#frameText` skips them, so a
                  refresh does not move the README screenshot's sidecar and turn
                  a data PR red over a date that has its own gates in the
-                 pipeline. It is on the VALUES and not on the cells, so the
-                 secondary vintage's label — «форма: Евростат SES», copy — stays
-                 pinned beside the year it labels. -->
+                 pipeline. It is on the VALUES and not on the cells, so a named
+                 vintage's label — «форма: Евростат SES», copy — stays pinned
+                 beside the period it labels. -->
             <td>
               <span data-freshness>{periodCopy(row)}</span>
-              <!-- A payload blended from two vintages names both. Dating
-                   `salary_dist` by its anchor quarter alone would present a
-                   four-year-old survey's dispersion as this quarter's. -->
-              {#if row.refPeriodSecondary}
+              <!-- A payload on more than one release names every one of them.
+                   Dating `salary_dist` by its anchor quarter alone would
+                   present a four-year-old survey's dispersion as this
+                   quarter's, and `credit` runs on three. -->
+              {#each row.refPeriodsBeside as beside (beside.period)}
                 <span class="second">
                   <span class="l-bg"
-                    >{row.refPeriodSecondary.label.bg}
-                    <span data-freshness>{period(row.refPeriodSecondary.period)}</span></span
+                    >{beside.label.bg}
+                    <span data-freshness>{period(beside.period)}</span></span
                   >
                   <span class="l-en"
-                    >{row.refPeriodSecondary.label.en}
-                    <span data-freshness>{period(row.refPeriodSecondary.period)}</span></span
+                    >{beside.label.en}
+                    <span data-freshness>{period(beside.period)}</span></span
                   >
                 </span>
-              {/if}
+              {/each}
             </td>
             <td><span data-freshness>{row.asOf ? dateShort(row.asOf, $lang) : "—"}</span></td>
             <td>

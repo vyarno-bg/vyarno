@@ -34,6 +34,7 @@ from vyarno_pipeline.mortgage import (
     latest_period,
     lending_limits_at,
     newest_shared_period,
+    series_through,
     validate_aprc_above_aar,
     validate_fixation_rows,
     validate_freshness,
@@ -515,6 +516,25 @@ def test_a_cross_check_runs_at_a_month_both_publishers_carry():
             bnb_workbook={"2026-07"},
             ecb_mir={"2026-06"},
         )
+
+
+def test_a_series_stops_where_the_block_that_carries_it_publishes():
+    """The other half of pinning a block: the curve under the card.
+
+    `newest_shared_period` moves the card back to the month both publishers
+    carry and leaves the series untouched, so БНБ's extra month goes on drawing
+    the last point of a chart whose card names the month before it.
+    """
+    series = {"2026-04": 2.68, "2026-05": 2.67, "2026-06": 2.66, "2026-07": 2.65}
+    assert series_through(series, "2026-06") == {
+        "2026-04": 2.68,
+        "2026-05": 2.67,
+        "2026-06": 2.66,
+    }
+    # A block at its publisher's newest keeps the series whole, and a month the
+    # series skips cuts at the months it has — the thin fixation buckets do.
+    assert series_through(series, "2026-07") == series
+    assert max(series_through(series, "2026-06-15")) == "2026-06"
 
 
 def test_a_bucket_is_read_at_the_month_asked_for_and_never_at_its_own_newest():

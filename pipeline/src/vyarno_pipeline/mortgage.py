@@ -220,6 +220,17 @@ def newest_shared_period(what: str, **legs: Iterable[str]) -> str:
     return max(shared)
 
 
+def series_through(series: dict[str, float], period: str) -> dict[str, float]:
+    """One publisher's series, cut where the block that carries it publishes.
+
+    The site draws the card above a curve as that curve's own last point, so a
+    series running past the month `newest_shared_period` pinned its block to
+    puts a reading no cross-check saw under the month before it. The extra
+    month is not lost — the run after the other publisher catches up ships it.
+    """
+    return {p: v for p, v in series.items() if p <= period}
+
+
 def rate_at(series: dict[str, float], period: str, whose: str, what: str) -> float:
     """One publisher's reading at the month a cross-check is being made at.
 
