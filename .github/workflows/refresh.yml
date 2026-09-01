@@ -214,7 +214,7 @@ jobs:
       - name: Open PR
         id: pr
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const source = process.env.SOURCE;
@@ -296,7 +296,7 @@ jobs:
 
       - name: Dispatch CI
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         # **Nothing this job pushes triggers a workflow.** Events raised by the
         # automatic token do not create workflow runs — that is the loop-breaker
         # GitHub applies to every token-driven push and PR, and it is not
