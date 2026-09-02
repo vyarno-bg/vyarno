@@ -1,6 +1,6 @@
 {
   "schema_version": "1.2",
-  "as_of": "2026-08-28",
+  "as_of": "2026-09-02",
   "source": "ecb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2B.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
   "notes": "BG household credit other than housing, from ECB MIR: loans for consumption (rate and APRC), overdrafts and revolving credit, and extended credit card credit — the balance carried past the interest-free period. The two deposit series are the comparator. The euro amounts under those rates are БНБ's own workbooks, because every ECB MIR outstanding-amount volume key for BG is a 404: MIR publishes what the stock costs and never how big it is. The arrears ratios are ECB CBD2, split by counterparty, because the portfolio-wide figure that reaches the news is not a household one. One block has a different borrower: new lending to non-financial corporations, spliced from the same lev and euro legs, so what a company is charged can be read against what a homebuyer is.",
@@ -9,8 +9,8 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2B.A.R.A.2250.BGN.N spliced with M.BG.B.A2B.A.R.A.2250.EUR.N",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2B.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-06",
-    "value_pct": 8.76,
+    "ref_period": "2026-07",
+    "value_pct": 9.09,
     "series_by_period": {
       "2020-01": 8.34,
       "2020-02": 7.92,
@@ -89,12 +89,13 @@
       "2026-03": 8.62,
       "2026-04": 8.8,
       "2026-05": 8.95,
-      "2026-06": 8.76
+      "2026-06": 8.76,
+      "2026-07": 9.09
     },
-    "aprc_pct": 9.06,
-    "aprc_ref_period": "2026-06",
+    "aprc_pct": 9.4,
+    "aprc_ref_period": "2026-07",
     "aprc_source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2B.A.C.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "monthly_volume_eur_m": 701.85,
+    "monthly_volume_eur_m": 707.03,
     "monthly_volume_note": "ЕЦБ MIR's own new-business volume. БНБ's workbooks print the same figure from their own vintage and it can sit ~1% away in the newest month; the two are one series reported by one institution, not two measurements to average"
   },
   "overdraft": {
@@ -102,8 +103,8 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2Z1.A.R.A.2250.BGN.N spliced with M.BG.B.A2Z1.A.R.A.2250.EUR.N",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2Z1.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-06",
-    "value_pct": 6.45,
+    "ref_period": "2026-07",
+    "value_pct": 6.54,
     "series_by_period": {
       "2020-01": 9.03,
       "2020-02": 8.93,
@@ -182,19 +183,20 @@
       "2026-03": 6.43,
       "2026-04": 6.33,
       "2026-05": 6.42,
-      "2026-06": 6.45
+      "2026-06": 6.45,
+      "2026-07": 6.54
     },
-    "stock_eur_m": 204.754,
-    "stock_rate_pct": 6.4649,
-    "stock_ref_period": "2026-06",
+    "stock_eur_m": 202.094,
+    "stock_rate_pct": 6.5483,
+    "stock_ref_period": "2026-07",
     "stock_source": "bnb",
     "stock_source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_ovdr_cc_oa_hh_bg.xlsx",
     "stock_dataset": "s_ir_ovdr_cc_oa_hh_bg.xlsx, sheet OVDR_CC_OA_HH, Овърдрафт × в евро, less its «в т.ч. кредитни карти» sub-block",
     "stock_basis": "БНБ's overdraft balances with the card sub-block taken out, because ЕЦБ A2Z1 excludes card credit and БНБ's «Овърдрафт» includes it. The rate the subtraction leaves is gated against A2Z1, which is the evidence it was done",
     "stock_cross_check": {
-      "bnb_pct": 6.4649,
-      "ecb_mir_pct": 6.45,
-      "delta_pp": 0.0149
+      "bnb_pct": 6.5483,
+      "ecb_mir_pct": 6.54,
+      "delta_pp": 0.0083
     }
   },
   "card": {
@@ -202,8 +204,8 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2Z3.A.R.A.2250.BGN.N spliced with M.BG.B.A2Z3.A.R.A.2250.EUR.N",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2Z3.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-06",
-    "value_pct": 21.15,
+    "ref_period": "2026-07",
+    "value_pct": 21.6,
     "series_by_period": {
       "2020-01": 19.93,
       "2020-02": 19.98,
@@ -282,19 +284,20 @@
       "2026-03": 21.22,
       "2026-04": 21.22,
       "2026-05": 21.12,
-      "2026-06": 21.15
+      "2026-06": 21.15,
+      "2026-07": 21.6
     },
     "no_aprc": "BG reports no APRC for this item — the ЕЦБ collect DATA_TYPE_MIR=C on instalment credit only — so the rate here carries no fees-included companion the way consumer credit does",
-    "stock_eur_m": 370.974,
-    "stock_rate_pct": 21.1636,
-    "stock_ref_period": "2026-06",
+    "stock_eur_m": 373.142,
+    "stock_rate_pct": 21.6054,
+    "stock_ref_period": "2026-07",
     "stock_source": "bnb",
     "stock_source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_ovdr_cc_oa_hh_bg.xlsx",
     "stock_dataset": "s_ir_ovdr_cc_oa_hh_bg.xlsx, sheet OVDR_CC_OA_HH, Овърдрафт × в т.ч. кредитни карти × в т.ч. извън безлихвен гратисен период × в евро",
     "stock_cross_check": {
-      "bnb_pct": 21.1636,
-      "ecb_mir_pct": 21.15,
-      "delta_pp": 0.0136
+      "bnb_pct": 21.6054,
+      "ecb_mir_pct": 21.6,
+      "delta_pp": 0.0054
     }
   },
   "deposit_overnight": {
@@ -302,7 +305,7 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.L21.A.R.A.2250.EUR.N",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.L21.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-06",
+    "ref_period": "2026-07",
     "value_pct": 0.01,
     "series_by_period": {
       "2026-01": 0.01,
@@ -310,7 +313,8 @@
       "2026-03": 0.01,
       "2026-04": 0.01,
       "2026-05": 0.01,
-      "2026-06": 0.01
+      "2026-06": 0.01,
+      "2026-07": 0.01
     },
     "series_starts": "2026-01",
     "why_it_starts_there": "the BGN leg of this key does publish back to 2020 and is cut here: its pair starts at the euro, and two deposit products drawn over two periods do not compare"
@@ -320,22 +324,23 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.L22.A.R.A.2250.EUR.N",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.L22.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-06",
-    "value_pct": 1.58,
+    "ref_period": "2026-07",
+    "value_pct": 1.65,
     "series_by_period": {
       "2026-01": 1.05,
       "2026-02": 1.09,
       "2026-03": 1.2,
       "2026-04": 1.3,
       "2026-05": 1.33,
-      "2026-06": 1.58
+      "2026-06": 1.58,
+      "2026-07": 1.65
     },
     "series_starts": "2026-01",
     "why_it_starts_there": "the BGN leg of this key is a 404 — BG reported term deposits by maturity bucket and never at this total before the euro",
-    "monthly_volume_eur_m": 430.71,
+    "monthly_volume_eur_m": 438.05,
     "monthly_volume_source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.L22.A.B.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "stock_rate_pct": 0.55,
-    "stock_ref_period": "2026-06",
+    "stock_rate_pct": 0.57,
+    "stock_ref_period": "2026-07",
     "stock_source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.L22.A.R.A.2250.EUR.O?format=jsondata&startPeriod=2020-01"
   },
   "business_lending": {
@@ -343,8 +348,8 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2A.A.R.A.2240.BGN.N (to 2025-12) spliced with M.BG.B.A2A.A.R.A.2240.EUR.N (from 2026-01)",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2A.A.R.A.2240.EUR.N?format=jsondata&startPeriod=2017-08",
-    "ref_period": "2026-06",
-    "value_pct": 4.5,
+    "ref_period": "2026-07",
+    "value_pct": 4.15,
     "series_by_period": {
       "2017-08": 3.79,
       "2017-09": 4.14,
@@ -452,7 +457,8 @@
       "2026-03": 4.18,
       "2026-04": 4.4,
       "2026-05": 4.15,
-      "2026-06": 4.5
+      "2026-06": 4.5,
+      "2026-07": 4.15
     },
     "rate_basis": "the MIR rate excluding charges (DATA_TYPE_MIR=R), new business, non-financial corporations (S.11), loans other than revolving loans and overdrafts and card credit (BS_ITEM A2A), all loan sizes, all initial rate-fixation periods",
     "comparability": "the mortgage rate is MIR A2C, term lending narrowed to house purchase; this is MIR A2A, term lending to companies for any purpose, because MIR carries no purpose split for corporate borrowing. Both exclude revolving credit, overdrafts and card debt, both are new business over the same month, and both are volume-weighted across every bank in Bulgaria",
@@ -463,7 +469,7 @@
     "methodology_change": "Bulgaria adopted the euro on 2026-01-01. Before then CURRENCY_TRANS=EUR meant loans DENOMINATED in euro rather than the currency of the country, and for company lending that was a real and differently priced part of the market: over the months both legs publish, the lev and euro rates sit as much as 2.08 pp apart. This series is therefore BGN through 2025-12 spliced with EUR from 2026-01. The euro leg publishes months this series does not use, and reading it whole would report that slice as the market. The splice steps 0.21 pp against a median month-to-month move of 0.17 pp, so it is an ordinary month for this series rather than the near-zero join the mortgage splice shows.",
     "series_starts": "2017-08",
     "why_it_starts_there": "the lev leg of this key begins here, and so does the lev leg of the mortgage rate this is compared with. Before it there is no month in which both are published in the currency Bulgarians were borrowing in",
-    "splice_evidence": "MIR publishes no new-business volume for this aggregation (M.BG.B.A2A.A.B.A.2240.EUR.N is a 404 on both legs), so the evidence is the smallest loan bucket instead: euro lending up to EUR 0.25 m averaged 10.5 m/month over the year before the changeover and 108.0 m/month since, while the lev leg stops at 2025-12",
+    "splice_evidence": "MIR publishes no new-business volume for this aggregation (M.BG.B.A2A.A.B.A.2240.EUR.N is a 404 on both legs), so the evidence is the smallest loan bucket instead: euro lending up to EUR 0.25 m averaged 10.5 m/month over the year before the changeover and 108.9 m/month since, while the lev leg stops at 2025-12",
     "splice_evidence_source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2A.A.B.2.2240.EUR.N?format=jsondata&startPeriod=2017-08"
   },
   "outstanding": {
@@ -472,38 +478,38 @@
     "dataset": "s_ir_loan_oa_hh_bg.xlsx, sheet LOAN_OA_HH (Кредити за потребление · Жилищни кредити · Други кредити) and s_ir_ovdr_cc_oa_hh_bg.xlsx, sheet OVDR_CC_OA_HH (Овърдрафт), all × в евро",
     "source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx",
     "overdraft_source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_ovdr_cc_oa_hh_bg.xlsx",
-    "ref_period": "2026-06",
-    "total_eur_m": 30862.889,
-    "rate_pct": 4.51,
+    "ref_period": "2026-07",
+    "total_eur_m": 31427.249,
+    "rate_pct": 4.53,
     "rate_source": "ecb",
-    "rate_ref_period": "2026-06",
+    "rate_ref_period": "2026-07",
     "rate_source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A20.A.R.A.2250.EUR.O?format=jsondata&startPeriod=2020-01",
     "rate_dataset": "MIR M.BG.B.A20.A.R.A.2250.EUR.O",
     "cross_check": {
-      "bnb_pct": 4.4653,
-      "ecb_mir_pct": 4.51,
-      "delta_pp": 0.0447
+      "bnb_pct": 4.4819,
+      "ecb_mir_pct": 4.53,
+      "delta_pp": 0.0481
     },
     "blocks": [
       {
         "block": "housing",
-        "volume_eur_m": 18580.075,
-        "rate_pct": 2.6609
+        "volume_eur_m": 18921.431,
+        "rate_pct": 2.6587
       },
       {
         "block": "consumer",
-        "volume_eur_m": 11301.239,
-        "rate_pct": 6.9058
+        "volume_eur_m": 11524.964,
+        "rate_pct": 6.9426
       },
       {
         "block": "overdraft",
-        "volume_eur_m": 695.071,
-        "rate_pct": 13.1999
+        "volume_eur_m": 696.868,
+        "rate_pct": 13.4678
       },
       {
         "block": "other",
-        "volume_eur_m": 286.504,
-        "rate_pct": 4.0255
+        "volume_eur_m": 283.986,
+        "rate_pct": 4.0505
       }
     ],
     "volume_by_period": {
@@ -741,7 +747,8 @@
         "2026-03": 10744.685,
         "2026-04": 10915.47,
         "2026-05": 11076.933,
-        "2026-06": 11301.239
+        "2026-06": 11301.239,
+        "2026-07": 11524.964
       },
       "housing": {
         "2007-01": 1758.4409999999998,
@@ -977,7 +984,8 @@
         "2026-03": 17513.258,
         "2026-04": 17850.66,
         "2026-05": 18162.993,
-        "2026-06": 18580.075
+        "2026-06": 18580.075,
+        "2026-07": 18921.431
       },
       "other": {
         "2007-01": 409.561,
@@ -1213,7 +1221,8 @@
         "2026-03": 276.075,
         "2026-04": 287.422,
         "2026-05": 288.152,
-        "2026-06": 286.504
+        "2026-06": 286.504,
+        "2026-07": 283.986
       },
       "overdraft": {
         "2007-01": 405.273,
@@ -1449,7 +1458,8 @@
         "2026-03": 678.154,
         "2026-04": 678.039,
         "2026-05": 680.064,
-        "2026-06": 695.071
+        "2026-06": 695.071,
+        "2026-07": 696.868
       },
       "total": {
         "2007-01": 4519.867,
@@ -1685,7 +1695,8 @@
         "2026-03": 29212.172,
         "2026-04": 29731.591,
         "2026-05": 30208.142,
-        "2026-06": 30862.889
+        "2026-06": 30862.889,
+        "2026-07": 31427.249
       }
     },
     "series_starts": "2007-01",

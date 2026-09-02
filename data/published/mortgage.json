@@ -1,6 +1,6 @@
 {
   "schema_version": "3.0",
-  "as_of": "2026-08-17",
+  "as_of": "2026-09-02",
   "source": "ecb+bnb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
   "notes": "BG mortgage panel. Two tiers: new_business (ECB MIR — what a home loan costs if you sign one now, over the agreements signed in the month, a renegotiated existing loan among them; the rate excluding charges plus the APRC with them) and outstanding_stock (BNB — what a housing loan already on the books averages). Both official and monthly. No scraped offered-rate tier by design.",
@@ -278,8 +278,8 @@
     "source": "bnb",
     "dataset": "s_ir_loan_oa_hh_bg.xlsx, sheet LOAN_OA_HH, Жилищни кредити (housing loans) × в евро (EUR) × maturity total",
     "source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx",
-    "ref_period": "2026-06",
-    "value_pct": 2.6609,
+    "ref_period": "2026-07",
+    "value_pct": 2.6587,
     "series_by_period": {
       "2007-01": 8.3836,
       "2007-02": 8.365,
@@ -514,9 +514,10 @@
       "2026-03": 2.6887,
       "2026-04": 2.6798,
       "2026-05": 2.6717,
-      "2026-06": 2.6609
+      "2026-06": 2.6609,
+      "2026-07": 2.6587
     },
-    "book_volume_eur_m": 18580.075,
+    "book_volume_eur_m": 18921.431,
     "currency": "EUR",
     "rate_basis": "annual rate on the outstanding stock of EUR housing loans to households and NPISH, weighted by the balances at the end of the month — includes older vintages still being amortised, so it moves slowly and lags new-business rates",
     "methodology_change": "Bulgaria adopted the euro on 2026-01-01. Per the BNB methodological note (st_m_instr_irs_new_2026_bg.pdf, published 19 Feb 2026), OLP and LEONIA Plus (BG's old base rates) were retired, the BGN column was dropped from interest tables, and pre-2026 EUR series were reconstructed by BNB from BGN+EUR aggregates. So the EUR outstanding-stock figures before 2026-01 are a BNB reconstruction, not a contemporaneous observation. See https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/st_m_instr_irs_new_2026_bg.pdf"
