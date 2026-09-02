@@ -341,6 +341,22 @@ export const PAYLOADS = Object.freeze(
       // Two tiers, each with its own reference month. `headline` names the one
       // the calculator defaults to, so the panel dates the figure it shows.
       refPeriod: (p) => p?.[p?.headline]?.ref_period ?? p?.new_business?.ref_period ?? null,
+      // Two publishers, so two clocks: `new_business` (and `fixation`,
+      // `new_business_split` on the same month) come off ECB MIR with
+      // `outstanding_stock` a month behind on БНБ's workbook. The same guard
+      // `credit` carries below — a ref_period nothing names is a red suite,
+      // not a silently dropped column.
+      refPeriodsBeside: (p) => {
+        const rates = p?.new_business?.ref_period;
+        return [
+          {
+            at: p?.outstanding_stock?.ref_period,
+            label: { bg: "всички изплащани", en: "outstanding" },
+          },
+        ]
+          .filter((r) => r.at && String(r.at) !== String(rates ?? ""))
+          .map((r) => ({ period: String(r.at), label: r.label }));
+      },
     },
     {
       key: "credit",
