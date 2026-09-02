@@ -10,8 +10,8 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2C.A.R.A.2250.BGN.N (to 2025-12) spliced with M.BG.B.A2C.A.R.A.2250.EUR.N (from 2026-01)",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-06",
-    "value_pct": 2.41,
+    "ref_period": "2026-07",
+    "value_pct": 2.43,
     "series_by_period": {
       "2020-01": 2.97,
       "2020-02": 2.97,
@@ -90,15 +90,16 @@
       "2026-03": 2.45,
       "2026-04": 2.45,
       "2026-05": 2.43,
-      "2026-06": 2.41
+      "2026-06": 2.41,
+      "2026-07": 2.43
     },
     "rate_basis": "the MIR rate excluding charges (DATA_TYPE_MIR=R — the ECB name that code for the annualised agreed rate AND the narrowly defined effective rate, and neither publisher says which of the two Bulgaria reports), new business, households and NPISH, lending for house purchase, all initial rate-fixation periods — this is the interest rate the monthly payment is computed from",
     "aprc": {
       "_role": "the same agreements' total cost of credit (ГПР in Bulgarian) — interest plus the charges the bank requires in order to lend. The notary and the fee for registering the transfer of ownership are outside it by the Directives that define it",
       "dataset": "MIR M.BG.B.A2C.A.C.A.2250.BGN.N spliced with M.BG.B.A2C.A.C.A.2250.EUR.N",
       "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.C.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
-      "ref_period": "2026-06",
-      "value_pct": 2.75,
+      "ref_period": "2026-07",
+      "value_pct": 2.77,
       "series_by_period": {
         "2020-01": 3.26,
         "2020-02": 3.25,
@@ -177,7 +178,8 @@
         "2026-03": 2.77,
         "2026-04": 2.78,
         "2026-05": 2.77,
-        "2026-06": 2.75
+        "2026-06": 2.75,
+        "2026-07": 2.77
       },
       "rate_basis": "annual percentage rate of charge (APRC), new business, households and NPISH, lending for house purchase"
     },
@@ -186,8 +188,8 @@
       "dataset": "MIR M.BG.B.A2C.A.B.A.2250.EUR.N",
       "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.B.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
       "unit": "millions, currency of the period",
-      "ref_period": "2026-06",
-      "value": 768.56,
+      "ref_period": "2026-07",
+      "value": 665.52,
       "series_by_period": {
         "2020-01": 279.0,
         "2020-02": 322.0,
@@ -266,7 +268,8 @@
         "2026-03": 630.89,
         "2026-04": 640.25,
         "2026-05": 599.12,
-        "2026-06": 768.56
+        "2026-06": 768.56,
+        "2026-07": 665.52
       }
     },
     "currency": "EUR",
@@ -523,9 +526,9 @@
     "methodology_change": "Bulgaria adopted the euro on 2026-01-01. Per the BNB methodological note (st_m_instr_irs_new_2026_bg.pdf, published 19 Feb 2026), OLP and LEONIA Plus (BG's old base rates) were retired, the BGN column was dropped from interest tables, and pre-2026 EUR series were reconstructed by BNB from BGN+EUR aggregates. So the EUR outstanding-stock figures before 2026-01 are a BNB reconstruction, not a contemporaneous observation. See https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/st_m_instr_irs_new_2026_bg.pdf"
   },
   "cross_check": {
-    "bnb_outstanding_pct": 2.6609,
+    "bnb_outstanding_pct": 2.6587,
     "ecb_mir_outstanding_pct": 2.66,
-    "delta_pp": 0.0009,
+    "delta_pp": 0.0013,
     "tolerance_pp": 0.3,
     "status": "ok",
     "why": "BNB reports MFI Interest Rate Statistics to the ECB, so the two describe the same outstanding housing-loan book. Agreement here is evidence both cells are being read correctly."
@@ -550,35 +553,35 @@
     "source": "bnb",
     "dataset": "s_ir_loan_nbf_hh_bg.xlsx, sheet LOAN_NBF_HH, Жилищни кредити × в евро × период на първоначално фиксиране на лихвения процент",
     "source_url": "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_nbf_hh_bg.xlsx",
-    "ref_period": "2026-06",
-    "total_eur_m": 767.075,
+    "ref_period": "2026-07",
+    "total_eur_m": 664.555,
     "buckets": [
       {
         "bucket": "up_to_1y",
-        "volume_eur_m": 763.908,
-        "share_pct": 99.59,
-        "rate_pct": 2.4051,
+        "volume_eur_m": 662.889,
+        "share_pct": 99.75,
+        "rate_pct": 2.4247,
         "cross_check_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.F.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01"
       },
       {
         "bucket": "1y_to_5y",
-        "volume_eur_m": 2.894,
-        "share_pct": 0.38,
-        "rate_pct": 2.9582,
+        "volume_eur_m": 1.073,
+        "share_pct": 0.16,
+        "rate_pct": 2.9478,
         "cross_check_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.I.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01"
       },
       {
         "bucket": "5y_to_10y",
-        "volume_eur_m": 0.0,
-        "share_pct": 0.0,
-        "rate_pct": null,
+        "volume_eur_m": 0.123,
+        "share_pct": 0.02,
+        "rate_pct": 1.2066,
         "cross_check_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.O.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01"
       },
       {
         "bucket": "over_10y",
-        "volume_eur_m": 0.273,
-        "share_pct": 0.04,
-        "rate_pct": 2.5234,
+        "volume_eur_m": 0.47,
+        "share_pct": 0.07,
+        "rate_pct": 2.5286,
         "cross_check_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.P.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01"
       }
     ],
@@ -816,7 +819,8 @@
       "2026-03": 99.63,
       "2026-04": 99.34,
       "2026-05": 99.43,
-      "2026-06": 99.59
+      "2026-06": 99.59,
+      "2026-07": 99.75
     },
     "cross_check": "the per-bucket rates are gated against ЕЦБ MIR's own four series (MATURITY_NOT_IRATE F/I/O/P). The VOLUMES have no second publisher: the euro leg of MIR carries no volume by fixation, so this workbook is the only source of the split after 2026-01"
   },
@@ -825,12 +829,12 @@
     "source": "ecb",
     "dataset": "MIR M.BG.B.A2C.A.B.A.2250.EUR.P and M.BG.B.A2C.A.B.A.2250.EUR.R, spliced from their BGN legs",
     "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.B.A.2250.EUR.R?format=jsondata&startPeriod=2020-01",
-    "ref_period": "2026-06",
-    "pure_new_eur_m": 615.33,
-    "renegotiated_eur_m": 153.23,
-    "renegotiated_share_pct": 19.94,
-    "pure_new_rate_pct": 2.4,
-    "renegotiated_rate_pct": 2.42,
+    "ref_period": "2026-07",
+    "pure_new_eur_m": 524.61,
+    "renegotiated_eur_m": 140.91,
+    "renegotiated_share_pct": 21.17,
+    "pure_new_rate_pct": 2.43,
+    "renegotiated_rate_pct": 2.41,
     "renegotiated_share_by_period": {
       "2020-01": 40.14,
       "2020-02": 35.71,
@@ -909,7 +913,8 @@
       "2026-03": 19.09,
       "2026-04": 18.54,
       "2026-05": 19.92,
-      "2026-06": 19.94
+      "2026-06": 19.94,
+      "2026-07": 21.17
     },
     "basis": "IR_BUS_COV — P «pure new loans» and R «renegotiation» partition N «new business», and the gate checks they still add up"
   }
