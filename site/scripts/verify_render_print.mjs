@@ -19,7 +19,15 @@ import { shutdown, skip, withApp } from "./render-harness.mjs";
 /** Put the page into print media and let the styles settle. */
 async function printing(page) {
   await page.emulateMedia({ media: "print" });
-  await page.waitForTimeout(120);
+  // 250 ms, not 120: `tokens.css` declares `transition: background 0.2s,
+  // color 0.2s` on `body`, and an assertion that runs inside that 200 ms
+  // window reads a colour value interpolated between the two states — a
+  // value the test would then pin into a sentinel with a number that varies
+  // by runner. The only suite that exposed this was the dark-theme one,
+  // but every other suite that calls `printing()` runs the same transition
+  // path on a fresh page-load, so the wait lives here rather than at the
+  // call site.
+  await page.waitForTimeout(250);
 }
 
 test("a page printed in the dark theme comes out on a light ground", { skip }, async () => {
@@ -32,12 +40,22 @@ test("a page printed in the dark theme comes out on a light ground", { skip }, a
   // Measured as luminance rather than as a hex value: the assertion is that
   // paper is light, and pinning the exact colour would go red on any retune of
   // a palette `verify_contrast.mjs` already governs.
+  //
+  // **Switch to print media BEFORE setting `data-theme="dark"`.** `body` in
+  // `tokens.css` carries `transition: background 0.2s, color 0.2s`, and
+  // applying dark first then print sets `--paper` from `#10140f` to `#fff`
+  // mid-transition; the 120 ms wait then lands on an interpolated colour
+  // (RGB ≈ 240..255 across all channels) that varies by runner and trip the
+  // `> 0.9` luminance threshold. Going print-first means `data-theme="dark"`
+  // changes `--paper` only under `@media screen`, which is inactive in print
+  // media, so `body { background: var(--paper) }` resolves to `#fff` either
+  // way and no transition runs.
   await withApp(async (page, errors) => {
+    await printing(page);
     await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
     const screen = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue("--paper").trim()
     );
-    await printing(page);
     const paper = await page.evaluate(() => {
       const rgb = getComputedStyle(document.body)
         .backgroundColor.match(/[\d.]+/g)
