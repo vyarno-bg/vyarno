@@ -183,6 +183,49 @@ jobs:
           git add -- data/published
           git commit --signoff -m "data refresh: ${{ inputs.source }} as of ${{ steps.meta.outputs.as_of }}"
 
+      - name: Re-shoot the README if the page changed
+        id: reshoot
+        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
+        # **A data refresh can move what the home page prints, and the only
+        # suite that notices is `verify_render_screenshot.mjs`.** A new
+        # `ref_period` collapsing the outstanding row out of `refPeriodsBeside`
+        # switches the strip label from «всички изплащани» to «ecb+bnb», and
+        # CI goes red on a green payload — exactly what happened on PR #164
+        # (data refresh: mortgage as of 2026-09-02). The bot's job is to ship
+        # the new figure; failing CI for copy nobody asked it to change is a
+        # regression the refresh arm exists to avoid.
+        #
+        # The shot is regenerated from the local tree that just got the data
+        # commit, so the sidecar is in sync by the time the push below
+        # happens. If `docs/img/screenshot.{png,txt}` do not move, the step is
+        # a no-op and the amend below is skipped — every arm pays for the
+        # build and the Chromium install on warm cache, nothing else.
+        #
+        # `git config user.name`/`user.email` lives in this block for the
+        # reason `Commit`'s does — `test_cli_dispatch.py` reads the workflow
+        # and refuses any `git commit` that does not set identity in the same
+        # `run:` step. `--amend --no-edit` does not strictly require it, but
+        # the block has to be self-sufficient: a future edit that adds a fresh
+        # commit (not just an amend) would have nothing to fall back on
+        # otherwise, and a separate configure step is the shape the rule
+        # exists to forbid.
+        working-directory: site
+        run: |
+          set -euo pipefail
+          git config user.name "vyarno-refresh"
+          git config user.email "vyarno-refresh@users.noreply.github.com"
+          npm ci --no-audit --no-fund
+          npx playwright install chromium
+          npm run build
+          node scripts/make_screenshot.mjs
+          if git diff --quiet -- docs/img/screenshot.png docs/img/screenshot.txt; then
+            echo "screenshot unchanged — the data did not move what the page prints"
+          else
+            git add docs/img/screenshot.png docs/img/screenshot.txt
+            git commit --amend --no-edit --signoff
+            echo "amended=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Push
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
         # **The branch outlives the run that made it.** It is created fresh
@@ -199,17 +242,32 @@ jobs:
         # older read of the same upstream, and the payload it carried is the
         # one this run just re-fetched.
         #
-        # Never `--force`: the branch is shared with an open PR, and a force
-        # push there discards a review in progress rather than an old fetch.
+        # `--force-with-lease` is the one exception to "never force", and only
+        # because the step before this can rewrite the local tip without
+        # changing its tree in any other way: a screenshot amend that adds two
+        # files (`docs/img/screenshot.png`, `docs/img/screenshot.txt`) to the
+        # same commit the data refresh just made. Without it, a PR that needed
+        # the screenshot reshoot could not push its own fix. The lease is held
+        # against `refs/heads/$BRANCH` at the SHA the previous fetch returned,
+        # so a concurrent push from elsewhere — the box's
+        # `vyarno-city-price-weekly` cron, a manual `git push` from Kiril — is
+        # still refused with the same error as a plain push. Only the lease
+        # holder, this very run, can rewrite its own amend.
         run: |
           set -euo pipefail
           BRANCH="data/${{ inputs.source }}"
+          EXPECTED=""
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
             echo "::notice::$BRANCH already on origin — superseding it in place."
             git fetch origin "$BRANCH"
+            EXPECTED=$(git rev-parse "origin/$BRANCH")
             git merge -s ours --no-edit FETCH_HEAD
           fi
-          git push -u origin "$BRANCH"
+          if [[ -n "$EXPECTED" ]]; then
+            git push --force-with-lease="refs/heads/$BRANCH:$EXPECTED" -u origin "$BRANCH"
+          else
+            git push -u origin "$BRANCH"
+          fi
 
       - name: Open PR
         id: pr
