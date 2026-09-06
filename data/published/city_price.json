@@ -1,9 +1,9 @@
 {
   "schema_version": "2.0",
-  "as_of": "2026-08-30",
+  "as_of": "2026-09-06",
   "source": "imot.bg",
   "source_url": "https://www.imot.bg/sredni-ceni",
-  "notes": "Per-district €/m² asking-price averages read from imot.bg's sredni-ceni pages on 2026-08-30, for 27 cities. 610 districts parsed in total after counting out 0 values outside [100, 10000] €/m² as injection sanity bounds across the 27 city page(s) that recorded a count; each city-year publishes its own `n_dropped`. The median is the headline, being resistant to long-tail districts; the mean is included for completeness. `snapshot_date` is imot.bg's own newest published snapshot, read from each page's date list — not the day we looked, which is `as_of` above. imot.bg serve a sredni-ceni page for 27 cities (`city_pages`); this run read 27 of them. 26 of 27 cities carry enough consecutive years of comparable coverage for a since-baseline comparison; the rest publish a current €/m² only. Every median and every since-baseline percentage is computed by us from imot.bg's per-district averages — imot.bg publish no city median.",
+  "notes": "Per-district €/m² asking-price averages read from imot.bg's sredni-ceni pages on 2026-09-06, for 27 cities. 614 districts parsed in total after counting out 0 values outside [100, 10000] €/m² as injection sanity bounds across the 27 city page(s) that recorded a count; each city-year publishes its own `n_dropped`. The median is the headline, being resistant to long-tail districts; the mean is included for completeness. `snapshot_date` is imot.bg's own newest published snapshot, read from each page's date list — not the day we looked, which is `as_of` above. imot.bg serve a sredni-ceni page for 27 cities (`city_pages`); this run read 27 of them. 26 of 27 cities carry enough consecutive years of comparable coverage for a since-baseline comparison; the rest publish a current €/m² only. Every median and every since-baseline percentage is computed by us from imot.bg's per-district averages — imot.bg publish no city median.",
   "payload_name": "city_price",
   "city_pages": [
     "vidin",
@@ -40,15 +40,15 @@
       "bg_name": "Видин",
       "en_name": "Vidin",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-vidin",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 18,
       "n_dropped": 0,
-      "eur_per_m2_median": 1030.0,
-      "eur_per_m2_mean": 1036.1,
-      "eur_per_m2_min": 776,
-      "eur_per_m2_max": 1658,
+      "eur_per_m2_median": 1047.0,
+      "eur_per_m2_mean": 1036.6,
+      "eur_per_m2_min": 764,
+      "eur_per_m2_max": 1373,
       "baseline_year": 2007,
-      "since_baseline_median_pct": 123.4,
+      "since_baseline_median_pct": 127.1,
       "trend_publishable": true,
       "historical": [
         {
@@ -207,9 +207,9 @@
           "year": 2026,
           "n_districts": 18,
           "n_dropped": 0,
-          "eur_per_m2_median": 1030.0,
-          "eur_per_m2_mean": 1036.1,
-          "since_baseline_median_pct": 123.4
+          "eur_per_m2_median": 1047.0,
+          "eur_per_m2_mean": 1036.6,
+          "since_baseline_median_pct": 127.1
         }
       ]
     },
@@ -218,15 +218,15 @@
       "bg_name": "Враца",
       "en_name": "Vratsa",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-vratsa",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 15,
       "n_dropped": 0,
-      "eur_per_m2_median": 1402,
-      "eur_per_m2_mean": 1406.9,
+      "eur_per_m2_median": 1314,
+      "eur_per_m2_mean": 1404.5,
       "eur_per_m2_min": 1017,
       "eur_per_m2_max": 1767,
       "baseline_year": 2004,
-      "since_baseline_median_pct": 657.8,
+      "since_baseline_median_pct": 610.3,
       "trend_publishable": true,
       "historical": [
         {
@@ -409,9 +409,9 @@
           "year": 2026,
           "n_districts": 15,
           "n_dropped": 0,
-          "eur_per_m2_median": 1402,
-          "eur_per_m2_mean": 1406.9,
-          "since_baseline_median_pct": 657.8
+          "eur_per_m2_median": 1314,
+          "eur_per_m2_mean": 1404.5,
+          "since_baseline_median_pct": 610.3
         }
       ]
     },
@@ -420,11 +420,11 @@
       "bg_name": "Ловеч",
       "en_name": "Lovech",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-lovech",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 7,
       "n_dropped": 0,
       "eur_per_m2_median": 1118,
-      "eur_per_m2_mean": 1036.4,
+      "eur_per_m2_mean": 1030.3,
       "eur_per_m2_min": 829,
       "eur_per_m2_max": 1202,
       "baseline_year": 2009,
@@ -572,7 +572,7 @@
           "n_districts": 7,
           "n_dropped": 0,
           "eur_per_m2_median": 1118,
-          "eur_per_m2_mean": 1036.4,
+          "eur_per_m2_mean": 1030.3,
           "since_baseline_median_pct": 176.7
         }
       ]
@@ -582,15 +582,15 @@
       "bg_name": "Монтана",
       "en_name": "Montana",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-montana",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 10,
       "n_dropped": 0,
-      "eur_per_m2_median": 1342.5,
-      "eur_per_m2_mean": 1368.4,
-      "eur_per_m2_min": 1225,
+      "eur_per_m2_median": 1359.0,
+      "eur_per_m2_mean": 1375.2,
+      "eur_per_m2_min": 1254,
       "eur_per_m2_max": 1695,
       "baseline_year": 2006,
-      "since_baseline_median_pct": 289.1,
+      "since_baseline_median_pct": 293.9,
       "trend_publishable": true,
       "historical": [
         {
@@ -757,9 +757,9 @@
           "year": 2026,
           "n_districts": 10,
           "n_dropped": 0,
-          "eur_per_m2_median": 1342.5,
-          "eur_per_m2_mean": 1368.4,
-          "since_baseline_median_pct": 289.1
+          "eur_per_m2_median": 1359.0,
+          "eur_per_m2_mean": 1375.2,
+          "since_baseline_median_pct": 293.9
         }
       ]
     },
@@ -768,15 +768,15 @@
       "bg_name": "Плевен",
       "en_name": "Pleven",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-pleven",
-      "snapshot_date": "27.8.2026",
-      "n_districts": 11,
+      "snapshot_date": "3.9.2026",
+      "n_districts": 12,
       "n_dropped": 0,
-      "eur_per_m2_median": 1324,
-      "eur_per_m2_mean": 1317.1,
+      "eur_per_m2_median": 1362.5,
+      "eur_per_m2_mean": 1367.1,
       "eur_per_m2_min": 705,
-      "eur_per_m2_max": 1592,
+      "eur_per_m2_max": 1990,
       "baseline_year": 2003,
-      "since_baseline_median_pct": 732.7,
+      "since_baseline_median_pct": 756.9,
       "trend_publishable": true,
       "historical": [
         {
@@ -965,11 +965,11 @@
         },
         {
           "year": 2026,
-          "n_districts": 11,
+          "n_districts": 12,
           "n_dropped": 0,
-          "eur_per_m2_median": 1324,
-          "eur_per_m2_mean": 1317.1,
-          "since_baseline_median_pct": 732.7
+          "eur_per_m2_median": 1362.5,
+          "eur_per_m2_mean": 1367.1,
+          "since_baseline_median_pct": 756.9
         }
       ]
     },
@@ -978,15 +978,15 @@
       "bg_name": "Велико Търново",
       "en_name": "Veliko Tarnovo",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-veliko-tarnovo",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 11,
       "n_dropped": 0,
-      "eur_per_m2_median": 1457,
-      "eur_per_m2_mean": 1456.5,
-      "eur_per_m2_min": 1027,
+      "eur_per_m2_median": 1446,
+      "eur_per_m2_mean": 1469.6,
+      "eur_per_m2_min": 1111,
       "eur_per_m2_max": 2046,
       "baseline_year": 2004,
-      "since_baseline_median_pct": 318.7,
+      "since_baseline_median_pct": 315.5,
       "trend_publishable": true,
       "historical": [
         {
@@ -1169,9 +1169,9 @@
           "year": 2026,
           "n_districts": 11,
           "n_dropped": 0,
-          "eur_per_m2_median": 1457,
-          "eur_per_m2_mean": 1456.5,
-          "since_baseline_median_pct": 318.7
+          "eur_per_m2_median": 1446,
+          "eur_per_m2_mean": 1469.6,
+          "since_baseline_median_pct": 315.5
         }
       ]
     },
@@ -1180,15 +1180,15 @@
       "bg_name": "Габрово",
       "en_name": "Gabrovo",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-gabrovo",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 16,
       "n_dropped": 0,
-      "eur_per_m2_median": 992.0,
-      "eur_per_m2_mean": 940.4,
+      "eur_per_m2_median": 987.5,
+      "eur_per_m2_mean": 944.2,
       "eur_per_m2_min": 317,
       "eur_per_m2_max": 1474,
       "baseline_year": 2005,
-      "since_baseline_median_pct": 258.1,
+      "since_baseline_median_pct": 256.5,
       "trend_publishable": true,
       "historical": [
         {
@@ -1363,9 +1363,9 @@
           "year": 2026,
           "n_districts": 16,
           "n_dropped": 0,
-          "eur_per_m2_median": 992.0,
-          "eur_per_m2_mean": 940.4,
-          "since_baseline_median_pct": 258.1
+          "eur_per_m2_median": 987.5,
+          "eur_per_m2_mean": 944.2,
+          "since_baseline_median_pct": 256.5
         }
       ]
     },
@@ -1374,15 +1374,15 @@
       "bg_name": "Разград",
       "en_name": "Razgrad",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-razgrad",
-      "snapshot_date": "27.8.2026",
-      "n_districts": 12,
+      "snapshot_date": "3.9.2026",
+      "n_districts": 13,
       "n_dropped": 0,
-      "eur_per_m2_median": 1421.5,
-      "eur_per_m2_mean": 1430.8,
-      "eur_per_m2_min": 1120,
-      "eur_per_m2_max": 1753,
+      "eur_per_m2_median": 1266,
+      "eur_per_m2_mean": 1317.6,
+      "eur_per_m2_min": 982,
+      "eur_per_m2_max": 1665,
       "baseline_year": 2013,
-      "since_baseline_median_pct": 391.0,
+      "since_baseline_median_pct": 337.3,
       "trend_publishable": true,
       "historical": [
         {
@@ -1491,11 +1491,11 @@
         },
         {
           "year": 2026,
-          "n_districts": 12,
+          "n_districts": 13,
           "n_dropped": 0,
-          "eur_per_m2_median": 1421.5,
-          "eur_per_m2_mean": 1430.8,
-          "since_baseline_median_pct": 391.0
+          "eur_per_m2_median": 1266,
+          "eur_per_m2_mean": 1317.6,
+          "since_baseline_median_pct": 337.3
         }
       ]
     },
@@ -1504,15 +1504,15 @@
       "bg_name": "Русе",
       "en_name": "Ruse",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-ruse",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 26,
       "n_dropped": 0,
-      "eur_per_m2_median": 1302.0,
-      "eur_per_m2_mean": 1279.6,
+      "eur_per_m2_median": 1299.0,
+      "eur_per_m2_mean": 1283.0,
       "eur_per_m2_min": 668,
-      "eur_per_m2_max": 1754,
+      "eur_per_m2_max": 1761,
       "baseline_year": 2003,
-      "since_baseline_median_pct": 713.7,
+      "since_baseline_median_pct": 711.9,
       "trend_publishable": true,
       "historical": [
         {
@@ -1703,9 +1703,9 @@
           "year": 2026,
           "n_districts": 26,
           "n_dropped": 0,
-          "eur_per_m2_median": 1302.0,
-          "eur_per_m2_mean": 1279.6,
-          "since_baseline_median_pct": 713.7
+          "eur_per_m2_median": 1299.0,
+          "eur_per_m2_mean": 1283.0,
+          "since_baseline_median_pct": 711.9
         }
       ]
     },
@@ -1714,15 +1714,15 @@
       "bg_name": "Силистра",
       "en_name": "Silistra",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-silistra",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 9,
       "n_dropped": 0,
-      "eur_per_m2_median": 1017,
-      "eur_per_m2_mean": 1022.8,
+      "eur_per_m2_median": 1002,
+      "eur_per_m2_mean": 1033.7,
       "eur_per_m2_min": 602,
       "eur_per_m2_max": 1310,
       "baseline_year": 2022,
-      "since_baseline_median_pct": 71.5,
+      "since_baseline_median_pct": 69.0,
       "trend_publishable": true,
       "historical": [
         {
@@ -1761,9 +1761,9 @@
           "year": 2026,
           "n_districts": 9,
           "n_dropped": 0,
-          "eur_per_m2_median": 1017,
-          "eur_per_m2_mean": 1022.8,
-          "since_baseline_median_pct": 71.5
+          "eur_per_m2_median": 1002,
+          "eur_per_m2_mean": 1033.7,
+          "since_baseline_median_pct": 69.0
         }
       ]
     },
@@ -1772,15 +1772,15 @@
       "bg_name": "Варна",
       "en_name": "Varna",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-varna",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 69,
       "n_dropped": 0,
-      "eur_per_m2_median": 1981,
-      "eur_per_m2_mean": 2088.2,
+      "eur_per_m2_median": 1993,
+      "eur_per_m2_mean": 2101.2,
       "eur_per_m2_min": 1148,
-      "eur_per_m2_max": 3906,
+      "eur_per_m2_max": 3909,
       "baseline_year": 2003,
-      "since_baseline_median_pct": 445.7,
+      "since_baseline_median_pct": 449.0,
       "trend_publishable": true,
       "historical": [
         {
@@ -1971,9 +1971,9 @@
           "year": 2026,
           "n_districts": 69,
           "n_dropped": 0,
-          "eur_per_m2_median": 1981,
-          "eur_per_m2_mean": 2088.2,
-          "since_baseline_median_pct": 445.7
+          "eur_per_m2_median": 1993,
+          "eur_per_m2_mean": 2101.2,
+          "since_baseline_median_pct": 449.0
         }
       ]
     },
@@ -1982,15 +1982,15 @@
       "bg_name": "Добрич",
       "en_name": "Dobrich",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-dobrich",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 22,
       "n_dropped": 0,
-      "eur_per_m2_median": 1020.5,
-      "eur_per_m2_mean": 996.5,
+      "eur_per_m2_median": 1027.0,
+      "eur_per_m2_mean": 995.7,
       "eur_per_m2_min": 491,
       "eur_per_m2_max": 1410,
       "baseline_year": 2005,
-      "since_baseline_median_pct": 390.6,
+      "since_baseline_median_pct": 393.8,
       "trend_publishable": true,
       "historical": [
         {
@@ -2165,9 +2165,9 @@
           "year": 2026,
           "n_districts": 22,
           "n_dropped": 0,
-          "eur_per_m2_median": 1020.5,
-          "eur_per_m2_mean": 996.5,
-          "since_baseline_median_pct": 390.6
+          "eur_per_m2_median": 1027.0,
+          "eur_per_m2_mean": 995.7,
+          "since_baseline_median_pct": 393.8
         }
       ]
     },
@@ -2176,15 +2176,15 @@
       "bg_name": "Търговище",
       "en_name": "Targovishte",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-targovishte",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 8,
       "n_dropped": 0,
-      "eur_per_m2_median": 1232.0,
-      "eur_per_m2_mean": 1206.6,
-      "eur_per_m2_min": 1002,
-      "eur_per_m2_max": 1342,
+      "eur_per_m2_median": 1231.5,
+      "eur_per_m2_mean": 1203.8,
+      "eur_per_m2_min": 1033,
+      "eur_per_m2_max": 1295,
       "baseline_year": 2014,
-      "since_baseline_median_pct": 228.5,
+      "since_baseline_median_pct": 228.4,
       "trend_publishable": true,
       "historical": [
         {
@@ -2287,9 +2287,9 @@
           "year": 2026,
           "n_districts": 8,
           "n_dropped": 0,
-          "eur_per_m2_median": 1232.0,
-          "eur_per_m2_mean": 1206.6,
-          "since_baseline_median_pct": 228.5
+          "eur_per_m2_median": 1231.5,
+          "eur_per_m2_mean": 1203.8,
+          "since_baseline_median_pct": 228.4
         }
       ]
     },
@@ -2298,15 +2298,15 @@
       "bg_name": "Шумен",
       "en_name": "Shumen",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-shumen",
-      "snapshot_date": "27.8.2026",
-      "n_districts": 21,
+      "snapshot_date": "3.9.2026",
+      "n_districts": 22,
       "n_dropped": 0,
-      "eur_per_m2_median": 1570,
-      "eur_per_m2_mean": 1574.9,
-      "eur_per_m2_min": 1205,
-      "eur_per_m2_max": 1946,
+      "eur_per_m2_median": 1568.5,
+      "eur_per_m2_mean": 1577.2,
+      "eur_per_m2_min": 1212,
+      "eur_per_m2_max": 1874,
       "baseline_year": 2008,
-      "since_baseline_median_pct": 209.7,
+      "since_baseline_median_pct": 209.4,
       "trend_publishable": true,
       "historical": [
         {
@@ -2455,11 +2455,11 @@
         },
         {
           "year": 2026,
-          "n_districts": 21,
+          "n_districts": 22,
           "n_dropped": 0,
-          "eur_per_m2_median": 1570,
-          "eur_per_m2_mean": 1574.9,
-          "since_baseline_median_pct": 209.7
+          "eur_per_m2_median": 1568.5,
+          "eur_per_m2_mean": 1577.2,
+          "since_baseline_median_pct": 209.4
         }
       ]
     },
@@ -2468,15 +2468,15 @@
       "bg_name": "Бургас",
       "en_name": "Burgas",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-burgas",
-      "snapshot_date": "27.8.2026",
-      "n_districts": 26,
+      "snapshot_date": "3.9.2026",
+      "n_districts": 27,
       "n_dropped": 0,
-      "eur_per_m2_median": 1523.5,
-      "eur_per_m2_mean": 1618.7,
+      "eur_per_m2_median": 1518,
+      "eur_per_m2_mean": 1603.9,
       "eur_per_m2_min": 675,
-      "eur_per_m2_max": 2720,
+      "eur_per_m2_max": 2733,
       "baseline_year": 2009,
-      "since_baseline_median_pct": 143.8,
+      "since_baseline_median_pct": 142.9,
       "trend_publishable": true,
       "historical": [
         {
@@ -2617,11 +2617,11 @@
         },
         {
           "year": 2026,
-          "n_districts": 26,
+          "n_districts": 27,
           "n_dropped": 0,
-          "eur_per_m2_median": 1523.5,
-          "eur_per_m2_mean": 1618.7,
-          "since_baseline_median_pct": 143.8
+          "eur_per_m2_median": 1518,
+          "eur_per_m2_mean": 1603.9,
+          "since_baseline_median_pct": 142.9
         }
       ]
     },
@@ -2630,15 +2630,15 @@
       "bg_name": "Сливен",
       "en_name": "Sliven",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-sliven",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 11,
       "n_dropped": 0,
-      "eur_per_m2_median": 1182,
-      "eur_per_m2_mean": 1187.3,
-      "eur_per_m2_min": 916,
-      "eur_per_m2_max": 1529,
+      "eur_per_m2_median": 1155,
+      "eur_per_m2_mean": 1144.5,
+      "eur_per_m2_min": 701,
+      "eur_per_m2_max": 1479,
       "baseline_year": 2005,
-      "since_baseline_median_pct": 311.1,
+      "since_baseline_median_pct": 301.7,
       "trend_publishable": true,
       "historical": [
         {
@@ -2813,9 +2813,9 @@
           "year": 2026,
           "n_districts": 11,
           "n_dropped": 0,
-          "eur_per_m2_median": 1182,
-          "eur_per_m2_mean": 1187.3,
-          "since_baseline_median_pct": 311.1
+          "eur_per_m2_median": 1155,
+          "eur_per_m2_mean": 1144.5,
+          "since_baseline_median_pct": 301.7
         }
       ]
     },
@@ -2824,15 +2824,15 @@
       "bg_name": "Стара Загора",
       "en_name": "Stara Zagora",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-stara-zagora",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 28,
       "n_dropped": 0,
-      "eur_per_m2_median": 1298.5,
-      "eur_per_m2_mean": 1313.3,
+      "eur_per_m2_median": 1309.5,
+      "eur_per_m2_mean": 1313.2,
       "eur_per_m2_min": 552,
       "eur_per_m2_max": 1794,
       "baseline_year": 2004,
-      "since_baseline_median_pct": 312.2,
+      "since_baseline_median_pct": 315.7,
       "trend_publishable": true,
       "historical": [
         {
@@ -3015,9 +3015,9 @@
           "year": 2026,
           "n_districts": 28,
           "n_dropped": 0,
-          "eur_per_m2_median": 1298.5,
-          "eur_per_m2_mean": 1313.3,
-          "since_baseline_median_pct": 312.2
+          "eur_per_m2_median": 1309.5,
+          "eur_per_m2_mean": 1313.2,
+          "since_baseline_median_pct": 315.7
         }
       ]
     },
@@ -3026,15 +3026,15 @@
       "bg_name": "Ямбол",
       "en_name": "Yambol",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-yambol",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 14,
       "n_dropped": 0,
-      "eur_per_m2_median": 1388.5,
-      "eur_per_m2_mean": 1316.3,
+      "eur_per_m2_median": 1416.5,
+      "eur_per_m2_mean": 1344.0,
       "eur_per_m2_min": 801,
       "eur_per_m2_max": 1648,
       "baseline_year": 2005,
-      "since_baseline_median_pct": 485.9,
+      "since_baseline_median_pct": 497.7,
       "trend_publishable": true,
       "historical": [
         {
@@ -3209,9 +3209,9 @@
           "year": 2026,
           "n_districts": 14,
           "n_dropped": 0,
-          "eur_per_m2_median": 1388.5,
-          "eur_per_m2_mean": 1316.3,
-          "since_baseline_median_pct": 485.9
+          "eur_per_m2_median": 1416.5,
+          "eur_per_m2_mean": 1344.0,
+          "since_baseline_median_pct": 497.7
         }
       ]
     },
@@ -3220,15 +3220,15 @@
       "bg_name": "Благоевград",
       "en_name": "Blagoevgrad",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-blagoevgrad",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 13,
       "n_dropped": 0,
-      "eur_per_m2_median": 1110,
-      "eur_per_m2_mean": 1161.2,
-      "eur_per_m2_min": 972,
-      "eur_per_m2_max": 1594,
+      "eur_per_m2_median": 1128,
+      "eur_per_m2_mean": 1163.7,
+      "eur_per_m2_min": 998,
+      "eur_per_m2_max": 1503,
       "baseline_year": 2005,
-      "since_baseline_median_pct": 172.1,
+      "since_baseline_median_pct": 176.5,
       "trend_publishable": true,
       "historical": [
         {
@@ -3403,9 +3403,9 @@
           "year": 2026,
           "n_districts": 13,
           "n_dropped": 0,
-          "eur_per_m2_median": 1110,
-          "eur_per_m2_mean": 1161.2,
-          "since_baseline_median_pct": 172.1
+          "eur_per_m2_median": 1128,
+          "eur_per_m2_mean": 1163.7,
+          "since_baseline_median_pct": 176.5
         }
       ]
     },
@@ -3414,15 +3414,15 @@
       "bg_name": "Кюстендил",
       "en_name": "Kyustendil",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-kyustendil",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 11,
       "n_dropped": 0,
-      "eur_per_m2_median": 1069,
-      "eur_per_m2_mean": 1091.8,
+      "eur_per_m2_median": 1064,
+      "eur_per_m2_mean": 1049.7,
       "eur_per_m2_min": 630,
-      "eur_per_m2_max": 1472,
+      "eur_per_m2_max": 1424,
       "baseline_year": 2008,
-      "since_baseline_median_pct": 218.2,
+      "since_baseline_median_pct": 216.7,
       "trend_publishable": true,
       "historical": [
         {
@@ -3573,9 +3573,9 @@
           "year": 2026,
           "n_districts": 11,
           "n_dropped": 0,
-          "eur_per_m2_median": 1069,
-          "eur_per_m2_mean": 1091.8,
-          "since_baseline_median_pct": 218.2
+          "eur_per_m2_median": 1064,
+          "eur_per_m2_mean": 1049.7,
+          "since_baseline_median_pct": 216.7
         }
       ]
     },
@@ -3584,15 +3584,15 @@
       "bg_name": "Перник",
       "en_name": "Pernik",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-pernik",
-      "snapshot_date": "27.8.2026",
-      "n_districts": 20,
+      "snapshot_date": "3.9.2026",
+      "n_districts": 21,
       "n_dropped": 0,
-      "eur_per_m2_median": 1414.5,
-      "eur_per_m2_mean": 1468.0,
+      "eur_per_m2_median": 1402,
+      "eur_per_m2_mean": 1447.8,
       "eur_per_m2_min": 972,
       "eur_per_m2_max": 2210,
       "baseline_year": 2004,
-      "since_baseline_median_pct": 656.4,
+      "since_baseline_median_pct": 649.7,
       "trend_publishable": true,
       "historical": [
         {
@@ -3773,11 +3773,11 @@
         },
         {
           "year": 2026,
-          "n_districts": 20,
+          "n_districts": 21,
           "n_dropped": 0,
-          "eur_per_m2_median": 1414.5,
-          "eur_per_m2_mean": 1468.0,
-          "since_baseline_median_pct": 656.4
+          "eur_per_m2_median": 1402,
+          "eur_per_m2_mean": 1447.8,
+          "since_baseline_median_pct": 649.7
         }
       ]
     },
@@ -3786,15 +3786,15 @@
       "bg_name": "София",
       "en_name": "Sofia",
       "source_url": "https://www.imot.bg/sredni-ceni",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 141,
       "n_dropped": 0,
-      "eur_per_m2_median": 2505,
-      "eur_per_m2_mean": 2592.0,
+      "eur_per_m2_median": 2499,
+      "eur_per_m2_mean": 2589.9,
       "eur_per_m2_min": 1102,
       "eur_per_m2_max": 6094,
       "baseline_year": 2000,
-      "since_baseline_median_pct": 1054.4,
+      "since_baseline_median_pct": 1051.6,
       "trend_publishable": true,
       "historical": [
         {
@@ -4009,9 +4009,9 @@
           "year": 2026,
           "n_districts": 141,
           "n_dropped": 0,
-          "eur_per_m2_median": 2505,
-          "eur_per_m2_mean": 2592.0,
-          "since_baseline_median_pct": 1054.4
+          "eur_per_m2_median": 2499,
+          "eur_per_m2_mean": 2589.9,
+          "since_baseline_median_pct": 1051.6
         }
       ]
     },
@@ -4020,15 +4020,15 @@
       "bg_name": "Кърджали",
       "en_name": "Kardzhali",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-kardzhali",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 9,
       "n_dropped": 0,
-      "eur_per_m2_median": 1127,
-      "eur_per_m2_mean": 1146.0,
+      "eur_per_m2_median": 1122,
+      "eur_per_m2_mean": 1126.6,
       "eur_per_m2_min": 752,
-      "eur_per_m2_max": 1541,
+      "eur_per_m2_max": 1423,
       "baseline_year": 2016,
-      "since_baseline_median_pct": 206.2,
+      "since_baseline_median_pct": 204.9,
       "trend_publishable": true,
       "historical": [
         {
@@ -4115,9 +4115,9 @@
           "year": 2026,
           "n_districts": 9,
           "n_dropped": 0,
-          "eur_per_m2_median": 1127,
-          "eur_per_m2_mean": 1146.0,
-          "since_baseline_median_pct": 206.2
+          "eur_per_m2_median": 1122,
+          "eur_per_m2_mean": 1126.6,
+          "since_baseline_median_pct": 204.9
         }
       ]
     },
@@ -4126,15 +4126,15 @@
       "bg_name": "Пазарджик",
       "en_name": "Pazardzhik",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-pazardzhik",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 13,
       "n_dropped": 0,
-      "eur_per_m2_median": 1087,
-      "eur_per_m2_mean": 1044.9,
+      "eur_per_m2_median": 1073,
+      "eur_per_m2_mean": 1045.6,
       "eur_per_m2_min": 668,
-      "eur_per_m2_max": 1158,
+      "eur_per_m2_max": 1191,
       "baseline_year": 2010,
-      "since_baseline_median_pct": 234.5,
+      "since_baseline_median_pct": 230.2,
       "trend_publishable": true,
       "historical": [
         {
@@ -4269,9 +4269,9 @@
           "year": 2026,
           "n_districts": 13,
           "n_dropped": 0,
-          "eur_per_m2_median": 1087,
-          "eur_per_m2_mean": 1044.9,
-          "since_baseline_median_pct": 234.5
+          "eur_per_m2_median": 1073,
+          "eur_per_m2_mean": 1045.6,
+          "since_baseline_median_pct": 230.2
         }
       ]
     },
@@ -4280,15 +4280,15 @@
       "bg_name": "Пловдив",
       "en_name": "Plovdiv",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-plovdiv",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 41,
       "n_dropped": 0,
-      "eur_per_m2_median": 1524,
-      "eur_per_m2_mean": 1654.2,
+      "eur_per_m2_median": 1518,
+      "eur_per_m2_mean": 1649.1,
       "eur_per_m2_min": 782,
       "eur_per_m2_max": 3208,
       "baseline_year": 2010,
-      "since_baseline_median_pct": 182.7,
+      "since_baseline_median_pct": 181.6,
       "trend_publishable": true,
       "historical": [
         {
@@ -4423,9 +4423,9 @@
           "year": 2026,
           "n_districts": 41,
           "n_dropped": 0,
-          "eur_per_m2_median": 1524,
-          "eur_per_m2_mean": 1654.2,
-          "since_baseline_median_pct": 182.7
+          "eur_per_m2_median": 1518,
+          "eur_per_m2_mean": 1649.1,
+          "since_baseline_median_pct": 181.6
         }
       ]
     },
@@ -4434,15 +4434,15 @@
       "bg_name": "Смолян",
       "en_name": "Smolyan",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-smolyan",
-      "snapshot_date": "27.8.2026",
-      "n_districts": 9,
+      "snapshot_date": "3.9.2026",
+      "n_districts": 8,
       "n_dropped": 0,
-      "eur_per_m2_median": 1267,
-      "eur_per_m2_mean": 1286.7,
+      "eur_per_m2_median": 1299.5,
+      "eur_per_m2_mean": 1281.6,
       "eur_per_m2_min": 1002,
-      "eur_per_m2_max": 1554,
+      "eur_per_m2_max": 1536,
       "baseline_year": 2025,
-      "since_baseline_median_pct": 1.8,
+      "since_baseline_median_pct": 4.4,
       "trend_publishable": false,
       "historical": [
         {
@@ -4455,11 +4455,11 @@
         },
         {
           "year": 2026,
-          "n_districts": 9,
+          "n_districts": 8,
           "n_dropped": 0,
-          "eur_per_m2_median": 1267,
-          "eur_per_m2_mean": 1286.7,
-          "since_baseline_median_pct": 1.8
+          "eur_per_m2_median": 1299.5,
+          "eur_per_m2_mean": 1281.6,
+          "since_baseline_median_pct": 4.4
         }
       ]
     },
@@ -4468,13 +4468,13 @@
       "bg_name": "Хасково",
       "en_name": "Haskovo",
       "source_url": "https://www.imot.bg/sredni-ceni/prodazhbi-haskovo",
-      "snapshot_date": "27.8.2026",
+      "snapshot_date": "3.9.2026",
       "n_districts": 19,
       "n_dropped": 0,
       "eur_per_m2_median": 1101,
-      "eur_per_m2_mean": 1032.4,
+      "eur_per_m2_mean": 1034.9,
       "eur_per_m2_min": 709,
-      "eur_per_m2_max": 1225,
+      "eur_per_m2_max": 1234,
       "baseline_year": 2010,
       "since_baseline_median_pct": 183.4,
       "trend_publishable": true,
@@ -4612,7 +4612,7 @@
           "n_districts": 19,
           "n_dropped": 0,
           "eur_per_m2_median": 1101,
-          "eur_per_m2_mean": 1032.4,
+          "eur_per_m2_mean": 1034.9,
           "since_baseline_median_pct": 183.4
         }
       ]
