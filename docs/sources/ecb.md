@@ -200,3 +200,32 @@ the corporates-above-households ordering and no copy may go further.
 denominator, quarterly in a PDF. It is not reconciled here and must not be
 presented as the same figure. Publishing CBD2 is what made parsing a 1.8 MB
 supervisory PDF for one cell unnecessary.
+
+## Fetch reliability — the retry rule and why 404 is never retried
+
+The ЕЦБ SDMX API stalls non-deterministically. Observed 2026-09: three scheduled
+refreshes died on a read timeout, twice on the consumer-credit arm and once on
+the mortgage one, each on a different series key and none reproducible against
+the same key a minute later. The arms fetch sequentially — the credit one makes
+25 requests at a ~0.3 s median — so a single 60 s stall anywhere in the sequence
+kills a job that otherwise finishes in about eight seconds.
+
+So a transient fault is retried once, `RETRY_WAIT` seconds apart, and there are
+two attempts in total. `TransportError` is the catch, which covers the observed
+`ReadTimeout` along with `ConnectError`, `ReadError` and connection resets; a 5xx
+from the ЕЦБ edge is the same transient class and joins it. On the happy path the
+rule costs nothing.
+
+A 4xx — most importantly a 404 for a wrong or dead series key — is **never
+retried**. The two structural rules at the top of `sources/ecb.py` (filter in the
+path, verify the response identity) exist because a silently-ignored
+query-parameter filter once shipped Austrian corporate loan rates as Bulgaria's
+mortgage rate, and a 404 is precisely the loud failure that makes a wrong key
+impossible to mistake for data. Retrying it would buy nothing and blunt the
+guard.
+
+`ValueError` from the identity check is never retried either, for a different
+reason: a response that describes the wrong series is a changed upstream rather
+than a fault, and the arm exits 2 on it. Retrying would also mean the caller
+eventually sees a transport error where the real fault was structural, which is
+the wrong exit code and the wrong diagnosis.

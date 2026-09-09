@@ -14,6 +14,7 @@ corporate-loan rate as Bulgaria's mortgage rate. Three tests below
 `test_the_exact_bug_shape_is_rejected`) exist solely to keep that impossible.
 """
 
+import contextlib
 import json
 from itertools import pairwise
 from pathlib import Path
@@ -24,9 +25,12 @@ import respx
 
 from vyarno_pipeline.sources.ecb import (
     BASE,
+    BSI_KEYS,
     EURO_SWITCH_PERIOD,
     SERIES_KEY_DIMS,
     SERIES_KEYS,
+    fetch_bsi_series,
+    fetch_cbd2_series,
     fetch_mir_series,
     parse_mir_series,
     series_url,
@@ -313,3 +317,122 @@ def test_fetch_raises_on_network_failure():
     respx.get(url__startswith=f"{BASE}/MIR/{key}").mock(side_effect=httpx.ConnectError("boom"))
     with pytest.raises(httpx.ConnectError):
         fetch_mir_series(key)
+
+
+# ---------------------------------------------------------------------------
+# Retry behaviour — one private helper used by all three fetchers
+# ---------------------------------------------------------------------------
+
+
+@respx.mock
+def test_mir_timeout_then_200_succeeds():
+    """The observed production failure: one read timeout, then a 200.
+
+    The credit arm issues 25 sequential requests; a single 60 s stall on any
+    one of them kills a job that otherwise completes in ~8 s. With one retry
+    the stall is survivable. The second attempt returns the correct series.
+    """
+    key = SERIES_KEYS["new_business_aar_eur"]
+    route = respx.get(url__startswith=f"{BASE}/MIR/{key}").mock(
+        side_effect=[
+            httpx.ReadTimeout("timed out"),
+            httpx.Response(200, json=load(AAR_EUR)),
+        ]
+    )
+    series = fetch_mir_series(key)
+    assert route.call_count == 2
+    assert series["2026-05"] == 2.43
+
+
+@respx.mock
+def test_mir_404_raises_immediately_and_is_not_retried():
+    """A wrong series key 404s — and it must stay loud and immediate.
+
+    A 404 is a dead or wrong key; retrying it would silence it and blunts
+    the guard that caught the Austrian-corporate-loans-as-Bulgaria-mortgage-rate
+    bug. The route must be called exactly once.
+    """
+    key = SERIES_KEYS["new_business_aar_eur"]
+    route = respx.get(url__startswith=f"{BASE}/MIR/{key}").mock(
+        return_value=httpx.Response(404, text="Not found")
+    )
+    with pytest.raises(httpx.HTTPStatusError):
+        fetch_mir_series(key)
+    assert route.call_count == 1, "404 must not be retried"
+
+
+@respx.mock
+def test_mir_5xx_is_retried_then_raises():
+    """A 502 from the ECB edge is the same transient class as a read timeout.
+
+    Both are retried; after the attempt budget the original HTTPStatusError
+    is re-raised unchanged so cli.py's exit mapping (HTTPError → 4,
+    ValueError → 2) stays correct.
+    """
+    key = SERIES_KEYS["new_business_aar_eur"]
+    route = respx.get(url__startswith=f"{BASE}/MIR/{key}").mock(
+        side_effect=[
+            httpx.Response(502, text="Bad Gateway"),
+            httpx.Response(502, text="Bad Gateway"),
+        ]
+    )
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        fetch_mir_series(key)
+    assert exc_info.value.response.status_code == 502
+    assert route.call_count == 2
+
+
+@respx.mock
+def test_mir_valueerror_from_identity_guard_is_not_retried():
+    """A response describing the wrong series is a changed upstream, not a flake.
+
+    The identity guard raises ValueError when the response doesn't describe the
+    series we asked for. This is a structural failure, not a transport flake,
+    and must not be retried — retrying would convert it to a different exception
+    type after the attempt budget and break cli.py's exit 2 mapping.
+    """
+    key = SERIES_KEYS["new_business_aar_eur"]
+    # Modify the fixture so the response decodes to Austria, not Bulgaria.
+    # The identity guard will find the mismatch and raise ValueError.
+    payload = load(AAR_EUR)
+    dims = payload["structure"]["dimensions"]["series"]
+    ref_area = next(d for d in dims if d["id"] == "REF_AREA")
+    ref_area["values"] = [{"id": "AT", "name": "Austria"}, *ref_area["values"]]
+    route = respx.get(url__startswith=f"{BASE}/MIR/{key}").mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+    with pytest.raises(ValueError, match="different series than requested"):
+        fetch_mir_series(key)
+    assert route.call_count == 1, "ValueError from identity guard must not be retried"
+
+
+@respx.mock
+def test_cbd2_routes_through_retry():
+    """fetch_cbd2_series uses the shared helper and inherits its retry behaviour."""
+    key = "Q.BG.W0.67.S1M._Z.A.F.I3632._Z._Z._Z._Z._Z._Z.PC"
+    route = respx.get(url__startswith=f"{BASE}/CBD2/{key}").mock(
+        side_effect=[
+            httpx.ReadTimeout("timed out"),
+            httpx.Response(200, json=load(AAR_EUR)),  # parse fails but route is called twice
+        ]
+    )
+    # This will raise ValueError on parse (wrong structure for CBD2), but the
+    # route must have been called twice before that.
+    with contextlib.suppress(ValueError):
+        fetch_cbd2_series(key)
+    assert route.call_count == 2
+
+
+@respx.mock
+def test_bsi_routes_through_retry():
+    """fetch_bsi_series uses the shared helper and inherits its retry behaviour."""
+    key = BSI_KEYS["household_deposits"]
+    route = respx.get(url__startswith=f"{BASE}/BSI/{key}").mock(
+        side_effect=[
+            httpx.ReadTimeout("timed out"),
+            httpx.Response(200, json=load(AAR_EUR)),  # parse fails but route is called twice
+        ]
+    )
+    with contextlib.suppress(ValueError):
+        fetch_bsi_series(key)
+    assert route.call_count == 2
