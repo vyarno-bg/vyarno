@@ -58,12 +58,25 @@ The splice is smooth, which is the evidence it is the right one:
 
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
 from typing import Any
 
 import httpx
 
 BASE = "https://data-api.ecb.europa.eu/service/data"
 DATAFLOW = "MIR"
+
+# The ЕЦБ SDMX API stalls non-deterministically: three scheduled refreshes died
+# on a read timeout in 2026-09, each on a different series key. An arm fetches
+# sequentially — the credit one makes 25 requests at a ~0.3 s median — so one
+# 60 s stall anywhere in that sequence kills a job that otherwise finishes in
+# about eight seconds. One retry is what the difference costs, and on the happy
+# path it costs nothing. `watch.py` carries the same pair of constants for the
+# same reason, and the two are meant to stay legible against each other.
+# RETRIES counts attempts, not retries: 2 means one retry.
+RETRIES = 2
+RETRY_WAIT = 3.0
 
 # Dimension order of a MIR series key. The ECB defines it; we assert the
 # responses still match this order so a reordering upstream fails loud
@@ -215,16 +228,62 @@ def cbd2_url(series_key: str, start_period: str = "2020-Q1") -> str:
     return f"{BASE}/{DATAFLOW_CBD2}/{series_key}?format=jsondata&startPeriod={start_period}"
 
 
+def _fetch_with_retry(
+    url: str,
+    timeout: float,
+    parse: Callable[[dict[str, Any]], dict[str, float]],
+) -> dict[str, float]:
+    """GET `url` with one retry on transient transport failures and 5xx responses.
+
+    Never retries 4xx (especially not 404) — a wrong series key is a loud failure,
+    not a flake, and the module docstring's structural rules exist because a
+    silently-ignored filter once shipped Austrian corporate loan rates as
+    Bulgaria's mortgage rate. ValueError from the identity guard is also never
+    retried: a response describing the wrong series is a changed upstream (caller
+    exits 2), not a transient fault.
+    """
+    for attempt in range(RETRIES):
+        try:
+            with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+                r = client.get(url)
+                r.raise_for_status()
+                return parse(r.json())
+        except httpx.HTTPStatusError as e:
+            # 5xx: retry. 4xx: re-raise immediately — a dead or wrong key must
+            # stay loud and cannot be retried into silence.
+            if e.response.status_code >= 500:
+                if attempt + 1 < RETRIES:
+                    time.sleep(RETRY_WAIT)
+                else:
+                    raise  # last attempt exhausted — re-raise the 5xx as-is
+            else:
+                raise  # 4xx: never retry
+        except httpx.TransportError:
+            # Covers ReadTimeout (the observed failure, a subclass of
+            # TimeoutException), ConnectError, ReadError, and connection resets.
+            if attempt + 1 < RETRIES:
+                time.sleep(RETRY_WAIT)
+            else:
+                raise  # last attempt exhausted — re-raise the TransportError as-is
+    # Unreachable: every branch above either returns the parsed series or
+    # raises. Written as a raise rather than a bare return so a future edit
+    # that breaks the invariant fails loudly instead of handing the caller a
+    # None the type signature forbids.
+    raise AssertionError("retry loop exited without returning or raising")
+
+
 def fetch_cbd2_series(
     series_key: str,
     start_period: str = "2020-Q1",
     timeout: float = 60.0,
 ) -> dict[str, float]:
     """Fetch one fully-specified CBD2 series → {"YYYY-Qn": value}."""
-    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
-        r = client.get(cbd2_url(series_key, start_period))
-        r.raise_for_status()
-        return _parse_sdmx_series(r.json(), CBD2_KEY_DIMS, series_key, DATAFLOW_CBD2)
+    url = cbd2_url(series_key, start_period)
+
+    def parse(payload: dict[str, Any]) -> dict[str, float]:
+        return _parse_sdmx_series(payload, CBD2_KEY_DIMS, series_key, DATAFLOW_CBD2)
+
+    return _fetch_with_retry(url, timeout, parse)
 
 
 # Everything a household borrows on that is not a mortgage, plus what a deposit
@@ -425,10 +484,11 @@ def fetch_bsi_series(
 ) -> dict[str, float]:
     """Fetch one fully-specified BSI series → {"YYYY-MM": millions of euro}."""
     url = bsi_url(series_key, start_period)
-    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
-        r = client.get(url)
-        r.raise_for_status()
-        return parse_bsi_series(r.json(), expect_key=series_key)
+
+    def parse(payload: dict[str, Any]) -> dict[str, float]:
+        return parse_bsi_series(payload, expect_key=series_key)
+
+    return _fetch_with_retry(url, timeout, parse)
 
 
 def parse_bsi_series(
@@ -463,10 +523,11 @@ def fetch_mir_series(
                          asked for, or its shape changed (caller exits 2).
     """
     url = series_url(series_key, start_period)
-    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
-        r = client.get(url)
-        r.raise_for_status()
-        return parse_mir_series(r.json(), expect_key=series_key)
+
+    def parse(payload: dict[str, Any]) -> dict[str, float]:
+        return parse_mir_series(payload, expect_key=series_key)
+
+    return _fetch_with_retry(url, timeout, parse)
 
 
 # ---------------------------------------------------------------------------
