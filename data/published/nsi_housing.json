@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-12",
+  "as_of": "2026-09-23",
   "source": "nsi",
   "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/HPI_1.3.xlsx",
   "notes": "НСИ's housing price and sales statistics, as published. The national house price index change on the same quarter a year earlier, and the same figure for the six cities over 120,000 people, beside the change in the NUMBER of sales for those cities. Nothing in this file is computed by us — no gap, no ratio, no rank, and no level: every НСИ city series is an index or a percentage, and their лв./кв.м survey ran to 2014-Q2 and was discontinued, so no transaction price per square metre exists for any Bulgarian city from any publisher.",
   "payload_name": "nsi_housing",
-  "ref_period": "2026-Q1",
+  "ref_period": "2026-Q2",
   "national_price_index_yoy": {
     "dataset": "HPI_1.3.xlsx",
     "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/HPI_1.3.xlsx",
     "sheet": "съответно тримесечие=100 ",
     "unit": "percent_change_on_same_quarter_a_year_earlier",
     "note": "НСИ's own published change on the same quarter of the previous year, selected from the workbook named above and not computed here. The workbook stores the float their subtraction produced, so a cell printed as -19.2 is held as -19.200000000000003; the published value is theirs at the precision they print it.",
-    "ref_period": "2026-Q1",
+    "ref_period": "2026-Q2",
     "series_by_period": {
       "2015-Q1": {
         "total": 2.3,
@@ -238,12 +238,17 @@
         "total": 14.8,
         "new": 12.5,
         "existing": 16.3
+      },
+      "2026-Q2": {
+        "total": 15.5,
+        "new": 12.3,
+        "existing": 17.6
       }
     },
     "value_pct": {
-      "total": 14.8,
-      "new": 12.5,
-      "existing": 16.3
+      "total": 15.5,
+      "new": 12.3,
+      "existing": 17.6
     }
   },
   "city_price_index_yoy": {
@@ -257,8 +262,8 @@
         "code": "sofiya",
         "name_bg": "София",
         "name_en": "Sofia",
-        "ref_period": "2026-Q1",
-        "value_pct": 16.0,
+        "ref_period": "2026-Q2",
+        "value_pct": 13.2,
         "series_by_period": {
           "2015-Q1": 6.7,
           "2015-Q2": 6.6,
@@ -304,15 +309,16 @@
           "2025-Q2": 16.3,
           "2025-Q3": 16.2,
           "2025-Q4": 12.7,
-          "2026-Q1": 16.0
+          "2026-Q1": 16.0,
+          "2026-Q2": 13.2
         }
       },
       {
         "code": "plovdiv",
         "name_bg": "Пловдив",
         "name_en": "Plovdiv",
-        "ref_period": "2026-Q1",
-        "value_pct": 8.8,
+        "ref_period": "2026-Q2",
+        "value_pct": 11.3,
         "series_by_period": {
           "2015-Q1": 6.5,
           "2015-Q2": 7.3,
@@ -358,15 +364,16 @@
           "2025-Q2": 15.7,
           "2025-Q3": 13.5,
           "2025-Q4": 8.6,
-          "2026-Q1": 8.8
+          "2026-Q1": 8.8,
+          "2026-Q2": 11.3
         }
       },
       {
         "code": "varna",
         "name_bg": "Варна",
         "name_en": "Varna",
-        "ref_period": "2026-Q1",
-        "value_pct": 13.2,
+        "ref_period": "2026-Q2",
+        "value_pct": 14.3,
         "series_by_period": {
           "2015-Q1": 1.9,
           "2015-Q2": 2.8,
@@ -412,15 +419,16 @@
           "2025-Q2": 19.0,
           "2025-Q3": 18.9,
           "2025-Q4": 15.1,
-          "2026-Q1": 13.2
+          "2026-Q1": 13.2,
+          "2026-Q2": 14.3
         }
       },
       {
         "code": "burgas",
         "name_bg": "Бургас",
         "name_en": "Burgas",
-        "ref_period": "2026-Q1",
-        "value_pct": 17.7,
+        "ref_period": "2026-Q2",
+        "value_pct": 9.1,
         "series_by_period": {
           "2015-Q1": 7.8,
           "2015-Q2": 14.0,
@@ -466,15 +474,16 @@
           "2025-Q2": 14.2,
           "2025-Q3": 9.9,
           "2025-Q4": 13.1,
-          "2026-Q1": 17.7
+          "2026-Q1": 17.7,
+          "2026-Q2": 9.1
         }
       },
       {
         "code": "ruse",
         "name_bg": "Русе",
         "name_en": "Ruse",
-        "ref_period": "2026-Q1",
-        "value_pct": -5.8,
+        "ref_period": "2026-Q2",
+        "value_pct": -0.8,
         "series_by_period": {
           "2015-Q1": 2.8,
           "2015-Q2": 3.7,
@@ -520,15 +529,16 @@
           "2025-Q2": 7.4,
           "2025-Q3": 14.7,
           "2025-Q4": 4.4,
-          "2026-Q1": -5.8
+          "2026-Q1": -5.8,
+          "2026-Q2": -0.8
         }
       },
       {
         "code": "stara-zagora",
         "name_bg": "Стара Загора",
         "name_en": "Stara Zagora",
-        "ref_period": "2026-Q1",
-        "value_pct": 12.7,
+        "ref_period": "2026-Q2",
+        "value_pct": 15.7,
         "series_by_period": {
           "2015-Q1": 4.7,
           "2015-Q2": 4.4,
@@ -574,11 +584,12 @@
           "2025-Q2": 13.7,
           "2025-Q3": 16.8,
           "2025-Q4": 19.8,
-          "2026-Q1": 12.7
+          "2026-Q1": 12.7,
+          "2026-Q2": 15.7
         }
       }
     ],
-    "ref_period": "2026-Q1"
+    "ref_period": "2026-Q2"
   },
   "city_deals_yoy": {
     "dataset": "HSI_2.4.5.xlsx",
@@ -591,8 +602,8 @@
         "code": "sofiya",
         "name_bg": "София",
         "name_en": "Sofia",
-        "ref_period": "2026-Q1",
-        "value_pct": -19.2,
+        "ref_period": "2026-Q2",
+        "value_pct": -21.3,
         "series_by_period": {
           "2022-Q1": 6.4,
           "2022-Q2": 8.1,
@@ -610,15 +621,16 @@
           "2025-Q2": 7.2,
           "2025-Q3": 6.3,
           "2025-Q4": -24.6,
-          "2026-Q1": -19.2
+          "2026-Q1": -19.2,
+          "2026-Q2": -21.3
         }
       },
       {
         "code": "plovdiv",
         "name_bg": "Пловдив",
         "name_en": "Plovdiv",
-        "ref_period": "2026-Q1",
-        "value_pct": -0.6,
+        "ref_period": "2026-Q2",
+        "value_pct": -3.3,
         "series_by_period": {
           "2022-Q1": -6.0,
           "2022-Q2": 2.9,
@@ -636,15 +648,16 @@
           "2025-Q2": 3.7,
           "2025-Q3": 9.1,
           "2025-Q4": 12.0,
-          "2026-Q1": -0.6
+          "2026-Q1": -0.6,
+          "2026-Q2": -3.3
         }
       },
       {
         "code": "varna",
         "name_bg": "Варна",
         "name_en": "Varna",
-        "ref_period": "2026-Q1",
-        "value_pct": -27.6,
+        "ref_period": "2026-Q2",
+        "value_pct": -21.9,
         "series_by_period": {
           "2022-Q1": 54.4,
           "2022-Q2": 19.0,
@@ -662,15 +675,16 @@
           "2025-Q2": -3.0,
           "2025-Q3": 14.9,
           "2025-Q4": -15.1,
-          "2026-Q1": -27.6
+          "2026-Q1": -27.6,
+          "2026-Q2": -21.9
         }
       },
       {
         "code": "burgas",
         "name_bg": "Бургас",
         "name_en": "Burgas",
-        "ref_period": "2026-Q1",
-        "value_pct": -30.5,
+        "ref_period": "2026-Q2",
+        "value_pct": -24.7,
         "series_by_period": {
           "2022-Q1": 19.9,
           "2022-Q2": 15.3,
@@ -688,15 +702,16 @@
           "2025-Q2": -24.4,
           "2025-Q3": 14.4,
           "2025-Q4": -24.7,
-          "2026-Q1": -30.5
+          "2026-Q1": -30.5,
+          "2026-Q2": -24.7
         }
       },
       {
         "code": "ruse",
         "name_bg": "Русе",
         "name_en": "Ruse",
-        "ref_period": "2026-Q1",
-        "value_pct": -13.0,
+        "ref_period": "2026-Q2",
+        "value_pct": -7.7,
         "series_by_period": {
           "2022-Q1": 30.2,
           "2022-Q2": 6.6,
@@ -714,15 +729,16 @@
           "2025-Q2": 15.2,
           "2025-Q3": 37.2,
           "2025-Q4": -15.6,
-          "2026-Q1": -13.0
+          "2026-Q1": -13.0,
+          "2026-Q2": -7.7
         }
       },
       {
         "code": "stara-zagora",
         "name_bg": "Стара Загора",
         "name_en": "Stara Zagora",
-        "ref_period": "2026-Q1",
-        "value_pct": -24.9,
+        "ref_period": "2026-Q2",
+        "value_pct": -15.0,
         "series_by_period": {
           "2022-Q1": 38.7,
           "2022-Q2": -5.8,
@@ -740,11 +756,12 @@
           "2025-Q2": 2.1,
           "2025-Q3": 19.2,
           "2025-Q4": -32.8,
-          "2026-Q1": -24.9
+          "2026-Q1": -24.9,
+          "2026-Q2": -15.0
         }
       }
     ],
-    "ref_period": "2026-Q1"
+    "ref_period": "2026-Q2"
   },
   "disclaimer": "Transaction prices for dwellings bought by households, and the number of those transactions. A percentage change, never a level: these say how much prices and volumes moved, not what anything costs. The asking prices per square metre elsewhere on this site are имот.bg's listings and a different measurement."
 }
