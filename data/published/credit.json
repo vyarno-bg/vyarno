@@ -1,6 +1,6 @@
 {
   "schema_version": "1.2",
-  "as_of": "2026-09-02",
+  "as_of": "2026-09-25",
   "source": "ecb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2B.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
   "notes": "BG household credit other than housing, from ECB MIR: loans for consumption (rate and APRC), overdrafts and revolving credit, and extended credit card credit — the balance carried past the interest-free period. The two deposit series are the comparator. The euro amounts under those rates are БНБ's own workbooks, because every ECB MIR outstanding-amount volume key for BG is a 404: MIR publishes what the stock costs and never how big it is. The arrears ratios are ECB CBD2, split by counterparty, because the portfolio-wide figure that reaches the news is not a household one. One block has a different borrower: new lending to non-financial corporations, spliced from the same lev and euro legs, so what a company is charged can be read against what a homebuyer is.",
@@ -1780,12 +1780,12 @@
     "_role": "what Bulgarian households have put in the bank, against what they owe it, over the one window both are published on. The two levels are the ЕЦБ's and the euro-per-euro ratio between them is ours",
     "source": "ecb",
     "dataset": "BSI M.BG.N.A.L20.A.1.U6.2250.Z01.E (deposit liabilities) and M.BG.N.A.A20.A.1.U6.2250.Z01.E (loans), both domestic counterparty (U6), households and NPISH (S.14+S.15), all currencies, stocks",
-    "ref_period": "2026-07",
-    "deposits_eur_m": 56858.729999999996,
+    "ref_period": "2026-08",
+    "deposits_eur_m": 57190.83,
     "deposits_source_url": "https://data-api.ecb.europa.eu/service/data/BSI/M.BG.N.A.L20.A.1.U6.2250.Z01.E?format=jsondata&startPeriod=2022-01",
-    "loans_eur_m": 32129.260000000002,
+    "loans_eur_m": 32637.39,
     "loans_source_url": "https://data-api.ecb.europa.eu/service/data/BSI/M.BG.N.A.A20.A.1.U6.2250.Z01.E?format=jsondata&startPeriod=2022-01",
-    "ratio": 1.7697,
+    "ratio": 1.7523,
     "ratio_basis": "ours: the deposit level divided by the loan level, both ЕЦБ BSI, same month, same counterparty sector and same counterpart area",
     "deposits_by_period": {
       "2022-01": 34127.009999999995,
@@ -1842,7 +1842,8 @@
       "2026-04": 56092.69,
       "2026-05": 56335.270000000004,
       "2026-06": 56472.59999999999,
-      "2026-07": 56858.729999999996
+      "2026-07": 56858.729999999996,
+      "2026-08": 57190.83
     },
     "loans_by_period": {
       "2022-01": 14852.66,
@@ -1899,15 +1900,16 @@
       "2026-04": 30404.84,
       "2026-05": 30905.86,
       "2026-06": 31544.880000000005,
-      "2026-07": 32129.260000000002
+      "2026-07": 32129.260000000002,
+      "2026-08": 32637.39
     },
     "series_starts": "2022-01",
     "why_it_starts_there": "every BG household series in ЕЦБ BSI begins at 2022-01 and none reaches further back, so the deposit line cannot be drawn before it. The loan line is cut to match rather than run on alone: two lines over two windows are two questions on one picture, and the ratio between them would have no date",
     "scope": "households resident in Bulgaria (COUNT_AREA U6), together with the non-profit institutions serving them (S.14+S.15). The ЕЦБ publish the deposit breakdown by type on the whole-euro-area counterparty alone, so this block carries the two totals and no split",
     "cross_check": {
-      "ecb_bsi_eur_m": 32129.260000000002,
-      "bnb_eur_m": 31427.249,
-      "delta_pct": 2.234
+      "ecb_bsi_eur_m": 32637.39,
+      "bnb_eur_m": 31916.547,
+      "delta_pct": 2.259
     },
     "cross_check_basis": "БНБ's household total for the same month, from the workbooks in `outstanding`. ЕЦБ BSI runs above it because БНБ's consumer and housing blocks are sector Домакинства alone while BSI adds the non-profit institutions serving households"
   }
