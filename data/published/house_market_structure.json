@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-12",
+  "as_of": "2026-10-01",
   "source": "eurostat",
   "source_url": "https://ec.europa.eu/eurostat/databrowser/view/ilc_lvho02/default/table?lang=en",
   "notes": "The structure of Bulgarian housing, from three Eurostat cubes on two different clocks: tenure and housing-cost overburden are annual EU-SILC, and the dwelling counts are a census snapshot. Every figure is Eurostat's own, unmodified. Nothing here is derived — the unoccupied share and any comparison between these figures is computed in the reader's browser from the counts below.",
