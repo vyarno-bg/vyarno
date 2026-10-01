@@ -15,6 +15,7 @@ it being right.
 """
 
 import json
+from datetime import date
 from pathlib import Path
 
 import httpx
@@ -22,6 +23,7 @@ import pytest
 import respx
 from click.testing import CliRunner
 
+from vyarno_pipeline import clock
 from vyarno_pipeline.cli import main
 from vyarno_pipeline.sources.bnb import FIXATION_BUCKETS
 from vyarno_pipeline.sources.bnb import FIXATION_URL as BNB_FIXATION_URL
@@ -30,6 +32,30 @@ from vyarno_pipeline.sources.ecb import BASE as ECB_BASE
 from vyarno_pipeline.sources.ecb import SERIES_KEYS, fixation_rate_key
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+# A run of `refresh --source mortgage` ends with a freshness gate that refuses
+# any `ref_period` older than 150 days, where the comparison is against
+# `clock.today()` rather than against the fixture's own `as_of`. The recorded
+# fixtures pin specific months — newest is БНБ 2026-04 — and a real clock that
+# has walked past 2026-09-28 trips the gate on every test in this file, even
+# though none of them is asserting freshness. Pinning the clock to a date
+# inside the fixture's window keeps the suite green on every contributor's
+# machine, no matter when they run it, and isolates the freshness gate to the
+# tests that actually exercise it (`test_live_upstreams.py`).
+#
+# **When to update this date.** Advance it whenever the fixtures advance. The
+# constraint is: the pinned date must fall within 150 days of the newest
+# fixture `ref_period`. Проверявай с: `pytest -x --collect-only` against the
+# new fixtures and read the assertion messages on the freshness gate.
+PINNED_TODAY = date(2026, 8, 27)
+
+
+@pytest.fixture(autouse=True)
+def _pin_clock_within_fixture_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Hold `clock.today()` at a date the recorded fixtures can stand on."""
+    monkeypatch.setattr(clock, "today", lambda: PINNED_TODAY)
+
 
 # Which recorded fixture answers which series key.
 FIXTURE_FOR_KEY = {
