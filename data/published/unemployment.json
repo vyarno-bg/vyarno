@@ -1,15 +1,15 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-09-01",
+  "as_of": "2026-10-01",
   "source": "eurostat",
   "source_url": "https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/default/table?lang=en",
   "notes": "Monthly unemployment rate, seasonally adjusted, total × both sexes × 15-74, PC_ACT (percentage of the labour force). ILO definition: not employed in the reference week, actively looking for the past four weeks, and available to start within two — so somebody who has given up looking counts as neither unemployed nor in the labour force, and one paid hour in the week counts as employed. The LFS behind it covers the usually-resident population outside collective and institutional households.",
   "payload_name": "unemployment",
   "dataset": "une_rt_m:s_adj=SA:sex=T:age=TOTAL:unit=PC_ACT",
-  "ref_period": "2026-07",
-  "published_at": "2026-09-01",
+  "ref_period": "2026-08",
+  "published_at": "2026-10-01",
   "unit": "percent",
-  "value": 3.6,
+  "value": 3.5,
   "series_by_period": {
     "2000-01": 14.3,
     "2000-02": 14.7,
@@ -169,7 +169,7 @@
     "2012-12": 13.6,
     "2013-01": 14.0,
     "2013-02": 14.1,
-    "2013-03": 14.2,
+    "2013-03": 14.1,
     "2013-04": 14.1,
     "2013-05": 13.8,
     "2013-06": 13.7,
@@ -179,7 +179,7 @@
     "2013-10": 14.1,
     "2013-11": 14.1,
     "2013-12": 14.1,
-    "2014-01": 13.8,
+    "2014-01": 13.7,
     "2014-02": 13.3,
     "2014-03": 13.0,
     "2014-04": 12.5,
@@ -329,7 +329,8 @@
     "2026-04": 3.2,
     "2026-05": 3.4,
     "2026-06": 3.5,
-    "2026-07": 3.6
+    "2026-07": 3.5,
+    "2026-08": 3.5
   },
   "status_by_period": {
     "2009-01": "b"
