@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-12",
+  "as_of": "2026-10-01",
   "source": "eurostat",
   "source_url": "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsnq/default/table?lang=en",
   "notes": "Bulgaria's residential property market as Eurostat publish it, quarterly: how many dwellings households bought, what they paid, and the official house price index with Eurostat's own annual rate of change, in the money of the day AND deflated. Scope is dwellings bought by households AT MARKET PRICES — flats and houses, VAT included on new builds, notary and agency fees excluded, the land component of the dwelling included. Standalone land, garages, shops and offices are outside it, as are gifts, inheritances, court-executor sales, sales to a sitting tenant at a discount, sales between family members and self-build. НСИ also remove «сделки на държавата и общините» without saying which side of the deal that is, and Eurostat scope the universe regardless of the sector a dwelling was bought FROM, so what that line excludes is not settled here. MODIFICATION NOTICE, per Eurostat's reuse conditions: every figure under deals, value, price_index, annual_rate_pct and price_index_real is Eurostat's own, unmodified, at the unit each block names. `avg_deal_eur` is OURS — the value cube divided by the count cube, quarter by quarter and purchase type by purchase type, published only for the quarters both cubes carry. Eurostat is not responsible for that division or for any conclusion drawn from it.",
   "payload_name": "house_market",
-  "ref_period": "2026-Q1",
+  "ref_period": "2026-Q2",
   "deals": {
     "_role": "COUNT: dwellings sold, as published",
     "dataset": "prc_hpi_hsnq",
@@ -197,6 +197,11 @@
         "existing": 11046.0,
         "new": 5181.0,
         "total": 16227.0
+      },
+      "2026-Q2": {
+        "existing": 14203.0,
+        "new": 6390.0,
+        "total": 20593.0
       }
     }
   },
@@ -415,6 +420,11 @@
         "existing": 777922448.0,
         "new": 565446130.0,
         "total": 1343368578.0
+      },
+      "2026-Q2": {
+        "existing": 1027814699.0,
+        "new": 704853953.0,
+        "total": 1732668652.0
       }
     }
   },
@@ -850,6 +860,11 @@
         "existing": 291.71,
         "new": 244.14,
         "total": 272.63
+      },
+      "2026-Q2": {
+        "existing": 304.39,
+        "new": 255.47,
+        "total": 284.8
       }
     },
     "annual_rate_pct": {
@@ -1257,9 +1272,14 @@
         "existing": 16.3,
         "new": 12.5,
         "total": 14.8
+      },
+      "2026-Q2": {
+        "existing": 17.6,
+        "new": 12.3,
+        "total": 15.5
       }
     },
-    "rate_ref_period": "2026-Q1",
+    "rate_ref_period": "2026-Q2",
     "status_by_period": {
       "2005-Q1": {
         "new": "e",
@@ -1338,7 +1358,7 @@
         "new": "b",
         "total": "b"
       },
-      "2026-Q1": {
+      "2026-Q2": {
         "existing": "p",
         "new": "p",
         "total": "p"
@@ -1437,7 +1457,8 @@
       "2025-Q2": 154.93,
       "2025-Q3": 155.33,
       "2025-Q4": 159.41,
-      "2026-Q1": 162.9
+      "2026-Q1": 162.9,
+      "2026-Q2": 164.37
     },
     "status_by_period": {
       "2005-Q1": "e",
@@ -1459,7 +1480,7 @@
       "2009-Q1": "e",
       "2015-Q1": "b",
       "2022-Q1": "b",
-      "2026-Q1": "p"
+      "2026-Q2": "p"
     },
     "note": "The house price index divided by the national accounts deflator for private final consumption, as Eurostat publish it. Same 2015 base and same quarters as the nominal index above, so the two are read on one axis. Nothing here is computed by us: this is their deflated series, not their nominal one with our arithmetic on it."
   },
@@ -1659,12 +1680,17 @@
         "total": 82786.01,
         "new": 109138.42,
         "existing": 70425.72
+      },
+      "2026-Q2": {
+        "total": 84138.72,
+        "new": 110305.78,
+        "existing": 72366.03
       }
     },
     "latest": {
-      "total": 82786.01,
-      "new": 109138.42,
-      "existing": 70425.72
+      "total": 84138.72,
+      "new": 110305.78,
+      "existing": 72366.03
     },
     "method": "Eurostat's published quarterly transaction value divided by Eurostat's published quarterly transaction count, for the quarters both cubes carry. Not a price per square metre and not a median: it is the mean amount paid for a dwelling, and a quarter's mix of flats and houses moves it. Eurostat publish neither this figure nor any per-city equivalent."
   },
