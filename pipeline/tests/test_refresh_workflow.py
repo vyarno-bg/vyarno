@@ -100,6 +100,32 @@ def test_reshoot_step_present() -> None:
         "the reshoot step must include both the PNG and the sidecar in the "
         "amend; the sidecar alone leaves the PNG inconsistent with the page."
     )
+    # **The amend is unconditional.** A `git diff --quiet` GATE looks
+    # load-bearing but fails open: the runner's build can render a sidecar
+    # that matches the committed one for reasons the gate cannot see
+    # (Vite's pre-bundle cache, a font fallback that the gate never
+    # measures). PR #186 (hicp, 2026-10-16) hit that class on the
+    # GHA runner: the reshoot produced no diff, the amend was skipped,
+    # and CI went red on a payload the bot had no way to ship. Asserting
+    # the absence of the gate is the mechanical guard.
+    #
+    # Check the `run:` block, not the comment: the workflow's prose
+    # above the block explains *why* there is no gate, and the literal
+    # `git diff --quiet` is part of that explanation. The test only
+    # cares about the gate being missing from the actual command.
+    run_match = re.search(r"run:\s*\|\s*\n((?:          .*\n)+)", body)
+    assert run_match is not None, (
+        f"the {name!r} step has no readable `run:` block; cannot verify "
+        "the unconditional-amend contract"
+    )
+    run_block = run_match.group(1)
+    assert "git diff --quiet" not in run_block, (
+        f"the {name!r} step's `run:` block contains a `git diff --quiet` "
+        "gate; PR #186 (hicp, 2026-10-16) hit the failure class this gate "
+        "opens. Drop the gate and amend on every refresh — the cost of a "
+        "few hundred KB of PNG on every data refresh is dwarfed by the "
+        "cost of opening a red PR."
+    )
 
 
 def test_push_step_uses_force_with_lease_when_amended() -> None:

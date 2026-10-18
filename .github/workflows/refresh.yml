@@ -197,9 +197,20 @@ jobs:
         #
         # The shot is regenerated from the local tree that just got the data
         # commit, so the sidecar is in sync by the time the push below
-        # happens. If `docs/img/screenshot.{png,txt}` do not move, the step is
-        # a no-op and the amend below is skipped — every arm pays for the
-        # build and the Chromium install on warm cache, nothing else.
+        # happens. **The amend is unconditional** — no `git diff --quiet`
+        # gate, no "if the page moved" check. A diff-quiet gate fails open
+        # exactly when the page DID move: the runner's build can read from
+        # a stale copy of the data for reasons the gate cannot see (a
+        # cached `node_modules/.vite`, a render that hits a font fallback
+        # narrower than the one the page was tuned for, anything that
+        # produces a sidecar that matches the committed one even when the
+        # data moved). PR #186 (data refresh: hicp) hit exactly that class
+        # on 2026-10-16: the runner's reshoot produced no diff, the amend
+        # was skipped, and CI went red on a payload the bot had no way to
+        # ship. The amend is a few hundred kilobytes of PNG and seven
+        # kilobytes of text — the runner budget is the right place to pay
+        # that, and the marginal cost of amending on every refresh is
+        # dwarfed by the cost of opening a red PR.
         #
         # `git config user.name`/`user.email` lives in this block for the
         # reason `Commit`'s does — `test_cli_dispatch.py` reads the workflow
@@ -218,13 +229,9 @@ jobs:
           npx playwright install chromium
           npm run build
           node scripts/make_screenshot.mjs
-          if git diff --quiet -- docs/img/screenshot.png docs/img/screenshot.txt; then
-            echo "screenshot unchanged — the data did not move what the page prints"
-          else
-            git add docs/img/screenshot.png docs/img/screenshot.txt
-            git commit --amend --no-edit --signoff
-            echo "amended=true" >> "$GITHUB_OUTPUT"
-          fi
+          git add docs/img/screenshot.png docs/img/screenshot.txt
+          git commit --amend --no-edit --signoff
+          echo "amended=true" >> "$GITHUB_OUTPUT"
 
       - name: Push
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
