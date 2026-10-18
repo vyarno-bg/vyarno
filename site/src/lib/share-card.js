@@ -265,6 +265,46 @@ function wrap(ctx, text, maxWidth, maxLines) {
 }
 
 /**
+ * `text` truncated with a horizontal ellipsis to fit `maxWidth` at the font
+ * the canvas is set to.
+ *
+ * The share card's footer has a source on the left and a route back on the
+ * right, sharing one baseline. They were drawn from each edge inward and
+ * trusted to stop short of each other; the first time a longer month name
+ * («септември 2026», 14 characters) reached the source line, the two
+ * strings met on a font whose fallback is narrower than the one the picture
+ * was tuned for, and `verify_render_share.mjs#the card's source line and
+ * its way back do not run into each other` went red on a payload that
+ * passed the day before. A truncated source is a less informative source,
+ * but a source whose last word is the first half of the route back is a
+ * worse one — a reader sees a fragment and a URL, neither of them whole.
+ *
+ * Exported so the unit suite can prove the contract: any input the canvas
+ * reports as wider than `maxWidth` comes back with an ellipsis at the end
+ * and a width the canvas reports as no wider than `maxWidth`. **The unit
+ * test feeds the helper a mock `ctx` whose `measureText` returns a width
+ * proportional to the string's length, runs the same ellipsize loop, and
+ * asserts the result fits and ends with `…`. The render test then asserts
+ * the pixel-level gap on a real canvas.** Either failing is a different
+ * bug, and pinning both is what makes the regression class go away.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} text
+ * @param {number} maxWidth
+ * @returns {string}
+ */
+export function ellipsize(ctx, text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  const ellipsis = "…";
+  const ellipsisWidth = ctx.measureText(ellipsis).width;
+  let out = String(text);
+  while (out.length > 1 && ctx.measureText(out).width + ellipsisWidth > maxWidth) {
+    out = out.slice(0, -1);
+  }
+  return `${out}${ellipsis}`;
+}
+
+/**
  * The headline figure, set the way the results card sets it.
  *
  * Two details are carried over deliberately rather than left to the default.
@@ -429,7 +469,25 @@ export function drawShareCard(canvas, { share, copy, lang = "bg", palette }) {
 
   ctx.fillStyle = palette.muted;
   ctx.font = `400 22px ${palette.mono}`;
-  ctx.fillText(text.source, PAD, Y.footerBaseline);
+  // The source on the left and the route back on the right share one
+  // baseline and one font. They were drawn from each edge inward and
+  // trusted to stop short of each other; the first time a longer month
+  // name («септември 2026», 14 characters) reached the source line, the
+  // two strings met on a font whose fallback is narrower than the one
+  // the picture was tuned for — Windows headless Chromium lands on
+  // Consolas for `--mono`, not IBM Plex Mono — and the test
+  // (`the card's source line and its way back do not run into each
+  // other`) failed on a payload that passed the day before. **Measure
+  // the CTA first, then ellipsize the source to leave the test's 24 px
+  // gap regardless of which font the runner is on.** A truncated source
+  // is a less informative source, but a source whose last word is the
+  // first half of the route back is a worse one: a reader sees a
+  // fragment and a URL, neither of them whole.
+  ctx.textAlign = "right";
+  const ctaWidth = ctx.measureText(text.cta).width;
+  ctx.textAlign = "left";
+  const source = ellipsize(ctx, text.source, CONTENT_WIDTH - ctaWidth - 24);
+  ctx.fillText(source, PAD, Y.footerBaseline);
   ctx.textAlign = "right";
   ctx.fillText(text.cta, SHARE_CARD.width - PAD, Y.footerBaseline);
 }
