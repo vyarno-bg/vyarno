@@ -29,6 +29,7 @@ import {
   SHARE_ORIGIN,
   SHARE_DOMAIN,
 } from "../src/lib/view/share.js";
+import { ellipsize } from "../src/lib/share-card.js";
 import { COPY } from "../src/lib/content.js";
 import { ORIGIN as SITEMAP_ORIGIN } from "./gen-sitemap.mjs";
 
@@ -260,4 +261,70 @@ test("the comparison bars are scaled against one ceiling, with a floor", () => {
   // Never zero: a ceiling of zero divides every bar width into infinity.
   assert.equal(barCeiling({ piPct: NaN, officialPct: NaN, anchor: "y1" }), 8);
   assert.equal(barCeiling({ piPct: 0, officialPct: 0, anchor: 2020 }), 1);
+});
+
+// ---------------------------------------------------------------------------
+// ellipsize — the share card's overflow guard
+// ---------------------------------------------------------------------------
+
+/**
+ * A canvas context whose `measureText` reports each char as a fixed-width
+ * cell, the way IBM Plex Mono and Consolas both do. The pixel-per-char value
+ * is the runner's monospace advance at 22 px, which is roughly 13.2 on Linux
+ * Chromium and around 12 on Windows headless Chromium. The test is robust to
+ * either: it asserts shape (truncated, ends with `…`, fits the budget), not
+ * pixel parity.
+ */
+function monoCtx(charWidth = 13.2) {
+  return {
+    measureText: (s) => ({ width: [...String(s)].length * charWidth }),
+  };
+}
+
+test("ellipsize returns the input unchanged when it already fits", () => {
+  const ctx = monoCtx(13.2);
+  // 8 chars × 13.2 = 105.6; budget 200. No truncation needed.
+  assert.equal(ellipsize(ctx, "Септ 2026", 200), "Септ 2026");
+});
+
+test("ellipsize drops characters and adds the horizontal ellipsis when the input is too wide", () => {
+  const ctx = monoCtx(13.2);
+  // 50 chars × 13.2 = 660; budget 200. The helper must return a string whose
+  // own reported width is at or below 200, ending with `…`.
+  const source = "Инфлация по данни на Евростат (HICP), септември 2026";
+  const out = ellipsize(ctx, source, 200);
+  assert.ok(out.endsWith("…"), `ellipsize did not add an ellipsis: ${JSON.stringify(out)}`);
+  // The returned string's width, plus the ellipsis that the helper already
+  // counted when it picked the cut, is at or below the budget.
+  const ellipsisWidth = ctx.measureText("…").width;
+  const body = out.slice(0, -1);
+  assert.ok(
+    ctx.measureText(body).width + ellipsisWidth <= 200,
+    `ellipsize returned a string wider than the budget: body=${body} (${ctx.measureText(body).width}px) + ellipsis (${ellipsisWidth}px) > 200px`
+  );
+});
+
+test("ellipsize on a Windows-narrow font still fits the same pixel budget", () => {
+  // Consolas at 22 px is ~12 px/char — the runner that broke on the
+  // September HICP share card. The helper must make the same source fit the
+  // same budget regardless of the font's advance, which is the only
+  // robustness claim it makes.
+  const ctx = monoCtx(12);
+  const source = "Инфлация по данни на Евростат (HICP), септември 2026";
+  const out = ellipsize(ctx, source, 200);
+  assert.ok(out.endsWith("…"));
+  const ellipsisWidth = ctx.measureText("…").width;
+  const body = out.slice(0, -1);
+  assert.ok(ctx.measureText(body).width + ellipsisWidth <= 200);
+});
+
+test("ellipsize never returns an empty string when the budget is impossibly small", () => {
+  // A budget of 0 means the helper cannot fit even the ellipsis. Returning
+  // the empty string would make the canvas draw nothing and the test
+  // (`widest > 0`) would fail on a different line. The helper must always
+  // return a string the canvas can draw.
+  const ctx = monoCtx(13.2);
+  const out = ellipsize(ctx, "Инфлация, септември 2026", 0);
+  assert.ok(out.length > 0, `ellipsize returned an empty string`);
+  assert.ok(out.endsWith("…"));
 });
