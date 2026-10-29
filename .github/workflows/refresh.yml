@@ -220,6 +220,24 @@ jobs:
         # commit (not just an amend) would have nothing to fall back on
         # otherwise, and a separate configure step is the shape the rule
         # exists to forbid.
+        #
+        # **The pathspec is repo-root-relative, so the stage runs from the
+        # root.** This step runs with `working-directory: site`, and git
+        # resolves a relative pathspec against the *current directory* — so
+        # `docs/img/screenshot.png` meant `site/docs/img/screenshot.png`,
+        # which does not exist, and the stage died with `fatal: pathspec
+        # 'docs/img/screenshot.png' did not match any files`. The screenshot
+        # itself was written correctly (the script resolves the repo root from
+        # its own path); only the stage addressed it wrongly. `git -C ..` runs
+        # the same command from the root, where the path means what it says.
+        #
+        # This was invisible while the step sat behind a diff gate: an
+        # unmatched pathspec makes the diff succeed with no output, so the
+        # gate always reported "unchanged" and the broken stage was never
+        # reached. PR #187 removed that gate and the mask came off — and the
+        # reshoot step has not run to completion since. The credit arm failed
+        # four consecutive times on 2026-10-27/28 for exactly this reason,
+        # and the step had never passed once before that either.
         working-directory: site
         run: |
           set -euo pipefail
@@ -229,7 +247,7 @@ jobs:
           npx playwright install chromium
           npm run build
           node scripts/make_screenshot.mjs
-          git add docs/img/screenshot.png docs/img/screenshot.txt
+          git -C .. add docs/img/screenshot.png docs/img/screenshot.txt
           git commit --amend --no-edit --signoff
           echo "amended=true" >> "$GITHUB_OUTPUT"
 

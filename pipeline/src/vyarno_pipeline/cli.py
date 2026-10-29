@@ -1228,12 +1228,28 @@ def _refresh_payroll(out: Path, as_of: date) -> None:
     entry = in_force_entry(as_of)
     citation = entry["tzpb"]
     click.echo(f"  fetching {citation['appendix']} from ДВ...")
-    tzpb = fetch_tzpb_appendix(
-        citation["dv_material_id"],
-        citation["appendix"],
-        expect_issue=citation["gazette_issue"],
-        expect_date=citation["gazette_date"].isoformat(),
-    )
+    try:
+        tzpb = fetch_tzpb_appendix(
+            citation["dv_material_id"],
+            citation["appendix"],
+            expect_issue=citation["gazette_issue"],
+            expect_date=citation["gazette_date"].isoformat(),
+        )
+    except httpx.HTTPError as e:
+        # **Exit 4, like every other arm that talks to an upstream.** The
+        # 2026-10-29 run died here with a raw `httpx.ConnectError` traceback
+        # and exit 1, because this arm was the only one of the eleven without
+        # this handler. Exit 1 is "the code is broken"; exit 4 is "the
+        # upstream was unreachable" — and the operator's next move differs: one
+        # waits for the schedule, the other opens the code. The traceback is
+        # still printed, because the failure is worth reading either way.
+        click.echo(f"ERROR: ДВ ТЗПБ fetch failed: {e}", err=True)
+        sys.exit(4)
+    except ValueError as e:
+        # The document is not the act the entry cites, or the table does not
+        # parse whole. That is a changed upstream, not a flake: exit 2.
+        click.echo(f"ERROR: ДВ ТЗПБ parse failed: {e}", err=True)
+        sys.exit(2)
     click.echo(f"  read {len(tzpb['activities'])} economic activities")
     payload = build_payroll_payload(as_of, tzpb=tzpb)
     validate_payroll(payload)
