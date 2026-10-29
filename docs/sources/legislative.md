@@ -115,6 +115,32 @@ whatever a search currently returns, and `fetch_tzpb_appendix` refuses a
 material whose own «брой: N, от дата D.M.YYYY» header disagrees with the
 entry's citation.
 
+**ДВ refuses the runner, and the refusal is not the upstream being down.**
+The payroll arm's one fetch is a single GET of a ДВ material. On 2026-10-29 it
+died on `httpx.ConnectError: [Errno 111] Connection refused` — and the host
+answered 200 in 0,6 s from the development box at the same minute, and from
+every runner between 2026-08-29 and 2026-10-01. What the runner sees is a SYN
+that is dropped and then refused after the full 60 s connect timeout, which is
+a firewall between GitHub's runner addresses and `dv.parliament.bg`, not an
+outage at ДВ. A reader chasing this will find the upstream perfectly healthy
+and conclude the pipeline is broken; the two are different faults with the
+same symptom.
+
+So the fetch retries once (`_get_page` in `sources/dv.py`), and the arm exits
+**4** on a network failure rather than 1. Exit 4 is the code `refresh.yml`
+documents as network/HTTP, and it is what tells the operator to wait for the
+schedule rather than to open the code. The payroll arm was the only one of
+the eleven without that handler, so on 2026-10-29 a refusal surfaced as an
+unhandled traceback and exit 1 — the one code that says "the code is broken".
+`pipeline/tests/test_refresh_reliability.py` holds both: the exit code, and
+that the fetch retries.
+
+Nothing about the published payload changes while this fails. `payroll.json`
+carries a 366-day cadence because the table is legislative, so a refused fetch
+leaves the last good payload in place and the freshness check silent — the arm
+is due on the last four days of a month precisely because the boundary is
+statutory, and it fails loudly rather than publishing a half-verified rate.
+
 **Name the appendix, never "the ТЗПБ table".** ЗБДОО 2026 legislates the whole
 year and чл. 14 splits it: Приложение № 2 runs 1 January – 31 July, № 2А from
 1 August. Seven activities move between them — food manufacturing 0,7→0,9%,

@@ -47,12 +47,21 @@ reader and no licence condition to anyone (docs/legal.md §Държавен ве
 from __future__ import annotations
 
 import re
+import time
 from typing import Any
 
 import httpx
 
 SOURCE_HOST = "dv.parliament.bg"
 MATERIAL_URL_TEMPLATE = "https://dv.parliament.bg/DVWeb/showMaterialDV.jsp?idMat={material_id}"
+
+# One retry on a transport failure, for the reason `_get_page` gives. ДВ
+# refused the connection on 2026-10-29 and the arm died on it. RETRIES counts
+# attempts, not retries: 2 means one retry. `ecb.py` and `watch.py` carry the
+# same pair of constants for the same reason, and the three are meant to stay
+# legible against each other.
+RETRIES = 2
+RETRY_WAIT = 3.0
 
 # The statutory span, КСО чл. 6, ал. 1, т. 7. Not a sanity guess: a rate
 # outside it is not a surprising figure, it is a parse that has left the rate
@@ -172,11 +181,50 @@ def parse_issue(page: str) -> tuple[int, str]:
 
 
 def _get_page(url: str) -> str:
-    """GET a ДВ material as text. The one network call, so tests replace it."""
-    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-        response = client.get(url)
-        response.raise_for_status()
-        return response.text
+    """GET a ДВ material as text, with one retry on a transport failure.
+
+    The one network call, so tests replace it.
+
+    **ДВ refuses connections, and a refusal kills the arm.** The payroll
+    refresh on 2026-10-29 died on `httpx.ConnectError: [Errno 111]
+    Connection refused` — the host was reachable from the development box at
+    the same minute and the three runs before it had passed, so this was the
+    upstream refusing the runner, not the upstream being down. One attempt
+    turns that into a failed run; one retry turns it into the ~30 ms fetch it
+    normally is. `ecb.py` carries the same pair of constants for the same
+    reason — the ЕЦБ SDMX API stalls non-deterministically and three
+    scheduled refreshes died on it in 2026-09 — and the two are meant to stay
+    legible against each other.
+
+    Only transport failures are retried. A 4xx is a dead or wrong `idMat` and
+    must stay loud: it is a changed upstream (caller exits 2), not a flake.
+    A 5xx is the upstream failing and is worth one more try.
+    """
+    for attempt in range(RETRIES):
+        try:
+            with httpx.Client(timeout=60.0, follow_redirects=True) as client:
+                response = client.get(url)
+                response.raise_for_status()
+                return response.text
+        except httpx.HTTPStatusError as e:
+            # 5xx: retry — the upstream is failing, not the request. 4xx:
+            # never retry — a wrong idMat is a loud failure, not a flake.
+            if e.response.status_code < 500:
+                raise
+            if attempt + 1 < RETRIES:
+                time.sleep(RETRY_WAIT)
+            else:
+                raise
+        except httpx.TransportError:
+            # Covers ConnectError (the refusal above), ReadTimeout, ConnectTimeout,
+            # ReadError and connection resets — all "the connection did not
+            # happen", which is exactly what a retry can fix.
+            if attempt + 1 < RETRIES:
+                time.sleep(RETRY_WAIT)
+            else:
+                raise
+    # Unreachable: every branch above either returns the page or raises.
+    raise AssertionError("retry loop exited without returning or raising")
 
 
 def fetch_tzpb_appendix(
