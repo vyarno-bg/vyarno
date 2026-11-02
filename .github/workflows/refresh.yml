@@ -183,74 +183,6 @@ jobs:
           git add -- data/published
           git commit --signoff -m "data refresh: ${{ inputs.source }} as of ${{ steps.meta.outputs.as_of }}"
 
-      - name: Re-shoot the README if the page changed
-        id: reshoot
-        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
-        # **A data refresh can move what the home page prints, and the only
-        # suite that notices is `verify_render_screenshot.mjs`.** A new
-        # `ref_period` collapsing the outstanding row out of `refPeriodsBeside`
-        # switches the strip label from «всички изплащани» to «ecb+bnb», and
-        # CI goes red on a green payload — exactly what happened on PR #164
-        # (data refresh: mortgage as of 2026-09-02). The bot's job is to ship
-        # the new figure; failing CI for copy nobody asked it to change is a
-        # regression the refresh arm exists to avoid.
-        #
-        # The shot is regenerated from the local tree that just got the data
-        # commit, so the sidecar is in sync by the time the push below
-        # happens. **The amend is unconditional** — no `git diff --quiet`
-        # gate, no "if the page moved" check. A diff-quiet gate fails open
-        # exactly when the page DID move: the runner's build can read from
-        # a stale copy of the data for reasons the gate cannot see (a
-        # cached `node_modules/.vite`, a render that hits a font fallback
-        # narrower than the one the page was tuned for, anything that
-        # produces a sidecar that matches the committed one even when the
-        # data moved). PR #186 (data refresh: hicp) hit exactly that class
-        # on 2026-10-16: the runner's reshoot produced no diff, the amend
-        # was skipped, and CI went red on a payload the bot had no way to
-        # ship. The amend is a few hundred kilobytes of PNG and seven
-        # kilobytes of text — the runner budget is the right place to pay
-        # that, and the marginal cost of amending on every refresh is
-        # dwarfed by the cost of opening a red PR.
-        #
-        # `git config user.name`/`user.email` lives in this block for the
-        # reason `Commit`'s does — `test_cli_dispatch.py` reads the workflow
-        # and refuses any `git commit` that does not set identity in the same
-        # `run:` step. `--amend --no-edit` does not strictly require it, but
-        # the block has to be self-sufficient: a future edit that adds a fresh
-        # commit (not just an amend) would have nothing to fall back on
-        # otherwise, and a separate configure step is the shape the rule
-        # exists to forbid.
-        #
-        # **The pathspec is repo-root-relative, so the stage runs from the
-        # root.** This step runs with `working-directory: site`, and git
-        # resolves a relative pathspec against the *current directory* — so
-        # `docs/img/screenshot.png` meant `site/docs/img/screenshot.png`,
-        # which does not exist, and the stage died with `fatal: pathspec
-        # 'docs/img/screenshot.png' did not match any files`. The screenshot
-        # itself was written correctly (the script resolves the repo root from
-        # its own path); only the stage addressed it wrongly. `git -C ..` runs
-        # the same command from the root, where the path means what it says.
-        #
-        # This was invisible while the step sat behind a diff gate: an
-        # unmatched pathspec makes the diff succeed with no output, so the
-        # gate always reported "unchanged" and the broken stage was never
-        # reached. PR #187 removed that gate and the mask came off — and the
-        # reshoot step has not run to completion since. The credit arm failed
-        # four consecutive times on 2026-10-27/28 for exactly this reason,
-        # and the step had never passed once before that either.
-        working-directory: site
-        run: |
-          set -euo pipefail
-          git config user.name "vyarno-refresh"
-          git config user.email "vyarno-refresh@users.noreply.github.com"
-          npm ci --no-audit --no-fund
-          npx playwright install chromium
-          npm run build
-          node scripts/make_screenshot.mjs
-          git -C .. add docs/img/screenshot.png docs/img/screenshot.txt
-          git commit --amend --no-edit --signoff
-          echo "amended=true" >> "$GITHUB_OUTPUT"
-
       - name: Push
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
         # **The branch outlives the run that made it.** It is created fresh
@@ -267,17 +199,14 @@ jobs:
         # older read of the same upstream, and the payload it carried is the
         # one this run just re-fetched.
         #
-        # `--force-with-lease` is the one exception to "never force", and only
-        # because the step before this can rewrite the local tip without
-        # changing its tree in any other way: a screenshot amend that adds two
-        # files (`docs/img/screenshot.png`, `docs/img/screenshot.txt`) to the
-        # same commit the data refresh just made. Without it, a PR that needed
-        # the screenshot reshoot could not push its own fix. The lease is held
-        # against `refs/heads/$BRANCH` at the SHA the previous fetch returned,
-        # so a concurrent push from elsewhere — the box's
+        # `--force-with-lease` is the one exception to "never force", and the
+        # lease is what makes the supersede above safe. It names the exact SHA
+        # the fetch returned, so a branch that moved in between — the box's
         # `vyarno-city-price-weekly` cron, a manual `git push` from Kiril — is
-        # still refused with the same error as a plain push. Only the lease
-        # holder, this very run, can rewrite its own amend.
+        # refused instead of clobbered, with the same error a plain push would
+        # give. `merge -s ours` has already made this push a fast-forward, so
+        # the lease never has to force anything: it is the assertion that the
+        # branch we superseded is still the branch we fetched.
         run: |
           set -euo pipefail
           BRANCH="data/${{ inputs.source }}"

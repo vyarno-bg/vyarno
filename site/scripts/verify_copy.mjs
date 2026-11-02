@@ -2552,12 +2552,13 @@ test("every НСИ credit line marks a preliminary quarter as preliminary", () =
   }
   // The marker's slot used to be a `{flash}` placeholder inside
   // `COPY.headlineRate`, and that is the behaviour that moved: the strip's
-  // sentence is now three copy keys with the payload's three figures marked
-  // between them, so the marker is appended to the rendered period instead of
+  // sentence is now three copy keys with the payload's three figures between
+  // them, so the marker is appended to the rendered period instead of
   // substituted into a string. What has to hold is unchanged — the strip can
   // still say the month is a flash — so the assertion follows it to the
-  // component. `screenshot-frame.mjs` §"Why a payload's own dates are not in
-  // it" is why the sentence was split at all.
+  // component. The split is why the sentence was taken apart at all: the
+  // period is a payload's figure and the words around it are copy, and the
+  // two are checked by different things.
   const banner = readFileSync(join(SRC, "components", "DataBanner.svelte"), "utf8");
   assert.match(
     banner,

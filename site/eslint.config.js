@@ -121,14 +121,7 @@ export default [
   // lint clean until its first `page.evaluate()` and then fail for a reason
   // that has nothing to do with what it asserts.
   {
-    files: [
-      "scripts/verify_render*.mjs",
-      "scripts/render-harness.mjs",
-      "scripts/make_screenshot.mjs",
-      // Holds the `page.evaluate()` callbacks the screenshot and its guard
-      // share, so it is a browser file that never launches one itself.
-      "scripts/screenshot-frame.mjs",
-    ],
+    files: ["scripts/verify_render*.mjs", "scripts/render-harness.mjs"],
     languageOptions: { globals: { ...globals.browser } },
   },
 

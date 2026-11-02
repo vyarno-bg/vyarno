@@ -2000,11 +2000,10 @@ export const COPY = {
   //
   // **The lead is a phrase and not a sentence with a slot**, because the period
   // is a payload's figure and the words around it are copy, and the two are
-  // checked by different things. `DataBanner.svelte` renders the month inside a
-  // `[data-freshness]` mark, which `screenshot-frame.mjs` skips — so a release
-  // moving the month leaves the README's frame alone, and an edit to these
-  // words still moves it. A single interpolated string cannot be marked that
-  // way: the mark would have to cover the whole sentence or none of it.
+  // checked by different things. `DataBanner.svelte` renders the month as its
+  // own element, so a release moving the month moves the figure and not the
+  // sentence around it. A single interpolated string cannot be split that way:
+  // the figure would have to be inside the sentence or outside it.
   dataAsOfLead: { bg: "Числата са към", en: "Figures for" },
   dataPanelToggle: { bg: "всички данни и източници", en: "all data and sources" },
   dataPanelTitle: { bg: "Данните на тази страница", en: "The data on this page" },

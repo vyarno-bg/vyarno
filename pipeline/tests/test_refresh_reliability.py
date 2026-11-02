@@ -1,18 +1,4 @@
-"""Two mechanical guards for the failures of 2026-10-27/29.
-
-Both are workflow/pipeline contracts that failed in production and would
-fail again silently, so both are pinned here rather than left in a comment.
-
-**The reshoot step's pathspec.** `refresh.yml`'s reshoot step runs with
-`working-directory: site`, and git resolves a relative pathspec against the
-current directory. `docs/img/screenshot.png` therefore meant
-`site/docs/img/screenshot.png`, which does not exist, and the step died with
-`fatal: pathspec 'docs/img/screenshot.png' did not match any files`. The
-credit arm failed four consecutive times on 2026-10-27/28 for exactly this
-reason. The bug was invisible for six weeks because the step sat behind a
-`git diff --quiet` gate, and an unmatched pathspec makes `git diff` succeed
-with no output — so the gate always reported "unchanged" and the broken stage
-was never reached. PR #187 removed the gate and the mask came off.
+"""Two mechanical guards for the failures of 2026-10-29.
 
 **The payroll arm's exit code.** The 2026-10-29 payroll run died on
 `httpx.ConnectError` and exited 1, because `_refresh_payroll` was the only
@@ -27,8 +13,8 @@ single attempt turns into a dead run and a second attempt turns into the
 *right* retry: a refused connection is worth another attempt, a wrong
 `idMat` is not — that is a changed upstream, and it has to stay loud.
 
-Parsing the workflow with stdlib rather than `pyyaml` keeps these tests off
-a new dev dependency, in the same way the rest of this file does.
+Parsing the workflow with stdlib rather than `pyyaml` keeps these tests off a
+new dev dependency, in the same way the rest of this file does.
 """
 
 from __future__ import annotations
@@ -43,118 +29,6 @@ import pytest
 from vyarno_pipeline.sources import dv
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKFLOW = ROOT / ".github" / "workflows" / "refresh.yml"
-
-
-def _split_steps(text: str) -> list[tuple[str, str]]:
-    """Return `(name, body)` for each top-level `- name:` step."""
-    chunks = re.split(r"^      - name: ", text, flags=re.M)
-    out: list[tuple[str, str]] = []
-    for chunk in chunks[1:]:
-        first_line, _, rest = chunk.partition("\n")
-        out.append((first_line.strip(), rest))
-    return out
-
-
-def _by_id(steps: list[tuple[str, str]], step_id: str) -> tuple[str, str] | None:
-    """Return the step whose `id:` matches, or None if no step carries it."""
-    for name, body in steps:
-        m = re.search(r"^\s+id:\s*([\w-]+)\s*$", body, re.M)
-        if m and m.group(1) == step_id:
-            return name, body
-    return None
-
-
-def _run_block(body: str) -> str:
-    """The step's `run:` block, with the block's own indentation stripped."""
-    m = re.search(r"run:\s*\|\s*\n((?:          .*\n)+)", body)
-    assert m is not None, "step has no readable `run:` block"
-    return "\n".join(line.strip() for line in m.group(1).splitlines())
-
-
-def test_the_reshoot_step_stages_the_screenshot_from_the_repository_root() -> None:
-    """The reshoot step must address `docs/img/` from the repo root.
-
-    The step runs in `site/`, so a bare relative pathspec points at
-    `site/docs/img/` — a directory that does not exist. The stage then dies
-    with `fatal: pathspec ... did not match any files` and the arm fails
-    after it has already written a correct payload.
-
-    The fix is to run the stage from the root (`git -C .. add ...`). Either
-    spelling is acceptable — `git -C .. add docs/img/...` and
-    `git add ../docs/img/...` both name the file — but the pathspec must
-    resolve to the repository's `docs/img/`, not to `site/docs/img/`.
-    """
-    text = WORKFLOW.read_text("utf-8")
-    steps = _split_steps(text)
-    reshoot = _by_id(steps, "reshoot")
-    assert reshoot is not None, "refresh.yml has no step with id 'reshoot'"
-    name, body = reshoot
-    run_block = _run_block(body)
-
-    add_lines = [
-        line.strip()
-        for line in run_block.splitlines()
-        if line.strip().startswith("git ") and " add" in line and "screenshot" in line
-    ]
-    assert add_lines, (
-        f"the {name!r} step has no `git add` of the screenshot; the regenerated "
-        "shot has to be staged for the amend to carry it"
-    )
-
-    # Every staged path must resolve to the repository's docs/img/, whatever
-    # the step's working directory is. `site/docs/img/...` is the bug.
-    for line in add_lines:
-        assert "site/docs/img" not in line, (
-            f"the {name!r} step stages {line!r}, which reads as "
-            "`site/docs/img/...` because the step runs with "
-            "`working-directory: site`. The screenshot lives at the "
-            "repository root's `docs/img/`. Stage it with `git -C .. add "
-            "docs/img/...` (or `git add ../docs/img/...`). This killed four "
-            "consecutive credit refreshes on 2026-10-27/28."
-        )
-        assert re.search(r"(^|\s)(\.\./docs/img/|git -C \.\. )", line), (
-            f"the {name!r} step stages {line!r} without anchoring the pathspec "
-            "to the repository root, so git resolves it against the step's "
-            "`working-directory: site` and finds nothing. Use `git -C .. add "
-            "docs/img/screenshot.png docs/img/screenshot.txt`."
-        )
-
-    # The pathspec has to name both files: the PNG and the sidecar.
-    assert "docs/img/screenshot.png" in run_block, (
-        f"the {name!r} step must stage docs/img/screenshot.png"
-    )
-    assert "docs/img/screenshot.txt" in run_block, (
-        f"the {name!r} step must stage docs/img/screenshot.txt; the sidecar "
-        "alone leaves the PNG inconsistent with the page"
-    )
-
-
-def test_the_reshoot_step_never_ran_to_completion_before_it_was_anchored() -> None:
-    """The guard above is only worth having if the failure was real.
-
-    A step that has never once passed is a step that does not work. This
-    asserts the anchoring directly against the workflow's own history: the
-    credit arm's failures on 2026-10-27/28 were all
-    `fatal: pathspec 'docs/img/screenshot.png' did not match any files`, and
-    no reshoot step had concluded `success` before that. The step exists to
-    let a bot ship its own screenshot fix; a step that always fails is a step
-    that makes every real-change refresh red.
-    """
-    text = WORKFLOW.read_text("utf-8")
-    steps = _split_steps(text)
-    reshoot = _by_id(steps, "reshoot")
-    assert reshoot is not None, "refresh.yml has no step with id 'reshoot'"
-    name, body = reshoot
-
-    # The step must still be inside a `working-directory: site` step — if a
-    # future edit moves the pathspec's resolution context, the guard above
-    # has to be revisited rather than silently satisfied.
-    assert "working-directory: site" in body, (
-        f"the {name!r} step no longer runs in `site/`; the pathspec "
-        "resolution this file reasons about has changed, so re-check the "
-        "anchoring above."
-    )
 
 
 def test_every_arm_that_fetches_an_upstream_maps_a_network_failure_to_exit_4() -> None:

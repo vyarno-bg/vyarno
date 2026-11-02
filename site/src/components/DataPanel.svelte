@@ -113,16 +113,17 @@
                 <span class="status status-{row.status}"> · {statusCopy(row)}</span>
               </span>
             </th>
-            <!-- `data-freshness` marks the two cells whose contents are a
-                 PAYLOAD's dates rather than anything written in this
-                 repository. `screenshot-frame.mjs#frameText` skips them, so a
-                 refresh does not move the README screenshot's sidecar and turn
-                 a data PR red over a date that has its own gates in the
-                 pipeline. It is on the VALUES and not on the cells, so a named
-                 vintage's label — «форма: Евростат SES», copy — stays pinned
-                 beside the period it labels. -->
+            <!-- The period and the day we fetched it are a PAYLOAD's two
+                 dates, not anything written in this repository, and they are
+                 kept in their own elements rather than interpolated into a
+                 sentence — the words around them are copy and are checked by
+                 `verify_copy.mjs`, the figures are the payload's and are
+                 gated where they are produced (`validate.py`, and
+                 `verify_view_freshness.mjs` for what the panel does with
+                 them). A named vintage's label — «форма: Евростат SES»,
+                 copy — sits beside the period it labels, not inside it. -->
             <td>
-              <span data-freshness>{periodCopy(row)}</span>
+              {periodCopy(row)}
               <!-- A payload on more than one release names every one of them.
                    Dating `salary_dist` by its anchor quarter alone would
                    present a four-year-old survey's dispersion as this
@@ -131,16 +132,16 @@
                 <span class="second">
                   <span class="l-bg"
                     >{beside.label.bg}
-                    <span data-freshness>{period(beside.period)}</span></span
+                    {period(beside.period)}</span
                   >
                   <span class="l-en"
                     >{beside.label.en}
-                    <span data-freshness>{period(beside.period)}</span></span
+                    {period(beside.period)}</span
                   >
                 </span>
               {/each}
             </td>
-            <td><span data-freshness>{row.asOf ? dateShort(row.asOf, $lang) : "—"}</span></td>
+            <td>{row.asOf ? dateShort(row.asOf, $lang) : "—"}</td>
             <td>
               {#if httpUrl(row.sourceUrl)}
                 <a href={httpUrl(row.sourceUrl)} target="_blank" rel="noopener noreferrer"

@@ -103,23 +103,22 @@
            anything it cannot render, which is right for a table cell and is not
            a date. The loading state omits the whole strip and this now matches
            it. -->
-      <!-- **The month sits inside `[data-freshness]` and the words do not.**
-           `screenshot-frame.mjs` skips marked nodes, so the README's frame is
-           pinned to this copy and blind to which month the payload is at — the
-           release half of the fix that took the panel's dates out. Before it,
-           a refresh that carried genuinely new figures moved the frame, went
-           red on `site` and `windows`, and left a pull request nobody could
-           merge (run 32485580094, PR #135). The mark is on the VALUE, so a copy
-           edit to «Числата са към» still moves the frame and still goes red. -->
+      <!-- **The month is a payload's figure and the words around it are
+           copy.** The two are kept apart so that a copy edit to «Числата са
+           към» is a copy edit and nothing else, and so a release moving the
+           month moves the figure and not the sentence around it. The month's
+           own gate is `validate.py`, which refuses an envelope whose period
+           is missing or malformed, and `verify_view_freshness.mjs`, which
+           holds what the panel does with the dates it is given. -->
       {#if asOfDisplay}
         <span>
           <span class="l-bg"
             >{t(COPY.dataAsOfLead, "bg")}
-            <span data-freshness>{periodLong(asOfDisplay, "bg")}</span></span
+            {periodLong(asOfDisplay, "bg")}</span
           >
           <span class="l-en"
             >{t(COPY.dataAsOfLead, "en")}
-            <span data-freshness>{periodLong(asOfDisplay, "en")}</span></span
+            {periodLong(asOfDisplay, "en")}</span
           >
         </span>
       {/if}
@@ -138,31 +137,27 @@
              has to make obvious, and a reader had to convert an ISO period
              before they could even see that they were not the same month.
              `/how/` prints the same pair as «юли 2026 г.» and «юни 2026 г.». -->
-        <!-- Same split, three figures. The flash marker is marked too: its
-             WORDS are copy, but whether it is on the page at all is the
-             payload's, and a release landing inside Eurostat's flash window
-             would otherwise move the frame with nothing edited. `verify_copy`
-             holds what it says; nothing else on this page prints it. -->
+        <!-- Same split, three figures. The flash marker rides with the period:
+             its WORDS are copy and `verify_copy` holds them, but whether it is
+             on the page at all is the payload's — a release landing inside
+             Eurostat's flash window is the payload's business and nothing
+             else on this page prints it. -->
         <span class="off-fig" class:off-late={headlineOverdue}>
           <span class="l-bg"
             >{t(COPY.headlineRateLead, "bg")}
-            <span data-freshness>{number(headline, 1, "bg")}%</span>
+            {number(headline, 1, "bg")}%
             {t(COPY.headlineRateFor, "bg")}
-            <span data-freshness
-              >{periodLong(headlineRefPeriod, "bg")}{headlineIsFlash
-                ? t(COPY.srcFlash, "bg")
-                : ""}</span
-            ></span
+            {periodLong(headlineRefPeriod, "bg")}{headlineIsFlash
+              ? t(COPY.srcFlash, "bg")
+              : ""}</span
           >
           <span class="l-en"
             >{t(COPY.headlineRateLead, "en")}
-            <span data-freshness>{number(headline, 1, "en")}%</span>
+            {number(headline, 1, "en")}%
             {t(COPY.headlineRateFor, "en")}
-            <span data-freshness
-              >{periodLong(headlineRefPeriod, "en")}{headlineIsFlash
-                ? t(COPY.srcFlash, "en")
-                : ""}</span
-            ></span
+            {periodLong(headlineRefPeriod, "en")}{headlineIsFlash
+              ? t(COPY.srcFlash, "en")
+              : ""}</span
           >
         </span>
       {/if}
