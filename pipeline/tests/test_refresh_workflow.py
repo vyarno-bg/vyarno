@@ -1,27 +1,31 @@
-"""The refresh arm regenerates the README screenshot when its data moves it.
+"""The refresh arm's push cannot clobber a branch it did not fetch.
 
-The screenshot the home page renders is read by every reader, in both READMEs.
-A data refresh can change what the page prints — a `ref_period` advancing so
-that two clocks collapse together removes the row the strip labels, and the
-label on the next row takes over. `verify_render_screenshot.mjs` is the suite
-that catches it; CI goes red on a green payload when nobody regenerates the
-sidecar alongside the data. PR #164 (data refresh: mortgage as of 2026-09-02)
-went red for exactly that reason: the bot committed the new mortgage rate,
-the strip label changed from «всички изплащани» to «ecb+bnb», and the sidecar
-still claimed the first.
+**The branch outlives the run that made it.** `refresh.yml` creates
+`data/<source>` fresh from `main` every time, but the branch is only deleted
+when its pull request merges — so a refresh that fires while the last one is
+still awaiting review meets a `data/<source>` on origin whose history this
+branch does not contain. A plain `git push` is refused as non-fast-forward,
+and the whole run fails at the last step with a correct payload already
+written to disk.
 
-`docs/img/screenshot.txt` and `docs/img/screenshot.png` are the only place a
-reviewer can see the home page without opening a browser, and a bot cannot
-open one. So `refresh.yml` is what runs the regeneration, and this file is
-what holds it to that responsibility.
+`merge -s ours` resolves that without a force: it records the stale branch as
+an ancestor and keeps THIS tree, byte for byte, so the push fast-forwards and
+the pull request shows the newest refresh against `main`. Nothing is lost that
+anyone wanted — the superseded commit holds an older read of the same
+upstream, and the payload it carried is the one this run just re-fetched.
+
+**The lease is what makes that safe.** `merge -s ours` makes the push a
+fast-forward, so the `--force-with-lease` never has to force anything: it is
+the assertion that the branch being superseded is still the branch that was
+fetched, held against the SHA the fetch returned. A branch that moved in
+between — the box's `vyarno-city-price-weekly` cron, a manual `git push` from
+Kiril — is refused with the same error a plain push would give, rather than
+being clobbered by a refresh that never saw it.
 
 The decision lives in YAML, but YAML is not read by `make check` — only this
-test does. A workflow that loses the step loses the bot's ability to ship its
-own fix, and the PR goes red on a green figure. Asserting the step exists is
-what makes the rule mechanical rather than aspirational, in the same way
-`test_release_calendar.py` holds the crons to the release table: a copy that
-drifts fails in the shape this project can least afford, and a one-line
-assertion here catches it before CI does.
+test does. A workflow that loses the lease loses the only thing standing
+between a routine refresh and somebody else's work, and it loses it silently:
+the push still succeeds, on a branch nobody is looking at.
 
 Parsing the workflow with stdlib rather than `pyyaml` keeps this test off a
 new dev dependency — `pyproject.toml` would carry it for one assertion, and
@@ -53,91 +57,15 @@ def _split_steps(text: str) -> list[tuple[str, str]]:
     return out
 
 
-def _by_id(steps: list[tuple[str, str]], step_id: str) -> tuple[str, str] | None:
-    """Return the step whose `id:` matches, or None if no step carries it."""
-    for name, body in steps:
-        m = re.search(r"^\s+id:\s*([\w-]+)\s*$", body, re.M)
-        if m and m.group(1) == step_id:
-            return name, body
-    return None
+def test_push_step_supersedes_a_stale_branch_without_clobbering_it() -> None:
+    """`Push` supersedes a stale `data/<source>` without disabling the lease.
 
-
-def test_reshoot_step_present() -> None:
-    """`refresh.yml` regenerates the README screenshot after the data commit.
-
-    A bot that ships only the JSON payload cannot answer a sidecar that drifted
-    in the same commit — the sidecar is in `docs/img/`, not in
-    `data/published/`. The step is the bridge: it amends the data commit so the
-    PR carries the rebuilt shot as part of the same change, and CI's
-    `verify_render_screenshot.mjs` passes on the first run rather than after
-    a human opens a terminal.
-
-    A workflow that drops this step re-introduces the PR #164 regression class.
-    """
-    text = WORKFLOW.read_text("utf-8")
-    steps = _split_steps(text)
-    reshoot = _by_id(steps, "reshoot")
-    assert reshoot is not None, (
-        "refresh.yml has no step with id 'reshoot' — the data refresh arm no "
-        "longer regenerates docs/img/screenshot.{png,txt}, and a bot PR will "
-        "fail CI's verify_render_screenshot.mjs every time the page moves. "
-        "Add the step back, modelled on the one this commit introduced."
-    )
-    name, body = reshoot
-    # The step runs only when there is a real data change. Anything else means
-    # it runs against a no-op PR and burns the runner budget.
-    assert "steps.diff.outputs.changed" in body, f"the {name!r} step must skip when no data changed"
-    assert "steps.meta.outputs.real_change" in body, (
-        f"the {name!r} step must skip when the pipeline did not move a figure"
-    )
-    # And it must actually amend the data commit, not just regenerate the shot.
-    assert "git commit --amend" in body, (
-        "the reshoot step must amend the data commit so the regenerated "
-        "shot ships in the same PR; a follow-up commit is what re-introduced "
-        "the original problem on PR #164."
-    )
-    assert "docs/img/screenshot.png" in body and "docs/img/screenshot.txt" in body, (
-        "the reshoot step must include both the PNG and the sidecar in the "
-        "amend; the sidecar alone leaves the PNG inconsistent with the page."
-    )
-    # **The amend is unconditional.** A `git diff --quiet` GATE looks
-    # load-bearing but fails open: the runner's build can render a sidecar
-    # that matches the committed one for reasons the gate cannot see
-    # (Vite's pre-bundle cache, a font fallback that the gate never
-    # measures). PR #186 (hicp, 2026-10-16) hit that class on the
-    # GHA runner: the reshoot produced no diff, the amend was skipped,
-    # and CI went red on a payload the bot had no way to ship. Asserting
-    # the absence of the gate is the mechanical guard.
-    #
-    # Check the `run:` block, not the comment: the workflow's prose
-    # above the block explains *why* there is no gate, and the literal
-    # `git diff --quiet` is part of that explanation. The test only
-    # cares about the gate being missing from the actual command.
-    run_match = re.search(r"run:\s*\|\s*\n((?:          .*\n)+)", body)
-    assert run_match is not None, (
-        f"the {name!r} step has no readable `run:` block; cannot verify "
-        "the unconditional-amend contract"
-    )
-    run_block = run_match.group(1)
-    assert "git diff --quiet" not in run_block, (
-        f"the {name!r} step's `run:` block contains a `git diff --quiet` "
-        "gate; PR #186 (hicp, 2026-10-16) hit the failure class this gate "
-        "opens. Drop the gate and amend on every refresh — the cost of a "
-        "few hundred KB of PNG on every data refresh is dwarfed by the "
-        "cost of opening a red PR."
-    )
-
-
-def test_push_step_uses_force_with_lease_when_amended() -> None:
-    """`Push` accepts the reshoot amend without disabling the safety net.
-
-    A plain `git push` would refuse the amended tip because the local commit
-    is no longer a descendant of the stale remote `data/<source>` branch the
-    merge-ours step just fetched. `--force-with-lease` is the one exception
-    to the workflow's "never force" rule: it rewrites the amend this run
-    made, and nothing else, because the lease holds against the SHA the
-    fetch returned. Without it, the bot cannot ship its own screenshot fix
-    on a branch that was already pushed for an earlier refresh.
+    A plain `git push` would refuse the new tip because the local commit is
+    not a descendant of the stale remote branch the merge-ours step just
+    fetched. `--force-with-lease` is the one exception to the workflow's
+    "never force" rule, and it is bounded: the lease holds against the SHA
+    the fetch returned, so the push cannot rewrite a branch that moved in
+    between.
     """
     text = WORKFLOW.read_text("utf-8")
     steps = _split_steps(text)
@@ -147,33 +75,22 @@ def test_push_step_uses_force_with_lease_when_amended() -> None:
     )
     _, push_body = push_steps[0]
     assert "force-with-lease" in push_body, (
-        "the Push step must use --force-with-lease to accept the reshoot "
-        "amend; a plain push rejects the rewritten tip, and the workflow "
-        "loses the only way it has to ship its own screenshot fix."
+        "the Push step must use --force-with-lease; it is the assertion that "
+        "the branch being superseded is still the branch that was fetched, and "
+        "a plain push has no such assertion."
     )
     assert "merge -s ours" in push_body, (
         "the Push step must keep `merge -s ours` for the supersede path; "
         "removing it is what makes a stale remote branch reject a plain push."
     )
-
-
-def test_reshoot_runs_after_commit_and_before_push() -> None:
-    """The order matters: amend before push, push after the amend.
-
-    A reshoot step placed after Push would amend a tip that has already been
-    pushed, and the push below it would silently lose the change. A reshoot
-    step placed before Commit would have no commit to amend.
-    """
-    text = WORKFLOW.read_text("utf-8")
-    steps = _split_steps(text)
-    names = [name for name, _ in steps]
-    assert "Commit" in names, "refresh.yml has no Commit step"
-    assert "Push" in names, "refresh.yml has no Push step"
-    reshoot_name = next((name for name, body in steps if "id: reshoot" in body), None)
-    assert reshoot_name is not None, "refresh.yml has no step with id 'reshoot'"
-    assert names.index("Commit") < names.index(reshoot_name), (
-        "the reshoot step must run after Commit so it has a tip to amend"
-    )
-    assert names.index(reshoot_name) < names.index("Push"), (
-        "the reshoot step must run before Push so the amended tip is what the push ships"
+    # The lease has to name the SHA the fetch returned. A bare
+    # `--force-with-lease` compares against the local remote-tracking ref,
+    # which is stale the moment anything else pushed — so it would protect
+    # against nothing.
+    assert re.search(r"force-with-lease=\"refs/heads/\$BRANCH:\$EXPECTED\"", push_body), (
+        "the Push step's lease must name the SHA the fetch returned "
+        "(`--force-with-lease=refs/heads/$BRANCH:$EXPECTED`); a bare "
+        "`--force-with-lease` compares against the local remote-tracking ref, "
+        "which is stale the moment anything else pushed, and so protects "
+        "against nothing."
     )

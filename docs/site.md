@@ -128,11 +128,8 @@ site/
 │   ├── verify_render_payroll.mjs  # payroll and more than one income
 │   ├── verify_render_share.mjs    # the share card and the share text
 │   ├── verify_render_contrast.mjs # painted text ratios · control boundaries
-│   ├── verify_render_screenshot.mjs # the README shot still shows today's words
-│   ├── screenshot-frame.mjs       # the frame both the shot and its guard use
-│   ├── make_og_image.py           # regenerates the six OG cards, the icons
-│   │                              # and the two README banners (stdlib only)
-│   └── make_screenshot.mjs        # regenerates docs/img/screenshot.png + .txt
+│   └── make_og_image.py           # regenerates the six OG cards, the icons
+│                                  # and the two README banners (stdlib only)
 ├── public/             # copied verbatim into dist/ — no build step
 │   ├── _headers · robots.txt · llms.txt · .well-known/security.txt
 │   ├── favicon.svg · og-*.png · fonts/ (self-hosted, vendored unmodified)
@@ -1020,39 +1017,6 @@ plus Latin and digits. It **raises** on a character it has no glyph for rather
 than skipping it, because a silently dropped glyph is a hole in the wordmark
 that no test can see and everyone the link is sent to can. **Look at the
 rendered file before committing it** — nothing downstream checks the pixels.
-
-## The README screenshot
-
-`docs/img/screenshot.png` is generated, by `scripts/make_screenshot.mjs` —
-`npm run build`, then `node scripts/make_screenshot.mjs` from `site/`. It drives
-the built page with the Playwright already installed for the render suite, types
-a salary, a raise and a savings figure, and photographs the result at 1280 CSS
-px in two columns.
-
-A photograph of a live UI goes stale from the first copy edit, and it is the
-first thing a stranger sees in both READMEs. So the same run writes
-`docs/img/screenshot.txt` — the words that were inside the frame — and
-`verify_render_screenshot.mjs` holds the built page to it. A copy change that
-reaches the frame fails the render suite and names the line that moved.
-
-**A payload's own dates are not among those words.** The frame includes the open
-data panel, whose `период` and `изтеглено` columns are every payload's reference
-period and the day it was fetched — and `as_of` moves on every refresh whether
-or not a figure did. Pinned here, the check failed on the arm that publishes the
-payload rather than on any commit that changed a word, taking `site` and
-`windows` with it and leaving the refresh PR unmergeable. `DataPanel.svelte`
-marks those values `data-freshness` and `frameText` skips them; the dates are
-gated where they are produced (`validate.py`, and `verify_view_freshness.mjs`
-for what the panel does with them), so nothing here was their second reader.
-
-The marks are on the values, not the cells, so the column headings, the status
-words, the secondary vintage's label and the paragraph under the table all stay
-pinned — a copy edit to any of them still goes red.
-
-**The words are checked and the pixels are not**, so a layout that broke without
-changing a word is still something only a person sees. Regenerate in the same
-commit as a copy change that reaches the frame, and **look at the image before
-committing it.**
 
 `favicon.svg` is the same mark as the in-app wordmark — a short bar, a tall bar,
 one solid rule joining their feet — and is text-free. The Facebook profile

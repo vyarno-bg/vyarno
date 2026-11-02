@@ -58,8 +58,6 @@ from the repository root (`make help` lists the targets), or
 `cd site && npm run check:all`, which is the same sequence for a machine with no
 `make`.
 
-![The calculator: net pay and basket on the left, the reader's own inflation rate and its per-category decomposition on the right](./docs/img/screenshot.png)
-
 Nothing here is financial, investment, tax, legal or credit advice, and no
 figure it produces is a recommendation.
 
