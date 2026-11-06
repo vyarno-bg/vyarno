@@ -1,6 +1,6 @@
 {
   "schema_version": "1.2",
-  "as_of": "2026-11-03",
+  "as_of": "2026-11-06",
   "source": "ecb",
   "source_url": "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2B.A.R.A.2250.EUR.N?format=jsondata&startPeriod=2020-01",
   "notes": "BG household credit other than housing, from ECB MIR: loans for consumption (rate and APRC), overdrafts and revolving credit, and extended credit card credit — the balance carried past the interest-free period. The two deposit series are the comparator. The euro amounts under those rates are БНБ's own workbooks, because every ECB MIR outstanding-amount volume key for BG is a 404: MIR publishes what the stock costs and never how big it is. The arrears ratios are ECB CBD2, split by counterparty, because the portfolio-wide figure that reaches the news is not a household one. One block has a different borrower: new lending to non-financial corporations, spliced from the same lev and euro legs, so what a company is charged can be read against what a homebuyer is.",
@@ -1731,10 +1731,10 @@
     "source": "ecb",
     "dataset": "CBD2 I3632, gross non-performing loans and advances as a share of total gross loans and advances, BS_COUNT_SECTOR S1M households and NPISH · S11 non-financial corporations · _Z every counterparty",
     "source_url": "https://data-api.ecb.europa.eu/service/data/CBD2/Q.BG.W0.67.S1M._Z.A.F.I3632._Z._Z._Z._Z._Z._Z.PC?format=jsondata&startPeriod=2020-Q1",
-    "ref_period": "2026-Q1",
-    "households_pct": 2.37,
-    "corporations_pct": 4.74,
-    "all_counterparties_pct": 2.55,
+    "ref_period": "2026-Q2",
+    "households_pct": 2.33,
+    "corporations_pct": 4.45,
+    "all_counterparties_pct": 2.48,
     "households_by_period": {
       "2020-Q1": 7.07,
       "2020-Q2": 7.65,
@@ -1760,7 +1760,8 @@
       "2025-Q2": 2.61,
       "2025-Q3": 2.55,
       "2025-Q4": 2.3,
-      "2026-Q1": 2.37
+      "2026-Q1": 2.37,
+      "2026-Q2": 2.33
     },
     "corporations_by_period": {
       "2020-Q1": 10.46,
@@ -1787,7 +1788,8 @@
       "2025-Q2": 4.51,
       "2025-Q3": 4.19,
       "2025-Q4": 4.59,
-      "2026-Q1": 4.74
+      "2026-Q1": 4.74,
+      "2026-Q2": 4.45
     },
     "scope_source_urls": {
       "households": "https://data-api.ecb.europa.eu/service/data/CBD2/Q.BG.W0.67.S1M._Z.A.F.I3632._Z._Z._Z._Z._Z._Z.PC?format=jsondata&startPeriod=2020-Q1",
