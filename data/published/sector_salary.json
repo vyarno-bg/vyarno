@@ -1,21 +1,21 @@
 {
   "schema_version": "1.0",
-  "as_of": "2026-08-17",
+  "as_of": "2026-11-13",
   "source": "nsi",
   "source_url": "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.1_EUR_EN.xlsx",
-  "notes": "Average GROSS monthly wage by economic activity (NACE Rev 2 sections), as published by НСИ and unmodified. Each activity's `value_eur` is НСИ's latest published QUARTERLY average at 2026-Q2 (preliminary); `series_by_period` is their full quarterly series. All activities at 2026-Q2: 1444 EUR. Nothing in this file is computed by us — no gap, no ratio, no rank. The quarter is НСИ's own reporting period and avoids the March bonus spike that dominates their single-month readings; the Q4 column taken is `IV`, not `IV incl.annual bonuses`. Section names are НСИ's own in each language, from the English and Bulgarian editions of the same table. Covers people on a labour contract AND in the civil service. NO pay DISTRIBUTION by sector is published for Bulgaria by anyone, so these are averages and support no percentile. All values in EUR (fixed 1.95583 BGN/EUR).",
+  "notes": "Average GROSS monthly wage by economic activity (NACE Rev 2 sections), as published by НСИ and unmodified. Each activity's `value_eur` is НСИ's latest published QUARTERLY average at 2026-Q3 (preliminary); `series_by_period` is their full quarterly series. All activities at 2026-Q3: 1438 EUR. Nothing in this file is computed by us — no gap, no ratio, no rank. The quarter is НСИ's own reporting period and avoids the March bonus spike that dominates their single-month readings; the Q4 column taken is `IV`, not `IV incl.annual bonuses`. Section names are НСИ's own in each language, from the English and Bulgarian editions of the same table. Covers people on a labour contract AND in the civil service. NO pay DISTRIBUTION by sector is published for Bulgaria by anyone, so these are averages and support no percentile. All values in EUR (fixed 1.95583 BGN/EUR).",
   "payload_name": "sector_salary",
   "source_url_bg": "https://www.nsi.bg/sites/default/files/files/data/timeseries/Labour_1.1.2.1_EUR.xlsx",
   "dataset": "Labour_1.1.2.1_EUR_EN.xlsx + Labour_1.1.2.1_EUR.xlsx:sheet={year}NaceRev2|{year}КИД2008:quarterly by-activity block",
-  "ref_period": "2026-Q2",
-  "published_at": "2026-08-17",
+  "ref_period": "2026-Q3",
+  "published_at": "2026-11-13",
   "unit": "eur_per_month",
   "is_preliminary": true,
   "sectors": [
     {
       "en_name": "Total",
       "bg_name": "Общо",
-      "value_eur": 1444.0,
+      "value_eur": 1438.0,
       "series_by_period": {
         "2020-Q1": 681.0,
         "2020-Q2": 686.0,
@@ -42,13 +42,14 @@
         "2025-Q3": 1303.0,
         "2025-Q4": 1369.0,
         "2026-Q1": 1407.0,
-        "2026-Q2": 1444.0
+        "2026-Q2": 1444.0,
+        "2026-Q3": 1438.0
       }
     },
     {
       "en_name": "Agriculture,forestry and fishing",
       "bg_name": "Селско, горско и рибно стопанство",
-      "value_eur": 1031.0,
+      "value_eur": 1084.0,
       "series_by_period": {
         "2020-Q1": 495.0,
         "2020-Q2": 515.0,
@@ -75,13 +76,14 @@
         "2025-Q3": 901.0,
         "2025-Q4": 905.0,
         "2026-Q1": 981.0,
-        "2026-Q2": 1031.0
+        "2026-Q2": 1031.0,
+        "2026-Q3": 1084.0
       }
     },
     {
       "en_name": "Mining and quarrying",
       "bg_name": "Добивна промишленост",
-      "value_eur": 1966.0,
+      "value_eur": 1826.0,
       "series_by_period": {
         "2020-Q1": 935.0,
         "2020-Q2": 959.0,
@@ -108,13 +110,14 @@
         "2025-Q3": 1570.0,
         "2025-Q4": 1617.0,
         "2026-Q1": 1713.0,
-        "2026-Q2": 1966.0
+        "2026-Q2": 1966.0,
+        "2026-Q3": 1826.0
       }
     },
     {
       "en_name": "Manufacturing",
       "bg_name": "Преработваща промишленост",
-      "value_eur": 1247.0,
+      "value_eur": 1252.0,
       "series_by_period": {
         "2020-Q1": 595.0,
         "2020-Q2": 594.0,
@@ -141,13 +144,14 @@
         "2025-Q3": 1123.0,
         "2025-Q4": 1155.0,
         "2026-Q1": 1201.0,
-        "2026-Q2": 1247.0
+        "2026-Q2": 1247.0,
+        "2026-Q3": 1252.0
       }
     },
     {
       "en_name": "Electricity,gas,steam and air conditioning supply",
       "bg_name": "Производство и разпределение на електрическа и топлинна енергия и на газообразни горива",
-      "value_eur": 2036.0,
+      "value_eur": 2063.0,
       "series_by_period": {
         "2020-Q1": 1045.0,
         "2020-Q2": 1082.0,
@@ -174,13 +178,14 @@
         "2025-Q3": 1809.0,
         "2025-Q4": 1963.0,
         "2026-Q1": 2060.0,
-        "2026-Q2": 2036.0
+        "2026-Q2": 2036.0,
+        "2026-Q3": 2063.0
       }
     },
     {
       "en_name": "Water supply,sewerage,waste management and remediation activities",
       "bg_name": "Доставяне на води;канализационни услуги,управление на отпадъци и възстановяване",
-      "value_eur": 1092.0,
+      "value_eur": 1089.0,
       "series_by_period": {
         "2020-Q1": 552.0,
         "2020-Q2": 554.0,
@@ -207,13 +212,14 @@
         "2025-Q3": 1000.0,
         "2025-Q4": 1025.0,
         "2026-Q1": 1048.0,
-        "2026-Q2": 1092.0
+        "2026-Q2": 1092.0,
+        "2026-Q3": 1089.0
       }
     },
     {
       "en_name": "Construction",
       "bg_name": "Строителство",
-      "value_eur": 1182.0,
+      "value_eur": 1189.0,
       "series_by_period": {
         "2020-Q1": 512.0,
         "2020-Q2": 524.0,
@@ -240,13 +246,14 @@
         "2025-Q3": 1072.0,
         "2025-Q4": 1111.0,
         "2026-Q1": 1110.0,
-        "2026-Q2": 1182.0
+        "2026-Q2": 1182.0,
+        "2026-Q3": 1189.0
       }
     },
     {
       "en_name": "Wholesale and retail trade;repair of motor vehicles and motorcycles",
       "bg_name": "Търговия; ремонт на автомобили и мотоциклети",
-      "value_eur": 1264.0,
+      "value_eur": 1273.0,
       "series_by_period": {
         "2020-Q1": 609.0,
         "2020-Q2": 608.0,
@@ -273,13 +280,14 @@
         "2025-Q3": 1124.0,
         "2025-Q4": 1169.0,
         "2026-Q1": 1220.0,
-        "2026-Q2": 1264.0
+        "2026-Q2": 1264.0,
+        "2026-Q3": 1273.0
       }
     },
     {
       "en_name": "Transportation and storage",
       "bg_name": "Транспорт, складиране и съобщения",
-      "value_eur": 1266.0,
+      "value_eur": 1278.0,
       "series_by_period": {
         "2020-Q1": 598.0,
         "2020-Q2": 581.0,
@@ -306,13 +314,14 @@
         "2025-Q3": 1125.0,
         "2025-Q4": 1155.0,
         "2026-Q1": 1214.0,
-        "2026-Q2": 1266.0
+        "2026-Q2": 1266.0,
+        "2026-Q3": 1278.0
       }
     },
     {
       "en_name": "Accommodation and food service activities",
       "bg_name": "Хотелиерство и ресторантьорство",
-      "value_eur": 918.0,
+      "value_eur": 908.0,
       "series_by_period": {
         "2020-Q1": 379.0,
         "2020-Q2": 327.0,
@@ -339,13 +348,14 @@
         "2025-Q3": 811.0,
         "2025-Q4": 827.0,
         "2026-Q1": 870.0,
-        "2026-Q2": 918.0
+        "2026-Q2": 918.0,
+        "2026-Q3": 908.0
       }
     },
     {
       "en_name": "Information and communication",
       "bg_name": "Създаване и разпространение на информация и творчески продукти; далекосъобщения",
-      "value_eur": 3079.0,
+      "value_eur": 3059.0,
       "series_by_period": {
         "2020-Q1": 1686.0,
         "2020-Q2": 1693.0,
@@ -372,13 +382,14 @@
         "2025-Q3": 2818.0,
         "2025-Q4": 2934.0,
         "2026-Q1": 3176.0,
-        "2026-Q2": 3079.0
+        "2026-Q2": 3079.0,
+        "2026-Q3": 3059.0
       }
     },
     {
       "en_name": "Financial and insurance activities",
       "bg_name": "Финансови и застрахователни дейности",
-      "value_eur": 2140.0,
+      "value_eur": 2088.0,
       "series_by_period": {
         "2020-Q1": 1141.0,
         "2020-Q2": 1220.0,
@@ -405,13 +416,14 @@
         "2025-Q3": 1900.0,
         "2025-Q4": 2029.0,
         "2026-Q1": 2226.0,
-        "2026-Q2": 2140.0
+        "2026-Q2": 2140.0,
+        "2026-Q3": 2088.0
       }
     },
     {
       "en_name": "Real estate activities",
       "bg_name": "Операции с недвижими имоти",
-      "value_eur": 1298.0,
+      "value_eur": 1301.0,
       "series_by_period": {
         "2020-Q1": 660.0,
         "2020-Q2": 644.0,
@@ -438,13 +450,14 @@
         "2025-Q3": 1219.0,
         "2025-Q4": 1288.0,
         "2026-Q1": 1259.0,
-        "2026-Q2": 1298.0
+        "2026-Q2": 1298.0,
+        "2026-Q3": 1301.0
       }
     },
     {
       "en_name": "Professional,scientific and technical activities",
       "bg_name": "Професионални дейности и научни изследвания",
-      "value_eur": 1972.0,
+      "value_eur": 1939.0,
       "series_by_period": {
         "2020-Q1": 979.0,
         "2020-Q2": 985.0,
@@ -471,13 +484,14 @@
         "2025-Q3": 1769.0,
         "2025-Q4": 1849.0,
         "2026-Q1": 1923.0,
-        "2026-Q2": 1972.0
+        "2026-Q2": 1972.0,
+        "2026-Q3": 1939.0
       }
     },
     {
       "en_name": "Administrative and support service activities",
       "bg_name": "Административни и спомагателни дейности",
-      "value_eur": 1245.0,
+      "value_eur": 1229.0,
       "series_by_period": {
         "2020-Q1": 541.0,
         "2020-Q2": 535.0,
@@ -504,13 +518,14 @@
         "2025-Q3": 1137.0,
         "2025-Q4": 1158.0,
         "2026-Q1": 1209.0,
-        "2026-Q2": 1245.0
+        "2026-Q2": 1245.0,
+        "2026-Q3": 1229.0
       }
     },
     {
       "en_name": "Public administration and defence;compulsory social security",
       "bg_name": "Държавно управление",
-      "value_eur": 1638.0,
+      "value_eur": 1661.0,
       "series_by_period": {
         "2020-Q1": 764.0,
         "2020-Q2": 737.0,
@@ -537,13 +552,14 @@
         "2025-Q3": 1579.0,
         "2025-Q4": 1623.0,
         "2026-Q1": 1591.0,
-        "2026-Q2": 1638.0
+        "2026-Q2": 1638.0,
+        "2026-Q3": 1661.0
       }
     },
     {
       "en_name": "Education",
       "bg_name": "Образование",
-      "value_eur": 1527.0,
+      "value_eur": 1494.0,
       "series_by_period": {
         "2020-Q1": 686.0,
         "2020-Q2": 732.0,
@@ -570,13 +586,14 @@
         "2025-Q3": 1421.0,
         "2025-Q4": 1606.0,
         "2026-Q1": 1437.0,
-        "2026-Q2": 1527.0
+        "2026-Q2": 1527.0,
+        "2026-Q3": 1494.0
       }
     },
     {
       "en_name": "Human health and social work activities",
       "bg_name": "Хуманно здравеопазване и социална работа",
-      "value_eur": 1427.0,
+      "value_eur": 1416.0,
       "series_by_period": {
         "2020-Q1": 681.0,
         "2020-Q2": 686.0,
@@ -603,13 +620,14 @@
         "2025-Q3": 1321.0,
         "2025-Q4": 1383.0,
         "2026-Q1": 1382.0,
-        "2026-Q2": 1427.0
+        "2026-Q2": 1427.0,
+        "2026-Q3": 1416.0
       }
     },
     {
       "en_name": "Arts,entertainment and recreation",
       "bg_name": "Култура,спорт и развлечения",
-      "value_eur": 1284.0,
+      "value_eur": 1332.0,
       "series_by_period": {
         "2020-Q1": 551.0,
         "2020-Q2": 508.0,
@@ -636,13 +654,14 @@
         "2025-Q3": 1146.0,
         "2025-Q4": 1237.0,
         "2026-Q1": 1260.0,
-        "2026-Q2": 1284.0
+        "2026-Q2": 1284.0,
+        "2026-Q3": 1332.0
       }
     },
     {
       "en_name": "Other service activities",
       "bg_name": "Други дейности",
-      "value_eur": 1053.0,
+      "value_eur": 1065.0,
       "series_by_period": {
         "2020-Q1": 452.0,
         "2020-Q2": 447.0,
@@ -669,7 +688,8 @@
         "2025-Q3": 907.0,
         "2025-Q4": 950.0,
         "2026-Q1": 1014.0,
-        "2026-Q2": 1053.0
+        "2026-Q2": 1053.0,
+        "2026-Q3": 1065.0
       }
     }
   ],
