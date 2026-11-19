@@ -266,9 +266,11 @@
     `display: none` leaves every text-level guard green while the credit reaches
     nobody.
   -->
-  <div class="wrap credits mono">
-    <span class="l-bg">{t(COPY.footerNote, "bg", { year: YEAR })}</span>
-    <span class="l-en">{t(COPY.footerNote, "en", { year: YEAR })}</span>
+  <div class="wrap">
+    <div class="credits mono">
+      <span class="l-bg">{t(COPY.footerNote, "bg", { year: YEAR })}</span>
+      <span class="l-en">{t(COPY.footerNote, "en", { year: YEAR })}</span>
+    </div>
   </div>
 
   <!--
@@ -313,7 +315,7 @@
      `row-gap` is larger than `column-gap` because the rows are what a reader
      scans down and the items inside one are read across. */
   .foot {
-    /* Block axis only, here and on the two rows below: each outranks `.wrap`,
+    /* Block axis only, here and on `.support` below: each outranks `.wrap`,
        so a shorthand's inline `0` deletes the gutter and the links meet the
        screen edge. */
     padding-block: 20px 14px;
@@ -353,13 +355,12 @@
     white-space: nowrap;
   }
   /* The imprint: the licence-condition attribution, the funding sentence and the
-     build stamp, ruled off from the navigation above. The rule is what makes the
-     zone legible as one — below it are statements about the project, above it are
-     places to go — and it is `--line-2` rather than `--line` because the footer's
-     own top border is already `--line` and two rules of one weight 100px apart
-     read as a box nobody drew. */
+     build stamp, ruled off from the places to go above. `--line-2` because the
+     footer's own top border is `--line`, and two rules of one weight read as a
+     box nobody drew. Inside a `.wrap` rather than one, so the rule spans the
+     text and not the gutter either side of it. */
   .credits {
-    padding-block-start: 14px;
+    padding-top: 14px;
     border-top: 1px solid var(--line-2);
     font-size: var(--fs-fine);
     color: var(--muted);
