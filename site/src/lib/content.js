@@ -1495,8 +1495,8 @@ export const COPY = {
     en: "How is it worked out? In plain words, with the table and sources",
   },
   drawerPrecision: {
-    bg: "Сметките се правят с пълна точност. Закръгляме само това, което показваме: процентите до един знак след запетаята, евровите суми до цяло число. Затова понякога сборът на показаните числа излиза с една стотинка разлика.",
-    en: "The maths runs at full precision. Only what we display is rounded: percentages to one decimal, euro amounts to whole euros. That is why the figures on screen can add up a cent apart.",
+    bg: "Сметките се правят с пълна точност. Закръгляме само това, което показваме: процентите до един знак след запетаята, евровите суми до цяло число. Затова понякога сборът на показаните числа се разминава в последната цифра.",
+    en: "The maths runs at full precision. Only what we display is rounded: percentages to one decimal, euro amounts to whole euros. That is why the figures on screen can disagree in the last digit when you add them up.",
   },
 
   // Footer
