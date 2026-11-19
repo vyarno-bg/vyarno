@@ -14,7 +14,14 @@ network: `marker_of` is what the upstream would have said.
 
 from __future__ import annotations
 
+import http.client
+import io
+import json
+import re
+import urllib.error
 from datetime import UTC, datetime
+from email.message import Message
+from pathlib import Path
 
 import pytest
 
@@ -187,18 +194,116 @@ def test_a_failed_probe_is_reported_and_the_others_still_dispatch(monkeypatch, t
     assert _sources(result), "one failed probe silenced every arm in the window"
 
 
-def test_the_tick_fails_when_a_probe_does(monkeypatch, tmp_path) -> None:
-    """Otherwise the watcher stops watching and nothing says so for a month.
+def test_the_tick_fails_when_a_probe_s_premise_does(monkeypatch, tmp_path) -> None:
+    """A 404 or a missing marker: the watcher has stopped seeing that arm at all.
 
     `--all` rather than a frozen clock: the exit code is what is under test,
     and the wide sweep probes regardless of what hour the suite runs at.
     """
 
     def _broken(release):
-        raise watch.ProbeError(f"{release.label}: 503")
+        raise watch.ProbeError(f"{release.label}: HTTP Error 404")
 
     monkeypatch.setattr(watch, "marker_of", _broken)
-    assert watch.main(["--repo", str(tmp_path), "--all"]) == 1
+    cadence = tmp_path / "cadence.json"
+    cadence.write_text(json.dumps(_manifest_cadence()), "utf-8")
+    assert watch.main(["--repo", str(tmp_path), "--all", "--cadence", str(cadence)]) == 1
+
+
+MANIFEST = Path(__file__).resolve().parents[2] / "site" / "src" / "lib" / "payloads.js"
+
+
+def _manifest_cadence() -> dict[str, int]:
+    """`payload-cadence.mjs`'s table, read the way the contract tests read the manifest."""
+    src = MANIFEST.read_text("utf-8")
+    pairs = re.findall(r'file:\s*"([a-z_0-9]+)"[\s\S]*?cadenceDays:\s*(\d+)', src)
+    assert len(pairs) == len(re.findall(r'file:\s*"', src)), "a payload with no cadenceDays"
+    return {stem: int(days) for stem, days in pairs}
+
+
+def _refusing(label_part: str):
+    def _fake(release):
+        if label_part in release.label:
+            raise watch.ProbeError(f"{release.label}: HTTP Error 403", transient=True)
+        return PUBLISHED
+
+    return _fake
+
+
+@pytest.mark.parametrize(
+    ("refused", "with_cadence", "code"),
+    [
+        ("НСИ", True, 0),  # covered: the 92- and 99-day НСИ payloads go stale and fire
+        ("earn_ses_monthly", True, 1),  # not covered: a 1462-day cadence fires years late
+        ("НСИ", False, 1),  # no table, no backstop known: red, as before
+    ],
+)
+def test_a_refused_probe_is_a_warning_only_where_freshness_covers_it(
+    monkeypatch, tmp_path, capsys, refused: str, with_cadence: bool, code: int
+) -> None:
+    """2026-11-18: НСИ sent one runner 403 for all seven files and the tick went red.
+
+    Nine of a hundred ticks were red that way, every one an upstream that
+    answered again, while a refusal that lasts is reported anyway: the arm
+    publishes nothing, `as_of` freezes, and freshness-check fires a cadence on.
+    """
+    monkeypatch.setattr(watch, "marker_of", _refusing(refused))
+    args = ["--repo", str(tmp_path), "--all", "--last-run", str(tmp_path / "runs.json")]
+    (tmp_path / "runs.json").write_text(json.dumps(_ran_at("2026-08-01T00:00:00Z")), "utf-8")
+    if with_cadence:
+        (tmp_path / "cadence.json").write_text(json.dumps(_manifest_cadence()), "utf-8")
+        args += ["--cadence", str(tmp_path / "cadence.json")]
+    assert watch.main(args) == code
+    printed = json.loads(capsys.readouterr().out)
+    assert _sources(printed), "a refused probe held back the arms that answered"
+
+
+def test_freshness_reports_every_arm_s_outage_within_a_quarter_but_ses() -> None:
+    """Which arms a refused probe may downgrade, against the manifest as it stands.
+
+    If НСИ refused runners for a month, `region_salary` and `sector_salary`
+    (92 days) and `nsi_housing` (99) stop advancing, and a refusal spanning the
+    next upload fires the Monday after each is a cadence old — within a week of
+    the release it cost. `salary_dist` is the one that would not: 1462 days.
+    A new arm landing in this set is a decision, not a fixture to update.
+    """
+    cadence = _manifest_cadence()
+    unbacked = {source for source in WATCHED if not watch.backed(source, cadence)}
+    assert unbacked == {"salary-dist"}, (
+        f"freshness-check does not report an outage of {sorted(unbacked)} within "
+        f"{watch.BACKSTOP_DAYS} days, so a refused probe there must stay red."
+    )
+    for source in ("region-salary", "sector-salary", "nsi-housing"):
+        assert watch.backed(source, cadence), f"{source}: a month of НСИ refusing runners"
+
+
+@pytest.mark.parametrize(
+    ("err", "transient"),
+    [
+        (urllib.error.HTTPError("u", 403, "Forbidden", Message(), io.BytesIO()), True),
+        (urllib.error.HTTPError("u", 429, "Too Many", Message(), io.BytesIO()), True),
+        (urllib.error.HTTPError("u", 500, "Internal", Message(), io.BytesIO()), True),
+        (urllib.error.HTTPError("u", 504, "Gateway", Message(), io.BytesIO()), True),
+        (TimeoutError("The read operation timed out"), True),
+        (urllib.error.URLError(ConnectionRefusedError(111, "refused")), True),
+        (http.client.IncompleteRead(b""), True),
+        (urllib.error.HTTPError("u", 404, "Not Found", Message(), io.BytesIO()), False),
+        (urllib.error.HTTPError("u", 410, "Gone", Message(), io.BytesIO()), False),
+        (watch.ProbeError("x: the response carries no Last-Modified header"), False),
+        (ValueError("Expecting value: line 1 column 1"), False),
+    ],
+)
+def test_only_an_upstream_that_may_answer_later_is_transient(monkeypatch, err, transient) -> None:
+    """What the ЕЦБ and НСИ actually returned on the red ticks, against what a moved file returns."""
+
+    def _raise(_release):
+        raise err
+
+    monkeypatch.setattr(watch, "_fetch_marker", _raise)
+    monkeypatch.setattr(watch, "RETRY_WAIT", 0)
+    with pytest.raises(watch.ProbeError) as caught:
+        watch.marker_of(WATCHED["hicp"][0])
+    assert caught.value.transient is transient
 
 
 @pytest.mark.parametrize("source", sorted(WATCHED))
