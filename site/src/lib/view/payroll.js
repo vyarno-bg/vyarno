@@ -173,7 +173,7 @@ export function standStillPay({ payroll, pay, pocketPct }) {
  *
  * **Each earner's position is derived from their GROSS**, recovered from the
  * net they typed with `bgGrossFromNet`. Feeding the net straight in would place
- * someone earning €2,200 gross below a €2,111.64 cap they are actually over —
+ * someone earning €2,400 gross, €1,874.75 net, below a €2,300 cap they are over —
  * a wrong answer inside every plausible band, exactly the class of error
  * `docs/data-sources.md` §"A plausible number is not a verified number"
  * exists for.

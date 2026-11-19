@@ -194,7 +194,7 @@ test("bgNetSalary at the cap (2300) — boundary, no cap flag", () => {
   assert.equal(r.insurableBase, BG_2026_MAX_INSURABLE);
 });
 
-test("bgNetSalary just over the cap (2112) — flag is true", () => {
+test("bgNetSalary just over the cap — flag is true", () => {
   const r = bgNetSalary(BG_2026_MAX_INSURABLE + 0.36);
   assert.equal(r.insuranceCapped, true);
   assert.equal(r.insurableBase, BG_2026_MAX_INSURABLE);
@@ -266,20 +266,35 @@ test("bgGrossFromNet -> bgNetSalary round-trip above the cap", () => {
 
 test("bgGrossFromNet(1000) back-computes ~1288.69 EUR", () => {
   // Branch 1: gross = 1000 / 0.77598 = 1288.69
-  // Branch 2: gross = (1000 + 2300 × 0.1378 × 1.9) / 0.9
-  //        = (1000 + 602.19) / 0.9 = 1780.21
+  // Branch 2: gross = (1000 + 2300 × 0.1378 × 0.9) / 0.9
+  //        = 1111.11 + 316.94 = 1428.05
   // Branch 1 should be picked (closer round-trip).
   const g = bgGrossFromNet(1000);
   assert.ok(Math.abs(g - 1288.69) < 0.5, `expected ~1288.69, got ${g}`);
 });
 
-test("bgGrossFromNet(net) picks the right branch (no-cap when target net < 1640)", () => {
-  // The crossover where both branches agree is roughly net ≈ 1640.
-  // For nets below, branch 1 is closer. Above, branch 2.
-  const g1000 = bgGrossFromNet(1000);
-  assert.ok(g1000 < BG_2026_MAX_INSURABLE, "1000 net should use no-cap branch");
-  const g4000 = bgGrossFromNet(4000);
-  assert.ok(g4000 > BG_2026_MAX_INSURABLE, "4000 net should use cap branch");
+/** The net a gross exactly at the ceiling pays, to the cent: where the branches meet. */
+const LAST_INSURABLE_NET =
+  Math.floor(
+    BG_2026_MAX_INSURABLE * (1 - BG_2026_TOTAL_EMPLOYEE_RATE) * (1 - BG_2026_INCOME_TAX_RATE) * 100
+  ) / 100;
+
+test("bgGrossFromNet takes the no-cap inverse to the ceiling and the capped one past it", () => {
+  // Each side is held to ITS OWN formula. Asserting only that the gross clears
+  // the ceiling cannot go red: the wrong inverse clears it too, by more. The
+  // crossover is read off the constants, so it follows the ceiling the statute
+  // sets rather than naming an old one.
+  const R = BG_2026_TOTAL_EMPLOYEE_RATE;
+  const T = BG_2026_INCOME_TAX_RATE;
+  for (const net of [1000, LAST_INSURABLE_NET]) {
+    const g = bgGrossFromNet(net);
+    assert.ok(Math.abs(g - net / ((1 - R) * (1 - T))) < 1e-9, `${net} net → ${g}, not no-cap`);
+  }
+  for (const net of [LAST_INSURABLE_NET + 0.01, 4000]) {
+    const g = bgGrossFromNet(net);
+    const capped = net / (1 - T) + BG_2026_MAX_INSURABLE * R;
+    assert.ok(Math.abs(g - capped) < 1e-9, `${net} net → ${g}, not the capped inverse`);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -308,7 +323,7 @@ test("Sofia net for the live anchor (€1914.7 gross, 2026-Q1) is ~€1486", () 
 // There are two candidate inverses, and only one of them is an inverse.
 //
 //   below-ceiling:  gross = net / (1 − R − Rtax(1 − R))  = net / 0.77598
-//   at-ceiling:     gross = (net + cap × R × (1 + Rtax)) / (1 − Rtax)
+//   at-ceiling:     gross = (net + cap × R × (1 − Rtax)) / (1 − Rtax)
 //
 // The below-ceiling form is the one that reads as obviously correct, and it
 // is correct — right up to the ceiling. Past it the insurance stops growing
@@ -334,7 +349,8 @@ test("net→gross satisfies its own breakdown", () => {
   // The property, stated without reference to any other calculator: whatever
   // gross we report for a target net must pay that net once every deduction
   // is taken. Sampled across the ceiling, which is where it breaks.
-  for (const targetNet of [800, 1500, 1638, 1639, 1700, 2100, 2500, 4000]) {
+  const edge = [LAST_INSURABLE_NET, LAST_INSURABLE_NET + 0.01];
+  for (const targetNet of [800, 1500, ...edge, 1700, 2100, 2500, 4000]) {
     const p = bgPayslipFromNet(targetNet);
     assert.ok(
       Math.abs(p.gross - p.totalDeductions - targetNet) < 0.005,
@@ -405,7 +421,18 @@ test("the five fund lines sum EXACTLY to the contributions total", () => {
   // means the sweep below always contains several, whatever the ceiling.
   const sweep = [];
   for (let cents = 60000; cents <= 300000; cents += 37) sweep.push(cents / 100);
-  for (const gross of [620.2, 601, 1000, 1077, 1500, 2111.64, 2624.31, 3000, 10000, ...sweep]) {
+  for (const gross of [
+    620.2,
+    601,
+    1000,
+    1077,
+    1500,
+    BG_2026_MAX_INSURABLE,
+    2624.31,
+    3000,
+    10000,
+    ...sweep,
+  ]) {
     const b = bgPayrollBreakdown(gross);
     assert.equal(b.lines.length, 5, `expected 5 fund lines, got ${b.lines.length}`);
     const sum = b.lines.reduce((a, l) => a + l.amount, 0);
@@ -425,7 +452,7 @@ test("the five fund lines sum EXACTLY to the contributions total", () => {
 });
 
 test("the payslip column balances: gross − deductions = net, in cents", () => {
-  for (const gross of [620.2, 1000, 2111.64, 2624.31, 3000, 10000]) {
+  for (const gross of [620.2, 1000, BG_2026_MAX_INSURABLE, 2624.31, 3000, 10000]) {
     const b = bgPayrollBreakdown(gross);
     assert.ok(
       Math.abs(b.insurance + b.tax - b.totalDeductions) < 1e-9,
@@ -447,7 +474,7 @@ test("the breakdown itemises the same money bgNetSalary withholds", () => {
   // second implementation that could drift. Every downstream comparison still
   // runs on bgNetSalary, so a breakdown that disagreed with it by more than
   // display rounding would put two different numbers for one salary on screen.
-  for (const gross of [800, 1500, 2111.64, 2624.31, 5000]) {
+  for (const gross of [800, 1500, BG_2026_MAX_INSURABLE, 2624.31, 5000]) {
     const exact = bgNetSalary(gross);
     const b = bgPayrollBreakdown(gross);
     assert.ok(Math.abs(b.insurance - exact.insurance) < 0.01, `insurance @${gross}`);

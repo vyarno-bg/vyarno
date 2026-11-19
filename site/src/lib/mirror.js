@@ -1124,8 +1124,8 @@ export function bgPayrollBreakdown(gross, params = BG_PAYROLL_DEFAULT) {
  *
  * `bgGrossFromNet` returns a full-precision gross, and the breakdown has to
  * be shown in cents. Rounding that gross to the nearest cent is NOT always
- * the gross that pays the typed net: for €2100 net the exact inverse is
- * €2624.3173, whose nearest cent (€2624.32) works out at €2100.01 once every
+ * the gross that pays the typed net: for €1780 net the exact inverse is
+ * €2293.8736, whose nearest cent (€2293.87) works out at €1779.99 once every
  * line is rounded. Both neighbouring cents are therefore tried and the one
  * that reproduces the typed net wins, so the bottom line of the breakdown is
  * the number the reader put in rather than a cent away from it.
