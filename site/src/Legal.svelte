@@ -15,7 +15,8 @@
    */
   import SiteFooter from "./lib/SiteFooter.svelte";
   import SiteHeader from "./lib/SiteHeader.svelte";
-  import { COPY } from "./lib/content.js";
+  import { COPY, t } from "./lib/content.js";
+  import { lang } from "./lib/stores.js";
   import {
     CONTACT,
     DOCS,
@@ -50,7 +51,7 @@
     <span class="l-en">Legal information</span>
   </h1>
 
-  <nav class="toc mono" aria-label="contents">
+  <nav class="toc mono" aria-label={t(COPY.tocNavK, $lang)}>
     {#each DOCS as doc (doc.id)}
       <a href="#{doc.id}">
         <span class="l-bg">{doc.nav.bg}</span>

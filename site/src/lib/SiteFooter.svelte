@@ -38,6 +38,7 @@
   // ~30 kB of terms of use on the calculator's critical path. `support.js` is
   // tiny and safe to pull in here for the same reason.
   import { COPY, t } from "./content.js";
+  import { lang } from "./stores.js";
   import { CONTACT, FACEBOOK_URL, LEGAL_NAV, REPO_URL } from "./legal-nav.js";
   import { SUPPORT_COPY, footerDonateLink } from "./support.js";
   import { BUILD_ID } from "./build.js";
@@ -139,7 +140,7 @@
         <span class="l-bg">{COPY.footerGroupPagesK.bg}</span>
         <span class="l-en">{COPY.footerGroupPagesK.en}</span>
       </p>
-      <nav class="routes" aria-label={t(COPY.footerRoutesK, "bg")}>
+      <nav class="routes" aria-label={t(COPY.footerRoutesK, $lang)}>
         {#each CONTENT_ROUTES.filter((r) => r.page !== page) as route (route.href)}
           <a class="route-link" href={route.href}>
             <span class="l-bg">{route.label.bg}</span>
@@ -153,7 +154,7 @@
       <span class="l-bg">{COPY.footerGroupLegalK.bg}</span>
       <span class="l-en">{COPY.footerGroupLegalK.en}</span>
     </p>
-    <nav class="legal-links" aria-label="legal">
+    <nav class="legal-links" aria-label={t(COPY.legalNavK, $lang)}>
       {#each LEGAL_NAV as doc (doc.id)}
         <a href={page === "legal" ? `#${doc.id}` : `/legal/#${doc.id}`}>
           <span class="l-bg">{doc.nav.bg}</span>
@@ -293,7 +294,7 @@
         </a>
       {/if}
     </span>
-    <span class="build" title="build">{BUILD_ID}</span>
+    <span class="build" title={t(COPY.buildK, $lang)}>{BUILD_ID}</span>
   </div>
 </footer>
 

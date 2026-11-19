@@ -220,6 +220,12 @@ export const COPY = {
   // The route row's accessible name. It is the second `<nav>` a page carries,
   // after the footer's legal landmark, and two unlabelled ones read alike.
   routesNavK: { bg: "страниците на сайта", en: "site pages" },
+  // The other landmarks a page names, and the build stamp's tooltip: each is
+  // read out in the page's language, or a Bulgarian screen reader spells an
+  // English word letter by letter where a landmark name should be.
+  legalNavK: { bg: "правна информация", en: "legal" },
+  tocNavK: { bg: "съдържание", en: "contents" },
+  buildK: { bg: "версия на сайта", en: "build" },
   // Announced after the current route's name and never drawn: sighted readers
   // have the marked chip, and a screen reader has nothing to read a colour off.
   // A word rather than `aria-current`, because the element carrying it is a

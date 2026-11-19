@@ -1382,7 +1382,7 @@
        meet in the pair of panels at the foot of §volume, which is why that pair
        is drawn there and not sooner: it needs a reader who has already met both
        of its halves. -->
-  <nav class="toc" aria-label="contents">
+  <nav class="toc" aria-label={t(COPY.tocNavK, $lang)}>
     <a href="#prices"
       ><span class="l-bg">колко струва</span><span class="l-en">what it costs</span></a
     >

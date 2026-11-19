@@ -1136,6 +1136,34 @@ test(
   }
 );
 
+test("every name a screen reader is given is in the page's language", { skip }, async () => {
+  // The test above holds the header's glyph buttons; a landmark is named the
+  // same way. A literal `aria-label="legal"` reads a BG footer out in English,
+  // and a label fixed to `"bg"` reads an EN one in Bulgarian, on every route.
+  // Drawn elements only: the language link's hidden twin carries the other
+  // language's name by design.
+  for (const path of ["/", "/how/", "/market/", "/credit/", "/legal/", "/support/", "/404.html"]) {
+    for (const prefix of ["", "/en"]) {
+      if (path === "/404.html" && prefix) continue;
+      await withApp(async (page, errors) => {
+        const wrong = await page.evaluate(() => {
+          const en = document.documentElement.dataset.lang === "en";
+          return [...document.querySelectorAll("[aria-label]")]
+            .filter((el) => el.getClientRects().length && !el.closest('[aria-hidden="true"]'))
+            .map((el) => el.getAttribute("aria-label"))
+            .filter((name) => /\p{L}/u.test(name) && /[Ѐ-ӿ]/.test(name) === en);
+        });
+        assert.deepEqual(
+          wrong,
+          [],
+          `${prefix}${path} names ${wrong.length} element(s) in the other language`
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      }, `${prefix}${path}`);
+    }
+  }
+});
+
 test("the figures are drawn in the face the page chose, in both languages", { skip }, async () => {
   // A digit is Latin, so shipping only IBM's Cyrillic splits put `0-9`, `€` and
   // `%` on the system stack in BOTH languages — the ledger's own numerals in
