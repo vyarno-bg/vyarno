@@ -167,7 +167,7 @@
         ><b>A home.</b> imot.bg publishes one average <b>asking</b> price per square metre for each
         district of a city (what sellers ask, not what buyers paid). We line the districts up
         cheapest to dearest and take the middle one (that is the median) times the size you picked,
-        or your own price if you entered one. "<b>Years</b>" means: that many years of your entire
+        or your own price if you entered one. “<b>Years</b>” means: that many years of your entire
         pay, down to the last euro, would go to the home. The payment is the ordinary equal monthly
         bank instalment on a loan of {fmt0(100 - downPayPct)}% of the price (the other {fmt0(
           downPayPct

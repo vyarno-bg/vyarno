@@ -1014,7 +1014,7 @@
       >
       <span class="l-en"
         >This is the average across the agreements signed last month, and it is what the monthly
-        payment is computed from. Three different numbers go by "the mortgage rate" though, the APRC
+        payment is computed from. Three different numbers go by “the mortgage rate” though, the APRC
         is the second of them, and БНБ place three limits on every new loan besides. All of that is
         on <a href={langHref("/credit/", $lang)}>the borrowing page</a>.</span
       >
