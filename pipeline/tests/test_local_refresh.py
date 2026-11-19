@@ -364,6 +364,13 @@ def test_the_pull_request_workflow_reads_what_the_command_writes(repos):
     assert pattern == "data/**"
     assert lr.branch_name(repos["person"], "payroll", DAY).startswith(pattern[: -len("**")])
     assert re.search(r"^permissions: \{\}$", workflow, re.M), "the default token gets nothing"
+    # The label it applies has to be one the merge script holds on, or a
+    # flagged refresh merges itself on green.
+    from vyarno_pipeline.automerge import HOLD_LABELS
+
+    applied = set(re.findall(r"labels: \['([^']+)'\]", workflow))
+    assert applied and applied <= HOLD_LABELS
+    assert "python3 -m vyarno_pipeline.automerge --pr" in workflow
 
 
 @pytest.mark.parametrize(

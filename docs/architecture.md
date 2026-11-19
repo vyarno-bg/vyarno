@@ -256,10 +256,12 @@ opens a pull request against `main` — **when the upstream republished, and at 
 other time.** `city-price`, and `payroll` when ДВ will not answer a runner, go
 through `make refresh-local` instead: it pushes `data/<source>-<date>` from a
 person's machine, and `data-pr.yml` opens the pull request from that commit's
-body, labelling it `needs-review` when its `Refresh-Flags:` trailer is not 0. A run that re-reads the same figures on a later day writes the same
-payload with a later date on it, and `refresh_report.py` is what tells those two
-apart: it drops the fields the pipeline stamps with the run date, at every depth,
-and compares the rest against what is committed. A pull request that moves no
+body, labels it `needs-review` when its `Refresh-Flags:` trailer is not 0, and
+then runs `automerge.py` like the refresh arms do. A run that re-reads the same
+figures on a later day writes the same payload with a later date on it, and
+`refresh_report.py` is what tells those two apart: it drops the fields the
+pipeline stamps with the run date, at every depth, and compares the rest against
+what is committed. A pull request that moves no
 number would spend a deploy, or a person's review, on nothing.
 
 **A published figure reaches a reader through a merge and no other way, and a

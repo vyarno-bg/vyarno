@@ -499,12 +499,13 @@ def refresh_local(
             return 4
         url = web_url(_git(repo, "remote", "get-url", "origin"))
         where = f" at {url}/pulls" if url else ""
-        label = (
-            f", labelled needs-review for the {len(checks.soft)} soft flag(s) above"
+        fate = (
+            f"labelled needs-review for the {len(checks.soft)} soft flag(s) above, so it "
+            f"waits for you"
             if checks.soft
-            else ""
+            else "it merges itself once CI is green; label it hold to stop that"
         )
-        print(f"Pushed {branch}. GitHub opens its pull request{where}{label}, and CI runs on it.")
+        print(f"Pushed {branch}. GitHub opens its pull request{where}: {fate}.")
         return 0
     finally:
         if _unlink(link):
