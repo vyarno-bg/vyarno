@@ -32,6 +32,11 @@ within two months, and then the broken citations stop being reported too.
     STALE     the upstream has published a period newer than the payload's.
               A refresh is due. Reported, never fatal.
 
+    UNCHECKED nothing could be compared: a host with no machine-readable
+              value (below), or an upstream that refused the request — a 5xx,
+              a 429, or БНБ's firewall page — on every retry. A refusal is a
+              fact about the server that minute, not about the citation.
+
     OK        every value the payload prints is the value the upstream serves.
 
 ## What it cannot check, and why that is said out loud
@@ -68,6 +73,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -76,6 +82,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 
+from vyarno_pipeline.sources.bnb import is_firewall_page
 from vyarno_pipeline.sources.ecb import (
     BSI_SERIES_KEY_DIMS,
     CBD2_KEY_DIMS,
@@ -165,8 +172,40 @@ def tolerance_for(value: float) -> float:
     return 0.5 * 10 ** (-decimals) + 1e-9
 
 
+# An ЕЦБ outage answers every key with 503 (24 at once on 2026-11-05), and БНБ's
+# firewall serves its page in place of a workbook. Read as BROKEN, either one is
+# exit 3 over a correct citation. A wrong citation is a 4xx or the wrong body,
+# so these are retried and then UNCHECKED. FETCH_ATTEMPTS counts attempts.
+FETCH_ATTEMPTS = 3
+RETRY_WAIT = 5.0
+
+
+class Unavailable(Exception):
+    """The upstream refused every attempt, so nothing is known about the citation."""
+
+
+def _refusal(response: httpx.Response) -> str:
+    """Why a response is the server declining rather than an answer, or ''."""
+    if response.status_code >= 500 or response.status_code == 429:
+        return f"HTTP {response.status_code}"
+    if response.status_code == 200 and is_firewall_page(response.content):
+        return f"БНБ's firewall page ({len(response.content)} bytes, HTTP 200)"
+    return ""
+
+
 def _fetch(url: str, client: httpx.Client) -> httpx.Response:
-    return client.get(url, headers={"User-Agent": BROWSER_UA})
+    reason = ""
+    for attempt in range(FETCH_ATTEMPTS):
+        if attempt:
+            time.sleep(RETRY_WAIT * attempt)
+        response = client.get(url, headers={"User-Agent": BROWSER_UA})
+        reason = _refusal(response)
+        if not reason:
+            return response
+    raise Unavailable(
+        f"the upstream refused {FETCH_ATTEMPTS} attempts, the last with {reason} — "
+        f"says nothing about whether the citation is right"
+    )
 
 
 def check_ecb(url: str, want: dict[str, float], client: httpx.Client) -> tuple[str, str, int]:
@@ -680,6 +719,8 @@ def verify(published: Path, only: str | None = None, timeout: float = 60.0) -> l
                         cache[key] = check_one(url, want, client)
                     except httpx.HTTPError as exc:
                         cache[key] = (UNCHECKED, f"unreachable from here: {exc!r}", 0)
+                    except Unavailable as exc:
+                        cache[key] = (UNCHECKED, str(exc), 0)
                 verdict, detail, checked = cache[key]
                 note = _coverage_note(excluded)
                 findings.append(

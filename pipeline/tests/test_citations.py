@@ -16,18 +16,25 @@ import json
 from pathlib import Path
 from urllib.parse import urlparse
 
+import httpx
+import pytest
+import respx
+
 from vyarno_pipeline.citations import (
     BROKEN,
+    FETCH_ATTEMPTS,
     LIVENESS,
     OK,
     REVISED,
     STALE,
     UNCHECKABLE,
+    UNCHECKED,
     _compare,
     _derived,
     _spliced,
     extract,
     tolerance_for,
+    verify,
 )
 
 PUBLISHED = Path(__file__).resolve().parents[2] / "data" / "published"
@@ -288,3 +295,73 @@ def test_the_year_end_level_is_never_dated_by_the_blocks_ref_period():
         f"by the block's ref_period instead of by its own December"
     )
     assert want["2025-12"] == 143.83
+
+
+# The network half, mocked. These hold the line between a citation that is
+# wrong and an upstream that declined to answer: the 2026-11-05 run printed
+# 24 BROKEN that were all one ЕЦБ outage, and nothing in this file noticed.
+ECB_URL = (
+    "https://data-api.ecb.europa.eu/service/data/MIR/M.BG.B.A2C.A.R.A.2250.EUR.N"
+    "?format=jsondata&startPeriod=2026-01"
+)
+BNB_URL = "https://www.bnb.bg/bnbweb/groups/public/documents/bnb_download/s_ir_loan_oa_hh_bg.xlsx"
+WORKBOOK = (Path(__file__).parent / "fixtures" / "bnb_housing_loans_oa_hh_bg.xlsx").read_bytes()
+FIREWALL_PAGE = (
+    b"<html><head><title>Error</title></head><body><H2>Error</H2>This page can't be "
+    b"displayed. Contact support for additional information.<br/>The incident ID is: "
+    b"N/A.</body></html>"
+)
+
+
+def _verdict(tmp_path: Path, payload: dict) -> tuple[str, str]:
+    (tmp_path / "x.json").write_text(json.dumps(payload), encoding="utf-8")
+    (finding,) = verify(tmp_path)
+    return finding.verdict, finding.detail
+
+
+@pytest.fixture
+def no_wait(monkeypatch):
+    monkeypatch.setattr("vyarno_pipeline.citations.RETRY_WAIT", 0)
+
+
+@respx.mock
+def test_an_upstream_outage_is_unchecked_and_not_a_broken_citation(tmp_path, no_wait):
+    route = respx.get(ECB_URL).mock(return_value=httpx.Response(503, text="down"))
+    verdict, detail = _verdict(tmp_path, {"source_url": ECB_URL})
+    assert verdict == UNCHECKED
+    assert "HTTP 503" in detail
+    assert route.call_count == FETCH_ATTEMPTS
+
+
+@respx.mock
+def test_a_dead_key_is_still_broken(tmp_path, no_wait):
+    route = respx.get(ECB_URL).mock(return_value=httpx.Response(404, text="No results found."))
+    assert _verdict(tmp_path, {"source_url": ECB_URL})[0] == BROKEN
+    assert route.call_count == 1, "a 4xx is an answer and is never retried"
+
+
+@respx.mock
+def test_a_bnb_firewall_refusal_is_retried_through(tmp_path, no_wait):
+    respx.get(BNB_URL).mock(
+        side_effect=[
+            httpx.Response(200, content=FIREWALL_PAGE),
+            httpx.Response(200, content=WORKBOOK),
+        ]
+    )
+    assert _verdict(tmp_path, {"source_url": BNB_URL})[0] == LIVENESS
+
+
+@respx.mock
+def test_a_bnb_firewall_that_never_relents_is_unchecked(tmp_path, no_wait):
+    respx.get(BNB_URL).mock(return_value=httpx.Response(200, content=FIREWALL_PAGE))
+    verdict, detail = _verdict(tmp_path, {"source_url": BNB_URL})
+    assert verdict == UNCHECKED
+    assert "firewall" in detail
+
+
+@respx.mock
+def test_any_other_page_in_place_of_a_workbook_is_still_broken(tmp_path, no_wait):
+    # The Site Studio shell an unknown bnb.bg path returns with HTTP 200.
+    shell = b"<!DOCTYPE html><html><body>" + b"x" * 20_000 + b"</body></html>"
+    respx.get(BNB_URL).mock(return_value=httpx.Response(200, content=shell))
+    assert _verdict(tmp_path, {"source_url": BNB_URL})[0] == BROKEN
