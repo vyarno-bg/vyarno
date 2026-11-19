@@ -1429,16 +1429,17 @@ export function bgTaxWedge({
 /**
  * What one contract costs, and how that cost divides.
  *
- * The definition is OECD/EC's, stated here because more than one is defensible:
+ * OECD's formula, stated here because more than one is defensible:
  *
  *   labour cost = gross + employer contributions
  *   net         = gross − employee contributions − income tax
  *   wedge       = (labour cost − net) / labour cost
  *
  * **The flat 10% is inside the wedge**, which is the choice a reader is most
- * likely to expect otherwise: under OECD methodology the wedge is every
- * compulsory levy on employing a person, income tax included, and leaving the
- * tax out answers "what do the contributions take" under the wider name.
+ * likely to expect otherwise: leaving the tax out answers "what do the
+ * contributions take" under the wider name. **So is the 5% to the worker's own
+ * УПФ account**, which OECD count as a non-tax compulsory payment and leave out
+ * of theirs; docs/math.md §"The labour tax wedge" has the source.
  *
  * **Both sides stop at the same ceiling.** КСО чл. 6, ал. 3 puts contributions
  * on no more than the maximum insurable income and only THEN splits them
