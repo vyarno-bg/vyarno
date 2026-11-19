@@ -798,6 +798,26 @@ def _strip_footnote(label: object) -> str:
     return re.sub(r"\s*\d+\s*$", "", str(label or "")).strip()
 
 
+# The measure is the sheet's NAME: the same family publishes «2025=100» levels
+# (HPI_1.1, HPI_2.4) and «предходно тримесечие=100» q/q changes (HPI_1.2, HPI_2.5,
+# HSI_2.4.4), one sheet a workbook, found by stem. Read by index, a renumbered
+# stem publishes a quarter's change as a year's, and only HPI_1.3 has a second
+# publisher to disagree with it.
+HOUSING_YOY_SHEET = "съответно тримесечие=100"
+
+
+def year_on_year_sheet(sheetnames: list[str], stem: str) -> str:
+    """The one sheet carrying the change on the same quarter a year earlier."""
+    hits = [name for name in sheetnames if name.strip() == HOUSING_YOY_SHEET]
+    if len(hits) != 1:
+        raise ValueError(
+            f"НСИ {stem}.xlsx has sheets {sheetnames!r}; expected exactly one named "
+            f"{HOUSING_YOY_SHEET!r}. Any other is a different measure, a q/q change "
+            f"or an index level, and reads as a plausible y/y figure."
+        )
+    return hits[0]
+
+
 def discover_housing_workbook(stem: str, topic: str, timeout: float = 30.0) -> str:
     """The URL НСИ currently publish `{stem}.xlsx` at, read off their own pages.
 
@@ -898,9 +918,7 @@ def fetch_housing_workbook(stem: str, timeout: float = 60.0) -> dict[str, Any]:
     spec = HOUSING_WORKBOOKS[stem]
     url = discover_housing_workbook(stem, spec["topic"], timeout=timeout)
     wb = openpyxl.load_workbook(io.BytesIO(_get_xlsx(url, timeout=timeout)), data_only=True)
-    # Matched by parsing the name, never by index: these workbooks carry one
-    # sheet today and the family they belong to carries dozens.
-    sheet = wb.sheetnames[0]
+    sheet = year_on_year_sheet(wb.sheetnames, stem)
     has_geography = stem != "HPI_1.3"
     return {
         "stem": stem,

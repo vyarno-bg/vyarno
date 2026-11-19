@@ -160,6 +160,14 @@ walks `/statistical-data/{topic}` — topics 99, 98 and 93 — and takes the
 `timeseries/` link naming the workbook, raising if it is gone. Guessing would
 have failed on the first attempt: `HPI_1.3.xls` 404s where `HPI_1.3.xlsx` serves.
 
+**The measure is the sheet's name, and the name is checked.** Each of these
+files carries one sheet, and its siblings carry the other two measures under
+theirs: «2025=100» levels (`HPI_1.1`, `HPI_2.4`) and «предходно тримесечие=100»
+q/q changes (`HPI_1.2`, `HPI_2.5`, `HSI_2.4.4`), read 2026-11-19.
+`nsi.py#year_on_year_sheet` refuses a workbook without exactly one «съответно
+тримесечие=100» sheet, because a renumbered stem would otherwise publish a
+quarter's change as a year's in the two city files nothing else reconciles.
+
 **No level exists to publish, and that is the upstream rather than a choice.**
 Every НСИ city series is an index or a percentage; their own «Пазарни цени на
 жилища» survey in лв./кв.м ran «I тримесечие 1993 - II тримесечие 2014» and was
