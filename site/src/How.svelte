@@ -1145,7 +1145,7 @@
           >Върхът е {number(unemployment.peak.value, 1, $lang)}% през {periodLong(
             unemployment.peak.period,
             $lang
-          )} Най-ниската стойност, която Евростат са отчели за България в този период, е {number(
+          )} Най-ниската стойност, която Евростат е отчел за България в този период, е {number(
             unemployment.trough.value,
             1,
             $lang
