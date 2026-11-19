@@ -51,6 +51,15 @@ test("housingCarveOut never returns a negative spendable", () => {
   assert.equal(r.spendable, 0);
 });
 
+test("housingCarveOut carves out no payment that is not a number of euros", () => {
+  // A term box emptied to retype prices a zero-year annuity, which is an
+  // infinite payment, and carved out it put every division of the basket at
+  // €0 until the reader finished typing.
+  const r = housingCarveOut({ salary: 2000, homeOn: true, monthlyMortgage: Infinity, rent: 300 });
+  assert.equal(r.housingCost, 300);
+  assert.equal(r.spendable, 1700);
+});
+
 // ---------------------------------------------------------------------------
 // The basket's budget — what was placed, and what was not
 //

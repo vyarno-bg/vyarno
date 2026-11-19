@@ -81,11 +81,16 @@ export function homePriceBasis({ priceMode, manualPrice, eurPerM2, m2, eurPerM2I
  * quoting a payment over a term no BG bank can legally originate would be a
  * made-up number.
  *
- * @param {number} termYears
+ * An emptied box comes back as it went in. The clamp is written back into the
+ * bound field, and `Math.min(null, 30)` is 0: a «0» under the cursor of a
+ * reader clearing the term to retype it.
+ *
+ * @param {number|null} termYears
  * @param {{maturityMaxYears:number}} limits
- * @returns {number}
+ * @returns {number|null}
  */
 export function clampTerm(termYears, limits) {
+  if (termYears === null || Number.isNaN(termYears)) return termYears;
   const max = limits?.maturityMaxYears ?? 30;
   return Math.min(termYears, max);
 }
