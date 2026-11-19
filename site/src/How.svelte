@@ -760,8 +760,10 @@
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
           и <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> според дейността. Под
           границата
-          <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> от целия разход за труд не стига до работника,
-          а над нея делът пада: осигуровките спират, заплатата не.</span
+          <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> от целия разход за труд не стига до заплатата
+          на работника, а над нея делът пада: осигуровките спират, заплатата не. В този дял е и вноската
+          за втората му пенсия: тя не стига до заплатата, но отива в негова собствена сметка в пенсионен
+          фонд.</span
         >
         <span class="l-en"
           >On top of the gross, the employer pays its own share of the same five funds, <b
@@ -771,8 +773,9 @@
           <b>{fmt(calc.systemLabourCost.workAccidentMinPct, 1)}%</b>
           to <b>{fmt(calc.systemLabourCost.workAccidentMaxPct, 1)}%</b> depending on the activity.
           Under the ceiling <b>{fmt(calc.systemLabourCost.peakWedgePct)}%</b> of the whole cost of employment
-          never reaches the worker, and above it the share falls: contributions stop, the salary does
-          not.</span
+          never reaches the worker's pay, and above it the share falls: contributions stop, the salary
+          does not. That share includes the contribution to their second-pillar pension, which misses
+          their pay but goes to an account of their own at a pension fund.</span
         >
       </p>
       <figure class="wedge-fig">

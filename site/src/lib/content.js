@@ -1299,7 +1299,7 @@ export const COPY = {
   // key to the band drawn lowest is a contradiction a reader has to resolve
   // before they can read anything else. What each band IS survives the stack
   // being reordered; where it sits does not.
-  lcKeyNet: { bg: "стига до работника", en: "reaches the worker" },
+  lcKeyNet: { bg: "заплата на ръка", en: "take-home pay" },
   lcKeyEmployee: { bg: "удържа се от заплатата му", en: "deducted from their pay" },
   lcKeyEmployer: { bg: "вноски на работодателя", en: "the employer's contributions" },
   // Under the picture, not in it. A percentage on this chart is a share of the
@@ -1315,7 +1315,7 @@ export const COPY = {
   // clause. The range still ships — most sectors are one — but as the sentence
   // that explains the first, never as the first.
   employerCostOne: {
-    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedge}%</b> от разхода за труд не стигат до теб.",
+    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedge}%</b> от разхода за труд не стигат до нея.",
     en: "<b>€{net}</b> reaches your account: <b>{wedge}%</b> of the cost of employing you does not.",
   },
   // One earner whose sector spans several ТЗПБ rates. Ten of the nineteen НСИ
@@ -1323,21 +1323,21 @@ export const COPY = {
   // range is stated in full and no midpoint is offered, because a midpoint is
   // a rate no statute sets.
   employerCostRange: {
-    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedgeLow}–{wedgeHigh}%</b> от разхода за труд не стигат до теб. Точният дял зависи от вноската за трудова злополука: в „{sector}“ тя е между {zLow}% и {zHigh}%, което прави разхода до €{costHigh}.",
+    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedgeLow}–{wedgeHigh}%</b> от разхода за труд не стигат до нея. Точният дял зависи от вноската за трудова злополука: в „{sector}“ тя е между {zLow}% и {zHigh}%, което прави разхода до €{costHigh}.",
     en: "<b>€{net}</b> reaches your account: <b>{wedgeLow}–{wedgeHigh}%</b> of the cost of employing you does not. The exact share turns on the work-accident contribution: in “{sector}” it runs {zLow}% to {zHigh}%, putting the cost as high as €{costHigh}.",
   },
   // No sector chosen. The fallback is the whole statutory span rather than its
   // floor: 0,4% is a specific claim about this reader that happens to be the
   // cheapest one, and what is actually known is the span.
   employerCostNoSector: {
-    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedgeLow}–{wedgeHigh}%</b> от разхода за труд не стигат до теб. Вноската за трудова злополука се определя по дейност и е между {zLow}% и {zHigh}%. Избери сектор горе, за да се стесни сметката.",
+    bg: "До сметката ти стигат <b>€{net}</b>: <b>{wedgeLow}–{wedgeHigh}%</b> от разхода за труд не стигат до нея. Вноската за трудова злополука се определя по дейност и е между {zLow}% и {zHigh}%. Избери сектор горе, за да се стесни сметката.",
     en: "<b>€{net}</b> reaches your account: <b>{wedgeLow}–{wedgeHigh}%</b> of the cost of employing you does not. The work-accident contribution is set per activity and runs {zLow}% to {zHigh}%. Choose a sector above to narrow it.",
   },
   // Several incomes. The household's own rate is total cost over total cost,
   // and each contract is then stated on its own — the ceiling is per contract
   // on the employer's side exactly as on the employee's.
   employerCostHousehold: {
-    bg: "До сметките ви стигат <b>€{net}</b>: <b>{wedge}%</b> от разхода за труд не стигат до вас. Осигуровките спират на <b>€{cap}</b> бруто поотделно за всяка заплата, не за сбора:",
+    bg: "До сметките ви стигат <b>€{net}</b>: <b>{wedge}%</b> от разхода за труд не стигат до тях. Осигуровките спират на <b>€{cap}</b> бруто поотделно за всяка заплата, не за сбора:",
     en: "<b>€{net}</b> reaches your accounts: <b>{wedge}%</b> of the cost of employing you does not. Contributions stop at <b>€{cap}</b> gross for each wage on its own, not for the sum:",
   },
   employerCostEarnerLine: {
