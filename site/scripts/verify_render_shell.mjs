@@ -1240,6 +1240,15 @@ test("no page prints a double stop or fuses two sentences", { skip }, async () =
           `${prefix}${path} fuses two sentences: ${JSON.stringify(fused)} — the ` +
             "follow-on sentence lost its space at a block boundary"
         );
+        // The same seam the other way round: a line break between two spans
+        // is a space, and before a string that opens with its own comma it
+        // prints «гориво , най-бързо».
+        const loose = text.match(/\p{L} +[,.;:](?=\s|$)/gu);
+        assert.equal(
+          loose,
+          null,
+          `${prefix}${path} spaces a word off its own punctuation: ${JSON.stringify(loose)}`
+        );
         assert.deepEqual(errors, [], errors.join(" | "));
       }, `${prefix}${path}`);
     }

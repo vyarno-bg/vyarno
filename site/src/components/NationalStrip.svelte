@@ -342,6 +342,7 @@
     {/if}
     {#if categories.length > 0}
       {@const fastest = fastestRisingDivision(categories)}
+      {@const fastK = FAST_K[divisionRateState(fastest.annual_rate_pct)]}
       <div class="stat">
         <div class="sv mono" style="color: var(--erode)">
           <!-- Signed: `fastestRisingDivision` returns the highest rate
@@ -353,10 +354,12 @@
               COPY.srcEurostat.en}</span
           >
         </div>
+        <!-- One span per language, name and caption together: the caption
+             opens with its own comma, and markup between the two prints a
+             space before it. -->
         <div class="sl">
-          <span class="l-bg">{fastest.bg_name}</span><span class="l-en">{fastest.en_name}</span>
-          <span class="l-bg">{FAST_K[divisionRateState(fastest.annual_rate_pct)].bg}</span><span
-            class="l-en">{FAST_K[divisionRateState(fastest.annual_rate_pct)].en}</span
+          <span class="l-bg">{fastest.bg_name}{fastK.bg}</span><span class="l-en"
+            >{fastest.en_name}{fastK.en}</span
           >
         </div>
         <div class="ss">
