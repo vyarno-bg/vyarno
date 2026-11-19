@@ -132,6 +132,11 @@ jobs:
         if: always()
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          # One arm per call, and a call the API refuses must not take the arms
+          # after it down too: those releases would wait for the next tick that
+          # GitHub delivers, which has been hours. Retries cover a 5xx; the
+          # catch covers the rest and names the arm.
+          retries: 3
           script: |
             const fs = require('fs');
             if (!fs.existsSync('/tmp/watch.json')) {
@@ -139,16 +144,25 @@ jobs:
               return;
             }
             const { refresh = [] } = JSON.parse(fs.readFileSync('/tmp/watch.json', 'utf8'));
+            const refused = [];
             for (const { source, detected } of refresh) {
-              await github.rest.actions.createWorkflowDispatch({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: `refresh-${source}.yml`,
-                ref: context.ref.replace('refs/heads/', ''),
-                inputs: { detected },
-              });
-              core.notice(`dispatched refresh-${source}: ${detected}`);
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: `refresh-${source}.yml`,
+                  ref: context.ref.replace('refs/heads/', ''),
+                  inputs: { detected },
+                });
+                core.notice(`dispatched refresh-${source}: ${detected}`);
+              } catch (err) {
+                refused.push(source);
+                core.error(`refresh-${source} was not dispatched: ${err.message}`);
+              }
             }
             if (refresh.length === 0) {
               core.info('no upstream has published since its arm last ran');
+            }
+            if (refused.length) {
+              core.setFailed(`${refused.length} arm(s) not dispatched: ${refused.join(', ')}`);
             }
