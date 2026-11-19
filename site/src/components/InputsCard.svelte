@@ -465,6 +465,13 @@
   .home-h {
     margin-top: 14px;
   }
+  /* The one hint in this card outside a `.field`, so `card.css`'s `.field .hint`
+     never reaches it: without this it is drawn at body size in ink, louder than
+     the toggle it explains. */
+  #homeHint {
+    font-size: var(--fs-small);
+    color: var(--muted);
+  }
   /* Price-source radio, for someone who already found a home. Same flex
      treatment as homeTog above; the two labels sit on one row and whichever
      is checked drives the homePrice derived value. */
