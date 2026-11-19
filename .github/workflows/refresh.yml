@@ -314,26 +314,11 @@ jobs:
       - name: Dispatch CI
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        # **Nothing this job pushes triggers a workflow.** Events raised by the
-        # automatic token do not create workflow runs — that is the loop-breaker
-        # GitHub applies to every token-driven push and PR, and it is not
-        # configurable. So `ci.yml`'s `push` and `pull_request` triggers both
-        # stay silent here, no check run is ever created against this SHA, and
-        # with five checks required by name the PR is not merely unchecked: it
-        # is unmergeable, waiting on statuses that have no event to produce
-        # them. The same trap the `pull_request` trigger exists to answer for a
-        # fork, arriving from the other side.
-        #
-        # `workflow_dispatch` is the documented exception to that rule, which
-        # is why it is the one used here. The run it starts reports its checks
-        # against the branch head, which is the commit the PR is open on, so
-        # the required checks resolve against the same SHA branch protection is
-        # reading. `ci.yml` already carries the trigger; nothing there changes.
-        #
-        # A failure to dispatch does not fail the refresh — the payload is
-        # committed and pushed by this point, and a PR that needs its checks
-        # re-run by hand is a smaller problem than a red run over a good
-        # refresh. It is logged as a notice so the reason is in the log.
+        # **Without this the PR can never merge.** The push raises no run, and the
+        # PR raises one that waits for approval, runs no job and closes as a red
+        # zero-job "failure" on merge; so no required check reports on this SHA.
+        # `workflow_dispatch` is the automatic token's exception and reports on
+        # the branch head. Not fatal: the payload is already pushed.
         continue-on-error: true
         with:
           script: |
