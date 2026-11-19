@@ -51,6 +51,10 @@ jobs:
       # `actions: write` is what dispatches CI onto the branch this job
       # pushes. See the "Dispatch CI" step for why that is not optional.
       actions: write
+    # Every script reads the arm's name from here and none has it pasted into
+    # its source, so no input value can ever be parsed as shell or JavaScript.
+    env:
+      SOURCE: ${{ inputs.source }}
 
     steps:
       - name: Checkout
@@ -117,7 +121,7 @@ jobs:
         run: |
           set -euo pipefail
           .venv/bin/vyarno-pipeline refresh \
-            --source "${{ inputs.source }}" \
+            --source "$SOURCE" \
             --out ../data/published
 
       - name: Capture changed files
@@ -139,7 +143,7 @@ jobs:
             # On the run page, where a notice folded into a job that did nothing
             # is not. A refresh finding the same figures is the good outcome and
             # has to read as one without opening the log.
-            echo "### ${{ inputs.source }} — nothing republished" >> "$GITHUB_STEP_SUMMARY"
+            echo "### ${SOURCE} — nothing republished" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "The payload the run wrote is the one already committed, byte for byte." \
               >> "$GITHUB_STEP_SUMMARY"
@@ -157,7 +161,7 @@ jobs:
           set -euo pipefail
           node site/scripts/payload-cadence.mjs > /tmp/cadence.json
           pipeline/.venv/bin/vyarno-pipeline refresh-report \
-            --source "${{ inputs.source }}" \
+            --source "$SOURCE" \
             --published data/published \
             --cadence /tmp/cadence.json \
             --against origin/main \
@@ -180,13 +184,15 @@ jobs:
         # renamed, made conditional or dropped while this one still looks
         # complete on its own. `test_cli_dispatch.py` asserts they stay
         # together.
+        env:
+          AS_OF: ${{ steps.meta.outputs.as_of }}
         run: |
           set -euo pipefail
           git config user.name "vyarno-refresh"
           git config user.email "vyarno-refresh@users.noreply.github.com"
-          git checkout -b "data/${{ inputs.source }}"
+          git checkout -b "data/${SOURCE}"
           git add -- data/published
-          git commit --signoff -m "data refresh: ${{ inputs.source }} as of ${{ steps.meta.outputs.as_of }}"
+          git commit --signoff -m "data refresh: ${SOURCE} as of ${AS_OF}"
 
       - name: Push
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
@@ -214,7 +220,7 @@ jobs:
         # branch we superseded is still the branch we fetched.
         run: |
           set -euo pipefail
-          BRANCH="data/${{ inputs.source }}"
+          BRANCH="data/${SOURCE}"
           EXPECTED=""
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
             echo "::notice::$BRANCH already on origin — superseding it in place."
@@ -305,7 +311,6 @@ jobs:
             core.setOutput('pr_url', pr.html_url);
             core.setOutput('pr_number', pr.number);
         env:
-          SOURCE: ${{ inputs.source }}
           AS_OF: ${{ steps.meta.outputs.as_of }}
           STALE_LIST: ${{ steps.meta.outputs.stale_list }}
           DETECTED: ${{ inputs.detected }}
@@ -329,5 +334,3 @@ jobs:
               ref: `data/${process.env.SOURCE}`,
             });
             core.info(`Dispatched CI on data/${process.env.SOURCE}`);
-        env:
-          SOURCE: ${{ inputs.source }}
