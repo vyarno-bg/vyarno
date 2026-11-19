@@ -153,7 +153,9 @@ export const FLOORS = {
   // basket, in `verify_render_basket.mjs`.
   // Raised with the gutter rule in `verify_render_layout.mjs`: no route sets a
   // line of text against a phone's edge, one test per route.
-  render: { floor: 216, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  // Raised with the layout-shift rule in `verify_render_layout.mjs`: nothing on
+  // the four routes that fetch moves once painted, one test per route.
+  render: { floor: 229, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**

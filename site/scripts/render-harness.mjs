@@ -238,32 +238,14 @@ async function newPage(options) {
  *   terminal state and belongs in the predicate too: without it a genuine load
  *   failure hangs the wait instead of failing the assertion that was going to
  *   catch it.
- * - **`/how/`** — everything on it IS prerendered, so no element proves the
- *   client ran. `document.readyState === "complete"` does: a module script has
- *   executed by the time `load` fires, so `how-main.js` has already emptied
- *   `#app` and mounted over it, and the payload-gated table below is therefore
- *   the live one rather than the frozen copy it replaced. A bundle that never
- *   executed at all would leave the prerendered table standing and satisfy this
- *   — that case is caught by the error list, which every test in this file
- *   asserts is empty, and by `verify_static_assets.mjs`.
- * - **`/market/`** — prerendered too, tables and charts included, so `#app`
- *   having a child is satisfied by markup frozen at build time and every
- *   assertion in `verify_render_market.mjs` would have been reading that.
- *   `document.readyState === "complete"` is what proves otherwise, for the
- *   reason it does on `/how/`: a module script has executed by the time `load`
- *   fires, so `market-main.js` has already emptied `#app` and mounted over it.
- *   The element half only rules out a page that mounted something else.
- * - **`/credit/`** — prerendered too, and the entry where `#app` having a child
- *   proves the least: the frozen copy carries all 23 `.stat` blocks and all 26
- *   of their `.src` links, so that predicate is satisfied at 40ms by the markup
- *   `verify_render_credit.mjs` is not there to read — and the assertions pass,
- *   because build-time markup looks like the live page. Under a 4x CPU throttle
- *   the same predicate lands mid-mount instead, on 4 figures out of 23, which
- *   is that bug arriving as a failure rather than as a pass.
- *   `readyState === "complete"` proves the wipe happened, for the reason it
- *   does on `/market/`; the `.src` is what proves the payloads did, because the
- *   client's own render before they arrive draws the figures with no publisher
- *   behind them — 5 `.stat` and 0 `.src`, at every throttle from 1x to 20x.
+ * - **`/how/`, `/market/` and `/credit/`** — everything on them IS
+ *   prerendered, tables, charts and sources included, so no element proves the
+ *   client ran: the frozen copy carries all 23 of `/credit/`'s `.stat` blocks
+ *   and their 26 `.src` links, and every assertion would pass reading it. Their
+ *   bootstraps keep that copy on screen until the payloads arrive and mark
+ *   `#app[data-live]` in the task that swaps it out (`main.js` says why), so
+ *   the mark is both facts at once; the element half rules out a page that
+ *   mounted something else.
  * - **`/legal/` and `/support/`** — prerendered for the same reason and waited
  *   for the same way. Their prose is assembled from in-repo constants rather
  *   than from a payload, which changes nothing about what a predicate has to
@@ -279,13 +261,9 @@ async function newPage(options) {
  */
 const READY_BY_ROUTE = {
   "/": () => document.querySelector(".m-grid, .load-fail") !== null,
-  "/how/": () =>
-    document.readyState === "complete" && document.querySelector("#basket table") !== null,
-  "/market/": () =>
-    document.readyState === "complete" &&
-    document.querySelector("#prices table.fig-table") !== null,
-  "/credit/": () =>
-    document.readyState === "complete" && document.querySelector("main.credit .stat .src") !== null,
+  "/how/": () => document.querySelector("#app[data-live] #basket table") !== null,
+  "/market/": () => document.querySelector("#app[data-live] #prices table.fig-table") !== null,
+  "/credit/": () => document.querySelector("#app[data-live] main.credit .stat .src") !== null,
   "/legal/": () =>
     document.readyState === "complete" && document.querySelector("main.legal article") !== null,
   "/support/": () =>

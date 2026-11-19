@@ -21,11 +21,17 @@ import "./lib/chart.css";
 import "./lib/print.css";
 import { mount } from "svelte";
 import Credit from "./Credit.svelte";
+import { loadAll } from "./lib/data.js";
 import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
-target.replaceChildren();
 
 startAnalytics();
 
-export default mount(Credit, { target });
+// The prerendered page stays until the payloads are in hand: `main.js` says why.
+// `"credit"` is the route `Credit.svelte` dates its payloads against.
+loadAll("credit").then((payloads) => {
+  target.replaceChildren();
+  mount(Credit, { target, props: { payloads } });
+  target.dataset.live = "";
+});

@@ -19,11 +19,16 @@ import "./lib/chart.css";
 import "./lib/print.css";
 import { mount } from "svelte";
 import How from "./How.svelte";
+import { fetchPayloads } from "./lib/calculator.svelte.js";
 import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
-target.replaceChildren();
 
 startAnalytics();
 
-export default mount(How, { target });
+// The prerendered page stays until the payloads are in hand: `main.js` says why.
+fetchPayloads().then((payloads) => {
+  target.replaceChildren();
+  mount(How, { target, props: { payloads } });
+  target.dataset.live = "";
+});

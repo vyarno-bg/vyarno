@@ -65,12 +65,14 @@
   // Which payloads are overdue, and which never arrived. Set in `onMount` and
   // never seeded from the prop: the verdict is a function of the clock, and the
   // build's clock is not the reader's. `ready: true` because this line only
-  // runs after the await — the gate is for surfaces that render while the fetch
-  // is still outstanding (view/freshness.js#dataNotice).
+  // runs once the fetch resolved — the gate is for surfaces that render while
+  // the fetch is still outstanding (view/freshness.js#dataNotice).
   let notice = $state(null);
 
+  // `credit-main.js` hands the payloads in, fetched before it mounts
+  // (`Market.svelte` says why); the fetch here is for a mount without them.
   onMount(async () => {
-    data = await loadAll("credit");
+    if (!payloads) data = await loadAll("credit");
     notice = dataNotice({ age: dataAge(data, payloadsFor("credit")), ready: true });
   });
 

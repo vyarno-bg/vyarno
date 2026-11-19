@@ -22,11 +22,17 @@ import "./lib/chart.css";
 import "./lib/print.css";
 import { mount } from "svelte";
 import Market from "./Market.svelte";
+import { loadAll } from "./lib/data.js";
 import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
-target.replaceChildren();
 
 startAnalytics();
 
-export default mount(Market, { target });
+// The prerendered page stays until the payloads are in hand: `main.js` says why.
+// `"market"` is the route `Market.svelte` dates its payloads against.
+loadAll("market").then((payloads) => {
+  target.replaceChildren();
+  mount(Market, { target, props: { payloads } });
+  target.dataset.live = "";
+});

@@ -99,7 +99,7 @@
   /**
    * Which of this page's payloads are overdue, and which never arrived at all.
    *
-   * **`ready: true` because this line only runs after the await above.** The
+   * **`ready: true` because this line only runs once the fetch resolved.** The
    * gate exists for the surfaces that render while the fetch is outstanding,
    * where every payload reads as absent; here the assignment IS the moment it
    * resolved (view/freshness.js#dataNotice).
@@ -112,8 +112,11 @@
    * the exact failure this line exists to report.
    */
   let notice = $state(null);
+  // `market-main.js` fetches before it mounts and hands the payloads in, so
+  // the page's first frame carries its figures; fetching here too would ask
+  // for every file twice.
   onMount(async () => {
-    data = await loadAll("market");
+    if (!payloads) data = await loadAll("market");
     notice = dataNotice({ age: dataAge(data, payloadsFor("market")), ready: true });
   });
 
