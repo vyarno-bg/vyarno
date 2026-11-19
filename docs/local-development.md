@@ -388,8 +388,10 @@ while the run reports success.
 refresh-*.yml` fires each one on its own upstream's cadence and opens a pull
 request with the diff; running an arm here is for developing it, for re-reading
 a payload the review questioned, and for `city-price`, which cannot run on a
-runner at all. What a scheduled run cannot do is decide whether a moved number
-is right — the pull request exists so that stays a person's job.
+runner at all. The pull request merges itself once the gates and CI are green,
+so a moved number nobody looked at is published; label it `hold` to keep it for
+a person ([`architecture.md`](./architecture.md) §"What happens to a data pull
+request").
 
 `--skip-link-check` skips **gate 6** (the published-URL body inspection — 52
 calls). Use it only where outbound HTTP is genuinely blocked, and **never for

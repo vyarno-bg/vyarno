@@ -257,26 +257,35 @@ other time.** A run that re-reads the same figures on a later day writes the sam
 payload with a later date on it, and `refresh_report.py` is what tells those two
 apart: it drops the fields the pipeline stamps with the run date, at every depth,
 and compares the rest against what is committed. A pull request that moves no
-number spends the one human look below on nothing.
+number would spend a deploy, or a person's review, on nothing.
 
-**A published figure reaches a reader
-through a merge and no other way**, and nothing in this repository merges one.
-That is deliberate, and the failure it leaves is the one worth naming: left
-alone the site ages while every gate stays green — the refresh ran, the gates
-passed, the PR opened, the dispatched CI went green on it — and the only signal
-a reader would ever get is the overdue line on a page they may never open.
+**A published figure reaches a reader through a merge and no other way, and a
+green gate run plus green CI now makes that merge.** The refresh arms its own
+pull request for GitHub auto-merge (`automerge.py`, rebase, the way every data
+PR has landed), and GitHub merges it the moment the five required CI checks are
+green on its head. Cloudflare Pages builds `main` from the push whoever made it,
+so the token's merge deploys. What it gives up is the human look before
+publication: the gates catch a payload wrong in a way somebody already thought
+of, and CI that the site still renders it.
 
-**Auto-merge on green is refused.** A data refresh is precisely the change where
-the diff IS the review: a number moving is the whole event, `data/published/` is
-committed so the diff shows which ones moved, and a bot merging it removes the
-only human look any published figure gets. The gates are not a substitute — they
-catch a payload that is wrong in a way somebody already thought of, which is a
-narrower claim than "this is the right number this quarter".
-`freshness-check.yml` therefore takes `pull-requests: read` and
-`test_cli_dispatch.py` asserts it never takes write.
+**`hold` or `needs-review` stops it.** A refresh that raised soft flags labels
+its own PR `needs-review`; a person adds `hold`. Either one keeps the PR for a
+hand merge, and `data-pr-hold.yml` switches auto-merge off when one is added
+after the PR armed, and back on when the last comes off. The PR's own *Disable
+auto-merge* button is the immediate stop. The bot arms raise no soft flag: every
+gate is hard, and a payload that fails one exits before any PR exists.
 
-**The enforcement is that the weekly check fails loudly, naming the pull
-request.** `freshness-check.yml` reports two things in one run: payloads past
+Three things that follow. **Arming is refused unless branch protection is
+holding the PR**, since auto-merge on an unprotected PR merges before CI reports,
+so the five required checks are now the whole publication gate. **A merge made
+by the automatic token raises no workflow run**, so `ci.yml` does not re-check
+`main` after it: the head was checked, and if `main` moved in between, the
+rebased combination was not. And a PR that CI fails waits for a person.
+
+**What is left waiting is reported weekly, by name.** `freshness-check.yml`
+reports and never merges: it takes `pull-requests: read`, and
+`test_cli_dispatch.py` asserts it never takes write. It reports two things in
+one run: payloads past
 **the cadence their own manifest row declares** — it shells out to
 `payload-cadence.mjs` for that, so one flat threshold cannot creep back in — and
 open `data/*` pull requests with how long each has been sitting.

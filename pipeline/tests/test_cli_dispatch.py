@@ -361,17 +361,14 @@ def test_neither_workflow_decides_for_itself_how_old_is_too_old() -> None:
 def test_the_weekly_check_reads_the_data_pull_requests_and_never_merges_them() -> None:
     """Every arm but one opens a PR, and a payload reaches a reader through a merge.
 
-    Nothing in this repository merges them. Left alone the site ages while every
-    gate stays green — the refresh ran, the gates passed, the PR opened, CI went
-    green on it — and the only other signal is an overdue line on a page the
-    reader may never open. So the weekly check reports the open `data/*` pull
-    requests beside the stale payloads, which is what makes a staleness alert
-    actionable rather than merely true.
+    A refresh PR merges itself on green CI, so the ones the weekly check finds
+    open are held, red, or never armed, and each is a figure no reader is
+    getting. Reporting them beside the stale payloads is what makes a staleness
+    alert actionable rather than merely true.
 
-    The second half of the assertion is the one worth keeping: auto-merge on
-    green is the obvious next step and it is refused, because a data refresh is
-    the change where the diff IS the review. This workflow may read the pull
-    requests and may never take a write scope over them.
+    This workflow may read the pull requests and may never take a write scope
+    over them: what merges is `automerge.py` under branch protection, and a
+    report that could also merge would be a second, unguarded route to `main`.
     """
     text = (
         Path(__file__).resolve().parents[2] / ".github" / "workflows" / "freshness-check.yml"
@@ -388,14 +385,14 @@ def test_the_weekly_check_reads_the_data_pull_requests_and_never_merges_them() -
     )
     assert not re.search(r"^\s+pull-requests: write\s*$", text, re.M), (
         "freshness-check.yml has taken a write scope over pull requests. This "
-        "workflow reports who has not merged the data; it must not become the "
-        "thing that merges it (docs/architecture.md §CI)."
+        "workflow reports what has not merged; it must not become a second route "
+        "to main beside automerge.py (docs/architecture.md)."
     )
     for forbidden in ("pulls.merge", "enablePullRequestAutoMerge", "gh pr merge"):
         assert forbidden not in text, (
-            f"freshness-check.yml calls {forbidden}. A data refresh is the change "
-            f"where the diff is the review; a bot merging it removes the only "
-            f"human look any published figure gets."
+            f"freshness-check.yml calls {forbidden}. Merging belongs to "
+            f"automerge.py, which arms only a PR branch protection is holding; "
+            f"a weekly report that merges skips that guard."
         )
 
 
