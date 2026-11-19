@@ -65,6 +65,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { ORIGIN } from "./gen-sitemap.mjs";
+import { PLAUSIBLE_SCRIPT } from "../src/lib/analytics.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE = join(HERE, "..");
@@ -360,6 +361,63 @@ async function checkCanonicalHost(origin) {
   return bad;
 }
 
+/**
+ * The served HTML is the HTML the build wrote, with nothing the edge added.
+ *
+ * Every `<script>` the build emits is a hashed `/assets/` bundle or JSON-LD, and
+ * no attribute points into `/cdn-cgi/`. An edge analytics beacon, a bot-challenge
+ * snippet and email obfuscation each break that, and the last turns the ЗЕТ чл. 4
+ * contact address into «[email protected]» for anyone without JavaScript.
+ */
+function foreignMarkup(html) {
+  const found = [];
+  for (const [, attrs] of html.matchAll(/<script\b([^>]*)>/gi)) {
+    const type = attrs.match(/\btype\s*=\s*["']?([^"'\s>]+)/i)?.[1]?.toLowerCase();
+    const src = attrs.match(/\bsrc\s*=\s*["']?([^"'\s>]+)/i)?.[1];
+    if (type === "application/ld+json" || src?.startsWith("/assets/")) continue;
+    found.push(src ? `a script from ${src}` : `an inline script <script${attrs}>`);
+  }
+  // The fragment is the address, encoded per link, so it is dropped to report the rule once.
+  const links = html.match(/\b(?:href|action)\s*=\s*["']?\/cdn-cgi\/[^"'\s>#]*/gi) ?? [];
+  for (const attr of links) found.push(`a link rewritten into the CDN: ${attr}`);
+  return [...new Set(found)];
+}
+
+/** The pages' markup, and the one third-party script they load, as served. */
+async function checkServedMarkup(origin) {
+  const bad = [];
+  const where = new Map();
+  for (const route of ["/", "/en/", ...ROUTES]) {
+    const res = await fetch(new URL(route, origin), { redirect: "follow" }).catch((err) => err);
+    if (res instanceof Error || !res.ok) {
+      bad.push(`   ${route} — ${res.message ?? `HTTP ${res.status}`}, markup not checked`);
+      continue;
+    }
+    const found = foreignMarkup(await res.text());
+    if (found.length === 0) console.log(`ok ${route} — markup carries only what the build wrote`);
+    for (const what of found) where.set(what, [...(where.get(what) ?? []), route]);
+  }
+  for (const [what, routes] of where) bad.push(`   ${what}\n     on ${routes.join(" ")}`);
+  if (where.size) {
+    bad[bad.length - 1] +=
+      "\n   Each of those is an edge feature rewriting the page, switched off in the\n" +
+      "   CDN's dashboard rather than here. Admitting one is a privacy-notice edit first.";
+  }
+  // A filename the counter's dashboard no longer recognises 404s, the page still
+  // renders, and the audience figure stops without anything going red.
+  const counter = await fetch(PLAUSIBLE_SCRIPT, { method: "HEAD" }).catch((err) => err);
+  if (counter instanceof Error || !counter.ok) {
+    bad.push(
+      `   ${PLAUSIBLE_SCRIPT} — ${counter.message ?? `HTTP ${counter.status}`}\n` +
+        "     The visit counter loads nothing. The filename is issued per site by the\n" +
+        "     counter's dashboard: check the site is still there and still on it."
+    );
+  } else {
+    console.log(`ok the visit counter's script answers ${counter.status}`);
+  }
+  return bad;
+}
+
 const origin = process.argv[2] ?? ORIGIN;
 const blocks = parseHeaders(readFileSync(join(SITE, "public", "_headers"), "utf8"));
 if (blocks.length === 0) {
@@ -469,12 +527,21 @@ for (const [path, patterns] of probes) {
 }
 
 console.log();
+const markup = await checkServedMarkup(origin);
+if (markup.length) {
+  problems += markup.length;
+  console.log(`\nFAIL served markup — ${markup.length} problem(s)`);
+  for (const line of markup) console.log(line);
+}
+
+console.log();
 const deployNote = undeployedPaths
   ? ` (${undeployedPaths} declared path(s) not deployed at this origin yet)`
   : "";
 if (problems === 0 && unprobed === 0) {
   console.log(
-    `The origin serves one address per route, with every header _headers declares.${deployNote}`
+    "The origin serves one address per route, with every header _headers declares" +
+      ` and the markup the build wrote.${deployNote}`
   );
   process.exit(0);
 }

@@ -544,7 +544,10 @@ serves what the file declares, `ORIGIN=…` points it at a staging deploy, and i
 sits outside `make check` because it needs a network and a deployed site. Run it
 after a deploy that touched `_headers`, and when a bug report has the shape of a
 missing header — [`site.md`](./site.md) §"Hosting: `public/_headers`" has what
-drift there costs a reader.
+drift there costs a reader. It also fails on HTML the edge rewrote (a script
+the build did not write, a link turned into a `/cdn-cgi/` address) and on a
+visit-counter script that no longer answers, since a CDN dashboard toggle
+produces either one with no commit here.
 
 ## Pre-commit checklist
 
