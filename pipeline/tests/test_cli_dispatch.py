@@ -512,8 +512,9 @@ def test_nothing_commits_pushes_or_opens_a_pull_request_without_a_real_change() 
 def test_the_workflow_the_refresh_dispatches_ci_onto_exists() -> None:
     """A refresh pull request has no other way to get a check run on it.
 
-    Nothing this job pushes triggers a workflow — GitHub raises no run for an
-    event its own token created — so `refresh.yml` dispatches `ci.yml` by name,
+    The pull request this job opens does raise a `pull_request` run, and it is
+    one that waits for approval, runs zero jobs and closes red (run 42256855147
+    on `data/credit`, 2026-11-06). So `refresh.yml` dispatches `ci.yml` by name,
     and that step is `continue-on-error: true` because a payload already pushed
     is worth more than a red run over a good refresh. Both halves are right and
     together they are silent: rename or move the workflow and every refresh
@@ -530,7 +531,7 @@ def test_the_workflow_the_refresh_dispatches_ci_onto_exists() -> None:
     dispatched = re.findall(r"workflow_id: '([^']+\.yml)'", refresh)
     assert dispatched, (
         "refresh.yml dispatches no workflow. Without it a refresh pull request "
-        "carries no check runs at all — the token that pushed it raises no events."
+        "carries no check that runs: its own pull_request run executes zero jobs."
     )
     for name in dispatched:
         assert (workflows / name).exists(), (
