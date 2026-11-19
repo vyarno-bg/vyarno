@@ -63,7 +63,7 @@ const SETUP_HINT = isWindows
     "  .\\.venv\\Scripts\\Activate.ps1\n" +
     "  pip install -r requirements-dev.txt\n" +
     "  pip install -e . --no-deps\n" +
-    "  cd ..\\site && npm install"
+    "  cd ..\\site && npm ci"
   : "  make setup";
 
 /**

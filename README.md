@@ -41,7 +41,7 @@ cd pipeline && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e . --no-deps
 pytest -q                                     # the offline suite
 
-cd ../site && npm install && npm run dev      # http://localhost:5173
+cd ../site && npm ci && npm run dev           # http://localhost:5173
 ```
 
 On Windows the venv puts its executables in `Scripts\` and the interpreter is
