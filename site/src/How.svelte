@@ -45,12 +45,10 @@
   import { hitW, hitX, niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   /**
-   * The published payloads, read off disk by `scripts/prerender.mjs`.
-   *
-   * `how-main.js` never passes them: in a browser the page fetches, like every
-   * other page here. At build time there is no fetch, so the payloads arrive
-   * as a prop and the served HTML carries the figures a crawler — and an agent
-   * citing them — would otherwise have to run the bundle to see.
+   * The published payloads: read off disk by `scripts/prerender.mjs`, so the
+   * served HTML carries the figures a crawler — and an agent citing them —
+   * would otherwise have to run the bundle to see, and fetched by `how-main.js`
+   * before it mounts, so the live page's first frame carries them too.
    */
   const { payloads = null, servedLang = null } = $props();
 
@@ -71,10 +69,10 @@
   if (servedLang) lang.set(servedLang);
 
   // svelte-ignore state_referenced_locally
-  // Reading the initial value is the whole intent: `payloads` is set once by
-  // the build and never again, and the Calculator holds what it was given.
+  // Reading the initial value is the whole intent: `payloads` is set once, at
+  // build time or before the mount, and the Calculator holds what it was given.
   const calc = new Calculator(payloads);
-  onMount(calc.load);
+  onMount(() => calc.load(payloads));
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);

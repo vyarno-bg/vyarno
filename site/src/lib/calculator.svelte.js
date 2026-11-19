@@ -134,6 +134,13 @@ import {
 const PAGE = "home";
 
 /**
+ * This page's payloads, fetched. Exported for the bootstraps that hold the
+ * prerendered page until the figures are in hand (`main.js` says why), so they
+ * wait on the same route `load()` dates rather than naming one of their own.
+ */
+export const fetchPayloads = () => loadAll(PAGE);
+
+/**
  * How many incomes the pay card will hold.
  *
  * Not a statement about households — it is where the card stops being
@@ -420,8 +427,9 @@ export class Calculator {
    * calculator's own failure state is for *missing data*, not for a broken
    * loader.
    */
-  load = async () => {
-    this.data = await loadAll(PAGE);
+  load = async (payloads = null) => {
+    // Handed in by a bootstrap that already fetched them; the retry passes none.
+    this.data = payloads ?? (await fetchPayloads());
     this.dataReady = true;
     // Staleness is age-based off `as_of` (the date the pipeline last refreshed
     // each JSON) — no hardcoded release date to maintain — and it is judged per

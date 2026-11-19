@@ -268,9 +268,14 @@ the rendered text against the payload the page fetched.
 
 1. `npm run dev` (or `npm run preview` against a `dist/`) starts Vite, which
    serves everything from `site/`.
-2. `src/main.js` imports `tokens.css` and mounts `App.svelte` into `#app`.
-3. `App.svelte` constructs a `Calculator` and its `onMount` calls `calc.load()`,
-   which calls `loadAll()` from `$lib/data.js`.
+2. `src/main.js` imports `tokens.css` and calls `fetchPayloads()`, which is
+   `loadAll()` from `$lib/data.js` for the calculator's route. The prerendered
+   page stays on screen meanwhile; once the payloads resolve, `main.js` empties
+   `#app` and mounts `App.svelte` with them in one task, so nothing a reader
+   can see moves when the figures arrive. `/how/`, `/market/` and `/credit/`
+   boot the same way.
+3. `App.svelte` constructs a `Calculator` seeded with them, and its `onMount`
+   calls `calc.load(payloads)`, which dates them against the reader's clock.
 4. `data.js` does `Promise.all` of one `fetch('/data/published/<name>.json',
 { cache: 'no-cache' })` per manifest row and returns whichever succeeded; failures become
    `null` and the page renders whatever subset loaded. The list is

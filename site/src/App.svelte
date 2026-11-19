@@ -41,11 +41,12 @@
   import { CONTACT } from "./lib/legal-nav.js";
 
   /**
-   * Both are set only by `scripts/prerender.mjs`, which renders this component
-   * on the server at build time so the page carries its prose AND the
-   * country's figures before the bundle runs. `main.js` passes neither.
+   * `scripts/prerender.mjs` sets both, rendering this component at build time
+   * so the page carries its prose AND the country's figures before the bundle
+   * runs. `main.js` passes `payloads` alone, fetched before it mounts, so the
+   * client's first frame carries the figures too (`main.js` says why).
    *
-   * `payloads` is the `loadAll()` result read off disk — the same files
+   * At build time `payloads` is the `loadAll()` result read off disk — the same files
    * `copy-data.mjs` puts in `dist/data/published/` for the bundle to fetch, so
    * the HTML a crawler reads and the JSON the reader's tab fetches come out of
    * one build from one set of files.
@@ -76,11 +77,12 @@
   if (servedLang) lang.set(servedLang);
 
   // svelte-ignore state_referenced_locally
-  // Reading the initial value is the whole intent: `payloads` is set once by
-  // the build and never again, and the Calculator holds what it was given.
+  // Reading the initial value is the whole intent: `payloads` is set once, at
+  // build time or before the mount, and the Calculator holds what it was given.
   const calc = new Calculator(payloads);
 
-  onMount(calc.load);
+  // The freshness verdict still runs here, against the reader's own clock.
+  onMount(() => calc.load(payloads));
 
   /**
    * What a previous visit left on this device, read once, before any effect

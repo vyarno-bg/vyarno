@@ -58,9 +58,9 @@
  * consumer, and doubled prose is the worst input it could be handed.
  *
  * So the written page keeps the language its entry declares in `data-lang` and
- * drops the other. **This is the crawler's copy and no reader's**, in either
- * state a reader can be in: the bundle calls `replaceChildren()` before
- * `mount()`, so anyone running JavaScript never sees this markup, and with
+ * drops the other. **A reader loses nothing by it**, in either state they can
+ * be in: with JavaScript on they see this markup only until the payloads
+ * arrive, and its language is the one their URL asked for; with
  * JavaScript off the half this step dropped is not what a reader is missing —
  * the counterpart page is a URL, and the header's language control is an
  * anchor pointing at it. The live DOM still carries both, because every string

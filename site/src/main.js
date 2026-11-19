@@ -8,21 +8,20 @@ import "./lib/result-row.css";
 import "./lib/print.css";
 import { mount } from "svelte";
 import App from "./App.svelte";
+import { fetchPayloads } from "./lib/calculator.svelte.js";
 import { startAnalytics } from "./lib/analytics.js";
 
 const target = document.getElementById("app");
 
-// `mount()` APPENDS to its target, and the built page arrives with the shell
-// already inside #app: `scripts/prerender.mjs` renders it there so a crawler
-// that runs no JavaScript still gets the page's prose. Left in place, every
-// heading, the explainer and the footer would be on the page twice. Emptying
-// the target is what makes the prerendered markup a crawler's copy rather than
-// a second one for the reader — it is discarded here, and the client renders
-// from scratch exactly as it does in dev, where the target is empty already.
-target.replaceChildren();
-
 startAnalytics();
 
-const app = mount(App, { target });
-
-export default app;
+// `prerender.mjs` writes the page into #app, figures included. Swapped for a
+// client frame with no payloads yet, every section moves down when the fetch
+// lands (CLS 0.89 on a phone); swapped once they are in hand, in one task,
+// nothing on screen survives the swap to move. #app is emptied first because
+// `mount()` appends, and marked live because the frozen copy looks the same.
+fetchPayloads().then((payloads) => {
+  target.replaceChildren();
+  mount(App, { target, props: { payloads } });
+  target.dataset.live = "";
+});

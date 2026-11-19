@@ -238,6 +238,37 @@ for (const path of BAR_ROUTES) {
   });
 }
 
+/**
+ * The four routes that fetch: a bootstrap that empties the prerendered page
+ * before its payloads arrive paints a short page that grows when they land,
+ * and every section under the gap moves (CLS 0.89 on `/`, 0.53 on `/market/`).
+ * 0.1 is the line Core Web Vitals calls good; font swaps account for the rest.
+ */
+for (const path of ["/", "/how/", "/market/", "/credit/"]) {
+  test(`nothing on ${path} moves under the reader once painted`, { skip }, async () => {
+    await withApp(
+      async (page, errors) => {
+        const cls = await page.evaluate(async () => {
+          await document.fonts.ready;
+          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          return window.__cls;
+        });
+        assert.ok(cls < 0.1, `${path} shifts its layout by ${cls.toFixed(3)} at 360px`);
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      path,
+      { viewport: { width: 360, height: 800 } },
+      (page) =>
+        page.addInitScript(() => {
+          window.__cls = 0;
+          new PerformanceObserver((list) => {
+            for (const e of list.getEntries()) if (!e.hadRecentInput) window.__cls += e.value;
+          }).observe({ type: "layout-shift", buffered: true });
+        })
+    );
+  });
+}
+
 // Every page of published figures, and the footer is what makes each reachable
 // from the pages whose header points back to the calculator instead.
 //
