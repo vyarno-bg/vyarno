@@ -142,7 +142,7 @@ build: ## Production build of the site
 render: ## Build, then load the built page in a browser and assert it rendered
 	@node site/scripts/check-all.mjs render
 
-headers: ## Ask the live origin whether it serves what site/public/_headers declares
+headers: ## Ask the live origin whether it serves what _headers declares, and unrewritten HTML
 	@# Deliberately outside `check`: it needs a network and a deployed site.
 	@# `_headers` is the contract, and a host that does not read it natively has
 	@# the same policy hand-written in its own syntax — a block added here and
