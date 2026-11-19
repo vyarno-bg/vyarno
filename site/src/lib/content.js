@@ -784,12 +784,12 @@ export const COPY = {
     en: "If that repeats every month, it comes to <b>€{y}</b> over a year.",
   },
   leftCash: {
-    bg: "Оставени в брой, при инфлация {i}% те биха купували с <b>€{e}</b> по-малко след година, колкото <b>€{v}</b> днес. Ако ги вложиш някъде и ти носят по-малко от {i}% на година, пак изостават от цените, само по-бавно.",
-    en: "Kept as cash at {i}% inflation, that money would buy <b>€{e}</b> less in a year, as much as <b>€{v}</b> buys today. Put somewhere that pays less than {i}% a year, it still trails prices, just more slowly.",
+    bg: "Оставени в брой, при инфлация {i}% парите от всеки месец губят стойност от деня, в който ги отделиш, затова в края на годината с тях ще купиш с <b>€{e}</b> по-малко, отколкото когато ги спести. Ако ги вложиш някъде и ти носят по-малко от {i}% на година, пак изостават от цените, само по-бавно.",
+    en: "Kept as cash at {i}% inflation, each month's money loses value from the day it is put aside, so at the end of the year it buys <b>€{e}</b> less than it did when it was saved. Put somewhere that pays less than {i}% a year, it still trails prices, just more slowly.",
   },
   leftAssume: {
-    bg: "допускане: цените се движат следващата година както през последната. Това е сметка, не прогноза. Евростат не прогнозира.",
-    en: "assumption: prices move over the next year as they did over the last. This is arithmetic, not a forecast. Eurostat does not publish one.",
+    bg: "допускане: цените се движат следващата година както през последната, а парите се отделят в края на всеки месец. Това е сметка, не прогноза. Евростат не прогнозира.",
+    en: "assumption: prices move over the next year as they did over the last, and the money is put aside at the end of each month. This is arithmetic, not a forecast. Eurostat does not publish one.",
   },
   // Same two-variant pattern as `leftLead*`: the over-budget branch fires
   // regardless of whether the home block is on, and the wording must hold in

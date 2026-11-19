@@ -1128,12 +1128,12 @@ export class Calculator {
   // question nobody asked.
   pocketEur = $derived(Math.round(pocketPerMonth(this.householdNet, this.pocket)));
 
-  // What a year of unplaced money would be worth held as cash. Takes the
-  // HEADLINE payload, never π — money that is not being spent on the user's
-  // basket is not measured by the user's basket. See view/spend.js#leftoverIfHeldAsCash.
+  // What a year of unplaced money, put aside month by month, buys held as cash.
+  // Takes the HEADLINE payload, never π — money that is not being spent on the
+  // user's basket is not measured by the user's basket. See view/spend.js#leftoverIfHeldAsCash.
   leftoverCash = $derived(
     leftoverIfHeldAsCash({
-      leftoverPerYear: this.budget.leftoverPerYear,
+      leftoverPerMonth: this.budget.leftover,
       headline: this.data.hicpHeadline,
     })
   );

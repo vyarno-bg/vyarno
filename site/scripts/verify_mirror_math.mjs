@@ -47,6 +47,7 @@ import {
   annuityReverse,
   homeYears,
   cashErosion,
+  monthlySavingsErosion,
   payrollParams,
   bgNetSalary,
   bgMarginalRatePct,
@@ -559,6 +560,22 @@ test("cashErosion at 0% inflation eats nothing", () => {
   const r = cashErosion(10000, 0);
   assert.equal(r.valueToday, 10000);
   assert.equal(r.eaten, 0);
+});
+
+test("monthlySavingsErosion holds each month's part only from the day it is saved", () => {
+  // Twelve parts saved at month ends and held to year end are held 11…0
+  // months, so what the pile buys is a geometric series in r = 1.12^(−1/12),
+  // computed here in closed form rather than by the loop under test.
+  const r = 1.12 ** (-1 / 12);
+  const e = monthlySavingsErosion(100, 12);
+  assert.equal(e.total, 1200);
+  assert.ok(near(e.valueThen, (100 * (1 - r ** 12)) / (1 - r), 1e-9), e.valueThen);
+  assert.ok(near(e.eaten, 1200 - e.valueThen, 1e-9));
+  // The whole-year rate on the year's total is the overstatement this replaces.
+  const wholeYear = cashErosion(1200, 12).eaten;
+  assert.ok(e.eaten < wholeYear / 2, `${e.eaten} is not under half of ${wholeYear}`);
+  assert.deepEqual(monthlySavingsErosion(100, 0), { total: 1200, valueThen: 1200, eaten: 0 });
+  assert.equal(monthlySavingsErosion(-5, 12).total, 0);
 });
 
 // ---------------------------------------------------------------------------

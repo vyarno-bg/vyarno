@@ -95,7 +95,6 @@
             {@html t(COPY.leftCash, "bg", {
               i: fmt(calc.leftoverCash.ratePct),
               e: fmt0(calc.leftoverCash.eaten),
-              v: fmt0(calc.leftoverCash.valueToday),
             })}</span
           >
           <span class="l-en"
@@ -103,7 +102,6 @@
             {@html t(COPY.leftCash, "en", {
               i: fmt(calc.leftoverCash.ratePct),
               e: fmt0(calc.leftoverCash.eaten),
-              v: fmt0(calc.leftoverCash.valueToday),
             })}</span
           >
         </div>
