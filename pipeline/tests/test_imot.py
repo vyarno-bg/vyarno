@@ -111,6 +111,29 @@ def test_a_redirect_onto_a_rentals_page_is_refused_after_the_fetch(
         fetch_city_prices(SOFIA)
 
 
+def test_the_pages_are_never_read_through_a_proxy(monkeypatch: pytest.MonkeyPatch) -> None:
+    # docs/legal.md §имот.bg: read from the runner's own connection. A proxy in
+    # the environment (or in Windows/macOS settings) must not be picked up.
+    import httpx
+
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:9")
+    monkeypatch.setenv("ALL_PROXY", "http://127.0.0.1:9")
+    built: list[bool] = []
+
+    class Recording(httpx.Client):
+        def __init__(self, **kwargs):
+            built.append(kwargs.get("trust_env", True))
+            page = _fixture("imot_city_large.html")
+            kwargs["transport"] = httpx.MockTransport(
+                lambda request: httpx.Response(200, content=page)
+            )
+            super().__init__(**kwargs)
+
+    monkeypatch.setattr(imot.httpx, "Client", Recording)
+    imot._get_page("https://www.imot.bg/sredni-ceni/prodazhbi-sofiya", timeout=5.0)
+    assert built == [False], "the имот.bg client would take its proxy from the environment"
+
+
 def test_a_fractional_value_is_refused_even_on_a_sales_url() -> None:
     """The second lock, and it fails for a different reason than the first.
 
