@@ -137,6 +137,10 @@ const junitAsserted = (text) => {
 /** THE ONLY TEST COUNTS IN THE REPOSITORY. Read the header before changing one. */
 export const FLOORS = {
   pytest: { floor: 541, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
+  // Raised with the direction-state suites: the three state functions
+  // (`indexVerdictState`, `divisionRateState`, `peak`/`troughWorthNaming`),
+  // the rule over COPY that stops a fixed direction returning, and the
+  // COPY-table shape in `verify_template_safety.mjs`.
   // Raised with the thousands-group cases for `parseAmount` in
   // `verify_format.mjs`, the same-quarter wage in `verify_view_market.mjs`,
   // the emptied-term cases in `verify_view_home.mjs` and
@@ -147,7 +151,9 @@ export const FLOORS = {
   // Raised with the keystroke tests that a money field keeps «1,500», in
   // `verify_render_shell.mjs`, and that clearing the term moves nothing in the
   // basket, in `verify_render_basket.mjs`.
-  render: { floor: 205, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  // Raised with the gutter rule in `verify_render_layout.mjs`: no route sets a
+  // line of text against a phone's edge, one test per route.
+  render: { floor: 216, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**

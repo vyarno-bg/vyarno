@@ -180,6 +180,64 @@ for (const path of BAR_ROUTES) {
   }
 }
 
+/**
+ * `.wrap` owns the gutter and every page's own rule outranks it, so a padding
+ * shorthand on a `main` or a footer row sets that page's text against the glass
+ * while the masthead keeps its margin, and nothing in the file looks wrong. A
+ * box that clips its overflow stands in for the text inside it: a table
+ * scrolls in a box that keeps the gutter, and its cells are not placed here.
+ */
+for (const path of BAR_ROUTES) {
+  test(`no line of text on ${path} meets a phone's edge`, { skip }, async () => {
+    await withApp(
+      async (page, errors) => {
+        const found = await page.evaluate(() => {
+          const vw = document.documentElement.clientWidth;
+          const probe = document.createElement("div");
+          probe.style.width = "var(--gutter)";
+          document.body.append(probe);
+          const gutter = probe.getBoundingClientRect().width;
+          probe.remove();
+          const outside = [];
+          const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+            const el = node.parentElement;
+            if (!node.textContent.trim() || !el || el.closest("svg")) continue;
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            let boxes = [...range.getClientRects()].filter((r) => r.width && r.height);
+            for (let a = el; a && a !== document.body; a = a.parentElement) {
+              if (getComputedStyle(a).overflowX !== "visible") {
+                boxes = boxes.length ? [a.getBoundingClientRect()] : [];
+                break;
+              }
+            }
+            // Off the screen entirely is a skip link waiting for focus.
+            const bad = boxes.find(
+              (r) =>
+                r.right > 0 && r.left < vw && (r.left < gutter - 0.5 || r.right > vw - gutter + 0.5)
+            );
+            if (bad)
+              outside.push(
+                `«${node.textContent.trim().slice(0, 24)}» at ${Math.round(bad.left)}–${Math.round(bad.right)}px`
+              );
+          }
+          return { gutter, outside };
+        });
+        assert.deepEqual(
+          found.outside,
+          [],
+          `${path} at 360px sets ${found.outside.length} text run(s) inside the ` +
+            `${found.gutter}px gutter: ${found.outside.slice(0, 5).join(", ")}`
+        );
+        assert.deepEqual(errors, [], errors.join(" | "));
+      },
+      path,
+      { viewport: { width: 360, height: 800 } }
+    );
+  });
+}
+
 // Every page of published figures, and the footer is what makes each reachable
 // from the pages whose header points back to the calculator instead.
 //

@@ -1397,8 +1397,10 @@
      narrower — the two were one number, which set every paragraph on this page
      85 characters wide. Tables and charts keep the column. */
   main.how {
-    padding: 30px 0 10px;
-    max-width: var(--col);
+    /* Block axis only: this rule outranks `.wrap`, so a shorthand's inline `0`
+       deletes the gutter and sets every line at a phone's edge. */
+    padding-block: 30px 10px;
+    max-width: var(--col-box);
     /* The skip link's target, offset by the same amount the sections are: a
        bare `#main` jump parks the h1 under the 54px sticky header. */
     scroll-margin-top: 64px;

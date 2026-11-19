@@ -194,8 +194,9 @@
      than anywhere. */
   .legal {
     scroll-margin-top: 64px;
-    padding: 26px 0 10px;
-    max-width: var(--col);
+    /* Block axis only: `How.svelte`'s `main.how` carries why. */
+    padding-block: 26px 10px;
+    max-width: var(--col-box);
   }
   .toc {
     display: flex;
