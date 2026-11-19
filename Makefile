@@ -86,13 +86,13 @@ PYTEST := pipeline/.venv/bin/pytest
 RUFF := pipeline/.venv/bin/ruff
 
 .DEFAULT_GOAL := help
-.PHONY: help setup lock check fmt lint test build render headers citations coverage clean
+.PHONY: help setup lock check fmt lint test build render headers citations coverage clean refresh-local
 
 help: ## Show this list
 	@echo "Вярно — make targets:"
 	@echo
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
-		| awk -F':.*?## ' '{printf "  \033[1m%-10s\033[0m %s\n", $$1, $$2}'
+		| awk -F':.*?## ' '{printf "  \033[1m%-13s\033[0m %s\n", $$1, $$2}'
 	@echo
 	@echo "  'make check' needs 'make setup' first. The browser smoke test"
 	@echo "  finds a Chromium by itself — Playwright's, the system's, or one"
@@ -160,6 +160,14 @@ citations: ## Ask every upstream whether it still serves the figure we print bes
 	@# ONLY=credit to check one stem.
 	@pipeline/.venv/bin/vyarno-pipeline verify-citations --published data/published \
 		$(if $(ONLY),--only $(ONLY),) --quiet
+
+SOURCE ?= city-price
+refresh-local: $(PYTEST) ## Refresh an arm no hosted runner can reach, and push it for review (SOURCE=payroll)
+	@# The two arms that need a person's own connection: имот.bg 403s every
+	@# datacenter address and ДВ times out from GitHub's. The module docstring
+	@# says what it touches (a scratch worktree at origin/main, never your
+	@# checkout) and the Windows spelling of the same command.
+	@$(PY) -m vyarno_pipeline.local_refresh --source $(SOURCE)
 
 lock: ## Regenerate pipeline/requirements*.txt from pyproject.toml
 	@# pip-compile reaches into pip's internals, and the current release (7.6.0)
