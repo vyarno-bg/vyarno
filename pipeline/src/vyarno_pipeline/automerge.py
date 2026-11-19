@@ -12,8 +12,9 @@ pull request and does one thing:
 - **arms GitHub auto-merge** (`MERGE_METHOD`, the way every data PR has landed)
   when branch protection is what stands between it and `main`. GitHub then
   merges it the moment the five required CI checks report green;
-- **refuses** anything else: a conflict, or a PR nothing is holding back, where
-  arming would merge it before CI has reported at all.
+- **refuses** anything else: a PR that changes a file outside `PUBLISHED`, a
+  conflict, or a PR nothing is holding back, where arming would merge it before
+  CI has reported at all.
 
 Exit 0 when it did what the labels and the branch state ask, 1 when it refused
 or the API failed; the PR then waits for a person, which is the safe default.
@@ -39,6 +40,11 @@ HOLD_LABELS = frozenset({"hold", "needs-review"})
 #: own message, with no merge commit and no "(#N)" squash title.
 MERGE_METHOD = "REBASE"
 
+#: The only files a pull request may change and still merge itself. A branch
+#: named `data/...` is a convention anyone with push access can borrow, so the
+#: diff is what is judged: code always waits for a person.
+PUBLISHED = "data/published/"
+
 #: GitHub computes mergeability after a push, and reports UNKNOWN until it has.
 POLLS = 6
 POLL_WAIT = 5.0
@@ -50,6 +56,7 @@ query($owner: String!, $name: String!, $number: Int!) {
       id state isDraft headRefOid mergeStateStatus
       autoMergeRequest { mergeMethod }
       labels(first: 50) { nodes { name } }
+      files(first: 100) { totalCount nodes { path } }
     }
   }
 }
@@ -87,6 +94,21 @@ def decide(pr: dict) -> tuple[str, str]:
         if pr["autoMergeRequest"]:
             return "disarm", f"labelled {', '.join(held)}: auto-merge switched off"
         return "held", f"labelled {', '.join(held)}: it waits for a person"
+    files = pr["files"]
+    outside = [node["path"] for node in files["nodes"] if not node["path"].startswith(PUBLISHED)]
+    # Checked before "already armed": a later push that adds code switches it off.
+    if outside:
+        why = f"it changes {outside[0]}, outside {PUBLISHED}"
+    elif not files["nodes"]:
+        why = "it changes no file"
+    elif files["totalCount"] != len(files["nodes"]):
+        why = f"it changes {files['totalCount']} files, more than one read can check"
+    else:
+        why = ""
+    if why:
+        if pr["autoMergeRequest"]:
+            return "disarm", f"{why}: auto-merge switched off"
+        return "refuse", f"{why}, so a person merges it"
     if pr["isDraft"]:
         return "skip", "the pull request is a draft"
     if pr["autoMergeRequest"]:

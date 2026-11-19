@@ -18,7 +18,15 @@ import pytest
 from vyarno_pipeline import automerge
 
 
-def _pr(status="BLOCKED", labels=(), armed=False, state="OPEN", draft=False) -> dict:
+def _pr(
+    status="BLOCKED",
+    labels=(),
+    armed=False,
+    state="OPEN",
+    draft=False,
+    paths=("data/published/hicp_headline.json",),
+    total=None,
+) -> dict:
     return {
         "id": "PR_kw",
         "state": state,
@@ -27,6 +35,10 @@ def _pr(status="BLOCKED", labels=(), armed=False, state="OPEN", draft=False) -> 
         "mergeStateStatus": status,
         "autoMergeRequest": {"mergeMethod": "REBASE"} if armed else None,
         "labels": {"nodes": [{"name": name} for name in labels]},
+        "files": {
+            "totalCount": len(paths) if total is None else total,
+            "nodes": [{"path": path} for path in paths],
+        },
     }
 
 
@@ -45,6 +57,12 @@ def _pr(status="BLOCKED", labels=(), armed=False, state="OPEN", draft=False) -> 
         (_pr("UNSTABLE"), "refuse"),
         (_pr("BLOCKED", state="MERGED"), "skip"),
         (_pr("BLOCKED", draft=True), "skip"),
+        # Only published payloads merge themselves, whatever the branch is called.
+        (_pr("BLOCKED", paths=("data/published/x.json", ".github/workflows/ci.yml")), "refuse"),
+        (_pr("BLOCKED", paths=("site/src/lib/mirror.js",)), "refuse"),
+        (_pr("BLOCKED", paths=("data/published/x.json", "README.md"), armed=True), "disarm"),
+        (_pr("BLOCKED", paths=("data/published/x.json",), total=101), "refuse"),
+        (_pr("BLOCKED", paths=()), "refuse"),
     ],
 )
 def test_only_a_pr_branch_protection_is_holding_is_armed(pr: dict, action: str) -> None:
