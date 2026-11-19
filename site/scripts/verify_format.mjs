@@ -17,6 +17,7 @@ import {
   dateShort,
   periodLong,
   label,
+  spaced,
   httpUrl,
   ordinalDay,
   parseAmount,
@@ -383,6 +384,25 @@ test("every sector name НСИ publishes survives the label rule intact", () => 
   for (const s of sectors.sectors) {
     assert.equal(label(s.bg_name), s.bg_name);
     assert.equal(label(s.en_name), s.en_name);
+  }
+});
+
+test("a sector name reaches the reader with its punctuation spaced, and nothing else", () => {
+  // НСИ write «води;канализационни услуги,управление» and "Agriculture,forestry",
+  // and the picker printed them so. Over every name they publish: no comma or
+  // semicolon runs into a word, the gate still admits the result, and taking
+  // the inserted spaces back out returns their label, so no word is touched.
+  assert.equal(spaced("a,b;c"), "a, b; c");
+  assert.equal(spaced("1,5 и 2"), "1,5 и 2", "a decimal comma is not a list");
+  const sectors = published("sector_salary");
+  if (!sectors) return;
+  const unspace = (s) => s.replace(/([;,]) (?=\p{L})/gu, "$1");
+  for (const s of sectors.sectors) {
+    for (const name of [s.bg_name, s.en_name]) {
+      assert.doesNotMatch(spaced(name), /[;,]\p{L}/u, name);
+      assert.equal(label(spaced(name)), spaced(name), name);
+      assert.equal(unspace(spaced(name)), unspace(name), name);
+    }
   }
 });
 
