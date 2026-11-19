@@ -48,6 +48,12 @@ rows for the `bnb_download/` links and their Bulgarian labels. That is how
 `s_ir_loan_nbf_hh_bg.xlsx` was found; guessing filenames from the ones we
 already had would not have produced it.
 
+**A ~740-byte page reading «This page can't be displayed» is their firewall,
+not a moved file.** Measured 2026-11-19 from a cloud IP, the same
+`bnb_download/` URL alternated between the workbook and that page, both with
+HTTP 200, on requests four seconds apart. `bnb.py#is_firewall_page` names it;
+the connector retries once and then exits **4**.
+
 ## `s_ir_loan_oa_hh_bg.xlsx` — household loans by purpose
 
 Sheet `LOAN_OA_HH`, monthly **2007-01 → present**, one row per month. **The

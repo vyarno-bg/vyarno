@@ -44,6 +44,7 @@ from vyarno_pipeline.sources.bnb import (
     fetch_housing_stock_rate_bg,
     fetch_loan_stock_bg,
     fetch_overdraft_card_stock_bg,
+    is_firewall_page,
     parse_housing_stock_xlsx,
     parse_loan_stock_xlsx,
     parse_overdraft_card_stock_xlsx,
@@ -250,6 +251,47 @@ def test_fetch_raises_on_http_error():
     respx.get(SOURCE_URL).mock(return_value=httpx.Response(503, text="down"))
     with pytest.raises(httpx.HTTPStatusError):
         fetch_housing_stock_rate_bg()
+
+
+# Trimmed from the page www.bnb.bg served on 2026-11-19 in place of
+# s_ir_loan_oa_hh_bg.xlsx, with HTTP 200 and no Server header.
+FIREWALL_PAGE = (
+    b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"><html><head>'
+    b"<title>Error</title></head><body><H2>Error</H2><table><tr><td>This page can't "
+    b"be displayed. Contact support for additional information.<br/>The incident ID "
+    b"is: N/A.</td></tr></table></body></html>"
+)
+
+
+@respx.mock
+def test_a_firewall_refusal_is_retried_rather_than_read_as_a_layout_change(monkeypatch):
+    monkeypatch.setattr("vyarno_pipeline.sources.bnb.RETRY_WAIT", 0)
+    route = respx.get(SOURCE_URL).mock(
+        side_effect=[
+            httpx.Response(200, content=FIREWALL_PAGE),
+            httpx.Response(200, content=FIXTURE_BYTES),
+        ]
+    )
+    assert fetch_housing_stock_rate_bg()[-1]["rate_pct"] == pytest.approx(2.6717, abs=0.0001)
+    assert route.call_count == 2
+
+
+@respx.mock
+def test_a_firewall_that_keeps_refusing_is_a_network_failure(monkeypatch):
+    # httpx.HTTPError is what the CLI turns into exit 4. A ValueError here
+    # would be exit 2 and an "XLSX layout changed" message about a file that
+    # had not changed.
+    monkeypatch.setattr("vyarno_pipeline.sources.bnb.RETRY_WAIT", 0)
+    respx.get(OVERDRAFT_URL).mock(return_value=httpx.Response(200, content=FIREWALL_PAGE))
+    with pytest.raises(httpx.HTTPStatusError, match="firewall"):
+        fetch_overdraft_card_stock_bg()
+
+
+def test_only_the_refusal_page_counts_as_one():
+    assert is_firewall_page(FIREWALL_PAGE)
+    assert not is_firewall_page(FIXTURE_BYTES)
+    # Any other non-workbook body stays a parse failure, exit 2.
+    assert not is_firewall_page(b"<html>Service unavailable</html>")
 
 
 @respx.mock
