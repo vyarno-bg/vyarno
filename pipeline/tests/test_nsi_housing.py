@@ -22,15 +22,20 @@ import io
 from datetime import date
 from pathlib import Path
 
+import httpx
 import openpyxl
 import pytest
+import respx
 
+from vyarno_pipeline.sources import nsi
 from vyarno_pipeline.sources.nsi import (
     HOUSING_CITIES,
+    HOUSING_YOY_SHEET,
     _housing_quarter,
     _housing_year,
     _parse_housing_sheet,
     _strip_footnote,
+    year_on_year_sheet,
 )
 from vyarno_pipeline.transform import build_nsi_housing_payload
 from vyarno_pipeline.validate import (
@@ -224,6 +229,60 @@ def test_a_sheet_whose_row_codes_moved_raises():
     moved["D6"] = 12.3
     with pytest.raises(ValueError, match="row codes"):
         _parse_housing_sheet(moved, has_geography=True)
+
+
+def _workbook_bytes(sheets: list[str], source: str = "nsi_HPI_2.6.xlsx") -> bytes:
+    """The fixture's one sheet, copied under each name in `sheets`, in order.
+
+    Every copy but the y/y one has its cells doubled, so a read of the wrong
+    sheet shows up as wrong numbers rather than as the same ones.
+    """
+    wb = openpyxl.load_workbook(io.BytesIO((FIXTURES / source).read_bytes()))
+    original = wb[wb.sheetnames[0]]
+    original.title = "fixture"  # out of the way, or openpyxl renames the copy
+    for name in sheets:
+        copy = wb.copy_worksheet(original)
+        copy.title = name
+        if name.strip() != HOUSING_YOY_SHEET:
+            for row in copy.iter_rows(min_row=6):
+                for cell in row:
+                    if isinstance(cell.value, (int, float)):
+                        cell.value = cell.value * 2
+    wb.remove(original)
+    out = io.BytesIO()
+    wb.save(out)
+    return out.getvalue()
+
+
+@respx.mock
+def test_the_year_on_year_sheet_is_read_wherever_it_sits(monkeypatch):
+    # A q/q sheet in front of the y/y one: read by index, its doubled figures
+    # would be published as each city's change on a year earlier.
+    url = "https://www.nsi.bg/sites/default/files/files/data/timeseries/HPI_2.6.xlsx"
+    monkeypatch.setattr(nsi, "discover_housing_workbook", lambda *a, **k: url)
+    body = _workbook_bytes(["предходно тримесечие=100", HOUSING_YOY_SHEET + " "])
+    respx.get(url).mock(return_value=httpx.Response(200, content=body))
+    got = nsi.fetch_housing_workbook("HPI_2.6")
+    assert got["sheet"].strip() == HOUSING_YOY_SHEET
+    assert got["data"] == _parsed("HPI_2.6")
+
+
+@respx.mock
+def test_a_workbook_without_the_year_on_year_sheet_is_refused(monkeypatch):
+    # What a renumbered stem looks like: HPI_2.5's q/q sheet under HPI_2.6's name.
+    url = "https://www.nsi.bg/sites/default/files/files/data/timeseries/HPI_2.6.xlsx"
+    monkeypatch.setattr(nsi, "discover_housing_workbook", lambda *a, **k: url)
+    respx.get(url).mock(
+        return_value=httpx.Response(200, content=_workbook_bytes(["предходно тримесечие=100"]))
+    )
+    with pytest.raises(ValueError, match="expected exactly one named"):
+        nsi.fetch_housing_workbook("HPI_2.6")
+
+
+def test_every_committed_workbook_names_the_measure_it_carries():
+    for stem, (name, _, _) in WORKBOOKS.items():
+        wb = openpyxl.load_workbook(io.BytesIO((FIXTURES / name).read_bytes()), read_only=True)
+        assert year_on_year_sheet(wb.sheetnames, stem).strip() == HOUSING_YOY_SHEET
 
 
 # --- the payload and its gates ---------------------------------------------
