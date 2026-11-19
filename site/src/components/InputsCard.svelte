@@ -16,7 +16,7 @@
    * sub-hint.
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, period, decimalText, parseAmount } from "../lib/format.js";
+  import { number, integer, period, decimalText, amountText, parseAmount } from "../lib/format.js";
   import { COPY, HOME, t } from "../lib/content.js";
   import BasketEditor from "./BasketEditor.svelte";
   import RegionPicker from "./RegionPicker.svelte";
@@ -66,7 +66,9 @@
   $effect(() => {
     for (const field of MONEY_FIELDS) {
       if (parseAmount(calc[`${field}Text`]) !== calc[field]) {
-        calc[`${field}Text`] = decimalText(calc[field], $lang);
+        // Square metres are not money, and «65,50 кв. м» claims a precision.
+        const text = field === "m2" ? decimalText : amountText;
+        calc[`${field}Text`] = text(calc[field], $lang);
       }
     }
   });
