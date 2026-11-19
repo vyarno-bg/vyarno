@@ -15,7 +15,7 @@
  * module per subject" says which one a new derived value goes in.
  */
 
-import { cashErosion } from "../mirror.js";
+import { monthlySavingsErosion } from "../mirror.js";
 import { headlineRate } from "./results.js";
 
 /**
@@ -191,12 +191,16 @@ export function exposedSpend({ salary, housingCost, spendBase }) {
  * the last twelve months' rate forward over the next twelve. Eurostat forecasts
  * nothing here and neither do we; the copy that renders this says so.
  *
+ * **It takes the MONTHLY amount**, because that is how the money arrives: a
+ * part is put aside each month and is held only from then
+ * (`mirror.js#monthlySavingsErosion`).
+ *
  * @param {object} args
- * @param {number} args.leftoverPerYear  12 × the monthly leftover, EUR
- * @param {object|null} args.headline    published hicp_headline.json
- * @returns {{ratePct:number, valueToday:number, eaten:number}}
+ * @param {number} args.leftoverPerMonth  the monthly leftover, EUR
+ * @param {object|null} args.headline     published hicp_headline.json
+ * @returns {{ratePct:number, total:number, valueThen:number, eaten:number}}
  */
-export function leftoverIfHeldAsCash({ leftoverPerYear, headline }) {
+export function leftoverIfHeldAsCash({ leftoverPerMonth, headline }) {
   const ratePct = headlineRate(headline);
-  return { ratePct, ...cashErosion(Math.max(0, leftoverPerYear || 0), ratePct) };
+  return { ratePct, ...monthlySavingsErosion(leftoverPerMonth, ratePct) };
 }

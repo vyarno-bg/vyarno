@@ -1597,6 +1597,30 @@ export function cashErosion(cash, officialCumPct) {
   return { valueToday, eaten: cash - valueToday };
 }
 
+/**
+ * A year of equal monthly savings held as cash, and what it buys at year end.
+ *
+ * One amount is set aside at the END of each month and held to the end of the
+ * year, so the first is held eleven months and the last none. A whole year's
+ * rate on the year's total charges every euro for months before it was saved
+ * and roughly doubles the loss.
+ *
+ * `valueThen` is what the year-end pile buys in the prices of the day each
+ * part was put aside; `eaten` is what it buys less than that.
+ *
+ * @param {number} monthly  EUR set aside each month
+ * @param {number} ratePct  annual rate of price change, percent
+ * @returns {{total:number, valueThen:number, eaten:number}}
+ */
+export function monthlySavingsErosion(monthly, ratePct) {
+  const m = Number.isFinite(monthly) && monthly > 0 ? monthly : 0;
+  const yearly = 1 + (Number.isFinite(ratePct) ? ratePct : 0) / 100;
+  if (!(yearly > 0)) return { total: 12 * m, valueThen: NaN, eaten: NaN };
+  let valueThen = 0;
+  for (let held = 0; held < 12; held += 1) valueThen += m / yearly ** (held / 12);
+  return { total: 12 * m, valueThen, eaten: 12 * m - valueThen };
+}
+
 // ---------------------------------------------------------------------------
 // THE PROPERTY MARKET
 // ---------------------------------------------------------------------------

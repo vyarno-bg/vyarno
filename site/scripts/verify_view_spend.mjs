@@ -334,30 +334,33 @@ test("leftoverIfHeldAsCash measures against the HEADLINE, never the user's baske
   // basket is not measured by this reader's basket — and the function takes
   // the payload rather than a rate precisely so no caller can hand it one.
   const r = leftoverIfHeldAsCash({
-    leftoverPerYear: 3000,
+    leftoverPerMonth: 250,
     headline: { headline_rate_pct: 5.2 },
   });
   assert.equal(r.ratePct, 5.2);
-  assert.ok(near(r.valueToday, 3000 / 1.052));
-  assert.ok(near(r.eaten, 3000 - 3000 / 1.052));
-  // Sanity: ~€148 on €3,000 at 5.2%. A sign slip or a ×100 shows up here.
-  assert.ok(r.eaten > 140 && r.eaten < 155, `implausible erosion: ${r.eaten}`);
+  assert.equal(r.total, 3000);
+  assert.ok(near(r.eaten, r.total - r.valueThen));
+  // ~€69 on €250 a month at 5.2%: each part is held only from the month it is
+  // saved. The whole-year rate on the €3,000 total, ~€148, charged every euro
+  // for months before it existed. A sign slip or a ×100 shows up here too.
+  assert.ok(r.eaten > 65 && r.eaten < 72, `implausible erosion: ${r.eaten}`);
+  assert.ok(r.eaten < (3000 - 3000 / 1.052) / 2, "this is the whole-year figure again");
 });
 
 test("leftoverIfHeldAsCash uses the SHIPPED headline rate when handed the payload", () => {
   const headline = read("hicp_headline");
   if (!headline) return;
-  const r = leftoverIfHeldAsCash({ leftoverPerYear: 1200, headline });
+  const r = leftoverIfHeldAsCash({ leftoverPerMonth: 100, headline });
   assert.equal(r.ratePct, headlineRate(headline));
   assert.ok(r.eaten > 0 && r.eaten < 1200);
 });
 
 test("leftoverIfHeldAsCash degrades to zero rather than NaN", () => {
   // No headline payload → rate 0 → the money keeps its value. A NaN here
-  // would render "€NaN less in a year" on a card people are asked to trust.
-  const r = leftoverIfHeldAsCash({ leftoverPerYear: 3000, headline: null });
+  // would render "€NaN less" on a card people are asked to trust.
+  const r = leftoverIfHeldAsCash({ leftoverPerMonth: 250, headline: null });
   assert.equal(r.ratePct, 0);
-  assert.equal(r.valueToday, 3000);
+  assert.equal(r.valueThen, 3000);
   assert.equal(r.eaten, 0);
-  assert.equal(leftoverIfHeldAsCash({ leftoverPerYear: -5, headline: null }).valueToday, 0);
+  assert.equal(leftoverIfHeldAsCash({ leftoverPerMonth: -5, headline: null }).valueThen, 0);
 });
