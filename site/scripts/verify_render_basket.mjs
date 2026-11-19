@@ -14,6 +14,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { DIST } from "./render-dist.mjs";
 import { shutdown, skip, withApp } from "./render-harness.mjs";
+import { monthShort, periodLong } from "../src/lib/format.js";
 
 test("the basket's 12-month window names the divisions' month", { skip }, async () => {
   // The y1 anchor's per-division numbers ARE `categories[].annual_rate_pct`,
@@ -32,12 +33,12 @@ test("the basket's 12-month window names the divisions' month", { skip }, async 
   await withApp(async (page, errors) => {
     const label = await page.locator("#inAnchor option[value='y1']").innerText();
     assert.ok(
-      label.includes(month.replace("-", ".")),
+      label.includes(monthShort(month, "bg")),
       `the 12-month option reads "${label}" but the divisions describe ${month}`
     );
     if (head.ref_period !== month) {
       assert.ok(
-        !label.includes(String(head.ref_period).replace("-", ".")),
+        !label.includes(monthShort(String(head.ref_period), "bg")),
         `the 12-month option reads "${label}" — that is the headline's month, and the ` +
           `divisions under it are at ${month}`
       );
@@ -47,7 +48,7 @@ test("the basket's 12-month window names the divisions' month", { skip }, async 
     // naming different months is the visible form of this bug.
     const hint = await page.locator("#inAnchor ~ .hint").first().innerText();
     assert.ok(
-      hint.includes(month),
+      hint.includes(periodLong(month, "bg")),
       `the anchor hint reads "${hint}" but the divisions describe ${month}`
     );
     assert.deepEqual(errors, [], errors.join(" | "));

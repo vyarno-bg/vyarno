@@ -1372,7 +1372,7 @@ test(
         for (const head of heads) {
           assert.match(
             head.trim(),
-            /Q[1-4]\s*\d{4}/,
+            /(?:Q[1-4]|[IV]+ трим\.)\s*\d{4}/i,
             `a figure column of the city table is headed "${head.trim()}" with no period in ` +
               "it — the two workbooks are released separately and either can be a quarter behind"
           );

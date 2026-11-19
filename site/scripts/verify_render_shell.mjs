@@ -1301,6 +1301,19 @@ test("no page prints a double stop or fuses two sentences", { skip }, async () =
           null,
           `${prefix}${path} writes the euro sign on the other language's side: ${JSON.stringify(euroWrong)}`
         );
+        // A period as `format.js#periodLong` says it: never the pipeline's
+        // «2026-10» or «2026-Q3», never «2025.10», and never "Q3 2026" in
+        // Bulgarian. A full ISO day, the build stamp, is not a period.
+        const rawPeriod = text.match(
+          prefix
+            ? /\b\d{4}(?:-(?:\d{2}|Q[1-4])|\.\d{2})\b(?!-\d)/g
+            : /\b\d{4}(?:-(?:\d{2}|Q[1-4])|\.\d{2})\b(?!-\d)|\bQ[1-4]\s?\d{4}\b/g
+        );
+        assert.equal(
+          rawPeriod,
+          null,
+          `${prefix}${path} prints a period raw: ${JSON.stringify(rawPeriod)}`
+        );
         const straight = text.match(/"[^"\n]{1,60}"/g);
         assert.equal(
           straight,

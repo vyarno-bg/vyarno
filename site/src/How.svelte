@@ -41,7 +41,15 @@
   import { COPY, HOME, t } from "./lib/content.js";
   import { QUARTERS, unemploymentHistory } from "./lib/view/country.js";
   import { monthsSplit as monthsAreSplit } from "./lib/view/results.js";
-  import { euro, number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
+  import {
+    euro,
+    number,
+    integer,
+    periodLong,
+    quarterName,
+    dateShort,
+    httpUrl,
+  } from "./lib/format.js";
   import { hitW, hitX, niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   /**
@@ -133,8 +141,8 @@
   const imotDated = $derived(
     calc.refCityPriceSnapshot
       ? {
-          bg: t(COPY.srcDatedByPage, "bg", { d: calc.refCityPriceSnapshot }),
-          en: t(COPY.srcDatedByPage, "en", { d: calc.refCityPriceSnapshot }),
+          bg: t(COPY.srcDatedByPage, "bg", { d: dateShort(calc.refCityPriceSnapshot, "bg") }),
+          en: t(COPY.srcDatedByPage, "en", { d: dateShort(calc.refCityPriceSnapshot, "en") }),
         }
       : {
           bg: t(COPY.srcDatedByFetch, "bg", { d: dateShort(calc.refCityPriceAsOf, "bg") }),
@@ -1287,7 +1295,10 @@
                 <span class="l-en">{COPY.howColYear.en}</span>
               </th>
               {#each QUARTERS as quarter (quarter)}
-                <th scope="col" class="num mono">{quarter}</th>
+                <th scope="col" class="num mono">
+                  <span class="l-bg">{quarterName(quarter, "bg")}</span>
+                  <span class="l-en">{quarterName(quarter, "en")}</span>
+                </th>
               {/each}
             </tr>
           </thead>

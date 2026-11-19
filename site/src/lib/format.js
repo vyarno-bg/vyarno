@@ -288,7 +288,19 @@ export function period(value) {
 }
 
 /**
- * A reference period as a reader says it: "юни 2026", "Q1 2026", "2026".
+ * A quarter's name, "Q1".."Q4", as each language writes it: НСИ's Roman
+ * numeral in Bulgarian («III трим.»), "Q3" in English.
+ */
+export function quarterName(quarter, lang = "bg") {
+  const n = /^Q([1-4])$/.exec(String(quarter ?? ""))?.[1];
+  if (!n) return "—";
+  return lang === "bg" ? `${["I", "II", "III", "IV"][n - 1]} трим.` : `Q${n}`;
+}
+
+/**
+ * A reference period as a reader says it: «юни 2026 г.» / "June 2026", «I трим.
+ * 2026 г.» / "Q1 2026", "2026". A Bulgarian quarter carries the «г.» the month
+ * already does.
  *
  * `period()` above returns the publisher's own label, which is right beside a
  * dataset name and wrong in a sentence — nobody reads "2026-06" as June. Same
@@ -300,9 +312,28 @@ export function periodLong(value, lang = "bg") {
   if (text === "—") return text;
   const [year, part] = text.split("-");
   if (!part) return year;
-  if (part.startsWith("Q")) return `${part} ${year}`;
+  if (part.startsWith("Q")) {
+    return lang === "bg" ? `${quarterName(part, "bg")} ${year} г.` : `${part} ${year}`;
+  }
   return new Date(Date.UTC(Number(year), Number(part) - 1, 1)).toLocaleDateString(locale(lang), {
     month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * A month in the shortest form a reader still reads as one: «10.2025» in the
+ * order Bulgarian writes a month, "Oct 2025" in English. For a range inside a
+ * control with no room for the long form; anything but a month is `periodLong`.
+ */
+export function monthShort(value, lang = "bg") {
+  const text = period(value);
+  if (!/^\d{4}-\d{2}$/.test(text)) return periodLong(text, lang);
+  const [year, month] = text.split("-");
+  if (lang === "bg") return `${month}.${year}`;
+  return new Date(Date.UTC(Number(year), Number(month) - 1, 1)).toLocaleDateString("en-GB", {
+    month: "short",
     year: "numeric",
     timeZone: "UTC",
   });
@@ -377,7 +408,13 @@ export function httpUrl(value) {
  */
 export function dateShort(value, lang = "bg") {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString(locale(lang), {
+  // имот.bg stamps its page «12.11.2026», and `new Date` reads that as
+  // December 11th. Day first, as the publisher wrote it.
+  const dotted = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(String(value));
+  const iso = dotted
+    ? `${dotted[3]}-${dotted[2].padStart(2, "0")}-${dotted[1].padStart(2, "0")}`
+    : value;
+  return new Date(iso).toLocaleDateString(locale(lang), {
     day: "numeric",
     month: "short",
     year: "numeric",
