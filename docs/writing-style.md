@@ -292,6 +292,7 @@ literate reader notices before they notice the figures.
 | Guillemets | «Помни числата ми» | „Помни числата ми“ |
 | Пълен и кратък член | «плащаме данъкът» | «плащаме данъка» — subject takes -ът/-ят, object and after a preposition -а/-я |
 | Броена форма | «два левове», «пет процентa» | «два лева», «пет процента» |
+| Short preposition | «с земята», «в Варна» | «със земята», «във Варна» |
 | Clitic order | «ще се ви покаже» | «ще ви се покаже» |
 | Calqued verb | «сметката се случва в браузъра ти» | «сметката се прави в браузъра ти» |
 | Anglicism with a plain word | опция, локация, релевантен, базиран на | възможност, място, съществен, въз основа на |
@@ -300,10 +301,11 @@ literate reader notices before they notice the figures.
 | Throat-clearing | «Важно е да се отбележи, че…» | the sentence it is clearing its throat before |
 | Mixed address | «Вие» in one paragraph and «ти» in the next | one, or neither — Bulgarian drops it more gracefully than English |
 
-**Three of these are checked** and the rest are review notes:
+**Four of these are checked** and the rest are review notes:
 `verify_copy.mjs` §"neither language quotes with guillemets" holds the quotation
-marks in both languages, and §"no Bulgarian string reaches a reader through
-English" holds the anglicisms and the throat-clearing. The denylist behind the
+marks in both languages, §"no Bulgarian string reaches a reader through
+English" holds the anglicisms and the throat-clearing, and §"a short preposition
+takes its long form before its own consonant" holds «със» and «във». The denylist behind the
 second is deliberately short — a word earns a place on it by being always wrong
 HERE with an obvious replacement, which is why `дефинира`, `интегрира` and
 `специфичен` are absent, and why «се случва» is too: `/market/` uses it

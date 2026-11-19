@@ -689,6 +689,31 @@ test("no Bulgarian string reaches a reader through English", () => {
   );
 });
 
+test("a short preposition takes its long form before its own consonant", () => {
+  // «със земята», «във Варна»: the vowel is orthography rather than style, so
+  // unlike the calques above it has no exception to argue over. «заедно с
+  // земята» reads as a typo to every Bulgarian reader, and no other suite reads
+  // the words of a sentence, only its punctuation and its figures.
+  const SHORT = /(?<!\p{L})(?:[сС]\s+[сзСЗ]|[вВ]\s+[вфВФ])\p{L}*/gu;
+  const offenders = [];
+  const check = (label, text) => {
+    for (const m of text.matchAll(SHORT))
+      offenders.push(`${label}: «${m[0].replace(/\s+/g, " ")}»`);
+  };
+  for (const [name, module] of COPY_MODULES)
+    for (const [path, value] of reachableStrings(module, name)) check(path, value);
+  for (const [path, src] of svelteFiles()) check(path, readerFacing(src));
+  for (const [path, src] of entryShells()) check(path, readerFacing(src));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "«с» and «в» take a vowel before a word that opens with their own consonant " +
+      "(«със», «във»):\n  " +
+      offenders.join("\n  ")
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Editorial rules: sentences that are commitments, not preferences
 // ---------------------------------------------------------------------------
