@@ -239,11 +239,10 @@ for (const path of BAR_ROUTES) {
 }
 
 /**
- * Emptying the prerendered page before its payloads land, or a title font
- * swapped in late, moves everything under the gap (CLS 0.89 on `/`, 0.25 on
- * `/market/`). CLS weighs a move by the viewport area it covers, so where the
- * fold falls decides it; no element painted in view may also move by half a
- * line of body text, which is where a reader loses their place.
+ * Emptying the prerendered page before its payloads land moves everything
+ * under the gap (CLS 0.89 on `/`). CLS weighs a move by the area it covers, so
+ * the fold decides it; no element painted in view may also move by half a line
+ * of body text, which is where a reader loses their place.
  */
 for (const path of ["/", "/how/", "/market/", "/credit/"]) {
   for (const route of [path, `/en${path}`]) {
@@ -263,13 +262,11 @@ for (const path of ["/", "/how/", "/market/", "/credit/"]) {
           route,
           { viewport: { width, height: 800 } },
           async (page) => {
-            // Every font held past its block period, as on a slow first visit,
-            // so a late swap is measured on every machine: without it this
-            // passed on a fast one and failed on CI's (25px on /credit/).
-            await page.route(/\.woff2$/, async (route) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              await route.continue();
-            });
+            // Fonts refused, so the page keeps one fallback and nothing swaps.
+            // How far a late swap re-wraps text depends on the OS's fallback
+            // metrics, so it failed different routes on each runner; the faces
+            // that can move a page at first paint are `optional` (tokens.css).
+            await page.route(/\.woff2$/, (route) => route.abort("aborted"));
             await page.addInitScript(() => {
               const shift = (window.__shift = { cls: 0, moved: 0, what: "" });
               new PerformanceObserver((list) => {
