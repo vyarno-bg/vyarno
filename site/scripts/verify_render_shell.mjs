@@ -293,6 +293,30 @@ test("the overdue warning comes before the panel that answers it", { skip }, asy
   );
 });
 
+test("the data panel names every publisher in the page's language", { skip }, async () => {
+  // The panel exists to say whose each figure is, and its source column
+  // printed each payload's pipeline id: «nsi», «legislation» and «ecb+bnb» as
+  // the only English in a Bulgarian table. Every row in both languages, so a
+  // publisher the manifest gains without a name here is red.
+  for (const [path, cyrillic] of [
+    ["/", true],
+    ["/en/", false],
+  ]) {
+    await withApp(async (page, errors) => {
+      await page.waitForFunction(() => document.querySelector("details.datapanel tbody tr"));
+      const cells = await page.evaluate(() =>
+        [...document.querySelectorAll("details.datapanel tbody tr")].map((tr) =>
+          tr.lastElementChild.textContent.trim()
+        )
+      );
+      assert.ok(cells.length >= 5, `${path} lists ${cells.length} payloads in the panel`);
+      const wrong = cells.filter((cell) => /[Ѐ-ӿ]/.test(cell) !== cyrillic);
+      assert.deepEqual(wrong, [], `${path} names a publisher in the other language`);
+      assert.deepEqual(errors, [], errors.join(" | "));
+    }, path);
+  }
+});
+
 test("a headline nobody refreshed is marked, not stamped", { skip }, async () => {
   // The strip's tick is an "on the record" mark, and a rate can be Eurostat's
   // own AND 400 days unfetched at the same time — so it sat above a band saying

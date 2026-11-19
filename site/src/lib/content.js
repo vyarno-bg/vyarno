@@ -2268,6 +2268,9 @@ export const COPY = {
   srcEurostatNsi: { bg: "Евростат и НСИ", en: "Eurostat and NSI" },
   srcEcbMir: { bg: "ЕЦБ MIR", en: "ECB MIR" },
   srcBnb: { bg: "БНБ", en: "BNB" },
+  // The payroll payload's publisher in the data panel's source column: a cell
+  // in a list of publishers, so no article (`howSrcDv` reads "the State Gazette").
+  srcGazette: { bg: "Държавен вестник", en: "State Gazette" },
   // Period qualifier on the strip sub-line ("за 1 г. · Евростат" / "in 1 yr ·
   // Eurostat"). Spelled out, because "YoY" does not read as a 12-month
   // comparison to a non-specialist.
