@@ -65,12 +65,46 @@ are in `docs/data-sources.md` §"TLS setup".
 from __future__ import annotations
 
 import io
+import time
 import warnings
 from datetime import datetime
 from typing import Any
 
 import httpx
 import openpyxl
+
+# БНБ's firewall answers a share of identical requests with a ~740-byte page and
+# HTTP 200 instead of the workbook: measured 2026-11-19, the same URL alternated
+# between the 110 kB file and this page on consecutive requests four seconds
+# apart. It says nothing about the file, so it is retried and then raised as an
+# HTTP failure (exit 4) rather than read as a layout change (exit 2).
+FIREWALL_MARKER = b"This page can't be displayed"
+RETRIES = 2
+RETRY_WAIT = 5.0
+
+
+def is_firewall_page(body: bytes) -> bool:
+    """The refusal page, which no workbook is: a zip starts with `PK`."""
+    return not body.startswith(b"PK") and FIREWALL_MARKER in body[:4096]
+
+
+def _download(url: str) -> bytes:
+    """One workbook's bytes. RETRIES counts attempts, as in `ecb.py` and `dv.py`."""
+    for attempt in range(RETRIES):
+        with httpx.Client(timeout=60.0, follow_redirects=True) as client:
+            r = client.get(url)
+            r.raise_for_status()
+        if not is_firewall_page(r.content):
+            return r.content
+        if attempt + 1 < RETRIES:
+            time.sleep(RETRY_WAIT)
+    raise httpx.HTTPStatusError(
+        f"БНБ's firewall answered {url} with a {len(r.content)}-byte refusal page "
+        f"and HTTP 200, {RETRIES} times. The file is not known to have moved.",
+        request=r.request,
+        response=r,
+    )
+
 
 # URL contract — cited verbatim in mortgage.json provenance.
 SOURCE_URL = (
@@ -158,10 +192,7 @@ def fetch_housing_stock_rate_bg() -> list[dict[str, Any]]:
         httpx.HTTPError on network/TLS failure (caller exits 4).
         ValueError if the sheet or headers changed (caller exits 2).
     """
-    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-        r = client.get(SOURCE_URL)
-        r.raise_for_status()
-        body = r.content
+    body = _download(SOURCE_URL)
     return parse_housing_stock_xlsx(body)
 
 
@@ -173,10 +204,7 @@ def fetch_loan_stock_bg() -> dict[str, list[dict[str, Any]]]:
 
     Raises the same two as `fetch_housing_stock_rate_bg`.
     """
-    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-        r = client.get(SOURCE_URL)
-        r.raise_for_status()
-        body = r.content
+    body = _download(SOURCE_URL)
     return {purpose: parse_loan_stock_xlsx(body, purpose) for purpose in LOAN_PURPOSES}
 
 
@@ -191,10 +219,7 @@ def fetch_overdraft_card_stock_bg() -> list[dict[str, Any]]:
 
     Raises the same two as `fetch_housing_stock_rate_bg`.
     """
-    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-        r = client.get(OVERDRAFT_URL)
-        r.raise_for_status()
-        body = r.content
+    body = _download(OVERDRAFT_URL)
     return parse_overdraft_card_stock_xlsx(body)
 
 
@@ -209,10 +234,7 @@ def fetch_housing_fixation_bg() -> list[dict[str, Any]]:
 
     Raises the same two as `fetch_housing_stock_rate_bg`.
     """
-    with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-        r = client.get(FIXATION_URL)
-        r.raise_for_status()
-        body = r.content
+    body = _download(FIXATION_URL)
     return parse_housing_fixation_xlsx(body)
 
 
