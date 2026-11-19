@@ -41,7 +41,7 @@ happens to a data pull request" is why nothing here merges one.
 | `data/published/` | The payloads, committed. These ARE what the site serves | §"What `data/published/` carries" below |
 | `site/` | The Vite + Svelte SPA, five layers | [`site.md`](./site.md) §Layout, whose file tree `verify_docs_map.mjs` holds to the directory in both directions |
 | `docs/` | Everything else | [`README.md`](./README.md) |
-| `.github/` | `ci.yml`, `watch.yml`, one `refresh-*.yml` per arm, `freshness-check.yml`, the issue and PR templates | §CI below |
+| `.github/` | `ci.yml`, `watch.yml`, one `refresh-*.yml` per arm, `data-pr.yml`, `freshness-check.yml`, the issue and PR templates | §CI below |
 
 Root carries the licence pair that the rest of this repository keeps true:
 `LICENSE` is Apache-2.0 over the code, `NOTICE` is the carve-out saying the
@@ -253,7 +253,10 @@ than an upstream anybody can poll.
 
 Every refresh arm but `city-price` pushes `data/<source>` and
 opens a pull request against `main` — **when the upstream republished, and at no
-other time.** A run that re-reads the same figures on a later day writes the same
+other time.** `city-price`, and `payroll` when ДВ will not answer a runner, go
+through `make refresh-local` instead: it pushes `data/<source>-<date>` from a
+person's machine, and `data-pr.yml` opens the pull request from that commit's
+body, labelling it `needs-review` when its `Refresh-Flags:` trailer is not 0. A run that re-reads the same figures on a later day writes the same
 payload with a later date on it, and `refresh_report.py` is what tells those two
 apart: it drops the fields the pipeline stamps with the run date, at every depth,
 and compares the rest against what is committed. A pull request that moves no

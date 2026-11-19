@@ -1,0 +1,113 @@
+# Opens the pull request for a data branch a PERSON pushed.
+#
+# `make refresh-local` (pipeline/src/vyarno_pipeline/local_refresh.py) pushes
+# `data/<source>-<date>` from a laptop and stops there: opening the pull
+# request from the laptop would need a GitHub token on it, and this needs none
+# beyond the job's own. The commit it pushes already carries the review — the
+# was → now table and the soft flags — so the pull request body IS the commit
+# body, and nothing here composes prose.
+#
+# **The checks come from the push, not from this pull request.** A pull
+# request opened by this job's token raises a `pull_request` run that waits for
+# approval and runs zero jobs (run 42256855147 is one). The person's own push
+# raised a full `ci.yml` run on the same SHA before this job started, and those
+# are the required contexts the pull request shows. So nothing is dispatched.
+#
+# **The refresh bot is excluded twice.** `refresh.yml` opens its own pull
+# request for `data/<source>`, and a push made with the automatic token raises
+# no run at all; the `actor` condition is for the day either of those changes.
+#
+# `needs-review` goes on when the head commit's `Refresh-Flags:` trailer is
+# above zero, or absent: a data branch nothing vouches for is one a person
+# reads. The label is what keeps a flagged refresh out of auto-merge.
+
+name: data-pr
+
+on:
+  push:
+    branches:
+      - "data/**"
+
+permissions: {}
+
+concurrency:
+  group: data-pr-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  open:
+    name: open the pull request for a pushed data branch
+    if: github.event.deleted == false && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # the pushed commit's message, through the API; no checkout
+      pull-requests: write # open the pull request, and create and apply the label
+    steps:
+      - name: Open it from the commit body, and label a flagged refresh
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const branch = process.env.BRANCH;
+            const { data: commit } = await github.rest.git.getCommit({
+              owner,
+              repo,
+              commit_sha: process.env.SHA,
+            });
+            const [subject, ...rest] = commit.message.split('\n');
+            const body = rest.join('\n').replace(/^\n+/, '');
+            const trailer = commit.message.match(/^Refresh-Flags:\s*(\d+)\s*$/m);
+            const flagged = trailer === null || Number(trailer[1]) > 0;
+
+            const open = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              head: `${owner}:${branch}`,
+            });
+            let number;
+            if (open.data.length > 0) {
+              number = open.data[0].number;
+              core.info(`#${number} is already open for ${branch}; not opening another.`);
+            } else {
+              const { data: pr } = await github.rest.pulls.create({
+                owner,
+                repo,
+                head: branch,
+                base: 'main',
+                title: subject,
+                body,
+              });
+              number = pr.number;
+              core.info(`Opened #${number}: ${pr.html_url}`);
+            }
+
+            if (flagged) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: 'needs-review' });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: 'needs-review',
+                  color: 'd93f0b',
+                  description: 'A data refresh a person has to read before it merges',
+                });
+              }
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: number,
+                labels: ['needs-review'],
+              });
+              core.info(
+                trailer === null
+                  ? 'No Refresh-Flags trailer on the head commit: labelled needs-review.'
+                  : `Refresh-Flags: ${trailer[1]}: labelled needs-review.`,
+              );
+            }

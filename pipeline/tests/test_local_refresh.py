@@ -355,6 +355,17 @@ def test_a_payroll_diff_names_the_fields_that_moved():
     assert rows[2:] == ["| `max_insurable_income_eur` | 2300.0 | 2400.0 |"]
 
 
+def test_the_pull_request_workflow_reads_what_the_command_writes(repos):
+    # data-pr.yml labels from the trailer and fires on the branch prefix. A
+    # rename on either side leaves every refresh labelled, or none opened.
+    workflow = (REPO / ".github" / "workflows" / "data-pr.yml").read_text("utf-8")
+    assert f"^{lr.FLAGS_TRAILER}:" in workflow
+    pattern = re.search(r'branches:\s*\n\s*-\s*"([^"]+)"', workflow)[1]
+    assert pattern == "data/**"
+    assert lr.branch_name(repos["person"], "payroll", DAY).startswith(pattern[: -len("**")])
+    assert re.search(r"^permissions: \{\}$", workflow, re.M), "the default token gets nothing"
+
+
 @pytest.mark.parametrize(
     "remote",
     ["https://github.com/vyarno-bg/vyarno.git", "git@github.com:vyarno-bg/vyarno.git"],
