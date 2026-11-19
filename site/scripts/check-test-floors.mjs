@@ -136,11 +136,7 @@ const junitAsserted = (text) => {
 
 /** THE ONLY TEST COUNTS IN THE REPOSITORY. Read the header before changing one. */
 export const FLOORS = {
-  pytest: { floor: 541, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
-  // Raised with the direction-state suites: the three state functions
-  // (`indexVerdictState`, `divisionRateState`, `peak`/`troughWorthNaming`),
-  // the rule over COPY that stops a fixed direction returning, and the
-  // COPY-table shape in `verify_template_safety.mjs`.
+  pytest: { floor: 682, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
   // Raised with the thousands-group cases for `parseAmount` in
   // `verify_format.mjs`, the same-quarter wage in `verify_view_market.mjs`,
   // the emptied-term cases in `verify_view_home.mjs` and
