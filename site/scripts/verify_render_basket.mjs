@@ -178,6 +178,28 @@ test("a basket the reader described survives an edit somewhere else", { skip }, 
   });
 });
 
+test("clearing the term to retype it moves nothing in the basket", { skip }, async () => {
+  // The term clamp is written back into the box, and an emptied box clamped
+  // to 0 put «0» under the cursor; the zero-year annuity it priced was
+  // infinite, and carved out of take-home it took every € figure in the
+  // basket to zero. Backspaces, because that is how a box gets emptied.
+  await withApp(async (page, errors) => {
+    await page.locator("#inSalary").fill("2000");
+    await page.locator(".m-inputs .homeTog input").first().check();
+    await page.waitForTimeout(300);
+    const firstEur = () => page.locator("#sliders .cat").first().innerText();
+    const before = await firstEur();
+    const term = page.locator("#inTerm");
+    await term.click();
+    await page.keyboard.press("End");
+    for (let i = 0; i < 3; i++) await page.keyboard.press("Backspace");
+    await page.waitForTimeout(300);
+    assert.equal(await term.inputValue(), "", "the emptied term box was refilled");
+    assert.equal(await firstEur(), before, "emptying the term moved the basket's € column");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("the loaded basket is marked, not crowned", { skip }, async () => {
   // A solid `--ink` fill is the strongest "this is the answer" signal the app
   // has, and the chip it sat on had only seeded thirteen sliders that outrank

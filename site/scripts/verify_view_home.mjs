@@ -128,6 +128,14 @@ test("clampTerm holds the term at the BNB maturity ceiling", () => {
   assert.equal(clampTerm(40, {}), 30, "with no published limits, still cap at 30");
 });
 
+test("clampTerm leaves an emptied term empty rather than making it a zero-year loan", () => {
+  // The clamp is written back into the bound box on every pass, so a reader
+  // clearing the term to retype it watched «0» appear under the cursor and
+  // typed «020» — and the zero-year annuity it priced is an infinite payment.
+  assert.equal(clampTerm(null, LIMITS), null);
+  assert.ok(Number.isNaN(clampTerm(NaN, LIMITS)));
+});
+
 test("mortgagePanel amortises the AAR, never the fee-inclusive APRC", () => {
   // docs/data-sources.md §"A plausible number is not a verified number". The
   // APRC (2.77% at 2026-05) folds fees into an annualised

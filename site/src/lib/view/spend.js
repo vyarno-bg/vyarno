@@ -23,11 +23,16 @@ import { headlineRate } from "./results.js";
  * payments already committed. A person can carry both — buying while still
  * renting until the deal closes.
  *
+ * A payment that is not a finite number of euros is not committed money: with
+ * the term box emptied mid-edit the annuity is infinite, and carved out it put
+ * all thirteen of the basket's € figures at zero until the reader finished.
+ *
  * @param {{salary:number, homeOn:boolean, monthlyMortgage:number, rent:number}} args
  * @returns {{housingCost:number, spendable:number}}
  */
 export function housingCarveOut({ salary, homeOn, monthlyMortgage, rent }) {
-  const housingCost = (homeOn ? Math.max(0, monthlyMortgage || 0) : 0) + (rent > 0 ? rent : 0);
+  const mortgage = homeOn && Number.isFinite(monthlyMortgage) ? Math.max(0, monthlyMortgage) : 0;
+  const housingCost = mortgage + (rent > 0 ? rent : 0);
   return { housingCost, spendable: Math.max(0, (salary || 0) - housingCost) };
 }
 

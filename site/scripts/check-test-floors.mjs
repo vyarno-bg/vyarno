@@ -138,11 +138,14 @@ const junitAsserted = (text) => {
 export const FLOORS = {
   pytest: { floor: 541, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
   // Raised with the thousands-group cases for `parseAmount` in
-  // `verify_format.mjs`, and the same-quarter wage in `verify_view_market.mjs`.
-  node: { floor: 690, report: join(SITE, ".report-node.tap"), count: tapPassed },
-  // Raised with the keystroke test that a money field keeps «1,500» and reads
-  // it as thousands, in `verify_render_shell.mjs`.
-  render: { floor: 204, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  // `verify_format.mjs`, the same-quarter wage in `verify_view_market.mjs`,
+  // and the emptied-term cases in `verify_view_home.mjs` and
+  // `verify_view_spend.mjs`.
+  node: { floor: 692, report: join(SITE, ".report-node.tap"), count: tapPassed },
+  // Raised with the keystroke tests that a money field keeps «1,500», in
+  // `verify_render_shell.mjs`, and that clearing the term moves nothing in the
+  // basket, in `verify_render_basket.mjs`.
+  render: { floor: 205, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**
