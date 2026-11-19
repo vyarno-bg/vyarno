@@ -17,15 +17,18 @@ runner's own Python before the pipeline is installed, which is what keeps a
 tick down to about fifteen seconds. stdlib only, and
 `test_release_calendar.py` holds it to that.
 
-    python3 -m vyarno_pipeline.watch [--all] [--repo PATH]
+    python3 -m vyarno_pipeline.watch [--all] [--repo PATH] [--cadence JSON]
 
 `--all` ignores the windows and probes every upstream. That is the wide sweep:
 a correction lands on no calendar and is still a figure to be first with.
+`--cadence` is `site/scripts/payload-cadence.mjs`'s table, which decides whose
+transient failures may be a warning (`backed`).
 """
 
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import subprocess
 import sys
@@ -52,15 +55,43 @@ USER_AGENT = "vyarno.bg release watcher (+https://vyarno.bg)"
 
 TIMEOUT = 20.0
 
-# One retry, then the tick fails. A probe that gives up silently is the shape
-# this whole file exists to remove: the watcher would stop watching and the
-# only signal would be a payload going stale weeks later.
+# Attempts, not retries: one retry, then the probe is reported. Never as
+# "nothing new" — a probe that gives up silently stops the watcher watching.
 RETRIES = 2
 RETRY_WAIT = 3.0
+
+# Statuses that say the upstream would not answer THIS request now, not that
+# the address is wrong: on 2026-11-18 НСИ sent one runner 403 for all seven
+# files that answer the same request with 200 elsewhere. A 404, a missing
+# marker or a body that does not parse is the probe's premise failing: fatal.
+TRANSIENT_STATUSES = frozenset({403, 429})
+
+# A transient failure is a warning only where freshness-check.yml's per-payload
+# cadence reports the same outage within a quarter: the arm stops publishing,
+# its `as_of` freezes, and the weekly check fires once it is a cadence old.
+# `salary_dist`'s four-yearly cadence would report a dead SES probe years late.
+BACKSTOP_DAYS = 99
 
 
 class ProbeError(RuntimeError):
     """An upstream could not be asked. Never confused with "nothing new"."""
+
+    def __init__(self, message: str, transient: bool = False) -> None:
+        super().__init__(message)
+        self.transient = transient
+
+
+def _transient(err: BaseException | None) -> bool:
+    """Would asking again later plausibly get an answer? See TRANSIENT_STATUSES."""
+    if isinstance(err, urllib.error.HTTPError):
+        return err.code in TRANSIENT_STATUSES or err.code >= 500
+    return isinstance(err, (OSError, http.client.HTTPException))
+
+
+def backed(source: str, cadence: dict[str, int] | None) -> bool:
+    """Does freshness-check report this arm's outage within BACKSTOP_DAYS?"""
+    days = [cadence[stem] for stem in payload_stems(source, sorted(cadence or {}))]
+    return bool(days) and min(days) <= BACKSTOP_DAYS
 
 
 def _request(url: str, method: str) -> tuple[dict[str, str], bytes]:
@@ -92,11 +123,12 @@ def marker_of(release: Release) -> datetime:
     for attempt in range(RETRIES):
         try:
             return _fetch_marker(release)
-        except (urllib.error.URLError, OSError, ValueError, ProbeError) as err:
+        except (OSError, http.client.HTTPException, ValueError, ProbeError) as err:
             last = err
             if attempt + 1 < RETRIES:
                 time.sleep(RETRY_WAIT)
-    raise ProbeError(f"{release.label}: {last}")
+    said = str(last) if isinstance(last, ProbeError) else f"{release.label}: {last}"
+    raise ProbeError(said, transient=_transient(last))
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -200,11 +232,17 @@ def sweep(
     now: datetime,
     watch_all: bool,
     last_runs: dict[str, str] | None,
+    cadence: dict[str, int] | None = None,
 ) -> dict[str, object]:
-    """Probe every upstream in window and report which arms the release moved past."""
+    """Probe every upstream in window and report which arms the release moved past.
+
+    `failed` fails the tick; `refused` is a transient failure of an arm that
+    `backed` says freshness-check covers, and is a warning.
+    """
     watching = WATCHED if watch_all else releases_due(now)
     refresh: list[dict[str, str]] = []
     failed: list[str] = []
+    refused: list[str] = []
     probed = 0
 
     for source, releases in sorted(watching.items()):
@@ -215,8 +253,12 @@ def sweep(
             try:
                 marker = marker_of(release)
             except ProbeError as err:
-                print(f"  FAILED {err}", file=sys.stderr)
-                failed.append(release.label)
+                if err.transient and backed(source, cadence):
+                    print(f"  REFUSED {err}", file=sys.stderr)
+                    refused.append(release.label)
+                else:
+                    print(f"  FAILED {err}", file=sys.stderr)
+                    failed.append(release.label)
                 continue
             ahead = marker > ours
             print(
@@ -234,7 +276,7 @@ def sweep(
                 }
             )
 
-    return {"refresh": refresh, "probed": probed, "failed": failed}
+    return {"refresh": refresh, "probed": probed, "failed": failed, "refused": refused}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -252,13 +294,28 @@ def main(argv: list[str] | None = None) -> int:
             "each arm's own run history. See `last_read` and `clock_of`."
         ),
     )
+    parser.add_argument(
+        "--cadence",
+        help=(
+            "JSON of {payload stem: cadence days}, as payload-cadence.mjs prints it. "
+            "Without it no arm is `backed` and every failed probe fails the tick."
+        ),
+    )
     args = parser.parse_args(argv)
 
     last_runs = json.loads(Path(args.last_run).read_text("utf-8")) if args.last_run else None
+    cadence = json.loads(Path(args.cadence).read_text("utf-8")) if args.cadence else None
     now = datetime.now(UTC)
-    result = sweep(Path(args.repo).resolve(), now, args.all, last_runs)
+    result = sweep(Path(args.repo).resolve(), now, args.all, last_runs, cadence)
     print(json.dumps(result))
 
+    refused = result["refused"]
+    if refused:
+        print(
+            f"::warning::{len(refused)} probe(s) refused for now, freshness-check covers "
+            f"a lasting outage: {', '.join(refused)}",
+            file=sys.stderr,
+        )
     failed = result["failed"]
     if failed:
         print(f"::error::{len(failed)} probe(s) failed: {', '.join(failed)}", file=sys.stderr)

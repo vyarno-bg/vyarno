@@ -114,12 +114,14 @@ jobs:
         # stdlib-only, so a tick needs no venv, no pip and no cache, which is
         # what makes a ten-minute poll affordable. The sweep flag reads the
         # cron line rather than living in its own workflow, so both schedules
-        # stay beside the table that produced them.
+        # stay beside the table that produced them. The cadence table is what
+        # lets a refused probe be a warning (`watch.py#backed`).
         env:
           SWEEP: ${{ github.event.schedule == '40 1,5,9,13,17,21 * * *' || github.event_name == 'workflow_dispatch' }}
         run: |
           set -euo pipefail
-          ARGS=(--repo . --last-run /tmp/last-run.json)
+          node site/scripts/payload-cadence.mjs > /tmp/cadence.json
+          ARGS=(--repo . --last-run /tmp/last-run.json --cadence /tmp/cadence.json)
           if [[ "${SWEEP}" == "true" ]]; then ARGS+=(--all); fi
           PYTHONPATH=pipeline/src python3 -m vyarno_pipeline.watch "${ARGS[@]}" > /tmp/watch.json
           cat /tmp/watch.json

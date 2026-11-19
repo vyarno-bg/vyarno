@@ -228,6 +228,10 @@ Two things follow that are worth knowing before touching either file:
 - **The window is a publisher's local time, not UTC.** A band written in UTC
   drifts an hour against the release twice a year. `utc_hours()` computes what
   the poll cron has to cover; the test fails if a window falls outside it.
+- **A refused probe is a warning, a wrong one is a red tick.** A timeout, 5xx,
+  403 or 429 only warns where freshness-check reports the arm's outage within
+  a quarter, which is every arm but `salary-dist`; a 404 or a missing marker
+  always fails (`watch.py#backed`).
 - **A widened window costs one request; a narrowed one costs a period.**
   `observed` in that table is evidence somebody gathered on a date, not a
   commitment the publisher made.
