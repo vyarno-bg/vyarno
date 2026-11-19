@@ -14,6 +14,12 @@ mechanics** — the `raioniAvgPrice` literal in `windows-1251` extracted by rege
 with no JS execution, the 403 on datacenter IPs, and the four things it must not
 do, each with its named guard.
 
+**No proxy, by construction.** `_get_page` builds its client with
+`trust_env=False`, so neither `HTTPS_PROXY` nor a Windows or macOS system proxy
+can route a request; [`legal.md`](../legal.md) §имот.bg rests on the pages being
+read from the runner's own connection. The cost is that `SSL_CERT_FILE` is not
+read for this host either, which it does not need.
+
 **Everything below was probed on 2026-08-09** from a residential connection in
 Bulgaria, across all 27 cities and every archive year each of them serves.
 

@@ -356,7 +356,11 @@ def _get_page(url: str, timeout: float) -> str:
         "User-Agent": "Mozilla/5.0 (Vyarno.bg data pipeline)",
         "Accept-Charset": "windows-1251,utf-8;q=0.9",
     }
-    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+    # `trust_env=False`: docs/legal.md §имот.bg rests on these pages being read
+    # from the runner's own connection and never through a proxy. httpx would
+    # otherwise take one from HTTPS_PROXY, and on Windows and macOS from the
+    # system settings, without a line in the code saying so.
+    with httpx.Client(timeout=timeout, follow_redirects=True, trust_env=False) as client:
         r = client.get(url, headers=headers)
         r.raise_for_status()
         # имот.bg redirect `prodazhbi-sofiya` to the bare page, so a redirect is
