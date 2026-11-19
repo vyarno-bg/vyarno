@@ -114,8 +114,8 @@
   viewBox="0 0 {W} {H}"
   role="img"
   aria-label={$lang === "bg"
-    ? `Какъв дял от общия разход за труд не стига до работника, според брутната заплата: отдолу вноските на работодателя, над тях удръжките от заплатата, а най-отгоре това, което стига до работника; осигуровки се плащат до ${fmt0(cost.capGross)} евро на месец`
-    : `What share of the total cost of employment never reaches the worker, by gross pay: the employer's contributions along the bottom, the deductions from their pay above them, and what reaches the worker on top; contributions are paid up to ${fmt0(cost.capGross)} euro a month`}
+    ? `Какъв дял от общия разход за труд не стига до заплатата на работника, според брутната заплата: отдолу вноските на работодателя, над тях удръжките от заплатата, а най-отгоре заплатата на ръка; осигуровки се плащат до ${fmt0(cost.capGross)} евро на месец`
+    : `What share of the total cost of employment never reaches the worker's pay, by gross pay: the employer's contributions along the bottom, the deductions from their pay above them, and the take-home pay on top; contributions are paid up to ${fmt0(cost.capGross)} euro a month`}
 >
   <defs>
     <!-- The employer's band is the one a reader has never seen on a payslip,
