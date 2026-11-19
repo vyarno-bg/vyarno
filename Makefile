@@ -104,7 +104,7 @@ setup: ## Create the Python venv and install both toolchains
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet -r pipeline/requirements-dev.txt
 	$(PY) -m pip install --quiet -e pipeline --no-deps
-	cd site && npm install
+	cd site && npm ci
 	@# Points git at the committed hooks, which refuse an agent's identity,
 	@# attribution or branch name (AGENTS.md §"Branches and authorship").
 	@if git rev-parse --git-dir >/dev/null 2>&1; then git config core.hooksPath .githooks; fi

@@ -42,7 +42,7 @@ cd pipeline && python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e . --no-deps
 pytest -q                                     # тестовете, без интернет
 
-cd ../site && npm install && npm run dev      # http://localhost:5173
+cd ../site && npm ci && npm run dev           # http://localhost:5173
 ```
 
 Под Windows виртуалната среда държи изпълнимите файлове в `Scripts\`, а

@@ -109,9 +109,14 @@ Expected: a green suite with the `live` probes deselected, and the CLI help.
 
 ```bash
 cd site
-npm install                      # once after clone
+npm ci                           # once after clone, exactly the lock
 npm run dev                      # http://localhost:5173, hot reload
 ```
+
+`npm ci` rather than `npm install`, as CI runs it. `install` rewrites
+`package-lock.json` to suit whichever npm is on the machine (npm 10.9 drops its
+`libc` fields), which is a lock diff nobody meant to make. `npm install` is for
+the day you change a range in `package.json`, as §"Updating dependencies" says.
 
 ### On Windows
 
@@ -133,7 +138,7 @@ pip install -e . --no-deps
 pytest -q
 
 cd ..\site
-npm install
+npm ci
 npm run dev
 ```
 

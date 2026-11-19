@@ -7,7 +7,7 @@ everywhere; this file is the front-end side.
 ## Commands
 
 ```sh
-npm install                                  # once after cloning
+npm ci                                       # once after cloning, exactly the lock
 npm run dev                                  # :5173, hot reload
 npm run verify:math                          # node:test, no browser
 npm run build && npm run test:render         # the built page, in a browser
