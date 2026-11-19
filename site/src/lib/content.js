@@ -2,7 +2,7 @@
  * Static UI content: presets, BG/EN labels, slider hint copy.
  * Hand-curated copy, NOT data. Source of truth for what every label
  * says in both languages. Mirrors the prototype's voice rules:
- *   - nominal is "на фиш"
+ *   - nominal is "на ръка", the raise that reaches the pocket
  *   - means labelled "средно, не медиана"
  *   - hints idiomatic ("и на око става")
  *   - one anchor per sentence, consistent "ти"
@@ -439,10 +439,15 @@ export const COPY = {
     en: "Enter the raise for the other incomes ({n}) too. Without them we cannot tell what happened to the household's pay.",
   },
   // The combined figure is not one of the numbers the reader typed, so the row
-  // shows the parts it was built from. Without them «на фиш: +9,1%» is a figure
+  // shows the parts it was built from. Without them «на ръка: +9,1%» is a figure
   // nobody entered and nobody can check.
   pocketRaiseParts: { bg: "доход {n}: {r}", en: "income {n}: {r}" },
   pocketCombined: { bg: "общо за домакинството", en: "the household together" },
+  // The pocket row's nominal raise is what reaches the pocket, net in either
+  // mode: in gross mode above the insurable ceiling a contract's +5% is +5,5%
+  // in hand, a figure no payslip prints, so the label names the pocket.
+  pocketTakeHome: { bg: "На ръка", en: "Take-home" },
+  pocketContract: { bg: "по договор", en: "on the contract" },
   // Inline hint under the raise input explaining why we ask for it.
   // Sits below the input box (not in the label) so the field reads
   // as a complete unit like the other inputs. Tells the user the

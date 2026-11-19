@@ -15,6 +15,23 @@
   const fmt0 = (x) => integer(x, $lang);
   const signedPct = (x, d = 1) => percentSigned(x, d, $lang);
 
+  // `calc.raise` is what reaches the pocket, so in gross mode above the
+  // insurable ceiling a typed +5% prints as +5,5%. The contract's own figure
+  // goes beside it wherever the two print differently, or the reader is left
+  // with a number they did not type. One income only: several are listed below.
+  const contractRaise = $derived(
+    calc.payBasis === "gross" &&
+      !calc.hasHousehold &&
+      Number.isFinite(calc.earners[0]?.raise) &&
+      percentSigned(calc.earners[0].raise, 1, "en") !== percentSigned(calc.raise, 1, "en")
+      ? calc.earners[0].raise
+      : null
+  );
+  const contractNote = (l) =>
+    contractRaise === null
+      ? ""
+      : ` (${t(COPY.pocketContract, l)} ${percentSigned(contractRaise, 1, l)})`;
+
   // Which incomes still owe a raise, as one sentence. One name reads better
   // than a list of one, and the plural form takes the numbers joined — the
   // alternative, a sentence per missing income, turns a prompt into a column.
@@ -122,8 +139,8 @@
       {/if}
     {:else}
       <span class="l-bg"
-        >На фиш{calc.hasHousehold ? ` (${COPY.pocketCombined.bg})` : ""}:
-        <span class="b">{signedPct(calc.raise)}</span> · твоите цени:
+        >{COPY.pocketTakeHome.bg}{calc.hasHousehold ? ` (${COPY.pocketCombined.bg})` : ""}:
+        <span class="b">{signedPct(calc.raise)}</span>{contractNote("bg")} · твоите цени:
         <span class="b">{signedPct(calc.pi)}</span>.<br
         />{pocketVerdict.bg}{#if calc.pocketEur !== 0}&nbsp;{@html t(
             calc.pocketEur > 0 ? COPY.pocketMoneyUp : COPY.pocketMoneyDn,
@@ -132,8 +149,8 @@
           )}{/if}</span
       >
       <span class="l-en"
-        >On paper{calc.hasHousehold ? ` (${COPY.pocketCombined.en})` : ""}:
-        <span class="b">{signedPct(calc.raise)}</span> · your prices:
+        >{COPY.pocketTakeHome.en}{calc.hasHousehold ? ` (${COPY.pocketCombined.en})` : ""}:
+        <span class="b">{signedPct(calc.raise)}</span>{contractNote("en")} · your prices:
         <span class="b">{signedPct(calc.pi)}</span>.<br
         />{pocketVerdict.en}{#if calc.pocketEur !== 0}&nbsp;{@html t(
             calc.pocketEur > 0 ? COPY.pocketMoneyUp : COPY.pocketMoneyDn,

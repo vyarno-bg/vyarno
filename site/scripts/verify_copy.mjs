@@ -1123,7 +1123,7 @@ test("only the exactly-cancelling pocket verdict claims to be exact", () => {
 });
 
 test("the stand-still ask answers in euro, and repeats no figure above it", () => {
-  // The row already prints «На фиш: +3,0% · твоите цени: +5,6%» two lines up.
+  // The row already prints «На ръка: +3,0% · твоите цени: +5,6%» two lines up.
   // A target of «+5,6%, точно колкото се вдигнаха твоите цени» under it is π
   // written out again: nothing a reader learns, and nothing they can act on,
   // because a raise is asked for in bruto and nobody negotiates a percentage
