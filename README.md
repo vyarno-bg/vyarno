@@ -235,8 +235,10 @@ started by a release watcher rather than by a person: `.github/workflows/
 watch.yml` polls each upstream inside the window
 [`release_calendar.py`](./pipeline/src/vyarno_pipeline/release_calendar.py)
 records for it and opens a pull request within about ten minutes of a
-publication. **Nothing merges that pull request automatically**, which is the
-only way a figure reaches a reader.
+publication. **That pull request merges itself once its five CI checks are
+green**, which is the only way a figure reaches a reader; the label `hold` stops
+it for a person ([`docs/architecture.md`](./docs/architecture.md) §"What
+happens to a data pull request").
 
 **How to know a refresh is overdue.** Every payload declares the cadence of the
 upstream it comes from and is judged against its own — monthly for HICP,

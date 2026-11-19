@@ -19,19 +19,14 @@
 # datacenter IP with a 403, so it is refreshed by hand instead
 # (`release_calendar.NOT_WATCHED`), and this check is the only thing watching
 # whether that has happened. Either way a payload reaches a reader only through
-# a merge — and nothing merges them. Left alone the site ages while every gate
-# stays green: the refresh ran, the gates passed, the PR opened, CI went green
-# on it, and the figure a reader sees is the one from before. The only other
-# signal is the overdue line on a page that reader may never open. So this
-# check reports the two halves together, and a stale payload is reported beside
-# the pull request that would fix it.
+# a merge. A refresh PR merges itself on green CI, so the ones still open here
+# are the ones that did not: held with `hold` or `needs-review`, red on CI, or
+# never armed. Each is a figure a reader is not getting, so a stale payload is
+# reported beside the pull request that would fix it.
 #
-# **Nothing here merges anything, and `permissions` says so.** Auto-merge on
-# green was the alternative and it is refused: a data refresh is the change
-# where the diff IS the review — a number moving is the whole event — and a bot
-# merging it removes the only human look any published figure gets. The gates
-# cannot stand in for that; they catch a payload that is wrong in a way somebody
-# already thought of. `docs/architecture.md` §CI carries the argument.
+# **Nothing here merges anything, and `permissions` says so.** This reports;
+# `automerge.py` and branch protection decide (`docs/architecture.md`
+# §"What happens to a data pull request").
 #
 # The per-source refresh workflow reads the same table for the "other payloads
 # that have gone quiet" list in its pull-request body, and
@@ -190,7 +185,7 @@ jobs:
           if [[ "${LATE_COUNT}" != "0" ]]; then
             echo "::error::${LATE_COUNT} data pull request(s) open past a review cycle:"
             echo "  ${LATE}"
-            echo "Nothing merges these. A payload reaches a reader through a merge and no other way."
+            echo "Each is held, red on CI or not armed to merge, and its figures reach no reader until it merges."
             FAIL=1
           fi
           exit "$FAIL"
