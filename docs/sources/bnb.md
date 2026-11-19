@@ -52,7 +52,8 @@ already had would not have produced it.
 not a moved file.** Measured 2026-11-19 from a cloud IP, the same
 `bnb_download/` URL alternated between the workbook and that page, both with
 HTTP 200, on requests four seconds apart. `bnb.py#is_firewall_page` names it;
-the connector retries once and then exits **4**.
+the connector retries once and then exits **4**, and `verify-citations` retries
+and reports it UNCHECKED rather than BROKEN.
 
 ## `s_ir_loan_oa_hh_bg.xlsx` — household loans by purpose
 
