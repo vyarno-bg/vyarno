@@ -323,7 +323,7 @@
               е твоят дял за група i (плъзгачите; делението на Σw ги свежда до 100%). r<sub>i</sub>
               е официалното поскъпване на групата:
               {#if anchor === "y1"}
-                годишният темп (Eurostat, prc_hicp_minr, RCH_A).
+                годишният темп (Евростат, prc_hicp_minr, RCH_A).
               {:else}
                 r<sub>i</sub> = I<sub>i</sub>(сега) ÷ I<sub>i</sub>({anchor}) − 1, където I<sub
                   >i</sub

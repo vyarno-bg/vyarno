@@ -1635,8 +1635,8 @@ export const COPY = {
     en: "average NET pay · choose where you live",
   },
   statRegionUnsetHint: {
-    bg: "кажи по-горе къде живееш, за да сравним заплатата ти със средната там",
-    en: "say above where you live, to compare your pay with the average there",
+    bg: "кажи по-горе къде живееш, за да сравним заплатата ти със средната там.",
+    en: "say above where you live, to compare your pay with the average there.",
   },
   // The control that answers the two prompts above, and it says «отвори», not
   // «избери»: the sentence beside it has already asked for the choice, and a
