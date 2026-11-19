@@ -30,8 +30,8 @@
  * point: «≈ €46 повече» is one line with Latin and Cyrillic in it, so a weight
  * present on one side and absent on the other renders that line in two fonts.
  * Worst case (`/`, everything opened) this is +153 kB against a page that
- * already transfers ~930 kB, behind `font-display: swap`, and cached after the
- * first visit.
+ * already transfers ~930 kB, behind `font-display: swap` (`optional` for the
+ * preloaded body and title faces, below), and cached after the first visit.
  *
  * `✓`, `≈`, `№` and `⚠` stay on the system stack deliberately. The first three
  * are in IBM's `Pi` split, which is another ~73 kB across the eight faces for
@@ -68,11 +68,14 @@
 
 /* ---------- @font-face (all local, no third-party CSS) ---------- */
 
+/* The body face, both subsets: `optional` and preloaded on every page, for the
+   reason the title face's rule gives below. Swapped in late it re-wraps a
+   paragraph and moves what follows a line (25px on /credit/ at 360px). */
 @font-face {
   font-family: "IBM Plex Sans";
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
   src: url("/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2") format("woff2");
   unicode-range:
     U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB, U+04AE-04B3, U+04B6-04BB,
@@ -82,7 +85,7 @@
   font-family: "IBM Plex Sans";
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
   src: url("/fonts/ibm-plex/IBMPlexSans-Regular-Latin1.woff2") format("woff2");
   unicode-range:
     U+0000, U+000D, U+0020-007E, U+00A0-00A3, U+00A4-00FF, U+0131, U+0152-0153, U+02C6, U+02DA,

@@ -262,8 +262,15 @@ for (const path of ["/", "/how/", "/market/", "/credit/"]) {
           },
           route,
           { viewport: { width, height: 800 } },
-          (page) =>
-            page.addInitScript(() => {
+          async (page) => {
+            // Every font held past its block period, as on a slow first visit,
+            // so a late swap is measured on every machine: without it this
+            // passed on a fast one and failed on CI's (25px on /credit/).
+            await page.route(/\.woff2$/, async (route) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              await route.continue();
+            });
+            await page.addInitScript(() => {
               const shift = (window.__shift = { cls: 0, moved: 0, what: "" });
               new PerformanceObserver((list) => {
                 for (const e of list.getEntries()) {
@@ -279,7 +286,8 @@ for (const path of ["/", "/how/", "/market/", "/credit/"]) {
                   }
                 }
               }).observe({ type: "layout-shift", buffered: true });
-            })
+            });
+          }
         );
       });
     }
