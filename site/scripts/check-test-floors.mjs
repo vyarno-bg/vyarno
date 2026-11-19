@@ -138,8 +138,8 @@ const junitAsserted = (text) => {
 export const FLOORS = {
   pytest: { floor: 541, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
   // Raised with the thousands-group cases for `parseAmount` in
-  // `verify_format.mjs`.
-  node: { floor: 689, report: join(SITE, ".report-node.tap"), count: tapPassed },
+  // `verify_format.mjs`, and the same-quarter wage in `verify_view_market.mjs`.
+  node: { floor: 690, report: join(SITE, ".report-node.tap"), count: tapPassed },
   // Raised with the keystroke test that a money field keeps «1,500» and reads
   // it as thousands, in `verify_render_shell.mjs`.
   render: { floor: 204, report: join(SITE, ".report-render.tap"), count: tapPassed },

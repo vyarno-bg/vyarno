@@ -1237,9 +1237,10 @@ calculator's mortgage panel.
 in the currency of the period, so the leg before the euro changeover has to be
 converted before it meets a euro denominator.
 
-**`sector_salary.json`** — the `Total` row's `value_eur` and the payload's
-`ref_period` and `source_url`, for the years-of-pay card. Everything else in
-that file belongs to the calculator's sector comparison.
+**`sector_salary.json`** — the `Total` row's `series_by_period` cell for the
+average deal's own quarter (its `value_eur` and the payload's `ref_period` only
+where НСИ carry no such cell) and `source_url`, for the years-of-pay card.
+Everything else in that file belongs to the calculator's sector comparison.
 
 **`hicp_categories.json`** — `CP041`'s `annual_rate_pct`, `ref_period` and
 `api_url`, for the renters' sentence. Everything else is the calculator's

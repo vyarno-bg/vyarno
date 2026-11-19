@@ -335,10 +335,9 @@ test("marketDealInYearsOfPay reads the all-activities GROSS row, and dates both 
   const y = marketDealInYearsOfPay(HOUSE_MARKET, sectorSalary);
   assert.equal(y.monthlyGrossEur, 1407, "the wage is not НСИ's all-activities row");
   assert.ok(Math.abs(y.value - 82786.01 / (1407 * 12)) < 1e-12);
-  // **Both periods, because the figure describes both.** Eurostat disseminate
-  // about a week behind НСИ publishing, so the two part for the days between
-  // two releases — and a card naming one of them describes half its own
-  // arithmetic.
+  // **Both periods, because the figure describes both.** With no wage cell for
+  // the deal's quarter the two part, and a card naming one of them describes
+  // half its own arithmetic.
   assert.equal(y.dealPeriod, "2026-Q1");
   assert.equal(y.wagePeriod, "2025-Q4");
   assert.equal(y.wageUrl, "https://example.invalid/nsi-wages");
@@ -346,6 +345,31 @@ test("marketDealInYearsOfPay reads the all-activities GROSS row, and dates both 
   // The sector rows are unreachable: there is no argument to pass one through.
   assert.equal(marketDealInYearsOfPay(HOUSE_MARKET, { ...sectorSalary, sectors: [] }).value, null);
   assert.equal(marketDealInYearsOfPay(null, sectorSalary).value, null);
+});
+
+test("marketDealInYearsOfPay divides a quarter's deal by THAT quarter's wage", () => {
+  // НСИ publish a quarter's wages weeks before Eurostat publish its deals, so
+  // the newest wage is usually a quarter ahead of the newest deal — and НСИ's
+  // wages are seasonal, 2025-Q4 running 5.1% over Q3 in the published series.
+  // The ratio takes the cell for the deal's own quarter where НСИ carry it.
+  const sectorSalary = {
+    ref_period: "2026-Q2",
+    source_url: "https://example.invalid/nsi-wages",
+    sectors: [
+      {
+        en_name: "Total",
+        value_eur: 1444,
+        series_by_period: { "2025-Q4": 1369, "2026-Q1": 1407, "2026-Q2": 1444 },
+      },
+    ],
+  };
+  const y = marketDealInYearsOfPay(HOUSE_MARKET, sectorSalary);
+  assert.equal(y.monthlyGrossEur, 1407, "the wage is not the deal's own quarter");
+  assert.ok(Math.abs(y.value - 82786.01 / (1407 * 12)) < 1e-12);
+  assert.equal(y.wagePeriod, "2026-Q1", "the wage is dated by a quarter it was not read at");
+  // A deal quarter НСИ have no cell for keeps the newest wage, under its own date.
+  const later = { ...HOUSE_MARKET, ref_period: "2026-Q3" };
+  assert.equal(marketDealInYearsOfPay(later, sectorSalary).wagePeriod, "2026-Q2");
 });
 
 test("marketCities dates each column by its own workbook and each row by its own cell", () => {
