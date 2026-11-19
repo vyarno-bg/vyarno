@@ -1222,7 +1222,12 @@ test("no page prints a double stop or fuses two sentences", { skip }, async () =
   for (const path of ["/", "/how/", "/market/", "/credit/", "/legal/", "/support/"]) {
     for (const prefix of ["", "/en"]) {
       await withApp(async (page, errors) => {
-        const text = await page.evaluate(() => document.body.innerText);
+        // Every disclosure open first: `innerText` skips a closed one, and the
+        // explainer and the method drawer are where most of the prose is.
+        const text = await page.evaluate(() => {
+          for (const d of document.querySelectorAll("details")) d.open = true;
+          return document.body.innerText;
+        });
         const doubled = text.match(/г\.\./g);
         assert.equal(
           doubled,
@@ -1248,6 +1253,16 @@ test("no page prints a double stop or fuses two sentences", { skip }, async () =
           loose,
           null,
           `${prefix}${path} spaces a word off its own punctuation: ${JSON.stringify(loose)}`
+        );
+        // The quote marks `verify_copy.mjs` holds in the copy modules, held here
+        // for prose inlined in a template, where `"bg"` in every expression keeps
+        // a source scan from telling markup from a sentence.
+        const straight = text.match(/"[^"\n]{1,60}"/g);
+        assert.equal(
+          straight,
+          null,
+          `${prefix}${path} quotes with straight marks: ${JSON.stringify(straight)}. ` +
+            "Bulgarian takes „…“ and English “…”"
         );
         assert.deepEqual(errors, [], errors.join(" | "));
       }, `${prefix}${path}`);

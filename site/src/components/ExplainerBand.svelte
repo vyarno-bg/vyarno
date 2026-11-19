@@ -112,7 +112,7 @@
              payload: a reader who follows the ↗ link lands on the same index
              this paragraph is teaching them to read. -->
         <h3>
-          <span class="l-bg">Какво е „индекс“?</span><span class="l-en">What is an "index"?</span>
+          <span class="l-bg">Какво е „индекс“?</span><span class="l-en">What is an “index”?</span>
         </h3>
         <p>
           <span class="l-bg"
@@ -137,7 +137,7 @@
 
         <h3>
           <span class="l-bg">Защо твоето число се различава от „официалната инфлация“?</span><span
-            class="l-en">Why does your number differ from the "official inflation"?</span
+            class="l-en">Why does your number differ from the “official inflation”?</span
           >
         </h3>
         <p>
@@ -197,9 +197,9 @@
             да се правим, че са едно.</span
           >
           <span class="l-en"
-            >The number in the strip up top and "the average basket" in the calculation sit a tenth
+            >The number in the strip up top and “the average basket” in the calculation sit a tenth
             or two of a percentage point apart. Both are correct and both come from Eurostat, they
-            are simply assembled differently. "The average basket" is the sum of the 13 groups at
+            are simply assembled differently. “The average basket” is the sum of the 13 groups at
             their official weights. The strip's number is not such a sum: <b
               >every January Eurostat changes the weights</b
             >, because people spend a little differently than last year, and links the new basket to
@@ -375,7 +375,7 @@
                 > on Eurostat's all-items index (prc_hicp_minr, TOTAL) as published{:else}the 13
                 groups summed at their official weights{/if}
               <br /><b>A home.</b> The price is the size times the price per square metre, and
-              "years" is that price divided by a whole year of your pay.
+              “years” is that price divided by a whole year of your pay.
               <code>price = €/m² × size</code> ·
               <code>years = price ÷ (12 × pay)</code>. The payment is the same every month to the
               end of the term, the ordinary bank annuity.

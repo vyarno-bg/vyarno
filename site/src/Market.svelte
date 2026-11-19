@@ -1909,7 +1909,7 @@
         сделка е цената на жилището, а не цената на купуването му.</span
       >
       <span class="l-en"
-        >"Total paid" is the price of the dwellings themselves together with the land under them,
+        >“Total paid” is the price of the dwellings themselves together with the land under them,
         VAT included on new builds; the notary, the agency commission and the bank fees sit outside
         it, so the average deal is what a home costs rather than what buying one costs.</span
       >
@@ -2774,7 +2774,7 @@
           не е бюджет, а мярка за сравнение между градовете.</span
         >
         <span class="l-en"
-          >"{fmt(afford.rows[0].latest.value)} years" means: that many years of the whole wage, down to
+          >“{fmt(afford.rows[0].latest.value)} years” means: that many years of the whole wage, down to
           the last euro, going to the home. We take what a {fmt0(afford.m2)} m² home costs at the city's
           average asking price and divide by the average wage for the oblast, after contributions and
           tax. The figure is not a budget, it is a yardstick for comparing cities.</span
@@ -3405,7 +3405,7 @@
         жилищата на хора в чужбина, а не само наистина празните.</span
       >
       <span class="l-en"
-        >"Unoccupied" means the dwelling was nobody's permanent home at the time of the census. Who
+        >“Unoccupied” means the dwelling was nobody's permanent home at the time of the census. Who
         slept there is not the test, so holiday homes, second homes and the homes of people abroad
         are all inside it, not only the genuinely empty ones.</span
       >
@@ -3614,7 +3614,7 @@
           ред се движи от тези сметки, а не от цените на сделките.</span
         >
         <span class="l-en"
-          >"Housing costs" here is everything around the home: electricity, heating, water,
+          >“Housing costs” here is everything around the home: electricity, heating, water,
           maintenance, insurance and tax; rent for tenants, and for owners with a loan the interest
           alone, never the capital. The percentage is a share of people rather than of households:
           it counts everyone living in a household over the line, out of the people in private
