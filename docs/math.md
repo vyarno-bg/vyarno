@@ -659,10 +659,32 @@ labour wedge    (labour cost − net) / labour cost           = 34.748 %
   net         = gross − employee contributions − income tax
 ```
 
-**The definition implemented is OECD/EC's**, stated because more than one is
-defensible: the wedge is every compulsory levy on employing a person, **the flat
-10% included**. Leaving the tax out would answer a narrower question — what do
-the contributions take — under a name that means the wider one.
+**The formula is OECD's and the scope is one line wider.** The wedge is every
+compulsory payment on employing a person, **the flat 10% included**. Leaving the
+tax out would answer a narrower question — what do the contributions take —
+under a name that means the wider one.
+
+**It includes the 5% second-pillar contribution, and OECD's own wedge would
+not.** ДЗПО to a universal pension fund (УПФ) is 2.2% from the employee and 2.8%
+from the employer, and it goes to the worker's own account at a privately
+managed pension fund. By OECD's definition that is a non-tax compulsory payment,
+which their tax wedge leaves out. They define the wedge as «the sum of personal
+income tax, employee and employer social security contributions plus any
+payroll taxes, minus any benefits received by the employee, as a percentage of
+labour costs», and note that «non-tax compulsory payments are requited and
+unrequited compulsory payments to privately-managed funds, welfare agencies or
+social insurance schemes outside general governments and to public
+enterprises». Both are OECD, *Taxing Wages 2021*, brochure, Box 1 and its note
+1 (<https://search.oecd.org/ctp/tax-policy/taxing-wages-brochure.pdf>). It was
+read 2026-11-19 from the copy at
+<https://www.lavorosi.it/fileadmin/user_upload/PRASSI_2020/ocse-taxing-wages-brochure-cuneo-fiscale.pdf>,
+because oecd.org refuses an automated read. The background paper is B. Brys,
+«Non-Tax Compulsory Payments as an Additional Burden on Labour Income», *OECD
+Taxation Working Papers* No. 8, 2011
+(<https://www.oecd.org/en/publications/non-tax-compulsory-payments-as-an-additional-burden-on-labour-income_5kg3h0sn2g6k-en.html>).
+So 34.748% is OECD's formula over Bulgaria's whole compulsory bill, the УПФ
+inside it, and not the figure OECD's scope would give. The employee-side 22.402%
+carries the employee's 2.2% the same way.
 
 **Neither figure may appear without its base named in the same sentence.** They
 differ by twelve points, both are true, and a reader who takes 34.7% for a share
