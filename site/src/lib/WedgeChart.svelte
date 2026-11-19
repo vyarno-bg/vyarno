@@ -30,7 +30,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY } from "$lib/content.js";
-  import { number, integer } from "$lib/format.js";
+  import { euro, number, integer } from "$lib/format.js";
 
   const {
     /** `points`, `capGross`, `peakEffectivePct`, `marginalAbovePct` — the
@@ -42,6 +42,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // SVG geometry for the curve. Pure presentation: the numbers are already
   // decided by `wedge`, this only maps them onto the plot box.
@@ -158,12 +159,12 @@
     text-anchor="end">{fmt(wedge.marginalAbovePct)}%</text
   >
   <text class="wedge-lbl" x={wedgeX(wedge.capGross) + 5} y={WEDGE_BASE + 13}
-    >€{fmt0(wedge.capGross)}</text
+    >{money(wedge.capGross)}</text
   >
   <!-- The frame's right edge, so the line's value there reads as "at this
        salary" rather than "in the end". -->
   <text class="wedge-lbl" x={WEDGE_W - WEDGE_PAD_X} y={WEDGE_BASE + 13} text-anchor="end"
-    >€{fmt0(wedgeMaxGross)}</text
+    >{money(wedgeMaxGross)}</text
   >
   <!-- One marker per earner: each contract sits at its own point on this
        curve, and a marker at their combined pay would stand where nobody in

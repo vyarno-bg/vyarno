@@ -10,7 +10,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { bgIn, number, integer, safeText } from "$lib/format.js";
+  import { bgIn, euro, number, integer, safeText } from "$lib/format.js";
 
   const {
     /** The row renders only when the home block is switched on. */
@@ -67,6 +67,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // The €/m² in the bracket is the one the total beside it is built from, and
   // the basis word says whose it is. In manual mode both are the reader's own;
@@ -297,7 +298,7 @@
                 : "."}</span
             >
             <span class="l-en"
-              >at this income, rate, and term you can afford up to <b>{fmt0(maxAffordPrice)} €</b>
+              >at this income, rate, and term you can afford up to <b>{money(maxAffordPrice)}</b>
               · <b>{fmt(maxAffordM2, 0)} m²</b>{cityNameEn
                 ? " " + t(COPY.affordWhere, "en", { city: cityNameEn })
                 : "."}</span
@@ -310,8 +311,8 @@
               <b>{fmt(maxAffordM2, 0)} м²</b>. Избраният ({fmt0(homePrice)} €) е под границата.</span
             >
             <span class="l-en"
-              >you can afford up to <b>{fmt0(maxAffordPrice)} €</b> ·
-              <b>{fmt(maxAffordM2, 0)} m²</b>. Your pick ({fmt0(homePrice)} €) is under the ceiling.</span
+              >you can afford up to <b>{money(maxAffordPrice)}</b> ·
+              <b>{fmt(maxAffordM2, 0)} m²</b>. Your pick ({money(homePrice)}) is under the ceiling.</span
             >
           </div>
         {/if}

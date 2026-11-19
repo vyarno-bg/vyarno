@@ -51,7 +51,7 @@
     creditRenegotiation,
     creditSavings,
   } from "./lib/view/credit.js";
-  import { dateShort, integer, number, periodLong, signed } from "./lib/format.js";
+  import { dateShort, euro, integer, number, periodLong, signed } from "./lib/format.js";
   import { niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   const { payloads = null, servedLang = null } = $props();
@@ -803,7 +803,7 @@
            directly under the two figures it divides, with both of them linked,
            which is the shape `/market/` gives its own derived figures. -->
       <p class="note ours">
-        <strong>{savings.ratio === null ? "—" : `${number(savings.ratio, 2, $lang)} €`}</strong>
+        <strong>{savings.ratio === null ? "—" : euro(savings.ratio, $lang, 2)}</strong>
         <!-- Said as one euro against the other, because a bare «1,79» beside two
              billion-euro figures reads as a third amount rather than as the
              relation between them. The two operands carry the links. -->
@@ -817,11 +817,11 @@
           <a href={savings.loansSourceUrl} rel="noopener">дълга</a>, за един и същи месец.</span
         >
         <span class="l-en"
-          >in the bank for every euro owed. In {periodLong(savings.from, $lang)} it was {number(
+          >in the bank for every euro owed. In {periodLong(savings.from, $lang)} it was {euro(
             savings.ratioFirst,
-            2,
-            $lang
-          )} €. Ours: <a href={savings.depositsSourceUrl} rel="noopener">the money in the bank</a>
+            "en",
+            2
+          )}. Ours: <a href={savings.depositsSourceUrl} rel="noopener">the money in the bank</a>
           divided by <a href={savings.loansSourceUrl} rel="noopener">the debt</a>, for the same
           month.</span
         >

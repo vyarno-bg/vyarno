@@ -548,7 +548,11 @@ test("the home block prices nothing before a €/m² has a source", { skip }, as
     const row = page.locator(".r-row", { hasText: "домът" }).first();
     assert.ok(await row.count(), "the home row is not on the card");
     const text = (await row.innerText()).replace(/\s+/g, " ");
-    assert.doesNotMatch(text, /€\s?\d/, `the row priced a home with no €/m² behind it: ${text}`);
+    assert.doesNotMatch(
+      text,
+      /€\s?\d|\d\s?€/,
+      `the row priced a home with no €/m² behind it: ${text}`
+    );
     assert.ok(!(await row.locator(".mort-bar").count()), "the affordability bar was drawn");
     assert.match(text, /къде живееш|where you live/i, `the row says nothing: ${text}`);
 
@@ -565,7 +569,11 @@ test("the home block prices nothing before a €/m² has a source", { skip }, as
     await page.selectOption("#region-select", "sofiya");
     await page.waitForTimeout(400);
     const priced = (await row.innerText()).replace(/\s+/g, " ");
-    assert.match(priced, /€\s?\d/, `the row stayed empty after a place was picked: ${priced}`);
+    assert.match(
+      priced,
+      /€\s?\d|\d\s?€/,
+      `the row stayed empty after a place was picked: ${priced}`
+    );
     assert.deepEqual(errors, [], errors.join(" | "));
   });
 });
@@ -613,7 +621,7 @@ test("every decimal field takes the separator this page writes", { skip }, async
 });
 
 test("a money field reads «1,500» as the thousands the English page writes", { skip }, async () => {
-  // The page prints «1,164 €», so that is how a reader types a figure back,
+  // The page prints «€1,164», so that is how a reader types a figure back,
   // and it reached the model as a decimal: €2 net, savings of €10. Typed key
   // by key, because the box is re-seeded off its own parse after each one and
   // a re-seed reading it differently from the handler rewrites it mid-word.
@@ -626,7 +634,7 @@ test("a money field reads «1,500» as the thousands the English page writes", {
       assert.equal(await field.inputValue(), "1,500", `${id} was rewritten as it was typed`);
     }
     const text = await page.locator("main").innerText();
-    assert.match(text, /1,500 € net/, "the salary was not read as €1,500");
+    assert.match(text, /€1,500 net/, "the salary was not read as €1,500");
     assert.match(text, /€1,500\/mo rent/, "the rent was not read as €1,500");
     assert.match(text, /The same €1,500 since 2020/, "the savings were not read as €1,500");
     assert.deepEqual(errors, [], errors.join(" | "));
@@ -1281,6 +1289,18 @@ test("no page prints a double stop or fuses two sentences", { skip }, async () =
         // The quote marks `verify_copy.mjs` holds in the copy modules, held here
         // for prose inlined in a template, where `"bg"` in every expression keeps
         // a source scan from telling markup from a sentence.
+        // One side for the euro sign per language, `format.js#euro`: after
+        // the figure in Bulgarian, before it in English. Two amounts side by
+        // side are allowed to look like either; a sign touching no figure on
+        // the language's side is the failure.
+        const euroWrong = prefix
+          ? text.match(/\d\s?€(?!\s?[−-]?\d)/g)
+          : text.match(/(?<!\d\s?)€\s?[−-]?\d/g);
+        assert.equal(
+          euroWrong,
+          null,
+          `${prefix}${path} writes the euro sign on the other language's side: ${JSON.stringify(euroWrong)}`
+        );
         const straight = text.match(/"[^"\n]{1,60}"/g);
         assert.equal(
           straight,

@@ -19,7 +19,7 @@
    * unusable with a screen reader.
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer } from "../lib/format.js";
+  import { euro, number, integer } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import { barCeiling } from "../lib/view/share.js";
 
@@ -38,6 +38,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // The four non-official chips are hand-made illustrations, not survey data:
   // there is no BG household-budget microdata at the resolution a data-driven
@@ -209,17 +210,17 @@
   {#if calc.householdNet > 0}
     <div class="r-money">
       {#if calc.anchor === "y1"}
-        ≈ <span class="b">€{fmt0(calc.extra)}</span>
+        ≈ <span class="b">{money(calc.extra)}</span>
         <span class="l-bg">повече всеки месец</span>
         <span class="l-en">more every month</span>
         <span class="l-bg">ти струва същият живот отпреди година</span>
         <span class="l-en">is what the same life as a year ago costs you</span>
       {:else}
         <span class="l-bg"
-          >≈ <span class="b">€{fmt0(calc.extra)}</span> от всеки твой доход днес</span
+          >≈ <span class="b">{money(calc.extra)}</span> от всеки твой доход днес</span
         >
         <span class="l-en"
-          >≈ <span class="b">€{fmt0(calc.extra)}</span> of every paycheck today</span
+          >≈ <span class="b">{money(calc.extra)}</span> of every paycheck today</span
         >
         <span class="l-bg">отиват само за поскъпването от {calc.anchor} насам</span>
         <span class="l-en">goes purely to price rises since {calc.anchor}</span>
@@ -243,7 +244,7 @@
            between them was rendering as a space: «≈ €13/ мес», against «€/мес»
            closed up in every other rate on the page. Splitting the amount from
            its unit across two lines is what puts whitespace inside a unit. -->
-      ≈ <span class="b">€{fmt0(calc.bite.eurPerMonth)}/</span><span class="l-bg">мес</span><span
+      ≈ <span class="b">{money(calc.bite.eurPerMonth)}/</span><span class="l-bg">мес</span><span
         class="l-en">mo</span
       >
     </div>

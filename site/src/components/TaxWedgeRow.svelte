@@ -13,7 +13,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer, label, spaced } from "$lib/format.js";
+  import { euro, number, integer, label, spaced } from "$lib/format.js";
   import WedgeChart from "$lib/WedgeChart.svelte";
   import LabourCostChart from "$lib/LabourCostChart.svelte";
 
@@ -28,6 +28,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   /** The single earner, when there is exactly one — the row's original case. */
   const only = $derived(wedge.earners.length === 1 ? wedge.earners[0] : null);
@@ -179,7 +180,7 @@
          shorthand, because two suites read this template as text:
          `verify_template_safety.mjs` has to see a formatter behind each value
          and `verify_copy.mjs` a literal `name:` per placeholder. -->
-    {@const headTxt = fmt0(costOnly ? costOnly.labourCostLow : cost.householdLabourCost)}
+    {@const headTxt = money(costOnly ? costOnly.labourCostLow : cost.householdLabourCost)}
     {@const netTxt = fmt0(costOnly ? costOnly.net : cost.householdNet)}
     {@const wedgeTxt = fmt(costOnly ? costOnly.wedgePctLow : cost.householdWedgePct)}
     {@const capTxt = fmt0(cost.capGross)}
@@ -199,7 +200,7 @@
              type. Everything under it explains this figure; nothing under it
              states it again. -->
         <div class="cost-head">
-          <span class="cost-head-v mono">€{headTxt}</span>
+          <span class="cost-head-v mono">{headTxt}</span>
           <span class="cost-head-k">
             <span class="l-bg">{COPY.employerCostHeadK.bg}</span>
             <span class="l-en">{COPY.employerCostHeadK.en}</span>

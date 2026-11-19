@@ -113,14 +113,16 @@
     {:else}
       <div class="rr-t">
         <span class="l-bg"
-          >{@html COPY.pctTopTxt.bg
-            .replace("{r}", fmt0(calc.ranks[0].ahead))
-            .replace("{m}", fmt0(calc.ladder[5] ?? 0))}</span
+          >{@html t(COPY.pctTopTxt, "bg", {
+            r: fmt0(calc.ranks[0].ahead),
+            m: fmt0(calc.ladder[5] ?? 0),
+          })}</span
         >
         <span class="l-en"
-          >{@html COPY.pctTopTxt.en
-            .replace("{r}", fmt0(calc.ranks[0].ahead))
-            .replace("{m}", fmt0(calc.ladder[5] ?? 0))}</span
+          >{@html t(COPY.pctTopTxt, "en", {
+            r: fmt0(calc.ranks[0].ahead),
+            m: fmt0(calc.ladder[5] ?? 0),
+          })}</span
         >
       </div>
     {/if}

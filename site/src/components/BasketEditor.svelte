@@ -11,7 +11,7 @@
    * categories, not a literal list" exists to hold.
    */
   import { lang } from "../lib/stores.js";
-  import { integer, percentSigned } from "../lib/format.js";
+  import { euro, integer, percentSigned } from "../lib/format.js";
   import { COPY } from "../lib/content.js";
   import { rateFor } from "../lib/mirror.js";
   import { t } from "../lib/content.js";
@@ -20,6 +20,7 @@
   const { calc } = $props();
 
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
   // The rate beside a row's code, in the same hand as every other signed
   // percentage on the page. Both rows here used to write the sign inline —
   // `{rate < 0 ? "" : "+"}{fmt(rate)}` — which reads as equivalent and is not:
@@ -300,7 +301,7 @@
                the SHARE (not the rate-inclusive cost) so the column
                reads as "how much of your take-home goes here" —
                the natural budget reading. -->
-          <small>{calc.householdNet > 0 ? `≈ €${fmt0(calc.divisionEur(i))}` : ""}</small>
+          <small>{calc.householdNet > 0 ? `≈ ${money(calc.divisionEur(i))}` : ""}</small>
         </span>
       </div>
       {#if calc.spendMode === "eur"}
@@ -375,7 +376,7 @@
                 </span>
                 <span class="pc mono">
                   <span>{fmt0(share)}%</span>
-                  <small>{eur === null ? "" : `≈ €${fmt0(eur)}`}</small>
+                  <small>{eur === null ? "" : `≈ ${money(eur)}`}</small>
                 </span>
               </div>
               <input

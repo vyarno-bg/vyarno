@@ -433,7 +433,7 @@ test(
       const labelled = await page.locator(".ss-lab").innerText();
       assert.match(
         labelled,
-        /след\s*€?\s*450\s*за жилище/,
+        /след\s*€?\s*450\s*€?\s*за жилище/,
         `the label reads "${labelled}" with €450 of rent entered — it names a base ` +
           "€450 larger than the one every figure under it is carved out of"
       );
@@ -470,7 +470,7 @@ test("rent and a mortgage together get one carve-out sentence", { skip }, async 
     // leftover row rather than added up here — the two sentences describe one
     // arithmetic, so a test that recomputes it would pass while they disagreed.
     const housing = (await page.locator(".ss-lab").innerText()).match(
-      /€?\s*([\d\s ]+)\s*за жилище/
+      /€?\s*([\d\s ]+?)\s*€?\s*за жилище/
     );
     assert.ok(housing, "the leftover row stopped naming the housing total");
     const total = housing[1].trim();

@@ -1056,6 +1056,9 @@ down payment.
   arithmetic in components.
 - **All visible text goes in `content.js`**, in both languages. No string
   literals in components other than styling and data attributes.
+- **A euro amount is `format.js#euro`**, which puts the sign after the figure
+  in Bulgarian and before it in English, and `t()` does the same to every
+  filled COPY sentence. Fill a template through `t()`, never `.replace()`.
 - **No new packages without justification.** `package.json` is `svelte` +
   `@sveltejs/vite-plugin-svelte` + `vite`.
 - **No third-party scripts or CDN fetches beyond the visit counter.** The CSP's

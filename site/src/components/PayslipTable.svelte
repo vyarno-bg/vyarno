@@ -11,13 +11,14 @@
    * table is one click for the reader who does not.
    */
   import { lang } from "../lib/stores.js";
-  import { number } from "../lib/format.js";
+  import { euro, number } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
 
   /** @type {{ payslip: any }} */
   const { payslip } = $props();
 
   const fmt = (x, d = 1) => number(x, d, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // Fund label per contribution key, in the order mirror.js#BG_CONTRIB_LINES
   // enumerates them. A key with no label here would render a nameless row, so
@@ -43,7 +44,7 @@
     <span class="dc-caret" aria-hidden="true">›</span>
     <span class="l-bg">{COPY.payslipOpen.bg}</span>
     <span class="l-en">{COPY.payslipOpen.en}</span>
-    <span class="dc-teaser">−{fmt(payslip.totalDeductions, 2)} €</span>
+    <span class="dc-teaser">{money(-payslip.totalDeductions, 2)}</span>
   </summary>
   <table>
     <tbody>
@@ -52,7 +53,7 @@
           <span class="l-bg">{COPY.payslipGross.bg}</span>
           <span class="l-en">{COPY.payslipGross.en}</span>
         </th>
-        <td>{fmt(payslip.gross, 2)} €</td>
+        <td>{money(payslip.gross, 2)}</td>
       </tr>
       <!-- The insurable income row exists for the capped case. Below the
            ceiling it equals the gross and says so; above it, it is the whole
@@ -73,7 +74,7 @@
             </span>
           {/if}
         </th>
-        <td>{fmt(payslip.insurableBase, 2)} €</td>
+        <td>{money(payslip.insurableBase, 2)}</td>
       </tr>
       <!-- Driven by mirror.js#BG_CONTRIB_LINES, not by a list written here, so
            a fund the pipeline publishes cannot be deducted from the pay
@@ -85,7 +86,7 @@
             <span class="l-en">{PAYSLIP_LABEL[line.key].en}</span>
             <span class="pl-note">{fmt(line.ratePct, 2)}%</span>
           </th>
-          <td>−{fmt(line.amount, 2)} €</td>
+          <td>{money(-line.amount, 2)}</td>
         </tr>
       {/each}
       <tr class="pl-sum">
@@ -93,14 +94,14 @@
           <span class="l-bg">{COPY.payslipInsurance.bg}</span>
           <span class="l-en">{COPY.payslipInsurance.en}</span>
         </th>
-        <td>−{fmt(payslip.insurance, 2)} €</td>
+        <td>{money(-payslip.insurance, 2)}</td>
       </tr>
       <tr>
         <th scope="row">
           <span class="l-bg">{COPY.payslipTaxable.bg}</span>
           <span class="l-en">{COPY.payslipTaxable.en}</span>
         </th>
-        <td>{fmt(payslip.taxable, 2)} €</td>
+        <td>{money(payslip.taxable, 2)}</td>
       </tr>
       <tr class="pl-item">
         <th scope="row">
@@ -108,21 +109,21 @@
           <span class="l-en">{COPY.payslipTax.en}</span>
           <span class="pl-note">{fmt(payslip.incomeTaxRatePct, 0)}%</span>
         </th>
-        <td>−{fmt(payslip.tax, 2)} €</td>
+        <td>{money(-payslip.tax, 2)}</td>
       </tr>
       <tr class="pl-sum">
         <th scope="row">
           <span class="l-bg">{COPY.payslipDeduct.bg}</span>
           <span class="l-en">{COPY.payslipDeduct.en}</span>
         </th>
-        <td>−{fmt(payslip.totalDeductions, 2)} €</td>
+        <td>{money(-payslip.totalDeductions, 2)}</td>
       </tr>
       <tr class="pl-head">
         <th scope="row">
           <span class="l-bg">{COPY.payslipNet.bg}</span>
           <span class="l-en">{COPY.payslipNet.en}</span>
         </th>
-        <td>{fmt(payslip.net, 2)} €</td>
+        <td>{money(payslip.net, 2)}</td>
       </tr>
     </tbody>
   </table>
