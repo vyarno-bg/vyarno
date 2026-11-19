@@ -793,6 +793,18 @@ export const COPY = {
     bg: "Оставени в брой, при инфлация {i}% парите от всеки месец губят стойност от деня, в който ги отделиш, затова в края на годината с тях ще купиш с <b>€{e}</b> по-малко, отколкото когато ги спести. Ако ги вложиш някъде и ти носят по-малко от {i}% на година, пак изостават от цените, само по-бавно.",
     en: "Kept as cash at {i}% inflation, each month's money loses value from the day it is put aside, so at the end of the year it buys <b>€{e}</b> less than it did when it was saved. Put somewhere that pays less than {i}% a year, it still trails prices, just more slowly.",
   },
+  // The same sentence for a year in which prices fell, and one in which they
+  // stood still: «губят стойност» is a direction the rate can reverse, so
+  // LeftoverRow picks among the three by `divisionRateState`. {i} and {e} are
+  // magnitudes here; the words carry the sign.
+  leftCashDown: {
+    bg: "Оставени в брой, при спад на цените с {i}% парите от всеки месец купуват повече от деня, в който ги отделиш, затова в края на годината с тях ще купиш с <b>€{e}</b> повече, отколкото когато ги спести.",
+    en: "Kept as cash while prices fall {i}%, each month's money buys more from the day it is put aside, so at the end of the year it buys <b>€{e}</b> more than it did when it was saved.",
+  },
+  leftCashFlat: {
+    bg: "Оставени в брой, при цени, които почти не се движат, парите запазват стойността си: в края на годината с тях ще купиш колкото и когато ги спести.",
+    en: "Kept as cash while prices barely move, the money holds its value: at the end of the year it buys what it did when it was saved.",
+  },
   leftAssume: {
     bg: "допускане: цените се движат следващата година както през последната, а парите се отделят в края на всеки месец. Това е сметка, не прогноза. Евростат не прогнозира.",
     en: "assumption: prices move over the next year as they did over the last, and the money is put aside at the end of each month. This is arithmetic, not a forecast. Eurostat does not publish one.",

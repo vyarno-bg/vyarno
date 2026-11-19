@@ -3,6 +3,7 @@
   import { lang } from "../lib/stores.js";
   import { number, integer } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
+  import { divisionRateState } from "../lib/view/basket.js";
 
   /** @type {{ calc: import("../lib/calculator.svelte.js").Calculator }} */
   const { calc } = $props();
@@ -20,6 +21,12 @@
   // rooted `COPY.<key>.<lang>` leaves; dynamic-key access (`COPY[leadKey]`)
   // fails that static check.
   const hasHousing = $derived(calc.housingCost > 0);
+
+  // What a year of prices does to cash, and the rate can fall as well as rise:
+  // `divisionRateState` decides which sentence is said, inside the dead band
+  // the printed precision draws, and an unknown rate says none.
+  const CASH_K = { up: COPY.leftCash, down: COPY.leftCashDown, flat: COPY.leftCashFlat };
+  const cashState = $derived(divisionRateState(calc.leftoverCash.ratePct));
 </script>
 
 <!-- NOT PLACED — the money the basket was never told about.
@@ -92,17 +99,17 @@
         <div class="rr-t">
           <span class="l-bg"
             >{@html t(COPY.leftYear, "bg", { y: fmt0(calc.budget.leftoverPerYear) })}
-            {@html t(COPY.leftCash, "bg", {
-              i: fmt(calc.leftoverCash.ratePct),
-              e: fmt0(calc.leftoverCash.eaten),
-            })}</span
+            {#if cashState !== "unsaid"}{@html t(CASH_K[cashState], "bg", {
+                i: fmt(Math.abs(calc.leftoverCash.ratePct)),
+                e: fmt0(Math.abs(calc.leftoverCash.eaten)),
+              })}{/if}</span
           >
           <span class="l-en"
             >{@html t(COPY.leftYear, "en", { y: fmt0(calc.budget.leftoverPerYear) })}
-            {@html t(COPY.leftCash, "en", {
-              i: fmt(calc.leftoverCash.ratePct),
-              e: fmt0(calc.leftoverCash.eaten),
-            })}</span
+            {#if cashState !== "unsaid"}{@html t(CASH_K[cashState], "en", {
+                i: fmt(Math.abs(calc.leftoverCash.ratePct)),
+                e: fmt0(Math.abs(calc.leftoverCash.eaten)),
+              })}{/if}</span
           >
         </div>
         <div class="rr-note">
