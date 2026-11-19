@@ -139,9 +139,10 @@ export const FLOORS = {
   pytest: { floor: 541, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
   // Raised with the thousands-group cases for `parseAmount` in
   // `verify_format.mjs`, the same-quarter wage in `verify_view_market.mjs`,
-  // and the emptied-term cases in `verify_view_home.mjs` and
-  // `verify_view_spend.mjs`.
-  node: { floor: 692, report: join(SITE, ".report-node.tap"), count: tapPassed },
+  // the emptied-term cases in `verify_view_home.mjs` and
+  // `verify_view_spend.mjs`, and the half-refreshed housing book in
+  // `verify_view_credit.mjs`.
+  node: { floor: 693, report: join(SITE, ".report-node.tap"), count: tapPassed },
   // Raised with the keystroke tests that a money field keeps «1,500», in
   // `verify_render_shell.mjs`, and that clearing the term moves nothing in the
   // basket, in `verify_render_basket.mjs`.

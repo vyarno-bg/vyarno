@@ -62,15 +62,94 @@ test("the three rates come off three different blocks", () => {
   }
 });
 
+/**
+ * Hold `mortgage.json`'s housing book and `credit.json`'s housing block to ONE
+ * БНБ series, at a month both carry.
+ *
+ * The two refresh on their own schedules, so for days at a time one is a month
+ * ahead and the newest rates differ while both are right; equality "now" failed
+ * each refresh alone. What a misread column breaks is the series, so the rate
+ * is compared where mortgage's series reaches credit's month and the volume
+ * where credit's series reaches mortgage's. A pair with neither is a failure:
+ * nothing would have compared the two books.
+ */
+function assertOneHousingBook(mortgage, credit) {
+  const stock = mortgage.outstanding_stock;
+  const owed = credit.outstanding;
+  const housing = owed.blocks.find((b) => b.block === "housing");
+  let compared = 0;
+  const rateThen = stock.series_by_period?.[owed.ref_period];
+  if (rateThen !== undefined) {
+    assert.equal(rateThen, housing.rate_pct, `two housing rates for ${owed.ref_period}`);
+    compared += 1;
+  }
+  const volumeThen = owed.volume_by_period?.housing?.[stock.ref_period];
+  if (volumeThen !== undefined) {
+    assert.equal(stock.book_volume_eur_m, volumeThen, `two housing books for ${stock.ref_period}`);
+    compared += 1;
+  }
+  assert.ok(
+    compared > 0,
+    `mortgage.json is at ${stock.ref_period} and credit.json at ${owed.ref_period}, and ` +
+      "neither carries the other's month, so nothing compared the two housing books"
+  );
+}
+
+/** The two halves of a refresh, as published on 2026-11-02 and 2026-11-03. */
+const HALF_REFRESHED = Object.freeze({
+  mortgageAhead: {
+    mortgage: {
+      outstanding_stock: {
+        ref_period: "2026-09",
+        book_volume_eur_m: 19542.842,
+        series_by_period: { "2026-07": 2.6587, "2026-08": 2.6526, "2026-09": 2.6652 },
+      },
+    },
+    credit: {
+      outstanding: {
+        ref_period: "2026-08",
+        blocks: [{ block: "housing", volume_eur_m: 19225.652, rate_pct: 2.6526 }],
+        volume_by_period: { housing: { "2026-07": 18921.431, "2026-08": 19225.652 } },
+      },
+    },
+  },
+  creditAhead: {
+    mortgage: {
+      outstanding_stock: {
+        ref_period: "2026-08",
+        book_volume_eur_m: 19225.652,
+        series_by_period: { "2026-07": 2.6587, "2026-08": 2.6526 },
+      },
+    },
+    credit: {
+      outstanding: {
+        ref_period: "2026-09",
+        blocks: [{ block: "housing", volume_eur_m: 19542.842, rate_pct: 2.6652 }],
+        volume_by_period: { housing: { "2026-08": 19225.652, "2026-09": 19542.842 } },
+      },
+    },
+  },
+});
+
 test("the third rate is the housing book, which is what its label claims", () => {
   // §5 renders the whole household book at 4,5% on this same page, so a reader
   // meets the two together. The same БНБ workbook carries an all-loans column:
   // picking it leaves every figure correct and «жилищни» in the label false.
+  assertOneHousingBook(PUBLISHED, CREDIT);
   const rates = creditRates(PUBLISHED);
-  const housing = CREDIT.outstanding.blocks.find((b) => b.block === "housing");
-  assert.equal(rates.outstanding.value, housing.rate_pct);
-  assert.equal(rates.bookVolumeEurM, housing.volume_eur_m);
   assert.notEqual(rates.outstanding.value, CREDIT.outstanding.rate_pct);
+});
+
+test("either payload may refresh first and the housing book still holds", () => {
+  // Each arm's refresh lands on its own and has to pass on its own.
+  for (const { mortgage, credit } of Object.values(HALF_REFRESHED)) {
+    assertOneHousingBook(mortgage, credit);
+  }
+  // Two months apart, neither carries the other's month: that is a red run.
+  const { mortgage, credit } = HALF_REFRESHED.mortgageAhead;
+  const stale = structuredClone(credit);
+  stale.outstanding.ref_period = "2026-06";
+  assert.throws(() => assertOneHousingBook(mortgage, stale), /nothing compared/);
 });
 
 test("the rate curve is the card above it, drawn from zero", () => {
