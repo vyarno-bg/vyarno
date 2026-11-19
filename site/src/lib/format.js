@@ -59,6 +59,12 @@ export function parseDecimal(raw) {
 }
 
 /**
+ * 1–3 digits, then groups of three behind ONE separator, then optionally a one-
+ * or two-digit fraction behind the other. A leading zero is never a group.
+ */
+const THOUSANDS = /^([1-9]\d{0,2})((?:([.,])\d{3})(?:\3\d{3})*)(?:([.,])(\d{1,2}))?$/;
+
+/**
  * The same characters as an AMOUNT: a number, or `null` for "not answered".
  *
  * The two callers want different things out of an unreadable box and the
@@ -78,11 +84,24 @@ export function parseDecimal(raw) {
  * percentages, and a field that quietly accepted «€2,75» as a rate would be
  * reading a figure out of something that is not one.
  *
+ * **A separator followed by exactly three digits is a thousands group.** The
+ * English page writes «1,164 €» and «1.500» is how many Bulgarians type a
+ * thousand and a half, and read as decimals both were a salary of €2. A euro
+ * amount has cents, so three decimals mean nothing in either language and the
+ * reading is one answer for both. `parseDecimal` keeps the plain rule, because
+ * a percentage has no cents to tell the two apart by.
+ *
  * Negative is refused rather than clamped: a salary of −500 is a typo, and
  * showing 500 puts a figure in the box the reader did not type.
  */
 export function parseAmount(raw) {
-  const value = parseDecimal(String(raw ?? "").replace(/€|лв\.?|BGN|EUR/gi, ""));
+  const text = String(raw ?? "")
+    .replace(/€|лв\.?|BGN|EUR/gi, "")
+    .replace(/\s/g, "");
+  const g = THOUSANDS.exec(text);
+  const plain =
+    g && g[4] !== g[3] ? g[1] + g[2].replaceAll(g[3], "") + (g[4] ? `.${g[5]}` : "") : text;
+  const value = parseDecimal(plain);
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 

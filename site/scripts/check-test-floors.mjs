@@ -137,15 +137,12 @@ const junitAsserted = (text) => {
 /** THE ONLY TEST COUNTS IN THE REPOSITORY. Read the header before changing one. */
 export const FLOORS = {
   pytest: { floor: 541, report: join(ROOT, ".report-pytest.xml"), count: junitAsserted },
-  // Raised with the direction-state suites: the three state functions
-  // (`indexVerdictState`, `divisionRateState`, `peak`/`troughWorthNaming`),
-  // the rule over COPY that stops a fixed direction returning, and the
-  // COPY-table shape in `verify_template_safety.mjs`.
-  node: { floor: 688, report: join(SITE, ".report-node.tap"), count: tapPassed },
-  // Raised with the typographic-integrity sweep in `verify_render_shell.mjs` —
-  // the rendered-text rule that no route prints «г..» or fuses two sentences
-  // at an {#if} boundary.
-  render: { floor: 203, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  // Raised with the thousands-group cases for `parseAmount` in
+  // `verify_format.mjs`.
+  node: { floor: 689, report: join(SITE, ".report-node.tap"), count: tapPassed },
+  // Raised with the keystroke test that a money field keeps «1,500» and reads
+  // it as thousands, in `verify_render_shell.mjs`.
+  render: { floor: 204, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**

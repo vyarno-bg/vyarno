@@ -52,7 +52,7 @@
     httpUrl,
     safeText,
     decimalText,
-    parseDecimal,
+    parseAmount,
   } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import PayslipTable from "./PayslipTable.svelte";
@@ -71,12 +71,13 @@
    * Gated on the box no longer parsing to its own amount, which is what keeps
    * it off the keystroke path: while somebody is typing, the amount IS the
    * parse of what is in the box, so «1200,» is left alone rather than rewritten
-   * to «1200» under the cursor. `decimalText` is here rather than in the
-   * calculator because it picks a SEPARATOR, and a separator is a language.
+   * to «1200» under the cursor — provided it is the same parse, `parseAmount`.
+   * `decimalText` is here rather than in the calculator because it picks a
+   * SEPARATOR, and a separator is a language.
    */
   $effect(() => {
     for (const earner of calc.earners) {
-      if (parseDecimal(earner.amountText) !== earner.amount) {
+      if (parseAmount(earner.amountText) !== earner.amount) {
         earner.amountText = decimalText(earner.amount, $lang);
       }
     }
