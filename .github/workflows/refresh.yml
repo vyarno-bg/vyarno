@@ -71,9 +71,14 @@ jobs:
           python-version: "3.11"
       - name: Install pipeline
         working-directory: pipeline
+        # From the hashed runtime lock, never the open ranges in pyproject.toml.
+        # This job holds a token that can push and open pull requests, written
+        # into `.git/config` above, so a dependency release nobody reviewed would
+        # run with it; CI installs from the lock for the same reason.
         run: |
           python -m venv .venv
-          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/pip install -q -r requirements.txt
+          .venv/bin/pip install -q -e . --no-deps
 
       - name: Trust the БНБ intermediate
         if: inputs.source == 'mortgage' || inputs.source == 'credit'
