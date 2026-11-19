@@ -216,6 +216,10 @@ def arm_environment(env: dict[str, str], worktree: Path) -> dict[str, str]:
     out = {key: value for key, value in env.items() if not key.upper().endswith("_PROXY")}
     out["PYTHONPATH"] = str(worktree / "pipeline" / "src")
     out.pop("PYTHONHOME", None)
+    # On Windows a piped child writes its stdout in the ANSI code page, which has
+    # no Cyrillic: UTF-8 mode makes what the arms print, and what is read back
+    # from them below, one encoding on every platform.
+    out["PYTHONUTF8"] = "1"
     return out
 
 
@@ -349,7 +353,9 @@ def _report(worktree: Path, source: str, base: str, env: dict[str, str]) -> dict
     script = worktree / "site" / "scripts" / "payload-cadence.mjs"
     known = False
     if node and script.exists():
-        made = subprocess.run([node, str(script)], capture_output=True, text=True, check=False)
+        made = subprocess.run(
+            [node, str(script)], capture_output=True, text=True, encoding="utf-8", check=False
+        )
         known = made.returncode == 0
         cadence.write_text(made.stdout if known else "{}", "utf-8")
     else:
@@ -357,7 +363,9 @@ def _report(worktree: Path, source: str, base: str, env: dict[str, str]) -> dict
     cmd = [sys.executable, "-m", "vyarno_pipeline.cli", "refresh-report", "--source", source]
     cmd += ["--published", str(worktree / "data" / "published"), "--cadence", str(cadence)]
     cmd += ["--against", base, "--repo", str(worktree), "--github-output", str(output)]
-    done = subprocess.run(cmd, cwd=worktree, env=env, capture_output=True, text=True, check=False)
+    done = subprocess.run(
+        cmd, cwd=worktree, env=env, capture_output=True, text=True, encoding="utf-8", check=False
+    )
     if done.returncode != 0:
         shutil.rmtree(scratch, ignore_errors=True)
         raise RuntimeError(f"refresh-report exited {done.returncode}: {done.stderr.strip()}")
@@ -523,7 +531,21 @@ def _committed(worktree: Path, ref: str, path: str) -> dict[str, Any] | None:
         return None
 
 
+def utf8_stdio() -> None:
+    """Print UTF-8 wherever Python picked a legacy code page for a pipe.
+
+    `make refresh-local` under Git Bash hands this process a pipe, and Windows
+    then encodes it in cp1252, which has neither «→» nor Cyrillic: the first
+    progress line would raise rather than print.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        encoding = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
+        if encoding != "utf8" and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    utf8_stdio()
     parser = argparse.ArgumentParser(prog="python -m vyarno_pipeline.local_refresh")
     parser.add_argument("--source", choices=LOCAL_SOURCES, default="city-price")
     parser.add_argument("--repo", type=Path, default=None, help="checkout to run from")
