@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Refuses a message that credits a coding agent: a co-author trailer naming
+# one, a session link, a "generated with" footer. Prose may name a tool.
+. "$(dirname "$0")/authorship.sh"
+
+if ! why=$(message_reason <"$1"); then
+  echo "commit-msg: the message carries $why" >&2
+  echo "AGENTS.md §\"Branches and authorship\" has the rule." >&2
+  exit 1
+fi

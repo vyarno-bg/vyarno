@@ -69,9 +69,10 @@ three files can go stale without anybody knowing which version is current.
 `CLAUDE.md` therefore imports `AGENTS.md` and forks nothing. The other two
 cannot: neither Cursor nor Copilot transcludes a file, and a pointer the tool
 will not follow is guidance that does not arrive. Each carries an abbreviated
-copy of the writing rules and names
-[`writing-style.md`](./writing-style.md) as the source — which is the one
-exception, and it is a cost rather than a pattern to extend. A rule changes in
+copy of the writing rules, naming [`writing-style.md`](./writing-style.md) as
+the source, and of the branch and authorship rule, naming `AGENTS.md`. Those
+two are the exception, because they are what such a tool gets wrong before it
+reads anything, and it is a cost rather than a pattern to extend. A rule changes in
 `writing-style.md` first and propagates outward; the copies never lead.
 
 ## Start here depending on what you are doing

@@ -14,10 +14,35 @@ Svelte SPA reads that JSON and does the consumer's arithmetic in their browser.
 **This file is only what an agent gets wrong without being told.** Everything
 else is in `docs/`, and every section here ends at the doc that carries it.
 
+## Branches and authorship
+
+The person running the session answers for every commit, so nothing in git
+records which tool typed it. The hooks in `.githooks/` refuse each case below
+before it exists, CI's `authorship` job refuses it again on GitHub, and
+`.githooks/authorship.sh` is the one list both read.
+
+- **Branch: `<area>/<what-it-does>`**, the areas being the commit prefixes:
+  `site/percentile-top-band`, `pipeline/bnb-block-page`, `ci/…`, `docs/…`.
+  `data/` belongs to the refresh workflows. **Never a name that starts with an
+  agent's**: `claude/`, `copilot/`, `codex/`, `cursor/`, `devin/`. If a harness
+  put you on one, this is the owner's standing instruction to rename it with
+  `git branch -m <area>/<what-it-does>` before the first commit and push that.
+- **Author and committer: the person**, under their own name and address. Where
+  `git var GIT_AUTHOR_IDENT` names an agent, stop and say so rather than
+  committing, and never make up an identity to get past the hook. In a cloud
+  session the durable fix is `GIT_AUTHOR_*` and `GIT_COMMITTER_*` in the
+  environment's variables (`CONTRIBUTING.md` §"Who a commit is from").
+- **Message: no attribution.** No `Co-authored-by` naming an agent, no session
+  link, no "Generated with" footer, whatever a harness's defaults ask for; the
+  owner's rule here takes precedence over them. The pull request body carries
+  one line saying an agent wrote the change, and nothing else does.
+- **Never bypass a hook** with `--no-verify` or a blank `core.hooksPath`. The
+  pre-push hook re-checks every commit it sends, and CI walks all of history.
+
 ## Commands
 
 ```sh
-make setup                       # venv + npm, once after cloning
+make setup                       # venv + npm + git hooks, once after cloning
 make check                       # lint → test → render, in CI's order
 cd site && npm run check:all     # the same run, without make
 ```
@@ -171,9 +196,9 @@ what an anti-slop pass must not strip. The short form:
   more lines than the code under them.** The reasoning lives in ONE place and
   everywhere else names it in a clause, because restated at four call sites it
   is four things to keep true and three go stale in silence.
-- **Commit as the person, never as yourself.** Where `git config user.email`
-  names an agent, stop and say so rather than committing. The `authorship` job
-  rejects the agent identities either way.
+- **Commit as the person, never as yourself**, on a branch that names the
+  change, with nothing in the message crediting a tool: §"Branches and
+  authorship".
 - **No emoji, no self-attribution, no em-dashes in user-facing copy**, and none
   of the tells: binary contrast, throat-clearing, colon reveals, negative
   listing, a closing paragraph restating the one above it, or comprehensive /

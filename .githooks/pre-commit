@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Refuses a commit before it exists when its author or committer is a coding
+# agent, or the branch it lands on is named after one. `make setup` points git
+# at this directory; .githooks/authorship.sh holds the lists.
+. "$(dirname "$0")/authorship.sh"
+
+fail=0
+for var in GIT_AUTHOR_IDENT GIT_COMMITTER_IDENT; do
+  id=$(git var "$var") || exit 1
+  name=${id%% <*}
+  email=${id#*<}
+  email=${email%%>*}
+  if ! why=$(ident_reason "$name" "$email"); then
+    echo "pre-commit: $var is $why: $name <$email>" >&2
+    fail=1
+  fi
+done
+
+branch=$(git symbolic-ref --short -q HEAD)
+if [ -n "$branch" ] && ! why=$(branch_reason "$branch"); then
+  echo "pre-commit: branch '$branch' is $why." >&2
+  echo "Rename it first: git branch -m <area>/<what-it-does>" >&2
+  fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "AGENTS.md §\"Branches and authorship\" has the rule." >&2
+  exit 1
+fi

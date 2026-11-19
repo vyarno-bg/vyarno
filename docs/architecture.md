@@ -199,7 +199,7 @@ it to the one thing it needs, and assume anything ever committed is permanent.
 request, and on demand. Its jobs are `pipeline` (pytest, offline), `site` (the
 module suites, the build and the built page in a browser), `windows` (the same
 run on `windows-latest`, so the Makefile-free path stays true), `authorship`
-(the commit author is a person, not an agent) and `data` (every published
+(no commit, commit message or branch carries a coding agent's name) and `data` (every published
 payload is committed and parses). Each reports its own suite count against the
 floor it has to clear.
 

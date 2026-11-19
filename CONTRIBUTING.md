@@ -158,7 +158,13 @@ already a rule above and each caught by something:
 your own name and address, a contributor under theirs. That is the same rule as
 the section above, in the field a reader checks first, and CI enforces it: a
 commit authored by `Claude`, `Cursor`, `Codex` or a placeholder like
-`Your Name <you@example.com>` fails the `authorship` job.
+`Your Name <you@example.com>` fails the `authorship` job. So does a message
+that credits an agent (a `Co-authored-by` naming one, a session link, a
+"Generated with" footer) and a branch whose name starts with an agent's,
+`claude/`, `copilot/` and the rest: a branch says what the change does, as in
+`site/percentile-top-band`. `make setup` installs `.githooks/`, which refuse all
+three on your machine before anything is pushed, and `.githooks/authorship.sh`
+is the one list the hooks and CI share.
 
 The list of rejected identities is a denylist rather than a roster of approved
 contributors. A roster would fail a first-time contributor's PR on a file they
