@@ -733,6 +733,30 @@ test(
   }
 );
 
+test("every hint on the calculator is drawn as a hint", { skip }, async () => {
+  // The same class as the segmented controls above: `.hint` is styled by
+  // `card.css` only inside a `.field`, so one written beside a toggle instead
+  // renders at body size in ink, louder than the label it qualifies. Every
+  // hint, with the home block open so its own hints are on the page too.
+  await withApp(async (page, errors) => {
+    await page.locator(".homeTog input").check();
+    const loud = await page.evaluate(() => {
+      const probe = document.createElement("span");
+      probe.style.cssText = "color: var(--muted); font-size: var(--fs-small)";
+      document.body.append(probe);
+      const { color, fontSize } = getComputedStyle(probe);
+      probe.remove();
+      return [...document.querySelectorAll(".m-grid .hint")]
+        .filter((el) => el.getClientRects().length)
+        .map((el) => [getComputedStyle(el), el.innerText.trim().slice(0, 30)])
+        .filter(([s]) => s.color !== color || parseFloat(s.fontSize) > parseFloat(fontSize))
+        .map(([s, text]) => `«${text}» at ${s.fontSize} in ${s.color}`);
+    });
+    assert.deepEqual(loud, [], `hints drawn louder than a hint: ${loud.join(" | ")}`);
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test("every keyboard stop draws the site's own focus ring, in both themes", { skip }, async () => {
   // A rule over ALL of them, which is the point: the ring had been a list of
   // four selectors — `button`, `.pill`, `a`, `.chip` — and a list has to be kept

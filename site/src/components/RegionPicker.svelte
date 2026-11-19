@@ -93,7 +93,7 @@
   }
   .hint {
     margin: 0.35rem 0 0;
-    font-size: 0.82rem;
+    font-size: var(--fs-small);
     color: var(--muted);
   }
 </style>
