@@ -18,6 +18,7 @@ import {
   percentSigned,
   dateShort,
   periodLong,
+  monthShort,
   label,
   spaced,
   httpUrl,
@@ -249,8 +250,10 @@ test("a monthly reference period is spoken as its own month, in both languages",
   // the whole page thirteen months out.
   assert.equal(periodLong("2026-12", "bg"), "декември 2026 г.");
   assert.equal(periodLong("2026-12", "en"), "December 2026");
-  // A quarter and a bare year are the publisher's own label already.
-  assert.equal(periodLong("2026-Q1", "bg"), "Q1 2026");
+  // A quarter as each language writes one: НСИ's Roman numeral and the «г.»
+  // the month carries in Bulgarian, "Q1" in English. A bare year is itself.
+  assert.equal(periodLong("2026-Q1", "bg"), "I трим. 2026 г.");
+  assert.equal(periodLong("2026-Q4", "bg"), "IV трим. 2026 г.");
   assert.equal(periodLong("2026-Q1", "en"), "Q1 2026");
   assert.equal(periodLong("2026", "bg"), "2026");
   // Anything outside the pipeline's period shape is the em dash `period()`
@@ -260,6 +263,21 @@ test("a monthly reference period is spoken as its own month, in both languages",
     assert.equal(periodLong(bad, "bg"), "—", String(bad));
     assert.equal(periodLong(bad, "en"), "—", String(bad));
   }
+});
+
+test("a month in a narrow control, and имот.bg's own date, read the language's way", () => {
+  // The anchor select printed «2025.10 → 2026.10» and its hint «до 2026-10»:
+  // neither is how Bulgarian or English writes a month. The range keeps the
+  // width a 360px phone has for it, so Bulgarian takes its own numeric order.
+  assert.equal(monthShort("2025-10", "bg"), "10.2025");
+  assert.equal(monthShort("2025-10", "en"), "Oct 2025");
+  assert.equal(monthShort("2026-12", "en"), "Dec 2026");
+  assert.equal(monthShort("2026", "bg"), "2026", "a year is not a month");
+  assert.equal(monthShort("<b>", "bg"), "—");
+  // имот.bg stamps «12.11.2026», which `new Date` reads as December 11th.
+  assert.equal(dateShort("12.11.2026", "bg"), dateShort("2026-11-12", "bg"));
+  assert.equal(dateShort("12.11.2026", "en"), "12 Nov 2026");
+  assert.equal(dateShort("1.2.2026", "en"), "1 Feb 2026");
 });
 
 test("a day of the month takes the ordinal ending its own language gives it", () => {

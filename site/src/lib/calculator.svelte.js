@@ -1432,19 +1432,13 @@ export class Calculator {
   basketRefPeriod = $derived(
     this.categories.length > 0 ? String(this.categories[0].ref_period ?? "") : ""
   );
-  // 12-month window end-point and its 1-year-earlier start, for the y1 option
-  // label (e.g. "2025.06 → 2026.06").
+  // The 12-month window's start, a year before `basketRefPeriod`, for the y1
+  // option's label; the component writes both in the reader's language.
   basketPrevPeriod = $derived.by(() => {
     const r = this.basketRefPeriod;
     if (!/^\d{4}-\d{2}$/.test(r)) return "";
     const [y, m] = r.split("-").map(Number);
     return `${y - 1}-${String(m).padStart(2, "0")}`;
-  });
-  yoyWindowLabel = $derived.by(() => {
-    const r = this.basketRefPeriod;
-    const p = this.basketPrevPeriod;
-    if (!r || !p) return "";
-    return `${p.replace("-", ".")} → ${r.replace("-", ".")}`;
   });
   /** Completed years available as anchors, newest first. */
   anchorYears = $derived(offeredAnchorYears(this.categories));

@@ -19,7 +19,7 @@
    * unusable with a screen reader.
    */
   import { lang } from "../lib/stores.js";
-  import { euro, number, integer } from "../lib/format.js";
+  import { euro, number, integer, monthShort, periodLong } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import { barCeiling } from "../lib/view/share.js";
 
@@ -38,6 +38,13 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  // The y1 option's window in the reader's own month notation, and short: the
+  // select has 288px at a 360px phone and the end month is what it would lose.
+  const yoyWindowLabel = $derived(
+    calc.basketPrevPeriod && calc.basketRefPeriod
+      ? `${monthShort(calc.basketPrevPeriod, $lang)} → ${monthShort(calc.basketRefPeriod, $lang)}`
+      : ""
+  );
   const money = (x, d = 0) => euro(x, $lang, d);
 
   // The four non-official chips are hand-made illustrations, not survey data:
@@ -130,8 +137,8 @@
       onchange={calc.onAnchorChange}
     >
       <option value="y1"
-        >{COPY.anchorY1[$lang] ?? COPY.anchorY1.bg}{calc.yoyWindowLabel
-          ? ` · ${calc.yoyWindowLabel}`
+        >{COPY.anchorY1[$lang] ?? COPY.anchorY1.bg}{yoyWindowLabel
+          ? ` · ${yoyWindowLabel}`
           : ""}</option
       >
       <!-- Grouped by decade, because the list is two dozen long and the control
@@ -148,8 +155,8 @@
               value={String(y)}
               title={calc.idxLatestYearLabel && calc.idxLatestYearLabel !== String(y)
                 ? $lang === "bg"
-                  ? `от края на ${y} до ${calc.idxLatestYearLabel}`
-                  : `end-of-${y} → ${calc.idxLatestYearLabel}`
+                  ? `от края на ${y} до ${periodLong(calc.idxLatestYearLabel, "bg")}`
+                  : `end of ${y} → ${periodLong(calc.idxLatestYearLabel, "en")}`
                 : ""}
             >
               {y}</option
@@ -161,12 +168,12 @@
     <div class="hint">
       <span class="l-bg"
         >{calc.anchor === "y1"
-          ? t(COPY.anchorY1Hint, "bg", { latest_month: calc.basketRefPeriod })
+          ? t(COPY.anchorY1Hint, "bg", { latest_month: periodLong(calc.basketRefPeriod, "bg") })
           : t(COPY.anchorSinceHint, "bg")}</span
       >
       <span class="l-en"
         >{calc.anchor === "y1"
-          ? t(COPY.anchorY1Hint, "en", { latest_month: calc.basketRefPeriod })
+          ? t(COPY.anchorY1Hint, "en", { latest_month: periodLong(calc.basketRefPeriod, "en") })
           : t(COPY.anchorSinceHint, "en")}</span
       >
     </div>

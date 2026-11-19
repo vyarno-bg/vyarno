@@ -39,6 +39,7 @@
   import ResultsCard from "./components/ResultsCard.svelte";
   import { COPY, t } from "./lib/content.js";
   import { CONTACT } from "./lib/legal-nav.js";
+  import { dateShort } from "./lib/format.js";
 
   /**
    * `scripts/prerender.mjs` sets both, rendering this component at build time
@@ -153,7 +154,7 @@
   // it, which is why it is not derived inside either of them.
   const cityPriceDated = $derived(
     calc.cityPricePageDate
-      ? t(COPY.srcDatedByPage, $lang, { d: calc.cityPricePageDate })
+      ? t(COPY.srcDatedByPage, $lang, { d: dateShort(calc.cityPricePageDate, $lang) })
       : calc.cityPriceAsOf
         ? t(COPY.srcDatedByFetch, $lang, { d: calc.cityPriceAsOf })
         : ""

@@ -1564,7 +1564,7 @@
             <b>×{fmt(reading.realTimes)}</b> от тогавашната си цена.
             {#if reading.realBelowPeakPct != null && reading.realPeakPeriod}
               Така мерено, нивото днес е с {fmt(reading.realBelowPeakPct)}% под най-високото, което
-              Евростат е отчитал, през {periodLong(reading.realPeakPeriod, "bg")}.{/if}</span
+              Евростат е отчитал (през {periodLong(reading.realPeakPeriod, "bg")}).{/if}</span
           >
           <!-- «×N» is a RATIO and the English has to keep it one. "takes ×2.7
                as much money" is missing the word the construction needs — "as
