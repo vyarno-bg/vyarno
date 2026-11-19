@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# The last point at which a bad branch name can be stopped: once pushed, the
+# branch exists on GitHub and CI can only turn it red. Also re-checks every
+# commit being published, which catches one made with the hooks bypassed.
+. "$(dirname "$0")/authorship.sh"
+
+remote=$1
+fail=0
+while read -r _ local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/*)
+      if ! why=$(branch_reason "$remote_ref"); then
+        echo "pre-push: branch '${remote_ref#refs/heads/}' is $why." >&2
+        fail=1
+      fi
+      ;;
+  esac
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac # a deletion
+  case "$remote_sha" in
+    *[!0]*) revs=("$remote_sha..$local_sha") ;;
+    *) revs=("$local_sha" --not "--remotes=$remote") ;; # a new branch
+  esac
+  check_range "${revs[@]}" >/dev/null || {
+    check_range "${revs[@]}" >&2
+    fail=1
+  }
+done
+exit "$fail"

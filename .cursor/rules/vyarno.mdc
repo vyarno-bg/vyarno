@@ -16,6 +16,16 @@ finds no browser, so a green run proves less than it looks; `make check` fails
 instead of reporting green, and `npx playwright install chromium` in `site/` is
 the fix where nothing resolves.
 
+## Branches and authorship
+
+`AGENTS.md` §"Branches and authorship" is the rule, and the hooks `make setup`
+installs plus CI's `authorship` job enforce it. Commit under the person's name
+and address, never an agent's. Name the branch `<area>/<what-it-does>`, never
+with an agent's prefix (`claude/`, `copilot/`, `codex/`, `cursor/`, `devin/`);
+rename one a harness assigned before the first commit. Credit no agent in a
+commit message: no `Co-authored-by`, no session link, no "Generated with"
+footer. The pull request body says an agent wrote the change, once.
+
 ## Writing
 
 The full list is `docs/writing-style.md` — change a rule there, not here. The

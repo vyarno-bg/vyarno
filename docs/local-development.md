@@ -3,7 +3,7 @@
 ## The short version
 
 ```bash
-make setup      # the venv, both toolchains — once, after cloning
+make setup      # the venv, both toolchains, the git hooks — once, after cloning
 make check      # everything CI runs, in CI's order
 make help       # the rest of the targets
 ```

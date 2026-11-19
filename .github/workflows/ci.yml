@@ -402,92 +402,32 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The check walks history back to a baseline, so a shallow clone
-          # would report every commit as new on the first push of a branch.
+          # The walk covers every commit HEAD can reach, so a shallow clone
+          # would check one commit and report the rest as fine.
           fetch-depth: 0
           persist-credentials: false
-      - name: No commit is authored by a coding agent
-        # A commit's author is the record of who is answerable for it, and
-        # CONTRIBUTING.md §"Contributions written with a coding agent" puts that
-        # on the person: "The agent wrote it" is not available as an explanation
-        # for a number that turned out wrong. An agent identity in the author
-        # field contradicts that in the one place a reader checks first.
-        #
-        # This bites hardest in a cloud agent session, where the container sets
-        # its own git identity and rebuilds fresh every time, so a local fix
-        # does not survive. The person running the session sets their own
-        # identity; this is what notices when they have not.
-        #
-        # A DENYLIST rather than an allowlist of known contributors, and that is
-        # the whole design. An allowlist makes a first-time contributor's PR
-        # fail on a file they cannot edit, which is a barrier this project does
-        # not want. Naming the agents costs a line each time a new one appears
-        # and lets every human through on their first try.
+      - name: No commit or branch carries a coding agent's name
+        # A commit's author is who answers for it (CONTRIBUTING.md §"Who a
+        # commit is from"), so an agent's identity, an agent co-author trailer
+        # or an agent-named branch contradicts that where a reader looks first.
+        # .githooks/authorship.sh holds the lists the local hooks also run; the
+        # selftest goes first so a list emptied by mistake fails here.
         run: |
           set -euo pipefail
-          # The rule applies from this commit forward, and the baseline may only
-          # ever move forward. Moving it back turns commits other clones already
-          # hold into failures that cannot be fixed without rewriting SHAs.
-          BASELINE=73f00f3968f2dcda5d56700ff0b5c4e13d034944
-          git cat-file -e "$BASELINE^{commit}" 2>/dev/null || {
-            echo "::notice::baseline $BASELINE absent from history, nothing to check"
-            exit 0
-          }
-          fail=0
-          # NUL-delimited, because an author's name is free text and a
-          # printable separator is a field the name can contain. Splitting on
-          # `|` gave the last variable everything after the second one, so
-          # `|Claude <real.person@example.com>` read as an EMPTY name and an
-          # email of `Claude|real.person@example.com` — a person refused as "a
-          # placeholder identity", shown a name and an address that are not
-          # theirs and no way to work out which. That is the barrier the
-          # denylist below exists to avoid, arriving by a different route.
-          #
-          # It never let an agent through: the email cases match as substrings
-          # and survive the shift, and the names on the list contain no
-          # separator to split on. So this buys a correct diagnostic rather
-          # than a closed hole.
-          #
-          # `git log -z` terminates each commit with NUL instead of a newline,
-          # so with `%x00` between the fields every record is exactly three
-          # NUL-delimited reads and nothing carries a stray newline. The three
-          # reads are chained with `&&`, which also ends the loop cleanly at
-          # end of input; a separate emptiness guard would be answering a
-          # question the chain has already answered.
-          #
-          # A control character is not an alternative here: git preserves
-          # \x01 and \x1f in an ident and strips only what would break the
-          # commit object. NUL is the one byte that cannot appear.
-          while IFS= read -r -d '' sha && IFS= read -r -d '' name && IFS= read -r -d '' email; do
-            reason=""
-            # Emails match as substrings — an agent's address is distinctive
-            # enough that no person shares one.
-            case "${email,,}" in
-              *noreply@anthropic.com*) reason="a coding agent" ;;
-              *you@example.com*|*@localhost|*@localhost.localdomain)
-                reason="a placeholder identity" ;;
-            esac
-            # Names match WHOLE, never as a prefix. "Claude" is banned and
-            # Claudia is a person; a glob would refuse her first contribution
-            # and give her no way to tell why.
-            case "${name,,}" in
-              claude|"claude code"|cursor|codex|devin|aider|"github copilot"|copilot)
-                reason="a coding agent" ;;
-              root|unknown|"your name"|"") reason="a placeholder identity" ;;
-            esac
-            [ -n "$reason" ] || continue
-            echo "::error::$sha is authored by $reason: $name <$email>"
-            fail=1
-          done < <(git log -z --format='%H%x00%an%x00%ae' "$BASELINE..HEAD")
-          if [ "$fail" -ne 0 ]; then
-            echo "::error::Set your own name and email before committing. In a cloud"
-            echo "::error::agent session that means GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL,"
-            echo "::error::GIT_COMMITTER_NAME and GIT_COMMITTER_EMAIL in the environment"
-            echo "::error::settings — the container's gitconfig resets every session."
-            echo "::error::CONTRIBUTING.md §'Who a commit is from' has the detail."
-            exit 1
+          bash .githooks/authorship.sh selftest
+          # A pull request names its head in GITHUB_HEAD_REF. A push names it
+          # in GITHUB_REF_NAME, which is a tag's name when a tag is pushed.
+          branch="${GITHUB_HEAD_REF:-}"
+          if [ -z "$branch" ] && [ "${GITHUB_REF_TYPE:-}" = branch ]; then
+            branch="$GITHUB_REF_NAME"
           fi
-          echo "$(git rev-list --count "$BASELINE..HEAD") commit(s) since the baseline, each authored by a person"
+          if [ -n "$branch" ]; then
+            bash .githooks/authorship.sh branch "$branch"
+          fi
+          # All of history rather than a range from a fixed commit: a baseline
+          # SHA is lost whenever history is rewritten, and the walk then has
+          # nothing to check and passes. Every commit HEAD reaches today passes.
+          bash .githooks/authorship.sh range HEAD
 
   data:
     name: data · published JSON is committed and parses
