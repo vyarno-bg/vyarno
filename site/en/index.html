@@ -146,21 +146,21 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" id="metaTheme" content="#E8ECEF" />
     <!--
-    The same two self-hosted subsets the Bulgarian entry preloads, and not a
-    Latin-only pair: the wordmark «Вярно», the publisher names and the
-    attribution line are Cyrillic on this page too, because they are a licence
-    condition and are not translated (docs/legal.md).
+    The Latin1 halves of the two faces the Bulgarian entry preloads, because
+    this page draws no Cyrillic: a preloaded Cyrillic file is 41 kB fetched
+    ahead of the body face and never used. A page that quotes a Bulgarian name
+    still gets its Cyrillic file, lazily, through `unicode-range`.
   -->
     <link
       rel="preload"
-      href="/fonts/ibm-plex/IBMPlexSans-Regular-Cyrillic.woff2"
+      href="/fonts/ibm-plex/IBMPlexSans-Regular-Latin1.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
     <link
       rel="preload"
-      href="/fonts/ibm-plex/IBMPlexSans-SemiBold-Cyrillic.woff2"
+      href="/fonts/ibm-plex/IBMPlexSans-SemiBold-Latin1.woff2"
       as="font"
       type="font/woff2"
       crossorigin
