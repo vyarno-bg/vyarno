@@ -90,10 +90,13 @@ jobs:
 
       - name: Install pipeline
         working-directory: pipeline
+        # The hashed runtime lock, as `refresh.yml` installs it: what is held
+        # against the upstreams here is the code that wrote the payloads.
         run: |
           set -euo pipefail
           python -m venv .venv
-          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/pip install -q -r requirements.txt
+          .venv/bin/pip install -q -e . --no-deps
 
       - name: Trust the БНБ intermediate
         # Five of the citations are БНБ workbooks. `www.bnb.bg` presents a leaf
