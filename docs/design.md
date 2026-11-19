@@ -238,6 +238,12 @@ for three glyphs, where `⚠` is in no Plex build at all. A symbol drawn by the
 system is still that symbol; a letterform drawn by the system is a different
 typeface.
 
+**The serif's Bold is the one face every entry preloads, and it is
+`font-display: optional`.** It draws every page's title at first paint, and a
+swap after paint re-wraps a balanced title and moves the page under it. The
+cost of `optional` is that a cold, slow first view keeps the fallback for that
+one view; the file is cached for the next. Every other face stays `swap`.
+
 **This is not a licence question and must not become one**: every file is
 byte-for-byte its publisher's, and writing a `unicode-range` modifies a
 stylesheet rather than a font. Re-subsetting is still the thing that would

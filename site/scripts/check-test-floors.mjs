@@ -146,14 +146,9 @@ export const FLOORS = {
   // `verify_view_credit.mjs`, and `monthlySavingsErosion` in
   // `verify_mirror_math.mjs`.
   node: { floor: 694, report: join(SITE, ".report-node.tap"), count: tapPassed },
-  // Raised with the keystroke tests that a money field keeps «1,500», in
-  // `verify_render_shell.mjs`, and that clearing the term moves nothing in the
-  // basket, in `verify_render_basket.mjs`.
-  // Raised with the gutter rule in `verify_render_layout.mjs`: no route sets a
-  // line of text against a phone's edge, one test per route.
-  // Raised with the layout-shift rule in `verify_render_layout.mjs`: nothing on
-  // the four routes that fetch moves once painted, one test per route.
-  render: { floor: 229, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  // Raised with the layout-shift rule in `verify_render_layout.mjs` running on
+  // both languages at a phone's width and a desk's: sixteen cases, not four.
+  render: { floor: 245, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**

@@ -239,34 +239,51 @@ for (const path of BAR_ROUTES) {
 }
 
 /**
- * The four routes that fetch: a bootstrap that empties the prerendered page
- * before its payloads arrive paints a short page that grows when they land,
- * and every section under the gap moves (CLS 0.89 on `/`, 0.53 on `/market/`).
- * 0.1 is the line Core Web Vitals calls good; font swaps account for the rest.
+ * Emptying the prerendered page before its payloads land, or a title font
+ * swapped in late, moves everything under the gap (CLS 0.89 on `/`, 0.25 on
+ * `/market/`). CLS weighs a move by the viewport area it covers, so where the
+ * fold falls decides it; no element painted in view may also move by half a
+ * line of body text, which is where a reader loses their place.
  */
 for (const path of ["/", "/how/", "/market/", "/credit/"]) {
-  test(`nothing on ${path} moves under the reader once painted`, { skip }, async () => {
-    await withApp(
-      async (page, errors) => {
-        const cls = await page.evaluate(async () => {
-          await document.fonts.ready;
-          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-          return window.__cls;
-        });
-        assert.ok(cls < 0.1, `${path} shifts its layout by ${cls.toFixed(3)} at 360px`);
-        assert.deepEqual(errors, [], errors.join(" | "));
-      },
-      path,
-      { viewport: { width: 360, height: 800 } },
-      (page) =>
-        page.addInitScript(() => {
-          window.__cls = 0;
-          new PerformanceObserver((list) => {
-            for (const e of list.getEntries()) if (!e.hadRecentInput) window.__cls += e.value;
-          }).observe({ type: "layout-shift", buffered: true });
-        })
-    );
-  });
+  for (const route of [path, `/en${path}`]) {
+    for (const width of [360, 1280]) {
+      test(`nothing on ${route} moves under the reader at ${width}px`, { skip }, async () => {
+        await withApp(
+          async (page, errors) => {
+            const { cls, moved, what } = await page.evaluate(async () => {
+              await document.fonts.ready;
+              await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+              return window.__shift;
+            });
+            assert.ok(cls < 0.1, `${route} shifts its layout by ${cls.toFixed(3)} at ${width}px`);
+            assert.ok(moved < 12, `${route} moves «${what}» ${Math.round(moved)}px at ${width}px`);
+            assert.deepEqual(errors, [], errors.join(" | "));
+          },
+          route,
+          { viewport: { width, height: 800 } },
+          (page) =>
+            page.addInitScript(() => {
+              const shift = (window.__shift = { cls: 0, moved: 0, what: "" });
+              new PerformanceObserver((list) => {
+                for (const e of list.getEntries()) {
+                  if (e.hadRecentInput) continue;
+                  shift.cls += e.value;
+                  // A hairline leader resizing as its label's font lands covers
+                  // no area and is not a move a reader can lose their place to.
+                  for (const { previousRect: a, currentRect: b, node } of e.sources) {
+                    const d = Math.max(Math.abs(a.y - b.y), Math.abs(a.x - b.x));
+                    if (a.height < 2 || a.width < 2 || d <= shift.moved) continue;
+                    shift.moved = d;
+                    shift.what = (node?.textContent ?? "").trim().slice(0, 30);
+                  }
+                }
+              }).observe({ type: "layout-shift", buffered: true });
+            })
+        );
+      });
+    }
+  }
 }
 
 // Every page of published figures, and the footer is what makes each reachable
