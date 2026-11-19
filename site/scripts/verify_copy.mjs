@@ -383,9 +383,10 @@ const DIRECTION_ALLOWED = {
   // structural — a percentile is a share of the population and cannot invert
   pctTopTxt: "structural: «изпреварваш {r}%» is true at every r a percentile can take",
   pctEarnerLine: "structural: the same, per earner",
-  // structural — a conditional about the reader's own money, not a series
+  // state — view/basket.js#divisionRateState, on the rate a year of cash is held at
   leftCash:
-    "structural: «пак изостават» is inside «ако ти носят по-малко от {i}%», so the condition carries the direction",
+    "state: divisionRateState's up branch, and «пак изостават» sits inside its own condition",
+  leftCashDown: "state: the down branch of the same",
 };
 
 test("no COPY string fixes a direction the data is free to reverse", () => {
@@ -869,6 +870,29 @@ test("LeftoverRow picks the housing variant by `calc.housingCost`", () => {
   assert.ok(
     /housingCost\s*>\s*0/.test(componentSrc),
     "LeftoverRow does not gate the variant on calc.housingCost > 0"
+  );
+});
+
+test("LeftoverRow picks the cash sentence by the direction of the rate", () => {
+  // «губят стойност» and «с €{e} по-малко» are true only while prices rise,
+  // and the rate is a published figure free to go below zero. The sentence is
+  // picked from a table by `divisionRateState`, the same dead band the strip's
+  // fastest-group caption uses; a template reaching for COPY.leftCash by name
+  // is the fixed direction coming back.
+  const src = readFileSync(join(SRC, "components", "LeftoverRow.svelte"), "utf8");
+  assert.match(
+    src,
+    /CASH_K\s*=\s*\{\s*up:\s*COPY\.leftCash,\s*down:\s*COPY\.leftCashDown,\s*flat:\s*COPY\.leftCashFlat\s*\}/,
+    "LeftoverRow no longer maps the three rate states to their three sentences"
+  );
+  assert.match(
+    src,
+    /cashState\s*=\s*\$derived\(divisionRateState\(calc\.leftoverCash\.ratePct\)\)/
+  );
+  assert.doesNotMatch(
+    src,
+    /t\(COPY\.leftCash\b/,
+    "a template names the rising-prices sentence directly"
   );
 });
 
