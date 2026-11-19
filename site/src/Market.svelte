@@ -304,10 +304,13 @@
    * never cropped, and why no axis text may be drawn inside the SVG.
    *
    * The numbers are here because they are this page's editorial decision and
-   * nothing else's. 600 by 240 is a shape rather than a size — the SVG is
+   * nothing else's. 600 by 264 is a shape rather than a size — the SVG is
    * `width: 100%` and scales — so what these fix is the aspect a reader sees
    * every plot in, and a page that drew each chart to its own would be saying
-   * something about them by their proportions.
+   * something about them by their proportions. It is as wide as the shape can
+   * go while a 360px phone, inside the page gutter, still gives the plot beside
+   * the widest axis («150 000 €») the 110px `verify_render_market.mjs` asks of
+   * every chart.
    */
   /**
    * `CH_TALL` is the one plot on the page drawn bigger than the others, and
@@ -328,8 +331,8 @@
    * same accent, same zero, same axis in multiples.
    */
   const CH_W = 600,
-    CH_H = 240,
-    CH_TALL = 320;
+    CH_H = 264,
+    CH_TALL = 352;
   /**
    * This page's box, bound to the geometry in `$lib/plot.js`.
    *
@@ -3714,8 +3717,9 @@
      Charts and tables keep the full column, which is the whole point of having
      two. */
   main.market {
-    padding: 30px 0 10px;
-    max-width: var(--col);
+    /* Block axis only: `How.svelte`'s `main.how` carries why. */
+    padding-block: 30px 10px;
+    max-width: var(--col-box);
     /* The skip link's target, offset by the same amount the sections are: a
        bare `#main` jump parks the h1 under the 54px sticky header. */
     scroll-margin-top: 64px;

@@ -249,7 +249,9 @@ Two tokens and not one, because a chart wants width and a line of prose does
 not. `--col` (48rem) is the single-column document `/how/`, `/market/`,
 `/credit/` and `/legal/` are laid out in; `--measure` (38rem) is the cap on
 every `p` inside them, so tables and plots run the full column while the text
-beside them sets 66–70 Cyrillic characters to the line.
+beside them sets 66–70 Cyrillic characters to the line. A page caps its `main`
+at `--col-box`, the column plus the gutter either side, because `.wrap` pads
+inside its own `max-width`.
 
 They had been one number, `max-width: 760px` on the `main` element, which put
 every paragraph on those pages at about 85 characters — past the band a reader

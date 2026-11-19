@@ -1511,13 +1511,11 @@
 <SiteFooter page="credit" />
 
 <style>
-  /* The same column `/how/` and `/market/` take, and it had been the wrapper's
-     full 1120px here — so a reader moving between three sibling documents met
-     the same chart at two different widths and the same paragraph at two
-     different lengths. */
+  /* The column `/how/` and `/market/` take, through the same token, so a reader
+     moving between three sibling documents meets one chart at one width. */
   .credit {
     padding-bottom: 64px;
-    max-width: var(--col);
+    max-width: var(--col-box);
   }
   /* The same lockup `/how/` and `/market/` give their titles — three content
      pages that a reader arrives at from each other should not each announce

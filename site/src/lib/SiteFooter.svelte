@@ -312,7 +312,10 @@
      `row-gap` is larger than `column-gap` because the rows are what a reader
      scans down and the items inside one are read across. */
   .foot {
-    padding: 20px 0 14px;
+    /* Block axis only, here and on the two rows below: each outranks `.wrap`,
+       so a shorthand's inline `0` deletes the gutter and the links meet the
+       screen edge. */
+    padding-block: 20px 14px;
     font-size: var(--fs-small);
     color: var(--muted);
     display: grid;
@@ -355,7 +358,7 @@
      own top border is already `--line` and two rules of one weight 100px apart
      read as a box nobody drew. */
   .credits {
-    padding: 14px 0 0;
+    padding-block-start: 14px;
     border-top: 1px solid var(--line-2);
     font-size: var(--fs-fine);
     color: var(--muted);
@@ -415,9 +418,7 @@
      Facebook" are the longer pair, and a cell that cannot shrink below its
      content carries them past a 320px viewport instead of breaking between them
      — which widens the document and fails `verify_render_layout.mjs` §"the
-     header fits a 320px phone" on all five `/en/` routes. Not a gutter question:
-     `--gutter` computes to 0 at that width, so a footer link ending at the
-     viewport edge is the content edge. */
+     header fits a 320px phone" on all five `/en/` routes. */
   .marks {
     min-width: 0;
   }
@@ -466,7 +467,7 @@
      line the project has unreadable to the people most likely to be squinting
      at a footer. */
   .support {
-    padding: 0 0 30px;
+    padding-block-end: 30px;
     font-size: var(--fs-fine);
     color: var(--muted);
     line-height: 1.6;

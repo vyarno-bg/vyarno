@@ -104,10 +104,11 @@
      reader who is told they arrived somewhere has to arrive there. */
   main.support {
     scroll-margin-top: 64px;
-    padding: 30px 0 10px;
+    /* Block axis only: `How.svelte`'s `main.how` carries why. */
+    padding-block: 30px 10px;
     /* This page carries two cards and no figure, so the column IS the measure —
        there is nothing here that wants the width a chart would. */
-    max-width: var(--measure);
+    max-width: var(--measure-box);
   }
   h1 {
     font-family: var(--serif);

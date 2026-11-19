@@ -437,6 +437,11 @@
      same one bigger. */
   --measure: 38rem;
   --gutter: clamp(16px, 4vw, 56px);
+  /* What a document page's `max-width` is set to. `.wrap` pads INSIDE its
+     max-width, so a page capped at `--col` itself gives the gutter out of the
+     figure and draws narrower than a sibling page that is not. */
+  --col-box: calc(var(--col) + 2 * var(--gutter));
+  --measure-box: calc(var(--measure) + 2 * var(--gutter));
   --radius: 3px;
 }
 
