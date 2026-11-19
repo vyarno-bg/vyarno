@@ -397,9 +397,6 @@
     background: var(--paper);
     padding: 22px 0 6px;
   }
-  .explain-band .wrap {
-    padding: 0 18px;
-  }
   .how.explain {
     margin-top: 0;
   }
