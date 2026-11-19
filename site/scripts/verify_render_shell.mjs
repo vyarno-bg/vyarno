@@ -588,6 +588,27 @@ test("every decimal field takes the separator this page writes", { skip }, async
   });
 });
 
+test("a money field reads «1,500» as the thousands the English page writes", { skip }, async () => {
+  // The page prints «1,164 €», so that is how a reader types a figure back,
+  // and it reached the model as a decimal: €2 net, savings of €10. Typed key
+  // by key, because the box is re-seeded off its own parse after each one and
+  // a re-seed reading it differently from the handler rewrites it mid-word.
+  await withApp(async (page, errors) => {
+    for (const id of ["#inSalary", "#inRent", "#inCash"]) {
+      const field = page.locator(id);
+      await field.fill("");
+      await field.pressSequentially("1,500", { delay: 15 });
+      await page.waitForTimeout(200);
+      assert.equal(await field.inputValue(), "1,500", `${id} was rewritten as it was typed`);
+    }
+    const text = await page.locator("main").innerText();
+    assert.match(text, /1,500 € net/, "the salary was not read as €1,500");
+    assert.match(text, /€1,500\/mo rent/, "the rent was not read as €1,500");
+    assert.match(text, /The same €1,500 since 2020/, "the savings were not read as €1,500");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  }, "/en/");
+});
+
 // --------------------------------------------------------------------------
 // Remembering the reader's figures — the three states, in a real browser
 //

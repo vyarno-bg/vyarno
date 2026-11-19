@@ -97,6 +97,27 @@ test("an amount keeps its figure and drops the unit beside it", () => {
   assert.ok(Number.isNaN(parseDecimal("€2,75")));
 });
 
+test("an amount grouped in thousands reads as thousands in either notation", () => {
+  // The English page writes «1,164 €» and the Bulgarian one is often typed
+  // «1.500», and both reached the model as 1.5 and 1.164: a salary of €2
+  // net, savings of €10, in the second person. A euro amount has cents, so a
+  // separator followed by exactly three digits is a group in both languages.
+  assert.equal(parseAmount("1,500"), 1500);
+  assert.equal(parseAmount("1.500"), 1500);
+  assert.equal(parseAmount("€10,000"), 10000);
+  assert.equal(parseAmount("1,234,567"), 1234567);
+  assert.equal(parseAmount("1,234.56"), 1234.56);
+  assert.equal(parseAmount("1.234,5"), 1234.5);
+  // What stays a decimal: a fraction of one or two digits, and a leading zero.
+  assert.equal(parseAmount("1,50"), 1.5);
+  assert.equal(parseAmount("0,500"), 0.5);
+  // Groups that are not groups are refused rather than guessed at.
+  assert.equal(parseAmount("1,500,50"), null);
+  assert.equal(parseAmount("1,50.000"), null);
+  // A percentage has no cents, so the rate and the raise keep the plain rule.
+  assert.equal(parseDecimal("1,500"), 1.5);
+});
+
 test("an amount nobody answered is null, and a negative one is refused", () => {
   // `null` and not NaN: it is what an emptied field used to produce and what
   // `stores.js#isAmount` accepts off the disk, so clearing a box lands in a

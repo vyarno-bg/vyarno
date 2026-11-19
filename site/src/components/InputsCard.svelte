@@ -16,7 +16,7 @@
    * sub-hint.
    */
   import { lang } from "../lib/stores.js";
-  import { number, integer, period, decimalText, parseDecimal } from "../lib/format.js";
+  import { number, integer, period, decimalText, parseAmount } from "../lib/format.js";
   import { COPY, HOME, t } from "../lib/content.js";
   import BasketEditor from "./BasketEditor.svelte";
   import RegionPicker from "./RegionPicker.svelte";
@@ -59,12 +59,13 @@
    * `rateTouched` has no counterpart here, so the gate is the box no longer
    * parsing to its own amount — true when a restore off this device sets one,
    * false on every keystroke, since typing is what put the amount there. That
-   * is what leaves «1200,» alone until the reader finishes it.
+   * is what leaves «1200,» alone until the reader finishes it — and it holds
+   * only through `parseAmount`, the parse the handler stored.
    */
   const MONEY_FIELDS = ["rent", "cash", "m2", "manualPrice"];
   $effect(() => {
     for (const field of MONEY_FIELDS) {
-      if (parseDecimal(calc[`${field}Text`]) !== calc[field]) {
+      if (parseAmount(calc[`${field}Text`]) !== calc[field]) {
         calc[`${field}Text`] = decimalText(calc[field], $lang);
       }
     }
