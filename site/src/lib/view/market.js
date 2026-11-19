@@ -252,12 +252,12 @@ export function marketStructure(structure) {
  * depend on the payroll table of whichever year converted it, which is a third
  * publisher's law inside a two-publisher ratio.
  *
- * **Both periods come back, because the figure describes both.** Eurostat
- * disseminate the transaction cubes about a week behind НСИ publishing the wage
- * table, so the two quarters agree most of the time and part for the days
- * between two releases. Dated by one of them the card names the period of half
- * its own arithmetic, and the half it names is the one a reader is least likely
- * to check.
+ * **The wage is the deal's own quarter where НСИ have published it.** Eurostat
+ * disseminate a quarter's transactions weeks after НСИ publish its wages, so
+ * the newest wage usually runs a quarter ahead of the newest deal, and НСИ's
+ * wages are seasonal enough (2025-Q4 sat 5.1% over Q3) that the mismatch moves
+ * the ratio. Both periods still come back, because they part where НСИ carry
+ * no cell for the deal's quarter, and a card dated by one would hide that.
  *
  * @param {object|null} houseMarket
  * @param {object|null} sectorSalary
@@ -268,7 +268,9 @@ export function marketDealInYearsOfPay(houseMarket, sectorSalary) {
   const period = houseMarket?.ref_period ?? null;
   const deal = houseMarket?.avg_deal_eur?.series_by_period?.[period ?? ""]?.total ?? null;
   const all = (sectorSalary?.sectors ?? []).find((s) => s?.en_name === "Total") ?? null;
-  const wage = all?.value_eur ?? null;
+  const sameQuarter = all?.series_by_period?.[period ?? ""];
+  const aligned = Number.isFinite(sameQuarter);
+  const wage = aligned ? sameQuarter : (all?.value_eur ?? null);
   return {
     ...sourced(dealInYearsOfPay(deal, wage), houseMarket?.value ?? null, {
       refPeriod: period,
@@ -282,7 +284,7 @@ export function marketDealInYearsOfPay(houseMarket, sectorSalary) {
     }),
     monthlyGrossEur: wage,
     dealPeriod: period,
-    wagePeriod: sectorSalary?.ref_period ?? null,
+    wagePeriod: aligned ? period : (sectorSalary?.ref_period ?? null),
     wageUrl: sectorSalary?.source_url ?? null,
   };
 }
