@@ -11,8 +11,23 @@ salary percentile, the tax wedge, rent, savings and the path to a home. A
 Python pipeline pulls official figures, gates them, and commits JSON; a static
 Svelte SPA reads that JSON and does the consumer's arithmetic in their browser.
 
+Every number on the screen is fresh, verifiable, honest about provenance,
+reconcilable and one bucket per row (`docs/README.md` §"Who this is for"). A
+change that costs one of the five is wrong however clean the code is.
+
 **This file is only what an agent gets wrong without being told.** Everything
 else is in `docs/`, and every section here ends at the doc that carries it.
+
+## First steps in a session
+
+1. `make setup`. Besides the venv and `npm`, it points git at `.githooks/`.
+2. Put the branch and the commit identity right before the first edit, per
+   §"Branches and authorship" below. Both are cheaper to fix now than after a
+   push.
+3. `make check` once, untouched, so a red you inherit is not one you report as
+   yours.
+4. Read the doc for the area from the table at the bottom. A feature starts at
+   `docs/principles.md`; anything a reader sees starts at `site/AGENTS.md`.
 
 ## Branches and authorship
 
@@ -156,6 +171,9 @@ What those tables cannot tell you, and an agent gets wrong:
 - **Which number feeds a formula is decided in `site/src/lib/view/`**, never in
   a `$derived` and never in `calculator.svelte.js`. `docs/site.md` §"A correct
   formula fed the wrong number" is why.
+- **A colour is a token** in `site/src/lib/tokens.css`, where
+  `verify_contrast.mjs` holds it to WCAG AA in both themes. A literal in a
+  component skips that check (`docs/design.md`).
 - **Refactoring means the suites are untouched.** If a test had to change it was
   not a refactor — say which behaviour moved.
 - **A feature is checked against P1–P11 and the closed list in
