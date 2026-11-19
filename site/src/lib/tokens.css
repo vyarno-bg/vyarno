@@ -250,11 +250,16 @@
   font-display: swap;
   src: url("/fonts/source-serif/SourceSerif4-Semibold.ttf.woff2") format("woff2");
 }
+/* Every page's title, so it is drawn at first paint. Swapped in late, a
+   balanced title re-wraps (two lines in a fallback, three in this face on
+   /market/ at 360px) and moves the page under it: CLS 0.25. `optional` with the
+   preload every entry carries uses it when it is in time and keeps the
+   fallback for that one view when it is not, so the title never moves. */
 @font-face {
   font-family: "Source Serif 4";
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
   src: url("/fonts/source-serif/SourceSerif4-Bold.ttf.woff2") format("woff2");
 }
 @font-face {
