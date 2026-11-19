@@ -53,6 +53,22 @@
       : row.refPeriodIsDayDate
         ? dateShort(row.refPeriod, $lang)
         : periodLong(row.refPeriod, $lang);
+
+  /**
+   * A row's publisher, named in the reader's language. A payload carries a
+   * pipeline id, and printed raw «nsi» and «legislation» are the English words
+   * in a Bulgarian table. An id with no entry prints as itself.
+   */
+  const PUBLISHERS = {
+    eurostat: [COPY.srcEurostat],
+    nsi: [COPY.srcNsi],
+    ecb: [COPY.crdWhoseEcb],
+    bnb: [COPY.srcBnb],
+    "ecb+bnb": [COPY.crdWhoseEcb, COPY.srcBnb],
+    legislation: [COPY.srcGazette],
+    "imot.bg": [COPY.howSrcImot],
+  };
+  const sourceCopy = (id) => PUBLISHERS[id]?.map((name) => t(name, $lang)).join(" + ") ?? id ?? "—";
 </script>
 
 <details class="datapanel" bind:open>
@@ -145,10 +161,10 @@
             <td>
               {#if httpUrl(row.sourceUrl)}
                 <a href={httpUrl(row.sourceUrl)} target="_blank" rel="noopener noreferrer"
-                  >{row.source ?? "—"}</a
+                  >{sourceCopy(row.source)}</a
                 >
               {:else}
-                {row.source ?? "—"}
+                {sourceCopy(row.source)}
               {/if}
             </td>
           </tr>
