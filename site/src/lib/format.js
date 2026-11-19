@@ -116,6 +116,18 @@ export function decimalText(x, lang = "bg") {
   return String(x).replace(".", lang === "bg" ? "," : ".");
 }
 
+/**
+ * The same for an amount of money: cents always as two digits, because a
+ * reader who typed «1 850,50» typed fifty cents and «1850,5» reads as five.
+ * Whole euros stay bare, and anything finer than a cent stays as it was typed.
+ */
+export function amountText(x, lang = "bg") {
+  if (!Number.isFinite(x) || Number.isInteger(x)) return decimalText(x, lang);
+  const cents = Math.round(x * 100);
+  if (Math.abs(x * 100 - cents) > 1e-6) return decimalText(x, lang);
+  return (cents / 100).toFixed(2).replace(".", lang === "bg" ? "," : ".");
+}
+
 /** `x` to `digits` decimal places, or "—" when there is no number to show. */
 export function number(x, digits = 1, lang = "bg") {
   if (x === null || x === undefined || !Number.isFinite(x)) return "—";

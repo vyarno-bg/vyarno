@@ -23,6 +23,7 @@ import {
   parseAmount,
   parseDecimal,
   decimalText,
+  amountText,
   bgIn,
   safeText,
   yearText,
@@ -385,6 +386,20 @@ test("every sector name НСИ publishes survives the label rule intact", () => 
     assert.equal(label(s.bg_name), s.bg_name);
     assert.equal(label(s.en_name), s.en_name);
   }
+});
+
+test("a remembered amount of money comes back with its cents as two digits", () => {
+  // A salary typed as «1 850,50» was put back in the box as «1850,5», which is
+  // five cents to anyone reading it. Whole euros stay bare, a sum the
+  // arithmetic left a float hair off a cent still shows its cent, and a figure
+  // typed finer than a cent is not rounded behind the reader's back.
+  assert.equal(amountText(1850.5, "bg"), "1850,50");
+  assert.equal(amountText(1850.5, "en"), "1850.50");
+  assert.equal(amountText(1850, "bg"), "1850");
+  assert.equal(amountText(0.1 + 0.2, "bg"), "0,30");
+  assert.equal(amountText(1850.567, "bg"), "1850,567");
+  assert.equal(amountText(NaN, "bg"), "");
+  assert.equal(parseAmount(amountText(1850.5, "bg")), 1850.5, "the box still parses to its amount");
 });
 
 test("a sector name reaches the reader with its punctuation spaced, and nothing else", () => {

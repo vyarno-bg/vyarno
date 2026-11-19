@@ -52,7 +52,7 @@
     period,
     httpUrl,
     safeText,
-    decimalText,
+    amountText,
     parseAmount,
   } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
@@ -73,13 +73,13 @@
    * it off the keystroke path: while somebody is typing, the amount IS the
    * parse of what is in the box, so «1200,» is left alone rather than rewritten
    * to «1200» under the cursor — provided it is the same parse, `parseAmount`.
-   * `decimalText` is here rather than in the calculator because it picks a
+   * `amountText` is here rather than in the calculator because it picks a
    * SEPARATOR, and a separator is a language.
    */
   $effect(() => {
     for (const earner of calc.earners) {
       if (parseAmount(earner.amountText) !== earner.amount) {
-        earner.amountText = decimalText(earner.amount, $lang);
+        earner.amountText = amountText(earner.amount, $lang);
       }
     }
   });
