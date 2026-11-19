@@ -212,12 +212,12 @@ jobs:
         #
         # `--force-with-lease` is the one exception to "never force", and the
         # lease is what makes the supersede above safe. It names the exact SHA
-        # the fetch returned, so a branch that moved in between — the box's
-        # `vyarno-city-price-weekly` cron, a manual `git push` from Kiril — is
-        # refused instead of clobbered, with the same error a plain push would
-        # give. `merge -s ours` has already made this push a fast-forward, so
-        # the lease never has to force anything: it is the assertion that the
-        # branch we superseded is still the branch we fetched.
+        # the fetch returned, so a branch that moved in between, such as a
+        # manual `git push` from Kiril, is refused instead of clobbered, with
+        # the same error a plain push would give. `merge -s ours` has already
+        # made this push a fast-forward, so the lease never has to force
+        # anything: it is the assertion that the branch we superseded is still
+        # the branch we fetched.
         run: |
           set -euo pipefail
           BRANCH="data/${SOURCE}"

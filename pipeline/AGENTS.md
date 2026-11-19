@@ -68,6 +68,8 @@ it (`docs/sources/bnb.md` §"TLS setup"). Never disable verification.
 `www.imot.bg` answers datacenter IPs with a 403 on every path, so that arm
 exits 4 from CI and from any cloud runner. A full refresh is 27 city pages plus
 one request per historical year each — around 650 requests at polite spacing.
+`make refresh-local` (`local_refresh.py`) is the whole procedure for it and for
+`payroll`: it runs `origin/main` in a scratch worktree, never the checkout.
 
 ## The seven HICP gates
 
