@@ -358,6 +358,31 @@ test("switching to gross moves the field and nothing else", { skip }, async () =
   });
 });
 
+test("the pocket row names its raise for the pocket it reaches", { skip }, async () => {
+  // The row's raise is the take-home one in either mode. Above the insurable
+  // ceiling a contract's +5% is more than +5% in hand, because contributions
+  // stop and the pay does not, so a label promising the payslip's figure
+  // printed one the reader never typed. The take-home figure is the
+  // arithmetic's; what is held is that it is named for the pocket and that
+  // the contract's +5,0% stands beside it, which above the ceiling it always does.
+  await withApp(async (page, errors) => {
+    await page.getByRole("button", { name: /^бруто$/i }).click();
+    await page.locator("#inSalary").fill("4000");
+    await page.locator("#inRaise").fill("5");
+    await page.waitForTimeout(400);
+    const row = async () =>
+      (await page.locator(".r-row", { hasText: /В джоба/i }).innerText()).replace(/\s+/g, " ");
+    assert.match(await row(), /На ръка: \+5,[1-9]% \(по договор \+5,0%\)/i, await row());
+
+    // Net mode: what was typed is what reaches the pocket, and nothing is beside it.
+    await page.getByRole("button", { name: /^нето$/i }).click();
+    await page.waitForTimeout(400);
+    assert.match(await row(), /На ръка: \+5,0% · /i, await row());
+    assert.doesNotMatch(await row(), /по договор/i, "net mode named a contract figure");
+    assert.deepEqual(errors, [], errors.join(" | "));
+  });
+});
+
 test(
   "each income is asked for its own raise, and the row waits for all of them",
   { skip },
