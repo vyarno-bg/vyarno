@@ -280,6 +280,13 @@ after the PR armed, and back on when the last comes off. The PR's own *Disable
 auto-merge* button is the immediate stop. The bot arms raise no soft flag: every
 gate is hard, and a payload that fails one exits before any PR exists.
 
+**Only a diff confined to `data/published/` merges itself.** The branch name is
+a convention anyone with push access can borrow, so `automerge.py` judges the
+files instead: one path outside that directory and the PR waits for a person,
+with auto-merge switched off if a later push brought the code in. A fork's pull
+request never reaches the script at all, since both workflows that run it act
+only on this repository's own branches.
+
 Three things that follow. **Arming is refused unless branch protection is
 holding the PR**, since auto-merge on an unprotected PR merges before CI reports,
 so the five required checks are now the whole publication gate. **A merge made
