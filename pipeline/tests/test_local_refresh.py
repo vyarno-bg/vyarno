@@ -11,8 +11,10 @@ around it.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -60,7 +62,7 @@ COMMITTED = payload(city("vidin", price=966.0, n=18), city("gabrovo", price=982.
 
 def git(cwd: Path, *args: str) -> str:
     return subprocess.run(
-        ["git", "-C", str(cwd), *args], check=True, capture_output=True, text=True
+        ["git", "-C", str(cwd), *args], check=True, capture_output=True, text=True, encoding="utf-8"
     ).stdout.strip()
 
 
@@ -77,6 +79,11 @@ def repos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Path]:
     config.write_text("[init]\n\tdefaultBranch = main\n", "utf-8")
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(config))
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    # A cloud session sets these as CONTRIBUTING.md advises, and git lets them
+    # outrank the identities each repository below configures for itself.
+    for var in ("NAME", "EMAIL"):
+        monkeypatch.delenv(f"GIT_AUTHOR_{var}", raising=False)
+        monkeypatch.delenv(f"GIT_COMMITTER_{var}", raising=False)
 
     origin = tmp_path / "origin.git"
     subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(origin)], check=True)
@@ -341,9 +348,22 @@ def test_a_red_suite_is_reported_red(tmp_path):
     tests = tmp_path / "pipeline" / "tests"
     write(tests / "test_reads_it.py", "def test_city_price():\n    assert False\n")
     (tmp_path / "site" / "scripts").mkdir(parents=True)
-    assert lr.default_run_suites(tmp_path, "city_price", {"PATH": "/usr/bin:/bin"}) is False
+    # The real environment: Windows cannot start a child's sockets without
+    # SYSTEMROOT, so a PATH-only one fails both runs for a reason of its own.
+    env = lr.arm_environment(dict(os.environ), tmp_path)
+    assert lr.default_run_suites(tmp_path, "city_price", env) is False
     write(tests / "test_reads_it.py", "def test_city_price():\n    assert True\n")
-    assert lr.default_run_suites(tmp_path, "city_price", {"PATH": "/usr/bin:/bin"}) is True
+    assert lr.default_run_suites(tmp_path, "city_price", env) is True
+
+
+def test_progress_prints_through_a_legacy_code_page():
+    # What Git Bash on Windows gives `make refresh-local`: a cp1252 pipe.
+    code = "from vyarno_pipeline import local_refresh as lr; lr.utf8_stdio(); print('→ имот.bg')"
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONPATH": str(REPO / "pipeline" / "src")}
+    env.pop("PYTHONUTF8", None)
+    done = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, check=False)
+    assert done.returncode == 0, done.stderr.decode("utf-8", "replace")
+    assert done.stdout.decode("utf-8").strip() == "→ имот.bg"
 
 
 def test_a_payroll_diff_names_the_fields_that_moved():
