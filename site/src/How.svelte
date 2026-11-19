@@ -351,7 +351,7 @@
     >
   </p>
 
-  <nav class="toc" aria-label="contents">
+  <nav class="toc" aria-label={t(COPY.tocNavK, $lang)}>
     <a href="#inflation"><span class="l-bg">инфлацията</span><span class="l-en">inflation</span></a>
     <a href="#basket"><span class="l-bg">кошницата</span><span class="l-en">the basket</span></a>
     <a href="#pay"><span class="l-bg">бруто и нето</span><span class="l-en">gross and net</span></a>
