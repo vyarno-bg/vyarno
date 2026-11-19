@@ -48,6 +48,7 @@
     number,
     integer,
     label,
+    spaced,
     period,
     httpUrl,
     safeText,
@@ -415,7 +416,7 @@
         >
           <option value="">{t(COPY.sectorNone, $lang)}</option>
           {#each calc.sectorOptions as opt (opt.key)}
-            <option value={opt.key}>{$lang === "bg" ? opt.bg : opt.en}</option>
+            <option value={opt.key}>{spaced($lang === "bg" ? opt.bg : opt.en)}</option>
           {/each}
         </select>
       </div>
@@ -428,14 +429,14 @@
                 >{@html t(calc.hasHousehold ? COPY.sectorDiffEarner : COPY.sectorDiff, "bg", {
                   n: fmt0(gap.ordinal),
                   delta: deltaPhrase(gap, "bg"),
-                  sector: label(calc.sector.bgName),
+                  sector: label(spaced(calc.sector.bgName)),
                 })}</span
               >
               <span class="l-en"
                 >{@html t(calc.hasHousehold ? COPY.sectorDiffEarner : COPY.sectorDiff, "en", {
                   n: fmt0(gap.ordinal),
                   delta: deltaPhrase(gap, "en"),
-                  sector: label(calc.sector.enName),
+                  sector: label(spaced(calc.sector.enName)),
                 })}</span
               >
             </div>

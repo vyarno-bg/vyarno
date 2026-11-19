@@ -13,7 +13,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer, label } from "$lib/format.js";
+  import { number, integer, label, spaced } from "$lib/format.js";
   import WedgeChart from "$lib/WedgeChart.svelte";
   import LabourCostChart from "$lib/LabourCostChart.svelte";
 
@@ -224,7 +224,7 @@
                 zLow: zLowTxt,
                 zHigh: zHighTxt,
                 costHigh: costHighTxt,
-                sector: label(sectorNames.bg),
+                sector: label(spaced(sectorNames.bg)),
               }
             )}</span
           >
@@ -239,7 +239,7 @@
                 zLow: zLowTxt,
                 zHigh: zHighTxt,
                 costHigh: costHighTxt,
-                sector: label(sectorNames.en),
+                sector: label(spaced(sectorNames.en)),
               }
             )}</span
           >

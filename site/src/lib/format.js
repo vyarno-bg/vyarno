@@ -282,6 +282,16 @@ export function label(value) {
 }
 
 /**
+ * A publisher's label with a space after every comma or semicolon that runs
+ * straight into the next word, as НСИ's «води;канализационни услуги,управление»
+ * and "Agriculture,forestry" do. Display only: the payload keeps their label
+ * verbatim, and a comma between digits is a decimal and is left alone.
+ */
+export function spaced(value) {
+  return String(value ?? "").replace(/([;,])(?=\p{L})/gu, "$1 ");
+}
+
+/**
  * A URL that is safe to put in an `href`, or "" if it is not one.
  *
  * Every source link on the page comes out of a published payload's
