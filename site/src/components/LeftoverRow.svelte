@@ -1,7 +1,7 @@
 <script>
   /** The money the basket was never told about — see the note in the markup. */
   import { lang } from "../lib/stores.js";
-  import { number, integer } from "../lib/format.js";
+  import { euro, number, integer } from "../lib/format.js";
   import { COPY, t } from "../lib/content.js";
   import { divisionRateState } from "../lib/view/basket.js";
 
@@ -10,6 +10,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // The denominator of `leftoverPct` is `spendable` = take-home − housing,
   // and `housingCost` is the carve-out that produced it. When it's non-zero,
@@ -60,7 +61,7 @@
         ><span class="l-bg">{COPY.leftK.bg}</span><span class="l-en">{COPY.leftK.en}</span></span
       >
       <span class="rr-v mono"
-        >€{fmt0(calc.budget.leftover)}<small
+        >{money(calc.budget.leftover)}<small
           >/<span class="l-bg">мес</span><span class="l-en">mo</span></small
         ></span
       >
@@ -126,7 +127,7 @@
         ><span class="l-bg">{COPY.leftK.bg}</span><span class="l-en">{COPY.leftK.en}</span></span
       >
       <span class="rr-v mono" style="color: var(--erode)"
-        >+€{fmt0(calc.budget.over)}<small
+        >+{money(calc.budget.over)}<small
           >/<span class="l-bg">мес</span><span class="l-en">mo</span></small
         ></span
       >

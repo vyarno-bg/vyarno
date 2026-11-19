@@ -9,6 +9,7 @@
  *   - decimal commas in BG (handled by Intl)
  *   - the savings row states plainly that the money buys less
  */
+import { euroOrder } from "./format.js";
 
 /**
  * Starting baskets — one number per ECOICOP ver.2 division, in the published
@@ -2171,7 +2172,7 @@ export const COPY = {
   //   {src}   short source caption: имот.bg, that city's district count, the
   //           date
   homeYears: {
-    bg: "{m} м² {v} <b>{city}</b> ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
+    bg: "{m} м² {v} <b>{city}</b> ≈ €{p} (≈{pm2} €/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
     en: "{m} m² in <b>{city}</b> ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
   },
   // The same sentence with no place in it. A reader who typed their own price
@@ -2180,7 +2181,7 @@ export const COPY = {
   // dangling preposition round an empty <b>. There is nothing to put in the
   // slot and nothing that needs to go there: the price is theirs.
   homeYearsNoCity: {
-    bg: "{m} м² ≈ €{p} (≈{pm2}€/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
+    bg: "{m} м² ≈ €{p} (≈{pm2} €/м², {basis}) = колкото изкарваш за <b>{y} години</b>.",
     en: "{m} m² ≈ €{p} (≈€{pm2}/m², {basis}) = <b>{y} years</b> of your entire pay.",
   },
   // What the €/m² in that sentence actually IS. When city_price.json is on
@@ -2197,7 +2198,7 @@ export const COPY = {
   homeBasisOwn: { bg: "твоята цена", en: "your price" },
   homeBasisPlaceholder: { bg: "ориентировъчна стойност, без данни", en: "placeholder, no data" },
   homeYearsSrc: {
-    bg: "≈{pm2}€/м² · източник: <b>{src}</b>",
+    bg: "≈{pm2} €/м² · източник: <b>{src}</b>",
     en: "≈€{pm2}/m² · source: <b>{src}</b>",
   },
   homeMort: {
@@ -3696,5 +3697,6 @@ export function t(bgEnObj, lang = "bg", subs = {}) {
   for (const [k, v] of Object.entries(subs)) {
     s = s.replaceAll("{" + k + "}", String(v));
   }
-  return s;
+  // Where the euro sign sits is the formatter's to decide, in every sentence.
+  return euroOrder(s, lang);
 }

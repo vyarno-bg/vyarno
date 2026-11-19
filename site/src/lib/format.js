@@ -144,6 +144,42 @@ export function integer(x, lang = "bg") {
 }
 
 /**
+ * An amount of euros, with the sign where the language puts it: after the
+ * figure in Bulgarian, joined by a no-break space so a line never ends on the
+ * number («1851 €»), and before it in English («€1,851»). The minus is outside
+ * both, U+2212 as `signed` writes it, and only where a digit is not zero.
+ */
+export function euro(x, lang = "bg", digits = 0) {
+  if (x === null || x === undefined || !Number.isFinite(x)) return "—";
+  const magnitude = digits ? number(Math.abs(x), digits, lang) : integer(Math.abs(x), lang);
+  const sign = x < 0 && /[1-9]/.test(magnitude) ? "−" : "";
+  return lang === "bg" ? `${sign}${magnitude}\u00a0€` : `${sign}€${magnitude}`;
+}
+
+/** A figure as `integer`/`number` print it in each language, ending on a digit. */
+const FIGURE_BG = "[−-]?\\d(?:[\\d\\u00a0\\u202f ]*\\d)?(?:,\\d+)?";
+const MAGNITUDE_EN = "\\d(?:[\\d,]*\\d)?(?:\\.\\d+)?";
+const EURO_BEFORE_BG = new RegExp(`€\\s?(${FIGURE_BG})`, "g");
+const EURO_AFTER_BG = new RegExp(`(${FIGURE_BG})(</b>)? €`, "g");
+const EURO_AFTER_EN = new RegExp(`([−-]?)(${MAGNITUDE_EN})(</b>)?\\s?€`, "g");
+
+/**
+ * A sentence with every euro sign beside a figure moved to where `euro` puts
+ * it. `content.js#t` runs each filled template through this, so a COPY string
+ * written «€{m}» or «{m} €» reads the same way in each language, and the copy
+ * does not have to be written twice to agree with the formatter.
+ */
+export function euroOrder(text, lang = "bg") {
+  if (!text.includes("€")) return text;
+  if (lang === "bg") {
+    return text
+      .replace(EURO_BEFORE_BG, (_, n) => `${n}\u00a0€`)
+      .replace(EURO_AFTER_BG, (_, n, close = "") => `${n}${close}\u00a0€`);
+  }
+  return text.replace(EURO_AFTER_EN, (_, minus, n, close = "") => `${minus}€${n}${close}`);
+}
+
+/**
  * A percentage carrying its own sign — one sign, and only where there is a
  * direction to name.
  *

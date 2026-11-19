@@ -21,7 +21,7 @@
 <script>
   import { lang } from "$lib/stores.js";
   import { COPY, t } from "$lib/content.js";
-  import { number, integer } from "$lib/format.js";
+  import { euro, number, integer } from "$lib/format.js";
 
   const {
     /** `points`, `capGross`, `peakWedgePct`, `workAccident` — from view/employer.js. */
@@ -40,6 +40,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // SVG geometry. Pure presentation: `cost` has already decided every figure,
   // and the same box as `WedgeChart` so the two stack legibly on one page and
@@ -151,8 +152,8 @@
   <text class="lc-lbl" x={W - PAD_X} y={y(cost.endWedgePct) + 12} text-anchor="end"
     >{fmt(cost.endWedgePct)}%</text
   >
-  <text class="lc-lbl" x={x(cost.capGross) + 5} y={BASE + 13}>€{fmt0(cost.capGross)}</text>
-  <text class="lc-lbl" x={W - PAD_X} y={BASE + 13} text-anchor="end">€{fmt0(maxGross)}</text>
+  <text class="lc-lbl" x={x(cost.capGross) + 5} y={BASE + 13}>{money(cost.capGross)}</text>
+  <text class="lc-lbl" x={W - PAD_X} y={BASE + 13} text-anchor="end">{money(maxGross)}</text>
   <!-- One marker per contract, on the boundary between what arrives and what
        does not — the line this chart is drawn to show. -->
   {#each markers as m (m.index)}

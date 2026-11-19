@@ -41,7 +41,7 @@
   import { COPY, HOME, t } from "./lib/content.js";
   import { QUARTERS, unemploymentHistory } from "./lib/view/country.js";
   import { monthsSplit as monthsAreSplit } from "./lib/view/results.js";
-  import { number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
+  import { euro, number, integer, periodLong, dateShort, httpUrl } from "./lib/format.js";
   import { hitW, hitX, niceTicks, pathOf, plotX, plotY, tickAt, yearTicks } from "./lib/plot.js";
 
   /**
@@ -76,6 +76,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // Whether Eurostat's flash has the all-items rate a month ahead of the
   // divisions. §инфлацията prints both figures and then explains the gap
@@ -625,14 +626,14 @@
           dvWhen
         )}
         {@render stat(
-          `${fmt0(calc.systemWedge.maxInsurable)} €`,
+          money(calc.systemWedge.maxInsurable),
           COPY.howKCeiling,
           COPY.howSrcDv,
           DV_URL,
           dvWhen
         )}
         {@render stat(
-          `${fmt(calc.systemWedge.minWageGross, 2)} €`,
+          money(calc.systemWedge.minWageGross, 2),
           COPY.howKMinWage,
           COPY.howSrcDv,
           DV_URL,
@@ -712,7 +713,7 @@
             {#each calc.systemWedge.rungs as rung (rung.gross)}
               <tr class:mark={rung.atCeiling}>
                 <th scope="row" class="num mono">
-                  {fmt0(rung.gross)} €
+                  {money(rung.gross)}
                   {#if rung.atCeiling}
                     <span class="tag">
                       <span class="l-bg">{COPY.howAtCeiling.bg}</span>
@@ -720,8 +721,8 @@
                     </span>
                   {/if}
                 </th>
-                <td class="num mono">{fmt0(rung.net)} €</td>
-                <td class="num mono">{fmt0(rung.deductions)} €</td>
+                <td class="num mono">{money(rung.net)}</td>
+                <td class="num mono">{money(rung.deductions)}</td>
                 <td class="num mono">{fmt(rung.effectivePct)}%</td>
                 <td class="num mono">{fmt(rung.marginalPct)}%</td>
               </tr>
@@ -820,7 +821,7 @@
     <div class="stats">
       {#if calc.data.sectorSalary}
         {@render stat(
-          `${fmt0(calc.payLadderRows.anchorGross)} €`,
+          money(calc.payLadderRows.anchorGross),
           COPY.howKNationalWage,
           COPY.srcNsiWages,
           calc.payLadderRows.anchorUrl,
@@ -862,8 +863,8 @@
             {#each calc.payLadderRows.rungs as rung (rung.cut)}
               <tr>
                 <th scope="row" class="mono">P{rung.cut}</th>
-                <td class="num mono">{fmt0(rung.gross)} €</td>
-                <td class="num mono">{fmt0(rung.net)} €</td>
+                <td class="num mono">{money(rung.gross)}</td>
+                <td class="num mono">{money(rung.net)}</td>
                 <td>
                   {#if rung.atMinWage}
                     <!-- Neither of the other two, and the difference is the
@@ -1052,14 +1053,16 @@
     <div class="stats">
       {#if calc.refCityPriceIsLive}
         {@render stat(
-          `${fmt0(calc.cityHome.eurPerM2)} €`,
+          money(calc.cityHome.eurPerM2),
           COPY.howKEurM2,
           COPY.howSrcImot,
           calc.cityHome.sourceUrl || IMOT_URL,
           imotDated
         )}
         {@render stat(
-          `${fmt0(calc.cityHome.eurPerM2Min)}–${fmt0(calc.cityHome.eurPerM2Max)} €`,
+          $lang === "bg"
+            ? `${fmt0(calc.cityHome.eurPerM2Min)}–${money(calc.cityHome.eurPerM2Max)}`
+            : `${money(calc.cityHome.eurPerM2Min)}–${money(calc.cityHome.eurPerM2Max)}`,
           {
             bg: t(COPY.howKEurM2Range, "bg", { n: fmt0(calc.cityHome.nDistricts) }),
             en: t(COPY.howKEurM2Range, "en", { n: fmt0(calc.cityHome.nDistricts) }),
@@ -1069,7 +1072,7 @@
           imotDated
         )}
         {@render stat(
-          `${fmt0(calc.cityHome.price)} €`,
+          money(calc.cityHome.price),
           {
             bg: t(COPY.howKHomePrice, "bg", { m2: fmt0(HOME.m2Default) }),
             en: t(COPY.howKHomePrice, "en", { m2: fmt0(HOME.m2Default) }),
@@ -1295,7 +1298,7 @@
                 {#each row.cells as cell, i (QUARTERS[i])}
                   <td class="num mono">
                     {#if cell}
-                      {fmt0(cell.value)} €
+                      {money(cell.value)}
                     {:else}
                       <span class="soft">—</span>
                     {/if}

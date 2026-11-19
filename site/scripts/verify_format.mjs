@@ -12,6 +12,8 @@ import assert from "node:assert/strict";
 import {
   number,
   integer,
+  euro,
+  euroOrder,
   percentShare,
   percentSigned,
   dateShort,
@@ -385,6 +387,37 @@ test("every sector name НСИ publishes survives the label rule intact", () => 
   for (const s of sectors.sectors) {
     assert.equal(label(s.bg_name), s.bg_name);
     assert.equal(label(s.en_name), s.en_name);
+  }
+});
+
+test("the euro sign goes where each language puts it, in a figure and in a sentence", () => {
+  // Both orders shipped in both languages: «1850 € нето» beside «≈ €2373» in
+  // Bulgarian, and "1,850 € net" in English. One formatter owns the placement,
+  // and `t()` runs every filled template through `euroOrder`, so a COPY string
+  // written either way reads the language's way. The no-break space keeps a
+  // Bulgarian line from ending on the figure with its sign on the next one.
+  assert.equal(euro(1851, "bg"), "1851\u00a0€");
+  assert.equal(euro(12345, "bg"), "12\u00a0345\u00a0€");
+  assert.equal(euro(1851, "en"), "€1,851");
+  assert.equal(euro(-522.5, "bg", 2), "−522,50\u00a0€");
+  assert.equal(euro(-522.5, "en", 2), "−€522.50", "the minus stands outside the sign");
+  assert.equal(euro(-0.2, "en"), "€0", "a minus on a zero names no direction");
+  assert.equal(euro(NaN, "bg"), "—");
+
+  assert.equal(
+    euroOrder("около <b>€12\u00a0345</b> на месец", "bg"),
+    "около <b>12\u00a0345\u00a0€</b> на месец"
+  );
+  assert.equal(euroOrder("1850 € нето", "bg"), "1850\u00a0€ нето");
+  assert.equal(euroOrder("brings home <b>1,851 €</b> net", "en"), "brings home <b>€1,851</b> net");
+  assert.equal(euroOrder("−522.50 € deducted", "en"), "−€522.50 deducted");
+  assert.equal(euroOrder("€450/mo rent", "en"), "€450/mo rent");
+  for (const lang of ["bg", "en"]) {
+    assert.equal(
+      euroOrder("цена (€/м²)", lang),
+      "цена (€/м²)",
+      "a unit with no figure is not moved"
+    );
   }
 });
 

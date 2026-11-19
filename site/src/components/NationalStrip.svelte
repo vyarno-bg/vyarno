@@ -11,6 +11,7 @@
   import { COPY, HOME, t } from "$lib/content.js";
   import {
     bgIn,
+    euro,
     number,
     integer,
     percentSigned,
@@ -108,6 +109,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
   /** НСИ's name for the chosen област, in one language. */
   const regionName = (l) => safeText(l === "bg" ? regionNameBg : regionNameEn);
   /** имот.bg's name for the chosen град, in one language. */
@@ -220,7 +222,7 @@
     {#if ladder.length}
       <div class="stat">
         <div class="sv mono">
-          <span>{fmt0(ladder[5])} €</span>
+          <span>{money(ladder[5])}</span>
         </div>
         <div class="sl">
           <span class="l-bg">{COPY.statMedianK.bg}</span>
@@ -240,15 +242,11 @@
                  P10/P50/P90 anchors — more modelled than the median beside
                  them, so they may not be spoken in the same voice as it. -->
             <span class="l-bg"
-              >{COPY.statMedianSub.bg
-                .replace("{lo}", fmt0(ladder[2]))
-                .replace("{hi}", fmt0(ladder[8]))}
+              >{t(COPY.statMedianSub, "bg", { lo: fmt0(ladder[2]), hi: fmt0(ladder[8]) })}
               {COPY.statMedianSubModelled.bg}</span
             >
             <span class="l-en"
-              >{COPY.statMedianSub.en
-                .replace("{lo}", fmt0(ladder[2]))
-                .replace("{hi}", fmt0(ladder[8]))}
+              >{t(COPY.statMedianSub, "en", { lo: fmt0(ladder[2]), hi: fmt0(ladder[8]) })}
               {COPY.statMedianSubModelled.en}</span
             >
             {#if salaryShapeUrl}
@@ -277,11 +275,9 @@
                euro of band, because both are drawn as whole euro. -->
           {#if nationalNet - ladder[5] >= 1}
             <div>
-              <span class="l-bg"
-                >{COPY.statMedianVsMean.bg.replace("{mean}", fmt0(nationalNet))}</span
+              <span class="l-bg">{t(COPY.statMedianVsMean, "bg", { mean: fmt0(nationalNet) })}</span
               >
-              <span class="l-en"
-                >{COPY.statMedianVsMean.en.replace("{mean}", fmt0(nationalNet))}</span
+              <span class="l-en">{t(COPY.statMedianVsMean, "en", { mean: fmt0(nationalNet) })}</span
               >
             </div>
           {/if}
@@ -326,7 +322,7 @@
     {:else if regionNet > 0}
       <div class="stat">
         <div class="sv mono">
-          <span>{fmt0(regionNet)} €</span>
+          <span>{money(regionNet)}</span>
         </div>
         <div class="sl">
           <span class="l-bg">{t(COPY.statRegionK, "bg", { region: regionName("bg") })}</span>
@@ -462,7 +458,7 @@
       {@const hP = cityEurPerM2 * HOME.m2Default}
       <div class="stat wide">
         <div class="sv mono" style="color: var(--erode)">
-          <span>€{fmt0(hP)}</span>
+          <span>{money(hP)}</span>
           <span class="sd down mono">{$lang === "bg" ? "70 м² по медиана" : "70 m² at median"}</span
           >
         </div>
@@ -529,13 +525,13 @@
                    their own value, so the reader never has to match a
                    floating legend to a point. -->
               <text class="hist-lbl" x={_x(0)} y={_y(cityHistorical[0].eur_per_m2_median) - 9}
-                >€{fmt0(cityBaselineMedian)}</text
+                >{money(cityBaselineMedian)}</text
               >
               <text
                 class="hist-lbl"
                 x={_x(_last)}
                 y={_y(cityHistorical[_last].eur_per_m2_median) - 11}
-                text-anchor="end">€{fmt0(cityEurPerM2)}</text
+                text-anchor="end">{money(cityEurPerM2)}</text
               >
             </svg>
             <!-- The axis reads the ends of the array it is drawn from, never
@@ -575,7 +571,7 @@
         <div class="ss">
           <div title={HOME.eurPerM2_source}>
             <span class="l-bg"
-              >≈{fmt0(cityEurPerM2)}€/м² · {t(COPY.statHomeMedianOf, "bg", {
+              >≈{fmt0(cityEurPerM2)}&nbsp;€/м² · {t(COPY.statHomeMedianOf, "bg", {
                 city: cityName("bg"),
               })}</span
             >

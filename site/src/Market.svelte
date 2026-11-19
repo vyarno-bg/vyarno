@@ -61,6 +61,7 @@
     marketCityAffordability,
   } from "./lib/view/market.js";
   import {
+    euro,
     number,
     integer,
     percentShare,
@@ -122,6 +123,7 @@
 
   const fmt = (x, d = 1) => number(x, d, $lang);
   const fmt0 = (x) => integer(x, $lang);
+  const money = (x, d = 0) => euro(x, $lang, d);
 
   // Which label each ×N card carries. The STATE is decided in `view/market.js`
   // so a suite can reach it; the words stay here, because this layer is the one
@@ -1929,20 +1931,20 @@
           <tbody>
             <tr class="mark">
               <th scope="row">{@render colHead(COPY.mktRowTotal, null)}</th>
-              <td class="num mono">{fmt0(deal.avg.value)} €</td>
-              <td class="num mono">{fmt0(deal.totalValue)} €</td>
+              <td class="num mono">{money(deal.avg.value)}</td>
+              <td class="num mono">{money(deal.totalValue)}</td>
               <td class="num mono">{fmt0(deal.deals)}</td>
             </tr>
             <tr>
               <th scope="row">{@render colHead(COPY.mktRowNew, null)}</th>
-              <td class="num mono">{fmt0(deal.newBuild)} €</td>
-              <td class="num mono">{fmt0(deal.newValue)} €</td>
+              <td class="num mono">{money(deal.newBuild)}</td>
+              <td class="num mono">{money(deal.newValue)}</td>
               <td class="num mono">{fmt0(deal.newDeals)}</td>
             </tr>
             <tr>
               <th scope="row">{@render colHead(COPY.mktRowExisting, null)}</th>
-              <td class="num mono">{fmt0(deal.existing)} €</td>
-              <td class="num mono">{fmt0(deal.existingValue)} €</td>
+              <td class="num mono">{money(deal.existing)}</td>
+              <td class="num mono">{money(deal.existingValue)}</td>
               <td class="num mono">{fmt0(deal.existingDeals)}</td>
             </tr>
           </tbody>
@@ -1982,8 +1984,8 @@
           Двата реда отдолу са на един мащаб.</span
         >
         <span class="l-en"
-          >A dwelling changed hands for <b>{fmt0(deal.avg.value)} €</b> on average in the quarter:
-          {fmt0(deal.newBuild)} € for a new build and {fmt0(deal.existing)} € for an existing dwelling.
+          >A dwelling changed hands for <b>{money(deal.avg.value)}</b> on average in the quarter:
+          {money(deal.newBuild)} for a new build and {money(deal.existing)} for an existing dwelling.
           The two lines below are drawn on one scale.</span
         >
       </p>
@@ -2002,7 +2004,7 @@
             {@render yAxis(
               dealAxis.values.map((v) => ({
                 at: tickAt(v, dealAxis),
-                label: v === 0 ? "0" : `${fmt0(v)} €`,
+                label: v === 0 ? "0" : money(v),
               }))
             )}
             <svg
@@ -2022,7 +2024,7 @@
               <path class="plot-line second" d={path({ ...dealExistingSeries, ...dealAxis })} />
               {@render lastPoint({ ...dealExistingSeries, ...dealAxis }, dealAxis, CH_H, true)}
               {@render lastPoint({ ...dealNewSeries, ...dealAxis }, dealAxis, CH_H)}
-              {@render dots({ ...dealNewSeries, ...dealAxis }, (v) => `${fmt0(v)} €`)}
+              {@render dots({ ...dealNewSeries, ...dealAxis }, (v) => money(v))}
               <line
                 class="plot-axis"
                 x1="0"
@@ -2035,7 +2037,7 @@
               [dealNewSeries, dealExistingSeries]
                 .map((s) => s.points.at(-1))
                 .filter(Boolean)
-                .map((p) => ({ at: tickAt(p.value, dealAxis), label: `${fmt0(p.value)} €` }))
+                .map((p) => ({ at: tickAt(p.value, dealAxis), label: money(p.value) }))
             )}
             {@render xYears(xTicks(dealNewSeries))}
           </div>
@@ -2065,7 +2067,7 @@
           COPY.mktTblDealNumbers,
           [COPY.mktColAvgNew, COPY.mktColAvgExisting],
           rowsOf(dealNewSeries, [dealExistingSeries]),
-          (v) => (v == null ? "—" : `${fmt0(v)} €`)
+          (v) => (v == null ? "—" : money(v))
         )}
       {/if}
 
