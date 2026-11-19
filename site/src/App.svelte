@@ -405,7 +405,9 @@
   }
   .calc h1 {
     font-family: var(--serif);
-    font-weight: 600;
+    /* The weight every other page's title is set in: at 600 this one heading
+       cost a second 79 kB serif file. */
+    font-weight: 700;
     font-size: var(--fs-title);
     letter-spacing: -0.015em;
     line-height: 1.1;

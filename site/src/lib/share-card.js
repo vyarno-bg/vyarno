@@ -455,7 +455,7 @@ export function drawShareCard(canvas, { share, copy, lang = "bg", palette }) {
 
   ctx.textAlign = "left";
   ctx.fillStyle = palette.ink;
-  ctx.font = `600 38px ${palette.serif}`;
+  ctx.font = `700 38px ${palette.serif}`;
   const verdictLines = wrap(ctx, text.verdict, CONTENT_WIDTH, 2);
   verdictLines.forEach((line, i) => {
     ctx.fillText(line, PAD, Y.verdictFirst + i * Y.verdictLine);
