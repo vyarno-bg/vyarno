@@ -278,7 +278,7 @@ jobs:
             lines.push('');
             lines.push('- Diff against `main` is the change.');
             lines.push("- The gates ran against the live upstream before anything was written — a payload that fails one exits non-zero and never reaches a PR. `docs/validation-gates.md` says what each catches.");
-            lines.push('- Five required CI checks on `main` are the deployment gate.');
+            lines.push('- It merges itself once the five required CI checks are green. Label it `hold` to stop that; `docs/architecture.md` §"What happens to a data pull request".');
 
             const body = lines.join('\n');
 
@@ -334,3 +334,15 @@ jobs:
               ref: `data/${process.env.SOURCE}`,
             });
             core.info(`Dispatched CI on data/${process.env.SOURCE}`);
+
+      - name: Merge once CI is green, unless held
+        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
+        # A green gate run plus green CI is the publication: the gates already
+        # stopped any payload they doubted, and these arms raise no softer flag.
+        # `hold` or `needs-review` keeps it for a person (`automerge.py`). Not
+        # fatal: a PR that cannot be armed waits for a merge by hand.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: pipeline/.venv/bin/python -m vyarno_pipeline.automerge --pr "$PR_NUMBER"

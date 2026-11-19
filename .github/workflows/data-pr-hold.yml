@@ -1,0 +1,44 @@
+# A data PR arms auto-merge when it opens, and GitHub then merges on the last
+# green check whatever its labels say. So a `hold` or `needs-review` added later
+# switches auto-merge off here, and removing the last one switches it back on,
+# through the `automerge.py` every PR-opening workflow calls. A check landing
+# seconds after the label can win that race; "Disable auto-merge" cannot lose it.
+
+name: data-pr-hold
+
+on:
+  # Not `pull_request_target`: the job only takes branches of this repository,
+  # and the script runs from the base commit, never from the pull request.
+  pull_request:
+    types: [labeled, unlabeled]
+
+permissions: {}
+
+jobs:
+  hold:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'data/') &&
+      contains(fromJSON('["hold", "needs-review"]'), github.event.label.name)
+    runs-on: ubuntu-latest
+    # Two API calls and a checkout of one directory.
+    timeout-minutes: 5
+    permissions:
+      # Switching auto-merge on or off is a merge permission, which GitHub
+      # files under contents as well as pull requests.
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout the base, never the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: pipeline/src
+          persist-credentials: false
+
+      - name: Hold or release
+        # stdlib only, on the runner's own Python: nothing is installed.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: PYTHONPATH=pipeline/src python3 -m vyarno_pipeline.automerge --pr "$PR_NUMBER"
