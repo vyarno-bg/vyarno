@@ -129,7 +129,8 @@ same symptom.
 So the fetch retries once (`_get_page` in `sources/dv.py`), and the arm exits
 **4** on a network failure rather than 1. Exit 4 is the code `refresh.yml`
 documents as network/HTTP, and it is what tells the operator to wait for the
-schedule rather than to open the code. The payroll arm was the only one of
+schedule rather than to open the code, or to run `make refresh-local
+SOURCE=payroll` from an ordinary connection, which ДВ answers. The payroll arm was the only one of
 the eleven without that handler, so on 2026-10-29 a refusal surfaced as an
 unhandled traceback and exit 1 — the one code that says "the code is broken".
 `pipeline/tests/test_refresh_reliability.py` holds both: the exit code, and

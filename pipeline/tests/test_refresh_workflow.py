@@ -18,9 +18,9 @@ upstream, and the payload it carried is the one this run just re-fetched.
 fast-forward, so the `--force-with-lease` never has to force anything: it is
 the assertion that the branch being superseded is still the branch that was
 fetched, held against the SHA the fetch returned. A branch that moved in
-between — the box's `vyarno-city-price-weekly` cron, a manual `git push` from
-Kiril — is refused with the same error a plain push would give, rather than
-being clobbered by a refresh that never saw it.
+between, such as a manual `git push` from Kiril, is refused with the same
+error a plain push would give, rather than being clobbered by a refresh that
+never saw it.
 
 The decision lives in YAML, but YAML is not read by `make check` — only this
 test does. A workflow that loses the lease loses the only thing standing

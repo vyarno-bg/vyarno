@@ -388,10 +388,10 @@ while the run reports success.
 refresh-*.yml` fires each one on its own upstream's cadence and opens a pull
 request with the diff; running an arm here is for developing it, for re-reading
 a payload the review questioned, and for `city-price`, which cannot run on a
-runner at all. The pull request merges itself once the gates and CI are green,
-so a moved number nobody looked at is published; label it `hold` to keep it for
-a person ([`architecture.md`](./architecture.md) §"What happens to a data pull
-request").
+runner at all — `make refresh-local` below. The pull request merges itself once
+the gates and CI are green, so a moved number nobody looked at is published;
+label it `hold` to keep it for a person ([`architecture.md`](./architecture.md)
+§"What happens to a data pull request").
 
 `--skip-link-check` skips **gate 6** (the published-URL body inspection — 52
 calls). Use it only where outbound HTTP is genuinely blocked, and **never for
@@ -401,49 +401,63 @@ still resolve, and those links are the "↗" the reader clicks.
 **`--source mortgage` needs the БНБ TLS fix on a fresh machine** — see
 [`data-sources.md`](./sources/bnb.md) §"TLS setup". Never disable verification.
 
-### `--source city-price` — the one that has to be run by hand
+### `make refresh-local` — the two arms a runner cannot reach
 
-имот.bg answer datacenter IPs with a **403**, so this arm cannot run in CI, on
-a build box or from a cloud session. It needs an ordinary Bulgarian connection,
-and it must **never be routed through a proxy** —
-[`legal.md`](./legal.md) and `AGENTS.md`.
+`city-price` reads имот.bg, which answer every datacenter IP with a **403**, so
+it cannot run in CI, on a build box or from a cloud session; it needs an
+ordinary Bulgarian connection and must **never be routed through a proxy**
+([`legal.md`](./legal.md), and `sources/imot.py` builds its client with
+`trust_env=False` so it cannot be). `payroll` reads Държавен вестник, which
+times out from GitHub's runners. Both are one command, run **once a quarter**
+for `city-price` and after any payroll change in ДВ:
 
 ```bash
-cd pipeline && source .venv/bin/activate
-vyarno-pipeline refresh --source city-price --out ../data/published
+make refresh-local                  # SOURCE=city-price
+make refresh-local SOURCE=payroll
 ```
 
-**What it does:** one page per city for the current figures, plus one per
-archive year per city — around 650 requests at 200 ms spacing, so **about two
-and a half minutes**. It prints a line per city as it lands, and a WARNING for
-any it skipped.
+On Windows without Git Bash, from the repository root:
+`pipeline\.venv\Scripts\python -m vyarno_pipeline.local_refresh --source city-price`.
 
-**What to check before committing the payload**, in the order the failures
-actually happen:
+**It never touches your checkout.** It fetches `origin/main` and runs there, in
+a temporary `git worktree` outside it, so uncommitted work and the branch you
+are on stay as they were, and what runs is `main`'s code and data. In order:
 
-1. **The city count in the OK line.** Fewer than 27 means some pages were
-   skipped, and the WARNINGs above say which and why. A handful of 403s from a
-   flaky connection is worth re-running; a parse error is not, and the message
-   names what changed.
-2. **`git diff --stat data/published/city_price.json`.** A refresh that moved
-   nothing but `as_of` is a refresh that read a cached page.
-3. **The district counts**, per city, against the diff. имот.bg retire and
-   merge districts and a few per cent is ordinary; a double-digit percentage
-   drop is worth opening the page for. A count below 60% of the dated table in
-   `regions.py#imot_districts` fails that city outright, which is the guard
-   rather than something to check by eye.
-4. **`n_dropped`.** Zero on every current-year row is what the probe saw. A
-   non-zero one is not automatically wrong — the history carries имот.bg's own
-   sentinel values — but a current-year drop is new and worth a look.
-5. **`snapshot_date`.** Each city carries имот.bg's own newest published
-   snapshot, read from that page's date list. A `null` means the list could not
-   be parsed and the card falls back to dating by our fetch, which is a weaker
-   claim; if every city is null, their markup changed.
-6. **Any `baseline_year` that moved a lot.** It is recomputed each run from how
-   far back that city's coverage holds, so it moving by a year is ordinary and
-   moving by a decade means имот.bg's archive changed shape.
+1. prints имот.bg's terms URL and the date `legal.md` last records reading them
+   (for `city-price`): **re-reading them is a duty of every refresh pass**, and
+   the date goes back in `legal.md` when you do;
+2. runs the arm. `city-price` is one page per city plus one per archive year,
+   around 650 requests at 200 ms spacing, **about two and a half minutes**;
+3. checks what it wrote (below), and stops on a hard failure;
+4. asks `refresh_report` whether anything but the run date moved, and exits 0
+   with "Nothing new" if not, which is the cached-page case;
+5. runs the pytest and node suites whose source names the payload;
+6. commits under **your** git identity with `--signoff`, the was → now table
+   and the soft flags in the body and a `Refresh-Flags:` trailer, and pushes
+   `data/<source>-<date>`.
 
-Then run `make check` and commit the payload with what you saw.
+Its last line says what happens next. `.github/workflows/data-pr.yml` opens the
+pull request from that commit and CI runs on the push; with no soft flags it
+merges itself once CI is green, and with any it is labelled `needs-review` and
+waits for you ([`architecture.md`](./architecture.md) §"What happens to a data
+pull request").
+
+**What it checks, which is what you would otherwise check by eye:**
+
+| | Stops the run | Goes into the pull request |
+|---|---|---|
+| City pages | a page served but not read (a 403 from a flaky connection: re-run) | a city имот.bg stopped serving, or started |
+| District counts | under 60% of `regions.py#imot_districts`, the arm's own gate | down 10% or more on the committed payload |
+| `n_dropped` | | non-zero on a current-year row |
+| `snapshot_date` | null on every city: their markup changed | null on one city, or older than the committed one |
+| `baseline_year` | moved by 10 years or more: their archive changed shape | moved by 2 to 9 years |
+
+`local_refresh.py#city_price_checks` is the table; the thresholds carry the
+reasoning beside them.
+
+**Nothing reminds you on a timer here; the weekly `freshness-check.yml` does.**
+`city_price` declares a 92-day cadence in `payloads.js`, and past it that
+check reports the payload overdue, beside any `data/*` pull request still open.
 
 A successful `--source hicp` run prints its fetches, then **every gate by name,
 in order**, then the publish. **Seven gate lines is the pass condition** — a run
