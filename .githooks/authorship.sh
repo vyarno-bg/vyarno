@@ -41,8 +41,13 @@ ident_reason() {
 # credits one. Reads the message on stdin and stops at git's scissors line,
 # below which `commit -v` puts the diff rather than the message.
 message_reason() {
-  local line low who mail
+  local all line low who mail
   local generated='generated (with|by).*(claude|copilot|cursor|codex|devin|aider)'
+  all=$(cat)
+  # One grep settles almost every message; the loop below forks per line, and
+  # over all of history that cost is what the CI job's timeout would meet.
+  printf '%s\n' "$all" | grep -qiE 'co-authored-by:|claude\.ai/code|claude-session:|generated (with|by)' ||
+    return 0
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in
       "# ------------------------ >8 ------------------------"*) break ;;
@@ -63,7 +68,7 @@ message_reason() {
     if [[ $low =~ $generated ]]; then
       echo "a footer crediting a coding agent: $line" && return 1
     fi
-  done
+  done <<<"$all"
   return 0
 }
 
