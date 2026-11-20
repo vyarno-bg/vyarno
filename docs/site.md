@@ -161,6 +161,7 @@ site/
         ├── content.js    # BG/EN copy + presets + HOME constants
         ├── share-card.js # the PNG a reader sends, drawn on a canvas
         ├── format.js     # how a number or a date is written
+        ├── fragment.js   # the section a URL names, kept across the swap
         ├── legal.js      # the four legal documents + the ЗЕТ чл. 4 identity
         ├── legal-nav.js  # contact addresses + document names (every page)
         ├── support.js    # the donation rules — what may be offered
