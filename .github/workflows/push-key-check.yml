@@ -1,0 +1,61 @@
+# Run by hand once PUSH_DEPLOY_KEY is set, and again after rotating it. It
+# proves what dependabot-relock.yml and refresh.yml's `ci-push` rely on and no
+# other run exercises until Dependabot or an upstream next publishes: that the
+# key is in Actions secrets, can write, and that its push starts a CI run.
+# It cannot read the Dependabot copy of the secret; nothing but Dependabot can.
+
+name: push-key-check
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # A push, then up to two minutes waiting for the run it starts.
+    timeout-minutes: 5
+    permissions:
+      # Read the CI run the push started, and cancel it: it tests main again.
+      actions: write
+    env:
+      BRANCH: ci/push-key-check-${{ github.run_id }}
+      HAS_KEY: ${{ secrets.PUSH_DEPLOY_KEY != '' }}
+    steps:
+      - name: Say so when the secret is missing
+        if: env.HAS_KEY != 'true'
+        run: echo "::error::PUSH_DEPLOY_KEY is not set under Settings → Secrets → Actions" && exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ssh-key: ${{ secrets.PUSH_DEPLOY_KEY }}
+          # The pushes below authenticate with the key checkout configures.
+          persist-credentials: true
+
+      - name: Push main's head to a throwaway branch with the key
+        run: git push origin "HEAD:refs/heads/$BRANCH"
+
+      - name: Wait for the CI run that push started
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const branch = process.env.BRANCH;
+            for (let i = 0; i < 24; i++) {
+              await new Promise((resolve) => setTimeout(resolve, 5000));
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                owner, repo, workflow_id: 'ci.yml', branch, event: 'push',
+              });
+              const run = data.workflow_runs[0];
+              if (run) {
+                core.info(`The key's push started CI: ${run.html_url}`);
+                await github.rest.actions.cancelWorkflowRun({ owner, repo, run_id: run.id });
+                return;
+              }
+            }
+            core.setFailed(`No CI run started on ${branch} within two minutes of the key's push.`);
+
+      - name: Delete the throwaway branch
+        if: always() && env.HAS_KEY == 'true'
+        run: git push origin --delete "$BRANCH" || true

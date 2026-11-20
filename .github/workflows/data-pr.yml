@@ -17,7 +17,9 @@
 # above zero, or absent: a data branch nothing vouches for is one a person
 # reads. It goes on BEFORE `automerge.py` runs, because a label this token adds
 # raises no event, so `data-pr-hold.yml` never sees it. The refresh bot opens
-# its own pull requests, and its token's pushes raise no run here anyway.
+# its own pull requests: its token's pushes raise no run here, and the push its
+# deploy key makes (refresh.yml `ci-push`) is skipped by its committer, which
+# would otherwise label every refresh `needs-review` for carrying no trailer.
 # docs/architecture.md §"What happens to a data pull request" is the rest.
 
 name: data-pr
@@ -36,7 +38,9 @@ concurrency:
 jobs:
   open:
     name: open the pull request for a pushed data branch
-    if: github.event.deleted == false && github.actor != 'github-actions[bot]'
+    if: >-
+      github.event.deleted == false && github.actor != 'github-actions[bot]' &&
+      github.event.head_commit.committer.name != 'vyarno-refresh'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

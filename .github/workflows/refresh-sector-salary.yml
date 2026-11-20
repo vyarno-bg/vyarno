@@ -39,3 +39,5 @@ jobs:
     with:
       source: sector-salary
       detected: ${{ inputs.detected || '' }}
+    secrets:
+      PUSH_DEPLOY_KEY: ${{ secrets.PUSH_DEPLOY_KEY }}

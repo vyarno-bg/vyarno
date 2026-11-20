@@ -41,3 +41,5 @@ jobs:
     with:
       source: payroll
       detected: ${{ inputs.detected || '' }}
+    secrets:
+      PUSH_DEPLOY_KEY: ${{ secrets.PUSH_DEPLOY_KEY }}

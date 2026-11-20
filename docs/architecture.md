@@ -268,10 +268,13 @@ number would spend a deploy, or a person's review, on nothing.
 green gate run plus green CI now makes that merge.** The refresh arms its own
 pull request for GitHub auto-merge (`automerge.py`, rebase, the way every data
 PR has landed), and GitHub merges it the moment the five required CI checks are
-green on its head. Cloudflare Pages builds `main` from the push whoever made it,
-so the token's merge deploys. What it gives up is the human look before
-publication: the gates catch a payload wrong in a way somebody already thought
-of, and CI that the site still renders it.
+green on its head. They report there because `refresh.yml`'s `ci-push` job
+pushes the refresh again with the `PUSH_DEPLOY_KEY` deploy key: a push made with
+the workflow token starts no run a pull request counts, and without the key the
+PR waits for a person to approve its own. Cloudflare Pages builds `main` from
+the push whoever made it, so the token's merge deploys. What it gives up is the
+human look before publication: the gates catch a payload wrong in a way
+somebody already thought of, and CI that the site still renders it.
 
 **`hold` or `needs-review` stops it.** A refresh that raised soft flags labels
 its own PR `needs-review`; a person adds `hold`. Either one keeps the PR for a

@@ -51,3 +51,5 @@ jobs:
     with:
       source: house-market
       detected: ${{ inputs.detected || '' }}
+    secrets:
+      PUSH_DEPLOY_KEY: ${{ secrets.PUSH_DEPLOY_KEY }}
