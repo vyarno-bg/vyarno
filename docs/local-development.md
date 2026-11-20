@@ -216,6 +216,9 @@ resolved the lock against. If a pin behaves differently there, reproduce on
 
 Both ecosystems are locked, and Dependabot opens one grouped pull request per
 ecosystem per month (`.github/dependabot.yml`, which carries the reasoning).
+Its pip update can leave a pin the rest cannot install with, so
+`dependabot-relock.yml` runs `make lock` on that branch, pushes what moved and
+re-runs CI on it.
 
 **Python** — `pyproject.toml` declares the allowed ranges; `requirements.txt`
 (runtime) and `requirements-dev.txt` (runtime + dev) record what was actually
