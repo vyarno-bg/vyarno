@@ -987,6 +987,31 @@ for (const [route, counterpart, stopAbove, settle] of [
       await page.waitForTimeout(150);
       assert.ok(before > 900, `${route} did not scroll: ${before}`);
 
+      // DIAGNOSTIC, temporary: the scroll timeline of the arriving page.
+      await page.addInitScript(() => {
+        const t0 = performance.now();
+        const log = (window.__lcLog = []);
+        const h = () => document.documentElement.scrollHeight;
+        const note = (what) =>
+          log.push(
+            `${Math.round(performance.now() - t0)}ms ${what} y=${Math.round(scrollY)} h=${h()}`
+          );
+        addEventListener("scroll", () => note("scroll"), { passive: true });
+        document.addEventListener("DOMContentLoaded", () => note("DOMContentLoaded"));
+        addEventListener("load", () => note("load"));
+        const frame = () => {
+          note("frame");
+          if (log.length < 40) requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+        new MutationObserver(() => {
+          const a = document.getElementById("app");
+          if (a && "live" in a.dataset && !window.__lcLive) {
+            window.__lcLive = 1;
+            note("app live");
+          }
+        }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-live"] });
+      });
       await page.locator('a.pill[hreflang="en"]').first().click();
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(300);
@@ -995,6 +1020,7 @@ for (const [route, counterpart, stopAbove, settle] of [
         path: location.pathname,
         hash: location.hash,
         y: Math.round(scrollY),
+        log: (window.__lcLog || []).join(" | "),
       }));
       assert.equal(after.path, counterpart, "the language control left its own route");
       assert.match(after.hash, /^#[a-z-]+$/, "no section travelled with the reader");
@@ -1005,7 +1031,7 @@ for (const [route, counterpart, stopAbove, settle] of [
       assert.ok(
         after.y > 900,
         `the reader was ${before}px down and arrived at ${after.y}px — ` +
-          `${after.hash} names something with no place on the page`
+          `${after.hash} names something with no place on the page. TIMELINE: ${after.log}`
       );
       assert.deepEqual(errors, [], errors.join(" | "));
     }, route);
