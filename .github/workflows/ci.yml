@@ -288,6 +288,14 @@ jobs:
     # The longest job in the run, and the one with the most to hang on: it
     # installs both toolchains and drives a browser, on the slower runner.
     timeout-minutes: 20
+    # PowerShell fails a step on its last command's exit code alone, so a pip
+    # install ending in ResolutionImpossible passed here and the next step said
+    # "ruff is not recognized", and a failing `ruff check` passed outright
+    # whenever `ruff format --check` after it was clean. This stops the step at
+    # the first native command that exits non-zero.
+    defaults:
+      run:
+        shell: pwsh -command "$ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true; . '{0}'"
     # Every other job is ubuntu-latest, which is the right default: it is what
     # the site is built and served on. The cost of it being the ONLY platform is
     # that nothing POSIX-shaped is ever contradicted, and six things had
