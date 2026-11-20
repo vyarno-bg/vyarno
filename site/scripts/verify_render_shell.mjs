@@ -1203,40 +1203,48 @@ test("the figures are drawn in the face the page chose, in both languages", { sk
   // designs of the headline figure and none of them chosen. The `/en/` tree had
   // the same failure over its whole body copy.
   //
-  // **Measured, not declared.** A `font-family` line naming a face the browser
-  // never loaded reports exactly the same string as one it did, so this compares
-  // a rendered width against the same text set in the fallback alone: equal
-  // widths mean the fallback drew it. A monospace advance differs by fractions
-  // of a pixel per glyph, hence the long run.
+  // **Read off the renderer.** A `font-family` line naming a face the browser
+  // never loaded reports exactly the same string as one it did, and a width
+  // cannot tell either: Plex Mono's digits and Courier New's are both 0.6em, so
+  // on a Windows Chromium that falls back to Courier New the two measure within
+  // 0.2px. Chromium names the face that drew each node (DevTools' Rendered Fonts).
+  const SAMPLES = [
+    ["mono digits", "0123456789 0123456789", "--mono"],
+    ["sans digits", "0123456789 0123456789", "--sans"],
+    ["sans latin", "the quick brown fox", "--sans"],
+  ];
   for (const route of ["/", "/en/"]) {
     await withApp(async (page) => {
-      const drew = await page.evaluate(async () => {
+      const chosen = await page.evaluate(async (samples) => {
         await document.fonts.ready;
-        const el = document.createElement("span");
-        el.style.cssText = "position:absolute;left:-9999px;font-size:64px;white-space:pre";
-        document.body.append(el);
-        const width = (text, family) => {
-          el.style.fontFamily = family;
+        const css = getComputedStyle(document.documentElement);
+        const first = samples.map(([, text, token], i) => {
+          const el = document.createElement("span");
+          el.id = `face-${i}`;
+          el.style.cssText = `position:absolute;left:-9999px;font-family:var(${token})`;
           el.textContent = text;
-          return el.getBoundingClientRect().width;
-        };
-        const out = {};
-        for (const [name, text, declared, fallback] of [
-          ["mono digits", "0123456789 0123456789", "var(--mono)", "ui-monospace, monospace"],
-          ["sans digits", "0123456789 0123456789", "var(--sans)", "system-ui, sans-serif"],
-          ["sans latin", "the quick brown fox", "var(--sans)", "system-ui, sans-serif"],
-        ]) {
-          out[name] = Math.abs(width(text, declared) - width(text, fallback)) > 0.5;
-        }
-        el.remove();
-        return out;
-      });
-      for (const [what, ours] of Object.entries(drew)) {
-        assert.ok(
-          ours,
-          `${route}: ${what} render identically to the system stack, so no Plex face covers them`
-        );
+          document.body.append(el);
+          return css.getPropertyValue(token).split(",")[0].trim().replace(/^"|"$/g, "");
+        });
+        // A face nothing on the page has drawn yet starts loading at this layout.
+        document.body.getBoundingClientRect();
+        await document.fonts.ready;
+        return first;
+      }, SAMPLES);
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("DOM.enable");
+      await cdp.send("CSS.enable");
+      const { root } = await cdp.send("DOM.getDocument", { depth: 0 });
+      for (const [i, [what]] of SAMPLES.entries()) {
+        const { nodeId } = await cdp.send("DOM.querySelector", {
+          nodeId: root.nodeId,
+          selector: `#face-${i}`,
+        });
+        const { fonts } = await cdp.send("CSS.getPlatformFontsForNode", { nodeId });
+        const drew = fonts.map((f) => f.familyName + (f.isCustomFont ? "" : " (installed)"));
+        assert.deepEqual(drew, [chosen[i]], `${route}: ${what} are drawn in ${drew.join(" + ")}`);
       }
+      await cdp.detach();
     }, route);
   }
 });
