@@ -1,0 +1,111 @@
+# Dependabot's grouped pip update rewrites pydantic and keeps the previous exact
+# pydantic-core pin, which the new pydantic refuses, so the pull request cannot
+# install: 2.13.5, 2.14.1 and 2.14.3 all arrived that way. This runs `make lock`
+# on every Dependabot pip branch. It moves only the pins the update left
+# unresolvable, and the result is pushed back onto the branch when one moved.
+
+name: dependabot-relock
+
+on:
+  # Not `pull_request_target`: only Dependabot's own branches here are taken,
+  # and the job that holds a write token runs nothing from them.
+  pull_request:
+    paths:
+      - pipeline/requirements.txt
+      - pipeline/requirements-dev.txt
+
+permissions: {}
+
+concurrency:
+  # A newer Dependabot push makes this run's patch one that no longer applies
+  # to the branch head.
+  group: relock-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  relock:
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'dependabot/pip/')
+    runs-on: ubuntu-latest
+    # Two pip-compile runs, about fifteen seconds between them.
+    timeout-minutes: 10
+    # Resolving runs code from PyPI (pip-tools, any build backend), so this job
+    # gets a token that cannot write, and its result leaves it as data.
+    permissions:
+      contents: read
+    outputs:
+      patch: ${{ steps.diff.outputs.patch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          # The interpreter the lock's header names: pip-compile resolves for
+          # the one it runs on.
+          python-version: "3.11"
+      - name: Regenerate the lock
+        run: make lock
+      - name: Keep the diff
+        id: diff
+        run: |
+          set -euo pipefail
+          git diff --stat
+          patch=$(git diff --binary -- pipeline/requirements.txt pipeline/requirements-dev.txt | base64 -w0)
+          echo "patch=$patch" >> "$GITHUB_OUTPUT"
+
+  push:
+    needs: relock
+    if: needs.relock.outputs.patch != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      # Dispatching CI onto the pushed commit, for the reason its step gives.
+      actions: write
+    env:
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          # The push below authenticates with the credential checkout writes.
+          persist-credentials: true
+      - name: Commit and push the regenerated lock
+        env:
+          PATCH: ${{ needs.relock.outputs.patch }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$PATCH" | base64 -d > "$RUNNER_TEMP/lock.patch"
+          git apply --index "$RUNNER_TEMP/lock.patch"
+          if git diff --cached --name-only | grep -vxE 'pipeline/requirements(-dev)?\.txt'; then
+            echo "::error::the regenerated patch touches files outside the lock" && exit 1
+          fi
+          git config user.name "vyarno-relock"
+          git config user.email "vyarno-relock@users.noreply.github.com"
+          git commit -q -F - <<'MSG'
+          pipeline: resolve the lock the Dependabot update left unresolvable
+
+          `make lock` on this branch, run by dependabot-relock.yml. It keeps
+          every pin the update chose and moves only the ones that could not
+          install together with them.
+          MSG
+          git push origin "HEAD:refs/heads/$HEAD_REF"
+      - name: Dispatch CI
+        # A push made with this job's token raises no workflow run, so no
+        # required check would ever report on the new commit and the pull
+        # request could not merge. `workflow_dispatch` is the token's exception,
+        # which refresh.yml's step of the same name relies on too.
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci.yml',
+              ref: process.env.HEAD_REF,
+            });
+            core.info(`Dispatched CI on ${process.env.HEAD_REF}`);
