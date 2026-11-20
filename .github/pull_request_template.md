@@ -9,8 +9,7 @@ The reasoning, not the diff. If this reverses an earlier decision, say which
 one and why — several files in this repo carry "do not re-litigate this"
 comments precisely so the reasoning survives the person who had it.
 
-If a coding agent wrote a substantial part, one line saying so belongs here.
-It tells a reviewer where to look hardest — see CONTRIBUTING.md.
+Credit no coding agent here, and link no agent session — see CONTRIBUTING.md.
 -->
 
 ## Does this change a published number?

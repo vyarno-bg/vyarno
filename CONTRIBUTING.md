@@ -120,14 +120,11 @@ people make decisions about.
 quoting counts from a run that never happened is the one failure that costs a
 reviewer their ability to trust anything else in the description.
 
-**Say so in the pull request** when an agent wrote a substantial part — one
-line under "Why" is enough. It tells a reviewer where to look hardest, which is
-the whole purpose; it is not a disclaimer and it does not weigh against the
-change. This is deliberately not the same thing as tagging the code: no
-`// AI-generated` in a comment, no author tags, no `Co-authored-by` bot trailer
-([`writing-style.md`](./docs/writing-style.md) §"Code comments"). The claim
-belongs where a reviewer reads it once, not scattered through files where it
-rots.
+**Credit no agent anywhere in the repository**: not in a commit, not in the
+pull request body, not in a comment on it. No `// AI-generated` in code, no
+author tags, no `Co-authored-by` bot trailer, no agent session link
+([`writing-style.md`](./docs/writing-style.md) §"Code comments"). The author
+field says who answers for the change, and that is the whole record.
 
 **Keep the diff small enough to review.** An agent can produce a thousand-line
 change as easily as a fifty-line one, and the reviewing capacity here is one
@@ -186,10 +183,6 @@ GIT_COMMITTER_EMAIL   you@example.com
 Commits older than the rule keep the identity they were made under. Rewriting
 them would change every SHA in the published history to restate something the
 repository already knows.
-
-**This does not compete with disclosing that an agent wrote the change.** The
-author field records who answers for the code; the line in the PR body records
-how it was produced. A reviewer needs both, and they are not the same question.
 
 If you sign off (`git commit -s`, see below), the `Signed-off-by` line names
 the same person as the author — it is a statement about the right to submit,
