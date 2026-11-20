@@ -24,7 +24,8 @@ and address, never an agent's. Name the branch `<area>/<what-it-does>`, never
 with an agent's prefix (`claude/`, `copilot/`, `codex/`, `cursor/`, `devin/`);
 rename one a harness assigned before the first commit. Credit no agent in a
 commit message: no `Co-authored-by`, no session link, no "Generated with"
-footer. The pull request body says an agent wrote the change, once.
+footer. Nor in a pull request body or a comment on GitHub: no agent credit,
+no session link.
 
 ## Writing
 
