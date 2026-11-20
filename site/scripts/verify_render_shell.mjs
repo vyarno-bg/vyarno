@@ -987,31 +987,6 @@ for (const [route, counterpart, stopAbove, settle] of [
       await page.waitForTimeout(150);
       assert.ok(before > 900, `${route} did not scroll: ${before}`);
 
-      // DIAGNOSTIC, temporary: the scroll timeline of the arriving page.
-      await page.addInitScript(() => {
-        const t0 = performance.now();
-        const log = (window.__lcLog = []);
-        const h = () => document.documentElement.scrollHeight;
-        const note = (what) =>
-          log.push(
-            `${Math.round(performance.now() - t0)}ms ${what} y=${Math.round(scrollY)} h=${h()}`
-          );
-        addEventListener("scroll", () => note("scroll"), { passive: true });
-        document.addEventListener("DOMContentLoaded", () => note("DOMContentLoaded"));
-        addEventListener("load", () => note("load"));
-        const frame = () => {
-          note("frame");
-          if (log.length < 40) requestAnimationFrame(frame);
-        };
-        requestAnimationFrame(frame);
-        new MutationObserver(() => {
-          const a = document.getElementById("app");
-          if (a && "live" in a.dataset && !window.__lcLive) {
-            window.__lcLive = 1;
-            note("app live");
-          }
-        }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-live"] });
-      });
       await page.locator('a.pill[hreflang="en"]').first().click();
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(300);
@@ -1020,7 +995,6 @@ for (const [route, counterpart, stopAbove, settle] of [
         path: location.pathname,
         hash: location.hash,
         y: Math.round(scrollY),
-        log: (window.__lcLog || []).join(" | "),
       }));
       assert.equal(after.path, counterpart, "the language control left its own route");
       assert.match(after.hash, /^#[a-z-]+$/, "no section travelled with the reader");
@@ -1031,11 +1005,55 @@ for (const [route, counterpart, stopAbove, settle] of [
       assert.ok(
         after.y > 900,
         `the reader was ${before}px down and arrived at ${after.y}px — ` +
-          `${after.hash} names something with no place on the page. TIMELINE: ${after.log}`
+          `${after.hash} names something with no place on the page`
       );
       assert.deepEqual(errors, [], errors.join(" | "));
     }, route);
   });
+}
+
+for (const [route, id] of [
+  ["/en/how/", "pay"],
+  ["/en/market/", "afford"],
+  ["/en/credit/", "owed"],
+]) {
+  test(
+    `an arrival at ${route}#${id} is on that section once the live page is in`,
+    { skip },
+    async () => {
+      // Whether the swap over the prerendered markup loses the browser's fragment
+      // scroll depends on timing: the cases above landed at 0px on some Windows
+      // runs only. Here the swap loses it every time, so what is asserted is that
+      // the entry puts the reader back (lib/fragment.js), on any machine.
+      const loseItAtTheSwap = (page) =>
+        page.addInitScript(() => {
+          const swap = Element.prototype.replaceChildren;
+          Element.prototype.replaceChildren = function (...nodes) {
+            const done = swap.apply(this, nodes);
+            if (this.id === "app") scrollTo(0, 0);
+            return done;
+          };
+        });
+      await withApp(
+        async (page, errors) => {
+          // The prerendered markup already counts as mounted for a path READY
+          // has no entry for; the live page is what this is about.
+          await page.waitForFunction(() => "live" in document.getElementById("app").dataset);
+          await page.waitForTimeout(150);
+          const at = await page.evaluate((target) => {
+            const el = document.getElementById(target);
+            return { y: Math.round(scrollY), top: Math.round(el.getBoundingClientRect().top) };
+          }, id);
+          assert.ok(at.y > 900, `${route}#${id} left the reader at ${at.y}px`);
+          assert.ok(Math.abs(at.top) < 200, `#${id} is ${at.top}px from the top of the screen`);
+          assert.deepEqual(errors, [], errors.join(" | "));
+        },
+        `${route}#${id}`,
+        {},
+        loseItAtTheSwap
+      );
+    }
+  );
 }
 
 test("near the top the language control carries no fragment", { skip }, async () => {

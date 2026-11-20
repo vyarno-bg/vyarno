@@ -23,6 +23,7 @@ import { mount } from "svelte";
 import Credit from "./Credit.svelte";
 import { loadAll } from "./lib/data.js";
 import { startAnalytics } from "./lib/analytics.js";
+import { landOnFragment } from "./lib/fragment.js";
 
 const target = document.getElementById("app");
 
@@ -34,4 +35,5 @@ loadAll("credit").then((payloads) => {
   target.replaceChildren();
   mount(Credit, { target, props: { payloads } });
   target.dataset.live = "";
+  landOnFragment();
 });

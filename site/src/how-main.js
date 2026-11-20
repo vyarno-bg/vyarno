@@ -21,6 +21,7 @@ import { mount } from "svelte";
 import How from "./How.svelte";
 import { fetchPayloads } from "./lib/calculator.svelte.js";
 import { startAnalytics } from "./lib/analytics.js";
+import { landOnFragment } from "./lib/fragment.js";
 
 const target = document.getElementById("app");
 
@@ -31,4 +32,5 @@ fetchPayloads().then((payloads) => {
   target.replaceChildren();
   mount(How, { target, props: { payloads } });
   target.dataset.live = "";
+  landOnFragment();
 });

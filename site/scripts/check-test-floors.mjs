@@ -148,7 +148,7 @@ export const FLOORS = {
   node: { floor: 694, report: join(SITE, ".report-node.tap"), count: tapPassed },
   // Raised with the layout-shift rule in `verify_render_layout.mjs` running on
   // both languages at a phone's width and a desk's: sixteen cases, not four.
-  render: { floor: 245, report: join(SITE, ".report-render.tap"), count: tapPassed },
+  render: { floor: 249, report: join(SITE, ".report-render.tap"), count: tapPassed },
 };
 
 /**
