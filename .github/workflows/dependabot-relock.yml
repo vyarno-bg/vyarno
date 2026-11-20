@@ -64,14 +64,20 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
-      # Dispatching CI onto the pushed commit, for the reason its step gives.
+      # Dispatching CI when there is no deploy key, for the reason that step gives.
       actions: write
     env:
       HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      HAS_KEY: ${{ secrets.PUSH_DEPLOY_KEY != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          # A push made with the workflow token starts no `push` or `pull_request`
+          # run, and only those count toward a pull request's required checks. A
+          # deploy key's push starts both. Dependabot's runs read Dependabot
+          # secrets, so the key is saved there and in Actions secrets alike.
+          ssh-key: ${{ secrets.PUSH_DEPLOY_KEY }}
           # The push below authenticates with the credential checkout writes.
           persist-credentials: true
       - name: Commit and push the regenerated lock
@@ -94,11 +100,11 @@ jobs:
           install together with them.
           MSG
           git push origin "HEAD:refs/heads/$HEAD_REF"
-      - name: Dispatch CI
-        # A push made with this job's token raises no workflow run, so no
-        # required check would ever report on the new commit and the pull
-        # request could not merge. `workflow_dispatch` is the token's exception,
-        # which refresh.yml's step of the same name relies on too.
+      - name: Without the key, run CI on the commit and say what the PR still needs
+        if: env.HAS_KEY != 'true'
+        # A dispatched run reports on the commit, never on the pull request,
+        # whose required checks stay "Expected" until something other than this
+        # token pushes. The lock is fixed either way.
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
@@ -108,4 +114,8 @@ jobs:
               workflow_id: 'ci.yml',
               ref: process.env.HEAD_REF,
             });
-            core.info(`Dispatched CI on ${process.env.HEAD_REF}`);
+            core.warning(
+              `The lock on ${process.env.HEAD_REF} is fixed, but no PUSH_DEPLOY_KEY ` +
+                'pushed it, so the pull request waits for its checks: update its ' +
+                'branch or close and reopen it (docs/local-development.md).'
+            );
