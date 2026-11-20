@@ -41,7 +41,7 @@ happens to a data pull request" is why nothing here merges one.
 | `data/published/` | The payloads, committed. These ARE what the site serves | §"What `data/published/` carries" below |
 | `site/` | The Vite + Svelte SPA, five layers | [`site.md`](./site.md) §Layout, whose file tree `verify_docs_map.mjs` holds to the directory in both directions |
 | `docs/` | Everything else | [`README.md`](./README.md) |
-| `.github/` | `ci.yml`, `watch.yml`, one `refresh-*.yml` per arm, `data-pr.yml`, `freshness-check.yml`, the issue and PR templates | §CI below |
+| `.github/` | `ci.yml`, `watch.yml`, one `refresh-*.yml` per arm, `data-pr.yml`, `freshness-check.yml`, `dependabot-relock.yml`, the issue and PR templates | §CI below |
 
 Root carries the licence pair that the rest of this repository keeps true:
 `LICENSE` is Apache-2.0 over the code, `NOTICE` is the carve-out saying the

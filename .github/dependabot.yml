@@ -85,8 +85,8 @@ updates:
       # pydantic pins pydantic-core with `==`, and Dependabot takes a newer core
       # alone (2.47.0, ahead of any stable pydantic), which no lock can install.
       # Ignored, a pydantic bump keeps the OLD core pin instead and fails with
-      # ResolutionImpossible the same way, as 2.13.5 and 2.14.1 both did: run
-      # `make lock` on that branch before merging; it moves only pydantic-core.
+      # ResolutionImpossible the same way (2.13.5, 2.14.1, 2.14.3), which
+      # `dependabot-relock.yml` repairs with `make lock` on the branch.
       - dependency-name: pydantic-core
 
   # The actions in ci.yml are pinned to commit SHAs, with the human-readable
