@@ -231,7 +231,7 @@ def test_every_arm_is_either_scheduled_or_named_as_manual() -> None:
     )
 
 
-def test_the_refresh_workflow_commits_under_an_identity() -> None:
+def test_every_workflow_that_commits_does_so_under_an_identity() -> None:
     """A runner has no git identity, so `git commit` there aborts with exit 128.
 
     It aborts at the end of the job, after the install, the live fetch and a
@@ -245,22 +245,22 @@ def test_the_refresh_workflow_commits_under_an_identity() -> None:
     moved, renamed, made conditional or dropped while the commit step still
     reads as complete on its own.
     """
-    workflow = (
-        Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh.yml"
-    ).read_text("utf-8")
-
-    committing = [
-        block
-        for block in re.split(r"^      - name: ", workflow, flags=re.M)
+    workflows = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    committing = {
+        (path.name, block)
+        for path in workflows.glob("*.yml")
+        for block in re.split(r"^      - name: ", path.read_text("utf-8"), flags=re.M)
         if re.search(r"^\s+git commit\b", block, re.M)
-    ]
-    assert committing, "no step in refresh.yml runs `git commit` — has the publish path moved?"
-    for block in committing:
-        name = block.splitlines()[0].strip()
+    }
+    assert any(name == "refresh.yml" for name, _ in committing), (
+        "no step in refresh.yml runs `git commit` — has the publish path moved?"
+    )
+    for file, block in committing:
+        name = f"{file}: {block.splitlines()[0].strip()}"
         assert re.search(r"^\s+git config user\.email\b", block, re.M), (
             f"the `{name}` step commits without setting user.email in the same block. "
-            f"A runner carries no identity: git aborts with exit 128 after the payload "
-            f"is already written."
+            f"A runner carries no identity: git aborts with exit 128 after the work it "
+            f"commits is already done."
         )
         assert re.search(r"^\s+git config user\.name\b", block, re.M), (
             f"the `{name}` step commits without setting user.name in the same block."
