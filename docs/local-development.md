@@ -217,8 +217,14 @@ resolved the lock against. If a pin behaves differently there, reproduce on
 Both ecosystems are locked, and Dependabot opens one grouped pull request per
 ecosystem per month (`.github/dependabot.yml`, which carries the reasoning).
 Its pip update can leave a pin the rest cannot install with, so
-`dependabot-relock.yml` runs `make lock` on that branch, pushes what moved and
-re-runs CI on it.
+`dependabot-relock.yml` runs `make lock` on that branch and pushes what moved.
+It pushes with the deploy key in the `PUSH_DEPLOY_KEY` secret, because only a
+push from something other than the workflow token starts the pull request's
+required checks. Set it up once: a deploy key with write access (Settings →
+Deploy keys), its private half saved under that name in **both** Actions and
+Dependabot secrets, since a run Dependabot starts reads only the latter.
+Without it the lock is still fixed, and the PR waits until its branch is
+updated or it is closed and reopened.
 
 **Python** — `pyproject.toml` declares the allowed ranges; `requirements.txt`
 (runtime) and `requirements-dev.txt` (runtime + dev) record what was actually
