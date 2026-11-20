@@ -9,7 +9,9 @@
 # Steps: checkout, install the pipeline, run it against live upstreams, stage
 # and capture changes, ask `vyarno-pipeline refresh-report` whether any figure
 # moved and what to date the commit with, then — only if one did — commit with
-# --signoff, push the data/<source> branch, open a PR, and dispatch CI on it.
+# --signoff, push the data/<source> branch, open a PR and arm it to merge
+# itself. The `ci-push` job then pushes that commit again with the deploy key,
+# which is what starts the CI its required checks read.
 #
 # The pipeline's exit codes drive the rest of the workflow:
 #   0 — published, JSON written
@@ -33,11 +35,18 @@ on:
         required: false
         default: ""
         type: string
+    secrets:
+      PUSH_DEPLOY_KEY:
+        description: "Deploy key with write access, read only by the ci-push job"
+        required: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      real_change: ${{ steps.meta.outputs.real_change }}
+      pushed: ${{ steps.push.outputs.sha }}
     concurrency:
       # **One run per arm at a time.** A watch tick and a backstop cron can
       # both reach this arm, and both push `data/<source>`: the second meets a
@@ -49,12 +58,14 @@ jobs:
       contents: write
       pull-requests: write
       # `actions: write` is what dispatches CI onto the branch this job
-      # pushes. See the "Dispatch CI" step for why that is not optional.
+      # pushes when there is no deploy key; see the "Dispatch CI" step.
       actions: write
     # Every script reads the arm's name from here and none has it pasted into
     # its source, so no input value can ever be parsed as shell or JavaScript.
+    # HAS_KEY is a boolean: the key itself never reaches this job.
     env:
       SOURCE: ${{ inputs.source }}
+      HAS_KEY: ${{ secrets.PUSH_DEPLOY_KEY != '' }}
 
     steps:
       - name: Checkout
@@ -195,6 +206,7 @@ jobs:
           git commit --signoff -m "data refresh: ${SOURCE} as of ${AS_OF}"
 
       - name: Push
+        id: push
         if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
         # **The branch outlives the run that made it.** It is created fresh
         # from `main` every time, but it is only deleted when its PR merges, so
@@ -233,6 +245,7 @@ jobs:
           else
             git push -u origin "$BRANCH"
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Open PR
         id: pr
@@ -317,13 +330,12 @@ jobs:
           CHANGED: ${{ steps.diff.outputs.changed }}
 
       - name: Dispatch CI
-        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes'
+        if: steps.diff.outputs.changed != '' && steps.meta.outputs.real_change == 'yes' && env.HAS_KEY != 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        # **Without this the PR can never merge.** The push raises no run, and the
-        # PR raises one that waits for approval, runs no job and closes as a red
-        # zero-job "failure" on merge; so no required check reports on this SHA.
-        # `workflow_dispatch` is the automatic token's exception and reports on
-        # the branch head. Not fatal: the payload is already pushed.
+        # Without the deploy key, the one way CI reaches this commit at all. A
+        # dispatched run reports on the commit and never on the PR, so the PR
+        # waits for a person to approve its own run; with the key, `ci-push`
+        # makes this unnecessary. Not fatal: the payload is already pushed.
         continue-on-error: true
         with:
           script: |
@@ -346,3 +358,54 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
         run: pipeline/.venv/bin/python -m vyarno_pipeline.automerge --pr "$PR_NUMBER"
+
+  # The push above is the workflow token's, which starts no CI run, and only a
+  # push or pull_request run counts toward the PR's required checks. Pushing
+  # the same commit again with a deploy key starts both, and the auto-merge
+  # armed above then merges it. The key lives here, in a job that runs nothing
+  # the pipeline installed, and never in the one above.
+  ci-push:
+    needs: refresh
+    if: needs.refresh.outputs.real_change == 'yes' && needs.refresh.outputs.pushed != ''
+    runs-on: ubuntu-latest
+    # One checkout and one push.
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      SOURCE: ${{ inputs.source }}
+      PUSHED: ${{ needs.refresh.outputs.pushed }}
+      HAS_KEY: ${{ secrets.PUSH_DEPLOY_KEY != '' }}
+    steps:
+      - name: Checkout the pushed refresh with the deploy key
+        if: env.HAS_KEY == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.refresh.outputs.pushed }}
+          # At depth 1 the head is a shallow root, and amending it makes a commit
+          # with no parent at all: a branch with no history in common with main.
+          fetch-depth: 2
+          ssh-key: ${{ secrets.PUSH_DEPLOY_KEY }}
+          # The push below authenticates with the key checkout configures.
+          persist-credentials: true
+
+      - name: Push it again as a commit of the key's
+        if: env.HAS_KEY == 'true' && needs.refresh.outputs.real_change == 'yes'
+        # Same tree, message, author and sign-off; only the committer date moves,
+        # which is what makes it a new commit for the push to carry. The lease
+        # names the SHA the job above pushed, so a branch that moved since is
+        # refused rather than replaced. data-pr.yml skips this committer.
+        run: |
+          set -euo pipefail
+          git config user.name "vyarno-refresh"
+          git config user.email "vyarno-refresh@users.noreply.github.com"
+          git commit --amend --no-edit --quiet
+          parents() { git cat-file commit "$1" | sed -n 's/^parent //p'; }
+          if [[ "$(parents HEAD)" != "$(parents "$PUSHED")" || -z "$(parents HEAD)" ]]; then
+            echo "::error::the re-made commit's parents differ from $PUSHED's; not pushing" && exit 1
+          fi
+          if [[ "$(git rev-parse HEAD)" == "$PUSHED" ]]; then
+            echo "::error::the re-made commit is $PUSHED itself, so a push would start nothing" && exit 1
+          fi
+          BRANCH="data/${SOURCE}"
+          git push --force-with-lease="refs/heads/$BRANCH:$PUSHED" origin "HEAD:refs/heads/$BRANCH"

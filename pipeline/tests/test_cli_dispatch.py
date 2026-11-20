@@ -267,6 +267,53 @@ def test_every_workflow_that_commits_does_so_under_an_identity() -> None:
         )
 
 
+def test_every_refresh_arm_hands_the_reusable_workflow_its_push_key() -> None:
+    """A reusable workflow sees only the secrets its caller passes.
+
+    `refresh.yml` takes PUSH_DEPLOY_KEY as optional, because a refresh without
+    it still publishes. So an arm that drops the line is not an error anywhere:
+    its runs go green, `ci-push` skips, and every pull request it opens waits on
+    required checks that nothing starts.
+    """
+    workflows = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    callers = [
+        path
+        for path in sorted(workflows.glob("*.yml"))
+        if "uses: ./.github/workflows/refresh.yml" in path.read_text("utf-8")
+    ]
+    assert callers, "no workflow calls refresh.yml — has the arm layout moved?"
+    for path in callers:
+        assert re.search(
+            r"^    secrets:\n      PUSH_DEPLOY_KEY: \$\{\{ secrets\.PUSH_DEPLOY_KEY \}\}$",
+            path.read_text("utf-8"),
+            re.M,
+        ), f"{path.name} calls refresh.yml without passing PUSH_DEPLOY_KEY."
+
+
+def test_data_pr_skips_exactly_the_committer_the_refresh_bot_commits_as() -> None:
+    """The deploy key's push in `ci-push` reaches data-pr.yml like a person's.
+
+    data-pr.yml labels a head commit with no `Refresh-Flags:` trailer
+    `needs-review`, and a refresh bot commit carries none, so it tells the two
+    apart by committer. Rename the identity in refresh.yml alone and every bot
+    refresh is held for a person, with every run green.
+    """
+    workflows = Path(__file__).resolve().parents[2] / ".github" / "workflows"
+    names = set(
+        re.findall(
+            r'git config user\.name "([^"]+)"', (workflows / "refresh.yml").read_text("utf-8")
+        )
+    )
+    assert len(names) == 1, f"refresh.yml commits under {sorted(names)}, expected one name"
+    skipped = re.findall(
+        r"github\.event\.head_commit\.committer\.name != '([^']+)'",
+        (workflows / "data-pr.yml").read_text("utf-8"),
+    )
+    assert skipped == list(names), (
+        f"data-pr.yml skips committer {skipped}, but refresh.yml commits as {sorted(names)}."
+    )
+
+
 def test_every_arm_that_fetches_bnb_is_given_the_intermediate() -> None:
     """`www.bnb.bg` does not always send its intermediate, and the fix is per arm.
 
@@ -507,7 +554,7 @@ def test_nothing_commits_pushes_or_opens_a_pull_request_without_a_real_change() 
 
 
 def test_the_workflow_the_refresh_dispatches_ci_onto_exists() -> None:
-    """A refresh pull request has no other way to get a check run on it.
+    """Without the deploy key, a refresh pull request has no other way to get a check run.
 
     The pull request this job opens does raise a `pull_request` run, and it is
     one that waits for approval, runs zero jobs and closes red (run 42256855147

@@ -44,3 +44,5 @@ jobs:
     with:
       source: salary-dist
       detected: ${{ inputs.detected || '' }}
+    secrets:
+      PUSH_DEPLOY_KEY: ${{ secrets.PUSH_DEPLOY_KEY }}

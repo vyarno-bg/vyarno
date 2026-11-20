@@ -224,7 +224,11 @@ required checks. Set it up once: a deploy key with write access (Settings →
 Deploy keys), its private half saved under that name in **both** Actions and
 Dependabot secrets, since a run Dependabot starts reads only the latter.
 Without it the lock is still fixed, and the PR waits until its branch is
-updated or it is closed and reopened.
+updated or it is closed and reopened. The refresh arms push their data branch
+again with the same key so their pull requests merge themselves too
+(`refresh.yml`'s `ci-push` job). After setting the key up or rotating it, run
+the `push-key-check` workflow from the Actions tab: it fails unless a push made
+with the key starts CI.
 
 **Python** — `pyproject.toml` declares the allowed ranges; `requirements.txt`
 (runtime) and `requirements-dev.txt` (runtime + dev) record what was actually
